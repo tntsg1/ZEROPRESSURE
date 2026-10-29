@@ -51,6 +51,7 @@ var job_mutex := Mutex.new()
 var gas0 := 0.0
 var gas_recovered := 0.0
 var gas_lost := 0.0
+var gas_take := {}                # 76 号: what the hoses really took in, kg by species ("bio": the culture carried with it)
 var blown := {}                   # room -> time of last blowout
 var flow_rate := {}               # room -> kPa/s (negative when draining)
 
@@ -95,6 +96,8 @@ var o2_on := false
 
 # hoses: port id -> {"mode": "recover"|"vent", "t": age}
 var hoses := {}
+# taps: a deployed pump's own draw (scripts/gear.gd): uid -> {"vol": gas volume or "", "fluid": fluid volume or "", "rate"}
+var taps := {}
 var readings := {}
 
 
@@ -115,26 +118,15 @@ func setup(g, w, ship: Dictionary) -> void:
 		var r = world.rooms[n]
 		var bb: Rect2 = r.bbox
 		var id: int = room_ids[n]
-		var c := 0
 		var x0 := maxi(0, int((bb.position.x / Geom.M - GX0) / CELL))
 		var x1 := mini(GW - 1, int((bb.end.x / Geom.M - GX0) / CELL) + 1)
 		var y0 := maxi(0, int((bb.position.y / Geom.M - GY0) / CELL))
 		var y1 := mini(GH - 1, int((bb.end.y / Geom.M - GY0) / CELL) + 1)
-		for gy in range(y0, y1 + 1):
-			for gx in range(x0, x1 + 1):
-				if Geometry2D.is_point_in_polygon(_cell_px(gx, gy), r.poly):
-					cell_owner[gy * GW + gx] = id
-					c += 1
-		room_cells[n] = c
+		room_cells[n] = _fill_room_slow(id, r.poly, x0, x1, y0, y1)
 	# a room inside another takes its cells from it (rooms are laid down outer first)
 	if world.rooms.size() > 1:
-		var cnt := {}
-		for i in cell_owner.size():
-			var o: int = cell_owner[i]
-			if o != 0:
-				cnt[o] = int(cnt.get(o, 0)) + 1
 		for n in world.rooms:
-			room_cells[n] = int(cnt.get(room_ids[n], 0))
+			room_cells[n] = cell_owner.count(room_ids[n])
 	var start: Dictionary = gas.get("rooms", {})
 	for n in world.rooms:
 		var v: float = room_cells[n] * CELL * CELL
@@ -179,16 +171,40 @@ func setup(g, w, ship: Dictionary) -> void:
 			"kind": s.get("kind", "battery"), "discharge": s.get("discharge", "")}
 	breakers = pw.get("breakers", {})
 	var fl: Dictionary = cfg.get("fluids", {})
+	# 96 号: what the tug station drew off this hulk before it came in (Q11 B: a share by its stage)
+	var drained := TugYard.drained_of(g)
 	for k in fl.get("volumes", {}):
 		var e: Dictionary = fl.volumes[k].duplicate()
 		e.amount = float(e.amount)
+		if drained > 0.0 and str(e.get("fluid", "")) == "fuel":
+			e.amount *= 1.0 - drained
 		fvol[k] = e
 		fluid0[e.fluid] = fluid0.get(e.fluid, 0.0) + e.amount
 		fluid_rec[e.fluid] = 0.0
 	heat = fl.get("heat", {})
 	loop_T = _heat_target() if not heat.is_empty() else 20.0
-	_compute_now()
+	# 91 号 (seamless entry): in play the first openings between rooms are worked out on the
+	# worker thread like every later change (it took up to 160 ms of the frame the ship came
+	# in on, and the first physics step started the same job again anyway); tests keep it
+	# here so they start from the same state every time
+	if game != null and ((game.bot == null and not game.testing) or Look.async_in_tests):
+		topology_dirty = false
+		job_t0 = Time.get_ticks_usec()
+		job_id = WorkerThreadPool.add_task(_grid_job.bind(_barrier_polys()))
+	else:
+		_compute_now()
 	_step_elec(0.0)
+
+
+# a room's cells: every cell whose centre is inside its outline
+func _fill_room_slow(id: int, poly: PackedVector2Array, x0: int, x1: int, y0: int, y1: int) -> int:
+	var c := 0
+	for gy in range(y0, y1 + 1):
+		for gx in range(x0, x1 + 1):
+			if Geometry2D.is_point_in_polygon(_cell_px(gx, gy), poly):
+				cell_owner[gy * GW + gx] = id
+				c += 1
+	return c
 
 
 # a longer or taller ship than the standard grid holds: whole metres more, same cells
@@ -504,11 +520,26 @@ func _step_gas(dt: float) -> void:
 					bio_vented += out
 			if o2_on and o2.get(v, 0.0) > 0.0 and vols[v].n > 1e-9:
 				o2[v] -= o2[v] * take / vols[v].n
+			if hose.mode != "vent":
+				_log_take(v, take)
 			vols[v].n -= take
 			if hose.mode == "vent":
 				gas_lost += take
 			else:
 				gas_recovered += take
+		for tid in taps:
+			var tp: Dictionary = taps[tid]
+			var tv: String = tp.get("vol", "")
+			if tv == "" or not vols.has(tv):
+				continue
+			var take2: float = minf(vols[tv].n, float(tp.rate) * P(tv) * h)
+			if bio.get(tv, 0.0) > 0.0 and vols[tv].n > 1e-9:
+				bio[tv] -= bio[tv] * take2 / vols[tv].n
+			if o2_on and o2.get(tv, 0.0) > 0.0 and vols[tv].n > 1e-9:
+				o2[tv] -= o2[tv] * take2 / vols[tv].n
+			_log_take(tv, take2)
+			vols[tv].n -= take2
+			gas_recovered += take2
 	for n in room_ids:
 		vols[n].n = maxf(0.0, vols[n].n)
 		var rate: float = (P(n) - before[n]) / maxf(dt, 1e-4)
@@ -982,6 +1013,16 @@ func _step_fluids(dt: float) -> void:
 				var t2 := minf(b.amount, float(jn.pump_through) * dt * pump_k())
 				b.amount -= t2
 				fluid_rec[b.fluid] += t2
+	for tid in taps:
+		var tp: Dictionary = taps[tid]
+		var tf: String = tp.get("fluid", "")
+		if tf == "" or not fvol.has(tf):
+			continue
+		var tvv: Dictionary = fvol[tf]
+		var tpump: Array = tvv.get("pump", [0.1, 0.005])
+		var ttake := minf(tvv.amount, (float(tpump[0]) * tvv.amount + float(tpump[1])) * dt * float(tp.rate))
+		tvv.amount -= ttake
+		fluid_rec[tvv.fluid] += ttake
 	# leaks drain what they are attached to
 	for lk in leaks:
 		lk.t += dt
@@ -1200,7 +1241,37 @@ func set_switch(id: String, state: bool) -> void:
 
 
 func gas_value() -> float:
+	# 76 号: with the port's gas line built the gas is kept as a batch, not cashed at settlement
+	if GasLine.keeping():
+		return 0.0
 	return gas_recovered / maxf(gas0, 1.0) * float(cfg.get("gas", {}).get("value", 0.0))
+
+
+# 76 号: one draw of the hose, by species: a room's air by its real oxygen share (21 % where
+# the ship keeps no oxygen model), a tank by its name; kg = kPa·m³ × 0.4105 mol × molar mass
+const MOL_PER_KPAM3 := 0.4105
+const MOLAR := {"o2": 0.032, "n2": 0.028, "ar": 0.040, "co2": 0.044, "h2": 0.002, "he": 0.004}
+func species_of(v: String) -> Dictionary:
+	if vessel_cfg.has(v):
+		var k := v.to_lower()
+		for sp in ["o2", "n2", "h2", "he", "co2"]:
+			if k.begins_with(sp):
+				return {sp: 1.0}
+		return {"o2": 0.21, "n2": 0.78, "ar": 0.01}
+	var fo := 0.21
+	if o2_on and vols.has(v) and float(vols[v].n) > 1e-9:
+		fo = clampf(float(o2.get(v, 0.21 * float(vols[v].n))) / float(vols[v].n), 0.0, 1.0)
+	return {"o2": fo, "n2": maxf(0.0, 0.99 - fo), "ar": 0.01}
+
+
+func _log_take(v: String, take: float) -> void:
+	if take <= 0.0 or not vols.has(v):
+		return
+	for sp in species_of(v):
+		var f: float = species_of(v)[sp]
+		gas_take[sp] = float(gas_take.get(sp, 0.0)) + take * f * MOL_PER_KPAM3 * float(MOLAR[sp])
+	if bio.get(v, 0.0) > 0.0 and float(vols[v].n) > 1e-9:
+		gas_take["bio"] = float(gas_take.get("bio", 0.0)) + float(bio[v]) * take / float(vols[v].n)
 
 
 func fluid_value() -> float:
@@ -1249,6 +1320,8 @@ func contents_reading(p) -> Array:
 func measure(key: String, kind: String, at_text: String, inst: String, extra: Dictionary = {}) -> Dictionary:
 	var r := {"key": key, "kind": kind, "at": at_text, "inst": inst, "t": time, "val": 0.0, "text": "", "ver": 0, "vk": ""}
 	r.merge(extra, true)
+	if game != null and Consum.is_cheap(game, "probe"):
+		r.noise = randf_range(-0.15, 0.15)
 	readings[key] = r
 	refresh_reading(r, true)
 	if game != null and game.assist != null:
@@ -1263,6 +1336,8 @@ func refresh_reading(r: Dictionary, take: bool) -> void:
 		r.text = cur[1]
 		r.ver = cur[2]
 		r.vk = cur[3]
+		if r.has("noise"):
+			r.text = Consum.noisy_text(r.text, float(r.noise))
 
 
 # [value, text, version, version-key]

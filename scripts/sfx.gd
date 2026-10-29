@@ -5,7 +5,8 @@ extends Node
 # generator hum and the dock's ambience (or the user's music, if present).
 
 const VOICES := 20
-const LOOPS := ["cut_loop", "jet_loop", "thrust_loop", "pump_loop", "hum_loop", "tether_loop", "ambience"]
+const TugWorksRef = preload("res://scripts/tug_works.gd")
+const LOOPS := ["cut_loop", "jet_loop", "thrust_loop", "pump_loop", "hum_loop", "tether_loop", "furl_loop", "crane_loop", "ambience"]
 
 var game: Game
 var streams := {}
@@ -17,8 +18,13 @@ var jet_acc := 0.0
 var last_play := {}
 var sfx_bus := 0
 var music_bus := 0
+var cut_pitch := 1.0         # 87-1: the cutting hiss, by the material under the beam
 var ending_player: AudioStreamPlayer
 var ending_level := 0.0
+
+
+static var _kept := {}         # 91 号: every sound, loaded once for the whole run
+static var _kept_music := {}
 
 
 func _ready() -> void:
@@ -28,9 +34,13 @@ func _ready() -> void:
 	Settings.apply_audio()
 	# ResourceLoader, not DirAccess: in an exported build the folder holds
 	# only "x.ogg.import" / "x.ogg.remap", and a plain listing finds no sounds
-	for f in ResourceLoader.list_directory("res://assets/audio"):
-		if f.ends_with(".ogg"):
-			streams[f.get_basename()] = load("res://assets/audio/" + f)
+	# 91 号 (seamless entry): the sounds stay loaded between scenes (they were read from disk
+	# again every time a ship was entered)
+	if _kept.is_empty():
+		for f in ResourceLoader.list_directory("res://assets/audio"):
+			if f.ends_with(".ogg"):
+				_kept[f.get_basename()] = load("res://assets/audio/" + f)
+	streams = _kept.duplicate()
 	for i in VOICES:
 		var v := AudioStreamPlayer.new()
 		v.bus = "SFX"
@@ -39,7 +49,9 @@ func _ready() -> void:
 	if ResourceLoader.exists("res://assets/music/ending.ogg"):
 		ending_player = AudioStreamPlayer.new()
 		ending_player.bus = "Music"
-		var es: AudioStreamOggVorbis = load("res://assets/music/ending.ogg")
+		if not _kept_music.has("ending"):
+			_kept_music["ending"] = load("res://assets/music/ending.ogg")
+		var es: AudioStreamOggVorbis = _kept_music["ending"]
 		es.loop = false
 		ending_player.stream = es
 		ending_player.volume_db = -80.0
@@ -63,8 +75,11 @@ func _ready() -> void:
 
 func _music():
 	for f in ["res://assets/music/main.ogg", "res://assets/music/main.mp3"]:
+		if _kept_music.has(f):
+			return _kept_music[f]
 		if ResourceLoader.exists(f):
-			return load(f)
+			_kept_music[f] = load(f)
+			return _kept_music[f]
 	return streams.get("ambience")
 
 
@@ -107,8 +122,14 @@ func _process(dt: float) -> void:
 	if game == null:
 		return
 	var want := {}
-	var playing: bool = game.state == "play" and not game.menu_open
-	want["cut_loop"] = game.tools.material_k * (1.0 if game.tools.cutting else 0.0) if playing else 0.0
+	# a screen over the game (the terminal, the star map) pauses it: the drone's flame is frozen at
+	# whatever it was, and its hiss would run on under the screen (user 2026-10-26)
+	var playing: bool = game.state == "play" and not game.menu_open and not get_tree().paused and game.console_ui == null
+	# 87-1: armour grinds louder and lower, aluminium and composite hiss higher and softer
+	var cq = game.tools.cut_mat
+	var cut_vol: float = float(Mat.of(cq).get("vol", 1.0)) if cq != null else 1.0
+	cut_pitch = Pal.damp(cut_pitch, float(Mat.of(cq).get("pitch", 1.0)) if cq != null else 1.0, 10.0, dt)
+	want["cut_loop"] = game.tools.material_k * (1.0 if game.tools.cutting else 0.0) * cut_vol if playing else 0.0
 	want["jet_loop"] = clampf(jet_acc, 0.0, 1.0) if playing else 0.0
 	jet_acc = 0.0
 	var fl := 0.0
@@ -127,6 +148,12 @@ func _process(dt: float) -> void:
 			hum = maxf(hum, clampf(1.0 - d / (10.0 * 48.0), 0.0, 1.0) * 0.5)
 	want["hum_loop"] = hum if playing else 0.0
 	want["tether_loop"] = (0.25 + 0.5 * game.tools.tether_force) if playing and game.tools.held_piece != null else 0.0
+	# 93 号: the sail's furling motors, while any corner winds
+	want["furl_loop"] = 0.5 if playing and game.sail != null and game.sail.active() and game.sail.furling() else 0.0
+	# 96 号: the tug station's gantry, lifts and slide, and its transfer pump, near it (a real motor)
+	var tug_near: float = game.port_structure.interiors._tug_near() if game.get("port_structure") != null and game.port_structure.get("interiors") != null else 0.0
+	want["crane_loop"] = TugWorksRef.motor() * 0.55 * tug_near if playing else 0.0
+	want["pump_loop"] = maxf(float(want["pump_loop"]), TugWorksRef.pump * 0.3 * tug_near) if playing else 0.0
 	var hush: bool = game.story != null and game.story.hush()
 	var ending: bool = game.state == "ending" and ending_player != null and not hush
 	want["ambience"] = 0.0 if ending or hush else (0.85 if game.state != "intro" else 0.6)
@@ -141,5 +168,9 @@ func _process(dt: float) -> void:
 		loops[n].volume_db = linear_to_db(maxf(0.0001, loop_level[n]))
 		if n == "thrust_loop":
 			loops[n].pitch_scale = 0.9 + fl * 0.25 + (0.15 if game.drone.dashing else 0.0)
+		if n == "cut_loop":
+			loops[n].pitch_scale = cut_pitch
+		if n == "crane_loop":
+			loops[n].pitch_scale = 0.85 + 0.3 * TugWorksRef.motor()
 		if n == "tether_loop":
 			loops[n].pitch_scale = 0.8 + game.tools.tether_force * 0.5 + game.tools.strain * 0.4

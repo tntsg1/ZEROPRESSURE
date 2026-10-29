@@ -1,5 +1,6 @@
 class_name Game
 extends Node2D
+signal load_received(keys: Array, zone: String, value: float, job_id: String)
 # A contract: the dock, the ship, the drone and everything that happens
 # between them. Holds the camera, routes input, reacts to every event the
 # systems raise (cuts, arcs, leaks, blowouts, recoveries) and keeps the books.
@@ -55,6 +56,7 @@ var auto_paused := false      # the operator stopped the berth's machines (arm, 
 var mouths := {}              # mouth zone -> the machine dropping into it now
 var dock: Dock
 var fx: Fx
+var look: Look                # 91 号: the picture layer (scripts/look.gd)
 var drone: Drone
 var tools: Tools
 var hud: Hud
@@ -66,7 +68,8 @@ var ship_id := "gr7"         # which ship file this contract is about
 var ship: Dictionary = {}
 static var start_ship := ""  # the title screen picks the next ship (training, exam, contract)
 static var course_chain: Array = []   # special courses still to run, back to back (scripts/codex.gd)
-static var course_then := ""          # after them: "contract" (the one waiting on them) or "terminal"
+static var course_then := ""          # after them: "contract" (the one waiting on them), "contract_loadout" (its loadout page first) or "terminal"
+static var loadout_after_course := false   # the terminal opens the waiting contract's loadout page (25 号)
 static var contract: Dictionary = {}   # the career's contract to play next (empty: a contract outside any career)
 var job: Dictionary = {}     # the career contract this scene plays
 var fee := CONTRACT_FEE
@@ -88,7 +91,7 @@ var _factory := {}           # the type's factory names: what can go in the arch
 const OP_CAT := {
 	"unfix": "manual", "unplug": "manual", "door": "manual", "haul_scrap": "manual", "remeasure": "manual", "repair": "manual",
 	"measure": "decision", "isolate": "decision", "hose": "decision", "cut": "decision", "deliver_equip": "decision",
-	"deliver_hazard": "decision", "ring": "decision", "pick_contract": "decision", "buy": "decision",
+	"deliver_hazard": "decision", "ring": "decision", "pick_contract": "decision", "buy": "decision", "deploy": "decision",
 	"arm_haul": "machine",     # the recovery arm, or a mouth pulling in what drifted close
 	"plan": "machine",         # a step of a work plan the berth ran
 }
@@ -99,7 +102,28 @@ var cam_pan := Vector2.ZERO
 var rmb_down := false
 var rmb_moved := 0.0
 var overview := false
+var port_view := false       # the whole of Zero Pressure Port in view (G6, key O at the berth)
+var port_access
+var port_structure          # the port's walls, doors and consoles (scripts/port_structure.gd)
+var boat                    # the work boat outside the gate (scripts/workboat.gd)
+var boat_tow = null         # 87-6: its tow line (scripts/boat_tow.gd)
+var cargo_floor             # the cargo district's counter, crates and rack mouths (scripts/cargo_floor.gd, 85 号)
+var mill_line               # the rolling mill in the processing district (scripts/mill_line.gd, 85 号)
+var tram                    # the rail shuttle through the corridors (scripts/tram.gd)
+var exchange_logistics
+var industrial_heat
+var plant                    # the processing district's own works (scripts/process_plant.gd, 30 号)
+var freight_pier             # the freight pier and the shipping clock (scripts/freight_pier.gd, 31 号)
+var gas_works = null         # 76 号: the gas line outside the processing district (scripts/gas_works.gd)
+var trade_hall               # the three companies' counters and the quote board (scripts/trade_hall.gd, 38 号)
+var industrial_sort
+var prelude_on := false       # the belt prelude is on screen: the berth's clock waits (28 号)
+var guide: Guide              # the on-site task guide (scripts/guide.gd, 27 号)
+var backdrop: Backdrop        # the stars, the planet and the port behind the berth (scripts/backdrop.gd)
+var industrial_assay          # the assay bench beside the sorting desk (scripts/industrial_assay.gd)
 var training := false        # the ship file is a training course, not a contract
+var belt := false            # the asteroid-belt prologue: no berth, no port (scripts/prologue.gd, 32 号)
+var prologue
 var tutorial: Tutorial
 var assist: Assist
 var codex: Codex              # first meetings and the book (scripts/codex.gd)
@@ -113,7 +137,19 @@ var hauler2: Hauler             # the second hauling drone (roadmap 4.4)
 var crane: Crane                # the heavy crane (roadmap 4.4)
 var keepout: Array = []         # Rect2 (px): keep-out zones the operator set; no machine goes in
 var consoles: Consoles          # the berth's two computers: shop and berth management, on site
+var gear: Gear                  # field gear out on this job: deployable tools, drone modules (scripts/gear.gd)
+var parts_in: Array = []        # whole equipment shelved for the berth's repairs this job (scripts/repair.gd)
+var parts_value := 0.0          # what it was worth (counted in the recovery, not paid in cash)
+var material_receipts: Array = [] # actual G5 raw intake, pending atomic career settlement
+var receiver_commits: Dictionary = {} # every piece of a G5 mixed receipt, including sold goods
+var material_recovery_value := 0.0 # retained value counts as recovery, never cash
+var structure_t := 0.0          # metal through the furnace this job, tonnes (structure for repairs)
 var console_ui: Control = null  # the terminal page open over the berth
+var order_review: Control = null
+var order_review_deferred := false
+var modal_release := false     # the click closing a preview must not fire a tool
+var settlement_retry_required := false
+var work_order = null
 const KEEPOUT_MAX := 3
 const KEEPOUT_SIZE := Vector2(8.0, 8.0)   # m
 var radio := Radio.new()      # Liang and the berth terminal
@@ -123,7 +159,8 @@ const WARP := 4.0
 const REST_SCRAP := 0.6       # an early end: what is left fetches this share of its scrap value
 var testing := false
 
-var state := "intro"         # intro play ending
+var state := "intro"         # intro play ending (… "towin": a hulk brought in, 63 号)
+var tow_traffic = null
 var state_t := 0.0
 var paused_sim := false
 var dev_overlay_open := false
@@ -138,6 +175,12 @@ var zoom_now := 0.62
 var trauma := 0.0
 var punch := Vector2.ZERO
 var cam_override = null      # Vector2 world point (intro / ending)
+var works_site = null         # the crew at work (scripts/works_site.gd), in the dock's space
+var crew = null               # 92 号: the crew's drones doing the work for real (scripts/crew.gd)
+var port_tour = null          # the port, district by district (scripts/port_tour.gd, 83 号)
+var arrival := {}             # a hulk just towed home: {id, name, held}, shown until the terminal is opened on it
+var plan_focus = null        # temporary local inspection, cancelled by pilot input
+var plan_focus_t := 0.0
 var zoom_override := -1.0
 
 # input edges
@@ -177,19 +220,28 @@ var ship_offset := 60.0 * 48.0
 # don't go back to the menu, go back into the berth"): the finished ship is towed
 # out, the empty berth (ships/berth.json) takes over with the drone where it was
 static var carry := {}
+static var exchange_requested := false
 const TOW_T := 2.6
 var ended := false
 var slowmo := 0.0
+var zoom_kick := 0.0           # 91 号: the view drawn in toward a big piece coming free
+var kick_at := Vector2.INF
 var hitstop_t := 0.0
 var playtime := 0.0
 var ledger: Array = []        # [label, zone, value]
 var autosave_t := 0.0
 var best := {}
+var nuke = null               # the core's heart cut: the detonation and its cinematic (scripts/nuke.gd)
+var nuked := false
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# a scene left in a hit-stop or the slow motion would hand its clock on to this one (the clock
+	# is the engine's, not the scene's): every game starts at full speed
+	Look.time_k(1.0)
 	testing = _is_test()
+	Look.mark("start")
 	Txt.load_settings(testing)
 	hints_on = Txt.hints
 	fx = Fx.new()
@@ -197,6 +249,7 @@ func _ready() -> void:
 	var bg := Backdrop.new()
 	bg.game = self
 	add_child(bg)
+	backdrop = bg
 	world = World.new()
 	world.game = self
 	dock = Dock.new()
@@ -221,6 +274,9 @@ func _ready() -> void:
 		# a save left over from another contract of the career is not this one
 		if not job.is_empty() and data.has("job") and data.job.get("id", "") != job.get("id", ""):
 			data = {}
+		# nor a save of some other ship (the empty berth's, say) for a contract on this one
+		if not job.is_empty() and not data.is_empty() and str(job.get("ship", "")) != "" and str(data.get("ship", "")) != str(job.ship):
+			data = {}
 	SaveGame.load_requested = false
 	if not data.is_empty():
 		ship_id = data.get("ship", "gr7")
@@ -229,6 +285,7 @@ func _ready() -> void:
 	fit_skills()
 	ship = Ship.load_data(ship_id)
 	training = ship.get("training", false)
+	belt = ship.get("belt", false)
 	if training or ship.has("exam"):
 		job = {}
 	if job.has("variant"):
@@ -256,10 +313,29 @@ func _ready() -> void:
 	else:
 		data = {}
 		Ship.build(world, ship)
+	Look.mark("ship_build")
 	sys = Systems.new()
 	add_child(sys)
+	world.ore_price = float(ship.get("ore", {}).get("price", 0.0))
 	world.finalize(float(ship.get("value", {}).get("metal", 12000.0)))
+	# 78 号 P0-1: what the whole ship can actually pay — every piece of equipment whole, all its
+	# metal, gas and fluids. Some authored "total"s fall short of it (H-22: 140,000 against
+	# 132,800 of equipment + 9,000 of metal), so a clean strip read over 100 %.
+	full_value = float(ship.get("value", {}).get("metal", 12000.0)) + float(ship.get("gas", {}).get("value", 0.0))
+	for fv in ship.get("fluids", {}).get("value", {}).values():
+		full_value += float(fv)
+	# 87-4: the sail furled whole, the most a light sail can pay
+	full_value += preload("res://scripts/sail.gd").asset_full(ship)
+	for id in world.order:
+		if world.pieces[id].cls == "equip":
+			full_value += float(world.pieces[id].value)
+		# 96 号: the hopper's chunks at the ore price, and its fines (they were never counted)
+		elif world.pieces[id].kind == "ore" and world.ore_price > 0.0:
+			full_value += world.scrap_value(world.pieces[id])
+	full_value += float(ship.get("ore", {}).get("fines", 0.0)) * world.ore_price
+	Look.mark("finalize_value")
 	sys.setup(self, world, ship)
+	Look.mark("sys_setup")
 	munitions = Munitions.new()
 	munitions.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(munitions)
@@ -406,6 +482,7 @@ func _ready() -> void:
 	cryo.setup(self, ship)
 	world.piece_freed.connect(on_body_freed)
 	add_child(fx)
+	Look.mark("sub_tether_ice_mech")
 	blueprint = Blueprint.new()
 	blueprint.game = self
 	add_child(blueprint)
@@ -415,6 +492,7 @@ func _ready() -> void:
 	drone.alive = false
 	add_child(drone)
 	drone.global_position = Dock.BAY * Geom.M + Vector2(-40, 0)
+	Look.mark("sub_blueprint_drone")
 	tools = Tools.new()
 	tools.game = self
 	tools.world = world
@@ -422,6 +500,15 @@ func _ready() -> void:
 	tools.sys = sys
 	tools.drone = drone
 	add_child(tools)
+	# 87-3: the grapple's range mode
+	tools.multi = preload("res://scripts/multi_grab.gd").new()
+	tools.multi.setup(tools)
+	Look.mark("sub_tools")
+	gear = Gear.new()
+	gear.process_mode = Node.PROCESS_MODE_PAUSABLE
+	world.add_child(gear)
+	gear.setup(self)
+	Look.mark("modules")
 	var we := WorldEnvironment.new()
 	var env := Environment.new()
 	env.background_mode = Environment.BG_CANVAS
@@ -438,17 +525,27 @@ func _ready() -> void:
 		env.set_glow_level(lv, [0.0, 1.0, 1.0, 0.8, 0.55, 0.3, 0.0][lv])
 	we.environment = env
 	add_child(we)
+	# 91 号: lights, the full-screen pass, the far belt, the notes near the cursor
+	Look.mark("sub_env")
+	look = Look.new()
+	add_child(look)
+	look.setup(self)
+	Settings.look = look
+	Look.mark("sub_look")
 	cam = Camera2D.new()
 	cam.process_callback = Camera2D.CAMERA2D_PROCESS_PHYSICS
 	add_child(cam)
 	cam.make_current()
+	Look.mark("sub_cam")
 	sfx = Sfx.new()
 	sfx.game = self
 	add_child(sfx)
 	radio.sfx = sfx
+	Look.mark("env_cam_sfx")
 	hud = Hud.new()
 	hud.game = self
 	add_child(hud)
+	Look.mark("hud")
 	codex = Codex.new()
 	codex.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(codex)
@@ -474,6 +571,44 @@ func _ready() -> void:
 		consoles = Consoles.new()
 		consoles.game = self
 		add_child(consoles)
+		# 65 号: the crew building a repair, seen where it works
+		var site = preload("res://scripts/works_site.gd").new()
+		site.game = self
+		dock.add_child(site)
+		works_site = site
+		# 92 号: and the crew that builds it for real
+		crew = preload("res://scripts/crew.gd").new()
+		crew.game = self
+		dock.add_child(crew)
+		if in_berth():
+			port_access = load("res://scripts/port_access.gd").new()
+			port_access.game = self
+			add_child(port_access)
+			port_structure = PortStructure.new()
+			port_structure.game = self
+			add_child(port_structure)
+			# 85 号: the rolling mill standing in the processing district
+			mill_line = preload("res://scripts/mill_line.gd").new()
+			mill_line.game = self
+			add_child(mill_line)
+			# 85 号: the cargo district's receiving counter, crates and rack mouths
+			cargo_floor = preload("res://scripts/cargo_floor.gd").new()
+			cargo_floor.game = self
+			add_child(cargo_floor)
+			boat = WorkBoat.new()
+			boat.game = self
+			add_child(boat)
+			# 87-6: the boat's tow line and the derelict section it can clear
+			boat_tow = preload("res://scripts/boat_tow.gd").new()
+			boat_tow.game = self
+			add_child(boat_tow)
+			tram = Tram.new()
+			tram.game = self
+			add_child(tram)
+			# 63 号: the tugs bringing hulks home, seen
+			tow_traffic = preload("res://scripts/tow_traffic.gd").new()
+			tow_traffic.game = self
+			add_child(tow_traffic)
 	if has_upgrade("crane"):
 		crane = Crane.new()
 		crane.game = self
@@ -484,10 +619,13 @@ func _ready() -> void:
 		arm.game = self
 		arm.process_mode = Node.PROCESS_MODE_PAUSABLE
 		add_child(arm)
+	Look.mark("port_props")
 	plan = WorkPlan.new()
 	plan.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(plan)
 	plan.setup(self)
+	work_order = load("res://scripts/work_orders.gd").new(self)
+	if work_order.active(): plan.packages.protected = work_order.preserve_keys()
 	if ship.has("exam"):
 		exam = Exam.new()
 		exam.process_mode = Node.PROCESS_MODE_ALWAYS
@@ -501,7 +639,7 @@ func _ready() -> void:
 		assist.game = self
 		assist.process_mode = Node.PROCESS_MODE_PAUSABLE
 		add_child(assist)
-	if ship.has("story"):
+	if ship.has("story") and Story.ON:
 		story = Story.new()
 		story.process_mode = Node.PROCESS_MODE_ALWAYS
 		add_child(story)
@@ -509,7 +647,17 @@ func _ready() -> void:
 		var sh := StoryHud.new()
 		sh.game = self
 		add_child(sh)
-	if training:
+	if belt:
+		# out in the belt: the berth is not here; the prologue teaches as it goes
+		dock.visible = false
+		dock.bounds_body.collision_layer = 0
+		prologue = preload("res://scripts/prologue.gd").new()
+		prologue.game = self
+		add_child(prologue)
+		# 68 号 §2: a new career sees the opening first, once
+		if Career.usable() and not Career.data.is_empty() and not Career.data.get("seen", {}).has("intro") and (not testing or opening_in_tests):
+			show_opening.call_deferred(true)
+	elif training:
 		tutorial = Tutorial.new()
 		tutorial.process_mode = Node.PROCESS_MODE_PAUSABLE
 		add_child(tutorial)
@@ -519,6 +667,7 @@ func _ready() -> void:
 		add_child(th)
 	for n in [dock, world, sys, fx, blueprint, drone, tools]:
 		n.process_mode = Node.PROCESS_MODE_PAUSABLE
+	Look.mark("plan_story")
 	var dev := DevPanel.new()
 	dev.game = self
 	dev.where = "game"
@@ -533,6 +682,14 @@ func _ready() -> void:
 	zoom_now = 0.62
 	state = "intro"
 	state_t = 0.0
+	if data.is_empty():
+		_belt_prelude.call_deferred()
+	# 80 号 Q5: a TUG-001 job loaded part-way gets its guide back, at the step it is at
+	_first_ship_coach.call_deferred()
+	if belt:
+		_end_intro.call_deferred()
+		# the berth's machinery (field, mouths, suction) is not out here
+		dock.process_mode = Node.PROCESS_MODE_DISABLED
 	if not data.is_empty():
 		SaveGame.apply_late(self, data)
 		if data.has("munitions"):
@@ -607,6 +764,10 @@ func _ready() -> void:
 			cryo.load_state(data.cryo)
 		if data.has("plan") and plan != null:
 			plan.load_state(data.plan)
+		if data.has("gear") and gear != null:
+			gear.load_state(data.gear)
+		if data.has("work_order") and work_order != null:
+			work_order.load_state(data.work_order)
 		for r in data.get("keepout", []):
 			keepout.append(Rect2(float(r[0]), float(r[1]), float(r[2]), float(r[3])))
 		if tutorial != null and data.has("tutorial"):
@@ -631,10 +792,68 @@ func _ready() -> void:
 			story.on_arrive()
 		if bot != null and bot.get("skip_intro", false):
 			_end_intro()
+	Look.mark("panels_save")
 	if in_berth():
 		_enter_berth()
 	if data.is_empty():
 		_maybe_build()
+	if in_berth() and build == null:
+		_maybe_show_repairs()
+	Look.mark("enter_berth")
+	if career() and Career.usable():
+		exchange_logistics = preload("res://scripts/exchange_logistics.gd").new()
+		exchange_logistics.game = self
+		exchange_logistics.restore_field(data.get("exchange_cargo",{}))
+		add_child(exchange_logistics)
+		trade_hall = preload("res://scripts/trade_hall.gd").new()
+		trade_hall.game = self
+		add_child(trade_hall)
+		# 76 号: the gas line's works and the supply berth
+		gas_works = preload("res://scripts/gas_works.gd").new()
+		gas_works.game = self
+		add_child(gas_works)
+		freight_pier = preload("res://scripts/freight_pier.gd").new()
+		freight_pier.game = self
+		freight_pier.yard = exchange_logistics
+		add_child(freight_pier)
+		# the company's works stand in the processing district; the services below run on them
+		plant = preload("res://scripts/process_plant.gd").new()
+		plant.game = self
+		add_child(plant)
+		industrial_heat = preload("res://scripts/industrial_heat.gd").new()
+		industrial_heat.game = self
+		industrial_heat.restore_field(data.get("industrial_cargo",{}))
+		add_child(industrial_heat)
+		industrial_sort = preload("res://scripts/industrial_sort.gd").new()
+		industrial_sort.game = self
+		industrial_sort.restore_field(data.get("sorting_cargo",{}))
+		add_child(industrial_sort)
+		industrial_assay = preload("res://scripts/industrial_assay.gd").new()
+		industrial_assay.game = self
+		add_child(industrial_assay)
+		if in_berth():
+			plant.catch_up.call_deferred()
+		guide = Guide.new()
+		guide.game = self
+		add_child(guide)
+	Look.mark("career_services")
+
+
+# repairs made at the terminal since the berth was last in view: shown now (scripts/repair_show.gd)
+func _maybe_show_repairs() -> void:
+	if not career() or not Career.usable() or bot != null or (testing and not cine_in_tests):
+		return
+	var pend: Array = Career.data.get("repaired_pending", [])
+	if pend.is_empty():
+		return
+	build = RepairShow.new()
+	dock.add_child(build)
+	build.setup(self, pend)
+	Career.data.repaired_pending = []
+	Career.save()
+	_after_build = state
+	state = "build"
+	state_t = 0.0
 
 
 func _is_test() -> bool:
@@ -707,12 +926,17 @@ func cam_zoom() -> float:
 # ---------------------------------------------------------------- frame
 
 func _process(dt: float) -> void:
-	if dev_overlay_open:
+	if dev_overlay_open or prelude_on:
 		return
 	var rdt := dt / maxf(Engine.time_scale, 0.01)
 	state_t += rdt
-	if state == "play" and not menu_open:
+	if exchange_requested and career() and state == "play" and console_ui == null and not menu_open:
+		exchange_requested = false
+		open_exchange()
+	if state == "play" and not menu_open and not paused_sim:
 		playtime += dt
+		if career() and Career.usable():
+			preload("res://scripts/industrial_exchange.gd").advance_career(dt)
 		# the end is checked when something is delivered; once a second as well, for a
 		# last piece that went some other way (and for a contract loaded with nothing left)
 		done_t += rdt
@@ -724,53 +948,109 @@ func _process(dt: float) -> void:
 		if standard_time() > 0.0 and playtime > standard_time() and not hints_seen.has("late"):
 			hints_seen["late"] = true
 			Copy.say(radio, "L_late")
+		_find_faults(rdt)
 		autosave_t += rdt
 		if autosave_t > 25.0 and not in_berth():
 			autosave_t = 0.0
-			SaveGame.save(self)
+			# written on a worker thread: no hitch every 25 s (ARK-01 took ~150 ms)
+			SaveGame.save_async(self)
 			hud.toast_saved()
 	if state == "play" and bot == null and not in_berth():
 		_account(dt, rdt)
+	# 65 号: the crew's work goes on while the game is played
+	if state == "play" and not menu_open and career() and Career.usable() and not training and exam == null:
+		# 68 号: the belt sweep and the signal analysis run on the same clock
+		var sc: Dictionary = Scan.advance(dt)
+		if not sc.is_empty() and hud != null:
+			hud.show_hint(Scan.done_text(sc))
+		# 75 号: people at the trade port's pier, the companies' standing contracts
+		var tp: Array = TradePeople.advance(dt)
+		if not tp.is_empty() and hud != null:
+			hud.show_hint(str(tp[0]))
+		while not TradePeople.lines.is_empty():
+			var lid: String = TradePeople.lines.pop_front()
+			if radio != null:
+				Copy.say(radio, lid, "client")
+		# 77 号: the tug charters and the third-party storage
+		var biz: Array = Charter.advance(dt) + Depot.advance(dt)
+		if not biz.is_empty() and hud != null:
+			hud.show_hint(str(biz[0]))
+		# 76 号: the gas line, the LOX tank, the passing ships
+		var gl: Array = GasLine.advance(self, dt)
+		if not gl.is_empty() and hud != null:
+			hud.show_hint(str(gl[0]))
+		# 73 号: the warehouse's forklifts; 74 号: the rolling mill
+		Warehouse.advance(self, dt)
+		if Mill.advance(self, dt) and hud != null:
+			hud.show_hint(Ops.w("轧机轧好一吨，送回仓库了。", "THE MILL ROLLED A TONNE: BACK ON THE RACKS."))
+		# 72 号: the company's tugs charge on the grid
+		if TugYard.advance(self, dt) and hud != null:
+			hud.show_hint(Ops.w("拖船充满电了：%s", "TUGS CHARGED: %s") % TugYard.status())
+		# 87-7: sail rolls listed for the sail-makers find their buyers
+		var sold_rolls: Array = Repair.advance_listings(dt)
+		if not sold_rolls.is_empty() and hud != null:
+			hud.show_hint(Ops.w("挂牌的光帆卷卖出了：%s", "LISTED SAIL ROLLS SOLD: %s") % ", ".join(sold_rolls))
+		if Works.advance(dt, drone.global_position if drone != null and drone.alive else Vector2.INF):
+			# the wreck gives way to the built thing
+			if dock != null and dock.static_node != null:
+				dock.static_node.queue_redraw()
+			if in_berth() and build == null:
+				_maybe_show_repairs()
 	_read_input()
 	var dev_warp: bool = DevPanel.warp_on() and bot == null
-	var want_warp: bool = state == "play" and not menu_open and (Keys.down("warp") or dev_warp or (bot != null and bot.get("warp", false)))
+	var want_warp: bool = state == "play" and not menu_open and not paused_sim and (Keys.down("warp") or dev_warp or (bot != null and bot.get("warp", false)))
 	if want_warp != warp:
 		warp = want_warp
 		if hitstop_t <= 0.0 and slowmo <= 0.0:
-			Engine.time_scale = _warp_k() if warp else 1.0
+			Look.time_k(_warp_k() if warp else 1.0)
 	match state:
 		"intro":
 			_intro(rdt)
 		"play":
-			if not menu_open and not contract_open:
+			if not menu_open and not contract_open and not paused_sim:
 				tools.aim = aim
 				tools.step(dt)
-			_drone_upkeep(dt)
+				_drone_upkeep(dt)
 		"ending":
 			_ending(rdt)
 		"towout":
 			_towout(rdt)
 		"survey":
 			_survey(rdt)
+		"towin":
+			if tow_traffic != null:
+				tow_traffic.step_cine(rdt)
+			else:
+				end_towin()
+		"porttour":
+			if port_tour != null and is_instance_valid(port_tour):
+				port_tour.step(rdt)
+			else:
+				state = "play"
+				cam_override = null
+				zoom_override = -1.0
 		"build":
 			_build_step(rdt)
+		"nuke":
+			if nuke != null:
+				nuke.step(rdt)
 	fx.step(dt)
 	if not menu_open:
 		radio.step(rdt, tools.cutting or (tools.held_piece != null and tools.tether_force > 0.2))
 	_age_messages(rdt)
 	if hitstop_t > 0.0:
 		hitstop_t -= rdt
-		Engine.time_scale = 0.05 if hitstop_t > 0.0 else (0.28 if slowmo > 0.0 else (_warp_k() if warp else 1.0))
+		Look.time_k(0.05 if hitstop_t > 0.0 else (Look.SLOW if slowmo > 0.0 else (_warp_k() if warp else 1.0)))
 	elif slowmo > 0.0:
 		slowmo -= rdt
-		Engine.time_scale = 0.28 if slowmo > 0.0 else (_warp_k() if warp else 1.0)
+		Look.time_k(Look.SLOW if slowmo > 0.0 else (_warp_k() if warp else 1.0))
 
 
 # one frame of the contract, booked to what the operator was doing
 func _account(dt: float, rdt: float) -> void:
 	var k := "wait"
 	var sec := dt
-	if menu_open or contract_open or (blueprint != null and blueprint.on):
+	if menu_open or contract_open or paused_sim or (blueprint != null and blueprint.on):
 		k = "menu"
 		sec = rdt
 	elif tools.cutting:
@@ -792,9 +1072,10 @@ func _physics_process(dt: float) -> void:
 	if dev_overlay_open:
 		return
 	_camera(dt / maxf(Engine.time_scale, 0.01))
-	if state == "play" and not menu_open:
+	if state == "play" and not menu_open and not paused_sim:
 		tools.physics_step(dt)
 		_bodies_upkeep(dt)
+		if work_order != null: work_order.tick(dt)
 
 
 func _read_input() -> void:
@@ -802,7 +1083,10 @@ func _read_input() -> void:
 	var b: Dictionary = bot if bot != null else {}
 	aim = b.get("aim", mpos)
 	var lmb: bool = b.get("lmb", Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT))
-	var blocked: bool = menu_open or contract_open or (bot == null and hud.pointer_over_ui())
+	if modal_release:
+		if not lmb: modal_release = false
+		lmb = false
+	var blocked: bool = menu_open or contract_open or paused_sim or console_ui != null or (bot == null and hud.pointer_over_ui())
 	# the press that readied the ring (on its slot) must let go before one can fire it
 	if ring_wait and not lmb:
 		ring_wait = false
@@ -819,8 +1103,8 @@ func _read_input() -> void:
 				ring_armed = false
 	if ring_eat and not ring_armed and not lmb:
 		ring_eat = false
-	tools.lmb_pressed = lmb and not prev_lmb and not ring_eat
-	tools.lmb = lmb and not ring_eat
+	tools.lmb_pressed = lmb and not prev_lmb and not ring_eat and not in_vehicle()
+	tools.lmb = lmb and not ring_eat and not in_vehicle()
 	prev_lmb = lmb
 	var mv := Vector2.ZERO
 	if b.has("move"):
@@ -834,17 +1118,22 @@ func _read_input() -> void:
 			mv.y -= 1
 		if Keys.down("down"):
 			mv.y += 1
-	player_moved = mv != Vector2.ZERO
+	var pilot_blocked: bool = console_ui != null or in_vehicle()
+	if boat != null and boat.aboard:
+		boat.input.move = mv if state == "play" and console_ui == null else Vector2.ZERO
+		boat.input.dash = b.get("dash", Keys.down("dash")) and state == "play" and console_ui == null
+		boat.input.brake = b.get("brake", Keys.down("brake")) and state == "play" and console_ui == null
+	player_moved = mv != Vector2.ZERO and not pilot_blocked
 	# Q hint in the training course: the drone flies itself to where the target shows
 	if tutorial != null and tutorial.autopilot != null and not player_moved:
 		var to: Vector2 = tutorial.autopilot - drone.global_position
 		mv = to.normalized() * clampf(to.length() / 90.0, 0.25, 1.0)
-	drone.input.move = mv if state == "play" else Vector2.ZERO
-	drone.input.dash = b.get("dash", Keys.down("dash")) and state == "play"
-	drone.input.brake = b.get("brake", Keys.down("brake")) and state == "play"
+	drone.input.move = mv if state == "play" and not pilot_blocked else Vector2.ZERO
+	drone.input.dash = b.get("dash", Keys.down("dash")) and state == "play" and not pilot_blocked
+	drone.input.brake = b.get("brake", Keys.down("brake")) and state == "play" and not pilot_blocked
 	drone.input.hold = b.get("hold", Keys.down("hold") and not menu_open) and state == "play"
-	overview = bot == null and state == "play" and not menu_open and not contract_open and Keys.down("overview")
-	drone.aim = aim
+	overview = bot == null and state == "play" and not menu_open and not contract_open and not pilot_blocked and Keys.down("overview")
+	if not pilot_blocked: drone.aim = aim
 
 
 func _unhandled_input(ev: InputEvent) -> void:
@@ -853,9 +1142,21 @@ func _unhandled_input(ev: InputEvent) -> void:
 		return
 	if ev is InputEventKey and ev.pressed and not ev.echo:
 		var k: int = ev.physical_keycode
+		if state == "nuke":
+			if nuke != null:
+				nuke.skip()
+			return
 		if state == "intro":
 			if k in [KEY_ESCAPE, KEY_SPACE, KEY_ENTER]:
 				_end_intro()
+			return
+		if state == "towin":
+			if state_t > 0.3 and k in [KEY_ESCAPE, KEY_SPACE, KEY_ENTER] and tow_traffic != null:
+				tow_traffic.finish()
+			return
+		if state == "porttour":
+			if port_tour != null:
+				port_tour.key(k)
 			return
 		if state == "survey":
 			if state_t > 0.3:
@@ -874,6 +1175,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 				hud.ending_key(k)
 			return
 		if k == KEY_ESCAPE:
+			if menu_open and hud.menu_page != "":
+				hud.menu_page = ""
+				return
 			if ring_armed:
 				arm_ring(false)
 			elif contract_open:
@@ -902,12 +1206,17 @@ func _unhandled_input(ev: InputEvent) -> void:
 			if tutorial.done and k in [KEY_1, KEY_2]:
 				after_training("exam" if k == KEY_1 else "contract")
 				return
+		# 68 号 §4: what a key is for, the first time it is used
+		var first_act := Keys.action_of(ev)
+		if first_act != "" and hud != null and career():
+			hud.op_card(first_act)
 		match Keys.action_of(ev):
 			"tool1": tools.set_tool(1, false, true)
 			"tool2": tools.set_tool(2, false, true)
 			"tool3": tools.set_tool(3, false, true)
 			"tool4": tools.set_tool(4, false, true)
 			"tool5": tools.set_tool(5, false, true)
+			"tool6": tools.set_tool(6, false, true)
 			"blueprint": blueprint.toggle()
 			"repair": repair_kit()
 			"ring": arm_ring(not ring_armed)
@@ -918,13 +1227,27 @@ func _unhandled_input(ev: InputEvent) -> void:
 				say("assist_on" if drone.assist else "assist_off", drone.global_position + Vector2(0, -44))
 				sfx.play("switch")
 			"contract": open_contract()
+			"starmap": open_star_map("find")
 			"log": hud.show_log = not hud.show_log
+			"port":
+				if career() and in_berth() and state == "play":
+					port_view = not port_view
+					sfx.play("switch")
 			"auto": toggle_auto()
+			"multi": tools.toggle_multi(ev is InputEventKey and ev.shift_pressed)
+			"tow":
+				if boat_tow != null and boat != null and boat.aboard:
+					boat_tow.toggle()
 			"plan":
-				if plan != null:
+				# 61 号: work plans stay out of sight until the second berth (G7)
+				if plan != null and G4_OPEN:
+					if plan.has_plan() and not plan.running:
+						open_plan_panel()
+						return
 					if auto_paused and not plan.running:
 						auto_paused = false
-					say(plan.toggle(), drone.global_position + Vector2(0, -44))
+					var plan_message := plan.toggle()
+					say(plan_message, drone.global_position + Vector2(0, -44), plan.message_arg)
 					sfx.play("switch")
 			"mouth":
 				# the equipment bay always runs on its rail; the furnace with the rail upgrade
@@ -937,11 +1260,42 @@ func _unhandled_input(ev: InputEvent) -> void:
 				sfx.play("switch")
 			"mark": mark_salvage()
 			"use":
-				if consoles != null and state == "play" and consoles.near() != "":
+				if boat != null and boat.aboard and state == "play":
+					if not boat.leave():
+						say_text(txt("boat_underway"), drone.global_position + Vector2(0, -44))
+				elif boat != null and state == "play" and boat.drone_can_board():
+					boat.board()
+					sfx.play("switch")
+				elif mill_line != null and state == "play" and mill_line.near():
+					open_mill()
+				elif cargo_floor != null and state == "play" and cargo_floor.use():
+					pass
+				elif tram != null and state == "play" and tram.phase == "" and tram.near_station() != "":
+					open_transit("tram", tram.near_station())
+				elif industrial_heat != null and state == "play" and industrial_heat.near():
+					open_heat()
+				elif industrial_assay != null and state == "play" and industrial_assay.near() and (industrial_sort == null or not industrial_sort.near() or drone.global_position.distance_to(industrial_assay.site()) < drone.global_position.distance_to(industrial_sort.site())):
+					open_assay()
+				elif industrial_sort != null and state == "play" and industrial_sort.near():
+					open_sort()
+				elif trade_hall != null and state == "play" and trade_hall.near_counter() != "":
+					open_exchange("company:" + trade_hall.near_counter())
+				elif port_structure != null and state == "play" and port_structure.near_console() != "":
+					open_district(port_structure.near_console())
+				elif port_access != null and state == "play" and port_access.near() != "":
+					open_console("port:" + port_access.near())
+				elif consoles != null and state == "play" and consoles.near() == "rack":
+					open_parts_rack()
+				elif consoles != null and state == "play" and consoles.near() != "":
 					open_console(consoles.near())
 			"terminal":
-				# the same terminal from anywhere in the berth
-				if consoles != null and state == "play":
+				# aboard the boat: its destination list; otherwise the same terminal from anywhere in the berth
+				if boat != null and boat.aboard and state == "play":
+					if boat.stopped():
+						open_transit("boat", boat.pad)
+					else:
+						say_text(txt("boat_underway"), drone.global_position + Vector2(0, -44))
+				elif consoles != null and state == "play":
 					open_console("terminal")
 			"zone":
 				if has_upgrade("zones"):
@@ -951,8 +1305,20 @@ func _unhandled_input(ev: InputEvent) -> void:
 				if training:
 					toggle_hints()
 	elif ev is InputEventMouseButton and ev.pressed:
+		if state == "nuke":
+			if nuke != null:
+				nuke.skip()
+			return
 		if state == "intro":
 			_end_intro()
+			return
+		if state == "towin":
+			if state_t > 0.3 and tow_traffic != null:
+				tow_traffic.finish()
+			return
+		if state == "porttour":
+			if port_tour != null:
+				port_tour.next()
 			return
 		if state == "survey":
 			if state_t > 0.3:
@@ -963,9 +1329,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 				_end_build()
 			return
 		if ev.button_index == MOUSE_BUTTON_WHEEL_UP:
-			zoom_target = clampf(zoom_target * 1.1, zoom_min(), 2.6)
+			zoom_target = clampf(zoom_target * ZOOM_STEP, zoom_min(), 2.6)
 		elif ev.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			zoom_target = clampf(zoom_target / 1.1, zoom_min(), 2.6)
+			zoom_target = clampf(zoom_target / ZOOM_STEP, zoom_min(), 2.6)
 		elif ev.button_index == MOUSE_BUTTON_RIGHT and state == "play" and not menu_open and not contract_open:
 			# A short click releases and marks; a drag only pans the view.
 			rmb_down = true
@@ -986,6 +1352,38 @@ func _unhandled_input(ev: InputEvent) -> void:
 			cam_pan -= ev.relative / maxf(zoom_now, 0.1)
 
 
+# the work plan hands a loose body to the berth's machines (G4): the haulers, or the
+# crane for what they cannot lift; false when nobody aboard can take it
+func plan_mark(b, zone: String = "") -> bool:
+	if arm_extract(b,zone,true): return true
+	return false
+
+func arm_extract(b, zone: String = "", by_plan: bool = false) -> bool:
+	# 78 号 P0②: on a manual-only ship the arm goes only where the player sends it
+	if by_plan and manual_only():
+		return false
+	if b == null or not is_instance_valid(b) or b.capture != null or b.pieces.is_empty() or tools.held_body == b:
+		return false
+	# Explicit user choice: a rail arm extracts planned loads through hulls.
+	# Keep the purchased carrier's load rating and actual receiver settlement.
+	var rated_t: float = Crane.MAX_T if crane != null else (Hauler.MAX_T if hauler != null else (RecoveryArm.MAX_T if arm != null else 0.0))
+	if rated_t > 0.0 and b.total_mass() <= rated_t:
+		if arm == null:
+			arm = RecoveryArm.new()
+			arm.game = self
+			add_child(arm)
+		for carrier in haulers():
+			carrier.queue.erase(b)
+			if carrier.body == b: carrier.halt()
+		if crane != null:
+			crane.queue.erase(b)
+			if crane.body == b: crane.halt()
+		if by_plan: b.set_meta("plan_dispatch",true)
+		b.set_meta("arm_extraction",true)
+		return arm.enqueue(b,zone,rated_t)
+	return false
+
+
 func mark_salvage() -> void:
 	var under: Array = world.pieces_at(aim)
 	var mb = under[0].body if not under.is_empty() else null
@@ -996,6 +1394,8 @@ func mark_salvage() -> void:
 	elif hauler != null:
 		key = hauler.toggle(mb)
 	if key != "":
+		if mb != null and is_instance_valid(mb):
+			mb.set_meta("manual_mark", key in ["hauler_marked","crane_marked"])
 		say(key, aim + Vector2(0, -30))
 
 
@@ -1009,10 +1409,505 @@ func toggle_menu() -> void:
 
 # one of the berth's computers: its terminal page over the berth, play stopped
 # while it is open (the operator is at the desk, not at the controls)
+# 61 号 (60 号 Q7): the G4 work plans and engineering orders are kept, not shown
+static var G4_OPEN := false   # tests of the work plans switch it on
+
+
+func open_plan_panel() -> void:
+	if console_ui != null or menu_open or contract_open or state != "play": return
+	tools._finish_cut()
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	var panel = load("res://scripts/plan_panel.gd").new()
+	panel.game = self
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+		get_tree().paused = false
+		paused_sim = false
+	paused_sim = true
+	get_tree().paused = true
+	console_ui = panel
+	layer.add_child(panel)
+
+
+func open_order_review(early: bool) -> void:
+	if console_ui != null or order_review != null: return
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	var panel = load("res://scripts/order_settlement.gd").new()
+	panel.game = self
+	var close_review := func():
+		order_review = null
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+		get_tree().paused = false
+		paused_sim = false
+	panel.on_confirm = func(selling: bool):
+		work_order.sell = selling
+		close_review.call()
+		finish_contract(early,true)
+	panel.on_cancel = func():
+		order_review_deferred = true
+		close_review.call()
+	order_review = panel
+	console_ui = panel
+	paused_sim = true
+	get_tree().paused = true
+	layer.add_child(panel)
+
+
+func open_heat() -> void:
+	if console_ui != null or menu_open or industrial_heat == null or not industrial_heat.near(): return
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	add_child(layer)
+	var panel = preload("res://scripts/heat_panel.gd").new()
+	panel.service = industrial_heat
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+	console_ui = panel
+	layer.add_child(panel)
+
+func open_sort() -> void:
+	if console_ui != null or menu_open or industrial_sort == null or not industrial_sort.near(): return
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	add_child(layer)
+	var panel = preload("res://scripts/sort_panel.gd").new()
+	panel.service = industrial_sort
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+	console_ui = panel
+	layer.add_child(panel)
+
+func open_assay() -> void:
+	if console_ui != null or menu_open or industrial_assay == null or not industrial_assay.near(): return
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	add_child(layer)
+	var panel = preload("res://scripts/assay_panel.gd").new()
+	panel.service = industrial_assay
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+	console_ui = panel
+	layer.add_child(panel)
+	sfx.play("menu")
+
+
+func backdrop_parts() -> Backdrop:
+	return backdrop
+
+
+# the very first hulk of a new career, found out in the belt and towed home (28 号 Q7/Q13):
+# played once, before the berth's own tow-in; later unowned hulks get a line of caption
+func _belt_prelude() -> void:
+	if not career() or not Career.usable() or (testing and not cine_in_tests) or bot != null:
+		return
+	if str(job.get("owner", "")) != "salvage":
+		return
+	var seen: Dictionary = Career.data.get("seen", {})
+	if str(job.get("id", "")) == "TUG-001" and not seen.has("belt_prelude"):
+		seen["belt_prelude"] = true
+		Career.data.seen = seen
+		Career.save()
+		var pre = preload("res://scripts/belt_prelude.gd").new()
+		pre.ship = str(job.get("ship", "tug"))
+		get_tree().paused = true
+		prelude_on = true
+		pre.on_done = func():
+			prelude_on = false
+			get_tree().paused = false
+		add_child(pre)
+	elif hud != null:
+		hud.show_hint(Txt.t("tm_drift_open") if job.has("opening") else Txt.t("tm_drift_v") % int(job.get("drift_years", 0)))
+
+
+# 68 号 §2: the opening cards (scripts/opening.gd): before the prologue once, and from the pause menu
+static var opening_in_tests := false
+var opening = null
+func show_opening(first: bool) -> void:
+	if opening != null and is_instance_valid(opening):
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 90
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	opening = preload("res://scripts/opening.gd").new()
+	var was_paused := get_tree().paused
+	get_tree().paused = true
+	opening.on_done = func():
+		layer.queue_free.call_deferred()
+		opening = null
+		if first:
+			var seen: Dictionary = Career.data.get("seen", {})
+			seen["intro"] = true
+			Career.data.seen = seen
+			Career.save()
+		get_tree().paused = was_paused
+	if first and Career.usable():
+		if not Career.data.has("permit_day"):
+			Career.data.permit_day = int(Shipping.day()) + 1
+		opening.first = true
+		opening.card = clampi(Career.guide_at("intro"), 0, opening.CARDS.size() - 1)
+	layer.add_child(opening)
+
+
+# 68 号 §3: TUG-001 at the berth, step by step (scripts/first_ship.gd), once per career
+static var coach_in_tests := false
+var coach = null
+func _first_ship_coach() -> void:
+	if not career() or not Career.usable() or ((bot != null or testing) and not coach_in_tests):
+		return
+	if str(job.get("id", "")) != "TUG-001" or Career.data.get("seen", {}).has("first_ship"):
+		return
+	coach = preload("res://scripts/first_ship.gd").new()
+	coach.game = self
+	add_child(coach)
+
+
+# 78 号 P0②: a ship the player strips with their own hands — no bot, no work plan or package, no
+# machine taking things on its own, no one-key tool. The ship file says so ("manual_only", ARK-01),
+# so it holds after a save and a load. The player's own machines (marked loads, the crane, pumps,
+# instruments) still work.
+func manual_only() -> bool:
+	return bool(ship.get("manual_only", false))
+
+
+# an automatic entry refused on a manual-only ship: said once where the drone is; true = refused
+func auto_refused(what: String) -> bool:
+	if not manual_only():
+		return false
+	if drone != null:
+		say("manual_only", drone.global_position + Vector2(0, -44), what)
+	return true
+
+
+# 84 号: the port on foot — out of the berth, the shuttle, every district's consoles; forced the
+# first time (once the first ship is stripped), from the menu after
+var port_walk = null
+func start_port_walk(forced: bool) -> void:
+	if walk_on() or state != "play":
+		return
+	if not in_berth():
+		# the corridors open only on an empty berth
+		say_text("船坞空着时才能出去走港区：先把这艘船拆完。" if Txt.zh else "The port opens only on an empty berth: finish this ship first.", drone.global_position + Vector2(0, -44))
+		return
+	# 90 号 (user 2026-10-27: "every time I load, now and then the whole tour starts over"): forced only
+	# the first time; a walk cut short comes back as one the player may end ("关掉导览")
+	if forced and Career.usable() and not Career.data.is_empty():
+		var seen: Dictionary = Career.data.get("seen", {})
+		if seen.has("port_walk_started"):
+			forced = false
+		else:
+			seen["port_walk_started"] = true
+			Career.data.seen = seen
+			Career.save()
+	port_walk = preload("res://scripts/port_walk.gd").new()
+	port_walk.game = self
+	port_walk.forced = forced
+	add_child(port_walk)
+
+
+func walk_on() -> bool:
+	return port_walk != null and is_instance_valid(port_walk) and not port_walk.done
+
+
+# 83 号: the port tour — forced the first time (once the first ship is stripped), from the menu after
+func start_port_tour(forced: bool) -> void:
+	if port_tour != null or state != "play":
+		return
+	port_tour = preload("res://scripts/port_tour.gd").new()
+	add_child(port_tour)
+	port_tour.start(self, forced)
+
+
+func coach_on() -> bool:
+	return coach != null and is_instance_valid(coach) and not coach.done
+
+
+# 80 号: one place says whether a tool is open — the training course, the belt prologue or the
+# first-ship guide (each step opens only what it needs; user: "强制只能切换这种武器")
+func guide_coach():
+	if prologue != null and is_instance_valid(prologue) and not prologue.done:
+		return prologue
+	if coach_on():
+		return coach
+	if walk_on():
+		return port_walk
+	return null
+
+
+func tool_ok(n: int) -> bool:
+	if tutorial != null:
+		return tutorial.tool_allowed(n)
+	var gc = guide_coach()
+	return gc == null or gc.tool_allowed(n)
+
+
+# "测量（1）、激光切割（2）" — the tools this step opens, by name and key; flying only when none
+func open_tools_text() -> String:
+	var out: Array = []
+	for n in range(1, 7):
+		if tool_ok(n):
+			out.append(("%s（%s）" if Txt.zh else "%s (%s)") % [txt("tool_%d" % n), Keys.label("tool%d" % n)])
+	if out.is_empty():
+		return "飞行，先不用工具" if Txt.zh else "flying, no tool yet"
+	return ("、" if Txt.zh else ", ").join(out)
+
+
+func context_ok(n: int) -> bool:
+	if tutorial != null:
+		return tutorial.context_ok(n)
+	return tool_ok(n)
+
+
+# the beam stops at what the step keeps whole (the first ship's winch while its mounts are cut)
+func coach_guards(q) -> bool:
+	var gc = guide_coach()
+	return gc != null and gc.has_method("guards") and gc.guards(q)
+
+
+# the drone is riding something: the boat's rack or the shuttle
+func in_vehicle() -> bool:
+	return (boat != null and boat.aboard) or (tram != null and tram.riding)
+
+
+# a floating line of plain text over the site (the keyed say() wants a text key)
+func say_text(text: String, _at: Vector2) -> void:
+	hud.show_hint(text)
+
+
+# the destination list of the shuttle (at a station) or the boat (docked)
+func open_transit(mode: String, here: String) -> void:
+	if console_ui != null or menu_open or state != "play":
+		return
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	add_child(layer)
+	var panel = preload("res://scripts/transit_panel.gd").new()
+	panel.game = self
+	panel.mode = mode
+	panel.here = here
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+	console_ui = panel
+	layer.add_child(panel)
+	sfx.play("menu")
+
+
+# 86 号 Q11: the parts rack (by the berth's terminal; the cargo district's racks once it is mended)
+func open_parts_rack() -> void:
+	if console_ui != null or menu_open or state != "play":
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	add_child(layer)
+	var panel = preload("res://scripts/parts_rack_panel.gd").new()
+	panel.game = self
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+	console_ui = panel
+	layer.add_child(panel)
+	sfx.play("menu")
+
+
+# 85 号: one side of the cargo district's racks (scripts/shelf_panel.gd)
+func open_shelf(side: String) -> void:
+	if console_ui != null or menu_open or state != "play":
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	add_child(layer)
+	var panel = preload("res://scripts/shelf_panel.gd").new()
+	panel.game = self
+	panel.side = side
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+	console_ui = panel
+	layer.add_child(panel)
+	sfx.play("menu")
+
+
+# 85 号: the rolling mill's own panel (scripts/mill_panel.gd): play goes on while it is open
+func open_mill() -> void:
+	if console_ui != null or menu_open or state != "play":
+		return
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	add_child(layer)
+	var panel = preload("res://scripts/mill_panel.gd").new()
+	panel.game = self
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+	console_ui = panel
+	layer.add_child(panel)
+	sfx.play("menu")
+
+
+# a district's business console (scripts/district_panel.gd): play goes on while it is open
+func open_district(zone: String) -> void:
+	if console_ui != null or menu_open or state != "play":
+		return
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	add_child(layer)
+	var panel = preload("res://scripts/district_panel.gd").new()
+	panel.game = self
+	panel.zone = zone
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+	console_ui = panel
+	layer.add_child(panel)
+	sfx.play("menu")
+
+
+func open_exchange(page: String = "") -> void:
+	if console_ui != null or menu_open or state != "play": return
+	var result: Dictionary = preload("res://scripts/industrial_exchange.gd").command("view")
+	if not result.ok: return
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	var panel = preload("res://scripts/exchange_panel.gd").new()
+	panel.game = self
+	panel.start_page = page
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+		_cover_world(false)
+	panel.on_repair = func(): open_console("port:trade")
+	console_ui = panel
+	layer.add_child(panel)
+	_cover_world(true)
+
+
+# the hulk market (scripts/ship_market_panel.gd, 33 号)
+func open_ship_market() -> void:
+	if console_ui != null or menu_open or state != "play" or not career() or not Career.usable() or not ShipMarket.open(): return
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	var panel = preload("res://scripts/ship_market_panel.gd").new()
+	panel.game = self
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+		_cover_world(false)
+	console_ui = panel
+	layer.add_child(panel)
+	_cover_world(true)
+	sfx.play("menu")
+
+
+# the power district's control screen (scripts/power_panel.gd, 48 号)
+func open_power_screen() -> void:
+	if console_ui != null or menu_open or state != "play" or not career() or not Career.usable(): return
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	var panel = preload("res://scripts/power_panel.gd").new()
+	panel.game = self
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+		_cover_world(false)
+	console_ui = panel
+	layer.add_child(panel)
+	_cover_world(true)
+	sfx.play("menu")
+
+
+# a tug just sent: the star map, following it
+func watch_tow(id: String) -> void:
+	open_star_map("find")
+	if console_ui != null and console_ui.has_method("watch_tow"):
+		console_ui.watch_tow(id)
+
+
+# the star map: the belt, the port and every freighter on its arc (scripts/star_map.gd, 31 号)
+func open_star_map(mode := "ships") -> void:
+	if console_ui != null or menu_open or state != "play" or not career() or not Career.usable(): return
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	var panel = preload("res://scripts/star_map.gd").new()
+	panel.game = self
+	panel.mode = mode
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+		_cover_world(false)
+	console_ui = panel
+	layer.add_child(panel)
+	_cover_world(true)
+	sfx.play("menu")
+
+
+# a page that fills the screen (the terminal, the exchange): the berth behind it is not
+# drawn while it is open (2026-10-24, ~11 ms a frame saved); its nodes keep running and
+# keep their own visibility, only this node's drawing stops
+func _cover_world(on: bool) -> void:
+	visible = not on
+	if hud != null:
+		hud.visible = not on
+
+# a hulk towed home: said on the spot with the way to start on it (the terminal opens on its card)
+func hulk_home(a: Dictionary) -> void:
+	var ship := str(a.get("listing", {}).get("offer", {}).get("ship", ""))
+	arrival = {"id": str(a.id), "name": Scan.type_name(ship) if ship != "" else str(a.id), "held": str(a.get("state", "")) == "held", "yard": int(a.get("yard", 0)) + 1}
+	sfx.play("menu", Vector2.INF, 1.0)
+
+
 func open_console(which: String) -> void:
 	if console_ui != null or menu_open:
 		return
 	var term = load("res://scenes/terminal.tscn").instantiate()
+	if which == "terminal" and not arrival.is_empty():
+		term.focus_offer = str(arrival.id)
+		arrival = {}
 	term.overlay = true
 	term.between = in_berth()
 	term.tab = -1
@@ -1022,10 +1917,17 @@ func open_console(which: String) -> void:
 	layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(layer)
 	term.on_skill_changed = fit_skills
+	# 91 号 (seamless): the screen opens out of the drone and folds back into it
+	var folds: bool = look != null and Txt.anim_level() > 0
+	term.keep_on_close = folds
 	term.on_close = func():
 		fit_skills()
 		console_ui = null
-		layer.queue_free()
+		if folds:
+			look.console_close(layer, look.screen_of(drone.global_position if drone != null else Vector2.INF))
+		else:
+			layer.queue_free()
+		_cover_world(false)
 		get_tree().paused = false
 		paused_sim = false
 		sfx.play("menu")
@@ -1034,8 +1936,16 @@ func open_console(which: String) -> void:
 			_maybe_build()
 	get_tree().paused = true
 	paused_sim = true
-	layer.add_child(term)
+	if folds:
+		look.console_open(layer, term, look.screen_of(drone.global_position if drone != null else Vector2.INF), func(): if console_ui == term: _cover_world(true))
+	else:
+		layer.add_child(term)
 	console_ui = term
+	if not folds:
+		_cover_world(true)
+	if which.begins_with("port:") and in_berth():
+		term.set_tab(5)
+		term.route_panel.select_key(which)
 	sfx.play("menu")
 
 
@@ -1208,6 +2118,12 @@ func _maybe_build() -> void:
 			else:
 				# this contract's berth isn't simply what was bought: nothing to show
 				Career.data["berth_seen"] = owned
+	# a detonation took the berth (scripts/nuke.gd): it is built again from the tower out
+	var rebuild: bool = career() and Career.usable() and Career.data.get("berth_rebuild", false)
+	if rebuild:
+		from = {"len": Dock.MIN_REBUILD, "lift": 0.0, "drop": 0.0}
+		Career.data.erase("berth_rebuild")
+		Career.save()
 	# taller than the berth the last scene left: it grows to take this ship
 	if not in_berth() and not prev_shape.is_empty():
 		from.lift = minf(float(prev_shape.lift), to.lift)
@@ -1215,7 +2131,7 @@ func _maybe_build() -> void:
 	if absf(from.len - to.len) < 0.5 and absf(from.lift - to.lift) < 0.5 and absf(from.drop - to.drop) < 0.5:
 		return
 	var seen_types: Dictionary = Career.data.get("reshaped", {}) if career() else reshaped
-	var quick := not paid and seen_types.has(ship_id)
+	var quick := not paid and not rebuild and seen_types.has(ship_id)
 	_layout_shape(from.len, from.lift, from.drop)
 	build = preload("res://scripts/berth_build.gd").new()
 	dock.add_child(build)
@@ -1283,9 +2199,10 @@ func _end_build() -> void:
 
 # ---------------------------------------------------------------- camera
 
-# the zoom that fits the whole berth and the ship in it: the wheel goes all the
-# way out to it (P.6), and the hold-to-look overview uses it
-const ZOOM_FOLLOW := 0.85    # below this the view starts leaving the drone for the berth's middle
+# The wheel keeps a local view until the last three notches before whole-ship
+# fit. A fixed zoom threshold sent the camera hundreds of metres away on ARK-01.
+const OVERVIEW_ZOOM_STEPS := 3
+const ZOOM_STEP := 1.1
 
 
 func zoom_min() -> float:
@@ -1305,6 +2222,8 @@ var _focus_sig := -1
 
 
 func focus_rect() -> Rect2:
+	if port_access != null and port_access.active():
+		return port_access.navigation_bounds()
 	var sig: int = (world.bodies.size() * 7919 + world.pieces.size()) if world != null else 0
 	if sig == _focus_sig and _focus.size != Vector2.ZERO:
 		return _focus
@@ -1328,11 +2247,24 @@ func focus_rect() -> Rect2:
 	return r
 
 
+const CAM_K := 38.0
+const CAM_LAG := 0.3244                # s (2/√CAM_K): how far a scripted shot leads what it follows
+
+
 func _camera(dt: float) -> void:
 	_pan(dt)
 	var target := cam_pos
+	var local_focus := cam_pos
+	var following := false
+	if plan_focus != null:
+		plan_focus_t -= dt
+		if player_moved or plan_focus_t <= 0.0: plan_focus = null
 	if cam_override != null:
 		target = cam_override
+	elif plan_focus != null:
+		target = plan_focus
+	elif port_view:
+		target = Backdrop.pano_centre_px()
 	elif overview:
 		target = focus_rect().get_center()
 	elif drone != null and (drone.alive or state == "play"):
@@ -1343,12 +2275,18 @@ func _camera(dt: float) -> void:
 		if tools.held_piece != null and not tools.held_piece.gone:
 			target = target.lerp(tools.grab_point(), 0.18)
 		target += cam_pan
-		# zoomed right out the view settles on the berth: the whole ship in sight
+		local_focus = target
+		following = true
+		# Only hand over to whole-ship framing when it is almost visible already.
+		# Use the displayed zoom, so a fast wheel burst cannot pull the camera
+		# away from the local structure before the view has actually widened.
 		var zm := zoom_min()
-		if zoom_target < ZOOM_FOLLOW and zm < ZOOM_FOLLOW:
-			target = target.lerp(focus_rect().get_center(), clampf((ZOOM_FOLLOW - zoom_target) / (ZOOM_FOLLOW - zm), 0.0, 1.0))
+		var start := zm * pow(ZOOM_STEP, OVERVIEW_ZOOM_STEPS)
+		var progress := clampf((start - maxf(zoom_now, zoom_target)) / maxf(start - zm, 0.00001), 0.0, 1.0)
+		var blend := progress * progress * (3.0 - 2.0 * progress)
+		target = target.lerp(focus_rect().get_center(), blend)
 	# a critically damped follow: soft, never laggy
-	var k := 38.0
+	var k := CAM_K
 	var c := 2.0 * sqrt(k)
 	var n := maxi(1, ceili(dt / (1.0 / 240.0)))
 	var h := dt / n
@@ -1356,22 +2294,50 @@ func _camera(dt: float) -> void:
 		cam_vel += ((target - cam_pos) * k - cam_vel * c) * h
 		cam_pos += cam_vel * h
 	var zt := zoom_override if zoom_override > 0.0 else zoom_target
+	if plan_focus != null and zoom_override <= 0.0: zt = maxf(zt,0.75)
 	if overview and zoom_override <= 0.0:
 		# the whole ship and the berth in view
 		zt = zoom_min()
-	if state == "play" and drone.alive:
+	if port_view and zoom_override <= 0.0:
+		zt = Backdrop.port_zoom(get_viewport().get_visible_rect().size)
+	elif state == "play" and drone.alive:
 		zt *= lerpf(1.0, 0.86, clampf(drone.linear_velocity.length() / 700.0, 0.0, 1.0))
 		if zoom_override <= 0.0:
 			zt = maxf(zt, minf(zoom_min(), zoom_target))
-	zoom_now = Pal.damp(zoom_now, zt, 4.0 if zoom_override > 0.0 else 6.0, dt)
+	var next_zoom := Pal.damp(zoom_now, zt, 4.0 if zoom_override > 0.0 else 6.0, dt)
+	if following and next_zoom > zoom_now:
+		# On the way back from overview, let the camera reach the local area
+		# before tightening the frame enough to leave that area off screen.
+		var half := get_viewport().get_visible_rect().size * 0.48
+		var offset := cam_pos - local_focus
+		var safe := minf(half.x / maxf(absf(offset.x), 1.0), half.y / maxf(absf(offset.y), 1.0))
+		next_zoom = minf(next_zoom, maxf(zoom_now, safe))
+	zoom_now = next_zoom
 	trauma = maxf(0.0, trauma - dt * 1.6)
 	punch = Pal.damp2(punch, Vector2.ZERO, 12.0, dt)
 	var sh := trauma * trauma
 	var tt := Time.get_ticks_msec() / 1000.0
 	var off := Vector2(sin(tt * 47.0) + sin(tt * 31.0) * 0.5, cos(tt * 41.0) + sin(tt * 23.0) * 0.5) * 14.0 * sh
-	cam.position = cam_pos + off + punch
-	cam.zoom = Vector2(zoom_now, zoom_now)
-	cam.rotation = sin(tt * 37.0) * 0.006 * sh
+	# 91 号: a big piece coming free pulls the view in a little toward it, then lets go
+	zoom_kick = Pal.damp(zoom_kick, 0.0, 2.6, dt)
+	var lean: Vector2 = (kick_at - cam_pos) * 0.22 * clampf(zoom_kick / 0.07, 0.0, 1.0) if kick_at != Vector2.INF else Vector2.ZERO
+	# 91 号 遥控 Q5 a/b: the camera rides on the drone (scripts/look.gd)
+	var ride: Vector2 = look.cam_offset / maxf(zoom_now, 0.1) if look != null else Vector2.ZERO
+	# never let one bad number take the whole picture away (user 2026-10-28: the view went black)
+	if not (cam_pos + off + punch + lean + ride).is_finite():
+		punch = Vector2.ZERO
+		zoom_kick = 0.0
+		lean = Vector2.ZERO
+		ride = Vector2.ZERO
+		if not cam_pos.is_finite():
+			cam_pos = drone.global_position if drone != null and drone.global_position.is_finite() else SHIP_CENTER
+			cam_vel = Vector2.ZERO
+	cam.position = cam_pos + off + punch + lean + ride
+	if not is_finite(zoom_now) or zoom_now <= 0.0 or not is_finite(zoom_kick):
+		zoom_now = maxf(zoom_target, 0.1)
+		zoom_kick = 0.0
+	cam.zoom = Vector2(zoom_now, zoom_now) * (1.0 + zoom_kick)
+	cam.rotation = sin(tt * 37.0) * 0.006 * sh + (look.cam_roll if look != null else 0.0)
 
 
 # the view leaves the drone while the right button drags it or the pointer
@@ -1409,11 +2375,145 @@ func shake(amount: float, dir: Vector2 = Vector2.ZERO) -> void:
 
 # ---------------------------------------------------------------- intro & ending
 
+# 72 号: a hulk home from the belt lies in the tug yard; the contract's opening pushes it from
+# its berth there round to the dock (Vector2.INF: it comes in the old way, from the side)
+# (user 2026-10-28 "拖船还是太慢了": 16 → 9 s round the station)
+const PUSH_T := 9.0
+var _yard_from = null
+var _yard_mid := Vector2.ZERO        # the hull's middle from its origin (px), for the camera
+# 87-6 (user 2026-10-27: the hulk went straight through the port and came in from its right): the
+# way round, as points for the hull's origin, every leg clear of the districts and of the hulks
+# parked in the yard: west out of the yard's column, south past the processing district, east under
+# the berth's floor, north up its open side to the berth's level, then the push in as before
+var yard_path: Array = []
+const YARD_CLEAR := 10.0             # m kept from any structure and any parked hull
+
+
+# the hull's box (px) round its origin, from its ship file
+static func hull_box(sid: String) -> Rect2:
+	var r := Ship.bounds(Ship.load_data(sid))
+	return Rect2(r.position * Geom.M, r.size * Geom.M)
+
+
+# what the hull's way out must keep clear of: every district, the berth's floor and tower, and
+# the hulls parked in the yard's other slots (px)
+func yard_obstacles(except_id: String) -> Array:
+	var out: Array = []
+	for z in Port.ZONES:
+		out.append(PortStructure.box(z))
+	out.append(Rect2(Vector2(Dock.TOWER_X - 4.0, -24.0) * Geom.M, Vector2(Dock.FLOOR_X1 - Dock.TOWER_X + 8.0, 24.0 + Dock.FLOOR_Y + 3.0) * Geom.M))
+	if Career.usable() and not Career.data.is_empty() and Career.data.has("ship_market"):
+		for a in ShipMarket.data().assets:
+			if str(a.id) == except_id or not a.has("yard"):
+				continue
+			var hb := hull_box(TugYard.ship_of(a))
+			var x1 := hb.end.x
+			var o := TugYard.slot_px(int(a.yard), TugYard.ship_of(a)) - Vector2(x1, hb.get_center().y)
+			out.append(Rect2(o + hb.position, hb.size))
+	return out
+
+
+func _yard_route(from: Vector2, hb: Rect2, except_id: String) -> Array:
+	var M := Geom.M
+	var obs := yard_obstacles(except_id)
+	var clear := YARD_CLEAR * M
+	# west until the hull's right edge is past every parked hull in the yard's column
+	var col_left := from.x + hb.position.x
+	for r in obs:
+		if r.position.x < from.x + hb.end.x + clear and r.end.x > from.x + hb.position.x - clear and r.position.x < col_left:
+			col_left = r.position.x
+	var west_x := minf(from.x, col_left - clear - hb.end.x)
+	# under everything there is
+	var bottom := -INF
+	for r in obs:
+		bottom = maxf(bottom, r.end.y)
+	var south_y := bottom + clear - hb.position.y
+	var p_end := Vector2(ship_offset, 0.0)
+	return [from, Vector2(west_x, from.y), Vector2(west_x, south_y), Vector2(p_end.x, south_y), p_end]
+
+
+# the hull's origin (px) t s into the push round the station. user 2026-10-28 ("推的东西要有真正
+# 物理效果，像无人机一样"): each leg is its own burn and brake, the hull stopped at every corner
+# before the tug pushes it the new way — no turn at speed. A leg's time grows as the root of its
+# length (the same burn, the same brake: d = a t²/4); the legs together take PUSH_T
+func yard_at(t: float) -> Vector2:
+	var n := yard_path.size()
+	if n == 0:
+		return world.position
+	var w: Array = []
+	var tot := 0.0
+	for i in range(1, n):
+		var r := sqrt((yard_path[i] as Vector2).distance_to(yard_path[i - 1]))
+		w.append(r)
+		tot += r
+	if tot <= 0.0:
+		return yard_path[n - 1]
+	var left := clampf(t, 0.0, PUSH_T)
+	for i in range(1, n):
+		var d: float = float(w[i - 1]) / tot * PUSH_T
+		if left <= d or i == n - 1:
+			return (yard_path[i - 1] as Vector2).lerp(yard_path[i], Pal.ease_io(left / maxf(d, 0.0001)))
+		left -= d
+	return yard_path[n - 1]
+
+
+# how long the opening spends in the yard route (0: it comes in the old way, from the side)
+func yard_push_t() -> float:
+	return PUSH_T if state == "intro" and yard_start() != Vector2.INF else 0.0
+
+
+# a point along a polyline, by the share of its length
+static func along(path: Array, u: float) -> Vector2:
+	var total := 0.0
+	for i in range(1, path.size()):
+		total += (path[i] as Vector2).distance_to(path[i - 1])
+	var want := clampf(u, 0.0, 1.0) * total
+	for i in range(1, path.size()):
+		var seg: float = (path[i] as Vector2).distance_to(path[i - 1])
+		if want <= seg or i == path.size() - 1:
+			return (path[i - 1] as Vector2).lerp(path[i], clampf(want / maxf(seg, 0.001), 0.0, 1.0))
+		want -= seg
+	return path[path.size() - 1]
+func yard_start() -> Vector2:
+	if _yard_from != null:
+		return _yard_from
+	_yard_from = Vector2.INF
+	if job.is_empty() or not Career.usable() or Career.data.is_empty() or not Career.data.has("ship_market"):
+		return _yard_from
+	var a := ShipMarket.asset(str(job.get("id", "")))
+	if a.is_empty() or not a.has("yard"):
+		return _yard_from
+	var x1 := -INF
+	var y0 := INF
+	var y1 := -INF
+	for pd in Ship.load_data(ship_id).get("pieces", []):
+		for q in pd.get("poly", []):
+			x1 = maxf(x1, float(q[0]))
+			y0 = minf(y0, float(q[1]))
+			y1 = maxf(y1, float(q[1]))
+	var stern := Vector2(x1, (y0 + y1) * 0.5) if x1 > -INF else Vector2(40.0, 0.0)
+	_yard_mid = stern * 0.5 * Geom.M
+	_yard_from = TugYard.slot_px(int(a.yard), ship_id) - stern * Geom.M
+	yard_path = _yard_route(_yard_from, hull_box(ship_id), str(job.get("id", "")))
+	return _yard_from
+
+
 func _intro(dt: float) -> void:
 	var t := state_t
+	var from: Vector2 = yard_start()
+	if from != Vector2.INF:
+		if t < PUSH_T:
+			# out of the yard, round the station (clear of every structure), to the dock's mouth
+			world.position = yard_at(t)
+			# led by the hull's speed: the camera's spring trails a moving target by 2/√k of its speed
+			# (user 2026-10-28: at the faster push the hull ran off the bottom of the screen)
+			cam_override = world.position + _yard_mid + (yard_at(t + 1.0 / 60.0) - world.position) * 60.0 * CAM_LAG
+			zoom_override = 0.22
+			return
+		t -= PUSH_T
 	# the tug pushes GR-7 into the dock
 	var k := Pal.ease_io(clampf(t / 3.4, 0.0, 1.0))
-	world.position.x = ship_offset * (1.0 - k)
+	world.position = Vector2(ship_offset * (1.0 - k), 0.0)
 	cam_override = Vector2(21.0 * 48.0 + world.position.x * 0.35, -0.5 * 48.0)
 	zoom_override = 0.62
 	for i in dock.clamps.size():
@@ -1432,6 +2532,7 @@ func _intro(dt: float) -> void:
 		cam_override = null
 		zoom_override = -1.0
 	if t > 6.2:
+		world.position = Vector2.ZERO
 		_end_intro()
 
 
@@ -1458,7 +2559,27 @@ func _enter_berth() -> void:
 		cam_pos = drone.global_position
 		zoom_now = CAM_ZOOM
 	if hud != null:
-		hud.show_hint(txt("berth_hint") % Keys.label("terminal"))
+		if port_access != null and port_access.active():
+			hud.show_hint(txt("pt_access_hint") % [Keys.label("terminal"),Keys.label("port")])
+		else:
+			hud.show_hint(txt("berth_hint") % Keys.label("terminal"))
+	# the main line's chapter, said once as it begins (28 号; the author's lines)
+	if career() and Career.usable():
+		Mainline.announce(radio)
+	# the run-down berth, seen for the first time (the author's line, design/台词待写_成长体系.md)
+	if career() and Career.usable() and not has_upgrade("lights") and not Career.data.get("seen", {}).has("berth_broken"):
+		var seen: Dictionary = Career.data.get("seen", {})
+		seen["berth_broken"] = true
+		Career.data.seen = seen
+		# 26 号: the berth is yours by salvage claim, not inherited (the author's lines; empty says nothing)
+		Copy.say(radio, "L_salvage_claim")
+		Copy.say(radio, "L_berth_broken")
+	# the colony ship off the port, seen for the first time (G6; the author's line)
+	if career() and Career.usable() and not Career.data.get("seen", {}).has("ark_seen"):
+		var seen2: Dictionary = Career.data.get("seen", {})
+		seen2["ark_seen"] = true
+		Career.data.seen = seen2
+		Copy.say(radio, "L_ark_seen")
 
 
 # what the berth's length goes by: the career's purchases (and the developer's kit)
@@ -1475,10 +2596,70 @@ func in_berth() -> bool:
 	return ship.get("berth", false)
 
 
+# 86 号 Q7: the berth's three faults are found by flying close (Repair.FIND_M): framed, one line,
+# logged in the berth page's repairs
+var _fault_t := 0.0
+func _find_faults(dt: float) -> void:
+	_fault_t += dt
+	if _fault_t < 0.2:
+		return
+	_fault_t = 0.0
+	if not career() or not Career.usable() or Career.data.is_empty() or belt or drone == null or not drone.alive:
+		return
+	for id in Repair.FAULTS:
+		if Repair.found(id):
+			continue
+		var at := RepairShow.spot(id)
+		if drone.global_position.distance_to(at) < Repair.FIND_M * Geom.M and Repair.find_fault(id):
+			Career.save()
+			var co = preload("res://scripts/fault_callout.gd").new()
+			co.id = id
+			co.at = at
+			add_child(co)
+			sfx.play("ok")
+
+
+# a ship being stripped on a contract: the only time it can be ended early (pause menu, terminal)
+# the core's heart cut (scripts/reactor.gd): the detonation's cinematic takes over
+func start_nuke(at: Vector2) -> void:
+	if nuke != null or ended:
+		return
+	nuke = preload("res://scripts/nuke.gd").new()
+	add_child(nuke)
+	nuke.setup(self, at)
+	state = "nuke"
+	state_t = 0.0
+
+
+# the card is through: the contract settles as given up, nothing left in the berth
+func end_nuke() -> void:
+	nuked = true
+	state = "play"
+	finish_contract(true)
+
+
+func can_end_early() -> bool:
+	return state == "play" and not ended and not training and exam == null and not belt and not in_berth()
+
+
+# 63 号: the bringing-in is over: back to the berth as it was
+func end_towin() -> void:
+	if state != "towin":
+		return
+	cam_override = null
+	zoom_override = -1.0
+	state = "play"
+	state_t = 0.0
+
+
 func _end_intro() -> void:
 	if state != "intro":
 		return
-	world.position.x = 0.0
+	# skipped in the middle of the tug pushing it round from the yard: the ship goes all the way into
+	# the berth (user 2026-10-26: only x was reset — the hulk stayed up to ~100 m off, the drone
+	# launched into an empty berth or into its hull)
+	world.position = Vector2.ZERO
+	world.reset_physics_interpolation()
 	for i in dock.clamps.size():
 		dock.clamp_t[i] = 0.0
 	if not drone.alive:
@@ -1505,20 +2686,55 @@ func _launch_drone() -> void:
 	sfx.play("launch")
 
 
-func finish_contract(early: bool) -> void:
-	if ended:
+func finish_contract(early: bool, reviewed: bool = false) -> void:
+	if ended or (settlement_retry_required and not early):
 		return
-	ended = true
+	if order_review_deferred and not early and not reviewed: return
+	if tools.cutting:
+		tools._finish_cut()
+	var cached_settlement: bool = Career.data.get("settled_jobs",{}).has(str(job.get("id","")))
+	if not reviewed and not cached_settlement and work_order != null and work_order.active() and not (work_order.previous+work_order.receipts).is_empty():
+		open_order_review(early)
+		return
+	order_review_deferred = false
+	var previous_rest := income_rest
 	if early and not training and exam == null:
 		var rest := 0.0
 		for p in pieces_left():
-			rest += p.mass * world.metal_price
+			rest += world.scrap_value(p)
 		income_rest = snappedf(rest * REST_SCRAP, 1.0)
+	if career() and Career.usable():
+		Career.load_or_new()
+		var before := Career.data
+		var cached: Dictionary = before.get("settled_jobs", {}).get(str(job.get("id", "")), {})
+		if cached.is_empty():
+			Career.data = before.duplicate(true)
+			Career.file_notes(ship_id, verified)
+			var old_result_key: String = plan.result_key if plan != null else ""
+			var old_result_arg: String = plan.result_arg if plan != null else ""
+			if plan != null: plan.commit()
+			Consum.settle_job(job)
+			career_result = Career.settle(settle_report())
+			if career_result.get("save_failed",false):
+				Career.data = before
+				income_rest = previous_rest
+				career_result = {}
+				settlement_retry_required = true
+				if plan != null:
+					plan.result_key = old_result_key
+					plan.result_arg = old_result_arg
+				say("g4_settle_failed",drone.global_position)
+				hud.show_hint(txt("g4_settle_failed"))
+				return
+		else:
+			career_result = cached.duplicate(true)
+			career_result.already_settled = true
+		if gear != null: gear.finalize()
+	settlement_retry_required = false
+	ended = true
 	state = "ending"
 	state_t = 0.0
 	tools.release_grab(false)
-	if tools.cutting:
-		tools._finish_cut()
 	if not early:
 		slowmo = 0.5
 	cam_override = Vector2(21.0 * 48.0, -0.2 * 48.0)
@@ -1534,11 +2750,6 @@ func finish_contract(early: bool) -> void:
 	if not testing and not dev_job():
 		best = SaveGame.record_best(recovery_rate(), net(), playtime, hud.grade())
 	if career() and Career.usable():
-		Career.load_or_new()
-		Career.file_notes(ship_id, verified)
-		if plan != null and not early:
-			plan.commit()
-		career_result = Career.settle(settle_report())
 		if job.has("outro") and not early:
 			Copy.say(radio, job.outro)
 		if career_result.installment + career_result.interest > 0.0:
@@ -1547,6 +2758,9 @@ func finish_contract(early: bool) -> void:
 			Copy.say(radio, "L_bonus")
 		if career_result.short > 0.5:
 			Copy.say(radio, "L_loan_short")
+		# gear lost for the first time (the author's line)
+		if career_result.get("gear_first_lost",false) and not career_result.get("already_settled",false):
+			Copy.say(radio, "L_gear_lost")
 
 
 # what the career needs to know about how this contract went
@@ -1554,8 +2768,11 @@ func settle_report() -> Dictionary:
 	var tb := {}
 	for k in time_by:
 		tb[k] = snappedf(float(time_by[k]), 0.1)
-	return {"earned": earned(), "losses": losses, "rate": recovery_rate(), "grade": hud.grade(), "time": playtime, "fee": fee, "bonus": bonus(), "used": used, "ops": ops,
-		"bonuses": bonuses(), "incidents": incidents.duplicate(true), "time_by": tb}
+	return {"job_id":str(job.get("id","")),"earned": earned(), "losses": losses, "rate": recovery_rate(), "grade": hud.grade(), "time": playtime, "fee": fee, "bonus": bonus(), "used": used, "ops": ops,
+		"bonuses": bonuses(), "incidents": incidents.duplicate(true), "time_by": tb, "gear": gear.settlement_report() if gear != null else {},
+		"material_receipts":material_receipts.duplicate(true), "parts": parts_in.duplicate(true), "parts_value": parts_value,
+		# 64 号: the furnace's scrap, cast into ingots (tonnes from its value at this ship's metal rate)
+		"ingot_value": income_metal, "ingot_t": income_metal / maxf(1.0, world.metal_price), "nuke": nuked, "structure_t": snappedf(structure_t, 0.01), "gas_take": sys.gas_take.duplicate() if GasLine.keeping() else {},"work_order":work_order.report() if work_order != null and work_order.active() else {}}
 
 
 # the contract's standard time (0: none, like the first contract)
@@ -1604,7 +2821,7 @@ func goal() -> String:
 
 
 func career() -> bool:
-	return (not job.is_empty() and not dev_job()) or (in_berth() and Career.usable())
+	return not training and not ship.has("exam") and ((not job.is_empty() and not dev_job()) or (in_berth() and Career.usable()))
 
 
 # a contract the developer built and started (DevPanel): played like any other, settled into nothing
@@ -1621,15 +2838,73 @@ func restart() -> void:
 	if dev_job():
 		contract = job.duplicate(true)
 		start_ship = ship_id
-	Engine.time_scale = 1.0
+	Look.time_k(1.0)
 	get_tree().paused = false
 	get_tree().reload_current_scene()
 
 
+# the prologue's cable is on (32 号): the tow home, then the career goes on at Berth 07
+func finish_prologue() -> void:
+	Career.certify("prologue")
+	if not Txt.certified:
+		Txt.certified = true
+		Txt.cert_kind = "prologue"
+		Txt.save_settings(testing)
+	var seen: Dictionary = Career.data.get("seen", {})
+	seen["belt_prelude"] = true
+	Career.data.seen = seen
+	# user 2026-10-26: "把 TS1 塞到拆第一艘船前面" — the hulk towed home, the base course first,
+	# then the real ship. A career that has not passed it here must (no skipping it)
+	if ts1_due():
+		Career.data.ts1_required = true
+	Career.save()
+	if (testing and not cine_in_tests) or bot != null:
+		_after_prologue()
+		return
+	var pre = preload("res://scripts/belt_prelude.gd").new()
+	pre.ship = "tug"
+	get_tree().paused = true
+	prelude_on = true
+	pre.on_done = func():
+		prelude_on = false
+		get_tree().paused = false
+		_after_prologue()
+	add_child(pre)
+
+
+# the base course still owed by this career before its first ship
+static func ts1_due() -> bool:
+	return Career.usable() and not Career.data.is_empty() and str(Career.data.get("cert_kind", "")) != "full" and not _did_first_ship()
+
+
+static func _did_first_ship() -> bool:
+	for h in Career.data.get("history", []):
+		if str(h.get("id", "")) == "TUG-001":
+			return true
+	return false
+
+
+# after the tow home: TS-1 if it is owed, else the first ship
+func _after_prologue() -> void:
+	if ts1_due():
+		start_ship = "ts1"
+		contract = {}
+		SaveGame.load_requested = false
+		Look.time_k(1.0)
+		get_tree().paused = false
+		get_tree().reload_current_scene()
+		return
+	after_training("contract")
+
+
 # the course is over: the apprentice assessment, or straight to the first contract
 func after_training(where: String) -> void:
+	# the base course passed: the main line's demand is met
+	if Career.usable() and not Career.data.is_empty() and str(Career.data.get("cert_kind", "")) == "full":
+		Career.data.erase("ts1_required")
+		Career.save()
 	SaveGame.clear(SaveGame.train_path)
-	Engine.time_scale = 1.0
+	Look.time_k(1.0)
 	get_tree().paused = false
 	if where != "exam" and Career.usable():
 		play_career(get_tree())
@@ -1642,7 +2917,7 @@ func after_training(where: String) -> void:
 # after the assessment: 0 take it again, 1 on to the first contract
 func exam_choice(i: int) -> void:
 	if i == 0:
-		Engine.time_scale = 1.0
+		Look.time_k(1.0)
 		get_tree().paused = false
 		start_ship = "exam"
 		SaveGame.load_requested = false
@@ -1665,7 +2940,7 @@ func to_title() -> void:
 		SaveGame.save(self)
 	if (training or career()) and not Career.data.is_empty():
 		Career.save()
-	Engine.time_scale = 1.0
+	Look.time_k(1.0)
 	get_tree().paused = false
 	var tree := get_tree()
 	Wipe.go(tree, func(): tree.change_scene_to_file("res://scenes/title.tscn"))
@@ -1675,14 +2950,14 @@ func to_title() -> void:
 func leave() -> void:
 	if dev_job():
 		# back to where the developer started it from
-		Engine.time_scale = 1.0
+		Look.time_k(1.0)
 		get_tree().paused = false
 		get_tree().change_scene_to_file("res://scenes/terminal.tscn" if job.get("dev_from", "") == "terminal" and Career.usable() else "res://scenes/title.tscn")
 		return
 	if not career():
 		to_title()
 		return
-	Engine.time_scale = 1.0
+	Look.time_k(1.0)
 	get_tree().paused = false
 	# the tug takes what is left of the ship out, and the berth stays: the next
 	# contract is picked at the berth's computer (or with the terminal key)
@@ -1702,6 +2977,12 @@ func _tow_out() -> void:
 			b.set_deferred("freeze", true)
 	cam_override = Vector2(21.0 * 48.0, -0.5 * 48.0)
 	zoom_override = 0.62
+	# the drone stays where the operator left it while the hull goes (it was being swept out with
+	# it now and then, so the empty berth came up with it 28 m away — 91 号 seamless handover):
+	# out of the hull's way for the tow, holding station; the berth's next scene makes a fresh one
+	if drone != null and drone.alive:
+		drone.collision_mask = drone.collision_mask & ~(1 | World.STATIC_LAYER)
+		drone.linear_velocity = Vector2.ZERO
 	sfx.play("clamp")
 
 
@@ -1740,7 +3021,7 @@ static func start_courses(classes: Array, then: String) -> void:
 
 # a special course passed: the next one, the contract, or the terminal
 func after_special() -> void:
-	Engine.time_scale = 1.0
+	Look.time_k(1.0)
 	get_tree().paused = false
 	var tree := get_tree()
 	if not course_chain.is_empty():
@@ -1753,20 +3034,37 @@ func after_special() -> void:
 	if then == "contract" and Career.usable():
 		play_career(tree)
 		return
+	if then == "contract_loadout" and Career.usable():
+		if loadout_route() == "loadout":
+			tree.change_scene_to_file("res://scenes/terminal.tscn")
+			return
+		play_career(tree)
+		return
 	if Career.usable():
 		tree.change_scene_to_file("res://scenes/terminal.tscn")
 	else:
 		tree.change_scene_to_file("res://scenes/title.tscn")
 
 
+# the courses a contract waited on are passed (25 号): "loadout" when its loadout page is
+# next (the terminal opens it, loadout_after_course), "career" when something still waits
+static func loadout_route() -> String:
+	var waiting: Dictionary = Career.active()
+	if not waiting.is_empty() and Codex.missing(str(waiting.get("ship", ""))).is_empty():
+		loadout_after_course = true
+		return "loadout"
+	return "career"
+
+
 # the career's contract in hand (the first one after training), or the terminal when there is none
 static func play_career(tree: SceneTree) -> void:
 	Career.load_or_new()
 	var waiting: Dictionary = Career.active()
-	var miss := Codex.missing(str(waiting.get("ship", ""))) if not waiting.is_empty() else []
+	var miss := Codex.required(str(waiting.get("ship", ""))) if not waiting.is_empty() else []
 	if not miss.is_empty():
-		# a contract taken on a family of ship never trained for: its courses first
-		start_courses(miss, "contract")
+		# a contract taken on a family of ship never trained for: its courses first,
+		# then its loadout page and the job (25 号)
+		start_courses(miss, "contract_loadout")
 		SaveGame.load_requested = false
 		tree.change_scene_to_file("res://scenes/main.tscn")
 		return
@@ -1780,7 +3078,9 @@ static func play_career(tree: SceneTree) -> void:
 	contract = a
 	start_ship = a.get("ship", "gr7")
 	var saved := SaveGame.read(SaveGame.path) if SaveGame.exists() else {}
-	SaveGame.load_requested = not saved.is_empty() and saved.get("job", a).get("id", "") == a.get("id", "")
+	# only a save of this very contract (user 2026-10-27 crash: a save made in the empty berth has
+	# no job, and the old default took it for this contract — the berth was then loaded as its ship)
+	SaveGame.load_requested = not saved.is_empty() and saved.has("job") and str(saved.job.get("id", "")) == str(a.get("id", ""))
 	tree.change_scene_to_file("res://scenes/main.tscn")
 
 
@@ -1788,13 +3088,17 @@ static func play_career(tree: SceneTree) -> void:
 
 func earned() -> float:
 	# a part-ship contract buys pieces, not the ship's gas and fluids
+	var reserved := 0.0
+	if work_order != null and work_order.active(): reserved = work_order.reserved_value()-work_order.stock_sale_value()
 	if scope() != "full":
-		return income_equip + income_metal + income_hazard + income_rest
-	return income_equip + income_metal + income_hazard + income_rest + sys.gas_value() + sys.fluid_value()
+		return income_equip + income_metal + income_hazard + income_rest-reserved
+	return income_equip + income_metal + income_hazard + income_rest + sys.gas_value() + sys.fluid_value()-reserved
 
 
 # pieces of the contract still to come off (in scope, not yet delivered)
 func pieces_left() -> Array:
+	if nuked:
+		return []
 	var out: Array = []
 	for id in world.order:
 		var p = world.pieces[id]
@@ -1830,7 +3134,7 @@ func boundary() -> float:
 func worth(p) -> float:
 	if p.cls == "equip" and p.intact:
 		return p.value * clampf(p.cond, 0.0, 1.0)
-	return p.mass * world.metal_price
+	return world.scrap_value(p)
 
 
 # taken from outside a section contract's section, or cut there: the breach is charged
@@ -1846,8 +3150,17 @@ func breach(p, cut: bool, at: Vector2) -> void:
 		lose("loss_breach_cut" if cut else "loss_breach_take", snappedf(amount, 10.0), at)
 
 
+var full_value := 0.0          # 78 号 P0-1: set at load, see rate_base()
+
+
 func recovery_rate() -> float:
-	return earned() / float(ship.get("value", {}).get("total", 120000.0))
+	return (earned() + material_recovery_value) / rate_base()
+
+
+# the rate's denominator: the authored total, or what the ship can really pay if that is more
+func rate_base() -> float:
+	var authored := float(ship.get("value", {}).get("total", 120000.0))
+	return maxf(authored, full_value) if scope() == "full" else authored
 
 
 func net() -> float:
@@ -1856,6 +3169,8 @@ func net() -> float:
 
 func incident(kind: String, detail: String = "") -> void:
 	incidents.append([snappedf(playtime, 0.1), kind, detail])
+	if plan != null and plan.running and kind in ["blowout","fire","arc","burst","blast","prop_blast","o2_fire","tank_burst","tank_rupture","drone_lost"]:
+		plan.cancel()
 	if assist != null:
 		assist.on_incident(kind)
 
@@ -1936,7 +3251,7 @@ func piece_value(p, zone: String) -> float:
 
 
 func _piece_value(p, zone: String) -> float:
-	var scrap: float = p.mass * world.metal_price
+	var scrap: float = world.scrap_value(p)
 	var dest: String = sys.dest_of(p)
 	var v := 0.0
 	if p.cls == "equip" and p.intact:
@@ -1953,6 +3268,7 @@ func _piece_value(p, zone: String) -> float:
 
 
 func judge(b, zone: String) -> Dictionary:
+	if zone == "metal" and Career.plant_reserved(self): return {"ok":false,"reason":"rej_plant_reserved"}
 	var total := 0.0
 	var metal_m := 0.0
 	var all_m := 0.0
@@ -1974,7 +3290,8 @@ func judge(b, zone: String) -> Dictionary:
 				return {"ok": false, "reason": "rej_hazard"}
 			if not equip_intact:
 				return {"ok": false, "reason": "rej_scrap"}
-			if metal_m > all_m * 0.2:
+			# 94 号: a block of the telescope's mirror (a backplane with its segments on) is one unit
+			if metal_m > all_m * 0.2 and (work_order == null or not work_order.accepts_assembly(b)) and not (optics != null and optics.is_block(b)):
 				return {"ok": false, "reason": "rej_mixed"}
 		"hazard":
 			if equip_intact and not hazard:
@@ -1993,14 +3310,33 @@ func on_swallow_start(b, zone: String) -> void:
 
 
 func on_swallowed(b, mouth: String) -> void:
+	var batches = preload("res://scripts/material_batches.gd")
+	# Guard the entire native receiver transaction, not only retained raw pieces.
+	# This also blocks reentrant notifications before this body is removed.
+	if batches.retains(job):
+		var identities: Array = []
+		for p in b.pieces:
+			var identity: String = batches.receipt_id(str(job.id), p.key if p.key != "" else "#%d" % p.id)
+			if receiver_commits.has(identity): return
+			identities.append(identity)
+		for identity in identities: receiver_commits[identity] = true
 	# a second equipment bay pays and counts as the first; the effects play where it is
 	var zone := Dock.kind(mouth)
 	var at: Vector2 = Dock.zpos(mouth) - Dock.ZONES[mouth].face * 30.0
 	var names: Array = []
 	var v := 0.0
 	var boom := false
+	var retained_keys := {}
 	for p in b.pieces:
-		v += piece_value(p, zone)
+		p.into = zone
+		var piece_payment := piece_value(p, zone)
+		if batches.eligible(self, p, zone):
+			if not batches.has_piece(material_receipts, str(job.id), p.key):
+				material_receipts.append(batches.received(job, p, piece_payment))
+				material_recovery_value += piece_payment
+			retained_keys[p.key] = true
+		else:
+			v += piece_payment
 		if p.tag != "" and p.cls == "equip":
 			names.append(p.tag)
 			verify("pieces", p.tag, {"to": zone})
@@ -2024,7 +3360,40 @@ func on_swallowed(b, mouth: String) -> void:
 	var label := ", ".join(names) if not names.is_empty() else txt("scrap_metal")
 	if not b.pieces.any(func(p): return p.scope):
 		label = txt("sc_out")
+	# the berth's repairs (scripts/repair.gd): whole equipment of a useful class goes on the
+	# shelf instead of being paid out; metal through the furnace is structure by the tonne
+	if work_order != null: work_order.capture(b,zone)
+	if career() and scope() != "rescue":
+		if zone == "equip":
+			for p in b.pieces:
+				if work_order != null and work_order.owns(p): continue
+				var cls := Repair.class_of(p, sys)
+				if cls != "" and p.scope:
+					parts_in.append(Repair.part_of(p, cls, ship_id, str(job.get("id", ""))))
+					parts_value += piece_value(p, zone)
+					say("rp_part_in", at + Vector2(0, -60), p.tag)
+					if not hints_seen.has("rp_part"):
+						hints_seen["rp_part"] = true
+						if not career() or Career.hint_once("rp_part"):
+							hud.show_hint(txt("hint_rp_part_in"))
+						if Career.usable() and not Career.data.get("seen", {}).has("parts_first"):
+							var seen2: Dictionary = Career.data.get("seen", {})
+							seen2["parts_first"] = true
+							Career.data.seen = seen2
+							Copy.say(radio, "L_parts_first")
+		elif zone == "metal":
+			for p in b.pieces:
+				if p.scope and not retained_keys.has(p.key) and (p.cls != "equip" or not p.intact):
+					structure_t += p.mass
 	ledger.append([label, zone, v])
+	# Correlated notification from the actual receiver commit. Keep the legacy
+	# ledger format and all income/stock/settlement behavior unchanged.
+	var received_keys: Array = b.pieces.map(func(p): return p.key)
+	received_keys.sort()
+	load_received.emit(received_keys,zone,v,str(job.get("id","")))
+	# the work plan learns where this went (G4): by the operator's hand or on their mark
+	if plan != null:
+		plan.on_haul(b, zone, b.get_meta("hauled", false) or b.get_meta("manual_mark", false))
 	if b.get_meta("arm_drop", -1.0) >= 0.0 or not b.get_meta("hauled", false):
 		# the arm brought it, or it drifted in on the mouth's own pull: nobody's hands
 		log_op("arm_haul")
@@ -2062,6 +3431,8 @@ func on_swallowed(b, mouth: String) -> void:
 	sfx.play("eat_" + zone)
 	if boom:
 		_furnace_boom()
+	if gear != null:
+		gear.on_swallowed(b, zone)
 	world.remove_body(b)
 	_check_done()
 
@@ -2080,6 +3451,16 @@ func _furnace_boom() -> void:
 # the recovery arm let a load go over the furnace (the operation log counts it as the machine's)
 func on_arm_drop(_b) -> void:
 	sfx.play("release")
+
+
+# a cut-off that slipped through the torn net (scripts/repair.gd: net_fix)
+func on_debris_lost(value: float, at: Vector2) -> void:
+	if value > 0.5:
+		say("rp_debris_lost", at + Vector2(0, -30))
+		if not hints_seen.has("rp_net"):
+			hints_seen["rp_net"] = true
+			if not career() or Career.hint_once("rp_net"):
+				hud.show_hint(txt("hint_rp_net"))
 
 
 func on_debris_in(value: float, at: Vector2) -> void:
@@ -2163,14 +3544,18 @@ func on_body_freed(b) -> void:
 			b.angular_velocity = randf_range(-1.5, 1.5)
 			p.remove_meta("snap_kick")
 	var all_metal := true
+	var crews := false
 	for p in b.pieces:
 		if p.cls == "equip" and p.intact:
 			all_metal = false
-	if all_metal and m < debris_max():
+		# 92 号: the works crew's wreck is hauled off by its own drones, not blown into the net
+		if str(p.key).begins_with("crew:"):
+			crews = true
+	if all_metal and m < debris_max() and not crews:
 		# tiny cut-offs go straight to the debris net
 		var vel: Vector2 = (b.global_position - SHIP_CENTER).normalized() * randf_range(60, 140)
 		for p in b.pieces:
-			dock.add_debris(world.world_poly(p), vel, p.mass * world.metal_price if p.scope and scope() != "rescue" else 0.0)
+			dock.add_debris(world.world_poly(p), vel, world.scrap_value(p) if p.scope and scope() != "rescue" else 0.0)
 			breach(p, false, world.frame(p) * Geom.centroid(p.poly))
 		world.remove_body(b)
 		sfx.play("debris")
@@ -2197,12 +3582,26 @@ func on_body_freed(b) -> void:
 					fx.molten(pl[i], Vector2.from_angle(randf() * TAU) * randf_range(30, 110), 1.8)
 				lit += 1
 	var com: Vector2 = b.global_transform * b.center_of_mass
-	fx.flash(com, 70.0 + 60.0 * minf(m, 2.0), 0.35, Pal.heat(0.55, 2.4))
+	# 91 号: a short white-hot breath at the break, not a red blot over the plate
+	fx.flash(com, 34.0 + 26.0 * minf(m, 2.0), 0.22, Color(1.7, 1.25, 0.85, 0.42))
 	fx.ring(com, 10.0, 90.0 + 40.0 * minf(m, 2.0), 0.45, Pal.ink(0.5, 1.6), 1.6)
 	fx.burst_shards(com, 6 + int(m * 4), 160.0, Pal.ink(0.7), 6.0)
 	shake(0.1 + minf(0.25, m * 0.06), away)
+	# 95 号 (user 2026-10-28, the demolition's weight, kept within bounds): a big section coming away
+	# is heard and felt by its weight — the steel's groan, a harder shake, and for the biggest a
+	# moment's hold as it goes
+	if m >= 2.0:
+		sfx.play("hull_break", com, clampf(0.45 + m / 12.0, 0.45, 1.0), clampf(1.15 - m / 40.0, 0.8, 1.1))
+		shake(minf(0.25, (m - 2.0) * 0.03), away)
+		if m >= 6.0:
+			hitstop(0.08)
 	if m > 0.5:
 		hitstop(0.045 + minf(0.05, m * 0.015))
+	# 91 号 Q11: a big piece coming free is a moment — the clock slows (the physics step stays 1/120 s)
+	if m >= Look.SLOW_MASS and Txt.slowmo_on and state == "play" and bot == null and not Txt.no_flash():
+		slowmo = maxf(slowmo, Look.SLOW_T)
+	if m >= Look.SLOW_MASS and look != null and not Txt.no_flash():
+		look.big_free(b, com, m)
 	fx.puff(com, Vector2.ZERO, 0.9, 14.0, 80.0, Pal.ink(0.05))
 	hint("free_body")
 
@@ -2259,11 +3658,16 @@ func _drone_upkeep(dt: float) -> void:
 			if drone_respawn <= 0.0:
 				_launch_drone()
 		return
-	var pull := dock.field_pull(drone.global_position)
+	var pull: Vector2 = port_access.boundary_pull(drone.global_position) if port_access != null and port_access.active() else dock.field_pull(drone.global_position)
+	# out in the belt there is no berth field (32 号)
+	if belt:
+		pull = Vector2.ZERO
 	if pull != Vector2.ZERO:
 		drone.external += pull * drone.mass * 3.0
 		hint("field")
 	var bay := Dock.BAY * Geom.M
+	if drone.global_position.distance_to(bay) < 2.6 * Geom.M and job.has("fit_pending") and not (job.fit_pending as Dictionary).is_empty():
+		Consum.apply_pending(self)
 	if drone.global_position.distance_to(bay) < 2.6 * Geom.M and drone.integrity < 100.0:
 		drone.integrity = minf(100.0, drone.integrity + dt * 55.0)
 		if randf() < 0.3:
@@ -2292,8 +3696,10 @@ func hurt_drone(amount: float, from: Vector2, key: String, cd_key: String = "", 
 
 
 func on_drone_impact(pos: Vector2, dv: float) -> void:
-	if dv > 175.0:
-		var dmg := clampf((dv - 175.0) / 18.0, 1.0, 14.0)
+	# the bumper module: light knocks are nothing, hard ones half as bad
+	var th := 300.0 if has_mod("mod_bumper") else 175.0
+	if dv > th:
+		var dmg := clampf((dv - th) / 18.0, 1.0, 14.0) * (0.5 if has_mod("mod_bumper") else 1.0)
 		if dmg >= 8.0:
 			hurt_drone(dmg, pos, "hit_hard", "impact", 0.7)
 		elif drone.alive and not DevPanel.god:
@@ -2322,9 +3728,29 @@ func on_drone_destroyed() -> void:
 	drone_respawn = 1.4 if training else 2.0
 	drone.linear_velocity = Vector2.ZERO
 	hint("drone_lost")
+	if gear != null:
+		gear.on_drone_destroyed(p)
 
 
 # ---------------------------------------------------------------- tool events
+
+# a cheap lens burst under the beam (scripts/consum.gd): the lens is gone, the drone is
+# scalded, whatever was under the beam is spoilt
+func lens_burst(at: Vector2, under: Array) -> void:
+	Consum.wear_out(self, "lens")
+	incident("lens_burst")
+	fx.flash(at, 120.0, 0.4, Pal.heat(1.0, 2.4))
+	fx.ring(at, 8.0, 90.0, 0.4, Pal.heat(0.9, 1.6), 2.0)
+	fx.sparks(at, Vector2.UP, 24, Pal.heat(1.0, 2.2), 320.0, 0.5, PI)
+	shake(0.5)
+	sfx.play("boom")
+	hurt_drone(Consum.BURST_HURT, at, "lens_burst")
+	for q in under:
+		if q.cls == "equip" and q.intact:
+			_dent(q, maxf(0.0, q.cond - Consum.BURST_DENT), "dv_lens")
+	say("cs_lens_burst", at + Vector2(0, -40))
+	hud.show_hint(txt("hint_cs_cheap"))
+
 
 func on_laser_near_equipment(p, pos: Vector2) -> void:
 	say("laser_near", pos, p.tag if p.tag != "" else Txt.piece_name(p))
@@ -2333,6 +3759,9 @@ func on_laser_near_equipment(p, pos: Vector2) -> void:
 
 
 func on_cut_into(p, pos: Vector2) -> void:
+	# 87-1: the first time the beam meets a material that is not plain steel, a line on what it is
+	if p.mat != "" and p.mat != Mat.STEEL:
+		hint("mat_" + str(p.mat))
 	if bio != null:
 		bio.on_cut(p)
 	breach(p, true, pos)
@@ -2406,7 +3835,7 @@ func on_cut_into(p, pos: Vector2) -> void:
 		fx.sparks(pos, Vector2.UP, 8, Pal.tint(Pal.VOLT, 1.0, 2.0), 160.0, 0.3, PI)
 		sfx.play("zap_small")
 	if p.intact:
-		note_loss("dv_cut", p.tag, was_value - p.mass * world.metal_price)
+		note_loss("dv_cut", p.tag, was_value - world.scrap_value(p))
 		mandatory_gone(p, "mg_cut")
 	if was_value > 200.0:
 		incident("equip_cut", p.tag)
@@ -2622,6 +4051,13 @@ func _kerf_breach(p, pl: PackedVector2Array, res: Dictionary) -> void:
 		for i in pl.size() - 1:
 			ln += pl[i].distance_to(pl[i + 1])
 		lk.area = float(lk.area) + ln / Geom.M * KERF_W
+		# the opening is the whole kerf, not the point it began at: the liquid comes out all
+		# along it (liquids.gd; user 2026-10-27, "只是在某些角落喷出来一点")
+		var slit: Array = lk.get("slit", [])
+		for q in pl:
+			if slit.size() < 64:
+				slit.append(world.frame(p).affine_inverse() * q)
+		lk.slit = slit
 		if int(res.get("split", 1)) > 1:
 			# cut in two: the tank's whole section is open to space
 			var bb := Geom.bbox(p.poly)
@@ -2719,10 +4155,14 @@ func on_ignite(cl: Dictionary, pos: Vector2) -> void:
 
 # a finished laser stroke through one attached piece (pl in world space), as
 # the laser would make it: equipment it touches, lines it crosses, the kerf
-func cut_kerf(p, pl: PackedVector2Array) -> void:
+func cut_kerf(p, pl: PackedVector2Array, kerf: float = World.KERF, by_plan: bool = false, source: Dictionary = {}) -> void:
 	if pl.is_empty():
 		return
-	log_op("cut")
+	if not by_plan:
+		log_op("cut")
+	var inc0 := incidents.size()
+	var plan_context: Dictionary = plan.cut_context(p) if plan != null else {}
+	if not plan_context.is_empty(): plan_context.kerf = kerf
 	if world.segment_cut(p, pl) and not _holds(p):
 		# along its marked line: it comes apart as planned, nothing ruined
 		fx.sparks(pl[0], Vector2.UP, 10, Pal.heat(1.0, 2.0), 160.0, 0.3, PI)
@@ -2732,9 +4172,18 @@ func cut_kerf(p, pl: PackedVector2Array) -> void:
 	if pl.size() >= 2:
 		for hit in world.cut_lines(pl):
 			on_line_cut(hit[0], hit[1])
-	var res: Dictionary = world.commit_cut(p, world.frame(p).affine_inverse() * pl)
+	var attached: bool = p.body == null
+	var local_pl: PackedVector2Array = world.frame(p).affine_inverse() * pl
+	var material_pl: PackedVector2Array = local_pl
+	if source.has("prefix"):
+		material_pl = PackedVector2Array()
+		for point in source.prefix: material_pl.append(Vector2(float(point[0]),float(point[1])))
+	var res: Dictionary = world.commit_cut(p, material_pl, kerf, source)
+	if not source.is_empty(): source.split = int(res.split)
 	_kerf_breach(p, pl, res)
 	on_kerf(p, res)
+	if plan != null:
+		plan.on_cut(p, local_pl, incidents.size() > inc0, attached, plan_context, by_plan)
 
 
 # a marked line only takes an empty vessel apart cleanly: one still under
@@ -2753,6 +4202,13 @@ func on_kerf(p, res: Dictionary) -> void:
 		on_line_cut(l, world.frame(p) * Geom.centroid(p.poly))
 	if res.split > 1:
 		sfx.play("crack", world.frame(p) * Geom.centroid(p.poly), 0.8)
+	# 87-1: a ceramic plate the beam heated too fast cracks: a snap, chips, its value spalls off
+	if int(res.get("cracked", 0)) > 0 and not p.gone:
+		var at: Vector2 = world.frame(p) * Geom.centroid(p.poly)
+		sfx.play("crack", at, 1.0, 0.8)
+		fx.burst_shards(at, 6 * int(res.cracked), 220.0, Pal.ink(0.75), 5.0)
+		fx.puff(at, Vector2.ZERO, 1.2, 8.0, 40.0, Pal.ink(0.08))
+		say("mat_crack", at, Mat.name_of(Mat.id_of(p)))
 
 
 func on_grab(p) -> void:
@@ -2783,8 +4239,11 @@ func on_grab(p) -> void:
 		hint("heavy")
 	elif p.cls == "equip" and p.intact:
 		# whole equipment far from its bay: the bay comes to you
-		var bay := Dock.zpos(Dock.nearest("equip", aim))
-		if absf(bay.x - aim.x) > 10.0 * Geom.M:
+		var destination := Dock.for_load("equip",p.body,false)
+		if destination == "":
+			# 78 号 P0-1: no equipment mouth takes it whole as it lies in the grapple
+			say("no_mouth", aim, Dock.no_mouth_text(p.body,false))
+		elif destination != "equip_bulk" and absf(Dock.zpos(destination).x - aim.x) > 10.0 * Geom.M:
 			hint("equip_rail")
 
 
@@ -2826,6 +4285,12 @@ func on_tear(p, weak: Array, lines_held: Array, at: Vector2) -> void:
 # ---------------------------------------------------------------- measure / wrench / hose
 
 func do_measure(tg: Dictionary) -> void:
+	# the meter's probe tip wears with every reading (scripts/consum.gd)
+	if not Consum.ready(self, "probe"):
+		say("cs_out_probe", tg.pos)
+		sfx.play("deny")
+		return
+	Consum.use(self, "probe", 1.0)
 	var mkey: String = str(tg.ctrl.id) if tg.kind == "ctrl" else (str(tg.line.id) if tg.kind == "line" else ("P:%d" % tg.piece.id if tg.has("piece") else ""))
 	log_op("remeasure" if _measured.has(mkey) else "measure")
 	_measured[mkey] = true
@@ -2937,7 +4402,7 @@ func do_measure(tg: Dictionary) -> void:
 			var key := "P:%d" % p.id
 			var local: Vector2 = world.frame(p).affine_inverse() * tg.pos
 			var label: String = p.tag if p.tag != "" else Txt.piece_name(p)
-			sys.measure(key, "temp", label, "inst_inspect", {"piece": p, "local": local, "inspect": _inspect_text(p), "temp_fn": func(): return p.temp})
+			sys.measure(key, "temp", label, "inst_inspect", {"piece": p, "local": local, "inspect": _inspect_text(p), "temp_fn": func(): return Mat.temp(p)})
 			if story != null:
 				story.on_inspect(p)
 			if sys.electric_piece(p):
@@ -2976,7 +4441,7 @@ func restore_reading(rd: Dictionary) -> void:
 			extra.sample_fn = func(): return sys.contents_reading(p)
 		else:
 			extra.inspect = _inspect_text(p)
-			extra.temp_fn = func(): return p.temp
+			extra.temp_fn = func(): return Mat.temp(p)
 	else:
 		var cid: String = key.split("/")[0]
 		var c = world.ctrls.get(cid)
@@ -3119,6 +4584,8 @@ func _inspect_text(p) -> String:
 		counts[j.type] = counts.get(j.type, 0) + 1
 	var nl := world.lines_of(p).size()
 	var parts: Array = ["%.2f t" % world.group_mass(p)]
+	# 87-1: what it is made of, how the beam goes through it at the current power, what cutting cost it
+	parts.append(Mat.describe(p, skill_value("laser_power") * Grid.salvage_k(self, "laser", 0.15)))
 	for k in ["bolt", "weld", "lock", "clamp", "seam"]:
 		if counts.has(k):
 			parts.append("%d %s" % [counts[k], txt("j_" + k)])
@@ -3330,7 +4797,7 @@ func breaching_ring() -> bool:
 
 # what the grapple can haul (the 5 t tractor grapple lifts the limit)
 func grab_max() -> float:
-	return skill_value("grapple_mass")
+	return maxf(skill_value("grapple_mass"), Consum.FINE_GRAB if Consum.is_fine(self, "cap") else 0.0)
 
 
 # the berth's upgrades this contract was taken with
@@ -3340,6 +4807,9 @@ func debris_max() -> float:
 
 
 func skill_value(id: String) -> float:
+	# the fine lens cuts a finer kerf than any volume did (scripts/consum.gd)
+	if id == "laser_kerf" and Consum.is_fine(self, "lens"):
+		return Consum.FINE_KERF
 	var kit: Dictionary = job.get("kit", {})
 	if bot != null and not bot.get("kit", {}).is_empty():
 		kit = kit.duplicate()
@@ -3354,14 +4824,22 @@ func fit_skills() -> void:
 			drone.queue_redraw()
 
 
+# a drone module carried on this job (scripts/gear.gd)
+func has_mod(id: String) -> bool:
+	return gear != null and gear.has_mod(id)
+
+
 func has_upgrade(id: String) -> bool:
+	# the fine probe tip reads condition and hidden damage like the inspection kit
+	if id == "scan_kit" and not job.is_empty() and Consum.is_fine(self, "probe"):
+		return true
 	# between contracts there's no contract's kit: the berth has what the career bought
 	if ship.get("berth", false) and Career.data.get("upgrades", {}).has(id):
 		return true
 	return job.get("kit", {}).has(id) or (bot != null and bot.get("kit", {}).has(id))
 
 
-func do_wrench(tg: Dictionary) -> void:
+func do_wrench(tg: Dictionary, by_plan: bool = false) -> void:
 	if tg.get("kind", "") == "ctrl" and tg.has("ctrl"):
 		changed["c:" + tg.ctrl.id] = true
 	# the training interlock looks at what the wrench is about to undo
@@ -3383,7 +4861,7 @@ func do_wrench(tg: Dictionary) -> void:
 				say(rails.locked_msg(j), world.joint_world(j))
 				sfx.play("deny")
 				return
-			log_op("unfix")
+			log_op("plan" if by_plan else "unfix")
 			verify("pieces", tag_of(j.a), {"held": j.type})
 			var p: Vector2 = world.joint_world(j)
 			world.kill_joint(j)
@@ -3395,7 +4873,7 @@ func do_wrench(tg: Dictionary) -> void:
 				say("clamp_off", p, j.get_meta("tag", ""))
 		"connector":
 			var l = tg.line
-			log_op("unplug")
+			log_op("plan" if by_plan else "unplug")
 			verify("lines", l.id, [tag_of(l.a), tag_of(l.b)])
 			if l.kind == "pipe":
 				var amt: float = sys.line_fluid(l)
@@ -3420,13 +4898,15 @@ func do_wrench(tg: Dictionary) -> void:
 			fx.sparks(tg.pos, Vector2.UP, 4, Pal.ink(0.8, 1.2), 90.0, 0.2, PI)
 		"ctrl":
 			verify("ctrls", tg.ctrl.id, tg.ctrl.kind)
-			log_op("door" if tg.ctrl.kind in ["door", "hatch", "jam"] else "isolate")
-			if plan != null:
+			log_op("plan" if by_plan else ("door" if tg.ctrl.kind in ["door", "hatch", "jam"] else "isolate"))
+			if plan != null and not by_plan:
 				plan.on_player("w", tg.ctrl)
-			_operate(tg.ctrl, tg.pos)
+			var operated := _operate(tg.ctrl, tg.pos)
+			if plan != null and not by_plan:
+				plan.finish_player(operated)
 
 
-func _operate(c, at: Vector2) -> void:
+func _operate(c, at: Vector2) -> bool:
 	match c.kind:
 		"valve":
 			c.state = not c.state
@@ -3439,7 +4919,7 @@ func _operate(c, at: Vector2) -> void:
 				log_op("flood")
 		"switch":
 			if vault != null and vault.blocks_switch(c, at):
-				return
+				return false
 			c.state = not c.state
 			sys.set_switch(c.id, c.state)
 			say("sw_on" if c.state else "sw_off", at, c.id)
@@ -3470,7 +4950,7 @@ func _operate(c, at: Vector2) -> void:
 				sys.set_switch(c.id, c.state)
 				say("cold_on" if c.state else "cold_off", at)
 				sfx.play("plug")
-				return
+				return true
 			sys.aux = not sys.aux
 			c.state = sys.aux
 			sys.set_switch(c.id, sys.aux)
@@ -3482,22 +4962,23 @@ func _operate(c, at: Vector2) -> void:
 			say("discharge_on" if c.state else "discharge_off", at)
 			sfx.play("plug")
 		"door":
+			var was_open: bool = c.state
 			if vault != null and vault.operate(c, at):
-				return
+				return c.state != was_open
 			if rings != null and rings.blocks_door(c, at):
-				return
+				return false
 			if Ship.ctrl_cfg(ship, c.id).get("stuck", false):
 				say("door_stuck", at, c.id)
 				sfx.play("deny")
-				return
+				return false
 			if not (sys.bus_live or sys.aux):
 				say("no_power", at)
 				sfx.play("deny")
 				hint("no_power")
-				return
+				return false
 			var dp = world.tag(c.target)
 			if dp == null:
-				return
+				return false
 			dp.door_open = not dp.door_open
 			c.state = dp.door_open
 			sfx.play("door")
@@ -3507,7 +4988,7 @@ func _operate(c, at: Vector2) -> void:
 				say("degauss_live", at)
 				sfx.play("deny")
 				hint("degauss_live")
-				return
+				return false
 			c.state = true
 			say("degaussed", at)
 			sfx.play("discharge")
@@ -3515,18 +4996,18 @@ func _operate(c, at: Vector2) -> void:
 		"seal":
 			if c.state:
 				say("bio_sealed_already", at)
-				return
+				return false
 			if not bio.seal(c.target):
 				say("bio_seal_fail", at)
 				sfx.play("deny")
-				return
+				return false
 			c.state = true
 			say("bio_sealed", at, c.target)
 			sfx.play("clamp_off")
 			fx.ring(at, 4.0, 40.0, 0.4, Pal.tint(Pal.FLUID, 0.8, 1.3), 1.5)
 		"jam":
 			if c.state:
-				return
+				return false
 			c.state = true
 			say("jam_cleared", at)
 			sfx.play("unjam")
@@ -3538,14 +5019,14 @@ func _operate(c, at: Vector2) -> void:
 				say("hatch_jammed", at)
 				sfx.play("deny")
 				hint("hatch_jam")
-				return
+				return false
 			var feed = world.lines.get(hc.get("cable", ""))
 			var powered: bool = (sys.bus_live and (feed == null or feed.alive)) or sys.aux
 			if not powered:
 				say("no_power", at)
 				sfx.play("deny")
 				hint("no_power")
-				return
+				return false
 			# a seam welded shut: the drive strains against it and burns out
 			var sealed := false
 			for t in hc.get("doors", []):
@@ -3560,7 +5041,7 @@ func _operate(c, at: Vector2) -> void:
 					incident("motor", c.id)
 					fx.sparks(at, Vector2.UP, 20, Pal.heat(1.0, 2.0), 260.0, 0.4, PI)
 					lose("loss_motor", 2500.0, at + Vector2(0, -40))
-				return
+				return false
 			for t in hc.get("doors", []):
 				var hp = world.tag(t)
 				if hp != null and hp.body == null:
@@ -3568,8 +5049,9 @@ func _operate(c, at: Vector2) -> void:
 			sfx.play("hatch")
 			shake(0.2)
 
+	return true
 
-func do_hose(tg: Dictionary, by_plan := false) -> void:
+func do_hose(tg: Dictionary, by_plan := false) -> bool:
 	var c = tg.ctrl
 	log_op("plan" if by_plan else "hose")
 	if plan != null and not by_plan:
@@ -3579,13 +5061,15 @@ func do_hose(tg: Dictionary, by_plan := false) -> void:
 		dock.hose_detach(c.id)
 		say("hose_off", tg.pos, c.id)
 		sfx.play("unplug")
-		return
+		if plan != null and not by_plan: plan.finish_player(true)
+		return true
 	# a port behind a jammed valve: it has to be freed first
 	var jam = world.ctrls.get(Ship.ctrl_cfg(ship, c.id).get("jam", ""))
 	if jam != null and not jam.state:
 		say("vent_jammed", tg.pos, c.id)
 		sfx.play("deny")
-		return
+		if plan != null and not by_plan: plan.finish_player(false)
+		return false
 	var mode := tools.hose_mode if c.medium == "gas" else "recover"
 	if sys.dead_leg_closed(c):
 		hint("dead_leg_hose")
@@ -3595,17 +5079,19 @@ func do_hose(tg: Dictionary, by_plan := false) -> void:
 	sfx.play("hose_on")
 	hint("hose")
 
+	if plan != null and not by_plan: plan.finish_player(true)
+	return true
 
 # a step of the work plan, done by the berth: the same control, worked as the operator did it
-func plan_do(kind: String, c) -> void:
+func plan_do(kind: String, c) -> bool:
 	var at: Vector2 = world.ctrl_world(c)
 	fx.ring(at, 4.0, 26.0, 0.35, Pal.ink(0.8, 1.3))
 	if kind == "h":
-		do_hose({"ctrl": c, "pos": at}, true)
-		return
+		return do_hose({"ctrl": c, "pos": at}, true)
 	changed["c:" + c.id] = true
-	log_op("plan")
-	_operate(c, at)
+	var success := _operate(c, at)
+	if success: log_op("plan")
+	return success
 
 
 # one machine at a time over a mouth: the arm and the hauler queue for it
@@ -3811,7 +5297,8 @@ const MUST_SHARE := 0.10        # a named piece delivered whole: this share of i
 const MUST_VALUABLE := 0.25     # ...or this, on a valuable-equipment job
 const MUST_MIN := 500.0
 const SAFE_SHARE := 0.05        # a safe-recovery job with no incident: this share of what was earned
-const UI_HINTS := ["field", "hose", "measured", "drone_lost", "free_body", "equip_cut", "equip_rail"]
+const UI_HINTS := ["field", "hose", "measured", "drone_lost", "free_body", "equip_cut", "equip_rail",
+	"mat_armor", "mat_ti", "mat_ceramic", "mat_shield", "mat_al", "mat_composite"]
 var hint_log: Array = []
 
 
@@ -3821,6 +5308,12 @@ var hint_log: Array = []
 func hint(key: String) -> void:
 	if training or exam != null or hints_seen.has(key):
 		return
+	var own_key: String = ship_id + ":" + key if ship.get("hints", {}).has(key) else key
+	if career() and Career.data.get("hints_once", {}).has(own_key):
+		return
+	# 80 号: one voice while the guide runs (the hint waits for after it, unseen)
+	if guide_coach() != null:
+		return
 	var tr := Txt.hint_tier
 	if tr == "hardcore" or (tr == "standard" and not key in UI_HINTS):
 		return
@@ -3829,5 +5322,7 @@ func hint(key: String) -> void:
 	if text == "":
 		return
 	hints_seen[key] = true
+	if career():
+		Career.hint_once(own_key)
 	hint_log.append([key, tr])
 	hud.show_hint(text)
