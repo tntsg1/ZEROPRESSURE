@@ -244,13 +244,13 @@ func _draw_body() -> void:
 	var font_b: Font = dock.font_b
 	var z: float = game.cam_zoom() if game != null else 1.0
 	if z < 0.55:
-		# far out: the two hulls' outlines
-		var sr := ship_rect()
-		var br := barge_rect()
-		cv.draw_set_transform(Vector2(-40.0, -60.0) * Pal.ease_in(leave) * M)
-		_rect(sr, Color(0.045, 0.048, 0.056), Pal.ink(0.5), 1.2)
-		cv.draw_set_transform(Vector2(30.0, 50.0) * Pal.ease_in(leave) * M)
-		_rect(br, Color(0.045, 0.048, 0.056), Pal.ink(0.5), 1.2)
+		_draw_routes(font, z)
+		var fo := Vector2(-40.0, -60.0) * Pal.ease_in(leave) * M
+		cv.draw_set_transform(fo)
+		_far_freighter(z, fo)
+		var bo := Vector2(30.0, 50.0) * Pal.ease_in(leave) * M
+		cv.draw_set_transform(bo)
+		_far_barge(z, bo)
 		cv.draw_set_transform(Vector2.ZERO)
 		return
 	_draw_routes(font, z)
@@ -367,17 +367,200 @@ func _cask(c: Vector2, kind: String, r: float) -> void:
 	cv.draw_circle(c * M, r * 0.35 * M, Pal.tint(col, 0.9, 1.3))
 
 
+# the freighter's hull (m): bow to the left, engines aft
+func freighter_hull() -> PackedVector2Array:
+	var r := ship_rect()
+	var x0 := r.position.x
+	var x1 := r.end.x
+	var y0 := r.position.y
+	var y1 := r.end.y
+	return PackedVector2Array([Vector2(x0 + 4.0, y0), Vector2(x1 - 5.0, y0), Vector2(x1 - 3.0, y0 + 1.2), Vector2(x1 - 3.0, y1 - 1.2), Vector2(x1 - 5.0, y1),
+		Vector2(x0 + 4.0, y1), Vector2(x0, y1 - 2.5), Vector2(x0, y0 + 2.5)])
+
+
+# the barge's hull (m)
+func barge_hull() -> PackedVector2Array:
+	var r := barge_rect()
+	return PackedVector2Array([r.position, Vector2(r.end.x - 2.0, r.position.y), Vector2(r.end.x, r.position.y + 2.0),
+		r.end, Vector2(r.position.x + 2.0, r.end.y), Vector2(r.position.x, r.end.y - 2.0)])
+
+
+# ---------------------------------------------------------------- far out
+# 110 号 (user 2026-10-30, the OB-90 berth build: far out the two hulls were flat boxes with a
+# 1 px edge, "看起来像没内容的界面框"): with the whole berth in view each still reads as a ship —
+# its own silhouette lit from above, plating seams and frames, the bridge and its lit windows, the
+# engines, the cut-away hold with what it carries, running lights, its moorings to the berth and
+# its name at a size that reads. Fills and hairlines (a 1 px line at any zoom) only.
+
+# a hull lit from above: lighter at the deck, darker at the keel, a hairline round it
+func _shade(pts: PackedVector2Array, top: Color, bot: Color, edge: Color) -> void:
+	var ya := INF
+	var yb := -INF
+	for q in pts:
+		ya = minf(ya, q.y)
+		yb = maxf(yb, q.y)
+	var px := PackedVector2Array()
+	var cols := PackedColorArray()
+	for q in pts:
+		px.append(q * M)
+		cols.append(top.lerp(bot, (q.y - ya) / maxf(yb - ya, 0.01)))
+	cv.draw_polygon(px, cols)
+	px.append(px[0])
+	cv.draw_polyline(px, edge, 1.0)
+
+
+# a name painted at a fixed size on screen, whatever the zoom (base: the transform in force)
+func _far_name(base: Vector2, at: Vector2, s: String, z: float, size: int, col: Color) -> void:
+	cv.draw_set_transform(base + at * M, 0.0, Vector2.ONE / z)
+	cv.draw_string(dock.font_b, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+	cv.draw_set_transform(base)
+
+
+# a running light, blinking on its own beat
+func _nav_light(at: Vector2, col: Color, phase: float) -> void:
+	var on := 0.35 + 0.65 * maxf(0.0, sin(t * 2.4 + phase))
+	cv.draw_circle(at * M, 0.32 * M, Color(col.r, col.g, col.b, 0.18 * on))
+	cv.draw_circle(at * M, 0.15 * M, Color(col.r * on * 1.6, col.g * on * 1.6, col.b * on * 1.6))
+
+
+func _far_freighter(z: float, base: Vector2) -> void:
+	var r := ship_rect()
+	var x0 := r.position.x
+	var x1 := r.end.x
+	var y0 := r.position.y
+	var y1 := r.end.y
+	# moored to the boom: two clamp arms down to the rail
+	if leave < 0.02:
+		for cx in [x0 + 6.0, x1 - 8.0]:
+			_rect(Rect2(cx - 0.3, y1, 0.6, Dock.RAIL_Y - 0.6 - y1), Color(0.085, 0.088, 0.1), Pal.ink(0.38))
+	# the bridge on its deckhouse over the bow, a mast with the masthead light
+	var br := Rect2(x0 + 4.4, y0 - 1.8, 3.0, 1.8)
+	_shade(PackedVector2Array([br.position + Vector2(0.4, 0), Vector2(br.end.x, br.position.y), br.end, Vector2(br.position.x, br.end.y)]), Color(0.15, 0.155, 0.17), Color(0.08, 0.083, 0.094), Pal.ink(0.45))
+	for i in 4:
+		_rect(Rect2(br.position + Vector2(0.55 + i * 0.6, 0.45), Vector2(0.38, 0.42)), Pal.tint(Pal.AIR, 0.55 + 0.15 * sin(t * 0.7 + i), 1.3))
+	cv.draw_line(Vector2(br.position.x + 1.6, br.position.y) * M, Vector2(br.position.x + 1.6, br.position.y - 2.0) * M, Pal.ink(0.4), 1.0)
+	cv.draw_line(Vector2(br.position.x + 0.9, br.position.y - 1.4) * M, Vector2(br.position.x + 2.3, br.position.y - 1.4) * M, Pal.ink(0.3), 1.0)
+	_nav_light(Vector2(br.position.x + 1.6, br.position.y - 2.1), Color(1.0, 0.95, 0.85), 0.0)
+	# the hull, lit along the deck, its keel in shadow
+	_shade(freighter_hull(), Color(0.135, 0.14, 0.157), Color(0.055, 0.058, 0.067), Pal.ink(0.62))
+	cv.draw_rect(Rect2(Vector2(x0 + 4.0, y0) * M, Vector2(x1 - x0 - 9.0, 0.35) * M), Color(0.22, 0.225, 0.245))
+	cv.draw_rect(Rect2(Vector2(x0 + 4.0, y1 - 0.45) * M, Vector2(x1 - x0 - 9.0, 0.45) * M), Color(0.026, 0.027, 0.032))
+	# plating: two seams along, a frame every 3 m
+	for sy in [y0 + 2.6, y1 - 2.6]:
+		cv.draw_line(Vector2(x0 + 0.2, sy) * M, Vector2(x1 - 3.1, sy) * M, Pal.ink(0.15), 1.0)
+	var fx := x0 + 4.0
+	while fx < x1 - 5.0:
+		cv.draw_line(Vector2(fx, y0 + 0.35) * M, Vector2(fx, y1 - 0.45) * M, Pal.ink(0.13), 1.0)
+		fx += 3.0
+	# the bridge's windows in the bow
+	for i in 4:
+		_rect(Rect2(Vector2(x0 + 1.0 + i * 0.6, y0 + 2.9), Vector2(0.4, 0.5)), Pal.tint(Pal.AIR, 0.4 + 0.15 * sin(t + i), 1.2))
+	# the engines and their bells
+	for e in 3:
+		var ey := y0 + 1.8 + e * 2.4
+		var bell := PackedVector2Array([Vector2(x1 - 3.0, ey - 0.5) * M, Vector2(x1 - 1.0, ey - 0.9) * M, Vector2(x1 - 1.0, ey + 0.9) * M, Vector2(x1 - 3.0, ey + 0.5) * M])
+		cv.draw_colored_polygon(bell, Color(0.1, 0.104, 0.117))
+		bell.append(bell[0])
+		cv.draw_polyline(bell, Pal.ink(0.5), 1.0)
+		if leave > 0.0:
+			cv.draw_colored_polygon(PackedVector2Array([Vector2(x1 - 1.0, ey - 0.7) * M, Vector2(x1 + 3.0 + 6.0 * leave, ey) * M, Vector2(x1 - 1.0, ey + 0.7) * M]), Pal.heat(0.8, 1.8))
+	# the hold, cut away: the racks and a block in every slot that holds something
+	var h := hold_rect()
+	_rect(h, Color(0.022, 0.024, 0.03), Pal.ink(0.42))
+	var cols := int(h.size.x / SLOT.x)
+	for c in range(1, cols + 1):
+		cv.draw_line(Vector2(h.position.x + c * SLOT.x, h.position.y) * M, Vector2(h.position.x + c * SLOT.x, h.end.y) * M, Pal.ink(0.13), 1.0)
+	for rr in range(1, 4):
+		var ry := h.position.y + rr * SLOT.y
+		if ry < h.end.y - 0.01:
+			cv.draw_line(Vector2(h.position.x, ry) * M, Vector2(h.end.x, ry) * M, Pal.ink(0.24), 1.0)
+	var shown := mini(equip.size(), cols * 3)
+	for i in shown:
+		var it: Dictionary = equip[equip.size() - shown + i]
+		var c := slot_pos(i)
+		var fresh := clampf(1.0 - float(it.t) / 1.5, 0.0, 1.0)
+		_rect(Rect2(c - SLOT * Vector2(0.36, 0.3), SLOT * Vector2(0.72, 0.6)), Color(0.2, 0.205, 0.22).lerp(Pal.tint(Pal.FLUID, 0.9, 1.3), fresh), Pal.ink(0.5))
+	# running lights at bow and stern
+	_nav_light(Vector2(x0 + 0.35, y0 + 2.5), Color(1.0, 0.22, 0.18), 0.0)
+	_nav_light(Vector2(x1 - 3.3, y0 + 1.0), Color(0.3, 1.0, 0.55), 1.7)
+	_far_name(base, Vector2(br.end.x + 0.8, y0 - 0.45), "RT-07 · " + Txt.t("sh_freighter"), z, 14, Pal.ink(0.85))
+
+
+func _far_barge(z: float, base: Vector2) -> void:
+	var r := barge_rect()
+	var X: float = dock.furnace_x
+	# moored to the plant's base frame
+	if leave < 0.02:
+		for mx in [X - 10.0, X + 6.0]:
+			cv.draw_line(Vector2(mx, Dock.FLOOR_Y + 10.6) * M, Vector2(mx, r.position.y) * M, Pal.ink(0.42), 1.0)
+			cv.draw_line(Vector2(mx + 0.4, Dock.FLOOR_Y + 10.6) * M, Vector2(mx + 0.4, r.position.y) * M, Pal.ink(0.22), 1.0)
+	# the wheelhouse on the deck, aft
+	var wh := Rect2(r.end.x - 5.2, r.position.y - 1.5, 3.0, 1.5)
+	_shade(PackedVector2Array([wh.position, Vector2(wh.end.x - 0.4, wh.position.y), wh.end, Vector2(wh.position.x, wh.end.y)]), Color(0.15, 0.155, 0.17), Color(0.08, 0.083, 0.094), Pal.ink(0.45))
+	for i in 3:
+		_rect(Rect2(wh.position + Vector2(0.4 + i * 0.8, 0.4), Vector2(0.5, 0.4)), Pal.tint(Pal.AIR, 0.5 + 0.15 * sin(t * 0.8 + i), 1.3))
+	_nav_light(Vector2(wh.position.x + 0.4, wh.position.y - 0.3), Color(1.0, 0.95, 0.85), 0.9)
+	# the hull
+	_shade(barge_hull(), Color(0.13, 0.135, 0.15), Color(0.052, 0.055, 0.063), Pal.ink(0.62))
+	cv.draw_rect(Rect2(r.position * M, Vector2(r.size.x - 2.0, 0.3) * M), Color(0.22, 0.225, 0.245))
+	cv.draw_rect(Rect2(Vector2(r.position.x + 2.0, r.end.y - 0.4) * M, Vector2(r.size.x - 2.0, 0.4) * M), Color(0.026, 0.027, 0.032))
+	var fx := r.position.x + 3.0
+	while fx < r.end.x - 1.0:
+		cv.draw_line(Vector2(fx, r.position.y + 0.3) * M, Vector2(fx, r.end.y - 0.4) * M, Pal.ink(0.13), 1.0)
+		fx += 3.0
+	# the ingot hold: the stacks under the lift
+	var ih := Rect2(Vector2(r.position.x + 1.5, r.position.y + 0.8), Vector2(ingot_lift_x() - r.position.x, 3.8))
+	_rect(ih, Color(0.022, 0.024, 0.03), Pal.ink(0.42))
+	# empty, it still reads as a hold: its ribs, a stringer, the dunnage on its floor
+	var rx := ih.position.x + 2.2
+	while rx < ih.end.x - 0.5:
+		cv.draw_line(Vector2(rx, ih.position.y) * M, Vector2(rx, ih.end.y) * M, Pal.ink(0.12), 1.0)
+		rx += 2.2
+	cv.draw_line(Vector2(ih.position.x, ih.position.y + 1.3) * M, Vector2(ih.end.x, ih.position.y + 1.3) * M, Pal.ink(0.09), 1.0)
+	cv.draw_rect(Rect2(Vector2(ih.position.x, ih.end.y - 0.3) * M, Vector2(ih.size.x, 0.3) * M), Color(0.075, 0.072, 0.068))
+	var n: int = dock.smelter.shipped
+	var per_row := maxi(1, int(ih.size.x / 0.55))
+	var bars := PackedVector2Array()
+	for i in mini(n, per_row * 12):
+		var bx := ih.end.x - 0.4 - (i % per_row) * 0.55
+		var by := ih.end.y - 0.15 - (i / per_row) * 0.3
+		bars.append_array([Vector2(bx - 0.24, by) * M, Vector2(bx + 0.24, by) * M])
+	if not bars.is_empty():
+		cv.draw_multiline(bars, Color(0.36, 0.35, 0.36), 0.22 * M)
+	# the shielded hazard hold: thick walls, hazard stripes, a cask for each thing in it
+	var hh := hazard_hold()
+	_rect(hh.grow(0.25), Color(0.07, 0.08, 0.07), Pal.tint(Pal.FLUID, 0.7))
+	_rect(hh, Color(0.02, 0.026, 0.024))
+	var sx := hh.position.x
+	while sx < hh.end.x - 0.3:
+		cv.draw_colored_polygon(PackedVector2Array([Vector2(sx, hh.position.y - 0.25) * M, Vector2(sx + 0.3, hh.position.y - 0.25) * M, Vector2(sx + 0.5, hh.position.y) * M, Vector2(sx + 0.2, hh.position.y) * M]), Pal.tint(Pal.FLUID, 0.55))
+		sx += 0.6
+	var per := maxi(1, int(hh.size.x / 0.9))
+	# the cask cradles, two tiers, filled one by one
+	for row in 2:
+		var cy := hh.end.y - 0.7 - row * 1.7
+		cv.draw_line(Vector2(hh.position.x + 0.1, cy + 0.5) * M, Vector2(hh.end.x - 0.1, cy + 0.5) * M, Pal.tint(Pal.FLUID, 0.3), 1.0)
+		for k in per:
+			var sx2 := hh.position.x + 0.5 + k * 0.9
+			cv.draw_line(Vector2(sx2 - 0.3, cy + 0.5) * M, Vector2(sx2 - 0.3, cy + 0.2) * M, Pal.tint(Pal.FLUID, 0.25), 1.0)
+			cv.draw_line(Vector2(sx2 + 0.3, cy + 0.5) * M, Vector2(sx2 + 0.3, cy + 0.2) * M, Pal.tint(Pal.FLUID, 0.25), 1.0)
+	for i in mini(hazard.size(), per * 2):
+		var it: Dictionary = hazard[i]
+		var c := Vector2(hh.position.x + 0.5 + (i % per) * 0.9, hh.end.y - 0.7 - (i / per) * 1.7)
+		_rect(Rect2(c - Vector2(0.3, 0.45), Vector2(0.6, 0.9)), Pal.tint(cask_col(it.kind), 0.7, 1.1))
+	_nav_light(Vector2(r.position.x + 0.3, r.position.y + 0.6), Color(1.0, 0.22, 0.18), 0.5)
+	_nav_light(Vector2(r.end.x - 0.3, r.end.y - 0.6), Color(0.3, 1.0, 0.55), 2.2)
+	_far_name(base, Vector2(r.position.x + 0.6, r.end.y + 2.0), "HB-03 · " + Txt.t("sh_barge"), z, 14, Pal.ink(0.85))
+
+
 func _draw_freighter(font: Font, font_b: Font, z: float) -> void:
 	var r := ship_rect()
 	var x0 := r.position.x
 	var x1 := r.end.x
 	var y0 := r.position.y
 	var y1 := r.end.y
-	# the hull: bow to the left, engines aft
-	var hull := PackedVector2Array([Vector2(x0 + 4.0, y0), Vector2(x1 - 5.0, y0), Vector2(x1 - 3.0, y0 + 1.2), Vector2(x1 - 3.0, y1 - 1.2), Vector2(x1 - 5.0, y1),
-		Vector2(x0 + 4.0, y1), Vector2(x0, y1 - 2.5), Vector2(x0, y0 + 2.5)])
 	var hp := PackedVector2Array()
-	for q in hull:
+	for q in freighter_hull():
 		hp.append(q * M)
 	cv.draw_colored_polygon(hp, Color(0.045, 0.048, 0.056))
 	hp.append(hp[0])
@@ -433,8 +616,9 @@ func _draw_freighter(font: Font, font_b: Font, z: float) -> void:
 func _draw_barge(font: Font, font_b: Font, z: float) -> void:
 	var r := barge_rect()
 	var X: float = dock.furnace_x
-	var hp := PackedVector2Array([r.position * M, Vector2(r.end.x - 2.0, r.position.y) * M, Vector2(r.end.x, r.position.y + 2.0) * M,
-		Vector2(r.end.x, r.end.y) * M, Vector2(r.position.x + 2.0, r.end.y) * M, Vector2(r.position.x, r.end.y - 2.0) * M])
+	var hp := PackedVector2Array()
+	for q in barge_hull():
+		hp.append(q * M)
 	cv.draw_colored_polygon(hp, Color(0.045, 0.048, 0.056))
 	hp.append(hp[0])
 	cv.draw_polyline(hp, Pal.ink(0.6), 1.6)

@@ -58,7 +58,9 @@ func _process(dt: float) -> void:
 	var cx: Codex = game.codex
 	if cx.card != "":
 		shown = cx.card
-	var want := 1.0 if cx.card != "" and game.state == "play" and not game.menu_open and page == null else 0.0
+	# 110 号: the berth extension's card rides along with the build itself
+	var on_build: bool = game.state == "build" and cx.card == Codex.BUILD_CARD
+	var want := 1.0 if cx.card != "" and (game.state == "play" or on_build) and not game.menu_open and page == null else 0.0
 	k = Pal.damp(k, want, 12.0 if want > 0.5 else 16.0, dt)
 	if k < 0.01 and cx.card == "":
 		shown = ""
@@ -146,16 +148,14 @@ func draw_brief(ci: CanvasItem, at: Vector2, w: float, a: float) -> void:
 		ci.draw_rect(brief_rect, Pal.ink(0.2 * a), false, 1.0)
 
 
+# 110 号 (user 2026-10-29, Q4 A): the card stands on the right under the earnings, always, so it
+# never covers the contract panel, the asset board or the hint cards on the left
+const TOP := 150.0
+const EDGE := 22.0
+
+
 func _anchor() -> Vector2:
-	var y := 300.0
-	if game.training:
-		y = 300.0
-	elif game.hud != null:
-		var r: Rect2 = game.hud._contract_rect()
-		y = r.end.y + 18.0
-		if game.assist != null:
-			y += game.assist.cards.size() * 54.0 + (30.0 + game.assist.notes.size() * 18.0 if not game.assist.notes.is_empty() else 0.0)
-	return Vector2(22.0, y)
+	return Vector2(c.size.x - EDGE - W, TOP)
 
 
 func _close_rect() -> Rect2:
@@ -204,7 +204,7 @@ func _draw_card() -> void:
 	var e: Dictionary = CodexData.E.get(id, {})
 	var a := clampf(k, 0.0, 1.0)
 	var ease := Pal.ease_out(a)
-	var p := _anchor() + Vector2((1.0 - ease) * -60.0, 0.0)
+	var p := _anchor() + Vector2((1.0 - ease) * 60.0, 0.0)
 	var h := card_height(id)
 	rect = Rect2(p, Vector2(W, h))
 	c.draw_rect(rect, Color(0.025, 0.027, 0.032, 0.93 * a))

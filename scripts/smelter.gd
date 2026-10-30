@@ -1134,16 +1134,53 @@ func draw_add(ci, F: float, tex: Texture2D) -> void:
 		ci.draw_texture_rect(tex, Rect2(c - Vector2(3.0, 3.0) * M, Vector2(6.0, 6.0) * M), false, Pal.heat(0.6 * flare_t, 1.8))
 
 
-# the plant from far away: its boxes, the furnace body with the melt's colour, the casting line
+# 110 号 (user 2026-10-30: far out the plant's boxes were empty frames, "看起来像没内容的界面框"):
+# far out a machine still reads as one: lit along its top, its foot in shadow, its panels' seams,
+# a grille, a lamp when it runs. Fills and hairlines (1 px at any zoom) only; r in px.
+static func far_box(ci, r: Rect2, fill_c: Color, edge: Color, lamp: Color = Color(0, 0, 0, 0)) -> void:
+	var top := Color(fill_c.r + 0.06, fill_c.g + 0.062, fill_c.b + 0.07)
+	ci.draw_polygon(PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]), PackedColorArray([top, top, fill_c, fill_c]))
+	var b := minf(r.size.y * 0.14, 0.22 * M)
+	ci.draw_rect(Rect2(r.position, Vector2(r.size.x, b)), Color(top.r + 0.07, top.g + 0.072, top.b + 0.08))
+	ci.draw_rect(Rect2(Vector2(r.position.x, r.end.y - b), Vector2(r.size.x, b)), Color(0.018, 0.019, 0.023))
+	# a seam every metre or so
+	var n := clampi(int(round(r.size.x / (1.1 * M))), 1, 8)
+	for i in range(1, n):
+		var x := r.position.x + r.size.x * i / n
+		ci.draw_line(Vector2(x, r.position.y + b), Vector2(x, r.end.y - b), Pal.ink(0.16), 1.0)
+	# a grille of slats, upper right
+	var gw := minf(r.size.x * 0.3, 0.9 * M)
+	var gy := r.position.y + b + r.size.y * 0.14
+	for k in 3:
+		var y := gy + k * minf(r.size.y * 0.1, 0.18 * M)
+		ci.draw_line(Vector2(r.end.x - gw - 0.15 * M, y), Vector2(r.end.x - 0.15 * M, y), Pal.ink(0.22), 1.0)
+	if lamp.a > 0.0:
+		ci.draw_circle(r.position + Vector2(0.25, 0.25) * M + Vector2(0, b), 0.09 * M, lamp)
+	var p := PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y), r.position])
+	ci.draw_polyline(p, edge, 1.0)
+
+
+func _r(x0: float, y0: float, x1: float, y1: float, F: float) -> Rect2:
+	return Rect2(Vector2(X + x0, F + y0) * M, Vector2(x1 - x0, y1 - y0) * M)
+
+
+# the plant from far away: its machines, the furnace body with the melt's colour, the casting line
 func _draw_far(ci, F: float) -> void:
-	var edge := Pal.ink(0.4)
-	_rect(ci, -10.0, 1.8, -6.8, 3.8, F, STEEL, edge)
-	_rect(ci, -11.4, 4.0, -7.6, 5.4, F, Color(0.03, 0.045, 0.055), edge)
-	_rect(ci, -1.4, 1.0, 1.4, 2.85, F, STEEL, edge)
-	_brect(ci, -1.4, 3.9, 1.4, 6.6, F, STEEL, edge)
+	var edge := Pal.ink(0.45)
+	var run := Pal.tint(Pal.FLUID, 0.9, 1.4) if power > 0.1 else Pal.ink(0.25)
+	far_box(ci, _r(-10.0, 1.8, -6.8, 3.8, F), STEEL, edge, run)
+	far_box(ci, _r(-11.4, 4.0, -7.6, 5.4, F), Color(0.03, 0.045, 0.055), edge, Pal.tint(Pal.AIR, 0.8, 1.2))
+	far_box(ci, _r(-1.4, 1.0, 1.4, 2.85, F), STEEL, edge)
+	_brect(ci, -1.4, 3.9, 1.4, 6.6, F, STEEL_HI, edge)
 	_brect(ci, -0.6, 4.0, 0.6, 6.0, F, glow_col(T, 0.9))
-	_rect(ci, 2.6, 3.65, 4.4, 4.75, F, Color(0.03, 0.04, 0.05), edge)
-	ci.draw_line(Vector2(X + LINE_X0, F + 6.15) * M, Vector2(X + LINE_X1, F + 6.15) * M, edge, 2.0)
+	far_box(ci, _r(2.6, 3.65, 4.4, 4.75, F), Color(0.03, 0.04, 0.05), edge)
+	# the casting line: its bed and its rollers
+	ci.draw_rect(Rect2(Vector2(X + LINE_X0, F + 6.0) * M, Vector2(LINE_X1 - LINE_X0, 0.3) * M), Color(0.08, 0.083, 0.094))
+	ci.draw_line(Vector2(X + LINE_X0, F + 6.0) * M, Vector2(X + LINE_X1, F + 6.0) * M, edge, 1.0)
+	var rx := LINE_X0 + 0.4
+	while rx < LINE_X1:
+		ci.draw_line(Vector2(X + rx, F + 6.0) * M, Vector2(X + rx, F + 6.3) * M, Pal.ink(0.3), 1.0)
+		rx += 0.8
 	ci.draw_rect(Rect2(Vector2(X + 10.5, F + 0.85) * M, Vector2(6.9 * M, 3.3 * M)), Color(0.035, 0.037, 0.042, 0.96))
 
 

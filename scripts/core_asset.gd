@@ -80,6 +80,134 @@ const SHIPS := {
 				"risks": ["大刀切开船体，整块往熔炉里送：快、痛快，但设备大多切坏、撞坏，按废料算", "Cut the hull into big sections and feed them to the furnace: quick and satisfying, but most equipment is cut or knocked to scrap"]},
 		],
 	},
+	# 111 号 (user 2026-10-30 "按你推荐": the ten ships a new hand meets first, each with its
+	# core asset and two ways, both measured by the salvage bot)
+	"tug": {
+		"name": ["推进与拖曳设备", "PROPULSION AND TOW GEAR"],
+		"units": ["拖缆绞车、主机、导航", "THE TOW WINCH, THE ENGINE, THE NAV"],
+		"groups": [{"name": ["推进与拖曳", "PROPULSION AND TOW"], "tags": ["WINCH-T", "ENG-T", "NAV-T"]}],
+		"methods": [
+			{"key": "careful", "name": ["保全拆", "TAKE IT APART"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["先泄压、断电、抽空燃料；设备用维护工具拧下固定件整件取，切到就成废料", "Vent, power off, drain the fuel; unbolt each unit whole with the wrench, a cut makes it scrap"]},
+			{"key": "demolish", "name": ["大块切进熔炉", "BIG SECTIONS TO THE FURNACE"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["船体切成大块整块送熔炉：快，但设备跟着一起熔了", "Cut the hull into big sections for the furnace: quick, but the units melt with it"]},
+		],
+	},
+	"pod": {
+		"name": ["货柜", "THE CONTAINERS"],
+		"units": ["5 个货柜", "5 CONTAINERS"],
+		"groups": [{"name": ["货柜", "CONTAINERS"], "tags": ["CG-1", "CG-2", "CG-3", "CG-4", "CG-5"]}],
+		"methods": [
+			{"key": "careful", "name": ["开舱门逐个取", "THROUGH THE DOOR, ONE BY ONE"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["开货舱门，拧开每个货柜的固定件，逐个抓出来；最大的 CG-3 有 3.8 t，超过抓钩要吊车", "Open the hold, unbolt each container and take it out one by one; CG-3 is 3.8 t, past the grapple: crane it"]},
+			{"key": "demolish", "name": ["切开舱壁整排拖出", "CUT THE WALL, DRAG THE ROW"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["切开货舱壁，连着舱板整排拖出来：快，但刀口贴着货柜，切到就成废料", "Cut the hold's wall and drag the row out on its deck: quick, but the cuts run along the boxes and a cut box is scrap"]},
+		],
+	},
+	"s09": {
+		"name": ["作业设备", "THE WORK GEAR"],
+		"units": ["机械臂、燃料电池、主机", "THE ARM, THE FUEL CELL, THE ENGINE"],
+		"groups": [{"name": ["作业设备", "WORK GEAR"], "tags": ["ARM-01", "FC-01", "MAIN-E"]}],
+		"methods": [
+			{"key": "careful", "name": ["保全拆", "TAKE IT APART"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["燃料电池先停机、放掉电容、抽空氢氧再拆；机械臂是强制回收件，整件拧下送设备口", "Stop the fuel cell, drain the capacitor, take the hydrogen and oxygen out first; the arm is a named piece: unbolt it whole"]},
+			{"key": "demolish", "name": ["大块切进熔炉", "BIG SECTIONS TO THE FURNACE"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["船体切成大块送熔炉：快，但氢氧还在就切会爆燃，设备跟着熔掉", "Big sections to the furnace: quick, but cut with the gas still in it flares, and the units melt"]},
+		],
+	},
+	"qc30": {
+		"name": ["量子芯片与制冷机", "THE QUANTUM CHIP AND ITS FRIDGE"],
+		"units": ["量子芯片 QPU + 稀释制冷机五级冷台", "THE QPU + THE FRIDGE'S FIVE STAGES"],
+		"groups": [
+			{"name": ["量子芯片", "QUANTUM CHIP"], "tags": ["QPU"]},
+			{"name": ["制冷机冷台", "FRIDGE STAGES"], "tags": ["STG-50K", "STG-4K", "STG-STILL", "STG-CP", "STG-MXC"]},
+		],
+		"dv": {"dv_qpu_shock": "qpu_shock", "dv_qpu_brittle": "qpu_brittle", "dv_qpu_vibration": "qpu_vibration", "dv_mix_boil": "mix_boil"},
+		"methods": [
+			{"key": "careful", "name": ["慢等自然回温", "LET IT WARM BY ITSELF"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["先锁隔振台、停循环、回收混合气，再停脉管，等它自己回到 250 K 以上才拆冷台：安全，但要等很久", "Lock the isolation table, stop the circulation, recover the mixture, then stop the pulse tube and wait till it is past 250 K before the stack: safe, and slow"]},
+			{"key": "demolish", "name": ["开加热器快速回温", "HEATERS ON"], "minutes": [0, 0], "lo": 0.0, "hi": 1.0,
+				"risks": ["同样的顺序，停脉管后开加热器，回温快几倍；混合室还没过 30 K 就开，芯片当场裂", "The same order, heaters on once the pulse tube stops: several times quicker; on before the mixing chamber is past 30 K and the chip cracks"]},
+		],
+	},
+	"jd38": {
+		"name": ["快递箱", "THE EXPRESS BOXES"],
+		"units": ["两个快递箱 + 邮袋", "TWO EXPRESS BOXES + THE MAIL"],
+		"groups": [{"name": ["快递", "EXPRESS"], "tags": ["BOX-1", "BOX-2", "MAIL"]}],
+		"dv": {"dv_rail": "rail_cut", "dv_drop": "rail_drop"},
+		"methods": [
+			{"key": "careful", "name": ["解锁沿轨道滑出", "RELEASE THEM DOWN THE RAILS"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["先开货舱门和船尾门，再拨轨道锁 LK-U、LK-L：箱子顺着轨道自己滑出来；门没开就解锁，箱子撞门受伤", "Open the hold door and the stern door, then the rail locks LK-U, LK-L: the boxes run out on their rails; released into a shut door they dent"]},
+			{"key": "demolish", "name": ["切开舱壁直接抓", "CUT IN AND GRAB"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["扳手拧不开轨道锁，只能连轨道一起切下来：快，但箱子被扯伤", "The wrench can't undo a rail lock: you cut the rail with the box on it, quick, but the box is wrenched"]},
+		],
+	},
+	"h22": {
+		"name": ["拖头与液压站", "THE TOW HEADS AND THE HYDRAULICS"],
+		"units": ["上下两个拖头 + 液压站", "TWO TOW HEADS + THE HPU"],
+		"groups": [
+			{"name": ["拖头", "TOW HEADS"], "tags": ["TH-U", "TH-L"]},
+			{"name": ["液压站", "HYDRAULICS"], "tags": ["HPU"]},
+		],
+		"dv": {"dv_preload": "arm_snap"},
+		"methods": [
+			{"key": "careful", "name": ["消磁泄压再拆", "DEGAUSS, BLEED, THEN TAKE"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["先断线圈电源再消磁，蓄能器泄压、拔掉拖臂的销子，最后拧下拖头；拖头 2.2 t 要吊车", "Kill the coil supply and degauss, bleed the accumulator, pull the arm pins, then unbolt the heads; 2.2 t each, crane them"]},
+			{"key": "demolish", "name": ["带磁带压快拆", "STRAIGHT IN"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["不消磁不泄压直接切：残磁把无人机和碎件吸过去，拖臂带压弹出，砸坏拖头", "Cut it as it is: the residual field drags the drone and loose pieces in, the arms spring out under pressure into the heads"]},
+		],
+	},
+	"st40": {
+		"name": ["主机与电子件", "THE ENGINE AND THE ELECTRONICS"],
+		"units": ["主机、电池 + 驾驶舱和电子舱的电子件", "THE ENGINE, THE BATTERY + THE COCKPIT AND AVIONICS ELECTRONICS"],
+		"groups": [
+			{"name": ["动力", "POWER"], "tags": ["ENG", "BAT-R"]},
+			{"name": ["电子件", "ELECTRONICS"], "tags": ["CON-P", "RDR", "TLM", "AV-P", "INV", "GYRO", "DAQ", "NOSE-S"]},
+		],
+		"dv": {"dv_fume": "fume", "dv_glass_fog": "fume"},
+		"methods": [
+			{"key": "careful", "name": ["抽空或拧螺栓拆壳", "VACUUM OR UNBOLT"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["先把舱室抽到真空再切碳纤维壳，或者用维护工具拧下壳板：都不冒烟", "Pump a room down before you cut its carbon skin, or unbolt the panels: no smoke either way"]},
+			{"key": "demolish", "name": ["带气直接切壳", "CUT THE SKIN WITH AIR IN"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["舱里还有空气就切碳纤维壳：快，但毒烟把电子件熏得掉价，玻璃也会起雾", "Cut the carbon skin with air in the room: quick, but the smoke spoils the electronics and fogs the glass"]},
+		],
+	},
+	"my48": {
+		"name": ["主人的收藏", "THE OWNER'S THINGS"],
+		"units": ["保险箱、钢琴、酒墙、水疗、吧台、艺术品", "THE SAFE, THE PIANO, THE WINE WALL, THE SPA, THE BAR, THE ART"],
+		"groups": [{"name": ["收藏", "COLLECTION"], "tags": ["SAFE", "PIANO", "WINE", "SPA", "BAR", "ART"]}],
+		"dv": {"dv_fire": "o2_flash", "dv_glass": "glass_craze"},
+		"methods": [
+			{"key": "careful", "name": ["先抽走富氧空气", "THE RICH AIR OUT FIRST"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["先撬开卡死的气口 G-S，把主舱的富氧空气抽走再动刀；玻璃拧螺栓拆，别在旁边切", "Free the jammed port G-S and pump the oxygen-rich air out before any cut; unbolt the glass, never cut beside it"]},
+			{"key": "demolish", "name": ["带气快拆", "STRAIGHT IN"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["富氧空气还在就切：闪燃烧遍主舱，收藏被烧坏，玻璃也会龟裂", "Cut with the rich air in: a flash fire through the saloon scorches the collection and crazes the glass"]},
+		],
+	},
+	"ev55": {
+		"name": ["观测仪器", "THE INSTRUMENTS"],
+		"units": ["日冕仪、两台光谱仪、仪器计算机", "THE CORONAGRAPH, TWO SPECTROMETERS, THE INSTRUMENT COMPUTER"],
+		"groups": [{"name": ["观测仪器", "INSTRUMENTS"], "tags": ["CORO", "SPEC-1", "SPEC-2", "ICP"]}],
+		"dv": {"dv_heat_spoil": "heat_spoil"},
+		"methods": [
+			{"key": "careful", "name": ["接冷却回路等降温", "COOLING LOOP, THEN TAKE"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["接上船坞冷却回路 COOL-S，等仪器舱降到 150°C 以下再取：仪器完好，要等", "Plug in the berth's cooling loop (COOL-S) and wait for the instrument room below 150 °C: whole, and a wait"]},
+			{"key": "demolish", "name": ["边等边拆", "WORK WHILE IT COOLS"], "minutes": [0, 0], "lo": 0.0, "hi": 0.6,
+				"risks": ["先拆已经冷下来的区，热区边等边拆：快，但从 150°C 以上的区取出的设备热损，热瓦切开会碎", "Strip the cool zones first and the hot ones as they come: quick, but units out of a zone over 150 °C are heat-damaged, hot tiles shatter"]},
+		],
+	},
+	"ih55": {
+		"name": ["气囊下的设备", "WHAT THE BAGS COVER"],
+		"units": ["环控、气泵、控制台、电池、电容、配电板、两个储物柜", "ENV CONTROL, BAG PUMP, CONSOLE, BATTERY, CAPACITOR, PANEL, TWO LOCKERS"],
+		"groups": [{"name": ["气囊下的设备", "UNDER THE BAGS"], "tags": ["ENV-1", "GAS-P", "CON-S", "BAT-S", "CAP-S", "PNL-1", "STORE-1", "STORE-2"]}],
+		"dv": {"dv_bag_rip": "bag_rip", "dv_strap_whip": "strap_whip"},
+		"methods": [
+			{"key": "careful", "name": ["放气松带再拆", "LET THEM DOWN, SLACKEN, TAKE"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["四个气囊各自接 BV 口放气，折叠贴到脊梁上，再拨 TN 松开张紧器，最后拆设备", "Let each bag down at its BV port till it folds onto the spine, the tensioners (TN) off, then the units"]},
+			{"key": "demolish", "name": ["直接割破气囊", "SLASH THE BAGS"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["带气割气囊：快，但气囊当场撕开塌下来砸坏下面的设备，绷着的绑带也会甩", "Cut a bag with gas in it: quick, but it rips and comes down on the units, and a taut strap whips"]},
+		],
+	},
 	# 94 号 (user 2026-10-28: segment by segment against the whole mirror; the whole is 32.6 t, the
 	# crane takes 12 t: a backplane at a time instead; the segments' state in words, no letters)
 	"ob90": {
@@ -105,6 +233,20 @@ const CAUSES := {
 	"static": [["静电击穿", "STATIC PINHOLES"], ["没接地就收卷，静电击穿了帆膜", "wound unearthed: static pinholed the film"], ["收卷前先接上左下角的接地线 GND", "Earth it at GND (bottom left) before you wind"]],
 	"holes": [["碎件打孔", "HOLED"], ["飘浮的碎件打穿了帆膜", "loose pieces holed the film"], ["收卷前把帆前面飘着的碎件清走", "Clear the loose pieces off the film before you wind"]],
 	"soot": [["熔渣熏黑", "SOOTED"], ["在帆附近切割，熔渣熏黑了帆膜", "cutting close by blackened the film"], ["先收帆，再切帆附近的结构", "Furl first, then cut the structure near the film"]],
+	# 111 号: the ten small ships
+	"qpu_shock": [["加热过早，芯片裂", "HEATED TOO SOON"], ["混合室还没过 30 K 就开了加热器，量子芯片热震开裂", "the heaters on before the mixing chamber passed 30 K: the chip cracked"], ["停脉管后先等混合室回到 30 K 以上，再开加热器 HEAT", "After the pulse tube stops, wait for the mixing chamber past 30 K before HEAT"]],
+	"qpu_brittle": [["低温时动了冷台", "STACK TOUCHED COLD"], ["混合室还在 250 K 以下就切开或拆下冷台，芯片脆裂", "the stack cut or freed under 250 K: the chip cracked"], ["混合室回到 250 K 以上再拆冷台", "Wait for the mixing chamber past 250 K before the stack"]],
+	"qpu_vibration": [["震伤芯片", "SHAKEN"], ["隔振台没锁，附近切割的震动传到芯片", "the isolation table floating, a cut close by shook the chip"], ["切制冷机附近之前，先拨 VI-LOCK 锁住隔振台", "Lock the isolation table (VI-LOCK) before you cut near the fridge"]],
+	"mix_boil": [["混合气沸散", "MIXTURE BOILED OFF"], ["混合气没回收就停了脉管，混合气沸散，冷台受损", "the pulse tube stopped with the mixture still in: it boiled off and hurt the stages"], ["先停循环 CIRC，接 G-MIX 把混合气抽到 20 kPa 以下，再停脉管 PT", "Circulation (CIRC) off, recover the mixture at G-MIX below 20 kPa, then the pulse tube (PT)"]],
+	"rail_cut": [["连轨道切下", "CUT OFF ITS RAIL"], ["箱子还锁在轨道上就把轨道切了，箱子被扯伤", "a rail cut with its box still locked on: the box was wrenched"], ["开门、拨轨道锁，让箱子自己沿轨道滑出", "Open the doors and throw the rail lock: the box runs out on its own"]],
+	"rail_drop": [["整组砸落", "DROPPED"], ["箱子还锁着就动了吊挂，整组砸下来", "the hangers taken with the boxes still locked: the set came down"], ["先解轨道锁，再动吊挂", "Release the rails before the hangers"]],
+	"arm_snap": [["拖臂弹出", "ARM SPRANG"], ["拖臂还带着液压和销子就拆了枢轴，臂弹出砸坏拖头", "a pivot taken with the arm still pinned and under pressure: it sprang into the head"], ["先给蓄能器泄压、拔掉 PIN 销子，再拆拖臂", "Bleed the accumulator and pull the pins before the arm"]],
+	"fume": [["毒烟熏坏", "SMOKED"], ["舱里有空气时切碳纤维壳，毒烟把电子件熏得掉价", "the carbon skin cut with air in the room: the smoke spoiled the electronics"], ["切壳之前先把舱室抽到真空，或者用维护工具拧下壳板", "Pump the room down before you cut the skin, or unbolt the panels"]],
+	"o2_flash": [["富氧闪燃", "FLASH FIRE"], ["主舱的富氧空气还在就切，闪燃把收藏烧坏", "cut with the oxygen-rich air still in: a flash fire scorched the collection"], ["先撬开 G-S，把主舱的富氧空气抽走再动刀", "Free G-S and pump the rich air out before any cut"]],
+	"glass_craze": [["玻璃龟裂", "GLASS CRAZED"], ["在精密玻璃旁边切割，玻璃被烤裂", "cutting beside the glazing crazed it"], ["玻璃用维护工具拧下来，别在旁边切", "Unbolt the glass; never cut beside it"]],
+	"heat_spoil": [["热损", "HEAT-DAMAGED"], ["从 150°C 以上的区取出设备，热损掉价", "a unit taken out of a zone over 150 °C was heat-damaged"], ["接上冷却回路 COOL-S，等那一区降到 150°C 以下再取", "Plug in the cooling loop (COOL-S) and wait for the zone below 150 °C"]],
+	"bag_rip": [["气囊塌下", "BAG CAME DOWN"], ["带气割破气囊，气囊撕开塌下来砸坏了设备", "a bag cut with gas in it ripped and came down on the units"], ["先接 BV 口把气囊放瘪，再切", "Let the bag down at its BV port before you cut"]],
+	"strap_whip": [["绑带甩伤", "STRAP WHIPPED"], ["张紧器还绷着就切了绑带，甩伤了设备", "a strap cut with its tensioner taut whipped into the units"], ["先拨 TN 松开张紧器，再切绑带", "Tensioner (TN) off before you cut its straps"]],
 	# OB-90's mirror
 	"dust": [["粉尘污染", "DUSTED"], ["在镜子附近切割，金属粉尘落在没盖住的镜面上", "cutting close by dusted the uncovered coating"], ["切主镜附近的结构之前，先放下防尘罩 CVR", "Run the dust cover (CVR) down before you cut near the mirror"]],
 	"drop": [["摔裂", "DROPPED"], ["支撑器没锁就取下镜片，镜片掉出镜座摔裂", "taken off unlocked, the segment dropped out of its seat and cracked"], ["取镜片之前，先给控制柜 MCC 供电，合上三圈支撑器锁", "Power the mirror cabinet (MCC) and lock all three rings before you take a segment"]],
@@ -130,6 +272,11 @@ const CAUSES := {
 }
 
 # GR-7 and the like: the game's own losses on a unit, by what they were
+# 111 号: a ship's own reading of a loss code (H-22's arm springing is not M-14's belt), else the common one
+static func _dv(g, code: String) -> String:
+	return str(spec(g).get("dv", {}).get(code, EQUIP_DV.get(code, "")))
+
+
 const EQUIP_DV := {"dv_cut": "eq_cut", "dv_impact": "eq_impact", "dv_fall": "eq_impact", "dv_snap": "eq_impact", "dv_tear": "eq_impact", "dv_burst": "burst", "dv_blowout": "burst", "dv_blast": "blast", "dv_fire": "fire", "dv_ore_spill": "ore_spill", "dv_preload": "belt_snap", "dv_kink": "kink", "dv_sag": "sag", "dv_rod_snap": "rod_snap"}
 const MIRROR_DV := {"dv_mirror_dust": "dust", "dv_mirror_drop": "drop", "dv_mirror_edge": "edge", "dv_impact": "impact"}
 const RING_NAMES := {3: ["外圈", "OUTER"], 2: ["中圈", "MIDDLE"], 1: ["内圈", "INNER"]}
@@ -173,6 +320,12 @@ static func has(g) -> bool:
 			return g.nested != null and g.nested.active()
 		"gr7":
 			for gr in SHIPS.gr7.groups:
+				for t in gr.tags:
+					if _unit(g, str(t)) != null:
+						return true
+		_:
+			# 111 号: a ship of units only — it has its asset while any of them is aboard
+			for gr in spec(g).get("groups", []):
 				for t in gr.tags:
 					if _unit(g, str(t)) != null:
 						return true
@@ -227,7 +380,7 @@ static func full(g) -> float:
 				if p != null:
 					sum += float(p.value)
 			return sum
-		"gr7", "m14":
+		"gr7", "m14", "tug", "pod", "s09", "qc30", "jd38", "h22", "st40", "my48", "ev55", "ih55":
 			var sum := ore_full(g) if spec(g).get("ore", false) else 0.0
 			for t in _units(g):
 				var p = _unit(g, str(t))
@@ -263,7 +416,7 @@ static func board(g) -> Dictionary:
 			return _sail_board(g)
 		"ob90":
 			return _mirror_board(g)
-		"gr7", "m14":
+		"gr7", "m14", "tug", "pod", "s09", "qc30", "jd38", "h22", "st40", "my48", "ev55", "ih55":
 			return _equip_board(g)
 		"cf90":
 			return _box_board(g)
@@ -289,14 +442,15 @@ static func _sail_board(g) -> Dictionary:
 		if st.torn > 0:
 			bits.append(w("撕裂 %d 片", "%d TORN") % st.torn)
 		rows.append({"name": s.quad_name(q), "text": " · ".join(bits), "right": "%s %s" % [s.grade_letter(st.grade), Pal.money(st.worth)],
-			"grade": st.grade, "alert": st.taut and not st.done, "done": st.done})
+			"grade": st.grade, "alert": st.taut and not st.done, "done": st.done,
+			"fix": w("拨 %s 松开绞盘刹车再收卷", "%s off to slacken it before winding") % str(s.cfg.get("quads", {}).get(q, ""))})
 	var recent: Array = []
 	for i in range(s.events.size() - 1, maxi(-1, s.events.size() - 4), -1):
 		var e: Dictionary = s.events[i]
 		recent.append({"text": "%s · %s" % [s.quad_name(str(e.q)), cause_short(str(e.k))], "money": float(e.money)})
 	var warn: Array = []
 	if not s.grounded():
-		warn.append(w("未接地：收卷会被静电击穿", "NOT EARTHED: WINDING WILL PINHOLE"))
+		warn.append(w("未接地：拨 %s 接地，否则收卷会被静电击穿", "NOT EARTHED: %s ON, OR WINDING PINHOLES") % str(s.cfg.get("ground", "")))
 	return {"name": _t(spec(g).name), "worth": s.worth_now(), "full": full(g), "warn": warn, "rows": rows, "recent": recent}
 
 
@@ -328,17 +482,21 @@ static func _mirror_board(g) -> Dictionary:
 		if op.on_mirror(str(t)):
 			left = true
 	if left and op.cover_down() < 0.5:
-		warn.append(w("防尘罩没放下：附近切割会污染镜面", "COVER UP: CUTTING CLOSE BY DUSTS THE MIRROR"))
+		warn.append(w("防尘罩没放下：拨 %s 放下，附近切割会污染镜面", "COVER UP: %s TO LOWER IT; CUTTING CLOSE BY DUSTS THE MIRROR") % str(op.cfg.get("cover", {}).get("switch", "")))
 	var rows: Array = []
 	# the locks, one row
 	var lk: Array = []
 	var any_open := false
+	var sws: Array = []
 	for r in [1, 2, 3]:
 		var ok: bool = op.ring_locked(r)
 		lk.append("%s%s" % [_t(RING_NAMES[r]), "✓" if ok else "✗"])
 		if not ok and op._ring_left(r):
 			any_open = true
-	rows.append({"name": w("锁", "LOCKS"), "text": " ".join(lk), "right": w("控制柜有电", "MCC LIVE") if op._powered(str(op.cfg.get("mcc", ""))) else w("控制柜没电", "MCC DEAD"), "grade": 0.0 if any_open else 1.0, "alert": any_open, "done": false})
+			sws.append(str(op.cfg.get("locks", {}).get(str(r), "")))
+	var live: bool = op._powered(str(op.cfg.get("mcc", "")))
+	rows.append({"name": w("锁", "LOCKS"), "text": " ".join(lk), "right": w("控制柜有电", "MCC LIVE") if live else w("控制柜没电", "MCC DEAD"), "grade": 0.0 if any_open else 1.0, "alert": any_open, "done": false,
+		"fix": (w("拨 %s 合锁（控制柜 %s 上）", "%s to lock (on the cabinet %s)") % ["/".join(sws), str(op.cfg.get("mcc", ""))]) if live else w("先给控制柜接电，再拨 %s 合锁", "power the cabinet, then %s to lock") % "/".join(sws)})
 	var worth := 0.0
 	for r in [3, 2, 1]:
 		var on := 0
@@ -384,7 +542,7 @@ static func review(g) -> Dictionary:
 			return _sail_review(g)
 		"ob90":
 			return _mirror_review(g)
-		"gr7", "m14":
+		"gr7", "m14", "tug", "pod", "s09", "qc30", "jd38", "h22", "st40", "my48", "ev55", "ih55":
 			return _equip_review(g)
 		"cf90":
 			return _box_review(g)
@@ -554,12 +712,100 @@ static func _equip_board(g) -> Dictionary:
 				"grade": v / maxf(float(p.value), 1.0), "alert": not p.intact or p.cond < 0.9, "done": p.gone})
 	var tags := _units(g)
 	var recent: Array = []
-	var mine: Array = g.devalued.filter(func(d): return tags.has(str(d[1])) and EQUIP_DV.has(str(d[0])))
+	var mine: Array = g.devalued.filter(func(d): return tags.has(str(d[1])) and _dv(g, str(d[0])) != "")
 	for i in range(mine.size() - 1, maxi(-1, mine.size() - 4), -1):
-		recent.append({"text": "%s · %s" % [str(mine[i][1]), cause_short(EQUIP_DV[str(mine[i][0])])], "money": float(mine[i][2])})
+		recent.append({"text": "%s · %s" % [str(mine[i][1]), cause_short(_dv(g, str(mine[i][0])))], "money": float(mine[i][2])})
+	_ship_warn(g, warn)
 	if _ship_live(g):
 		warn.append(w("船还没安全：先断电、泄压、放空再动刀", "NOT SAFE YET: POWER OFF, VENT, DRAIN BEFORE YOU CUT"))
 	return {"name": _t(spec(g).name), "worth": worth, "full": full(g), "warn": warn, "rows": rows, "recent": recent}
+
+
+# 111 号: what on each small ship still bites, said with what to do about it (Q3 A)
+static func _ship_warn(g, warn: Array) -> void:
+	var s = g.sys
+	match ship_key(g):
+		"qc30":
+			var d = g.dilution
+			if d == null or not d.active():
+				return
+			if not d.locked():
+				warn.append(w("隔振台没锁：附近切割会震伤芯片（拨 VI-LOCK）", "ISOLATION TABLE FLOATING: A CUT CLOSE BY SHAKES THE CHIP (VI-LOCK)"))
+			var t: float = d.mxc_temp()
+			if t < float(d.cfg.get("brittle_T", 250.0)):
+				var tt := ("%.0f mK" % (t * 1000.0)) if t < 1.0 else ("%.0f K" % t)
+				warn.append(w("混合室 %s：回到 250 K 以上才能拆冷台", "MIXING CHAMBER %s: NOT THE STACK TILL PAST 250 K") % tt)
+		"h22":
+			var m = g.mech
+			if m == null:
+				return
+			var mt := 0.0
+			for t in ["TH-U", "TH-L"]:
+				mt = maxf(mt, m.field(t))
+			if mt > 1.0:
+				warn.append(w("拖头残磁 %.0f mT：会吸住无人机和碎件（断开 K-H 后拨 DEGAUSS）", "TOW HEADS AT %.0f mT: THEY PULL THE DRONE IN (K-H OFF, THEN DEGAUSS)") % mt)
+			for l in m.loads:
+				if l.alive and not l.fired:
+					warn.append(w("拖臂还带压上着销：先给 ACC 泄压、拔 PIN 再拆", "ARMS PINNED UNDER PRESSURE: BLEED ACC, PULL THE PINS FIRST"))
+					break
+		"st40":
+			var c = g.composite
+			if c == null or not c.active():
+				return
+			for r in g.world.rooms:
+				if c.level(r) > 0.05:
+					warn.append(w("%s 有毒烟：电子件在掉价（接气口抽走空气）", "SMOKE IN %s: THE ELECTRONICS ARE SPOILING (PUMP IT OUT)") % g.room_name(r))
+			for r in g.world.rooms:
+				if s.P(r) > 20.0:
+					warn.append(w("舱里还有空气：切碳纤维壳会冒毒烟（先抽真空，或拧螺栓拆壳板）", "AIR ABOARD: CUTTING THE CARBON SKIN SMOKES (PUMP DOWN, OR UNBOLT THE PANELS)"))
+					break
+		"my48":
+			var a = g.atmos
+			if a == null:
+				return
+			for r in g.world.rooms:
+				if s.P(r) > 20.0 and s.o2_frac(r) > a.fire_o2():
+					warn.append(w("%s 富氧 %d%%：附近切割会闪燃（撬开 G-S，抽走空气）", "%s AT %d%% OXYGEN: A CUT CLOSE BY FLASHES OVER (FREE G-S, PUMP IT OUT)") % [g.room_name(r), int(round(s.o2_frac(r) * 100.0))])
+		"ev55":
+			var th = g.thermal
+			if th == null or not th.active():
+				return
+			var hot := -1.0
+			var zn := ""
+			for gr in spec(g).groups:
+				for t in gr.tags:
+					var p = _unit(g, str(t))
+					if p == null or p.gone:
+						continue
+					var z: String = th.zone_of(p)
+					if z != "" and th.zone_temp(z) > hot:
+						hot = th.zone_temp(z)
+						zn = z
+			if hot > float(th.cfg.get("spoil_T", 150.0)):
+				warn.append(w("仪器所在区 %.0f°C：150°C 以下再取（接 COOL-S 降得快）", "THE INSTRUMENTS' ZONE AT %.0f °C: TAKE THEM BELOW 150 (COOL-S COOLS IT FASTER)") % hot)
+		"ih55":
+			var sh = g.softshell
+			if sh == null or not sh.active():
+				return
+			var up := 0
+			var tight := 0
+			for b in sh.cfg.get("bags", {}):
+				if sh.inflated(str(b)):
+					up += 1
+				if sh.taut(str(b)):
+					tight += 1
+			if up > 0:
+				warn.append(w("%d 个气囊还鼓着：带气切会塌下砸设备（接 BV 口放气）", "%d BAGS STILL UP: CUT ONE AND IT COMES DOWN ON THE UNITS (LET IT DOWN AT ITS BV)") % up)
+			if tight > 0:
+				warn.append(w("%d 个张紧器还绷着：切绑带会甩（先拨 TN 松开）", "%d TENSIONERS TAUT: A STRAP CUT WHIPS (TN OFF FIRST)") % tight)
+		"jd38":
+			var rl = g.rails
+			if rl == null or not rl.active():
+				return
+			for sid in rl.cfg:
+				if not rl.released.has(sid):
+					warn.append(w("快递箱锁在轨道上：开货舱门和船尾门，再拨 LK-U、LK-L 让箱子滑出", "THE BOXES ARE LOCKED ON THEIR RAILS: OPEN THE DOORS, THEN LK-U AND LK-L"))
+					break
 
 
 static func _equip_review(g) -> Dictionary:
@@ -597,9 +843,9 @@ static func _equip_review(g) -> Dictionary:
 	var tags := _units(g)
 	var by := {}
 	for d in g.devalued:
-		if not tags.has(str(d[1])) or not EQUIP_DV.has(str(d[0])):
+		if not tags.has(str(d[1])) or _dv(g, str(d[0])) == "":
 			continue
-		var k: String = EQUIP_DV[str(d[0])]
+		var k: String = _dv(g, str(d[0]))
 		if not by.has(k):
 			by[k] = {"money": 0.0, "n": 0}
 		by[k].money = float(by[k].money) + float(d[2])
@@ -630,6 +876,49 @@ static func _equip_review(g) -> Dictionary:
 # carrier stripped in 51.5 min of work (99.99 %, no incident); careless cut into its hull at
 # 12.5 min (the premium gone) and fed it all to the furnace: none of it, 47 min, $12,000 in fines
 const BOT_RUNS := {
+	# 111 号, 2026-10-30: the ten small ships as built, no crane, one run each way (tests/bot_run.gd
+	# paced; careless = straight to cutting, all to the furnace). Minutes: the work until the last money
+	# came in (on the runs the bot never finished, it circled one or two long pieces at the end)
+	"tug": {
+		"careful": {"lo": 18000.0, "hi": 18000.0, "minutes": [8, 9], "note": ["实测整船收入 $36,738，0 事故", "measured, whole ship: $36,738 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [7, 8], "note": ["实测整船收入 $6,856，罚款 $6,000，6 次事故", "measured, whole ship: $6,856 in, $6,000 in fines, 6 incidents"]},
+	},
+	"pod": {
+		"careful": {"lo": 22798.0, "hi": 22798.0, "minutes": [6, 6], "note": ["实测（船坞无吊车）：最重的货柜 CG-3 超过抓钩，被切成废料；整船收入 $51,746，0 事故；有吊车可以全拿", "measured (no crane): the heaviest box, CG-3, past the grapple, was cut to scrap; $51,746 in, no incidents; with a crane, all of them"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [4, 5], "note": ["实测整船收入 $8,034，罚款 $9,000，4 次事故", "measured, whole ship: $8,034 in, $9,000 in fines, 4 incidents"]},
+	},
+	"s09": {
+		"careful": {"lo": 30000.0, "hi": 30000.0, "minutes": [11, 12], "note": ["实测整船收入 $83,984，0 事故", "measured, whole ship: $83,984 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [9, 10], "note": ["实测整船收入 $9,605，罚款 $18,000，10 次事故", "measured, whole ship: $9,605 in, $18,000 in fines, 10 incidents"]},
+	},
+	"qc30": {
+		"careful": {"lo": 425000.0, "hi": 425000.0, "minutes": [16, 17], "note": ["实测：芯片完好，一级冷台机器人没送进去；整船收入 $842,009，0 事故，大半时间在等回温", "measured: the chip whole, one stage the bot never got in; $842,009 in, no incidents, most of it waiting for the warm-up"]},
+		"demolish": {"lo": 0.0, "hi": 425000.0, "minutes": [8, 10], "note": ["机器人不会用加热器，没实跑这条路；用时按回温速率算（加热器快 4 倍）。机器人直接切的结果：芯片和冷台全毁，$0", "the bot can't run the heaters, so this way wasn't measured; the time is worked out from the warming rate (the heaters are 4 times quicker). The bot cutting straight in: chip and stack gone, $0"]},
+	},
+	"jd38": {
+		"careful": {"lo": 40000.0, "hi": 40000.0, "minutes": [10, 11], "note": ["实测整船收入 $110,409，0 事故", "measured, whole ship: $110,409 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [9, 9], "note": ["实测整船收入 $17,188，罚款 $6,000，7 次事故", "measured, whole ship: $17,188 in, $6,000 in fines, 7 incidents"]},
+	},
+	"h22": {
+		"careful": {"lo": 41000.0, "hi": 41000.0, "minutes": [14, 15], "note": ["实测整船收入 $149,372，0 事故", "measured, whole ship: $149,372 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [12, 13], "note": ["实测整船收入 $19,389，罚款 $21,000，9 次事故", "measured, whole ship: $19,389 in, $21,000 in fines, 9 incidents"]},
+	},
+	"st40": {
+		"careful": {"lo": 254000.0, "hi": 254000.0, "minutes": [11, 12], "note": ["实测整船收入 $463,603，0 事故", "measured, whole ship: $463,603 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [9, 10], "note": ["实测整船收入 $11,352，罚款 $12,000，6 次事故", "measured, whole ship: $11,352 in, $12,000 in fines, 6 incidents"]},
+	},
+	"my48": {
+		"careful": {"lo": 56883.0, "hi": 56883.0, "minutes": [13, 14], "note": ["实测整船收入 $194,413，0 事故", "measured, whole ship: $194,413 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [12, 12], "note": ["实测整船收入 $7,499，罚款 $3,000，5 次事故", "measured, whole ship: $7,499 in, $3,000 in fines, 5 incidents"]},
+	},
+	"ev55": {
+		"careful": {"lo": 166000.0, "hi": 166000.0, "minutes": [34, 35], "note": ["实测整船收入 $597,780，0 事故，大半时间在等降温", "measured, whole ship: $597,780 in, no incidents, most of it waiting for it to cool"]},
+		"demolish": {"lo": 0.0, "hi": 99600.0, "minutes": [29, 30], "note": ["机器人只会直接切，没实跑'边等边拆'：它直接切的结果是仪器全毁，$0，整船收入 $32,699，罚款 $9,000", "the bot only cuts straight in, it didn't run this way: cutting straight in it lost every instrument, $0; $32,699 in, $9,000 in fines"]},
+	},
+	"ih55": {
+		"careful": {"lo": 33500.0, "hi": 33500.0, "minutes": [33, 34], "note": ["实测整船收入 $109,274，0 事故；一件储物柜机器人没送进去", "measured, whole ship: $109,274 in, no incidents; one locker the bot never got in"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [30, 31], "note": ["实测整船收入 $25,836，16 次事故", "measured, whole ship: $25,836 in, 16 incidents"]},
+	},
 	"lc140": {
 		"careful": {"lo": 1038837.0, "hi": 1038837.0, "minutes": [51, 53],
 			"note": ["实测：小船在开工 3 分钟内整船拖出，整船（含拆完载舰）收入 $1,726,874，0 事故", "measured: the courier out whole within 3 minutes; the whole job, carrier stripped too, $1,726,874, no incidents"]},
@@ -734,7 +1023,8 @@ static func _ore_board(g, rows: Array, warn: Array) -> float:
 		"grade": ow / maxf(f, 1.0), "alert": o.spilled > 0.05 or o.torn, "done": o.fines <= 0.0})
 	rows.append({"name": w("矿块", "CHUNKS"), "text": w("运走 %d / %d 块", "%d OF %d HAULED") % [oc.x, oc.y], "right": "", "grade": 1.0, "alert": false, "done": oc.x >= oc.y})
 	for gt in o.cfg.get("gates", []):
-		rows.append({"name": str(gt), "text": w("放料门 · %s", "GATE · %s") % o.gate_state(str(gt)), "right": "", "grade": 1.0, "alert": o.jammed(str(gt)), "done": false})
+		rows.append({"name": str(gt), "text": w("放料门 · %s", "GATE · %s") % o.gate_state(str(gt)), "right": "", "grade": 1.0, "alert": o.jammed(str(gt)), "done": false,
+			"fix": w("磁力抓钩挪开门口的矿块", "grapple the chunks off the gate")})
 	if o.open_holes() > 0:
 		warn.append(w("矿仓破口在料位线下：细矿正在洒落", "A HOLE BELOW THE HEAP: THE FINES ARE POURING OUT"))
 	if o.torn:
@@ -775,7 +1065,8 @@ static func _box_board(g) -> Dictionary:
 		else:
 			state = w("弯曲 %d%%", "BEND %d%%") % int(round(bd * 100.0))
 		rows.append({"name": w("第 %d 列", "BAY %d") % (b + 1), "text": w("%d/%d 箱 · %s", "%d/%d · %s") % [bx.fill(b), bay.size(), state],
-			"right": Pal.money(v), "grade": v / maxf(whole, 1.0), "alert": bent or bd > 0.85, "done": bx.fill(b) == 0})
+			"right": Pal.money(v), "grade": v / maxf(whole, 1.0), "alert": bent or bd > 0.85, "done": bx.fill(b) == 0,
+			"fix": "" if bent else w("先卸它外侧的箱，或在这一列下放撑杆", "clear the bays outside it first, or prop this one")})
 		if not bent and bd > 0.85 and b != sup:
 			warn.append(w("第 %d 列弯曲 %d%%：再卸它里侧的箱就会折", "BAY %d AT %d%%: TAKE MORE FROM INSIDE IT AND IT KINKS") % [b + 1, int(round(bd * 100.0))])
 	if not bx.unsafe().is_empty():
@@ -871,12 +1162,15 @@ static func _small_board(g) -> Dictionary:
 	var warn: Array = []
 	var on := func(id): return s.on(str(id))
 	var bat := str(n.cfg.get("battery", ""))
-	rows.append({"name": w("电池", "BATTERY"), "text": w("小船电池 %s · %s", "%s · %s") % [bat, w("通着", "ON") if on.call(bat) else w("已断", "OFF")], "right": "", "grade": 1.0, "alert": on.call(bat), "done": not on.call(bat)})
+	rows.append({"name": w("电池", "BATTERY"), "text": w("小船电池 %s · %s", "%s · %s") % [bat, w("通着", "ON") if on.call(bat) else w("已断", "OFF")], "right": "", "grade": 1.0, "alert": on.call(bat), "done": not on.call(bat),
+		"fix": w("拨 %s 断开（在小船舱里）", "%s off (in the small ship's cabin)") % bat})
 	var fuel: float = s.fluid(str(n.cfg.get("fuel", "")))
-	rows.append({"name": w("燃料", "FUEL"), "text": w("小船燃料 %s", "%s ABOARD") % (w("已抽空", "EMPTY") if fuel <= 0.02 else "%.2f" % fuel), "right": "", "grade": 1.0, "alert": fuel > 0.02, "done": fuel <= 0.02})
+	rows.append({"name": w("燃料", "FUEL"), "text": w("小船燃料 %s", "%s ABOARD") % (w("已抽空", "EMPTY") if fuel <= 0.02 else "%.2f" % fuel), "right": "", "grade": 1.0, "alert": fuel > 0.02, "done": fuel <= 0.02,
+		"fix": w("气液回收（5）接小船的燃料口", "hose (5) on the small ship's fuel port")})
 	var pr: float = s.P(str(n.cfg.get("room", "")))
 	var ph: float = s.P(str(n.cfg.get("hold", ""))) if str(n.cfg.get("hold", "")) != "" else 0.0
-	rows.append({"name": w("气压", "AIR"), "text": w("小船舱 %.0f kPa · 货舱 %.0f kPa", "CABIN %.0f kPa · HOLD %.0f kPa") % [pr, ph], "right": "", "grade": 1.0, "alert": pr > 5.0 or ph > 5.0, "done": pr <= 5.0 and ph <= 5.0})
+	rows.append({"name": w("气压", "AIR"), "text": w("小船舱 %.0f kPa · 货舱 %.0f kPa", "CABIN %.0f kPa · HOLD %.0f kPa") % [pr, ph], "right": "", "grade": 1.0, "alert": pr > 5.0 or ph > 5.0, "done": pr <= 5.0 and ph <= 5.0,
+		"fix": w("气液回收（5）接舱室的气口，抽到 5 kPa 以下", "hose (5) on each room's gas port, below 5 kPa")})
 	var locks: Array = n.cfg.get("locks", [])
 	var held: Array = n.locks_held()
 	var next := ""
@@ -887,7 +1181,8 @@ static func _small_board(g) -> Dictionary:
 	rows.append({"name": w("托架锁", "LOCKS"), "text": w("已解 %d / %d", "%d OF %d OFF") % [locks.size() - held.size(), locks.size()] + (w(" · 下一个 %s", " · NEXT %s") % next if next != "" else ""), "right": "", "grade": 1.0, "alert": false, "done": held.is_empty()})
 	rows.append({"name": w("船首门", "BOW DOOR"), "text": w("开", "OPEN") if n.door_open() else w("关", "SHUT"), "right": "", "grade": 1.0, "alert": false, "done": n.door_open()})
 	var blk: Array = n.exit_block()
-	rows.append({"name": w("出口", "WAY OUT"), "text": w("净空", "CLEAR") if blk.is_empty() else w("%d 件挡路（现场标红）", "%d IN THE WAY (RED)") % blk.size(), "right": "", "grade": 1.0, "alert": not blk.is_empty(), "done": blk.is_empty()})
+	rows.append({"name": w("出口", "WAY OUT"), "text": w("净空", "CLEAR") if blk.is_empty() else w("%d 件挡路（现场标红）", "%d IN THE WAY (RED)") % blk.size(), "right": "", "grade": 1.0, "alert": not blk.is_empty(), "done": blk.is_empty(),
+		"fix": w("切开或拖走标红的件", "cut or haul off the pieces marked red")})
 	var state := w("完整", "WHOLE")
 	if n.out:
 		state = w("已拖出", "OUT")

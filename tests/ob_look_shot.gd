@@ -30,6 +30,16 @@ func _run() -> void:
 	current_scene = g
 	await _frames(40)
 	var M := Geom.M
+	# 110 号: the next step on site — the ring on G-I, the board's first line
+	var gi: Vector2 = g.world.ctrl_world(g.world.ctrls["G-I"])
+	g.zoom_override = 1.3
+	g.cam_override = gi + Vector2(-120.0, -60.0)
+	await _frames(60)
+	Cap.save(root, "res://tests/out/oblook_0_next.png")
+	g.zoom_override = 0.5
+	g.cam_override = Vector2(10.0, -1.5) * M
+	await _frames(60)
+	Cap.save(root, "res://tests/out/oblook_0_edge.png")
 	g.zoom_override = 1700.0 / (95.0 * M)
 	g.cam_override = Vector2(45.0, -1.5) * M
 	await _frames(90)

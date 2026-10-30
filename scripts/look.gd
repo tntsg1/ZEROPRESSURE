@@ -694,7 +694,7 @@ func _draw_flight(c: CanvasItem, vs: Vector2, fb: Font, fr: Font) -> void:
 	# the tapes: speed on the left, height above the berth floor on the right
 	var hs: float = d.linear_velocity.length() / Geom.M
 	var alt: float = (Dock.FLOOR_Y * Geom.M - lamp_pos().y) / Geom.M
-	_tape(c, Vector2(cc.x - 760.0, cc.y), hs, 0.5, "HS", "m/s", true, fb, fr)
+	_tape(c, Vector2(_hs_x(cc), cc.y), hs, 0.5, "HS", "m/s", true, fb, fr)
 	_tape(c, Vector2(cc.x + 760.0, cc.y), alt, 1.0, "ALT", "m", false, fb, fr)
 	# the flight-path marker: where the drone is heading, off the middle by its speed
 	var v: Vector2 = d.linear_velocity
@@ -736,6 +736,23 @@ func _job_bar(c: CanvasItem, fb: Font, fr: Font) -> void:
 		c.draw_rect(r, Color(1, 1, 1, 0.95) if lit else Color(1, 1, 1, 0.18))
 	var what := Ops.w("测量", "MEASURE") if str(tl.job.get("kind", "")) == "measure" else Ops.w("作业", "WORK")
 	_ot(c, fb, Vector2(x0, y + 24.0), "%s  %d%%" % [what, int(k * 100.0)], HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(1, 1, 1, 0.95))
+
+
+# 110 号 (the core asset board grew a "next step" line and reached down over the speed tape): the
+# speed tape steps out to the right of the board while they would overlap, gliding there and back
+var _hs_at := -1.0
+func _hs_x(cc: Vector2) -> float:
+	var home := cc.x - 760.0
+	var want := home
+	var ar: Rect2 = game.hud.get("asset_rect") if game.hud != null and game.hud.get("asset_rect") != null else Rect2()
+	# what the tape covers: its tick numbers on the left, the reading's box on the right, its title on top
+	var tape := Rect2(home - 60.0, cc.y - 170.0, 140.0, 330.0)
+	if ar.has_area() and ar.grow(10.0).intersects(tape):
+		want = ar.end.x + 70.0
+	_hs_at = want if _hs_at < 0.0 else lerpf(_hs_at, want, 0.18)
+	if absf(_hs_at - want) < 0.5:
+		_hs_at = want
+	return _hs_at
 
 
 # a vertical tape: the scale slides past a fixed pointer holding the value

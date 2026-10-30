@@ -20,6 +20,7 @@ const CATS := ["struct", "device", "mech", "sys"]
 const HOVER_T := 0.4          # s a thing is pointed at before it counts as met
 const GAP := 6.0              # s between two cards
 const SHOW_T := 12.0          # s a card stays (not while the mouse is on it)
+const BUILD_CARD := "s_berth_ext"   # 110 号: shown during the berth build itself
 const QUEUE := 3
 
 # the seven special courses (one per family of mechanism) and the ships that need them
@@ -374,8 +375,22 @@ static func _book_set(set_name: String, id: String) -> void:
 func _process(dt: float) -> void:
 	if game == null:
 		return
+	# 110 号 (user 2026-10-29: the berth card came up after the build, over the asset board,
+	# still saying "watch it go up"): the berth extension's card shows while the build runs and
+	# goes with it
 	if game.state == "build":
 		_flags["built"] = true
+		if card == "" and not carded(BUILD_CARD):
+			meet(BUILD_CARD, "event")
+			queue.erase(BUILD_CARD)
+			if carded(BUILD_CARD):
+				_flags["ev:" + BUILD_CARD] = true
+				card = BUILD_CARD
+				card_t = 0.0
+				last = card
+		return
+	if card == BUILD_CARD:
+		_close()
 	if game.state != "play" or game.menu_open:
 		return
 	# the card on screen

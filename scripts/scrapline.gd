@@ -605,11 +605,18 @@ func _poly(ci, pts: PackedVector2Array, F: float, col: Color, edge: Color) -> vo
 func draw(ci, F: float, mx: float, font: Font, font_b: Font, zoom: float, txt: Callable) -> void:
 	var ink := Pal.ink(0.42)
 	if zoom < 0.55:
-		# far out: the machines' outlines
-		_rect(ci, PRESS_X0 - 0.2, PRESS_Y0 - 0.2, PRESS_X1 + 0.2, PRESS_Y1 + 0.2, F, Color(0.06, 0.063, 0.072), ink)
-		_rect(ci, 4.15, 1.85, 5.85, 3.55, F, Color(0.03, 0.031, 0.036), ink)
-		ci.draw_circle(_p(MILL.x, MILL.y, F), MILL_R * M, Color(0.03, 0.031, 0.036))
-		ci.draw_circle(_p(DRUM.x, DRUM.y, F), DRUM_R * M, Color(0.08, 0.083, 0.095))
+		# far out: the machines, still machines (110 号: Smelter.far_box)
+		var S = preload("res://scripts/smelter.gd")
+		S.far_box(ci, Rect2(_p(PRESS_X0 - 0.2, PRESS_Y0 - 0.2, F), Vector2(PRESS_X1 - PRESS_X0 + 0.4, PRESS_Y1 - PRESS_Y0 + 0.4) * M), Color(0.06, 0.063, 0.072), ink)
+		S.far_box(ci, Rect2(_p(4.15, 1.85, F), Vector2(1.7, 1.7) * M), Color(0.045, 0.047, 0.054), ink)
+		# the shredder's mill and the eddy drum: their rims, their hubs, a spoke turning
+		for w in [[MILL, MILL_R, Color(0.07, 0.073, 0.083)], [DRUM, DRUM_R, Color(0.1, 0.104, 0.117)]]:
+			var c: Vector2 = _p(w[0].x, w[0].y, F)
+			var rr: float = w[1] * M
+			ci.draw_circle(c, rr, w[2])
+			ci.draw_arc(c, rr, 0.0, TAU, 20, ink, 1.0)
+			ci.draw_circle(c, rr * 0.25, Pal.ink(0.35))
+			ci.draw_line(c, c + Vector2.from_angle(t * 3.0) * rr * 0.9, Pal.ink(0.3), 1.0)
 		ci.draw_rect(Rect2(_p(10.5, 0.95, F), Vector2(6.9, 2.4) * M), Color(0.035, 0.037, 0.042, 0.96))
 		return
 	var steel := Color(0.06, 0.063, 0.072)

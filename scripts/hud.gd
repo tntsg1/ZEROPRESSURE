@@ -12,6 +12,7 @@ var fadd: Control
 var font: Font
 var font_l: Font
 var font_b: Font
+var asset_rect := Rect2()      # 110 号: where the asset board stands this frame (the drone feed's tapes keep clear of it)
 var t := 0.0
 var rate_roll := Motion.Roller.new(0.0, 6.0)
 var credit_roll := Motion.Roller.new(0.0, 7.0)
@@ -745,6 +746,8 @@ func _draw_hud_body() -> void:
 		_left_markers(s)
 		_boundary(s)
 		_haul_guide(s)
+		if not g.training and g.exam == null and not g.in_berth():
+			_next_mark(s)
 		if g.warp:
 			_warp(s)
 		c.draw_set_transform(Vector2((1.0 - _in(1)) * 380.0, 0.0))
@@ -2692,6 +2695,7 @@ func _grade_col(g: float, a: float) -> Color:
 # on the job, under the contract panel: each corner's pull, progress and grade, and the last losses
 func _asset_board(cr: Rect2) -> void:
 	var b: Dictionary = CoreAsset.board(game)
+	asset_rect = Rect2()
 	if b.is_empty():
 		return
 	var rows: Array = b.rows
@@ -2701,8 +2705,20 @@ func _asset_board(cr: Rect2) -> void:
 	var now: String = Ops.w("预估 %s / %s", "NOW %s / %s") % [Pal.money(b.worth), Pal.money(b.full)]
 	# a long name: the worth on a line of its own
 	var two := font.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + font_b.get_string_size(now, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 24.0 > cr.size.x - 34.0
-	var h := 64.0 + (18.0 if two else 0.0) + rows.size() * 24.0 + warn.size() * 18.0 + (10.0 + recent.size() * 20.0 if not recent.is_empty() else 0.0)
+	# 110 号 (Q2 C / Q3 A): the one thing to do next, at the top; under a row that isn't safe, how
+	var nx: Dictionary = NextStep.of(game)
+	var nx_how := 0
+	if not nx.is_empty() and str(nx.how) != "":
+		nx_how = clampi(ceili(_tw(str(nx.how), 12) / maxf(cr.size.x - 40.0, 1.0)), 1, 3)
+	var fixes := 0
+	if NextStep.on(game):
+		for row in rows:
+			if row.get("alert", false) and str(row.get("fix", "")) != "":
+				fixes += 1
+	var nx_h := (42.0 + nx_how * 17.0) if not nx.is_empty() else 0.0
+	var h := 64.0 + (18.0 if two else 0.0) + nx_h + rows.size() * 24.0 + fixes * 17.0 + warn.size() * 18.0 + (10.0 + recent.size() * 20.0 if not recent.is_empty() else 0.0)
 	var r := Rect2(cr.position.x, cr.end.y + 12.0, cr.size.x, h)
+	asset_rect = r
 	UI.panel(c, r, 0.82, 0.0, UiSkin.ACCENT, 1.0)
 	var x := r.position.x + 18.0
 	var y := r.position.y + 24.0
@@ -2715,6 +2731,18 @@ func _asset_board(cr: Rect2) -> void:
 	c.draw_rect(bar, Pal.ink(0.12))
 	c.draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(float(b.worth) / maxf(float(b.full), 1.0), 0.0, 1.0), 3.0)), UiSkin.ACCENT)
 	y += 24.0
+	if not nx.is_empty():
+		var wait: bool = nx.get("wait", false)
+		var pulse := 0.55 + 0.45 * absf(sin(Time.get_ticks_msec() * 0.004)) if not wait else 0.8
+		c.draw_rect(Rect2(x - 10.0, y - 14.0, 3.0, 20.0 + nx_how * 17.0 + 8.0), Color(UiSkin.ACCENT, pulse))
+		_text(Ops.w("进行中", "UNDER WAY") if wait else Ops.w("下一步", "NEXT"), Vector2(x, y - 2.0), 11, Color(UiSkin.ACCENT, 0.95), font)
+		y += 17.0
+		_text(str(nx.t), Vector2(x, y), 15, Pal.ink(0.97), font_b)
+		y += 6.0
+		if nx_how > 0:
+			c.draw_multiline_string(font, Vector2(x, y + 12.0), str(nx.how), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 40.0, 12, nx_how, Pal.ink(0.62))
+			y += nx_how * 17.0
+		y += 22.0
 	for wl in warn:
 		_text(str(wl), Vector2(x, y - 6.0), 12, Pal.heat(0.9, 1.2), font)
 		y += 18.0
@@ -2723,11 +2751,61 @@ func _asset_board(cr: Rect2) -> void:
 		_text(str(row.text), Vector2(x + maxf(44.0, font_b.get_string_size(str(row.name), HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 8.0), y), 12, Pal.heat(0.8, 1.1) if row.get("alert", false) else Pal.ink(0.6), font)
 		_text(str(row.right), Vector2(r.end.x - 16.0, y), 14, _grade_col(float(row.grade), 1.0), font_b, 1)
 		y += 24.0
+		if NextStep.on(game) and row.get("alert", false) and str(row.get("fix", "")) != "":
+			_text("→ " + str(row.fix), Vector2(x + 14.0, y - 7.0), 12, Pal.ink(0.6), font)
+			y += 17.0
 	if not recent.is_empty():
 		y += 4.0
 		for ev in recent:
 			_text("−%s  %s" % [Pal.money(ev.money).trim_prefix("$"), ev.text], Vector2(x, y), 12, Pal.heat(0.9, 1.25), font)
 			y += 20.0
+
+
+# 110 号 (Q2 C): the next step on site — a ring on the control or piece it means, a leader and the
+# same words; out of view, an arrow at the screen's edge pointing to it. A fixed size on the screen.
+func _next_mark(s: Vector2) -> void:
+	var nx: Dictionary = NextStep.of(game)
+	if nx.is_empty():
+		return
+	var at: Vector2 = nx.at
+	if not at.is_finite():
+		return
+	var p := to_screen(at)
+	var acc: Color = UiSkin.ACCENT
+	var wait: bool = nx.get("wait", false)
+	var ph := Time.get_ticks_msec() / 1000.0
+	var label: String = (Ops.w("进行中 · ", "UNDER WAY · ") if wait else Ops.w("下一步 · ", "NEXT · ")) + str(nx.t)
+	# clear of the contract column on the left, the toolbar and the map along the bottom
+	var inset := Rect2(Vector2(380.0, 110.0), s - Vector2(380.0 + 90.0, 110.0 + 230.0))
+	if inset.has_point(p):
+		var rr := 16.0 + (0.0 if wait else 4.0 * absf(sin(ph * 3.0)))
+		c.draw_arc(p, rr, 0.0, TAU, 40, Color(acc, 0.9), 2.0, true)
+		c.draw_arc(p, rr + 7.0, ph * 1.6, ph * 1.6 + 1.2, 12, Color(acc, 0.55), 1.5, true)
+		c.draw_arc(p, rr + 7.0, ph * 1.6 + PI, ph * 1.6 + PI + 1.2, 12, Color(acc, 0.55), 1.5, true)
+		var tw := font_b.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+		var left := p.x + 40.0 + tw + 24.0 > s.x - 40.0
+		var knee := p + Vector2(-34.0 if left else 34.0, -34.0)
+		var end := knee + Vector2(-(tw + 20.0) if left else tw + 20.0, 0.0)
+		c.draw_line(p + (knee - p).normalized() * (rr + 2.0), knee, Color(acc, 0.8), 1.5, true)
+		c.draw_line(knee, end, Color(acc, 0.8), 1.5, true)
+		var tx := minf(knee.x, end.x) + 10.0
+		c.draw_rect(Rect2(tx - 6.0, knee.y - 24.0, tw + 12.0, 22.0), Color(0.02, 0.022, 0.026, 0.85))
+		_text(label, Vector2(tx, knee.y - 8.0), 14, Pal.ink(0.97), font_b)
+		return
+	# out of view: an arrow on the edge, pointing at it
+	var cen := s * 0.5
+	var d := (p - cen).normalized()
+	var e := p
+	e.x = clampf(e.x, inset.position.x, inset.end.x)
+	e.y = clampf(e.y, inset.position.y, inset.end.y)
+	var side := d.orthogonal()
+	var tip := e + d * 10.0
+	c.draw_colored_polygon(PackedVector2Array([tip, e - d * 8.0 + side * 9.0, e - d * 8.0 - side * 9.0]), Color(acc, 0.9))
+	var tw2 := font_b.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+	var lp := e - d * 26.0
+	lp.x = clampf(lp.x - (tw2 if d.x > 0.3 else (0.0 if d.x < -0.3 else tw2 * 0.5)), 20.0, s.x - tw2 - 20.0)
+	c.draw_rect(Rect2(lp.x - 6.0, lp.y - 15.0, tw2 + 12.0, 21.0), Color(0.02, 0.022, 0.026, 0.85))
+	_text(label, Vector2(lp.x, lp.y), 13, Pal.ink(0.92), font_b)
 
 
 # at the settlement, right of the sheet: what came of the asset, what it lost and why, one thing to do
