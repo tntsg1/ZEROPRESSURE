@@ -110,10 +110,14 @@ static func slot_px(i: int, ship: String = "") -> Vector2:
 	return Vector2(box.position.x - 26.0 * M, box.position.y - 6.0 * M - float(i) * 34.0 * M)
 
 
-# the hulk lying in the mouth now (its asset), or {}
-static func docked() -> Dictionary:
-	for a in taken():
-		if int(a.get("yard", -1)) == 0 and str(a.get("state", "")) in ["arrived", "held"] and dock_in(ship_of(a)) > 0.0:
+# the hulk lying in the mouth now (its asset), or {}. in_hand: the game is in the empty berth, so a
+# contract taken but not started (its loadout page closed) still lies here, waiting for its start
+static func docked(in_hand := false) -> Dictionary:
+	if not Career.usable() or Career.data.is_empty() or not Career.data.has("ship_market"):
+		return {}
+	for a in Career.data.ship_market.get("assets", []):
+		var st := str(a.get("state", ""))
+		if int(a.get("yard", -1)) == 0 and (st in ["arrived", "held"] or (in_hand and st == "stripping")) and dock_in(ship_of(a)) > 0.0:
 			return a
 	return {}
 

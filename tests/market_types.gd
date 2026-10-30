@@ -18,6 +18,8 @@ func check(ok: bool, what: String) -> void:
 
 
 func _initialize() -> void:
+	# 68 号: this test reads the hulks the market drew by itself (before the star-map sweep)
+	Scan.ON = false
 	var by := {}                 # ship -> {n, time, value, fee, per_min}
 	var big_best := 0
 	var markets := 0

@@ -28,6 +28,9 @@ var hold_t := 0.0
 var t := 0.0
 var carried := 0
 var wait_t := 0.0
+const LoadMotion = preload("res://scripts/load_motion.gd")
+var wait_reason := ""
+var route_t := 0.0
 
 
 func _init() -> void:
@@ -45,7 +48,7 @@ func home() -> Vector2:
 
 
 func can_take(b) -> bool:
-	return is_instance_valid(b) and b.capture == null and not b.pieces.is_empty() and b.total_mass() <= MAX_T and game.tools.held_body != b and not b.get_meta("arm", false)
+	return is_instance_valid(b) and b.capture == null and not b.pieces.is_empty() and b.total_mass() <= Methods.crane_t() and game.tools.held_body != b and not b.get_meta("arm", false)
 
 
 # the mark key on a load too heavy for the haulers
@@ -55,20 +58,25 @@ func toggle(b) -> String:
 	if queue.has(b):
 		queue.erase(b)
 		return "crane_unmarked"
-	if b.total_mass() > MAX_T:
+	if b.total_mass() > Methods.crane_t():
 		return "crane_heavy"
+	if _zone_for(b) == "":
+		return "hauler_no_mouth"
 	queue.append(b)
 	return "crane_marked"
 
 
 func _zone_for(b) -> String:
+	var planned: String = str(b.get_meta("plan_zone", ""))
+	if planned in ["metal", "equip", "hazard"]:
+		return Dock.for_load(planned, b)
 	var k := "equip"
 	for p in b.pieces:
 		if game.sys.dest_of(p) == "hazard":
 			k = "hazard"
 	if k != "hazard" and game.dock.is_scrap(b):
 		k = "metal"
-	return Dock.nearest(k, b.global_transform * b.center_of_mass)
+	return Dock.for_load(k, b)
 
 
 # just off the mouth's lip, inside its catch: the mouth takes it from the hook
@@ -80,6 +88,7 @@ func _physics_process(dt: float) -> void:
 	if game == null or game.paused_sim or game.state != "play":
 		return
 	t += dt
+	game.nav_grid().step(dt)
 	if pos == Vector2.ZERO:
 		pos = home()
 	for b in queue.duplicate():
@@ -90,6 +99,13 @@ func _physics_process(dt: float) -> void:
 			halt()
 		pos = pos.move_toward(home(), EMPTY * dt)
 		return
+	if is_instance_valid(body) and game.tools.held_body == body:
+		# 106 号: the operator took it: it is theirs now, the crane leaves it alone unless marked
+		body.set_meta("crane_skip", true)
+		halt()
+		return
+	if state in ["carry","release"] and is_instance_valid(body) and body.capture == null:
+		pos = body.global_position-off
 	if state in ["reach", "carry"] and game.keepout_blocks(pos, _heading()):
 		return
 	var k := 1.0
@@ -101,6 +117,17 @@ func _physics_process(dt: float) -> void:
 	else:
 		wait_t = 0.0
 	dt *= k
+	# 106 号: a piece taken unasked that cannot be got out is put down again and left for the
+	# operator, so the crane is not held up by it
+	if is_instance_valid(body) and body.get_meta("crane_auto", false) and wait_reason in ["load_no_route", "load_obstructed", "load_pickup_blocked"]:
+		stuck_t += dt
+		if stuck_t > STUCK_S:
+			stuck_t = 0.0
+			body.set_meta("crane_skip", true)
+			halt()
+			return
+	else:
+		stuck_t = 0.0
 	match state:
 		"idle":
 			for b in queue:
@@ -109,9 +136,20 @@ func _physics_process(dt: float) -> void:
 					queue.erase(b)
 					body.set_meta("arm", true)
 					body.set_meta("arm_by", "crane")
+					game.ops["crane_lift"] = int(game.ops.get("crane_lift", 0)) + 1
 					path = _overhead(pos, body.global_transform * body.center_of_mass)
 					state = "reach"
 					break
+			if state == "idle" and queue.is_empty():
+				# 106 号 (Q1 C): a cut-loose piece the drone cannot pull and the crane can lift is
+				# taken by itself, once it has come to rest
+				auto_t -= dt
+				if auto_t <= 0.0:
+					auto_t = 0.5
+					var pick = auto_pick()
+					if pick != null:
+						pick.set_meta("crane_auto", true)
+						queue.append(pick)
 			if state == "idle":
 				pos = pos.move_toward(home(), EMPTY * dt)
 		"reach":
@@ -126,13 +164,14 @@ func _physics_process(dt: float) -> void:
 			if pos.distance_to(path[0]) < 3.0:
 				path.pop_front()
 			if path.is_empty() and pos.distance_to(target) < 6.0:
-				body.freeze_mode = RigidBody2D.FREEZE_MODE_KINEMATIC
-				body.set_deferred("freeze", true)
-				body.collision_layer = 0
-				body.collision_mask = 0
+				if not LoadMotion.grip(body):
+					wait_reason = "load_pickup_blocked"
+					return
+				wait_reason = ""
 				off = body.global_position - pos
 				zone = _zone_for(body)
-				path = _overhead(pos, _drop_point(zone))
+				path.clear()
+				route_t = 0.0
 				state = "carry"
 				game.sfx.play("grab", pos, 0.7)
 		"carry":
@@ -140,18 +179,35 @@ func _physics_process(dt: float) -> void:
 				carried += 1
 				_done()
 				return
-			if path.is_empty():
+			LoadMotion.line_up(body, zone, 0.6, dt)
+			var drop := _drop_point(zone)
+			if Dock.kind(zone) == "equip": drop = LoadMotion.intake_point(body, zone, pos)
+			route_t -= dt
+			if (path.is_empty() and wait_reason == "") or route_t <= 0.0:
+				path = Array(game.nav_grid().payload_path(pos, drop, LoadMotion.plan_extents(body, zone)))
+				route_t = 1.2
+			# A full-shape sweep also validates the final intake approach, where
+			# the grid intentionally stops short of the receiving lip.
+			if LoadMotion.clear_to(body, drop-pos): path = [drop]
+			while path.size() > 1 and pos.distance_to(path[0]) < 2.0: path.pop_front()
+			if pos.distance_to(drop) < 2.0:
 				state = "release"
 				hold_t = 0.0
 				return
+			if path.is_empty():
+				wait_reason = "load_no_route"
+				return
 			if path.size() == 1 and not game.mouth_take(zone, "crane"):
 				return
-			pos = pos.move_toward(path[0], SPEED * dt)
+			var next: Vector2 = pos.move_toward(path[0], SPEED * dt)
+			if not LoadMotion.move(body, next-pos):
+				wait_reason = "load_obstructed"
+				path.clear()
+				return
+			wait_reason = ""
+			pos = next
 			if pos.distance_to(path[0]) < 2.0:
 				path.pop_front()
-			body.global_position = pos + off
-			body.linear_velocity = Vector2.ZERO
-			body.angular_velocity = 0.0
 		"release":
 			hold_t += dt
 			if not is_instance_valid(body) or body.capture != null:
@@ -170,6 +226,43 @@ func _physics_process(dt: float) -> void:
 
 
 # to the carrying height, along, and straight to the point
+var auto_t := 0.0
+var stuck_t := 0.0
+const STUCK_S := 8.0             # s a piece taken unasked may hold the crane up before it is put down
+const AUTO_AGE := 1.5            # s a piece has been loose before the crane comes for it
+const AUTO_V := 0.6              # m/s: and no faster than this
+
+
+# the loose piece the crane takes unasked, nearest first; null for none
+func auto_pick():
+	if game.manual_only() or game.training or game.exam != null:
+		return null
+	var lim: float = game.grab_max()
+	var taken := {}
+	for h in game.haulers():
+		for b in h.queue:
+			taken[b] = true
+		if h.body != null:
+			taken[h.body] = true
+	var best = null
+	var bd := INF
+	for b in game.world.bodies:
+		if not is_instance_valid(b) or b.capture != null or b.pieces.is_empty() or taken.has(b) or game.tools.held_body == b:
+			continue
+		if b.get_meta("arm", false) or b.get_meta("arm_extraction", false) or b.get_meta("manual_mark", false) or b.get_meta("crane_skip", false):
+			continue
+		var m: float = b.total_mass()
+		if m <= lim + 0.001 or m > Methods.crane_t() or b.age < AUTO_AGE or b.linear_velocity.length() > AUTO_V * Geom.M:
+			continue
+		if _zone_for(b) == "":
+			continue
+		var d := pos.distance_to(b.global_position)
+		if d < bd:
+			bd = d
+			best = b
+	return best
+
+
 func _overhead(from: Vector2, to: Vector2) -> Array:
 	var y := LIFT_Y * Geom.M
 	return [Vector2(from.x, y), Vector2(to.x, y), to]
@@ -191,6 +284,7 @@ func halt() -> void:
 
 
 func _done() -> void:
+	wait_reason = ""
 	game.mouth_release(zone, "crane")
 	if body != null and is_instance_valid(body) and state == "reach":
 		body.set_meta("arm", false)
@@ -199,7 +293,14 @@ func _done() -> void:
 	state = "idle"
 
 
-func _process(_dt: float) -> void:
+var art := MechArt.new()          # 91 号: the trolley's swing, wheels and beacon
+
+
+func _process(dt: float) -> void:
+	art.step(pos, dt)
+	if art.hard_stop() and game != null and Txt.anim_level() >= 2:
+		for s in [-1.0, 1.0]:
+			game.fx.puff(Vector2(pos.x + art.x + s * 20.0, rail_y() - 3.0), Vector2(s * 30.0, -10.0), 0.9, 3.0, 16.0, Pal.ink(0.1))
 	queue_redraw()
 
 
@@ -222,16 +323,13 @@ func _draw() -> void:
 		var c: Vector2 = b.global_transform * b.center_of_mass
 		var s := 12.0 + 2.0 * sin(t * 4.0 + i)
 		draw_rect(Rect2(c - Vector2(s, s), Vector2(s, s) * 2.0), Pal.tint(Pal.AIR, 0.85, 1.3), false, 1.6)
-		draw_string(Fonts.get_font("Medium"), c + Vector2(s + 4, 4), "C%d" % (i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Pal.tint(Pal.AIR, 0.9, 1.2))
+		draw_string(Fonts.get_font("Medium"), c + Vector2(s + 4, 4), ("C%d" % (i + 1)) + (Ops.w(" 吊车自动", " CRANE") if b.get_meta("crane_auto", false) else ""), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Pal.tint(Pal.AIR, 0.9, 1.2))
 	# the trolley, the cable, the hook
-	var tr := Vector2(pos.x, ry)
-	draw_rect(Rect2(tr - Vector2(26, 4), Vector2(52, 16)), Color(0.07, 0.074, 0.084))
-	draw_rect(Rect2(tr - Vector2(26, 4), Vector2(52, 16)), Pal.ink(0.75), false, 1.4)
-	for s2 in [-16.0, 16.0]:
-		draw_circle(tr + Vector2(s2, -2), 4.0, Pal.ink(0.5))
-	draw_line(tr + Vector2(-4, 12), pos + Vector2(-4, -8), Pal.ink(0.55), 1.2)
-	draw_line(tr + Vector2(4, 12), pos + Vector2(4, -8), Pal.ink(0.55), 1.2)
-	draw_rect(Rect2(pos - Vector2(12, 10), Vector2(24, 8)), Pal.heat(0.85, 1.2) if state != "idle" else Pal.ink(0.6))
-	draw_arc(pos + Vector2(0, 6), 8.0, -0.4, PI + 0.4, 12, Pal.ink(0.85), 2.0, true)
+	# 91 号: the trolley rides a little ahead of or behind the hook as the load swings
+	var tr := Vector2(pos.x + art.x, ry)
+	MechArt.cable_and_hook(self, tr + Vector2(-4, 12), pos, 4, state in ["carry", "release"])
+	art.trolley(self, tr, 56.0, state != "idle", t)
+	if wait_reason != "":
+		draw_string(Fonts.get_font("Medium"), pos + Vector2(18, 28), LoadMotion.wait_line(body,wait_reason), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.heat(0.95, 1.2))
 	if body != null and is_instance_valid(body) and state in ["carry", "release"]:
 		draw_line(pos, body.global_transform * body.center_of_mass, Pal.tint(Pal.AIR, 0.45, 1.2), 1.2, true)

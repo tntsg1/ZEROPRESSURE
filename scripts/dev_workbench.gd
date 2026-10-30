@@ -211,6 +211,8 @@ func operations() -> void:
 		"dev_trap": words("生成只包含一种指定事故的合同卡。", "Generate an offer containing a single accident type."),
 		"dev_opening": words("跳过开局合同，打开三份报价的市场。", "Skip the opening jobs and open the three-offer market."),
 		"dev_plans": words("清除当前生涯保存的拆解工单。", "Clear this career's saved work plans."),
+		"dev_heats": words("电弧炉已出钢炉数直接记为 3，炉台“更多”里就能安装自动测温出钢。", "Count three tapped arc-furnace heats, so the furnace desk offers the auto sample-and-tap."),
+		"dev_skip_guide": words("当前存档当作新手引导全做完：序章、TS-1（持证）、七门专项训练、第一艘船、认识船坞、找第二艘船、修照明、星图与港区导览、所有接驳站。钱、市场和开局合同不动。在船坞或终端里用会直接回到空船坞。", "The save as if every guide were done: the prologue, TS-1 (certified), the seven courses, the first ship, the berth tour, the second hulk, the lights, the star map and port tours, every shuttle stop. Money, the market and the opening are left alone. Used on site or at the terminal it goes straight back to the empty berth."),
 		"dev_certify": words("将当前存档标为已通过训练。", "Mark the selected save as having completed training."),
 	}
 	for index in dev.rows().size():

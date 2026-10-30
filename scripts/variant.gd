@@ -49,6 +49,10 @@ static func make(base: Dictionary, job: Dictionary) -> Dictionary:
 	revalue(d)
 	_scope(d, job)
 	_goal(d, job)
+	# an unowned hulk (26 号): nobody asks for any piece whole
+	if job.get("owner", "") == "salvage":
+		for pd in d.pieces:
+			pd.mandatory = false
 	d.variant = {"seed": int(job.get("variant", 0)), "traps": traps.duplicate(), "notes": notes, "targets": d.get("variant_targets", {})}
 	d.erase("variant_targets")
 	return d
@@ -312,6 +316,8 @@ static func revalue(d: Dictionary) -> void:
 	# what a ship pays on top of its parts when it goes out whole (LC-140's nested ship)
 	sum += float(d.value.get("bonus", 0.0))
 	sum += float(d.get("ore", {}).get("fines", 0.0)) * float(d.get("ore", {}).get("price", 0.0))
+	# 87-4: a light sail furled whole (its torn panels left out)
+	sum += preload("res://scripts/sail.gd").asset_full(d)
 	for f in d.get("fluids", {}).get("value", {}):
 		sum += float(d.fluids.value[f])
 	for pd in d.pieces:

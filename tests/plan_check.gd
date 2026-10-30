@@ -5,7 +5,7 @@ extends SceneTree
 # readings no worse than they were: it waits to be measured, it holds on a
 # reading that is worse, it stops for good on a control the ship does not
 # have, and a door step always wants the rooms behind it read. A contract with
-# an incident writes no plan. The automation key stops it. Test files only.
+# unrelated incidents preserve the plan. The automation key stops it. Test files only.
 # godot --headless --path . --fixed-fps 60 -s tests/plan_check.gd
 
 const Bot = preload("res://tests/salvage_bot.gd")
@@ -178,13 +178,13 @@ func _run() -> void:
 	g.queue_free()
 	await _frames(2)
 
-	print("PLAN: an incident writes no plan")
+	print("PLAN: unrelated incidents do not erase successful steps")
 	g = _game(job)
 	await _frames(2)
-	g.plan.rec = [{"do": "w", "ctrl": "X", "pre": []}]
+	g.plan.rec = steps.duplicate(true)
 	g.incidents.append([0.0, "test", ""])
 	g.plan.commit()
-	check(Career.data.plans.tug.size() == steps.size(), "the old plan stands")
+	check(Career.data.plans.tug == steps and g.plan.result_key == "plan_saved", "an unrelated incident does not veto a valid recording")
 	check(WorkPlan.no_worse("pressure", 3.0, 0.4) and not WorkPlan.no_worse("pressure", 101.0, 0.4) and WorkPlan.no_worse("pressure", 2.0, 9.5)
 		and not WorkPlan.no_worse("volts", 230.0, 0.0) and WorkPlan.no_worse("volts", 0.0, 230.0) and WorkPlan.no_worse("field", 1.0, 0.0), "no worse: what was dead or empty is still")
 	g.queue_free()

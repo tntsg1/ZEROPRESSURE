@@ -76,7 +76,7 @@ func _ready() -> void:
 		_fill_gas()
 	# 77 号: the services that pay without a ship to strip — tug charters, third-party storage
 	if zone in ["tug", "cargo"]:
-		column.add_child(OpsSkin.Section.new(words("拖船外运（替别人拖货）", "TUG CHARTERS") if zone == "tug" else words("第三方仓储（替别人存货）", "THIRD-PARTY STORAGE")))
+		column.add_child(OpsSkin.Section.new(words("拖船外运", "TUG CHARTERS") if zone == "tug" else words("第三方仓储", "THIRD-PARTY STORAGE")))
 		biz_box = VBoxContainer.new()
 		column.add_child(biz_box)
 		_fill_biz()
@@ -92,7 +92,10 @@ func _ready() -> void:
 	# 85 号 (user 2026-10-26: "左边的这个柜台就显示左边柜台的东西"): each rack is set at the rack itself
 	if zone == "cargo":
 		column.add_child(OpsSkin.Section.new(words("货架", "RACKS")))
-		column.add_child(label(words("左边货架 A1–A4、右边货架 B1–B4：飞到货架下面的货架口按 %s，只开那一边。客户的货箱在舱口左边的收货台。", "Racks A1–A4 on the left, B1–B4 on the right: %s at a rack's mouth opens that side only. Clients' crates come to the counter left of the hatch.") % Keys.label("use"), 15))
+		var rk := label(words("货架口按 %s 开（左边货架 A1–A4，右边 B1–B4）", "Racks A1–A4 left, B1–B4 right: %s at a rack's mouth") % Keys.label("use"), 15)
+		rk.tooltip_text = words("飞到货架下面的货架口按 %s，只开那一边。客户的货箱在舱口左边的收货台。", "%s at a rack's mouth opens that side only. Clients' crates come to the counter left of the hatch.") % Keys.label("use")
+		rk.mouse_filter = Control.MOUSE_FILTER_PASS
+		column.add_child(rk)
 	message = label("", 15)
 	column.add_child(message)
 	column.add_child(button(words("关闭 [Esc]", "CLOSE [Esc]"), close))
@@ -144,7 +147,6 @@ func _fill_repair() -> void:
 	if st >= 2:
 		repair_box.add_child(label(words("两期都修好了。", "BOTH STAGES DONE."), 15))
 		return
-	repair_box.add_child(label(words("第 %d 期修好后：%s", "STAGE %d: %s") % [st + 1, Port.desc_of(zone, st + 1)], 15))
 	var needs := Port.needs(zone, st + 1)
 	var pf := Repair.parts_for_needs(needs)
 	for cls in needs:
@@ -171,7 +173,9 @@ func _fill_repair() -> void:
 		var b := button("%s  %s" % [Txt.t("rp_fix_parts") if with_parts else Txt.t("rp_fix_cash"), Pal.money(Port.cash(zone, st + 1, with_parts))], _order.bind(with_parts))
 		b.disabled = why != ""
 		repair_box.add_child(b)
-		if why != "":
+		# what it lacks is the list above: the long why goes on the button's hover card
+		b.tooltip_text = why
+		if why != "" and not why.begins_with(words("还需要", "STILL NEEDS")) and why.length() <= 24:
 			repair_box.add_child(label("  " + why, 13))
 
 
@@ -548,8 +552,9 @@ func _show(lines: Array) -> void:
 	var n := Port.stage(zone)
 	var head: Array = [[Txt.t("pt_stage"), "%d / 2" % n, Hmi.ok_col() if n >= 2 else Hmi.warn_col()]]
 	if n < 2:
-		head.append([words("下一阶段：", "NEXT: ") + Port.desc_of(zone, n + 1), ""])
-		head.append([Route.missing(Route.port_node(zone)), "", Hmi.warn_col()])
+		# 108 号 Q4/Q11 (the outside review: the cargo console said the same thing three times): the
+		# next stage here once; what it still lacks is the ticked list under "mend this district"
+		head.append([words("下一期：", "NEXT: ") + Port.desc_of(zone, n + 1), ""])
 	stage_box.set_rows(head)
 	plate.set_lamp("ok" if n >= 1 else "warn")
 	if overview != null:

@@ -1,5 +1,6 @@
 class_name Fx
 extends Node2D
+const FastDraw = preload("res://scripts/fast_draw.gd")
 # Short-lived marks in world space: sparks, molten slag, rings, shards, gas
 # mist, fluid sprays, arcs, glow flashes, value numbers and the slow dust of
 # the dock. Pooled in plain arrays, drawn in one pass per layer.
@@ -231,7 +232,7 @@ func _draw() -> void:
 		var e := Pal.ease_out(r[3] / r[4])
 		var c4: Color = r[5]
 		var rad := lerpf(r[1], r[2], e)
-		draw_arc(r[0], rad, 0.0, TAU, maxi(20, int(rad * 0.5)), Color(c4.r, c4.g, c4.b, c4.a * (1.0 - e)), r[6] * (1.0 - 0.6 * e), true)
+		FastDraw.arc(self, r[0], rad, 0.0, TAU, maxi(20, int(rad * 0.5)), Color(c4.r, c4.g, c4.b, c4.a * (1.0 - e)), r[6] * (1.0 - 0.6 * e), true)
 	for n in numbers:
 		var t: float = n[3]
 		var pop := lerpf(1.6, 1.0, Pal.back(t / 0.16, 2.2))
@@ -281,7 +282,7 @@ func _draw_add() -> void:
 			pts.append(c0 + (q - c0) * sc)
 		pts.append(pts[0])
 		var col: Color = o[3]
-		add_layer.draw_polyline(pts, Color(col.r, col.g, col.b, col.a * (1.0 - k) * (1.0 - k)), 2.0, true)
+		FastDraw.polyline(add_layer, pts, Color(col.r, col.g, col.b, col.a * (1.0 - k) * (1.0 - k)), 2.0, true)
 	for fl in flashes:
 		var k2: float = 1.0 - fl[2] / fl[3]
 		var r: float = fl[1] * (0.6 + 0.4 * Pal.ease_out(fl[2] / fl[3] * 2.0))
@@ -304,9 +305,9 @@ func _draw_arc_bolt(a: Array) -> void:
 		var off: float = 0.0 if i == 0 or i == n else rng.randf_range(-1.0, 1.0) * dir.length() * 0.16 * a[4]
 		pts.append(p0 + dir * t + nrm * off)
 	var c := Pal.tint(Pal.VOLT, k, 2.4)
-	add_layer.draw_polyline(pts, Pal.tint(Pal.VOLT, 0.35 * k, 1.4), 7.0, true)
-	add_layer.draw_polyline(pts, c, 2.0, true)
-	add_layer.draw_polyline(pts, Color(1.6, 1.6, 1.8, k), 0.8, true)
+	FastDraw.polyline(add_layer, pts, Pal.tint(Pal.VOLT, 0.35 * k, 1.4), 7.0, true)
+	FastDraw.polyline(add_layer, pts, c, 2.0, true)
+	FastDraw.polyline(add_layer, pts, Color(1.6, 1.6, 1.8, k), 0.8, true)
 	if rng.randf() < 0.6:
 		var bi := rng.randi_range(2, n - 2)
 		var bp := pts[bi]

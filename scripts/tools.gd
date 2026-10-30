@@ -1,5 +1,6 @@
 class_name Tools
 extends Node2D
+const FastDraw = preload("res://scripts/fast_draw.gd")
 # The five tools of R-02. Every tool works at the cursor, within 4 m of the
 # drone, on what can actually be seen (never inside a room nobody has opened).
 #   1 measure   2 laser   3 magnetic grapple   4 wrench   5 gas/fluid hose
@@ -29,6 +30,7 @@ var hose_mode := "recover"
 
 # laser
 var cutting := false
+var probe_hold := false         # 108 号: a probe stopped the beam; it waits for the button to be let go
 var front := Vector2.ZERO
 var front_prev := Vector2.ZERO
 var pending := {}          # piece id -> {"pl": PackedVector2Array, "anch": bool, "t": float}
@@ -37,6 +39,11 @@ var blocked := {}          # {"piece": id, "t": time}
 var warn := {}             # {"piece": id, "t": time, "d": px}: the beam is close to intact equipment
 var in_material := false
 var material_k := 0.0
+var cut_mat = null            # 87-1: the slowest part under the beam (its material sets sparks and hiss)
+var multi                     # 87-3: scripts/multi_grab.gd, the grapple's range mode
+var carry_left := 0.0         # 87-1: px of freshly melted slot ahead still charged at the material's speed
+var carry_speed := 0.0
+const BEAM_K := 1.27          # 87-1: beam speed scale: plain plate cuts as fast as before (0.55 s through 2 m, as measured)
 var touched := {}          # piece id -> true (hazards fire once per stroke)
 var cut_sound := 0.0
 var tail_on := false       # the beam is still finishing a stroke after the button came up
@@ -60,6 +67,9 @@ var latched := false       # the grapple holds on while another tool is in hand
 var latch_d := Vector2.ZERO
 var laser_lock := {}       # piece id -> the training interlock stopped the beam here (this stroke)
 var denied_slot := 0       # a locked tool was asked for (the toolbar shakes it)
+var cap_fail_t := -1.0     # s until a cheap capacitor lets go of what it holds (scripts/consum.gd)
+var stroke_inc := 0        # incidents on the books when this stroke began (a work plan records only a clean cut)
+var lens_rolled := false   # this stroke's chance of a cheap lens bursting was taken
 var denied_t := 9.0
 var t := 0.0
 var add_node: Node2D
@@ -94,13 +104,25 @@ func set_tool(n: int, force: bool = false, by_key: bool = false) -> void:
 	if by_key:
 		pin_key = _context()[1]
 	# the training course opens one tool at a time
-	if not force and game.tutorial != null and not game.tutorial.tool_allowed(n):
+	if not force and not game.tool_ok(n):
 		denied_slot = n
 		denied_t = 0.0
 		game.sfx.play("deny")
-		game.say("tool_locked", drone.global_position + Vector2(0, -44))
+		if game.tutorial == null and game.guide_coach() != null:
+			game.say("tool_locked_use", drone.global_position + Vector2(0, -44), game.open_tools_text())
+		else:
+			game.say("tool_locked", drone.global_position + Vector2(0, -44))
+		return
+	if n == 6 and game.gear != null and game.gear.in_hand() == "":
+		denied_slot = n
+		denied_t = 0.0
+		game.sfx.play("deny")
+		game.say("gear_none_in_hand", drone.global_position + Vector2(0, -44))
 		return
 	if n == tool:
+		if n == 6 and game.gear != null:
+			game.say("gear_in_hand", drone.global_position + Vector2(0, -44), Gear.name_of(game.gear.cycle()))
+			game.sfx.play("tool")
 		if n == 5:
 			hose_mode = "vent" if hose_mode == "recover" else "recover"
 			for id in sys.hoses:
@@ -157,7 +179,7 @@ func _context() -> Array:
 
 
 func _context_step() -> void:
-	if not Txt.context or game.bot != null or tool == 2 or tool == 5:
+	if not Txt.context or game.bot != null or tool == 2 or tool == 5 or tool == 6:
 		return
 	if cutting or not job.is_empty() or held_body != null or held_piece != null or lmb:
 		return
@@ -165,7 +187,7 @@ func _context_step() -> void:
 	if c[1] == pin_key:
 		return
 	# the training course teaches it from its second lesson on, within the tools it opened
-	if game.tutorial != null and c[0] != 0 and not game.tutorial.context_ok(c[0]):
+	if c[0] != 0 and not game.context_ok(c[0]):
 		return
 	pin_key = ""
 	if c[0] != 0 and c[0] != tool:
@@ -184,8 +206,8 @@ func step(dt: float) -> void:
 		queue_redraw()
 		add_node.queue_redraw()
 		return
-	# a tool the training course has not opened yet does nothing
-	if game.tutorial != null and not game.tutorial.tool_allowed(tool):
+	# a tool the training course (or the guide's step) has not opened yet does nothing
+	if not game.tool_ok(tool):
 		hover = {}
 		if cutting:
 			_finish_cut()
@@ -203,6 +225,12 @@ func step(dt: float) -> void:
 			_laser(dt)
 		3:
 			_grab_input()
+		6:
+			if lmb_pressed and hover.get("ok", false) and job.is_empty():
+				if hover.kind == "drop":
+					game.gear.pick(hover.drop)
+				else:
+					_start_job()
 		_:
 			if lmb_pressed and hover.get("ok", false) and job.is_empty():
 				_start_job()
@@ -254,8 +282,16 @@ func _find_hover() -> Dictionary:
 			h = _near_ctrl(["port"], pick * 1.2)
 			if not h.is_empty() and h.ctrl.medium == "volt":
 				h = {}
+		6:
+			if game.gear != null:
+				h = game.gear.target(aim, _near_ctrl(["port", "test", "discharge", "probe"], pick), _piece_hover())
 		2:
 			return {}
+	# something dropped on the floor: the grapple or the deploy tool picks it up
+	if tool in [3, 6] and game.gear != null:
+		var dr: Dictionary = game.gear.drop_at(aim)
+		if not dr.is_empty():
+			h = {"kind": "drop", "drop": dr, "pos": dr.pos, "d": 0.0, "label": Gear.name_of(dr.type)}
 	if h.is_empty():
 		return h
 	h.ok = true
@@ -398,6 +434,9 @@ func _start_job() -> void:
 		5:
 			kind = "hose"
 			dur = 0.3
+		6:
+			kind = "deploy"
+			dur = Gear.DEPLOY_T
 		4:
 			kind = "wrench"
 			match hover.kind:
@@ -458,6 +497,7 @@ func _step_job(dt: float) -> void:
 					if e.get("joint") != null and e.joint.alive:
 						game.do_wrench(e)
 			"hose": game.do_hose(j.target)
+			"deploy": game.gear.act(j.target)
 
 
 # ---------------------------------------------------------------- laser
@@ -467,10 +507,17 @@ func _speed_at(p: Vector2) -> Array:
 	var list: Array = world.pieces_at(p)
 	if list.is_empty():
 		return [EMPTY_SPEED, list]
+	# 71 号: the laser cuts as fast as the grid lets it (the drone's own pack keeps 15 %)
+	# 87-1: through each material at that power (armour has a power threshold: a stronger beam
+	# helps it more than plain plate); the slowest part under the point sets the pace
+	var power: float = game.skill_value("laser_power") * Grid.salvage_k(game, "laser", 0.15)
 	var s := EMPTY_SPEED
 	for q in list:
-		s = minf(s, q.cut_speed)
-	return [s * game.skill_value("laser_power"), list]
+		var v: float = Mat.speed(q, power)
+		if v < s:
+			s = v
+			cut_mat = q
+	return [s, list]
 
 
 func _guarded(q) -> bool:
@@ -479,6 +526,8 @@ func _guarded(q) -> bool:
 
 # the training interlock stops the beam at a piece it guards (once per lesson)
 func _locked(q) -> bool:
+	if game.coach_guards(q):
+		return true
 	if game.tutorial == null:
 		return false
 	if laser_lock.has(q.id):
@@ -490,6 +539,10 @@ func _locked(q) -> bool:
 
 
 func _laser(dt: float) -> void:
+	if probe_hold:
+		if lmb:
+			return
+		probe_hold = false
 	if not lmb:
 		if not cutting:
 			in_material = false
@@ -517,12 +570,21 @@ func _laser(dt: float) -> void:
 		_finish_cut()
 		in_material = false
 		return
+	# a worn-out lens cuts nothing (scripts/consum.gd)
+	if not cutting and not Consum.ready(game, "lens"):
+		if lmb_pressed:
+			game.say("cs_out_lens", aim)
+			game.sfx.play("deny")
+		return
 	var desired := tail_target if tail_on else clamp_range(aim)
 	if lmb and (lmb_pressed or not cutting):
 		cutting = true
 		tail_on = false
 		pending = {}
 		touched = {}
+		carry_left = 0.0
+		lens_rolled = false
+		stroke_inc = game.incidents.size()
 		var start := desired
 		if world.hidden(start):
 			start = _last_visible(drone.global_position, start)
@@ -533,6 +595,8 @@ func _laser(dt: float) -> void:
 				guard_hit = true
 		if guard_hit:
 			start = _last_free(drone.global_position, start)
+		else:
+			start = _surface_entry(start,world.hidden(desired))
 		front = start
 		front_prev = front
 		for q in _speed_at(front)[1]:
@@ -541,9 +605,14 @@ func _laser(dt: float) -> void:
 				if not touched.has(q.id):
 					touched[q.id] = true
 					game.on_cut_into(q, front)
+		if world.hidden(desired):
+			# Saves made before opening detection was fixed may already contain
+			# a clear slit. A fresh stroke must also recognize that opening.
+			_reveal_cut_opening(front)
 	var budget := dt
 	var moved_world := PackedVector2Array([front])
 	var went := 0.0
+	var mat_m := 0.0
 	in_material = false
 	var prev_list: Array = _speed_at(front)[1]
 	var guard := 0
@@ -556,7 +625,12 @@ func _laser(dt: float) -> void:
 		var stepl := minf(3.0, dist)
 		var np := front + to / dist * stepl
 		if world.hidden(np):
-			break
+			# Finish the visible part of this step. Stopping a whole step short
+			# left a thin back face on walls flush with an unrevealed room.
+			np = _last_visible(front, np)
+			stepl = front.distance_to(np)
+			if stepl < 0.001:
+				break
 		var sa: Array = _speed_at(np)
 		var stop := false
 		for q in sa[1]:
@@ -564,7 +638,19 @@ func _laser(dt: float) -> void:
 				stop = true
 		if stop:
 			break
-		var cost: float = stepl / sa[0]
+		# 87-1: the slot the beam spot has just melted ahead of the front is still this material's
+		# work: charged at its speed (it used to be free air, a fixed bonus of a kerf radius each
+		# commit that flattened the gap between plate and armour); BEAM_K keeps plate as it was
+		var spd: float = sa[0] * (BEAM_K if Mat.ENABLED else 1.0)
+		if not Mat.ENABLED:
+			pass
+		elif not sa[1].is_empty():
+			carry_left = game.skill_value("laser_kerf") + 1.0
+			carry_speed = spd
+		elif carry_left > 0.0:
+			spd = carry_speed
+			carry_left -= stepl
+		var cost: float = stepl / spd
 		if cost > budget:
 			stepl *= budget / cost
 			np = front + to / dist * stepl
@@ -597,6 +683,15 @@ func _laser(dt: float) -> void:
 				pending[id].anch = true
 		if not sa[1].is_empty():
 			in_material = true
+			mat_m += stepl / Geom.M
+			# a cheap lens: once a stroke, as the beam bites, it may burst
+			if not lens_rolled:
+				lens_rolled = true
+				if Consum.fails(game, "lens"):
+					game.lens_burst(front, sa[1])
+					_finish_cut()
+					in_material = false
+					return
 			for q in sa[1]:
 				_kerf_point(q, front)
 				if not touched.has(q.id):
@@ -604,6 +699,13 @@ func _laser(dt: float) -> void:
 					game.on_cut_into(q, front)
 		prev_list = sa[1]
 		moved_world.append(front)
+	# the lens wears by the metre of metal it went through; worn out, the stroke ends here
+	if mat_m > 0.0:
+		Consum.use(game, "lens", mat_m)
+		if not Consum.ready(game, "lens"):
+			_finish_cut()
+			in_material = false
+			return
 	material_k = Pal.damp(material_k, 1.0 if in_material else 0.0, 18.0, dt)
 	_warn_equipment()
 	# lines the beam passed over
@@ -629,6 +731,38 @@ func _laser(dt: float) -> void:
 		_cut_fx(dt, went)
 
 
+# A stationary cursor on the far face must still cut the metal between that
+# face and the operator. Previously front started at the destination itself,
+# so a held beam had no distance to travel and left only an uncommitted dot.
+func _surface_entry(target: Vector2, hidden_target: bool) -> Vector2:
+	var origin := drone.global_position
+	var direction := target - origin
+	if direction.length_squared() < 1.0: return target
+	var candidates: Array = world.pieces_at(target)
+	if hidden_target:
+		# A previous notch may already leave the exact boundary point in air.
+		# Look back for visible shell on this beam without exposing room contents.
+		for id in world.order:
+			var p = world.pieces[id]
+			if not p.gone and p.barrier and p.body == null and not candidates.has(p) and not (p.door and p.door_open):
+				candidates.append(p)
+	var nearest := target
+	var distance := origin.distance_squared_to(target)
+	for p in candidates:
+		if laser_lock.has(p.id) or world.piece_contains(p,origin): continue
+		var poly: PackedVector2Array = world.world_poly(p)
+		if not Geom.bbox(poly).grow(1.0).intersects(Rect2(origin,Vector2.ZERO).expand(target).grow(1.0)): continue
+		for i in poly.size():
+			var hit = Geometry2D.segment_intersects_segment(origin,target,poly[i],poly[(i + 1) % poly.size()])
+			if hit == null or world.hidden(hit): continue
+			var d: float = origin.distance_squared_to(hit)
+			if d < distance:
+				distance = d
+				nearest = hit
+	if nearest.distance_squared_to(target) < 0.01: return target
+	return nearest - direction.normalized() # 1 px outside; normal speed budgeting follows
+
+
 # Equipment does not stop the beam any more (it used to wait for a second
 # click): close to an intact unit the beam and the unit's outline flash red and
 # a warning sounds once; cut on and it is scrap — the player's call.
@@ -636,13 +770,15 @@ const WARN_NEAR := 36.0           # px (0.75 m) from the unit's edge
 
 func _warn_equipment() -> void:
 	var best = null
-	var bd := WARN_NEAR
+	# the fine lens warns earlier (scripts/consum.gd)
+	var near := WARN_NEAR * (Consum.FINE_WARN if Consum.is_fine(game, "lens") else 1.0)
+	var bd := near
 	for id in world.order:
 		var q = world.pieces[id]
 		if q.gone or q.cls != "equip" or not q.intact:
 			continue
 		var lp: Vector2 = world.frame(q).affine_inverse() * front - world.door_offset(q)
-		var bb := Geom.bbox(q.poly).grow(WARN_NEAR)
+		var bb := Geom.bbox(q.poly).grow(near)
 		if not bb.has_point(lp):
 			continue
 		var d := 0.0 if Geometry2D.is_point_in_polygon(lp, q.poly) else Geom.dist_to_boundary(lp, q.poly)
@@ -715,9 +851,15 @@ func _commit(id: int) -> void:
 	# where the front is, in the berth: the cut can free a part, and a freed
 	# part has a frame of its own (the old point in it drew a line across the berth)
 	var w_last: Vector2 = world.frame(p) * (pl[pl.size() - 1] + world.door_offset(p))
+	var attached: bool = p.body == null
+	var plan_context: Dictionary = game.plan.cut_context(p) if game.plan != null else {}
 	var res: Dictionary = world.commit_cut(p, pl, game.skill_value("laser_kerf"))
 	game.on_kerf(p, res)
+	if game.plan != null:
+		game.plan.on_cut(p, pl, game.incidents.size() > stroke_inc, attached, plan_context)
 	stroke_cuts += 1
+	if p.barrier:
+		_reveal_cut_opening(w_last)
 	# keep cutting from where the front is now, on whatever holds that point
 	if not res.gone:
 		for q in [p] + res.new:
@@ -727,6 +869,41 @@ func _commit(id: int) -> void:
 			if Geometry2D.is_point_in_polygon(last, q.poly) or Geom.dist_to_boundary(last, q.poly) < 6.0:
 				pending[q.id] = {"pl": PackedVector2Array([last]), "anch": true, "t": 0.0}
 				break
+
+
+func _reveal_cut_opening(at: Vector2) -> void:
+	var origin := drone.global_position
+	if world.hidden(origin) or origin.distance_to(at) > reach() * 1.1:
+		return
+	var probe := at + origin.direction_to(at) * 2.0
+	var room := world.room_at(probe)
+	if not world.room_hidden(room):
+		return
+	# A fine kerf can fall between gas-grid cells. Visibility follows the actual
+	# opening, while pressure/flow still belongs to Systems. Only test on a cut
+	# commit near a hidden boundary, never scan the ship on every held frame.
+	var beam := Rect2(origin,Vector2.ZERO).expand(probe).grow(0.01)
+	for id in world.order:
+		var q = world.pieces[id]
+		if q.gone or not q.barrier or (q.door and q.door_open): continue
+		var poly: PackedVector2Array = world.world_poly(q)
+		if not Geom.bbox(poly).grow(0.01).intersects(beam): continue
+		if Geometry2D.is_point_in_polygon(origin,poly) or Geometry2D.is_point_in_polygon(probe,poly): return
+		for i in poly.size():
+			if Geometry2D.segment_intersects_segment(origin,probe,poly[i],poly[(i + 1) % poly.size()]) != null:
+				return
+	world.reveal(room,at)
+
+
+# 108 号 Q15 (the probe's second tier): a reading crossed its step — the beam stops where it is,
+# and starts again only on a fresh press
+func probe_stop() -> bool:
+	if not cutting:
+		return false
+	_finish_cut()
+	in_material = false
+	probe_hold = true
+	return true
 
 
 func _finish_cut() -> void:
@@ -778,27 +955,102 @@ func _cut_fx(dt: float, went: float) -> void:
 	var fx = game.fx
 	var mv := (front - front_prev)
 	var away := -mv.normalized() if mv.length() > 0.5 else (front - drone.global_position).normalized()
-	var n := 3 + int(went * 0.2)
-	fx.sparks(front, away.rotated(randf_range(-0.6, 0.6)), n, Pal.heat(1.0, 3.4), 460.0, 0.38, 0.9)
-	fx.sparks(front, Vector2.from_angle(randf() * TAU), 2, Color(2.4, 2.1, 1.8, 1.0), 260.0, 0.2)
-	for i in 2:
+	# 87-1: what is being cut shows in the cut: armour throws a dense fan of long sparks, titanium
+	# white-hot streaks, aluminium few sparks and much dross, ceramic dust and chips, composite smoke
+	var q = cut_mat if cut_mat != null and not cut_mat.gone else null
+	var sk: float = Mat.fx(q, "spark") if q != null else 1.0
+	var sv: float = Mat.fx(q, "spark_v") if q != null else 1.0
+	var mk: float = Mat.fx(q, "molten") if q != null else 1.0
+	var smk: float = Mat.fx(q, "smoke") if q != null else 1.0
+	var shk: float = Mat.fx(q, "shard") if q != null else 0.0
+	var glk: float = Mat.fx(q, "glint") if q != null else 0.0
+	var n := int(round((3 + int(went * 0.2)) * sk))
+	if n > 0:
+		fx.sparks(front, away.rotated(randf_range(-0.6, 0.6)), n, Pal.heat(1.0, 3.4 * (0.8 + 0.2 * sv)), 460.0 * sv, 0.38 * sv, 0.9)
+	if randf() < minf(1.0, sk):
+		fx.sparks(front, Vector2.from_angle(randf() * TAU), 2, Color(2.4, 2.1, 1.8, 1.0), 260.0 * sv, 0.2)
+	for i in int(ceil(2.0 * mk)):
 		if randf() < 0.7:
 			fx.molten(front, away * randf_range(60, 200) + Vector2.from_angle(randf() * TAU) * 50.0, 2.0)
-	if randf() < 0.25:
-		fx.puff(front, away * 40.0, 0.7, 3.0, 12.0, Pal.ink(0.06))
+	if randf() < 0.25 * smk:
+		fx.puff(front, away * 40.0 + Vector2(0, -20.0 * maxf(0.0, smk - 1.0)), 0.7 + 0.4 * minf(smk, 3.0), 3.0, 12.0 + 9.0 * minf(smk, 3.0), Pal.ink(0.06 + 0.05 * maxf(0.0, minf(smk, 3.0) - 1.0)))
+	if shk > 0.0 and randf() < 0.3 * shk:
+		fx.burst_shards(front, 1 + int(randf() * 2.0 * shk), 120.0, Pal.ink(0.7), 3.0)
+	if glk > 0.0 and randf() < 0.2 * glk:
+		# a reflective face throws part of the beam back: a short white glint off the surface
+		fx.flash(front, 14.0 + 10.0 * glk, 0.06, Color(2.2, 2.2, 2.3, 0.4))
 
 
 # ---------------------------------------------------------------- grapple
 
+# 87-3: X switches the grapple between one piece and the field; Shift+X its guard
+func toggle_multi(shift: bool) -> void:
+	if multi == null:
+		return
+	if not multi.fitted():
+		game.say("mg_unfitted", drone.global_position + Vector2(0, -44))
+		game.sfx.play("deny")
+		return
+	if shift:
+		multi.toggle_guard()
+		game.say("mg_guard_on" if multi.guard else "mg_guard_off", drone.global_position + Vector2(0, -44))
+	elif multi.on and multi.can_pick():
+		# 108 号: the second tier — X steps through what the field takes, then off
+		release_grab(false)
+		if multi.next_pick():
+			game.hud.show_hint(game.txt("mg_pick_" + multi.pick))
+		else:
+			game.say("mg_off", drone.global_position + Vector2(0, -44))
+	else:
+		release_grab(false)
+		multi.toggle()
+		if multi.on:
+			game.hud.show_hint(game.txt("mg_on") % ["%.1f" % (multi.radius() / Geom.M), str(multi.count())] + (game.txt("mg_pick_more") if multi.can_pick() else ""))
+		else:
+			game.say("mg_off", drone.global_position + Vector2(0, -44))
+	game.sfx.play("switch")
+
+
+func _multi_input() -> void:
+	if lmb_pressed and not multi.holding():
+		var n: int = multi.grab(clamp_range(aim))
+		if n == 0:
+			game.say("mg_none", aim)
+			game.sfx.play("deny")
+		else:
+			game.sfx.play("grab")
+	if not lmb and multi.holding():
+		var fast := false
+		for h in multi.held:
+			if is_instance_valid(h.body) and (h.body.linear_velocity - drone.linear_velocity).length() > FLICK:
+				fast = true
+		game.sfx.play("throw" if fast else "release")
+		multi.release(fast)
+
+
 func _grab_input() -> void:
+	if multi != null and multi.on:
+		_multi_input()
+		return
 	if latched:
 		# back on the grapple after the wrench: the hold stays until the next click
 		if lmb_pressed:
 			latched = false
 		return
 	if lmb_pressed and held_body == null and held_piece == null:
-		if hover.get("ok", false) and hover.kind == "piece":
+		if hover.get("ok", false) and hover.kind == "drop":
+			game.gear.pick(hover.drop)
+		elif hover.get("ok", false) and hover.kind == "piece" and not Consum.ready(game, "cap"):
+			# a worn-out capacitor holds nothing (scripts/consum.gd)
+			game.say("cs_out_cap", aim)
+			game.sfx.play("deny")
+		elif hover.get("ok", false) and hover.kind == "piece":
 			var p = hover.piece
+			# the capacitor wears by what it takes hold of; a cheap one may let go in a moment
+			var gm: float = p.body.total_mass() if p.body != null and is_instance_valid(p.body) else world.group_mass(p)
+			Consum.use(game, "cap", maxf(Consum.CAP_MIN, gm))
+			if Consum.fails(game, "cap"):
+				cap_fail_t = randf_range(Consum.SLIP_T[0], Consum.SLIP_T[1])
 			held_piece = p
 			held_body = p.body
 			held_local = world.frame(p).affine_inverse() * aim
@@ -832,6 +1084,7 @@ func release_grab(thrown: bool) -> void:
 	strain = 0.0
 	overweight = false
 	tether_force = 0.0
+	cap_fail_t = -1.0
 
 
 func grab_point() -> Vector2:
@@ -843,11 +1096,34 @@ func grab_point() -> Vector2:
 func physics_step(dt: float) -> void:
 	drone.tow_k = 0.0
 	drone.tow_h = 0.0
+	if multi != null and multi.holding():
+		if not drone.alive:
+			multi.release(false)
+			return
+		var dm: Vector2 = aim - drone.global_position
+		var reach_m := clampf(dm.length(), 1.4 * Geom.M, reach(3) * 0.85)
+		tether_target = drone.global_position + dm.normalized() * reach_m
+		multi.step(dt, tether_target)
+		tether_force = multi.force
+		overweight = multi.overload > 0.0
+		return
 	if held_piece == null:
 		return
 	if held_piece.gone or not drone.alive:
 		release_grab(false)
 		return
+	if not Consum.ENABLED: cap_fail_t = -1.0
+	if cap_fail_t > 0.0:
+		cap_fail_t -= dt
+		if cap_fail_t <= 0.0:
+			# the cheap capacitor let go: it is finished, the load is loose
+			game.say("cs_cap_slip", grab_point())
+			game.sfx.play("deny")
+			game.incident("cap_slip")
+			Consum.wear_out(game, "cap")
+			game.hud.show_hint(game.txt("hint_cs_cheap"))
+			release_grab(false)
+			return
 	if held_piece.body != held_body:
 		held_body = held_piece.body
 	var d: Vector2 = aim - drone.global_position if not latched else latch_d
@@ -935,6 +1211,70 @@ func physics_step(dt: float) -> void:
 
 # ---------------------------------------------------------------- drawing
 
+# 87-3: the field: its circle at the pointer, the pieces it would take bracketed (a guarded one
+# crossed, one being swallowed or carried left plain), and once caught the pull to each piece; a
+# read-out by the pointer: how many, how heavy against its rating, its draw, overload in red
+func _draw_multi(z: float, lw: float) -> void:
+	var font: Font = game.hud.font if game.hud != null and "font" in game.hud else ThemeDB.fallback_font
+	var at := clamp_range(aim)
+	var over: bool = multi.overload > 0.0
+	var col := Pal.heat(0.9, 1.6) if over else Pal.tint(Pal.AIR, 0.85, 1.3)
+	if not multi.holding():
+		_dashed_circle(at, multi.radius(), Pal.tint(Pal.AIR, 0.55, 1.2), lw * 1.2)
+		var n := 0
+		var m := 0.0
+		for c in multi.candidates(at):
+			var b = c[0]
+			var bb := Rect2()
+			var first := true
+			for p in b.pieces:
+				var r := Geom.bbox(world.world_poly(p))
+				bb = r if first else bb.merge(r)
+				first = false
+			var take: bool = c[1] == "" and n < multi.count()
+			var cc := Pal.tint(Pal.AIR, 0.9, 1.4) if take else Pal.ink(0.35)
+			_brackets(bb.grow(3.0 / z), cc, lw * 1.4, 6.0 / z)
+			if c[1] == "guarded":
+				draw_line(bb.position, bb.end, Pal.heat(0.7, 1.3), lw * 1.2, true)
+				draw_line(Vector2(bb.position.x, bb.end.y), Vector2(bb.end.x, bb.position.y), Pal.heat(0.7, 1.3), lw * 1.2, true)
+			if take:
+				n += 1
+				m += b.total_mass()
+		var pk := ""
+		if multi.pick != "all":
+			pk = " · " + (Ops.w("只抓钢", "STEEL ONLY") if multi.pick == "steel" else Ops.w("只抓设备", "MACHINES ONLY"))
+		_readout(font, at + Vector2(multi.radius() + 8.0 / z, -10.0 / z), z, "%d/%d · %.1f/%.1f t%s" % [n, multi.count(), m, multi.mass_cap(), pk], Pal.ink(0.85))
+		return
+	for h in multi.held:
+		if not is_instance_valid(h.body):
+			continue
+		var com: Vector2 = h.body.global_transform * h.body.center_of_mass
+		draw_line(drone.global_position, com, Color(col.r, col.g, col.b, 0.35 + 0.4 * multi.force), lw * (1.0 + multi.force), true)
+		FastDraw.arc(self, com, 7.0 / z, 0.0, TAU, 14, col, lw * 1.4, true)
+	var txt := "%d · %.1f/%.1f t · %.2f/%.2f MW" % [multi.held.size(), multi.mass_held(), multi.mass_cap(), multi.power_mw(), multi.rated_mw()]
+	if over:
+		txt += " · " + game.txt("mg_over")
+	_readout(font, tether_target + Vector2(14.0 / z, -18.0 / z), z, txt, col)
+
+
+func _brackets(r: Rect2, c: Color, w: float, arm: float) -> void:
+	for k in 4:
+		var p := Vector2(r.position.x if k % 2 == 0 else r.end.x, r.position.y if k < 2 else r.end.y)
+		var sx := 1.0 if k % 2 == 0 else -1.0
+		var sy := 1.0 if k < 2 else -1.0
+		draw_line(p, p + Vector2(arm * sx, 0), c, w, true)
+		draw_line(p, p + Vector2(0, arm * sy), c, w, true)
+
+
+func _readout(font: Font, at: Vector2, z: float, text: String, c: Color) -> void:
+	var size := 15
+	draw_set_transform(at, 0.0, Vector2(1.0 / z, 1.0 / z))
+	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	draw_rect(Rect2(Vector2(-6, -16), Vector2(w + 12, 22)), Color(0.03, 0.032, 0.036, 0.85))
+	draw_string(font, Vector2.ZERO, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, c)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
 func _draw() -> void:
 	if not drone.alive:
 		return
@@ -944,22 +1284,24 @@ func _draw() -> void:
 	var out: bool = (not hover.is_empty() and hover.get("reason", "") == "range") or (tool == 2 and lmb and aim.distance_to(drone.global_position) > reach())
 	var ra := 0.16 if out else 0.05
 	_dashed_circle(drone.global_position, reach(), Pal.ink(ra), lw)
+	if tool == 3 and multi != null and multi.on:
+		_draw_multi(z, lw)
 	# hover target
 	if not hover.is_empty() and hover.kind != "piece" and hover.kind != "inspect":
 		var c := Pal.ink(0.9) if hover.ok else Pal.ink(0.35)
 		var rr := 9.0 / z + 2.0 * sin(t * 6.0) / z
-		draw_arc(hover.pos, rr, 0.0, TAU, 24, c, lw * 1.2, true)
-		draw_arc(hover.pos, rr + 5.0 / z, -0.6 + t * 2.0, 0.6 + t * 2.0, 10, c, lw, true)
+		FastDraw.arc(self, hover.pos, rr, 0.0, TAU, 24, c, lw * 1.2, true)
+		FastDraw.arc(self, hover.pos, rr + 5.0 / z, -0.6 + t * 2.0, 0.6 + t * 2.0, 10, c, lw, true)
 	elif not hover.is_empty() and (hover.kind == "piece" or hover.kind == "inspect"):
 		var poly: PackedVector2Array = world.world_poly(hover.piece)
 		var cl := poly.duplicate()
 		cl.append(poly[0])
-		draw_polyline(cl, Pal.ink(0.75 if hover.ok else 0.3), lw * 1.6, true)
+		FastDraw.polyline(self, cl, Pal.ink(0.75 if hover.ok else 0.3), lw * 1.6, true)
 	# job progress
 	if not job.is_empty():
 		var k: float = job.t / job.dur
 		var pp: Vector2 = job.pos
-		draw_arc(pp, 14.0 / z, -PI / 2, -PI / 2 + TAU * k, 30, Pal.ink(0.95), 2.4 / z, true)
+		FastDraw.arc(self, pp, 14.0 / z, -PI / 2, -PI / 2 + TAU * k, 30, Pal.ink(0.95), 2.4 / z, true)
 		if job.kind == "wrench":
 			for i in 6:
 				var a := t * 9.0 + TAU * i / 6.0
@@ -968,7 +1310,7 @@ func _draw() -> void:
 			var from := drone.muzzle()
 			var tip := from.lerp(pp, Pal.ease_out(k * 1.6))
 			_dashed_line(from, tip, Pal.ink(0.7), lw)
-			draw_circle(tip, 2.5 / z, Pal.ink(1.0))
+			FastDraw.circle(self, tip, 2.5 / z, Pal.ink(1.0))
 	# cursor
 	_cursor(z)
 	# the unit the beam is about to cut into, outlined in red
@@ -979,7 +1321,7 @@ func _draw() -> void:
 			var cl2 := poly2.duplicate()
 			cl2.append(poly2[0])
 			var pulse := 0.5 + 0.5 * sin(t * 10.0)
-			draw_polyline(cl2, Pal.heat(0.5 + 0.4 * pulse, 1.3), lw * 2.0, true)
+			FastDraw.polyline(self, cl2, Pal.heat(0.5 + 0.4 * pulse, 1.3), lw * 2.0, true)
 
 
 func _cursor(z: float) -> void:
@@ -989,22 +1331,26 @@ func _cursor(z: float) -> void:
 	match tool:
 		1:
 			var d := PackedVector2Array([c + Vector2(0, -7) * s, c + Vector2(7, 0) * s, c + Vector2(0, 7) * s, c + Vector2(-7, 0) * s, c + Vector2(0, -7) * s])
-			draw_polyline(d, col, 1.4 * s, true)
+			FastDraw.polyline(self, d, col, 1.4 * s, true)
 		2:
 			for a in 4:
 				var dir := Vector2.from_angle(a * PI / 2.0)
 				draw_line(c + dir * 5.0 * s, c + dir * 11.0 * s, col, 1.4 * s, true)
 		3:
-			draw_arc(c, 9.0 * s, 0.4, PI - 0.4, 14, col, 1.6 * s, true)
-			draw_arc(c, 9.0 * s, PI + 0.4, TAU - 0.4, 14, col, 1.6 * s, true)
+			FastDraw.arc(self, c, 9.0 * s, 0.4, PI - 0.4, 14, col, 1.6 * s, true)
+			FastDraw.arc(self, c, 9.0 * s, PI + 0.4, TAU - 0.4, 14, col, 1.6 * s, true)
 		4:
-			draw_arc(c, 6.0 * s, 0.0, TAU, 16, col, 1.4 * s, true)
+			FastDraw.arc(self, c, 6.0 * s, 0.0, TAU, 16, col, 1.4 * s, true)
 			for i in 6:
 				var a := TAU * i / 6.0
 				draw_line(c + Vector2.from_angle(a) * 6.0 * s, c + Vector2.from_angle(a) * 9.5 * s, col, 1.6 * s)
 		5:
-			draw_arc(c, 8.0 * s, 0.0, TAU, 20, col, 1.4 * s, true)
-			draw_arc(c, 4.0 * s, 0.0, TAU, 12, col, 1.0 * s, true)
+			FastDraw.arc(self, c, 8.0 * s, 0.0, TAU, 20, col, 1.4 * s, true)
+			FastDraw.arc(self, c, 4.0 * s, 0.0, TAU, 12, col, 1.0 * s, true)
+		6:
+			draw_rect(Rect2(c - Vector2(6, 6) * s, Vector2(12, 12) * s), col, false, 1.4 * s)
+			draw_line(c + Vector2(0, -10) * s, c + Vector2(0, -6) * s, col, 1.4 * s)
+			draw_line(c + Vector2(0, 6) * s, c + Vector2(0, 10) * s, col, 1.4 * s)
 
 
 func _dashed_circle(c: Vector2, r: float, col: Color, w: float) -> void:
@@ -1039,7 +1385,11 @@ func _draw_add() -> void:
 		var pulse := 0.6 + 0.4 * sin(t * 18.0)
 		var outer: Color = Color(2.4, 0.25, 0.2, (0.35 + 0.3 * k) * pulse) if hot else Pal.heat(0.22 + 0.25 * k, 1.5)
 		var inner: Color = Color(2.4, 0.9, 0.8, 0.85) if hot else Color(2.0, 1.7, 1.4, 0.75 + 0.2 * k)
-		add_node.draw_line(m, front, outer, (4.0 + 3.0 * k) * flick * (1.4 if hot else 1.0), true)
+		# 71 号: short of power the beam is thinner and dimmer
+		var pk := Grid.salvage_k(game, "laser", 0.15)
+		outer.a *= 0.35 + 0.65 * pk
+		inner.a *= 0.5 + 0.5 * pk
+		add_node.draw_line(m, front, outer, (4.0 + 3.0 * k) * flick * (1.4 if hot else 1.0) * (0.45 + 0.55 * pk), true)
 		add_node.draw_line(m, front, inner, 1.4, true)
 		if hot:
 			add_node.draw_texture_rect(tex, Rect2(front - Vector2(34, 34), Vector2(68, 68)), false, Color(2.2, 0.2, 0.15, 0.45 * pulse))
@@ -1050,9 +1400,12 @@ func _draw_add() -> void:
 			var u := fposmod(t * 3.2 + i * 0.25, 1.0)
 			var pp := m + bd * bl * u
 			add_node.draw_line(pp, pp + bd * minf(18.0, bl * 0.2), Color(2.2, 1.9, 1.6, 0.8), 1.8, true)
-		# the surface glows hot around the cut
-		add_node.draw_texture_rect(tex, Rect2(front - Vector2(70, 70), Vector2(140, 140)), false, Pal.heat(0.22 * k, 1.8))
-		var r := (16.0 + 26.0 * k) * flick
+		# the surface glows hot around the cut (87-1: armour and titanium hold the heat in a wide
+		# bright pool, aluminium carries it off, composite chars without glowing)
+		var mg: float = clampf(float(Mat.of(cut_mat).get("glow", 1.0)), 0.25, 2.0) if cut_mat != null and in_material else 1.0
+		var hw := 70.0 * (0.7 + 0.3 * mg)
+		add_node.draw_texture_rect(tex, Rect2(front - Vector2(hw, hw), Vector2(hw, hw) * 2.0), false, Pal.heat(0.22 * k * mg, 1.8))
+		var r := (16.0 + 26.0 * k * (0.6 + 0.4 * mg)) * flick
 		add_node.draw_texture_rect(tex, Rect2(front - Vector2(r, r), Vector2(r, r) * 2.0), false, Pal.heat(0.6 * (0.3 + k), 2.2))
 		add_node.draw_texture_rect(tex, Rect2(front - Vector2(6, 6), Vector2(12, 12)), false, Color(2.0, 1.8, 1.6, 0.9))
 		add_node.draw_texture_rect(tex, Rect2(m - Vector2(10, 10), Vector2(20, 20)), false, Pal.heat(0.6, 2.0))
@@ -1063,7 +1416,7 @@ func _draw_add() -> void:
 			continue
 		var pl: PackedVector2Array = world.frame(p) * (pending[id].pl as PackedVector2Array)
 		if pl.size() >= 2:
-			add_node.draw_polyline(pl, Pal.heat(0.85, 2.4), game.skill_value("laser_kerf") * 1.6, true)
+			FastDraw.polyline(add_node, pl, Pal.heat(0.85, 2.4), game.skill_value("laser_kerf") * 1.6, true)
 	# the magnetic tether
 	if held_piece != null and not held_piece.gone:
 		var a := drone.muzzle()
@@ -1081,5 +1434,5 @@ func _draw_add() -> void:
 			for s in 13:
 				var u := s / 12.0
 				pts.append(a.lerp(mid, u).lerp(mid.lerp(b, u), u) + nrm * off * (1.0 - absf(u - 0.5) * 2.0))
-			add_node.draw_polyline(pts, Color(col.r, col.g, col.b, col.a * (0.9 - i * 0.2)), 1.4, true)
+			FastDraw.polyline(add_node, pts, Color(col.r, col.g, col.b, col.a * (0.9 - i * 0.2)), 1.4, true)
 		add_node.draw_texture_rect(tex, Rect2(b - Vector2(14, 14), Vector2(28, 28)), false, Color(col.r, col.g, col.b, 0.6))

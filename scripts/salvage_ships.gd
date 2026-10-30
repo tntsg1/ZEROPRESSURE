@@ -29,6 +29,7 @@ var lift_t := -1.0          # the ingot lift's car: < 0 idle, else 0..1 down
 var _ingots_seen := -1
 var leave := 0.0            # 0 docked .. 1 gone (when the hull is towed out)
 var cv = null               # the batch this frame is drawn into (canvas_batch.gd)
+var _was_empty := false
 
 
 func _init() -> void:
@@ -197,8 +198,17 @@ func step(dt: float) -> void:
 		lift_t += dt / 1.6
 		if lift_t >= 1.0:
 			lift_t = -1.0
+	var empty := not alongside()
+	if empty != _was_empty:
+		_was_empty = empty
+		queue_redraw()
 	if dock.draw_now and _seen():
 		queue_redraw()
+
+
+# alongside only while a contract is in the berth
+func alongside() -> bool:
+	return not (game != null and game.has_method("in_berth") and game.in_berth())
 
 
 func _seen() -> bool:
@@ -219,6 +229,10 @@ func _seen() -> bool:
 
 func _draw() -> void:
 	if dock == null or dock.furnace_x == -INF:
+		return
+	# they lie alongside only for a contract: the empty berth has none (their hulls used to sit over
+	# the salvage district's corridor up to the ring)
+	if not alongside():
 		return
 	cv = preload("res://scripts/canvas_batch.gd").new(self)
 	_draw_body()

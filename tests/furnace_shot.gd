@@ -95,7 +95,7 @@ func _process(_dt: float) -> bool:
 		var box := PackedVector2Array([Vector2(0.0, 0.0), Vector2(0.6, 0.0), Vector2(0.6, 0.5), Vector2(0.0, 0.5)])
 		d.scrapline.take([plate], 1.0, ["hull"], fx)
 		d.scrapline.take([frame_l, box], 0.6, ["rib", "equip"], fx)
-	if frame < 700:
+	if frame < 1100:
 		game.cam_override = Vector2(fx - 1.5, F + 3.4) * 48.0
 		game.zoom_override = 0.95
 		var pr = d.scrapline.press
@@ -110,7 +110,7 @@ func _process(_dt: float) -> bool:
 			shots.append("fines")
 			Cap.save(root, "res://tests/out/furnace_fines.png")
 		return false
-	if frame == 700:
+	if frame == 1100:
 		check(shots.has("press") and shots.has("shred") and shots.has("fines"), "the plate was pressed, the frame shredded to powder: %s" % [shots])
 		check(d.scrapline.pucks_made >= 1 and d.scrapline.shredded > 0.5, "a puck made (%d), %.1f t shredded" % [d.scrapline.pucks_made, d.scrapline.shredded])
 		check(d.scrapline.nonferrous > 0.0, "the drum threw off %.0f kg of non-ferrous" % d.scrapline.nonferrous)
@@ -120,7 +120,7 @@ func _process(_dt: float) -> bool:
 		sm.T = Smelter.T_TAP + 1.0
 		sm.phase = "heat"
 		Engine.time_scale = 4.0
-	if frame < 1200:
+	if frame < 1600:
 		game.cam_override = Vector2(fx + 2.5, F + 6.8) * 48.0
 		game.zoom_override = 1.25
 		if sm.phase == "pour" and sm.m_l < Smelter.CAP - 3.0 and not shots.has("pour"):
@@ -128,15 +128,15 @@ func _process(_dt: float) -> bool:
 			Engine.time_scale = 1.0
 			Cap.save(root, "res://tests/out/furnace_tap.png")
 			check(sm.tilt >= Smelter.TILT_MAX - 0.001 and sm.hood >= 1.0 and sm.gate > 0.5, "tapping: hood aside, tilted %.0f°, gate open" % rad_to_deg(sm.tilt))
-			frame = 1200
+			frame = 1600
 		return false
-	if frame == 1201:
+	if frame == 1601:
 		Engine.time_scale = 1.0
 		check(shots.has("pour"), "the furnace reached tapping")
-	if frame < 1300:
+	if frame < 1700:
 		game.cam_override = Vector2(fx + 1.0, F + 3.0) * 48.0
 		game.zoom_override = 0.6
-		if frame == 1299:
+		if frame == 1699:
 			Cap.save(root, "res://tests/out/furnace_wide.png")
 		return false
 	print("furnace_shot: %d failures" % fails)

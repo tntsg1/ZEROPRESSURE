@@ -12,6 +12,8 @@ var finished := false
 
 
 func _initialize() -> void:
+	# 68 号: this test reads the hulks the market drew by itself (before the star-map sweep)
+	Scan.ON = false
 	Career.path = "user://zp_test_berth_career.json"
 	SaveGame.path = "user://zp_test_berth_save.json"
 	for f in [Career.path, SaveGame.path]:
@@ -67,7 +69,8 @@ func _run() -> void:
 	var t1 := _types(c, 80)
 	check(t1.has("med47"), "with it: MED-47 comes up (%d of the offers)" % int(t1.get("med47", 0)))
 	var c2 := {"rep": 4, "done": 3, "upgrades": {"berth88": 1}}
-	check(not _types(c2, 60).has("med47"), "and only at reputation 10")
+	# 66 号: ships unlock by the berth alone now (Market.BY_BERTH_ONLY), not by reputation
+	check(_types(c2, 60).has("med47") == Market.BY_BERTH_ONLY, "reputation no longer gates it (66 号: by the berth only)")
 	print("BERTH: bought at the terminal")
 	Career.data = {}
 	Career.start_new()
@@ -83,8 +86,11 @@ func _run() -> void:
 	for b in term.BERTH:
 		if b[0] == "berth88":
 			it = b
+	# 65 号: the crew builds it; the money goes when it is ordered (hired, no materials of our own)
+	var price := Repair.price("berth88", Repair.parts_for("berth88").ok)
 	term.buy(it)
-	check(Career.data.upgrades.has("berth88") and absf(float(Career.data.money) - 60000.0) < 1.0, "the extension is bought for $240,000 (left $%d)" % int(Career.data.money))
+	Works.finish()
+	check(Career.data.upgrades.has("berth88") and absf(float(Career.data.money) - (300000.0 - price)) < 1.0, "the extension is ordered for %s and built (left $%d)" % [Pal.money(price), int(Career.data.money)])
 	term.queue_free()
 	await _frames(2)
 	print("BERTH: in play")

@@ -12,9 +12,11 @@ chars = set(chr(c) for c in range(0x20, 0x7F))
 chars |= set("·—–→←↑↓×÷±%…「」『』（）《》，。！？：；、“”‘’°²³▲△▽◆◇○●■□★☆✦⌁∞≈≥≤▸▹◂◃")
 for folder in ['scripts', 'scenes', 'ships', 'data']:
     for f in (root / folder).rglob('*'):
-        if f.suffix in ('.gd', '.tscn', '.json'):
+        # .txt: the author's words read at run time (data/台词.txt, scripts/lines.gd)
+        if f.suffix in ('.gd', '.tscn', '.json', '.txt'):
             chars |= set(f.read_text(encoding='utf-8'))
-chars = {c for c in chars if c.isprintable()}
+# the ideographic space is not "printable" to Python but the screens use it to line up columns
+chars = {c for c in chars if c.isprintable() or c == '　'}
 for weight, name in [(400, 'ZeroSC-Regular.ttf'), (300, 'ZeroSC-Light.ttf'), (600, 'ZeroSC-Semibold.ttf')]:
     opts = subset.Options(); opts.layout_features = ['*']; opts.name_IDs = ['*']; opts.notdef_outline = True
     font = subset.load_font(str(source), opts)

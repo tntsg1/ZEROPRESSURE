@@ -98,7 +98,7 @@ func hatch(r: Rect2, col: Color, w: float, step: float, flip := false) -> void:
 	while x < r.end.x:
 		var a := Vector2(x, r.end.y) if not flip else Vector2(x, r.position.y)
 		var b := Vector2(x + r.size.y, r.position.y) if not flip else Vector2(x + r.size.y, r.end.y)
-		var seg := Geometry2D.clip_polyline_with_polygon(PackedVector2Array([a, b]), PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]))
+		var seg := Geometry2D.intersect_polyline_with_polygon(PackedVector2Array([a, b]), PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]))
 		for s in seg:
 			if s.size() >= 2:
 				line(s[0], s[1], col, w)

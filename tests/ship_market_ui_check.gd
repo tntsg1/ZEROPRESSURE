@@ -1,0 +1,89 @@
+extends "res://tests/guide_check.gd"
+# 45 号: the hulk market in the Delta Force layout. One card per listing with the ship's own side
+# view; the size filter; a card opens the window, its inspections and its buy; my ships as cards
+# with resale. Shots. Own test saves only.
+#   tools/run_test.sh tests/ship_market_ui_check.gd --fixed-fps 60
+
+
+func _initialize() -> void:
+	Career.path = "user://zp_test_ship_market_ui_career.json"
+	SaveGame.path = "user://zp_test_ship_market_ui_save.json"
+	SaveGame.allow_test = true
+	if DisplayServer.get_name() != "headless":
+		root.add_child(preload("res://tests/test_window.gd").new())
+	_run.call_deferred()
+
+
+func _cards(ui) -> Array:
+	return ui.find_children("*", "ShipThumb", true, false).filter(func(c): return c.is_visible_in_tree() and not ui.detail_win.is_ancestor_of(c))
+
+
+func _run() -> void:
+	Txt.zh = true
+	Career.data = Career.fresh()
+	Career.data.market = true
+	Career.data.story_job = {}
+	Career.data.active = {}
+	Career.data.money = 5000000.0
+	Career.data.port = {"salvage": 1, "trade": 1}
+	Career.data.drill = {"granted": true, "done": true}
+	Career.data.offers = []
+	Career.save()
+	await _spawn()
+	await _frames(90)
+	g.open_ship_market()
+	await _frames(8)
+	var ui = g.console_ui
+	var n: int = ShipMarket.data().listings.size()
+	check(ui != null and _cards(ui).size() == n, "one card with a ship picture per listing (%d)" % n)
+	var outlined := true
+	for c in _cards(ui):
+		outlined = outlined and not ShipThumb.shape_of(c.offer).outline.is_empty()
+	check(outlined, "every picture is the ship's own outline")
+	Cap.save(root, "res://tests/out/ship_market_cards_zh.png")
+	ui._cat("small")
+	await _frames(3)
+	var small := 0
+	for l in ShipMarket.data().listings:
+		if ui.length_of(l) <= 40.0:
+			small += 1
+	check(_cards(ui).size() == small, "the small filter shows the small ones (%d)" % small)
+	ui._cat("all")
+	await _frames(3)
+	var pick: Dictionary = {}
+	for l in ShipMarket.data().listings:
+		if ShipMarket.fits(l):
+			pick = l
+			break
+	ui.chosen = str(pick.id)
+	ui._detail()
+	await _frames(4)
+	check(ui.detail_win.visible and ui.dimmer.visible, "a card opens its window over a darkened page")
+	for b in ui.detail_win.find_children("*", "Button", true, false):
+		if str(b.text).begins_with("结构检验"):
+			b.pressed.emit()
+			break
+	await _frames(3)
+	check(ShipMarket.listing(str(pick.id)).inspected.has("structure"), "the structure check from the window")
+	Cap.save(root, "res://tests/out/ship_market_detail_zh.png")
+	var bought := false
+	for b in ui.detail_win.find_children("*", "Button", true, false):
+		if str(b.text).begins_with("买下并拖回") and not b.disabled:
+			b.pressed.emit()
+			bought = true
+			break
+	await _frames(3)
+	check(bought and not ShipMarket.asset(str(pick.id)).is_empty() and not ui.detail_win.visible, "bought from the window")
+	ui._cat("mine")
+	await _frames(4)
+	var resale := false
+	for b in ui.find_children("*", "Button", true, false):
+		if str(b.text) == "挂牌转售":
+			resale = true
+	check(resale and _cards(ui).size() == 1, "my ships: its card, with resale")
+	Cap.save(root, "res://tests/out/ship_market_mine_zh.png")
+	ui.close()
+	g.queue_free()
+	await _frames(4)
+	print("SHIP MARKET UI %s (%d checks, %d failed)" % ["PASS" if fails == 0 else "FAIL", checks, fails])
+	quit()

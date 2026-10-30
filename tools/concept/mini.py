@@ -98,5 +98,5 @@ class Pen:
         return '\n'.join(self.o)
 
 
-HEAD = '''<html><head><style>@font-face{font-family:N;src:url(file:///tmp/claude-0/fontsrc/NotoSansSC-VF.ttf)}
+HEAD = '''<html><head><style>@font-face{font-family:N;src:url(file:///tmp/claude-0/fontsrc/NotoSansSC-VF.ttf),url(file:///C:/Windows/Fonts/NotoSansSC-VF.ttf),url(file:///C:/Windows/Fonts/msyh.ttc)}
 body{margin:0;background:%s;font-family:N}</style></head><body>''' % BG

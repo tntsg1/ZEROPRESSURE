@@ -20,6 +20,8 @@ func check(ok: bool, what: String) -> void:
 
 
 func _initialize() -> void:
+	# 68 号: this test reads the hulks the market drew by itself (before the star-map sweep)
+	Scan.ON = false
 	Txt.test_zh = true
 	Txt.zh = true
 	Career.path = "user://zp_test_berthflow_career.json"
@@ -102,13 +104,30 @@ func _run() -> void:
 	await _frames(5)
 	check(b.console_ui == null and not paused, "Esc goes home, then back to the berth (unpaused)")
 	# ---------------------------------------------------------------- taking one there
+	# 62 号: a find is sent for first; once it is towed home its card starts the job
+	if Career.data.get("offers", []).size() > 0 and Career.data.offers[0].get("find", false):
+		Career.data.money = maxf(float(Career.data.money), 100000.0)
+		var fid := str(Career.data.offers[0].id)
+		ShipMarket.tow_find(0)
+		var fa := ShipMarket.asset(fid)
+		Shipping.data().day = float(fa.run.depart) + float(fa.run.tof) + 0.01
+		ShipMarket.tick()
+		Career.save()
 	b.open_console("terminal")
 	await _frames(20)
 	term = b.console_ui
 	term.set_tab(0)
 	await _frames(20)
-	var want: String = str(term.offers()[0].get("id", ""))
-	term.take(0)
+	# an ordinary contract that needs no special course (a ship that does is sent to its lesson; a
+	# belt find sends the tug out; which offers come up depends on the random draw)
+	var pick := 0
+	for i in term.offers().size():
+		# not a belt find either (62 号: that sends the tug out, it brings no ship in)
+		if Codex.required(str(term.offers()[i].get("ship", ""))).is_empty() and not term.offers()[i].get("find", false) and not term.offers()[i].get("trial_card", false):
+			pick = i
+			break
+	var want: String = str(term.offers()[pick].get("id", ""))
+	term.take(pick)
 	t = 0
 	while (_scene() == b or Wipe.busy()) and t < 600:
 		await process_frame

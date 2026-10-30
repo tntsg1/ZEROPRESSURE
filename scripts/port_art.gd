@@ -144,6 +144,24 @@ static func draw_part(ci, part: String, c: Vector2, M: float, z: float, t: float
 		for rb in ribs:
 			var q := a0 + dir * (rb + 0.5) * 5.0 * M
 			ci.draw_line(q + dir.orthogonal() * 3.6 * M, q - dir.orthogonal() * 3.6 * M, Pal.ink(0.1 + 0.05 * n), lw * 1.6)
+		# 100 号 (Q1 C): the feeder cable along the spoke, its current as pulses — into the hub from
+		# the power district, out from the hub to each district by what it draws now
+		var side_v := dir.orthogonal() * 2.3 * M
+		ci.draw_line(a0 + side_v, a1 + side_v, Pal.tint(Pal.VOLT, 0.12 + 0.06 * n, 1.0), lw * 1.4)
+		var zz2: String = zid
+		_anim(ci, t, func(cc, tt: float, _z: float):
+			var mw := _feeder_mw(zz2)
+			if mw <= 0.005:
+				return
+			var L := len
+			var stp := 7.0 * M
+			var off := fmod(tt * (5.0 + 4.0 * sqrt(mw)) * M, stp)
+			var vc := Pal.tint(Pal.VOLT, 0.45 + 0.5 * clampf(mw / 12.0, 0.0, 1.0), 1.4)
+			var dd := off
+			while dd < L:
+				var k := dd / L if zz2 != "power" else 1.0 - dd / L
+				FastDraw.circle(cc, a0.lerp(a1, k) + side_v, (0.28 + 0.2 * clampf(mw / 20.0, 0.0, 1.0)) * M, vc)
+				dd += stp)
 		# a junction where the spoke crosses the rail
 		var jp := c + Vector2(dir.x * RAIL_R, dir.y * RAIL_R * 0.86) * M
 		ci.draw_rect(Rect2(jp - Vector2(3.0, 3.0) * M, Vector2(6.0, 6.0) * M), FILL2)
@@ -232,7 +250,8 @@ static func _hub(ci, c: Vector2, M: float, z: float, t: float, n: int) -> void:
 		var col := Pal.heat(0.85, 1.5) if i < segs16 else Pal.ink(0.05)
 		ci.draw_arc(c, (HUB_R + 3.0) * M, a0 + 0.04, a0 + TAU / 16.0 - 0.04, 6, col, lw * 2.4, true)
 		if i < segs16 and not _no_lamps:
-			lamps.append([c + Vector2.from_angle(a0 + TAU / 32.0) * (HUB_R + 3.0) * M, 3.0 * M, col])
+			# 109 号: a small halo (3 m threw orange blobs over the hub's rim up close)
+			lamps.append([c + Vector2.from_angle(a0 + TAU / 32.0) * (HUB_R + 3.0) * M, 1.2 * M, col])
 	# four docking arms off the ring, a pad at each end (a shuttle on one once it runs)
 	for i in 4:
 		var a := TAU * i / 4.0 + PI / 4.0
@@ -256,7 +275,7 @@ static func _hub(ci, c: Vector2, M: float, z: float, t: float, n: int) -> void:
 					break
 				var a := -tt * 0.25 + TAU * i / 6.0
 				var p := c + Vector2.from_angle(a) * (HUB_R + 1.0) * M
-				_lamp(cc, p, 0.9 * M, Pal.heat(0.8, 1.5), 3.0))
+				_lamp(cc, p, 0.9 * M, Pal.heat(0.8, 1.5), 1.3))
 	_anim(ci, t, func(cc, _t: float, zz: float): _plate(cc, c + Vector2(-HUB_R * M, -(HUB_R + 9.0) * M), Port.name_of("ring"), "TR-0", n, M, zz))
 
 
@@ -315,13 +334,24 @@ static func exterior_rects(zone: String) -> Array:
 # a name plate like the berth's: a dark box, a heat edge, the name and a code
 static func _plate(ci, at: Vector2, name: String, code: String, n: int, M: float, z: float) -> void:
 	var font := Fonts.get_font("Regular")
-	var fs := int(12.0 / z)
-	var w: float = font.get_string_size(name + "   " + code, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 24.0 / z
-	var r := Rect2(at, Vector2(w, 24.0 / z))
+	# drawn in screen pixels at its corner (a font size of 12 / zoom rounds to nothing zoomed far in)
+	var fs := 12
+	var w: float = font.get_string_size(name + "   " + code, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 24.0
+	var r := Rect2(Vector2.ZERO, Vector2(w, 24.0))
+	ci.draw_set_transform(at, 0.0, Vector2.ONE / maxf(z, 0.001))
 	ci.draw_rect(r, Color(0.02, 0.022, 0.026, 0.9))
-	ci.draw_rect(Rect2(r.position, Vector2(3.0 / z, r.size.y)), Pal.heat(0.9, 1.1) if n >= 1 else Pal.ink(0.3))
-	ci.draw_string(font, r.position + Vector2(10.0 / z, 17.0 / z), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Pal.ink(0.6 + 0.3 * n))
-	ci.draw_string(font, r.end - Vector2(8.0 / z + font.get_string_size(code, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, 7.0 / z), code, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Pal.ink(0.35))
+	ci.draw_rect(Rect2(r.position, Vector2(3.0, r.size.y)), Pal.heat(0.9, 1.1) if n >= 1 else Pal.ink(0.3))
+	ci.draw_string(font, r.position + Vector2(10.0, 17.0), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Pal.ink(0.6 + 0.3 * n))
+	ci.draw_string(font, r.end - Vector2(8.0 + font.get_string_size(code, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x, 7.0), code, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Pal.ink(0.35))
+	ci.draw_set_transform(Vector2.ZERO)
+
+
+# a label a constant size on screen at a world point (offset in screen pixels): a font size of
+# n / zoom rounds to nothing zoomed far in
+static func _screen_text(ci, at: Vector2, off: Vector2, text: String, px: int, z: float, col: Color, font: Font = null) -> void:
+	ci.draw_set_transform(at, 0.0, Vector2.ONE / maxf(z, 0.001))
+	ci.draw_string(font if font != null else Fonts.get_font("Medium"), off, text, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
+	ci.draw_set_transform(Vector2.ZERO)
 
 
 # a truss between two points: two chords and a zigzag web
@@ -523,21 +553,70 @@ static func _power(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: i
 				tx += 0.9 * M
 			if n >= 1:
 				_anim(ci, t, func(cc, _tt: float, _z: float):
-					# the load the sets carry now (the grid's last sample)
-					var frac := 0.1
-					if not Grid.history.is_empty() and Career.usable() and not Career.data.is_empty():
-						frac = clampf(float(Grid.history.back()) / maxf(1.0, Grid.capacity()), 0.0, 1.0)
-					cc.draw_rect(pr.grow(-0.2 * M), Pal.heat(0.02 + 0.18 * frac, 1.0)))
+					# 100 号: as warm as the radiator loop really runs (scripts/power_works.gd)
+					var frac := clampf((PowerWorksRef.rad_t - 20.0) / 95.0, 0.0, 1.0)
+					cc.draw_rect(pr.grow(-0.2 * M), Pal.heat(0.02 + 0.2 * frac, 1.0)))
 	_block(ci, r, M, lw, t, n, 11, true)
-	# two reactor domes on the roof, a vent each
-	for dx: float in [-14.0, 14.0]:
-		var dc := Vector2(r.get_center().x + dx * M, r.position.y)
-		ci.draw_circle(dc, 8.0 * M, FILL)
-		ci.draw_arc(dc, 8.0 * M, PI, TAU, 24, Pal.ink(ink + 0.06), lw * 1.3, true)
-		ci.draw_arc(dc, 5.5 * M, PI, TAU, 18, Pal.ink(ink * 0.7), lw, true)
-		ci.draw_line(dc + Vector2(0, -8.0 * M), dc + Vector2(0, -11.0 * M), Pal.ink(ink), lw)
-		if n >= 1:
-			_anim(ci, t, func(cc, tt: float, _z: float): cc.draw_circle(dc + Vector2(0, -4.0 * M), 1.2 * M, Pal.heat(0.5 + 0.3 * sin(tt * 3.0 + dx), 1.5)))
+	# 100 号 (Q5 B): a containment dome over each reactor bay — the third an open frame of ribs
+	# until stage 2 — its vent, and a lamp as warm as that unit's core
+	for i in 3:
+		var dc := Vector2(r.position.x + (0.8 + 4.7 + i * 9.6) * M, r.position.y)
+		var built := i < 2 or n >= 2
+		if built:
+			ci.draw_circle(dc, 4.4 * M, FILL)
+			ci.draw_arc(dc, 4.4 * M, PI, TAU, 24, Pal.ink(ink + 0.06), lw * 1.3, true)
+			ci.draw_arc(dc, 3.0 * M, PI, TAU, 18, Pal.ink(ink * 0.7), lw, true)
+			ci.draw_line(dc + Vector2(0, -4.4 * M), dc + Vector2(0, -6.6 * M), Pal.ink(ink), lw)
+			var ui := i
+			_anim(ci, t, func(cc, tt: float, _z: float):
+				var q := clampf(float(PowerWorksRef.q_th[ui]) / maxf(1.0, PowerWorksRef.cap / maxf(1, PowerWorksRef.units) / PowerWorksRef.ETA), 0.0, 1.0)
+				cc.draw_circle(dc + Vector2(0, -2.2 * M), 0.8 * M, Pal.heat(0.15 + 0.6 * q + 0.1 * q * sin(tt * 2.0 + ui), 1.5) if q > 0.01 else Pal.ink(0.12)))
+		else:
+			for k in 5:
+				var a := PI + PI * (k + 0.5) / 5.0
+				ci.draw_line(dc, dc + Vector2.from_angle(a) * 4.4 * M, Pal.ink(ink * 0.5), lw)
+			ci.draw_arc(dc, 4.4 * M, PI, TAU, 24, Pal.ink(ink * 0.5), lw, true)
+			ci.draw_line(dc + Vector2(-4.6, -0.3) * M, dc + Vector2(4.6, -0.3) * M, Pal.heat(0.45, 1.0), lw * 1.5)
+	# the step-up transformers on the roof: the hub's feeders start here
+	for k in 2:
+		var tx := r.position.x + (36.0 + k * 5.0) * M
+		var tr := Rect2(Vector2(tx, r.position.y - 2.6 * M), Vector2(3.4 * M, 2.6 * M))
+		ci.draw_rect(tr, FILL2)
+		ci.draw_rect(tr, Pal.ink(ink + 0.05), false, lw)
+		for f in 5:
+			ci.draw_line(Vector2(tx + (0.4 + f * 0.65) * M, tr.position.y + 0.3 * M), Vector2(tx + (0.4 + f * 0.65) * M, tr.end.y - 0.2 * M), Pal.ink(ink * 0.6), lw)
+		for b in 3:
+			var bp := Vector2(tx + (0.7 + b * 1.0) * M, tr.position.y)
+			ci.draw_line(bp, bp + Vector2(0, -1.4 * M), Pal.tint(Pal.VOLT, 0.55, 1.0), lw * 1.6)
+			ci.draw_circle(bp + Vector2(0, -1.4 * M), 0.22 * M, Pal.tint(Pal.VOLT, 0.7, 1.0))
+	# 100 号 (Q6 C): the shore line's umbilical on the roof — stowed along it, swung up and plugged
+	# into the shore line's socket while the port draws shore power; the current down the line
+	var root := r.position + Vector2(56.0, -0.4) * M
+	var sock := root + Vector2.from_angle(-PI * 0.42) * 9.0 * M
+	var far := sock + Vector2(34.0, -40.0) * M
+	ci.draw_rect(Rect2(root - Vector2(0.9, 0.4) * M, Vector2(1.8, 0.8) * M), FILL2)
+	ci.draw_rect(Rect2(root - Vector2(0.9, 0.4) * M, Vector2(1.8, 0.8) * M), Pal.ink(ink + 0.08), false, lw)
+	ci.draw_line(sock, far, Pal.ink(ink * 0.55), lw)
+	ci.draw_circle(far, 1.1 * M, FILL2)
+	ci.draw_arc(far, 1.1 * M, 0.0, TAU, 16, Pal.ink(ink + 0.05), lw, true)
+	ci.draw_rect(Rect2(sock - Vector2(0.45, 0.45) * M, Vector2(0.9, 0.9) * M), FILL2)
+	ci.draw_rect(Rect2(sock - Vector2(0.45, 0.45) * M, Vector2(0.9, 0.9) * M), Pal.ink(ink + 0.1), false, lw)
+	_anim(ci, t, func(cc, tt: float, zz: float):
+		var u := PowerWorksRef.umb
+		var a := lerpf(PI, -PI * 0.42, Pal.ease_io(u))
+		var tip := root + Vector2.from_angle(a) * 9.0 * M
+		cc.draw_line(root, tip, Pal.ink(0.55), maxf(2.0 / zz, 0.35 * M))
+		cc.draw_line(root, tip, Pal.heat(0.6, 1.0), maxf(1.0 / zz, 0.12 * M))
+		cc.draw_circle(tip, 0.4 * M, Pal.tint(Pal.FLUID, 0.95, 1.4) if u >= 1.0 else Pal.heat(0.8, 1.3))
+		_lamp(cc, far, 0.35 * M, Pal.heat(0.6 + 0.4 * absf(sin(tt * 2.0)), 1.5) if PowerWorksRef.shore > 0.05 else Pal.ink(0.3))
+		if u >= 1.0 and PowerWorksRef.shore > 0.05:
+			var L := far.distance_to(sock)
+			var stp := 5.0 * M
+			var off := fmod(tt * (4.0 + 2.0 * sqrt(PowerWorksRef.shore)) * M, stp)
+			var d := off
+			while d < L:
+				FastDraw.circle(cc, far.lerp(sock, d / L), 0.3 * M, Pal.tint(Pal.VOLT, 0.95, 1.4))
+				d += stp)
 	# radiator fins out the top, hatched; they glow faintly once the reactors run
 	for i in 5:
 		var fx := r.position.x + (6.0 + i * 11.0) * M
@@ -548,6 +627,21 @@ static func _power(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: i
 
 
 const TugWorksRef = preload("res://scripts/tug_works.gd")
+const PowerWorksRef = preload("res://scripts/power_works.gd")
+const FastDraw = preload("res://scripts/fast_draw.gd")
+
+
+# 100 号: what a spoke's feeder carries now (MW): the power district's own spoke all of it, the
+# others their group (the hub and the trade port on the base)
+static func _feeder_mw(zone: String) -> float:
+	match zone:
+		"power":
+			return PowerWorksRef.own + PowerWorksRef.shore
+		"trade":
+			return float(PowerWorksRef.groups.get("base", 0.0)) * 0.2
+	return float(PowerWorksRef.groups.get(zone, 0.0))
+
+const TradeWorksRef = preload("res://scripts/trade_works.gd")
 
 # 拖船站: a hangar with three open bays, tugs parked in them, approach lights
 static func _tug(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: int) -> void:
@@ -599,8 +693,8 @@ static func _tug(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: int
 			var a := tt * 3.2
 			for s2 in [-1.0, 1.0]:
 				cc.draw_line(bp, bp + Vector2(cos(a) * s2 * 7.0, -absf(sin(a)) * 3.0) * M, Pal.heat(0.18, 1.4), 0.5 * M)
-		cc.draw_string(Fonts.get_font("Medium"), Vector2(x0 - 1.6 * M - 70.0 / maxf(zz, 0.05), y0 + g.x + 2.0 * M), "拖船门" if Txt.zh else "TUG GATE", HORIZONTAL_ALIGNMENT_LEFT, -1, int(11.0 / maxf(zz, 0.05)), Pal.ink(0.6))
-		cc.draw_string(Fonts.get_font("Medium"), Vector2(x0 - 1.6 * M - 70.0 / maxf(zz, 0.05), y0 + mo.x + 2.0 * M), "船坞口" if Txt.zh else "MOUTH", HORIZONTAL_ALIGNMENT_LEFT, -1, int(11.0 / maxf(zz, 0.05)), Pal.ink(0.6)))
+		_screen_text(cc, Vector2(x0 - 1.6 * M, y0 + g.x + 2.0 * M), Vector2(-70.0, 0.0), "拖船门" if Txt.zh else "TUG GATE", 11, zz, Pal.ink(0.6))
+		_screen_text(cc, Vector2(x0 - 1.6 * M, y0 + mo.x + 2.0 * M), Vector2(-70.0, 0.0), "船坞口" if Txt.zh else "MOUTH", 11, zz, Pal.ink(0.6)))
 
 
 # an industrial tug on its berth, bow out (left): hull, cockpit glazing forward, four thruster
@@ -757,6 +851,37 @@ static func _trade(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: i
 	for k in 18:
 		var lp := Vector2(px0 + (2.0 + k * 4.0) * M, py - 3.5 * M)
 		ci.draw_circle(lp, 0.4 * M, Pal.tint(Pal.AIR, 0.55, 1.2) if n >= 1 else Pal.ink(0.07))
+	# 98 号: the east wall's two visitors' airlocks and the lighter's port below (scripts/trade_works.gd),
+	# each a dark opening in a hazard-marked frame; the dome's ribs and its beacon, turning while
+	# the hand-over dock or a visitor is busy
+	for span in [TradeWorksRef.LOCKS[0], TradeWorksRef.LOCKS[1], TradeWorksRef.PORT]:
+		var th := Rect2(Vector2(r.end.x - 2.6 * M, r.position.y + span.x * M), Vector2(3.0 * M, (span.y - span.x) * M))
+		ci.draw_rect(th, Color(0.012, 0.013, 0.016))
+		ci.draw_rect(th, Pal.ink(ink + 0.12), false, lw * 1.6)
+		var hy := th.position.y
+		while hy < th.end.y - 0.4 * M:
+			ci.draw_line(Vector2(th.end.x - 0.5 * M, hy), Vector2(th.end.x, hy + 0.5 * M), Pal.heat(0.4, 1.0), lw)
+			hy += 1.1 * M
+	for i in 7:
+		var a2 := PI + PI * (i + 0.5) / 7.0
+		ci.draw_line(dc + Vector2.from_angle(a2) * 6.0 * M, dc + Vector2.from_angle(a2) * 10.0 * M, Pal.ink(ink * 0.35), lw)
+	ci.draw_arc(dc, 6.0 * M, PI, TAU, 24, Pal.ink(ink * 0.5), lw, true)
+	var nn := n
+	_anim(ci, t, func(cc, tt: float, _z: float):
+		var busy: bool = (not TradeWorksRef.job.is_empty() and not bool(TradeWorksRef.job.get("done", true))) or not TradeWorksRef.visitors.is_empty()
+		var bp := dc + Vector2(0.0, -10.6 * M)
+		cc.draw_circle(bp, 0.6 * M, Pal.heat(0.35 + 0.65 * absf(sin(tt * 6.0)), 1.6) if busy else (Pal.tint(Pal.FLUID, 0.7, 1.2) if nn >= 1 else Pal.ink(0.12)))
+		if busy:
+			var a3 := tt * 3.0
+			for s2 in [-1.0, 1.0]:
+				cc.draw_line(bp, bp + Vector2(cos(a3) * s2 * 8.0, -absf(sin(a3)) * 3.0) * M, Pal.heat(0.16, 1.4), 0.5 * M)
+		for i2 in 2:
+			var lk: Vector2 = TradeWorksRef.LOCKS[i2]
+			var used := false
+			for e in TradeWorksRef.visitors.values():
+				if int(e.lock) == i2 and float(e.g) >= 1.0:
+					used = true
+			cc.draw_circle(Vector2(r.end.x + 1.2 * M, r.position.y + (lk.x - 0.6) * M), 0.45 * M, Pal.tint(Pal.FLUID, 0.9, 1.3) if used else (Pal.ink(0.3) if nn >= 1 else Pal.ink(0.1))))
 
 
 # 货运区: the depot, container stacks in rows, a gantry crane over them, a trolley running
@@ -806,7 +931,7 @@ static func _salvage(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n:
 			cc.draw_rect(cr, Pal.ink(0.45), false, lw)
 			cc.draw_line(cr.position + Vector2(0, 0.8 * m), Vector2(cr.end.x, cr.position.y + 0.8 * m), Pal.ink(0.3), lw)
 		var font := Fonts.get_font("Regular")
-		cc.draw_string(font, door.position + Vector2(0.2 * m, -1.9 * m), Ops.w("零件库 · %d 件", "PARTS STORE · %d") % held, HORIZONTAL_ALIGNMENT_LEFT, -1, int(12.0 / zz), Pal.ink(0.75)))
+		_screen_text(cc, door.position + Vector2(0.2 * m, -1.9 * m), Vector2.ZERO, Ops.w("零件库 · %d 件", "PARTS STORE · %d") % held, 12, zz, Pal.ink(0.75), font))
 	# the second berth's frame to the right (G7): only once its footing is built (43 号: no ghost)
 	var fr := Rect2(o + Vector2(x1 + 30.0, -15.0) * m, Vector2(70.0, fy + 15.0) * m)
 	if n >= 2:
@@ -854,7 +979,7 @@ static func _ark(ci, ac: Vector2, M: float, z: float, t: float) -> void:
 	# one running light still blinking, slow
 	_anim(ci, t, func(cc, tt: float, zz: float):
 		cc.draw_circle(ac + Vector2(64.0 * M, 0), 0.7 * M, Pal.heat(0.6 if fmod(tt, 3.0) < 0.2 else 0.08, 1.4))
-		cc.draw_string(Fonts.get_font("Regular"), ac + Vector2(-50.0 * M, -16.0 * M), "ARK-01", HORIZONTAL_ALIGNMENT_LEFT, -1, int(11.0 / zz), Pal.ink(0.2)))
+		_screen_text(cc, ac + Vector2(-50.0 * M, -16.0 * M), Vector2.ZERO, "ARK-01", 11, zz, Pal.ink(0.2), Fonts.get_font("Regular")))
 
 
 static func _dashed_ellipse(ci, c: Vector2, r: Vector2, segs: int, col: Color, lw: float) -> void:

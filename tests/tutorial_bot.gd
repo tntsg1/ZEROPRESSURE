@@ -30,6 +30,8 @@ var shot_done := {}
 
 
 func _initialize() -> void:
+	# 68 号: this test reads the hulks the market drew by itself (before the star-map sweep)
+	Scan.ON = false
 	var a := OS.get_cmdline_user_args()
 	chaos = a.has("chaos")
 	shots = a.has("shots")

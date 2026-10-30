@@ -177,7 +177,7 @@ static func tick(dt: float) -> void:
 	_look -= dt
 	if _look <= 0.0:
 		_look = 0.25
-		_docked = TugYard.docked()
+		_docked = TugYard.docked(true)
 	_watch_hulk(dt)
 	# the tugs: in through the gate, out again, a swap for each one home
 	var moving_tug := false
@@ -315,6 +315,7 @@ static func _watch_hulk(dt: float) -> void:
 		drain = 0.0
 		return
 	if not hulk.is_empty() and str(hulk.id) == str(a.id):
+		hulk.in_hand = str(a.get("state", "")) == "stripping"
 		return
 	var ship := TugYard.ship_of(a)
 	var d := Ship.load_data(ship)
@@ -330,7 +331,8 @@ static func _watch_hulk(dt: float) -> void:
 				bb = bb.expand(v)
 	var depth := TugYard.dock_in(ship)
 	hulk = {"id": str(a.id), "ship": ship, "stern": depth, "cy": (MOUTH.x + MOUTH.y) * 0.5, "h": bb.size.y,
-		"len": bb.size.x, "inside": depth > 0.0, "done": a.has("prep"), "fuel": TugYard.fuel_of(ship)}
+		"len": bb.size.x, "inside": depth > 0.0, "done": a.has("prep"), "fuel": TugYard.fuel_of(ship),
+		"in_hand": str(a.get("state", "")) == "stripping"}
 	if a.has("prep"):
 		# pre-processed before (a game loaded): it lies as it was left
 		arms = 1.0
@@ -492,7 +494,9 @@ static func mouth_state() -> Array:
 	var n := str(hulk.id)
 	if not powered():
 		return [w("%s · 没电，不能处理", "%s · NO POWER") % n, "warn"]
-	if bool(hulk.get("done", false)):
+	if bool(hulk.get("done", false)) or bool(hulk.get("in_hand", false)):
+		if bool(hulk.get("in_hand", false)):
+			return [w("%s · 已接单 · 按 B 打开终端开工", "%s · TAKEN · B, THEN START IT") % n, "work"]
 		return [w("%s · 已处理 · 开工就推去船坞", "%s · READY · START IT TO PUSH IT IN") % n, "ok"]
 	if hose > 0.98 and drain < 1.0:
 		return [w("%s · 抽推进剂 %d%%", "%s · DRAWING OFF %d%%") % [n, int(drain * 100.0)], "work"]

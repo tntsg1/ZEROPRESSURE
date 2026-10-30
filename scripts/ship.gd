@@ -22,8 +22,41 @@ static func load_data(id: String) -> Dictionary:
 		return {}
 	# the containers the file left empty get what they really hold (scripts/contents.gd)
 	CONTENTS.add(d)
+	# 108 号 第 5 件 (user 2026-10-29 "C 折中"): the structure's scrap is priced by the tonne, the
+	# same for every ship (material-weighted), not each file's own figure
+	if not d.has("value"):
+		d.value = {}
+	d.value.metal = scrap_value(id, d)
+	# and the ship's whole worth with it (the recovery's denominator, the market's prices)
+	Variant.revalue(d)
+	# the author's edits in data/台词.txt: course radio lines and the story (scripts/lines.gd)
+	Lines.apply_ship(id, d)
 	_cache[id] = d
 	return d
+
+
+# what the structure fetches as scrap: its metal pieces' tonnes, weighted by their material's price
+# (titanium more a tonne, composite less), at one price a tonne for every ship. A hopper's ore is
+# priced as ore, not here (scripts/world.gd finalize does the same sum).
+const SCRAP_PER_T := 150.0
+
+
+static func scrap_value(id: String, d: Dictionary) -> float:
+	var ore := float(d.get("ore", {}).get("price", 0.0)) > 0.0
+	var t := 0.0
+	for pd in d.get("pieces", []):
+		if str(pd.get("cls", "metal")) != "metal" or (ore and str(pd.get("kind", "")) == "ore"):
+			continue
+		var m := float(pd.mass) if pd.has("mass") else _area(pd) * float(pd.get("density", 1.0))
+		t += m * float(Mat.def(str(Mat.resolve(id, pd)[0])).get("price", 1.0))
+	return snappedf(t * SCRAP_PER_T, 1.0)
+
+
+static func _area(pd: Dictionary) -> float:
+	var pts := PackedVector2Array()
+	for q in pd.get("poly", []):
+		pts.append(Vector2(q[0], q[1]))
+	return absf(Geom.area(pts))
 
 
 # for tests that break a ship on purpose: the next load_data reads this instead
@@ -78,6 +111,10 @@ static func build(w, d: Dictionary) -> Dictionary:
 		for k in ["density", "cut_speed", "tag", "name_key", "cls", "value", "cond", "art", "fragile", "room", "barrier", "door", "door_open", "hazard", "temp", "mandatory", "dest", "mass", "scope"]:
 			if pd.has(k):
 				opts[k] = pd[k]
+		# 87-1: what the part is made of, and the beam's speed through it (data/materials.json)
+		var mr: Array = Mat.resolve(str(d.get("id", "")), pd)
+		opts.mat = mr[0]
+		opts.cut_speed = mr[1]
 		if pd.has("art_xf"):
 			var a: Array = pd.art_xf
 			opts.art_xf = Transform2D(Vector2(a[0], a[1]), Vector2(a[2], a[3]), Vector2(a[4], a[5]) * Geom.M)
@@ -86,6 +123,7 @@ static func build(w, d: Dictionary) -> Dictionary:
 		if pd.has("open_dir"):
 			opts.open_dir = _v(pd.open_dir)
 		var p = w.add_piece(pd.kind, _poly(pd.poly), opts)
+		p.key = str(pd.get("key", ""))
 		if p.door:
 			p.open_t = 1.0 if p.door_open else 0.0
 		if pd.get("rig", false):

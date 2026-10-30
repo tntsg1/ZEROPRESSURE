@@ -26,6 +26,26 @@ var off := Vector2.ZERO          # the body's position relative to the claw
 var carried := 0                 # bodies delivered this contract
 var t := 0.0
 var wait_t := 0.0               # s spent holding back for the drone
+var queue: Array = []           # explicitly authorized plan loads
+var zone := "metal"
+
+func enqueue(b, destination: String, rated_t: float) -> bool:
+	if not is_instance_valid(b) or b.capture != null or b.pieces.is_empty() or b.total_mass() > rated_t or game.tools.held_body == b: return false
+	b.set_meta("arm_rated_t",rated_t)
+	b.set_meta("plan_zone",destination)
+	if _zone_for(b) == "":
+		b.remove_meta("plan_zone")
+		return false
+	b.set_meta("arm_receiver",_zone_for(b))
+	if body != b and not queue.has(b): queue.append(b)
+	return true
+
+func _zone_for(b) -> String:
+	var planned: String = str(b.get_meta("plan_zone",""))
+	if planned in ["equip","metal","hazard"]: return Dock.for_load(planned,b,false)
+	for p in b.pieces:
+		if game.sys.dest_of(p) == "hazard": return "hazard"
+	return Dock.for_load("metal" if game.dock.is_scrap(b) else "equip",b,false)
 
 
 # where it waits: over the berth, a little short of the furnace
@@ -40,13 +60,18 @@ func _init() -> void:
 
 # can the arm take this body?
 func takes(b) -> bool:
-	if not is_instance_valid(b) or b.capture != null or b.pieces.is_empty() or b.total_mass() > MAX_T:
+	if not is_instance_valid(b) or b.capture != null or b.pieces.is_empty():
 		return false
+	var assigned: bool = b.get_meta("arm_extraction",false) and queue.has(b)
+	if b.total_mass() > float(b.get_meta("arm_rated_t",MAX_T) if assigned else MAX_T): return false
 	if game.tools.held_body == b or b.get_meta("arm", false):
 		return false
 	# just let go over the mouth: give the mouth a moment
 	if t - float(b.get_meta("arm_drop", -99.0)) < 5.0:
 		return false
+	if assigned: return true
+	if b.get_meta("arm_parked",false): return false
+	if game.plan != null and game.plan.reserves_body(b): return false
 	for p in b.pieces:
 		if (p.cls == "equip" and p.intact) or game.sys.dest_of(p) == "hazard":
 			return false
@@ -64,6 +89,9 @@ func _physics_process(dt: float) -> void:
 			halt()
 		claw = claw.move_toward(home(), EMPTY * dt)
 		return
+	if is_instance_valid(body) and game.tools.held_body == body:
+		halt()
+		return
 	# never into a keep-out zone
 	if state in ["reach", "carry"] and game.keepout_blocks(claw, _heading()):
 		return
@@ -79,9 +107,15 @@ func _physics_process(dt: float) -> void:
 	dt *= k
 	match state:
 		"idle":
-			for b in game.world.bodies:
+			for b in queue.duplicate():
+				if not is_instance_valid(b) or b.capture != null: queue.erase(b)
+			var candidates: Array = queue.duplicate()
+			if candidates.is_empty(): candidates = game.world.bodies.duplicate()
+			for b in candidates:
 				if takes(b):
 					body = b
+					zone = _zone_for(b)
+					queue.erase(b)
 					body.set_meta("arm", true)
 					body.set_meta("arm_by", "arm")
 					state = "reach"
@@ -100,6 +134,9 @@ func _physics_process(dt: float) -> void:
 				body.set_deferred("freeze", true)
 				body.collision_layer = 0
 				body.collision_mask = 0
+				body.ghost = 0.0
+				body.remove_meta("arm_parked")
+				body.set_meta("arm_receiver",zone)
 				off = body.global_position - claw
 				path = _route(claw)
 				state = "carry"
@@ -115,7 +152,7 @@ func _physics_process(dt: float) -> void:
 				hold_t = 0.0
 				return
 			# the last leg is over the mouth: only once nothing else is dropping there
-			if path.size() == 1 and not game.mouth_take("metal", "arm"):
+			if path.size() == 1 and not game.mouth_take(zone, "arm"):
 				return
 			claw = claw.move_toward(path[0], SPEED * dt)
 			if claw.distance_to(path[0]) < 2.0:
@@ -133,9 +170,10 @@ func _physics_process(dt: float) -> void:
 				body.collision_layer = 1
 				body.collision_mask = FreeBody.MASK
 				body.set_deferred("freeze", false)
-				body.linear_velocity = Vector2(0, 80)
+				body.linear_velocity = -Dock.ZONES[zone].face*80.0
 				# (the drop point follows a furnace mouth moved along its rail)
 				body.set_meta("arm", false)
+				body.remove_meta("arm_by")
 				body.set_meta("arm_drop", t)
 				carried += 1
 				game.on_arm_drop(body)
@@ -153,18 +191,24 @@ func _heading() -> Vector2:
 
 # let go of what it holds, where it is, and stand by
 func halt() -> void:
-	if body != null and is_instance_valid(body) and state in ["carry", "release"]:
+	if body != null and is_instance_valid(body) and body.capture == null and state in ["carry", "release"]:
 		body.collision_layer = 1
 		body.collision_mask = FreeBody.MASK
 		body.set_deferred("freeze", false)
 		body.linear_velocity = Vector2.ZERO
 	if body != null and is_instance_valid(body):
 		body.set_meta("arm", false)
+		body.remove_meta("arm_by")
+		body.remove_meta("arm_receiver")
 	_drop_it()
 
 
 func _drop_it() -> void:
-	game.mouth_release("metal", "arm")
+	game.mouth_release(zone, "arm")
+	if is_instance_valid(body):
+		body.set_meta("arm",false)
+		body.remove_meta("arm_by")
+		if body.capture != null or not body.get_meta("arm_extraction",false): body.remove_meta("arm_receiver")
 	body = null
 	path = []
 	state = "idle"
@@ -172,6 +216,11 @@ func _drop_it() -> void:
 
 # round the ship's nearer end while it still stands between the load and the furnace
 func _route(from: Vector2) -> Array:
+	# User explicitly authorized clipping extraction (2026-10-22). The claw
+	# carries the actual load continuously through obstructions, not a deletion
+	# or a synthetic receipt. Unassigned scrap retains its existing route.
+	if is_instance_valid(body) and body.get_meta("arm_extraction",false):
+		return [Dock.zpos(zone)+Dock.ZONES[zone].face*0.4*Geom.M]
 	var bb := Rect2()
 	var first := true
 	for id in game.world.order:
@@ -200,19 +249,24 @@ func _crosses(a: Vector2, b: Vector2, r: Rect2) -> bool:
 	return false
 
 
-func _process(_dt: float) -> void:
+var art := MechArt.new()          # 91 号: the trolley's swing, wheels and beacon
+
+
+func _process(dt: float) -> void:
+	art.step(claw, dt)
 	queue_redraw()
 
 
 func _draw() -> void:
 	# the trolley on the boom, the cable, the claw
-	var trolley := Vector2(clampf(claw.x, -6.0 * 48.0, (Dock.ARM_X1 - 0.5) * 48.0), RAIL_Y)
-	draw_rect(Rect2(trolley + Vector2(-22, -14), Vector2(44, 16)), Color(0.07, 0.073, 0.082))
-	draw_rect(Rect2(trolley + Vector2(-22, -14), Vector2(44, 16)), Pal.ink(0.6), false, 1.2)
-	draw_line(trolley + Vector2(-14, 2), trolley + Vector2(-14, 6), Pal.ink(0.5), 2.0)
-	draw_line(trolley + Vector2(14, 2), trolley + Vector2(14, 6), Pal.ink(0.5), 2.0)
-	var mid := Vector2(claw.x, trolley.y) if absf(claw.x - trolley.x) > 2.0 else trolley
-	draw_polyline(PackedVector2Array([trolley + Vector2(0, 2), mid + Vector2(0, 2), claw]), Pal.ink(0.45), 1.4, true)
+	var tx := clampf(claw.x, -6.0 * 48.0, (Dock.ARM_X1 - 0.5) * 48.0)
+	var swing := art.x if absf(claw.x - tx) < 2.0 else 0.0
+	var trolley := Vector2(tx + swing, RAIL_Y)
+	var mid := Vector2(claw.x, trolley.y) if absf(claw.x - tx) > 2.0 else trolley
+	if mid != trolley:
+		draw_line(trolley + Vector2(0, 8), mid + Vector2(0, 8), Pal.ink(0.45), 1.4, true)
+	MechArt.cable_and_hook(self, mid + Vector2(0, 10), claw + Vector2(0, 14), 2, state in ["carry", "release"], 1.0, false)
+	art.trolley(self, trolley + Vector2(0, -8), 44.0, state != "idle", t)
 	var open := 0.4 if state in ["idle", "reach"] else 0.1
 	for s in [-1.0, 1.0]:
 		var a: Vector2 = Vector2(s * 6.0, 0).rotated(s * open)

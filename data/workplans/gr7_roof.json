@@ -1,0 +1,105 @@
+{
+	"deps": [
+		"preset:gr7:preparation"
+	],
+	"id": "gr7:roof:access",
+	"kind": "verified",
+	"label_en": "CARGO SKIN · SERVICE OPENING",
+	"label_zh": "货舱上蒙皮 · 检修开口",
+	"protected": [
+		"C-01"
+	],
+	"purpose_en": "Free the skin section between two verified kerfs; preserve the cargo. Rail clearance and equipment detachment remain manual.",
+	"purpose_zh": "切离两处连接之间的上蒙皮，保留货箱。导轨与设备脱离仍由你处理。",
+	"ship": "gr7",
+	"steps": [
+		{
+			"after": [
+				"733.07:-170.40",
+				"627.40:-170.40",
+				"627.40:-192.00",
+				"739.20:-192.00"
+			],
+			"before": [
+				"609.60:-192.00",
+				"739.20:-192.00",
+				"733.07:-170.40",
+				"605.84:-170.40"
+			],
+			"do": "cut",
+			"kerf": 3.4,
+			"key": "p7",
+			"links": [
+				"HATCH-1:weld:734.90:-176.88",
+				"HATCH-1:weld:737.36:-185.52",
+				"p6:weld:606.96:-176.88",
+				"p6:weld:608.47:-185.52"
+			],
+			"pl": [
+				[
+					624.0,
+					-197.759994506836
+				],
+				[
+					624.0,
+					-167.040008544922
+				]
+			],
+			"pre": [
+				{
+					"key": "P-C01",
+					"kind": "pressure",
+					"val": 0.0
+				}
+			],
+			"rooms": [
+				"C"
+			]
+		},
+		{
+			"after": [
+				"716.60:-170.40",
+				"627.40:-170.40",
+				"627.40:-192.00",
+				"716.60:-192.00"
+			],
+			"before": [
+				"733.07:-170.40",
+				"627.40:-170.40",
+				"627.40:-192.00",
+				"739.20:-192.00"
+			],
+			"do": "cut",
+			"kerf": 3.4,
+			"key": "p7",
+			"links": [
+				"HATCH-1:weld:734.90:-176.88",
+				"HATCH-1:weld:737.36:-185.52"
+			],
+			"pl": [
+				[
+					720.0,
+					-197.759994506836
+				],
+				[
+					720.0,
+					-167.040008544922
+				]
+			],
+			"pre": [
+				{
+					"key": "P-C01",
+					"kind": "pressure",
+					"val": 0.0
+				}
+			],
+			"rooms": [
+				"C"
+			]
+		}
+	],
+	"targets": [
+		"p7"
+	],
+	"version": 1
+}

@@ -6,7 +6,9 @@ extends Node
 
 const VOICES := 20
 const TugWorksRef = preload("res://scripts/tug_works.gd")
-const LOOPS := ["cut_loop", "jet_loop", "thrust_loop", "pump_loop", "hum_loop", "tether_loop", "furl_loop", "crane_loop", "ambience"]
+const TradeWorksRef = preload("res://scripts/trade_works.gd")
+const PowerWorksRef = preload("res://scripts/power_works.gd")
+const LOOPS := ["cut_loop", "jet_loop", "thrust_loop", "pump_loop", "hum_loop", "tether_loop", "furl_loop", "crane_loop", "tow_roll", "turbine_loop", "ambience"]
 
 var game: Game
 var streams := {}
@@ -95,6 +97,8 @@ func _bus(name: String, db: float) -> int:
 
 
 func play(name: String, pos: Vector2 = Vector2.INF, vol: float = 1.0, pitch: float = 1.0) -> void:
+	if name == "deny":
+		Playtest.deny()
 	var s = streams.get(name)
 	if s == null:
 		return
@@ -150,10 +154,23 @@ func _process(dt: float) -> void:
 	want["tether_loop"] = (0.25 + 0.5 * game.tools.tether_force) if playing and game.tools.held_piece != null else 0.0
 	# 93 号: the sail's furling motors, while any corner winds
 	want["furl_loop"] = 0.5 if playing and game.sail != null and game.sail.active() and game.sail.furling() else 0.0
+	# 98 号: a ship rolling out of a carrier's hold on its cradle, and the winch's motor hauling it
+	var tow: float = game.nested.rolling() if playing and game.nested != null and game.nested.active() else 0.0
+	want["tow_roll"] = 0.65 * tow
+	want["furl_loop"] = maxf(float(want["furl_loop"]), 0.45 * tow)
 	# 96 号: the tug station's gantry, lifts and slide, and its transfer pump, near it (a real motor)
 	var tug_near: float = game.port_structure.interiors._tug_near() if game.get("port_structure") != null and game.port_structure.get("interiors") != null else 0.0
-	want["crane_loop"] = TugWorksRef.motor() * 0.55 * tug_near if playing else 0.0
+	# 98 号: and the trade port's dock — its belt and crane — near it
+	var trade_near: float = game.trade_hall.near_k() if game.get("trade_hall") != null and is_instance_valid(game.trade_hall) else 0.0
+	want["crane_loop"] = maxf(TugWorksRef.motor() * tug_near, TradeWorksRef.motor() * trade_near) * 0.55 if playing else 0.0
 	want["pump_loop"] = maxf(float(want["pump_loop"]), TugWorksRef.pump * 0.3 * tug_near) if playing else 0.0
+	# 100 号: the turbine hall's running sound by its speed and load, the plant's pumps, the shore
+	# umbilical's motor — near the power district (real recordings, tools/power_audio.py)
+	var power_near: float = game.port_structure.interiors.power_near() if game.get("port_structure") != null and game.port_structure.get("interiors") != null else 0.0
+	var spin := clampf(PowerWorksRef.hz / 50.0, 0.0, 1.0)
+	want["turbine_loop"] = spin * (0.35 + 0.4 * PowerWorksRef.frac()) * power_near * 0.6 if playing else 0.0
+	want["pump_loop"] = maxf(float(want["pump_loop"]), (0.18 if PowerWorksRef.units > 0 or PowerWorksRef.fc > 0.05 else 0.0) * power_near) if playing else 0.0
+	want["crane_loop"] = maxf(float(want["crane_loop"]), PowerWorksRef.motor() * power_near * 0.5) if playing else 0.0
 	var hush: bool = game.story != null and game.story.hush()
 	var ending: bool = game.state == "ending" and ending_player != null and not hush
 	want["ambience"] = 0.0 if ending or hush else (0.85 if game.state != "intro" else 0.6)
@@ -171,6 +188,8 @@ func _process(dt: float) -> void:
 		if n == "cut_loop":
 			loops[n].pitch_scale = cut_pitch
 		if n == "crane_loop":
-			loops[n].pitch_scale = 0.85 + 0.3 * TugWorksRef.motor()
+			loops[n].pitch_scale = 0.85 + 0.3 * maxf(TugWorksRef.motor(), TradeWorksRef.motor())
+		if n == "turbine_loop":
+			loops[n].pitch_scale = 0.6 + 0.4 * clampf(PowerWorksRef.hz / 50.0, 0.0, 1.0)
 		if n == "tether_loop":
 			loops[n].pitch_scale = 0.8 + game.tools.tether_force * 0.5 + game.tools.strain * 0.4

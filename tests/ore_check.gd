@@ -90,7 +90,9 @@ func _run() -> void:
 	var p0: int = _packed(g)
 	var m0: float = g.income_metal
 	g.do_wrench(_c(g, "GATE-1"))
-	await _seconds(12.0)
+	# 87-2: the chunks over a gate opened on a full hopper often wedge into an arch at first,
+	# which gives way by itself after Ore.JAM_GIVE s: watch long enough for that
+	await _seconds(12.0 + Ore.JAM_GIVE + 2.0)
 	check(g.ore.fines < f0 - 4.0 and g.income_metal > m0 + 4000.0, "GATE-1 open: %.0f t out, $%d paid as it runs" % [f0 - g.ore.fines, int(g.income_metal - m0)])
 	check(_packed(g) < p0, "the lumps over it come loose (%d of %d still packed)" % [_packed(g), p0])
 	g.do_wrench(_c(g, "GATE-2"))

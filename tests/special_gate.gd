@@ -1,7 +1,7 @@
 extends SceneTree
 # The special courses' gate (design/新手教程与图鉴定案.md Q10/Q15/Q16/Q17/Q23), on a
 # test career: which families a ship needs; a contract taken on HB-86 (two families)
-# runs both courses back to back and then the contract itself; the bonus is paid
+# runs both courses back to back, then (25 号) its loadout page and the contract; the bonus is paid
 # the first time only; an old save that already worked an FX-70 comes certified for
 # stored energy, without the bonus; a family never worked still needs its course.
 # godot --headless --path . -s tests/special_gate.gd
@@ -46,10 +46,19 @@ func _process(_dt: float) -> bool:
 	var g = current_scene
 	match step:
 		0:
+			# 61 号 (60 号 Q7): courses are offered, never required — HB-86 is worked at once
+			if not Codex.COURSES_REQUIRED:
+				if t > 30 and g != null and g.get("ship_id") != null:
+					if g.ship_id != "hb86":
+						_fail("HB-86 taken, courses optional: the job should start at once, not %s" % g.ship_id)
+					print("SPECIAL GATE %s (courses optional: the contract starts at once)" % ("PASS" if fails.is_empty() else "FAIL"))
+					quit()
+				return false
 			if t > 30 and g != null and g.get("ship_id") != null:
 				if g.ship_id != "sp_atmos":
 					_fail("HB-86 taken: the first course is %s, not sp_atmos" % g.ship_id)
-				if Game.course_chain != ["precise"] or Game.course_then != "contract":
+				# 2026-10-24 (25 号, player): after the courses the loadout page comes first, then the job
+				if Game.course_chain != ["precise"] or Game.course_then != "contract_loadout":
 					_fail("chain %s then %s" % [str(Game.course_chain), Game.course_then])
 				if g.menu_open == false and g.hud != null:
 					var items: Array = g.hud._menu_items().map(func(it): return it[0])

@@ -28,6 +28,9 @@ const REPLAN := 1.2               # s between fresh paths
 const AVOID_R := 1.6 * 48.0       # px: loose pieces and drones nearer than this are eased round
 const R := 12.0
 const CLEAR := 2.5 * 48.0        # px it keeps from the operator's drone
+const PUSH_SPEED := 48.0         # px/s sideways: clear a lane without flinging scrap
+const PUSH_ACCEL := 150.0        # px/s², capped thruster force for heavy obstructions
+const PUSH_MASS := 1.5           # t: the force budget stops scaling above this mass
 
 var game: Game
 var who := "hauler"              # its name over a mouth ("hauler", "hauler2")
@@ -42,10 +45,13 @@ var off := Vector2.ZERO
 var hold_t := 0.0
 var t := 0.0
 var carried := 0
+var auto_pickup := false         # unasked scrap may yield before gripping
 var wait_t := 0.0               # s spent holding back for the drone
 # its airframe (2026-10-17): every drone in the berth looks different; drawn
 # smaller and in air-blue, turned the way it travels
 const Art = preload("res://scripts/drone_art.gd")
+const LoadMotion = preload("res://scripts/load_motion.gd")
+var wait_reason := ""
 var heading := -PI / 2.0
 var vel := Vector2.ZERO
 var route := PackedVector2Array()
@@ -55,6 +61,10 @@ var _clear := 0.0
 var _avoid_skip: Array = []      # bodies it does not ease round (what it goes for, what it carries)
 var _last_pos := Vector2.ZERO
 var _move := Vector2.ZERO
+var _rescue_id := 0
+var _rescue_state := ""
+var _rescue_best := INF
+var _rescue_t := 0.0
 # what its jets are doing: its real acceleration (player 2026-10-18: speeding
 # up blows backwards, slowing down is a reverse burn — strictly)
 var _acc := Vector2.ZERO
@@ -93,6 +103,10 @@ func _unclaim(b) -> void:
 # hazard) that nobody holds and no other machine is after. Anything of value,
 # or anything it cannot be sure of, waits for the operator (or a mark).
 func auto_takes(b) -> bool:
+	if game.manual_only():
+		return false
+	if is_instance_valid(b) and b.get_meta("arm_parked",false): return false
+	if game.plan != null and game.plan.reserves_body(b): return false
 	if not can_take(b) or b.get_meta("arm", false) or b == body:
 		return false
 	if t < float(b.get_meta("no_way_till", -1.0)):
@@ -123,11 +137,18 @@ func toggle(b) -> String:
 		return "hauler_unmarked"
 	if b.total_mass() > MAX_T:
 		return "hauler_heavy"
+	# 78 号 P0-1: whole equipment no equipment mouth can take, however it is turned
+	if _zone_for(b) == "equip" and Dock.for_load("equip", b) == "":
+		return "hauler_no_mouth"
+	b.remove_meta("no_way_till")
 	queue.append(b)
 	return "hauler_marked"
 
 
 func _zone_for(b) -> String:
+	var planned: String = str(b.get_meta("plan_zone", ""))
+	if planned in ["metal", "equip", "hazard"]:
+		return planned
 	for p in b.pieces:
 		if game.sys.dest_of(p) == "hazard":
 			return "hazard"
@@ -137,7 +158,10 @@ func _zone_for(b) -> String:
 
 
 func _drop_point(z: String) -> Vector2:
-	return Dock.zpos(z) - Dock.ZONES[z].face * 1.4 * Geom.M
+	# face points out into the berth. A target behind the metal lip lies below
+	# the solid floor, so full-payload navigation correctly found no route.
+	# Approach from the working side, within the receiver's physical catch.
+	return Dock.zpos(z) + Dock.ZONES[z].face * 0.4 * Geom.M
 
 
 func _physics_process(dt: float) -> void:
@@ -152,6 +176,11 @@ func _physics_process(dt: float) -> void:
 	for b in queue.duplicate():
 		if not is_instance_valid(b) or b.capture != null:
 			queue.erase(b)
+	# A deliberate operator/package command takes precedence over an unasked
+	# pickup. Only yield before gripping; an actual carried load finishes first.
+	if state == "reach" and auto_pickup and not queue.is_empty():
+		if is_instance_valid(body): body.set_meta("no_way_till",t+6.0)
+		_done()
 	if game.auto_paused:
 		if body != null:
 			halt()
@@ -161,6 +190,29 @@ func _physics_process(dt: float) -> void:
 	if body != null and is_instance_valid(body) and game.tools.held_body == body:
 		halt()
 		return
+	# A projected grid endpoint can appear reachable while the actual pickup
+	# or loaded motion remains blocked. Explicit operator work must not sit
+	# there forever: hand the same physical load to the clipping rail arm.
+	if state in ["reach","carry"] and is_instance_valid(body) and body.capture == null and body.get_meta("manual_mark",false) and not body.get_meta("plan_dispatch",false):
+		var distance: float = pos.distance_to(body.global_transform*body.center_of_mass if state == "reach" else _drop_point(zone))
+		if _rescue_id != body.get_instance_id() or _rescue_state != state or distance < _rescue_best-4.0:
+			_rescue_id = body.get_instance_id()
+			_rescue_state = state
+			_rescue_best = distance
+			_rescue_t = 0.0
+		else:
+			_rescue_t += dt
+		if _rescue_t >= 4.0 and game.arm_extract(body,_zone_for(body),false):
+			_rescue_t = 0.0
+			return
+	else:
+		_rescue_id = 0
+		_rescue_t = 0.0
+	if state in ["carry","release"] and is_instance_valid(body) and body.capture == null:
+		# Physics recovery may move a contacted load after our previous callback.
+		# The gripper follows that real pose; its virtual position must never run
+		# ahead and announce arrival while the cargo remains inside the ship.
+		pos = body.global_position-off
 	var hold := false
 	if state in ["reach", "carry"] and game.keepout_blocks(pos, _heading()):
 		hold = true
@@ -178,21 +230,27 @@ func _physics_process(dt: float) -> void:
 		return
 	match state:
 		"idle":
-			for b in queue:
+			for b in queue.duplicate():
 				if can_take(b) and _reachable(b):
 					_set_off(b)
 					queue.erase(b)
 					break
 			# nothing marked: loose scrap that is plainly scrap, the arm's or not
-			if state == "idle":
+			if state == "idle" and queue.is_empty():
 				for b in game.world.bodies:
-					if auto_takes(b) and _reachable(b):
-						_set_off(b)
+					if auto_takes(b) and _reachable(b) and _delivery_reachable(b):
+						_set_off(b,true)
 						break
 			if state == "idle":
 				_fly(home(), dt)
 		"reach":
 			if not can_take(body):
+				_done()
+				return
+			if Dock.for_load(_zone_for(body), body) == "":
+				# 78 号 P0-1: no mouth takes it whole — leave it for the operator to cut
+				queue.erase(body)
+				wait_reason = ""
 				_done()
 				return
 			var target: Vector2 = body.global_transform * body.center_of_mass
@@ -201,12 +259,12 @@ func _physics_process(dt: float) -> void:
 			# no knock as it grips), then the two move as one
 			var met := _fly(target, dt, 6.0, bv) or pos.distance_to(target) < 6.0
 			if met and (vel - bv).length() < 8.0:
-				body.freeze_mode = RigidBody2D.FREEZE_MODE_KINEMATIC
-				body.set_deferred("freeze", true)
-				body.collision_layer = 0
-				body.collision_mask = 0
+				if not LoadMotion.grip(body):
+					wait_reason = "load_pickup_blocked"
+					return
+				wait_reason = ""
 				off = body.global_position - pos
-				zone = Dock.nearest(_zone_for(body), pos)
+				zone = Dock.for_load(_zone_for(body), body)
 				route = PackedVector2Array()
 				state = "carry"
 				game.sfx.play("grab", pos, 0.5)
@@ -216,21 +274,18 @@ func _physics_process(dt: float) -> void:
 				carried += 1
 				_done()
 				return
+			LoadMotion.line_up(body, zone, 0.9, dt)
 			var drop := _drop_point(zone)
+			if Dock.kind(zone) == "equip": drop = LoadMotion.intake_point(body, zone, pos)
 			# the last stretch waits its turn at the mouth
 			if pos.distance_to(drop) < 3.0 * Geom.M and not game.mouth_take(zone, who):
 				_brake(dt)
 			elif _fly(drop, dt):
 				state = "release"
 				hold_t = 0.0
-			body.global_position = pos + off
-			body.linear_velocity = Vector2.ZERO
-			body.angular_velocity = 0.0
 		"release":
 			hold_t += dt
 			_brake(dt)
-			if is_instance_valid(body) and body.capture == null:
-				body.global_position = pos + off
 			if not is_instance_valid(body) or body.capture != null:
 				carried += 1
 				_done()
@@ -248,8 +303,9 @@ func _physics_process(dt: float) -> void:
 
 
 # off after b: claimed for this hauler, a fresh way planned
-func _set_off(b) -> void:
+func _set_off(b, automatic: bool = false) -> void:
 	body = b
+	auto_pickup = automatic
 	_claim(b)
 	state = "reach"
 	route = PackedVector2Array()
@@ -263,9 +319,31 @@ func _reachable(b) -> bool:
 	var p: Vector2 = b.global_transform * b.center_of_mass
 	var way: PackedVector2Array = game.nav_grid().path(pos, p, preload("res://scripts/nav.gd").EMPTY_CLEAR)
 	if way.is_empty():
+		if b.get_meta("manual_mark",false) and not b.get_meta("plan_dispatch",false) and game.arm_extract(b,_zone_for(b),false):
+			return false
 		b.set_meta("no_way_till", t + 6.0)
 		return false
 	return true
+
+
+# Unasked scrap must not monopolize the machine while a deliberately marked
+# job waits. A native join sweep rejects grid projections through a closed
+# shell. Marked jobs keep their explicit wait-and-clear behavior.
+func _delivery_reachable(b) -> bool:
+	if b.ghost > 0.0:
+		b.set_meta("no_way_till",t+2.0)
+		return false
+	var center: Vector2 = b.global_transform*b.center_of_mass
+	var to_zone := Dock.for_load(_zone_for(b),b)
+	if to_zone == "":
+		b.set_meta("no_way_till",t+6.0)
+		return false
+	var destination := LoadMotion.plan_intake(b,to_zone) if Dock.kind(to_zone) == "equip" else _drop_point(to_zone)
+	if LoadMotion.clear_to(b,destination-center): return true
+	var way: PackedVector2Array = game.nav_grid().payload_path(center,destination,LoadMotion.plan_extents(b,to_zone),b)
+	if not way.is_empty() and LoadMotion.clear_to(b,way[0]-center): return true
+	b.set_meta("no_way_till",t+6.0)
+	return false
 
 
 # how much it carries now (0 empty, 1 a full 1.5 t load)
@@ -281,17 +359,26 @@ func _load() -> float:
 func _fly(to: Vector2, dt: float, arrive: float = ARRIVE, tv: Vector2 = Vector2.ZERO) -> bool:
 	var Nav = preload("res://scripts/nav.gd")
 	var ld := _load()
+	var loaded: bool = state in ["carry", "release"] and is_instance_valid(body) and body.capture == null
 	var clear: float = Nav.LOAD_CLEAR if ld > 0.0 else Nav.EMPTY_CLEAR
 	_replan_t -= dt
-	if route.is_empty() or _replan_t <= 0.0 or _goal.distance_to(to) > 24.0 or clear != _clear:
-		route = game.nav_grid().path(pos, to, clear)
-		if route.is_empty():
+	if (route.is_empty() and wait_reason == "") or _replan_t <= 0.0 or _goal.distance_to(to) > 24.0 or clear != _clear:
+		if loaded:
+			route = game.nav_grid().payload_path(pos, to, LoadMotion.plan_extents(body,zone),body)
+		else:
+			route = game.nav_grid().path(pos, to, clear)
+		if route.is_empty() and not loaded:
 			route = PackedVector2Array([to])
 		_goal = to
 		_clear = clear
 		_replan_t = REPLAN
+	if loaded and LoadMotion.clear_to(body,to-pos): route = PackedVector2Array([to])
+	if route.is_empty():
+		_brake(dt)
+		if wait_reason != "load_obstructed": wait_reason = "load_no_route"
+		return false
 	# the next point, skipping ahead when the one after is in clear sight
-	while route.size() > 1 and (pos.distance_to(route[0]) < 28.0 or game.nav_grid().sight(pos, route[1], clear * 0.8)):
+	while route.size() > 1 and ((pos.distance_to(route[0]) < 3.0 or LoadMotion.clear_to(body,route[1]-pos)) if loaded else (pos.distance_to(route[0]) < 28.0 or game.nav_grid().sight(pos, route[1], clear * 0.8))):
 		route.remove_at(0)
 	var nxt: Vector2 = route[0]
 	var left := pos.distance_to(nxt)
@@ -302,34 +389,75 @@ func _fly(to: Vector2, dt: float, arrive: float = ARRIVE, tv: Vector2 = Vector2.
 	# brake in: the speed it can still stop from over what is left
 	var speed := minf(vmax, sqrt(2.0 * acc * 0.75 * maxf(0.0, left - arrive * 0.5)))
 	var dir := (nxt - pos).normalized() if left > 0.5 else Vector2.ZERO
-	var want := dir * speed + tv + _avoid() * vmax * 0.5
+	var avoidance := _avoid(dir, left, clear)
+	if loaded:
+		# Retain a bounded way around loose bodies when they cannot be pushed
+		# straight out. Never cancel forward rendezvous thrust; every resulting
+		# displacement still sweeps the actual compound load below.
+		var side := Vector2(-dir.y,dir.x)
+		avoidance = side*avoidance.dot(side)
+	var want := dir * speed + tv + avoidance * vmax * (0.35 if loaded else 0.5)
 	if left < arrive and (vel - tv).length() < 50.0:
 		vel = vel.move_toward(tv, acc * dt)
-		pos += vel * dt
-		return true
+		return _advance(vel * dt)
 	vel += (want - vel).limit_length(acc * dt)
-	pos += vel * dt
+	_advance(vel * dt)
 	return false
 
 
 func _brake(dt: float) -> void:
 	vel = vel.move_toward(Vector2.ZERO, ACCEL / (1.0 + 1.4 * _load()) * dt)
-	pos += vel * dt
-	if state == "carry" and is_instance_valid(body):
-		body.global_position = pos + off
+	_advance(vel * dt)
+
+
+func _advance(delta: Vector2) -> bool:
+	if state in ["carry", "release"] and is_instance_valid(body) and body.capture == null:
+		if not LoadMotion.move(body, delta):
+			var normal: Vector2 = body.get_meta("carrier_normal",Vector2.ZERO)
+			var tangent := delta.slide(normal) if normal.length_squared() > 0.9 else Vector2.ZERO
+			if tangent.length_squared() > 0.00001 and LoadMotion.move(body,tangent):
+				pos += tangent
+				vel = vel.slide(normal)
+				wait_reason = ""
+				return true
+			vel = Vector2.ZERO
+			# Keep the intended approach while contact is being cleared. Dropping
+			# the route also skipped _avoid() until the next replan, reducing the
+			# clearing thrust to one frame every 1.2 s and effectively stalling it.
+			wait_reason = "load_obstructed"
+			return false
+	pos += delta
+	if delta.length_squared() > 0.00001: wait_reason = ""
+	return true
 
 
 # a push away from what is near: loose pieces (not its own), the other hauler, the operator
-func _avoid() -> Vector2:
+func _avoid(dir: Vector2 = Vector2.ZERO, remaining: float = INF, clearance: float = R) -> Vector2:
 	var push := Vector2.ZERO
+	var half := Vector2(R,R)
+	if state == "carry" and is_instance_valid(body): half = LoadMotion.half_extents(body)
+	var radius := AVOID_R+maxf(0.0,half.length()-R*sqrt(2.0))
+	var side := Vector2(-dir.y,dir.x)
+	var lane := maxf(clearance,absf(side.x)*half.x+absf(side.y)*half.y)
+	var rear := maxf(R,absf(dir.x)*half.x+absf(dir.y)*half.y)
 	for b in game.world.bodies:
 		if not is_instance_valid(b) or b == body or b.capture != null:
 			continue
 		var c: Vector2 = b.global_transform * b.center_of_mass
-		var d := pos - c
-		var r := AVOID_R + 0.5 * sqrt(b.total_mass()) * Geom.M
-		if d.length() < r and d.length() > 0.1:
-			push += d.normalized() * (1.0 - d.length() / r)
+		# Work from the footprint, not just its centre: the corner of a long
+		# plate can obstruct the approach even with its centre far away.
+		var near := _obstacle_point(b,radius)
+		if not near.is_finite(): continue
+		var d := pos - near
+		var distance := d.length()
+		if distance >= radius: continue
+		var away := d.normalized() * (1.0 - distance / radius) if distance > 0.1 else (pos - c).normalized()
+		if dir != Vector2.ZERO and state in ["reach", "carry"] and _can_clear(b, c) and _clear_obstacle(b, c, near, dir, lane, rear):
+			# Movable scrap must not cancel the final rendezvous thrust. Keep a
+			# lateral separation cue, fading it as the gripper meets its target.
+			away -= dir * minf(0.0, away.dot(dir))
+			away *= clampf(remaining / AVOID_R, 0.0, 1.0)
+		push += away
 	for h in game.haulers():
 		if h != self:
 			var d2: Vector2 = pos - h.pos
@@ -340,6 +468,64 @@ func _avoid() -> Vector2:
 		if d3.length() < AVOID_R and d3.length() > 0.1:
 			push += d3.normalized() * 1.2 * (1.0 - d3.length() / AVOID_R)
 	return push.limit_length(1.0)
+
+
+func _obstacle_point(b, radius: float = AVOID_R) -> Vector2:
+	var local: Vector2 = b.global_transform.affine_inverse() * pos
+	var box: Rect2 = b.clearance_bounds
+	if local.distance_to(local.clamp(box.position,box.end)) >= radius: return Vector2.INF
+	var point := Vector2.INF
+	var closest := radius * radius
+	for piece in b.pieces:
+		if piece.gone: continue
+		var bounds := Geom.bbox(piece.poly)
+		if not bounds.grow(radius).has_point(local): continue
+		if Geometry2D.is_point_in_polygon(local,piece.poly): return pos
+		for i in piece.poly.size():
+			var edge := Geometry2D.get_closest_point_to_segment(local,piece.poly[i],piece.poly[(i + 1) % piece.poly.size()])
+			var distance := local.distance_squared_to(edge)
+			if distance < closest:
+				closest = distance
+				point = edge
+	return b.global_transform * point if point.is_finite() else Vector2.INF
+
+
+func _can_clear(b, center: Vector2) -> bool:
+	if b.freeze or b.tethered or b.get_meta("arm", false) or b == game.tools.held_body:
+		return false
+	for area in game.keepout:
+		if area.has_point(center): return false
+	if game.dock.in_buffer(b) or game.keepout_blocks(pos, center): return false
+	return game.drone == null or not game.drone.alive or center.distance_to(game.drone.global_position) > CLEAR
+
+
+func _clear_obstacle(b, center: Vector2, near: Vector2, dir: Vector2, clearance: float, rear: float = R) -> bool:
+	var offset := near - pos
+	if offset.dot(dir) < -rear: return false # behind the entire load, not merely behind its gripper
+	var side := Vector2(-dir.y, dir.x)
+	var lateral := (center - pos).dot(side)
+	if lateral < -0.5 or absf(lateral) <= 0.5 and b.get_instance_id() % 2 == 0: side = -side
+	var gap := absf(offset.dot(side))
+	var lane := maxf(R * 2.0, clearance)
+	if gap >= lane + R: return false
+	# Don't push into fixed hull, forbidden zones or the operator. Try the
+	# opposite side if necessary; the existing navigation still routes walls.
+	var destination := near + side * (lane + R)
+	if not _clear_side(near, destination):
+		side = -side
+		destination = near + side * (lane + R)
+		if not _clear_side(near, destination): return false
+	var strength := clampf(1.0 - gap / (lane + R), 0.15, 1.0)
+	var along: float = b.linear_velocity.dot(side)
+	var acceleration := clampf((PUSH_SPEED * strength - along) * 5.0, 0.0, PUSH_ACCEL)
+	b.sleeping = false
+	b.apply_central_force(side * acceleration * minf(b.mass, PUSH_MASS))
+	return true
+
+
+func _clear_side(from: Vector2, to: Vector2) -> bool:
+	if game.keepout_blocks(from, to) or not game.nav_grid().sight(from, to, R): return false
+	return game.drone == null or not game.drone.alive or Geom.dist_to_segment(game.drone.global_position, from, to) > Drone.R + R
 
 
 # where it is making for now
@@ -363,6 +549,8 @@ func halt() -> void:
 
 
 func _done() -> void:
+	wait_reason = ""
+	auto_pickup = false
 	game.mouth_release(zone, who)
 	_unclaim(body)
 	body = null
@@ -394,6 +582,8 @@ func _draw() -> void:
 		draw_polyline(PackedVector2Array([c + Vector2(0, -s), c + Vector2(s, 0), c + Vector2(0, s), c + Vector2(-s, 0), c + Vector2(0, -s)]), Pal.tint(Pal.AIR, 0.9, 1.3), 1.6, true)
 		draw_string(Fonts.get_font("Medium"), c + Vector2(s + 4, 4), str(i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Pal.tint(Pal.AIR, 0.9, 1.2))
 	# the drone itself, and its line to the load
+	if wait_reason != "":
+		draw_string(Fonts.get_font("Medium"), pos + Vector2(18, 28), LoadMotion.wait_line(body,wait_reason), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.heat(0.95, 1.2))
 	if body != null and is_instance_valid(body) and state in ["carry", "release"]:
 		draw_line(pos, body.global_transform * body.center_of_mass, Pal.tint(Pal.AIR, 0.5, 1.2), 1.2, true)
 	var sc := R / 20.0

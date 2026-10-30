@@ -17,6 +17,8 @@ func check(ok: bool, what: String) -> void:
 
 
 func _initialize() -> void:
+	# 68 号: this test reads the hulks the market drew by itself (before the star-map sweep)
+	Scan.ON = false
 	for rep in [0, 6, 16, 30]:
 		var lv: String = Career.LEVELS[Market.level_index(rep)][0]
 		var by_star := {}
@@ -60,8 +62,11 @@ func _initialize() -> void:
 	Career.path = "user://zp_test_market_career.json"
 	Career.data = Career.fresh()
 	var seen: Array = [Career.level()]
+	var n := 0
 	for g in [3, 3, 2, 0, 3, 3, 3, 3, 2, 3, 3, 3]:
-		Career.data.active = {"id": "x", "fee": 0.0, "fee_paid": true}
+		# each job its own id: a settlement is paid once per job
+		n += 1
+		Career.data.active = {"id": "x%d" % n, "fee": 0.0, "fee_paid": true}
 		Career.settle({"earned": 100000.0, "grade": g})
 		if seen.back() != Career.level():
 			seen.append(Career.level())

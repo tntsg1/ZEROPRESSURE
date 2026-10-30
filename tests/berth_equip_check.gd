@@ -77,6 +77,8 @@ func _free(g, what):
 
 func _put(b, at: Vector2) -> void:
 	b.global_position = at - b.global_transform.basis_xform(b.center_of_mass)
+	# the physics server keeps its own copy of a live body's pose: hand it the new one too
+	PhysicsServer2D.body_set_state(b.get_rid(), PhysicsServer2D.BODY_STATE_TRANSFORM, b.global_transform)
 	b.linear_velocity = Vector2.ZERO
 	b.angular_velocity = 0.0
 
@@ -96,6 +98,9 @@ func _run() -> void:
 	Career.data.market = true
 	Career.data.seen = {"market": true}
 	Career.data.money = 400000.0
+	# the berth's equipment hangs on the lights (Repair: "lights" first) and some on the grid
+	Career.data.upgrades["lights"] = 1
+	Career.data.port = {"salvage": 1, "power": 1}
 	Career.save()
 	var term: Node = load("res://scenes/terminal.tscn").instantiate()
 	root.add_child(term)
@@ -104,12 +109,20 @@ func _run() -> void:
 	for b in term.BERTH:
 		items[b[0]] = b
 	term.buy(items.hauler2)
+	Works.finish()
 	check(not Career.data.upgrades.has("hauler2") and absf(float(Career.data.money) - 400000.0) < 1.0, "a second hauler is refused before the first")
-	term.buy(items.hauler)
-	term.buy(items.hauler2)
-	check(Career.data.upgrades.has("hauler2") and absf(float(Career.data.money) - (400000.0 - 45000.0 - 60000.0)) < 1.0, "with the first bought, the second ($%d left)" % int(Career.data.money))
-	for id in ["crane", "port2", "buffer", "zones"]:
+	# 65 号: each is ordered and built by the crew, one at a time (Works.finish stands for the wait)
+	var spent := 0.0
+	for id in ["hauler", "hauler2"]:
+		var p0 := float(Career.data.money)
 		term.buy(items[id])
+		Works.finish()
+		spent += p0 - float(Career.data.money)
+	check(Career.data.upgrades.has("hauler") and Career.data.upgrades.has("hauler2") and spent > 0.0, "with the first built, the second (%s spent, $%d left)" % [Pal.money(spent), int(Career.data.money)])
+	# the crane stands on the buffer platform: the platform first
+	for id in ["buffer", "crane", "port2", "zones"]:
+		term.buy(items[id])
+		Works.finish()
 	check(["crane", "port2", "buffer", "zones"].all(func(id): return Career.data.upgrades.has(id)), "crane, second equipment bay, buffer platform, work zones all bought ($%d left)" % int(Career.data.money))
 	term.tab = 1
 	var last: Rect2 = term._facility_rect(term.BERTH.size() - 3)
@@ -150,13 +163,23 @@ func _run() -> void:
 	var tk = await _free(g, "T-1")
 	var m: float = tk.total_mass()
 	check(m > g.grab_max() and m <= Crane.MAX_T, "an emptied tank, %.1f t: beyond the grapple" % m)
+	# 78 号 P0-1: the rest of the ship cleared away (sealed in FR-26's hull the payload sweep rightly
+	# finds no way out — the crane used to carry it through the wall); too wide for a 4.2 m bay
+	# however it is turned, it goes to the outside rack
+	for id in g.world.order.duplicate():
+		var sp = g.world.pieces[id]
+		if not sp.gone and not tk.pieces.has(sp):
+			g.world.remove_piece(sp)
+	await _frames(2)
+	_put(tk, Vector2(58.0, 0.0) * Geom.M)
+	await _frames(2)
 	var key: String = g.crane.toggle(tk)
 	var k := 0
 	while _ledger_has(g, "T-1").is_empty() and k < 120:
 		await _seconds(1.0)
 		k += 1
 	var l: Array = _ledger_has(g, "T-1")
-	check(not l.is_empty() and l[1] == "equip" and float(l[2]) > 20000.0 and key == "crane_marked", "the crane lifts it whole into the equipment bay in %d s ($%d)" % [k, int(float(l[2])) if not l.is_empty() else 0])
+	check(not l.is_empty() and l[1] == "equip" and float(l[2]) > 20000.0 and key == "crane_marked", "the crane lifts it whole into the outside rack (%s) in %d s ($%d)" % [g.crane.zone, k, int(float(l[2])) if not l.is_empty() else 0])
 	g.queue_free()
 	await _frames(2)
 

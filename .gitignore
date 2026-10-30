@@ -9,3 +9,6 @@ tests/out/
 /proofs/*
 !/proofs/.gdignore
 !/proofs/validation.md
+
+# Demo videos recorded for review (large; kept local)
+recordings/*.mp4

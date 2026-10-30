@@ -20,6 +20,8 @@ func check(ok: bool, what: String) -> void:
 
 
 func _initialize() -> void:
+	# 68 号: this test reads the hulks the market drew by itself (before the star-map sweep)
+	Scan.ON = false
 	Txt.test_zh = not OS.get_cmdline_user_args().has("en")
 	Txt.zh = Txt.test_zh
 	Career.path = "user://zp_test_build_career.json"

@@ -7,6 +7,7 @@ const MUSIC_DB := -5.0
 const SFX_DB := -3.0
 
 static var env: Environment = null     # the game's glow, while a game is running
+static var look: Node = null           # 91 号: the game's picture layer (scripts/look.gd), while a game is running
 
 
 static func _bus(name: String) -> int:
@@ -43,6 +44,8 @@ static func apply_video(vp: Viewport) -> void:
 		vp.msaa_2d = Viewport.MSAA_2X if high else Viewport.MSAA_DISABLED
 	if env != null:
 		env.glow_enabled = high
+	if look != null and is_instance_valid(look):
+		look.apply_settings()
 
 
 static func apply(vp: Viewport) -> void:

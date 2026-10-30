@@ -11,6 +11,8 @@ class Piece:
 	var id := 0
 	var kind := "hull"        # hull hatch bulkhead door deck keel rib rail beam strut plate fixture equip lamp
 	var tag := ""             # "NAV-01" etc. for named equipment
+	var key := ""             # the ship file's key for this piece (a work plan finds the same piece on the next ship)
+	var cut_seq := 0            # stable child identity across replay and save/load
 	var name_key := ""        # Txt key
 	var label := ""           # short text printed on its art ("O₂", "PRECISION")
 	var poly := PackedVector2Array()
@@ -26,7 +28,11 @@ class Piece:
 	var art_size := Vector2.ZERO
 	var fragile := 0.3
 	var contam := false
-	var cut_speed := 260.0    # px/s through this material
+	var cut_speed := 260.0    # px/s through this material (at laser power 1)
+	var mat := ""             # 87-1: material id (data/materials.json; "" = structural steel)
+	var kerf_dt := 0.0        # °C the cutting has put into it (cools off: Mat.cool)
+	var loss := 0.0           # share of its scrap value melted off a titanium kerf / spalled off ceramic
+	var cracks := 0           # thermal-shock cracks (ceramic)
 	var room := ""            # room it sits in ("" = hull / outside)
 	var barrier := false      # blocks gas (hull, bulkheads, decks, closed doors)
 	var door := false
@@ -37,12 +43,15 @@ class Piece:
 	var hazard := ""          # gas_tank fuel_tank cap battery gen
 	var temp := 20.0
 	var gone := false
+	var into := ""            # the kind of mouth that took it (equip | metal | hazard), once gone
 	var mandatory := false
 	var scope := true         # inside what the contract pays for
 	var dest := "metal"       # where it pays most: metal | equip | hazard
 	var hidden_by := -1       # a cover piece that has to come off first
 	var seen := false
 	var tri := PackedInt32Array()   # cached triangulation of poly (drawing)
+	var bb := Rect2()               # 60 FPS: poly's bounds grown 1 px (World.piece_contains), for bb_of
+	var bb_of := PackedVector2Array()
 	var tri_sig := 0
 
 	func world_xf() -> Transform2D:

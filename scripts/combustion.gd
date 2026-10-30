@@ -314,7 +314,9 @@ func _physics_process(dt: float) -> void:
 		_burn(u, dt)
 	_sparks.clear()
 	_flush_blasts(false)
-	queue_redraw()
+	# 108 号 帧率: only while its part of the port is in view (scripts/view_cull.gd)
+	if ViewCull.sees_zone(game, "salvage", 80.0):
+		queue_redraw()
 
 
 func _flush_fine() -> void:

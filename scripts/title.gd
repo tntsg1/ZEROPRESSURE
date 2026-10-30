@@ -104,11 +104,11 @@ func _ready() -> void:
 	for i in Career.SLOTS:
 		slot_lift.append(Motion.Spring.new(0.0, 260.0, 0.7))
 		tilt.append([Motion.Spring.new(0.0, 160.0, 0.8), Motion.Spring.new(0.0, 160.0, 0.8)])
-	for i in 3:
+	for i in _items().size():
 		item_k.append(Motion.Spring.new(0.0, 360.0, 0.75))
 	sfx = Sfx.new()
 	add_child(sfx)
-	for i in 3:
+	for i in _items().size():
 		item_pour.append(Pour.make(self))
 	back_pour = Pour.make(self)
 	var gr := Gradient.new()
@@ -419,11 +419,14 @@ func _new_slot(i: int, company: String) -> void:
 	_stop_naming()
 	Career.use_slot(i + 1)
 	Career.start_new()
+	# a career begun here opens its terminal up as it is needed (28 号, scripts/onboarding.gd)
+	Career.data.term_open = {}
 	Career.data.company = nm
 	Career.save()
 	SaveGame.clear()
 	SaveGame.clear(SaveGame.train_path)
-	Game.start_ship = "ts1"
+	# 32 号 (28 号 Q5 C): a new career begins in the belt; TS-1 stays an option at the terminal
+	Game.start_ship = "belt"
 	SaveGame.load_requested = false
 	next_scene = "res://scenes/main.tscn"
 	leave_from = _slot_rect(i)
@@ -601,9 +604,8 @@ func _menu(s: Vector2, vk: float, dive: float) -> void:
 	if bar_a.x > 0.01:
 		var r0 := _item_rect(0)
 		var br := Rect2(r0.position.x + off.x, bar_y.x + off.y + vk * 30.0, r0.size.x, r0.size.y)
-		Pal.band(self, br, 0.12 * bar_a.x * ma)
-		var uw := 72.0 * bar_a.x
-		draw_rect(Rect2(br.get_center().x - uw * 0.5, br.end.y - 2, uw, 2), Pal.heat(bar_a.x * ma, 1.0))
+		# 51 号: the new look's glass key under the pointed item, its edge warm
+		draw_style_box(UiSkin.box("raised", bar_a.x * ma, 1.0), br.grow(-2.0))
 	for i in items.size():
 		var ia := clampf((t - 2.0 - i * 0.08) / 0.35, 0.0, 1.0) * ma
 		var r := _item_rect(i)

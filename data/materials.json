@@ -1,0 +1,91 @@
+{
+  "_doc": "87-1 船体材料。每种材料对激光：a 吸收系数、th 功率门槛（相对基础激光功率 1.0）——同几何下的切速倍率 = max(a×P − th, (a − th)×P×0.35)，P = 切割功率升级 × 电网系数；P=1 时结构钢为 1。heat：每米切缝给零件的升温系数；cool：散热时间常数 s；glow：切缝余热发光时长倍率；price：同船内每吨回收价权重（整船废料总价不变，只在各材料间重新分配）；loss：每米切缝的熔损（价值比例）；shock：陶瓷热冲击开裂的升温阈值 °C（0 = 不会）；nonmag：非磁性比例（分选线用）；sort：回收去向；fx：火花/熔滴/烟/碎屑/反光倍率；pitch/vol：切割声的音高与音量；fill：画面明暗偏移；pattern：材料表面纹样。ships：42 艘正式船（及教学/附件船）的映射：default 是该船结构件的默认材料，rules 依次匹配（re 匹配零件 key，nk 匹配零件名称键，kind 匹配零件种类，cls 指定 equip 才会作用于设备件），keep=true 表示船图里原有的切速已经是这种材料的实际切速，否则按 base（或船图原值）× P=1 的材料倍率算。",
+  "materials": {
+    "steel": {"name": ["结构钢", "STRUCTURAL STEEL"], "a": 1.0, "th": 0.0, "heat": 1.0, "cool": 25.0, "glow": 1.0, "price": 1.0, "loss": 0.0, "shock": 0.0, "nonmag": -1.0, "sort": "ferrous",
+      "fx": {"spark": 1.0, "spark_v": 1.0, "molten": 1.0, "smoke": 1.0, "shard": 0.0, "glint": 0.0}, "pitch": 1.0, "vol": 1.0, "fill": 0.0, "pattern": ""},
+    "al": {"name": ["铝合金", "ALUMINIUM ALLOY"], "a": 1.1, "th": 0.25, "heat": 0.45, "cool": 10.0, "glow": 0.4, "price": 1.7, "loss": 0.004, "shock": 0.0, "nonmag": 0.97, "sort": "nonferrous",
+      "fx": {"spark": 0.25, "spark_v": 0.7, "molten": 2.6, "smoke": 0.6, "shard": 0.0, "glint": 0.6}, "pitch": 1.22, "vol": 0.8, "fill": 0.018, "pattern": "rivets"},
+    "armor": {"name": ["军规装甲钢", "MILITARY ARMOUR STEEL"], "a": 0.5, "th": 0.22, "heat": 1.5, "cool": 32.0, "glow": 1.7, "price": 1.35, "loss": 0.0, "shock": 0.0, "nonmag": 0.03, "sort": "ferrous",
+      "fx": {"spark": 2.2, "spark_v": 1.35, "molten": 0.6, "smoke": 1.2, "shard": 0.0, "glint": 0.0}, "pitch": 0.72, "vol": 1.25, "fill": -0.022, "pattern": "layers"},
+    "ti": {"name": ["钛合金", "TITANIUM ALLOY"], "a": 0.7, "th": 0.15, "heat": 1.8, "cool": 45.0, "glow": 2.4, "price": 3.2, "loss": 0.025, "shock": 0.0, "nonmag": 1.0, "sort": "titanium",
+      "fx": {"spark": 2.6, "spark_v": 1.6, "molten": 0.4, "smoke": 0.4, "shard": 0.0, "glint": 0.0}, "pitch": 1.12, "vol": 1.1, "fill": 0.03, "pattern": "brushed"},
+    "ceramic": {"name": ["陶瓷复合装甲", "CERAMIC COMPOSITE ARMOUR"], "a": 0.45, "th": 0.23, "heat": 0.8, "cool": 4.0, "glow": 0.8, "price": 0.9, "loss": 0.0, "shock": 180.0, "nonmag": 1.0, "sort": "ceramic",
+      "fx": {"spark": 0.3, "spark_v": 0.8, "molten": 0.2, "smoke": 1.6, "shard": 1.0, "glint": 0.0}, "pitch": 0.86, "vol": 1.0, "fill": 0.012, "pattern": "tiles"},
+    "shield": {"name": ["隔热反射层", "HEAT-SHIELD / REFLECTIVE LAYER"], "a": 0.55, "th": 0.15, "heat": 0.3, "cool": 80.0, "glow": 1.3, "price": 0.6, "loss": 0.0, "shock": 0.0, "nonmag": 0.9, "sort": "refractory",
+      "fx": {"spark": 0.4, "spark_v": 0.8, "molten": 0.3, "smoke": 1.4, "shard": 0.3, "glint": 2.0}, "pitch": 0.94, "vol": 0.9, "fill": 0.024, "pattern": "tiles"},
+    "composite": {"name": ["碳纤维复合材料", "CARBON-FIBRE COMPOSITE"], "a": 1.5, "th": 0.0, "heat": 0.6, "cool": 20.0, "glow": 0.3, "price": 0.5, "loss": 0.0, "shock": 0.0, "nonmag": 1.0, "sort": "composite",
+      "fx": {"spark": 0.15, "spark_v": 0.6, "molten": 0.0, "smoke": 3.0, "shard": 0.4, "glint": 0.0}, "pitch": 1.32, "vol": 0.7, "fill": -0.03, "pattern": "weave"},
+    "film": {"name": ["光帆薄膜", "SAIL FILM"], "a": 1.0, "th": 0.0, "heat": 0.2, "cool": 5.0, "glow": 0.2, "price": 1.0, "loss": 0.0, "shock": 0.0, "nonmag": 1.0, "sort": "film",
+      "fx": {"spark": 0.1, "spark_v": 0.5, "molten": 0.0, "smoke": 0.5, "shard": 0.0, "glint": 1.0}, "pitch": 1.4, "vol": 0.5, "fill": 0.0, "pattern": ""},
+    "ice": {"name": ["水冰", "WATER ICE"], "a": 1.0, "th": 0.0, "heat": 0.1, "cool": 5.0, "glow": 0.1, "price": 1.0, "loss": 0.0, "shock": 0.0, "nonmag": 1.0, "sort": "ice",
+      "fx": {"spark": 0.0, "spark_v": 0.5, "molten": 0.0, "smoke": 2.0, "shard": 0.6, "glint": 0.0}, "pitch": 0.9, "vol": 0.6, "fill": 0.0, "pattern": ""}
+  },
+  "ships": {
+    "gr7": {"default": "steel"},
+    "s09": {"default": "al"},
+    "pod": {"default": "al"},
+    "tug": {"default": "steel"},
+    "h22": {"default": "steel"},
+    "m14": {"default": "steel"},
+    "med47": {"default": "steel"},
+    "fr26": {"default": "steel"},
+    "pt34": {"default": "steel", "rules": [
+      {"nk": ["p_armor", "p_mag_wall"], "mat": "armor", "keep": true},
+      {"re": "^(VH|HT-U|HT-L|DR-MAG)", "mat": "armor", "keep": true},
+      {"nk": ["p_shield"], "mat": "ceramic", "keep": true}]},
+    "jd38": {"default": "al"},
+    "tw64": {"default": "steel"},
+    "hb86": {"default": "steel"},
+    "cl104": {"default": "steel"},
+    "es112": {"default": "steel", "rules": [
+      {"nk": ["p_bow_armor"], "mat": "ceramic", "keep": true},
+      {"nk": ["p_armor", "p_armor_strake", "p_vault_wall", "p_vault_door"], "mat": "armor", "keep": true},
+      {"re": "^(HT-S|HT-M|HT-P)$", "mat": "armor", "keep": true}]},
+    "fl116": {"default": "steel"},
+    "sv122": {"default": "steel"},
+    "mf126": {"default": "steel", "rules": [
+      {"nk": ["p_furnace_shell", "p_furnace_roof"], "mat": "shield", "keep": true}]},
+    "ro128": {"default": "steel"},
+    "cv138": {"default": "steel"},
+    "vt80": {"default": "steel"},
+    "ps12": {"default": "al"},
+    "cf90": {"default": "steel"},
+    "sa200": {"default": "steel", "rules": [
+      {"kind": ["film"], "mat": "film", "keep": true},
+      {"re": "^ST", "mat": "composite"}]},
+    "nr95": {"default": "steel"},
+    "ih55": {"default": "composite", "rules": [
+      {"kind": ["beam", "strut"], "mat": "al"}]},
+    "mt140": {"default": "steel"},
+    "md160": {"default": "steel"},
+    "tb180": {"default": "steel"},
+    "ch110": {"default": "steel"},
+    "my48": {"default": "composite"},
+    "ic120": {"default": "steel", "rules": [
+      {"kind": ["ice"], "mat": "ice", "keep": true}]},
+    "ark01": {"default": "steel"},
+    "qc30": {"default": "al"},
+    "st40": {"default": "ti", "rules": [
+      {"nk": ["p_st_composite"], "mat": "composite", "keep": true},
+      {"re": "^(HT-E|HT-P)$", "mat": "composite", "keep": true},
+      {"kind": ["fixture"], "mat": "al"}]},
+    "ev55": {"default": "steel", "rules": [
+      {"nk": ["p_ev_tile"], "cls": "equip", "mat": "shield", "keep": true}]},
+    "dc84": {"default": "steel", "rules": [
+      {"kind": ["fixture"], "mat": "al"}]},
+    "ob90": {"default": "steel", "rules": [
+      {"re": "^(BF|BP|STR)", "mat": "composite"}]},
+    "fx70": {"default": "steel"},
+    "bl88": {"default": "steel"},
+    "lc140": {"default": "steel"},
+    "dr150": {"default": "steel"},
+    "hg170": {"default": "steel", "rules": [
+      {"re": "^T[A-D]", "mat": "ti"}]},
+    "belt": {"default": "steel"},
+    "ts1": {"default": "steel"},
+    "e07a": {"default": "steel"},
+    "e07b": {"default": "steel"},
+    "e07c": {"default": "steel"},
+    "e07d": {"default": "steel"}
+  }
+}

@@ -1,0 +1,983 @@
+# 零压拆船厂 · 台词与画面文字（一次性改这里）
+#
+# 怎么改：
+#   每条以 [编号] 开头；「中：」后面写中文，「英：」后面写英文（英文可以空着，空着就显示中文）。
+#   「中：」空着 = 还没写：这句不播；合同卡上显示【待写】。
+#   一个场景写几句就用 _1 _2 _3 编号，游戏按顺序播（比如 L_tug_in_1、L_tug_in_2）。
+#   {name}、%d、%s 这类留着，游戏会填进去。换行写 \n。
+#   # 开头的是说明（谁说、什么时候说、建议长度），不用改。
+#   编号不要改；改完保存，重启游戏就生效。
+#
+
+############################################################
+# 现在游戏里会出现的（只改这部分）
+############################################################
+
+============================================================
+# 一、终端消息与开场卡片 · 成长体系与主线
+============================================================
+
+[L_intro_1]
+# 旁白 · 开场卡 1：零压港当年，六区灯火通明（68 号，只在新档播一次，暂停菜单可回看） · 两到四句
+中：
+英：
+
+[L_intro_2]
+# 旁白 · 开场卡 2：同一个镜头，灯一盏盏熄灭，港站衰败成现在的样子 · 两到四句
+中：
+英：
+
+[L_intro_3]
+# 旁白 · 开场卡 3：镜头推到荒废多年的七号坞（BERTH 07） · 两到四句
+中：
+英：
+
+[L_intro_4]
+# 旁白 · 开场卡 4：回收权使用证弹出，签上玩家的公司名 · 一到两句
+中：
+英：
+
+[L_permit_terms]
+# 文件 · 回收权使用证上的“使用条件”说明段落（编号、日期、公司名、损坏清单由游戏填） · 三到五条
+中：
+英：
+
+[T_contract_signed]
+# 终端 · 合同签下 · 一句
+中：
+英：
+
+[T_loan_installment]
+# 终端 · 结算扣分期 · 一句
+中：
+英：
+
+[T_loan_paid]
+# 终端 · 贷款还清 · 一句
+中：
+英：
+
+[T_market_open]
+# 终端 · 市场开放 · 一句
+中：
+英：
+
+[T_rep_up]
+# 终端 · 声望升级，{name} 是新等级 · 一句
+中：
+英：
+
+============================================================
+# 二、合同卡：报废原因、船载记录、陷阱名与复盘说明
+============================================================
+
+[R_reason_01]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：
+英：
+
+[R_reason_02]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：
+英：
+
+[R_reason_03]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：
+英：
+
+[R_reason_04]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：
+英：
+
+[R_reason_05]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：
+英：
+
+[R_reason_06]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：
+英：
+
+[R_reason_07]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：
+英：
+
+[R_reason_08]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：
+英：
+
+[G_log_01]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：
+英：
+
+[G_log_02]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：
+英：
+
+[G_log_03]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：
+英：
+
+[G_log_04]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：
+英：
+
+[G_log_05]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：
+英：
+
+[G_log_06]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：
+英：
+
+[G_log_07]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：
+英：
+
+[G_log_08]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：
+英：
+
+[X_log_wrong_valve_1]
+# 合同卡 · 船载记录里暗示「wrong_valve」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_wrong_valve_2]
+# 合同卡 · 船载记录里暗示「wrong_valve」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_fake_stop_1]
+# 合同卡 · 船载记录里暗示「fake_stop」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_fake_stop_2]
+# 合同卡 · 船载记录里暗示「fake_stop」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_hidden_tank_1]
+# 合同卡 · 船载记录里暗示「hidden_tank」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_hidden_tank_2]
+# 合同卡 · 船载记录里暗示「hidden_tank」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_live_cargo_1]
+# 合同卡 · 船载记录里暗示「live_cargo」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_live_cargo_2]
+# 合同卡 · 船载记录里暗示「live_cargo」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_welded_hatch_1]
+# 合同卡 · 船载记录里暗示「welded_hatch」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_welded_hatch_2]
+# 合同卡 · 船载记录里暗示「welded_hatch」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_rerouted_line_1]
+# 合同卡 · 船载记录里暗示「rerouted_line」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_rerouted_line_2]
+# 合同卡 · 船载记录里暗示「rerouted_line」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_second_source_1]
+# 合同卡 · 船载记录里暗示「second_source」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_second_source_2]
+# 合同卡 · 船载记录里暗示「second_source」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_hidden_damage_1]
+# 合同卡 · 船载记录里暗示「hidden_damage」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_hidden_damage_2]
+# 合同卡 · 船载记录里暗示「hidden_damage」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_explosive_cargo_1]
+# 合同卡 · 船载记录里暗示「explosive_cargo」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_explosive_cargo_2]
+# 合同卡 · 船载记录里暗示「explosive_cargo」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_fire_system_1]
+# 合同卡 · 船载记录里暗示「fire_system」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_fire_system_2]
+# 合同卡 · 船载记录里暗示「fire_system」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_bio_breach_1]
+# 合同卡 · 船载记录里暗示「bio_breach」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_bio_breach_2]
+# 合同卡 · 船载记录里暗示「bio_breach」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_gate_jam_1]
+# 合同卡 · 船载记录里暗示「gate_jam」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_gate_jam_2]
+# 合同卡 · 船载记录里暗示「gate_jam」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_psv_stuck_1]
+# 合同卡 · 船载记录里暗示「psv_stuck」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_psv_stuck_2]
+# 合同卡 · 船载记录里暗示「psv_stuck」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_heater_live_1]
+# 合同卡 · 船载记录里暗示「heater_live」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_heater_live_2]
+# 合同卡 · 船载记录里暗示「heater_live」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_jacket_loss_1]
+# 合同卡 · 船载记录里暗示「jacket_loss」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_jacket_loss_2]
+# 合同卡 · 船载记录里暗示「jacket_loss」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_valve_leak_1]
+# 合同卡 · 船载记录里暗示「valve_leak」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_valve_leak_2]
+# 合同卡 · 船载记录里暗示「valve_leak」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[X_log_pod_armed_1]
+# 合同卡 · 船载记录里暗示「pod_armed」陷阱的一句（第 1 种写法） · 一句
+中：
+英：
+
+[X_log_pod_armed_2]
+# 合同卡 · 船载记录里暗示「pod_armed」陷阱的一句（第 2 种写法） · 一句
+中：
+英：
+
+[N_wrong_valve]
+# 复盘 · 陷阱「wrong_valve」的名字 · 几个字
+中：
+英：
+
+[V_wrong_valve]
+# 复盘 · 陷阱「wrong_valve」的复盘说明 · 一两句
+中：
+英：
+
+[N_fake_stop]
+# 复盘 · 陷阱「fake_stop」的名字 · 几个字
+中：
+英：
+
+[V_fake_stop]
+# 复盘 · 陷阱「fake_stop」的复盘说明 · 一两句
+中：
+英：
+
+[N_hidden_tank]
+# 复盘 · 陷阱「hidden_tank」的名字 · 几个字
+中：
+英：
+
+[V_hidden_tank]
+# 复盘 · 陷阱「hidden_tank」的复盘说明 · 一两句
+中：
+英：
+
+[N_live_cargo]
+# 复盘 · 陷阱「live_cargo」的名字 · 几个字
+中：
+英：
+
+[V_live_cargo]
+# 复盘 · 陷阱「live_cargo」的复盘说明 · 一两句
+中：
+英：
+
+[N_welded_hatch]
+# 复盘 · 陷阱「welded_hatch」的名字 · 几个字
+中：
+英：
+
+[V_welded_hatch]
+# 复盘 · 陷阱「welded_hatch」的复盘说明 · 一两句
+中：
+英：
+
+[N_rerouted_line]
+# 复盘 · 陷阱「rerouted_line」的名字 · 几个字
+中：
+英：
+
+[V_rerouted_line]
+# 复盘 · 陷阱「rerouted_line」的复盘说明 · 一两句
+中：
+英：
+
+[N_second_source]
+# 复盘 · 陷阱「second_source」的名字 · 几个字
+中：
+英：
+
+[V_second_source]
+# 复盘 · 陷阱「second_source」的复盘说明 · 一两句
+中：
+英：
+
+[N_hidden_damage]
+# 复盘 · 陷阱「hidden_damage」的名字 · 几个字
+中：
+英：
+
+[V_hidden_damage]
+# 复盘 · 陷阱「hidden_damage」的复盘说明 · 一两句
+中：
+英：
+
+[N_explosive_cargo]
+# 复盘 · 陷阱「explosive_cargo」的名字 · 几个字
+中：
+英：
+
+[V_explosive_cargo]
+# 复盘 · 陷阱「explosive_cargo」的复盘说明 · 一两句
+中：
+英：
+
+[N_fire_system]
+# 复盘 · 陷阱「fire_system」的名字 · 几个字
+中：
+英：
+
+[V_fire_system]
+# 复盘 · 陷阱「fire_system」的复盘说明 · 一两句
+中：
+英：
+
+[N_bio_breach]
+# 复盘 · 陷阱「bio_breach」的名字 · 几个字
+中：
+英：
+
+[V_bio_breach]
+# 复盘 · 陷阱「bio_breach」的复盘说明 · 一两句
+中：
+英：
+
+[N_gate_jam]
+# 复盘 · 陷阱「gate_jam」的名字 · 几个字
+中：
+英：
+
+[V_gate_jam]
+# 复盘 · 陷阱「gate_jam」的复盘说明 · 一两句
+中：
+英：
+
+[N_psv_stuck]
+# 复盘 · 陷阱「psv_stuck」的名字 · 几个字
+中：
+英：
+
+[V_psv_stuck]
+# 复盘 · 陷阱「psv_stuck」的复盘说明 · 一两句
+中：
+英：
+
+[N_heater_live]
+# 复盘 · 陷阱「heater_live」的名字 · 几个字
+中：
+英：
+
+[V_heater_live]
+# 复盘 · 陷阱「heater_live」的复盘说明 · 一两句
+中：
+英：
+
+[N_jacket_loss]
+# 复盘 · 陷阱「jacket_loss」的名字 · 几个字
+中：
+英：
+
+[V_jacket_loss]
+# 复盘 · 陷阱「jacket_loss」的复盘说明 · 一两句
+中：
+英：
+
+[N_valve_leak]
+# 复盘 · 陷阱「valve_leak」的名字 · 几个字
+中：
+英：
+
+[V_valve_leak]
+# 复盘 · 陷阱「valve_leak」的复盘说明 · 一两句
+中：
+英：
+
+[N_pod_armed]
+# 复盘 · 陷阱「pod_armed」的名字 · 几个字
+中：
+英：
+
+[V_pod_armed]
+# 复盘 · 陷阱「pod_armed」的复盘说明 · 一两句
+中：
+英：
+
+============================================================
+# 三、训练课（TS-1 基础课与七门专项课）的无线电
+============================================================
+
+[course.sp_atmos_course.SO_safe_t]
+# 终端 · sp_atmos_course
+中：舱压已降到安全值。
+英：BAY PRESSURE BELOW SAFE.
+
+[course.sp_atmos_course.SO_lock_t]
+# 终端 · sp_atmos_course
+中：训练安全联锁启动：舱内仍是富氧空气。
+英：TRAINING INTERLOCK: THE BAY STILL HOLDS OXYGEN-RICH AIR.
+
+[course.sp_atmos_course.SM_safe_t]
+# 终端 · sp_atmos_course
+中：舱压已降到安全值。
+英：BAY PRESSURE BELOW SAFE.
+
+[course.sp_atmos_course.SM_lock_t]
+# 终端 · sp_atmos_course
+中：训练安全联锁启动：舱内仍有空气。
+英：TRAINING INTERLOCK: THERE IS STILL AIR IN THE BAY.
+
+[course.sp_atmos_course.SH_safe_t]
+# 终端 · sp_atmos_course
+中：炉芯已冷却到安全温度。
+英：CORE BELOW SAFE TEMPERATURE.
+
+[course.sp_atmos_course.SH_lock_t]
+# 终端 · sp_atmos_course
+中：训练安全联锁启动：炉芯仍然高温。
+英：TRAINING INTERLOCK: THE CORE IS STILL HOT.
+
+[course.sp_cryo_course.SC_safe_t]
+# 终端 · sp_cryo_course
+中：罐已抽空，安全阀已解冻。
+英：TANK EMPTY, RELIEF VALVE THAWED.
+
+[course.sp_cryo_course.SC_lock_t]
+# 终端 · sp_cryo_course
+中：训练安全联锁启动：罐内仍有货物，安全阀未确认。
+英：TRAINING INTERLOCK: CARGO STILL ABOARD, RELIEF VALVE NOT VERIFIED.
+
+[course.sp_cryo_course.SD_safe_t]
+# 终端 · sp_cryo_course
+中：回温完成，隔振台已锁定。
+英：WARM-UP COMPLETE, TABLE LOCKED.
+
+[course.sp_cryo_course.SD_lock_t]
+# 终端 · sp_cryo_course
+中：训练安全联锁启动：制冷机未完成回温。
+英：TRAINING INTERLOCK: THE FRIDGE IS NOT WARMED UP.
+
+[course.sp_energy_course.SE_safe_t]
+# 终端 · sp_energy_course
+中：储能已降到安全值。
+英：STORED FIELD BELOW SAFE.
+
+[course.sp_energy_course.SE_lock_t]
+# 终端 · sp_energy_course
+中：训练安全联锁启动：线圈仍储有磁能。
+英：TRAINING INTERLOCK: THE COIL STILL HOLDS ITS FIELD.
+
+[course.sp_energy_course.SF_safe_t]
+# 终端 · sp_energy_course
+中：飞轮转速已降到安全值。
+英：FLYWHEEL BELOW SAFE SPEED.
+
+[course.sp_energy_course.SF_lock_t]
+# 终端 · sp_energy_course
+中：训练安全联锁启动：飞轮仍在高速旋转。
+英：TRAINING INTERLOCK: THE FLYWHEEL IS STILL SPINNING.
+
+[course.sp_fluid_course.SR_safe_t]
+# 终端 · sp_fluid_course
+中：钻杆已泄扭泄压，卡瓦已坐。
+英：STRING BLED, SLIPS SET.
+
+[course.sp_fluid_course.SR_lock_t]
+# 终端 · sp_fluid_course
+中：训练安全联锁启动：钻杆仍有扭矩、压力或卡瓦未坐。
+英：TRAINING INTERLOCK: TORQUE, MUD OR OPEN SLIPS ON THE STRING.
+
+[course.sp_fluid_course.SX_safe_t]
+# 终端 · sp_fluid_course
+中：推进剂已抽完。
+英：PROPELLANT DRAWN OFF.
+
+[course.sp_fluid_course.SX_lock_t]
+# 终端 · sp_fluid_course
+中：训练安全联锁启动：罐内仍有推进剂。
+英：TRAINING INTERLOCK: PROPELLANT STILL IN THE TANKS.
+
+[course.sp_isolate_course.SN_lock_t]
+# 终端 · sp_isolate_course
+中：训练安全联锁启动：小船尚未取出。
+英：TRAINING INTERLOCK: THE SMALL SHIP IS NOT OUT.
+
+[course.sp_isolate_course.SV_backfeed_t]
+# 终端 · sp_isolate_course
+中：检测到备用供电路径：门锁备用电源。
+英：BACKUP SUPPLY PATH DETECTED: THE LOCK'S OWN BACKUP.
+
+[course.sp_isolate_course.SV_lock_t]
+# 终端 · sp_isolate_course
+中：训练安全联锁启动：门锁仍有供电。
+英：TRAINING INTERLOCK: THE LOCK STILL HAS A SUPPLY.
+
+[course.sp_load_course.SL_safe_t]
+# 终端 · sp_load_course
+中：预紧已解除。
+英：PRELOAD RELEASED.
+
+[course.sp_load_course.SL_lock_t]
+# 终端 · sp_load_course
+中：训练安全联锁启动：蓄能器仍有压力。
+英：TRAINING INTERLOCK: THE ACCUMULATOR IS STILL CHARGED.
+
+[course.sp_load_course.SG_lock_t]
+# 终端 · sp_load_course
+中：训练安全联锁启动：轨道上仍锁着货物。
+英：TRAINING INTERLOCK: CARGO STILL LOCKED ON THE RAIL.
+
+[course.sp_precise_course.SP_lock_t]
+# 终端 · sp_precise_course
+中：训练安全联锁启动：防尘罩未放下。
+英：TRAINING INTERLOCK: THE DUST COVER IS NOT DOWN.
+
+[course.sp_precise_course.SW_safe_t]
+# 终端 · sp_precise_course
+中：舱压已降到安全值。
+英：HALL PRESSURE BELOW SAFE.
+
+[course.sp_precise_course.SW_lock_t]
+# 终端 · sp_precise_course
+中：训练安全联锁启动：玻璃背后仍有压力。
+英：TRAINING INTERLOCK: THERE IS STILL PRESSURE BEHIND THE GLASS.
+
+[course.ts1_course.T00_4]
+# 终端 · ts1_course
+中：远程操作权限已确认。训练项目 TS-1 已载入。
+英：REMOTE OPERATION AUTHORISED. TRAINING ITEM TS-1 LOADED.
+
+[course.ts1_course.T01_found]
+# 终端 · ts1_course
+中：设备 P-001 已识别。
+英：ITEM P-001 IDENTIFIED.
+
+[course.ts1_course.T02_done_t]
+# 终端 · ts1_course
+中：金属结构回收完成。回收重量 0.18 t。资产价值 120 信用点。
+英：METAL RECOVERED. 0.18 t. VALUE 120 CR.
+
+[course.ts1_course.T03_empty_t]
+# 终端 · ts1_course
+中：舱室压力进入训练允许范围。气体回收完成。
+英：BAY PRESSURE WITHIN TRAINING LIMIT. GAS RECOVERED.
+
+[course.ts1_course.T03_lock_t]
+# 终端 · ts1_course
+中：训练安全联锁启动：目标舱室状态未确认。
+英：TRAINING INTERLOCK: TARGET BAY NOT VERIFIED.
+
+[course.ts1_course.T04_backup_t]
+# 终端 · ts1_course
+中：检测到备用供电路径。
+英：BACKUP SUPPLY PATH DETECTED.
+
+[course.ts1_course.T04_ok_t]
+# 终端 · ts1_course
+中：目标电气区域验证完成。允许进行指定模块拆卸。
+英：ELECTRICAL ZONE VERIFIED. MODULE REMOVAL PERMITTED.
+
+[course.ts1_course.T04_lock_t]
+# 终端 · ts1_course
+中：训练安全联锁启动：目标电气区域未验证。
+英：TRAINING INTERLOCK: ELECTRICAL ZONE NOT VERIFIED.
+
+[course.ts1_course.T06_done_t]
+# 终端 · ts1_course
+中：TS-1 拆解任务完成。训练舱段剩余可回收结构：0。
+英：TS-1 DISMANTLED. RECOVERABLE STRUCTURE REMAINING: 0.
+
+[course.ts1_course.TF_scrap_t]
+# 终端 · ts1_course
+中：金属废料接收完成。
+英：SCRAP RECEIVED.
+
+[course.ts1_course.TF_equip_t]
+# 终端 · ts1_course
+中：设备接收完成：完整。
+英：EQUIPMENT RECEIVED: WHOLE.
+
+[course.ts1_course.TF_haz_t]
+# 终端 · ts1_course
+中：危险品接收完成。
+英：HAZARD RECEIVED.
+
+[course.ts1_course.TL_lock_t]
+# 终端 · ts1_course
+中：训练安全联锁启动：容器内仍有液体。
+英：TRAINING INTERLOCK: THE VESSEL STILL HOLDS LIQUID.
+
+[course.ts1_course.TL_empty_t]
+# 终端 · ts1_course
+中：液体回收完成。
+英：LIQUID RECOVERED.
+
+============================================================
+# 五、画面上的提示文字：考核界面、训练回想卡、安全提醒（不是角色说话）
+============================================================
+
+[txt.ex_goal]
+# 提示文字
+中：考核目标：完整回收设备 E-07
+英：OBJECTIVE: RECOVER UNIT E-07 WHOLE
+
+[txt.ex_known]
+# 提示文字
+中：已知条件：无有效现场检测记录
+英：KNOWN: NO VALID SITE READINGS
+
+[txt.ex_q]
+# 提示文字
+中：Q  求提示（评级会记一笔）
+英：Q  HINT (IT GOES ON THE GRADE)
+
+[txt.ex_hints]
+# 提示文字
+中：已用提示 %d 次
+英：HINTS USED: %d
+
+[txt.ex_l1]
+# 提示文字
+中：这是最后一个练习。我不提示你该怎么拆，自己检查。
+英：Last exercise. I won't tell you how to take it apart. Check it yourself.
+
+[txt.ex_l2]
+# 提示文字
+中：放心，训练场出不了大事。
+英：Relax, nothing big can go wrong on the training rig.
+
+[txt.ex_l3]
+# 提示文字
+中：不过设备拆坏了，成绩就会很难看。
+英：But break the unit and your grade will look ugly.
+
+[txt.ex_hint_cost]
+# 提示文字
+中：想要提示？可以。不过最后的评级会记一笔。
+英：Want a hint? Fine. It goes on the grade.
+
+[txt.ex_free]
+# 提示文字
+中：好，继续送回收口。
+英：Good. Now into the bay.
+
+[txt.ex_broken]
+# 提示文字
+中：设备已经损坏了。把剩下的部分回收吧，至少把活干完。
+英：The unit's damaged. Recover what's left — at least finish the job.
+
+[txt.ex_a]
+# 提示文字
+中：不错。看来你确实知道自己在干什么了。
+英：Not bad. Looks like you do know what you're doing.
+
+[txt.ex_bc]
+# 提示文字
+中：能拆完就行。后面还有得练。
+英：Getting it done is what counts. Plenty of practice ahead.
+
+[txt.ex_done]
+# 提示文字
+中：考核完成
+英：ASSESSMENT COMPLETE
+
+[txt.ex_incomplete]
+# 提示文字
+中：考核未完成
+英：ASSESSMENT INCOMPLETE
+
+[txt.ex_g_none]
+# 提示文字
+中：可以重新考核，也可以直接接合同
+英：Take it again, or go straight to the contract
+
+[txt.ex_review]
+# 提示文字
+中：事故复盘
+英：INCIDENT REVIEW
+
+[txt.ex_clean]
+# 提示文字
+中：没有事故。
+英：No incidents.
+
+[txt.ex_retake]
+# 提示文字
+中：重新考核
+英：TAKE IT AGAIN
+
+[txt.as_p_g]
+# 提示文字
+中：%s 压力未验证。先在 %s 测一下。
+英：%s pressure not verified. Measure at %s first.
+
+[txt.as_p_g_dl]
+# 提示文字
+中：%s 压力未验证。%s 和舱室之间隔着阀门 %s，先开阀再测。
+英：%s pressure not verified. Valve %s sits between %s and the room — open it, then measure.
+
+[txt.as_p_g_known]
+# 提示文字
+中：%s 里还有 %d kPa，先接软管抽空。
+英：%s still holds %d kPa. Hose it down first.
+
+[txt.as_p_g_none]
+# 提示文字
+中：%s 压力未验证，先找个能测的地方。
+英：%s pressure not verified. Find somewhere to measure it.
+
+[txt.as_p_s]
+# 提示文字
+中：这个区域的检测记录还没确认。
+英：This area's survey record isn't confirmed yet.
+
+[txt.as_v_g]
+# 提示文字
+中：%s 可能还带电。先断开电源、放电，再测到 0 V。
+英：%s may still be live. Isolate, bleed, measure 0 V first.
+
+[txt.as_v_s]
+# 提示文字
+中：现在的数据和事故报告对不上，最好再查一下。
+英：The readings don't match the incident report. Better check again.
+
+[txt.as_c_g]
+# 提示文字
+中：先确认所有连接都断开了。这东西还连着别的设备。
+英：Make sure every connection's undone first. This thing's still hooked to other equipment.
+
+[txt.as_c_s]
+# 提示文字
+中：%s 还有连接未解除。
+英：%s: CONNECTIONS REMAIN.
+
+[txt.as_f_g]
+# 提示文字
+中：管里还有液体：先用 %s 抽空再拆。
+英：Still fluid in that line: drain it at %s first.
+
+[txt.as_f_g_np]
+# 提示文字
+中：管里还有液体：先抽空再拆。
+英：Still fluid in that line: drain it first.
+
+[txt.as_f_s]
+# 提示文字
+中：%s 管路状态：未处理。
+英：%s LINE: UNRESOLVED.
+
+[txt.as_t_g]
+# 提示文字
+中：管路还很烫：热源停下来以后要等它降温。
+英：That line is hot: stop the heat source and let it cool.
+
+[txt.as_t_s]
+# 提示文字
+中：管路温度：未处理。
+英：LINE TEMPERATURE: UNRESOLVED.
+
+[txt.as_h_g]
+# 提示文字
+中：%s 里还有危险残留，送危险品回收口。
+英：%s still holds hazardous contents — hazmat mouth.
+
+[txt.as_h_s]
+# 提示文字
+中：%s 的去向再确认一下。
+英：%s: CHECK WHERE IT GOES.
+
+[txt.as_cl_g]
+# 提示文字
+中：附近有推进剂云团，别在里面开激光。
+英：Propellant in the air here — keep the laser out of it.
+
+[txt.as_cl_s]
+# 提示文字
+中：附近有可燃气体。
+英：FLAMMABLE GAS NEARBY.
+
+[txt.as_port_g]
+# 提示文字
+中：看看这接口接到哪儿，别只盯着表上的数字。
+英：Check what this port is connected to, not just the number.
+
+[txt.rc_title]
+# 提示文字
+中：训练回想
+英：FROM TRAINING
+
+[txt.rc_l]
+# 提示文字
+中：和 TS-1 第 %d 课一样
+英：SAME AS TS-1 LESSON %d
+
+[txt.rc_s_path]
+# 提示文字
+中：测量通路
+英：WHAT THE GAUGE SEES
+
+[txt.rc_s_backup]
+# 提示文字
+中：备用电源
+英：BACKUP POWER
+
+[txt.rc_s_blow]
+# 提示文字
+中：带压舱室
+英：PRESSURISED ROOM
+
+[txt.rc_s_tank]
+# 提示文字
+中：储气罐
+英：GAS BOTTLES
+
+[txt.rc_s_hot]
+# 提示文字
+中：热源
+英：HEAT SOURCE
+
+[txt.rc_s_guard]
+# 提示文字
+中：护板
+英：GUARD PLATE
+
+[txt.rc_s_tied]
+# 提示文字
+中：连接
+英：CONNECTIONS
+
+[txt.rc_s_heavy]
+# 提示文字
+中：超重
+英：OVERWEIGHT
+
+[txt.rc_v02]
+# 提示文字
+中：还记得训练里的 V-02 吗。
+英：Remember V-02 in training.
+
+[txt.rc_volts]
+# 提示文字
+中：面板说停了，测点不这么说。和训练时一样。
+英：The panel says stopped. The test point disagrees. Like in training.
+
+[txt.rc_blow]
+# 提示文字
+中：……还好不是人。
+英：...Good thing nobody was in there.
+
+[txt.rc_tank]
+# 提示文字
+中：舱抽空了，罐子可没有。
+英：The room's empty. The bottles aren't.
+
+[txt.rc_hot]
+# 提示文字
+中：热源还在转，它就凉不下来。
+英：While the heat source runs, it won't cool down.
+
+[txt.rc_guard]
+# 提示文字
+中：护板变形了，拆掉它再接管。
+英：The guard's bent. Take it off, then connect.
+
+[txt.rc_pull]
+# 提示文字
+中：连着呢，和训练那台泵一样。
+英：Still connected — just like that pump in training.
+
+[txt.rc_heavy]
+# 提示文字
+中：超重。和训练那根梁一样，想办法分开。
+英：Overweight. Like that beam in training — split it.
+
+
+############################################################

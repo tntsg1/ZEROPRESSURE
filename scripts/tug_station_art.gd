@@ -95,6 +95,9 @@ const PLATES := {
 
 # ================================================================== the still parts
 func still(ci: CanvasItem, on: bool, lod: int, stage: int) -> void:
+	# the layer's bounds: a canvas item culls a draw_mesh by the mesh's own (untransformed) box, near
+	# the world's origin; a transparent frame round the station keeps the layer in view (tram 97 号)
+	ci.draw_rect(r, Color(0, 0, 0, 0), false, 1.0)
 	_put(ci, _mesh("still/%s/%d/%d" % [on, lod, stage], func(p): _still(p, on, lod, stage)), Vector2.ZERO)
 	if lod >= 1:
 		_text(ci, Vector2(9.4, 1.32), "SWL 40 t", 0.5, Pal.heat(0.75, 1.0))

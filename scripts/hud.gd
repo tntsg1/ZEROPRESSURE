@@ -1,5 +1,7 @@
 class_name Hud
 extends CanvasLayer
+const FastDraw = preload("res://scripts/fast_draw.gd")
+const CoreAsset = preload("res://scripts/core_asset.gd")
 # Screen-space layer: contract panel, income, toolbar, drone status, cursor
 # labels, measurement tags, messages, hints, the contract card, the pause
 # menu and the settlement. Everything moves on springs and real time.
@@ -20,6 +22,9 @@ var hint_text := ""
 var hint_t := 99.0
 var flash := 0.0
 var hurt := 0.0
+var gauge_k := 0.0          # 91 号: the ring round the pointer for the work in hand
+var gauge_kind := ""
+var gauge_spin := 0.0
 var flyers: Array = []     # [from, to, t, amount]
 var card_k := Motion.Spring.new(0.0, 170.0, 0.82)
 var card_t := 0.0
@@ -89,7 +94,28 @@ func _ready() -> void:
 	minimap = preload("res://scripts/minimap.gd").new()
 	minimap.visible = false
 	add_child(minimap)
-	for i in 5:
+	# the on-site guide's two keys (27 号): end it, or take its step's action (open the exchange)
+	for i in 3:
+		var b := Button.new()
+		b.visible = false
+		b.focus_mode = Control.FOCUS_NONE
+		b.add_theme_font_override("font", Fonts.get_font("Medium"))
+		b.add_theme_font_size_override("font_size", 15)
+		for st in ["normal", "hover", "pressed", "focus", "disabled"]:
+			var box := SkillBook._key_box(st)
+			box.content_margin_left = 14
+			b.add_theme_stylebox_override(st, box)
+		add_child(b)
+		if i == 2:
+			main_go = b
+			b.pressed.connect(func(): Mainline.take_me(game, str(Mainline.step().get("go", ""))))
+		elif i == 0:
+			guide_end = b
+			b.pressed.connect(func(): if game.guide != null: game.guide.stop())
+		else:
+			guide_act = b
+			b.pressed.connect(func(): if game.guide != null: game.guide.act())
+	for i in 6:
 		slot_y.append(Motion.Spring.new(0.0, 300.0, 0.6))
 		slot_glow.append(0.0)
 
@@ -104,7 +130,7 @@ func to_screen(w: Vector2) -> Vector2:
 
 func pointer_over_ui() -> bool:
 	var m := c.get_local_mouse_position()
-	return _toolbar_rect().has_point(m) or _item_at(m) != ""
+	return _toolbar_rect().has_point(m) or _item_at(m) != "" or (game.training and TutorialHud.OVERVIEW_RECT.has_point(m)) or (game.codex_hud != null and game.codex_hud.pointer_over_card())
 
 
 # the consumables this contract carries: one tile each, above the drone panel
@@ -128,15 +154,42 @@ func _item_at(m: Vector2) -> String:
 	return ""
 
 
+# five tools, and the deploy tool while the job carries any field gear (scripts/gear.gd)
+func _slots() -> int:
+	if game == null or game.gear == null:
+		return 5
+	# on a career contract the slot is always there (greyed with nothing aboard), so it can be found
+	return 6 if game.gear.active() or game.tools.tool == 6 or (game.career() and not game.training and game.exam == null and not game.in_berth()) else 5
+
+
 func _toolbar_rect() -> Rect2:
 	var s := size()
-	var w := 5 * 132.0 + 4 * 10.0
+	var n := _slots()
+	var w := n * 132.0 + (n - 1) * 10.0
 	return Rect2(s.x * 0.5 - w * 0.5, s.y - 112.0, w, 92.0)
+
+
+# 91 号 遥控: where the on-site panels are, for the drone feed's overlay round them (scripts/look.gd)
+func feed_rects() -> Dictionary:
+	var g = game
+	var s := size()
+	var out := {}
+	if g.state != "play" or ending or g.menu_open or g.contract_open:
+		return out
+	if not g.training and g.exam == null and not g.in_berth():
+		out["task"] = _contract_rect()
+		out["ledger"] = Rect2(s.x - 290.0, 22, 268, 86)
+	out["unit"] = Rect2(22.0, s.y - 106.0, 420.0, 70.0)
+	out["payload"] = _toolbar_rect()
+	if minimap != null and minimap.visible:
+		out["nav"] = Rect2(minimap.position, minimap.map_size)
+	return out
 
 
 func menu_changed() -> void:
 	menu_k.target = 1.0 if game.menu_open else 0.0
 	menu_confirm = -1
+	menu_page = ""
 
 
 func contract_changed() -> void:
@@ -150,6 +203,85 @@ func mandatory_alert(tag: String, reason: String) -> void:
 	alert_t = 0.0
 
 
+# 68 号 §4: the first use of a key in a career, said once on the right
+var op_act := ""
+var op_t := 99.0
+func op_card(action: String) -> void:
+	if action in ["down", "left", "right"]:
+		action = "up"
+	# 80 号: one voice while the guide runs — its card already says the key
+	if game.guide_coach() != null:
+		return
+	if OpCards.first(action):
+		op_act = action
+		op_t = 0.0
+
+
+# a hulk towed home: top centre, until the terminal is opened on it (click it, or the terminal key)
+# the top-centre stack (user 2026-10-26: these sat on each other): the guide card, then the hulk's
+# arrival, then the passing hint line
+func arrival_rect(s: Vector2) -> Rect2:
+	var y := 118.0
+	if _guide_on():
+		y = _guide_rect(s).end.y + 10.0
+	return Rect2(s.x * 0.5 - 330, y, 660, 92)
+
+
+func _arrival_card(s: Vector2) -> void:
+	var ar: Dictionary = game.arrival
+	if ar.is_empty() or game.state != "play":
+		return
+	var r := arrival_rect(s)
+	var k := 0.75 + 0.25 * sin(t * 4.0)
+	c.draw_style_box(UiSkin.solid(Color(0.09, 0.105, 0.12, 0.96), 14, 12.0), r)
+	c.draw_rect(Rect2(r.position, Vector2(4, r.size.y)), Color(UiSkin.ACCENT, k))
+	var head := (Ops.w("%s 拖到港了 · 停在拖船站泊位 %d", "%s IS HOME · TUG YARD BERTH %d") % [str(ar.name), int(ar.get("yard", 1))])
+	_text(head, r.position + Vector2(20, 34), 20, Pal.ink(0.96), font_b)
+	var line := Ops.w("按 %s（或点这里）打开终端，它的卡已经选好：点“开工拆”就进船坞开拆。", "Press %s (or click here): the terminal opens on its card — start stripping to bring it into the berth.") % Keys.label("terminal")
+	if ar.get("held", false):
+		line = Ops.w("它被扣在港口（欠费或留置）。按 %s（或点这里）打开终端看原因，处理完才能开拆。", "It is held at the port (a lien or a bill). Press %s (or click here) to see why.") % Keys.label("terminal")
+	_text(line, r.position + Vector2(20, 66), 15, Color(UiSkin.ACCENT, 0.95), font)
+
+
+func _op_card(s: Vector2) -> void:
+	if op_act == "" or op_t > OpCards.SHOW_S:
+		return
+	var a := clampf(op_t / 0.25, 0.0, 1.0) * clampf((OpCards.SHOW_S - op_t) / 0.5, 0.0, 1.0)
+	var r := Rect2(s.x - 22.0 - 520.0 + (1.0 - a) * 30.0, 262.0, 520.0, 104.0)
+	UI.panel(c, r, 0.94 * a)
+	c.draw_rect(Rect2(r.position + Vector2(8, 10), Vector2(3, r.size.y - 20)), Color(UiSkin.ACCENT, a))
+	var kr := Rect2(r.position + Vector2(20, 14), Vector2(maxf(44.0, 14.0 * OpCards.key_text(op_act).length() + 16.0), 30))
+	c.draw_style_box(UiSkin.box("tag", a), kr)
+	_text(OpCards.key_text(op_act), kr.position + Vector2(kr.size.x * 0.5, 21), 15, Pal.ink(0.95 * a), font_b, 0)
+	_text(Ops.w("移动", "MOVE") if op_act == "up" else Txt.t("key_" + op_act), Vector2(kr.end.x + 12, kr.position.y + 21), 16, Pal.ink(0.95 * a), font_b, -1)
+	var body := OpCards.line(op_act)
+	if "：" in body:
+		body = body.substr(body.find("：") + 1)
+	c.draw_multiline_string(font, r.position + Vector2(20, 68), body, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 36.0, 15, 2, Pal.ink(0.82 * a))
+
+
+# 71 号: the berth short of power says so, once a second worked out
+var _sp_t := -1.0
+var _sp_text := ""
+func _salvage_power(s: Vector2) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	if now - _sp_t > 1.0:
+		_sp_t = now
+		_sp_text = ""
+		if Grid.applies(game):
+			var gn: Dictionary = Grid.groups_now(game).get("salvage", {})
+			var want := float(gn.get("want", 0.0))
+			var got := float(gn.get("own", 0.0)) + float(gn.get("shore", 0.0))
+			if want > 0.0 and got < want * 0.9:
+				_sp_text = Ops.w("电不够：船坞只分到 %.1f / %.1f MW（激光 %d%%、传送带 %d%%、熔炉 %d%%）。修动力区，或在动力区控制屏把拆船区往前调。", "SHORT OF POWER: THE BERTH GETS %.1f / %.1f MW (LASER %d%%, BELT %d%%, FURNACE %d%%).") % [got, want, int(Grid.salvage_k(game, "laser", 0.15) * 100.0), int(Grid.salvage_k(game, "mouth", 0.2) * 100.0), int(Grid.salvage_k(game, "berth_furnace", 0.0) * 100.0)]
+	if _sp_text == "":
+		return
+	var r := Rect2(s.x * 0.5 - 460.0, 176.0, 920.0, 34.0)
+	UI.panel(c, r, 0.9)
+	c.draw_rect(Rect2(r.position + Vector2(8, 8), Vector2(3, r.size.y - 16)), Pal.heat(0.9, 1.2))
+	_text(_sp_text, Vector2(r.position.x + 20, r.position.y + 23), 14, Pal.ink(0.9), font, -1)
+
+
 func toast_saved() -> void:
 	saved_t = 0.0
 
@@ -160,6 +292,7 @@ func close_then(f: Callable) -> void:
 
 func show_hint(text: String) -> void:
 	hint_text = text
+	Playtest.hint(text)
 	hint_t = 0.0
 
 
@@ -208,6 +341,21 @@ func career_rows() -> Array:
 		return []
 	# the installment and interest only while there is a debt
 	var out: Array = []
+	var order: Dictionary = r.get("work_order",{})
+	if not order.is_empty():
+		var orders = load("res://scripts/work_orders.gd")
+		out.append(["e_work_order",orders.text(str(order.id)),"text"])
+		if order.get("completed",false):
+			var reward := game.txt("g4_reward_access" if order.id == "access" else "g4_reward_rigging")
+			if order.id == "heavy": reward = game.txt("g4_reward_stock") if order.get("reward","") == "field_stock" else Repair.name_of(str(order.reward))
+			out.append(["e_work_reward",reward,"text"])
+			if float(order.get("cash_cost",0.0)) > 0.0: out.append(["e_work_assembly",-float(order.cash_cost),"money"])
+			if float(order.get("surplus_cash",0.0)) > 0.0: out.append(["e_work_surplus",float(order.surplus_cash),"money"])
+		elif order.get("sold",false): out.append(["e_work_status",game.txt("g4_order_sold"),"text"])
+		else: out.append(["e_work_status",game.txt("g4_order_pending"),"text"])
+	# 64 号: the furnace's scrap went into the warehouse as ingots
+	if float(r.get("ingot_t", 0.0)) > 0.0005:
+		out.append(["e_ingots", Ops.w("%.1f 吨，下一页定：直卖或留着加工", "%.1f t: sell or process, on the next page") % float(r.ingot_t), "text"])
 	if float(r.installment) > 0.5 or float(r.interest) > 0.5:
 		out.append_array([["e_inst", -float(r.installment), "money"], ["e_interest", -float(r.interest), "money"]])
 	if float(r.short) > 0.5:
@@ -218,6 +366,69 @@ func career_rows() -> Array:
 		for k in used:
 			parts.append("%s ×%d" % [game.txt("it_" + k), int(used[k])])
 		out.append(["e_used", ", ".join(parts), "text"])
+	# the parts for the berth and what to work for next (scripts/repair.gd)
+	var pr: Dictionary = r.get("parts", {})
+	if not pr.is_empty() and (not pr.get("tags", []).is_empty() or float(pr.get("tons", 0.0)) > 0.05):
+		if not pr.get("tags", []).is_empty():
+			out.append(["e_parts_in", game.txt("e_parts_in_v") % [pr.tags.size(), Pal.money(float(pr.value))], "text"])
+		if float(pr.get("tons", 0.0)) > 0.05:
+			out.append(["e_structure_in", "%.1f t" % float(pr.tons), "text"])
+	# G5.1: the scrap kept as raw material, and the cash it did not bring
+	var mat: Dictionary = r.get("materials", {})
+	if float(mat.get("mass_t", 0.0)) > 0.0005:
+		out.append(["e_retained", "%.2f t" % float(mat.mass_t), "text"])
+		out.append(["e_retained_cash", Pal.money(float(r.get("retained_value", 0.0))), "text"])
+		out.append(["e_retained_next", game.txt("e_retained_next_v"), "text"])
+	if float(r.get("trade_bonus", 0.0)) > 0.5:
+		out.append(["e_trade_bonus", float(r.trade_bonus), "money"])
+	if float(r.get("tow", 0.0)) > 0.5:
+		out.append(["e_tow_fee", -float(r.tow), "money"])
+	if float(r.get("tow_owed", 0.0)) > 0.5:
+		out.append(["e_tow_owed", -float(r.tow_owed), "money"])
+	if float(r.get("spot_paid", 0.0)) > 0.5:
+		out.append(["e_spot_paid", -float(r.spot_paid), "money"])
+	# 108 号 Q6 A: the showcase job against the same type before, or the job's own yardstick
+	var sc: Dictionary = r.get("showcase", {})
+	if not sc.is_empty():
+		var mins := func(s: float) -> String: return "%d:%02d" % [int(s) / 60, int(s) % 60]
+		out.append(["e_showcase", "%s · %s · %s · %s" % [Methods.name_of(str(sc.id)), str(sc.use), mins.call(float(sc.time)), Pal.money(float(sc.net))], "text"])
+		if sc.has("before"):
+			out.append(["e_showcase_before", "%s · %s" % [mins.call(float(sc.before.time)), Pal.money(float(sc.before.net))], "text"])
+		else:
+			out.append(["e_showcase_std", "%s · %s" % [mins.call(float(sc.std_time)), Pal.money(float(sc.value))], "text"])
+	var sg: Dictionary = r.get("suggest", {})
+	if not sg.is_empty():
+		if sg.get("ready", false):
+			out.append(["e_next_repair", game.txt("e_next_ready") % str(sg.name), "text"])
+		else:
+			var lack: Array = sg.get("lack", [])
+			var line: String = str(sg.name) + (("  ·  " + game.txt("e_next_lack") % ", ".join(lack)) if not lack.is_empty() else "")
+			if float(sg.get("short", 0.0)) > 0.5:
+				line += "  ·  " + game.txt("e_next_short") % Pal.money(float(sg.short))
+			out.append(["e_next_repair", line, "text"])
+			if not sg.get("ships", []).is_empty():
+				out.append(["e_next_ships", ", ".join(sg.ships), "text"])
+	# the field gear: back, lost, achieved, opened (scripts/gear.gd)
+	var gr: Dictionary = r.get("gear", {})
+	if not gr.is_empty():
+		if not gr.get("back", []).is_empty():
+			out.append(["e_gear_back", _gear_list(gr.back), "text"])
+		if not gr.get("lost", []).is_empty():
+			out.append(["e_gear_lost", "%s  −%s" % [_gear_list(gr.lost), Pal.money(float(gr.lost_cost))], "text"])
+		if not gr.get("lent_lost", []).is_empty():
+			out.append(["e_gear_lent_lost", _gear_list(gr.lent_lost), "text"])
+		for f in gr.get("feats", []):
+			out.append(["e_feats", game.txt("feat_" + str(f)), "text"])
+		if not gr.get("grants", []).is_empty():
+			out.append(["e_gear_grant", _gear_list(gr.grants), "text"])
+	# 104 号: a dismantling method learned on this job (the borrow job, or an achievement)
+	for mid in r.get("learned", []):
+		out.append(["e_learned", "%s · %s" % [Methods.name_of(str(mid)), Methods.does(str(mid))], "text"])
+	if not gr.is_empty():
+		for f in gr.get("feats", []):
+			var g: String = Gear.FEAT_GRANT.get(f, "")
+			if g != "":
+				out.append(["e_gear_next", game.txt("gear_next_buy") % Gear.name_of(g), "text"])
 	# 第一关结算时白送的设备（career.gd GIFT_HAULER_AFTER）
 	var granted: Array = r.get("granted", [])
 	if not granted.is_empty():
@@ -231,6 +442,20 @@ func career_rows() -> Array:
 	return out
 
 
+# gear types with their counts, in a line
+func _gear_list(types: Array) -> String:
+	var n := {}
+	var order: Array = []
+	for t in types:
+		if not n.has(t):
+			order.append(t)
+		n[t] = int(n.get(t, 0)) + 1
+	var parts: Array = []
+	for t in order:
+		parts.append(Gear.name_of(str(t)) + (" ×%d" % n[t] if n[t] > 1 else ""))
+	return ", ".join(parts)
+
+
 func ending_key(k: int) -> void:
 	if end_t < 1.0:
 		end_t = 9.0
@@ -238,6 +463,9 @@ func ending_key(k: int) -> void:
 	if game.career():
 		# settled with the career: no second go at the same contract
 		if game.story == null or not game.story.wants_epilogue():
+			# 106 号: the goods' second page first, while anything is left to decide
+			if not Disposal.pending().is_empty() and game.open_disposal():
+				return
 			game.leave()
 		return
 	if k == KEY_R:
@@ -266,6 +494,10 @@ func _input(ev: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			_menu_click()
 			return
+		if not game.arrival.is_empty() and game.state == "play" and arrival_rect(size()).has_point(c.get_local_mouse_position()):
+			game.open_console("terminal")
+			get_viewport().set_input_as_handled()
+			return
 		if ending:
 			if end_t < 4.0:
 				end_t = 9.0
@@ -281,7 +513,7 @@ func _input(ev: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		elif game.state == "play" and _toolbar_rect().has_point(c.get_local_mouse_position()):
 			var i := int((c.get_local_mouse_position().x - _toolbar_rect().position.x) / 142.0)
-			game.tools.set_tool(clampi(i + 1, 1, 5))
+			game.tools.set_tool(clampi(i + 1, 1, _slots()))
 			get_viewport().set_input_as_handled()
 
 
@@ -296,6 +528,7 @@ func _process(dt: float) -> void:
 			f.call()
 	t += dt
 	hint_t += dt
+	op_t += dt
 	alert_t += dt
 	saved_t += dt
 	flash = maxf(0.0, flash - dt * 2.5)
@@ -335,7 +568,7 @@ func _process(dt: float) -> void:
 	sel_x.target = game.tools.tool - 1
 	sel_x.step(dt)
 	tool_pulse += dt
-	for i in 5:
+	for i in _slots():
 		var on: bool = game.tools.tool == i + 1
 		var over := Rect2(tb.position.x + i * 142.0, tb.position.y + 14.0, 132.0, 70.0).has_point(mp)
 		slot_y[i].target = -12.0 if on else (-5.0 if over else 0.0)
@@ -368,6 +601,7 @@ func _process(dt: float) -> void:
 	cur_out += dt
 	cur.target = mp
 	cur.step(dt)
+	_guide_keys()
 	c.queue_redraw()
 	fadd.queue_redraw()
 
@@ -381,7 +615,7 @@ func _place_minimap() -> void:
 	var on: bool = g.state == "play" and not ending and not g.menu_open and not g.contract_open and card_k.x < 0.01 and menu_k.x < 0.01 and bpk < 0.05 and not g.training and g.exam == null
 	minimap.visible = on
 	if on:
-		if minimap.map_size.y <= 0.0 or minimap._ship_sig.is_empty():
+		if minimap.mode == "berth" and (minimap.map_size.y <= 0.0 or minimap._ship_sig.is_empty()):
 			minimap.layout()
 		var s := size()
 		minimap.position = Vector2(s.x - 40.0 - minimap.map_size.x, s.y - 40.0 - minimap.map_size.y + (1.0 - _in(2)) * 200.0)
@@ -446,6 +680,10 @@ func _text(s: String, pos: Vector2, size_px: int, col: Color, f: Font = null, al
 		x -= fo.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x * 0.5
 	elif align == 1:
 		x -= fo.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x
+	# 91 号: on site the text is burned into the camera picture, the way a drone's OSD is — a
+	# black outline round every letter keeps it legible over anything
+	if UiSkin.field and col.a > 0.05:
+		c.draw_string_outline(fo, Vector2(x, pos.y), s, HORIZONTAL_ALIGNMENT_LEFT, width, size_px, 4, Color(0, 0, 0, 0.85 * col.a))
 	c.draw_string(fo, Vector2(x, pos.y), s, HORIZONTAL_ALIGNMENT_LEFT, width, size_px, col)
 
 
@@ -462,6 +700,13 @@ func _panel(r: Rect2, a: float = 0.82) -> void:
 func _draw_hud() -> void:
 	if game == null:
 		return
+	# 91 号 遥控 Q6 C: on site the panels are the camera feed's overlay, not glass cards
+	UiSkin.field = Look.on and game.look != null
+	_draw_hud_body()
+	UiSkin.field = false
+
+
+func _draw_hud_body() -> void:
 	var s := size()
 	var g = game
 	if g.state == "intro":
@@ -477,9 +722,12 @@ func _draw_hud() -> void:
 	if g.state == "build":
 		_build_overlay(s)
 		return
+	if g.state == "nuke":
+		return
 	if not ending and g.state != "ending":
 		_world_tags()
 		_messages()
+		_gauge()
 		_cursor_label()
 		if not g.training and g.exam == null and not g.in_berth():
 			var bpk: float = g.blueprint.k if g.blueprint != null else 0.0
@@ -490,6 +738,7 @@ func _draw_hud() -> void:
 			else:
 				_contract_panel()
 				UI.boot_cover(c, _contract_rect(), _boot(0))
+				_asset_board(_contract_rect())
 			c.draw_set_transform(Vector2.ZERO)
 		_overweight()
 		_tearing()
@@ -500,13 +749,14 @@ func _draw_hud() -> void:
 			_warp(s)
 		c.draw_set_transform(Vector2((1.0 - _in(1)) * 380.0, 0.0))
 		if g.in_berth():
-			pass
+			pass   # 61 号 (60 号 Q8): no status strip in the empty berth; the main-line card guides
 		elif _boot(1) < 0.45:
 			UI.panel(c, Rect2(s.x - 290.0, 22, 268, 86), 0.82, 0.0, Pal.HEAT, _boot(1))
 		else:
 			_credits(s)
 			UI.boot_cover(c, Rect2(s.x - 290.0, 22, 268, 86), _boot(1))
 		_machines(s)
+		_work_order(s)
 		c.draw_set_transform(Vector2.ZERO)
 		_toolbar(s)
 		c.draw_set_transform(Vector2(0.0, (1.0 - _in(2)) * 140.0))
@@ -517,10 +767,14 @@ func _draw_hud() -> void:
 			UI.boot_cover(c, Rect2(22.0, s.y - 106.0, 420, 70), _boot(2))
 		c.draw_set_transform(Vector2.ZERO)
 		_hint(s)
+		_guide(s)
+		_op_card(s)
+		_arrival_card(s)
+		_salvage_power(s)
 		_radio_box(s)
 		var ka := clampf((40.0 - g.playtime) / 3.0, 0.0, 1.0)
 		if ka > 0.01:
-			_text(g.txt("keys_berth") % Keys.label("terminal") if g.in_berth() else g.txt("keys"), Vector2(s.x * 0.5, s.y - 6.0), 13, Pal.ink(0.55 * ka), font, 0)
+			_text(g.txt("keys_berth") % [Keys.label("terminal"), Keys.label("port")] if g.in_berth() else g.txt("keys"), Vector2(s.x * 0.5, s.y - 6.0), 15, Pal.ink(0.72 * ka), font, 0)
 	# hurt vignette
 	if hurt > 0.0:
 		var e := hurt * hurt
@@ -594,9 +848,12 @@ func _radio_box(s: Vector2) -> void:
 	var two := _tw(full, 18) > RADIO_W
 	var h := 92.0 if two else 64.0
 	var r := Rect2(s.x * 0.5 - w * 0.5, s.y - 146.0 - h + (1.0 - Pal.ease_out(clampf(lt / 0.25, 0.0, 1.0))) * 14.0, w, h)
-	c.draw_rect(r, Color(0.02, 0.022, 0.026, 0.86 * a))
-	c.draw_rect(Rect2(r.position, Vector2(3, r.size.y)), (Pal.tint(Pal.AIR, a, 1.0) if term else Pal.heat(a, 1.0)))
-	_text(game.txt("tut_term") if term else game.txt("tut_liang"), r.position + Vector2(18, 22), 13, Pal.ink(0.5 * a), font)
+	c.draw_style_box(UiSkin.box("panel", a), r)
+	c.draw_rect(Rect2(r.position + Vector2(8, 10), Vector2(3, r.size.y - 20)), (Color(UiSkin.DATA, a) if term else Color(UiSkin.ACCENT, a)))
+	# 75 号: a caller at the trade port's pier, or a company's contact, speaks for themselves
+	var who_s := str(line.get("who", "liang"))
+	var who_label: String = game.txt("tut_term") if term else (Ops.w("贸易港 · 客人", "TRADE PORT · CALLER") if who_s == "client" else game.txt("tut_liang"))
+	_text(who_label, r.position + Vector2(18, 22), 13, Pal.ink(0.5 * a), font)
 	# the voice as a little waveform while the words come in
 	var typing := shown.length() < full.length()
 	for i in 14:
@@ -621,7 +878,7 @@ func _warp(s: Vector2) -> void:
 		for side in [-1.0, 1.0]:
 			var x: float = cx + side * (34.0 + ph * 70.0)
 			var p := Vector2(x, 34.0)
-			c.draw_polyline(PackedVector2Array([p + Vector2(-4, -6), p + Vector2(3, 0), p + Vector2(-4, 6)]), Pal.heat(a, 1.2), 1.6, true)
+			FastDraw.polyline(c, PackedVector2Array([p + Vector2(-4, -6), p + Vector2(3, 0), p + Vector2(-4, 6)]), Pal.heat(a, 1.2), 1.6, true)
 	_text("×%d" % int(Game.WARP), Vector2(cx, 40), 16, Pal.heat(0.95, 1.3), font_b, 0)
 
 
@@ -633,7 +890,13 @@ func _haul_guide(s: Vector2) -> void:
 	if tl.held_body == null or not is_instance_valid(tl.held_body) or tl.overweight:
 		return
 	var zone := _zone_for(tl.held_body)
-	var wp: Vector2 = Dock.zpos(zone)
+	# the player's grapple can't swing a load round: the mouth it goes in as it lies
+	var destination := Dock.for_load(zone,tl.held_body,false)
+	if destination == "":
+		# 78 号 P0-1: no mouth takes it whole — say so where the guide arrow would be
+		_text(Dock.no_mouth_text(tl.held_body,false), Vector2(size().x * 0.5, size().y - 190.0), 15, Pal.heat(0.95, 1.2), font, 0)
+		return
+	var wp: Vector2 = Dock.zpos(destination)
 	var com0: Vector2 = tl.held_body.global_transform * tl.held_body.center_of_mass
 	if zone == "metal":
 		var tp := Dock.trough_below(com0)
@@ -642,11 +905,11 @@ func _haul_guide(s: Vector2) -> void:
 	var sp := to_screen(wp)
 	var dist: float = (tl.held_body.global_transform * tl.held_body.center_of_mass).distance_to(wp) / Geom.M
 	var col := Pal.tint(Pal.FLUID, 0.95, 1.2) if zone == "hazard" else (Pal.ink(0.95, 1.2) if zone == "equip" else Pal.heat(0.95, 1.3))
-	var lbl := "%s  %.0f m" % [game.txt("zone_" + zone), dist]
+	var lbl := "%s  %.0f m" % [game.txt("zone_equip_bulk" if destination == "equip_bulk" else "zone_" + zone), dist]
 	var inner := Rect2(Vector2(70, 70), s - Vector2(140, 140))
 	if inner.has_point(sp):
 		var pr := 26.0 + 4.0 * sin(t * 6.0)
-		c.draw_arc(sp, pr, 0.0, TAU, 40, col, 2.0, true)
+		FastDraw.arc(c, sp, pr, 0.0, TAU, 40, col, 2.0, true)
 		_text(lbl, sp + Vector2(pr + 10, 6), 15, col, font_b)
 		return
 	# off screen: an arrow on the edge, pointing at it
@@ -660,10 +923,10 @@ func _haul_guide(s: Vector2) -> void:
 	var at := cpos + dir * tt
 	var n := dir.orthogonal()
 	var bob := dir * 5.0 * sin(t * 6.0)
-	c.draw_colored_polygon(PackedVector2Array([at + bob + dir * 18.0, at + bob - dir * 6.0 + n * 12.0, at + bob - dir * 6.0 - n * 12.0]), col)
+	FastDraw.poly(c, PackedVector2Array([at + bob + dir * 18.0, at + bob - dir * 6.0 + n * 12.0, at + bob - dir * 6.0 - n * 12.0]), col)
 	var lw := _tw(lbl, 15, font_b)
 	var lp := at - dir * 34.0 - Vector2(lw * 0.5, -6)
-	c.draw_rect(Rect2(lp - Vector2(8, 20), Vector2(lw + 16, 28)), Color(0.02, 0.022, 0.026, 0.85))
+	c.draw_style_box(UiSkin.box("tag", 0.85), Rect2(lp - Vector2(8, 20), Vector2(lw + 16, 28)))
 	_text(lbl, lp, 15, col, font_b)
 
 
@@ -678,7 +941,7 @@ func _boundary(s: Vector2) -> void:
 		return
 	c.draw_dashed_line(top, bot, Pal.heat(0.85, 1.3), 2.0, 12.0)
 	var lbl: String = game.txt("sc_boundary")
-	c.draw_rect(Rect2(top + Vector2(8, -30), Vector2(_tw(lbl, 14, font_b) + 16, 26)), Color(0.02, 0.022, 0.026, 0.85))
+	c.draw_style_box(UiSkin.box("tag", 0.85), Rect2(top + Vector2(8, -30), Vector2(_tw(lbl, 14, font_b) + 16, 26)))
 	_text(lbl, top + Vector2(16, -11), 14, Pal.heat(0.95, 1.2), font_b)
 	# the section side is lit, the other side carries the breach warning
 	_text("→", top + Vector2(-6, 20), 18, Pal.heat(0.9, 1.3), font_b, 0)
@@ -696,7 +959,8 @@ func _zone_for(b) -> String:
 			equip = true
 		else:
 			metal_m += p.mass
-	return "equip" if equip and metal_m <= all_m * 0.2 else "metal"
+	var assembly: bool = game.work_order != null and game.work_order.accepts_assembly(b)
+	return "equip" if equip and (metal_m <= all_m * 0.2 or assembly) else "metal"
 
 # the grapple refuses a load over its rating, and says so in numbers
 func _overweight() -> void:
@@ -706,9 +970,27 @@ func _overweight() -> void:
 	var m: float = tl.held_body.total_mass() if tl.held_body != null and is_instance_valid(tl.held_body) else game.world.group_mass(tl.held_piece)
 	var p := to_screen(tl.grab_point()) + Vector2(24, -46)
 	var rows := ["TARGET MASS: %.1f t" % m, "RATED CAPACITY: %.1f t" % game.grab_max(), "OPERATION REFUSED"]
-	_panel(Rect2(p - Vector2(10, 18), Vector2(230, 70)), 0.86)
+	# 106 号: what the berth's crane can do about it — mended or not, within its rating or not
+	var crane_line := crane_note(m)
+	var wd := maxf(230.0, font.get_string_size(crane_line, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 20.0)
+	_panel(Rect2(p - Vector2(10, 18), Vector2(wd, 70 + (20 if crane_line != "" else 0))), 0.86)
 	for i in 3:
 		_text(rows[i], p + Vector2(0, i * 20), 13, Pal.heat(0.95, 1.2) if i == 2 else Pal.ink(0.85), font_b if i == 2 else font)
+	if crane_line != "":
+		_text(crane_line, p + Vector2(0, 60), 13, Pal.tint(Pal.AIR, 0.95, 1.2), font)
+
+
+# the crane's word on a load the drone cannot pull ("" where the berth has no crane to speak of)
+func crane_note(m: float) -> String:
+	if game.crane != null:
+		if m > Methods.crane_t():
+			return Ops.w("超过吊车额定 %.0f t：先切小", "OVER THE CRANE'S %.0f t: CUT IT SMALLER") % Methods.crane_t()
+		if game.manual_only():
+			return Ops.w("这艘只许人工：按 %s 交给吊车", "MANUAL-ONLY SHIP: %s TO GIVE IT TO THE CRANE") % Keys.label("mark")
+		return Ops.w("松手：吊车会来整件吊走", "LET GO: THE CRANE WILL LIFT IT WHOLE")
+	if game.crane_wreck != null:
+		return Ops.w("门式吊车坏了：修好就能整件吊走（%.0f t 以内）", "THE CRANE IS DOWN: MENDED, IT LIFTS THIS WHOLE (UP TO %.0f t)") % Methods.CRANE_T[1]
+	return ""
 
 
 func _intro_overlay(s: Vector2) -> void:
@@ -778,7 +1060,7 @@ func _survey_overlay(s: Vector2) -> void:
 		_dim(Vector2(hx, r.position.y + 14.0), Vector2(hx, r.end.y - 14.0), g.txt("sv_hgt") % ((float(sv.y1) - float(sv.y0)) / M), a2)
 		# the centre of mass
 		var cm: Vector2 = xf * (sv.com as Vector2)
-		c.draw_arc(cm, 9.0, 0.0, TAU, 20, Pal.heat(0.9 * a2, 1.3), 1.6, true)
+		FastDraw.arc(c, cm, 9.0, 0.0, TAU, 20, Pal.heat(0.9 * a2, 1.3), 1.6, true)
 		c.draw_line(cm - Vector2(14, 0), cm + Vector2(14, 0), Pal.heat(0.9 * a2, 1.3), 1.2)
 		c.draw_line(cm - Vector2(0, 14), cm + Vector2(0, 14), Pal.heat(0.9 * a2, 1.3), 1.2)
 		_text(g.txt("sv_com") % ((sv.com.x - float(sv.x0)) / M), cm + Vector2(16, -12), 13, Pal.heat(0.95 * a2, 1.2), font_b)
@@ -809,12 +1091,15 @@ func _build_overlay(s: Vector2) -> void:
 	var b = g.build
 	if b == null:
 		return
+	if b is RepairShow:
+		_repair_overlay(s, b)
+		return
 	var tt: float = b.t
 	var k_in := Pal.ease_out(clampf(tt / 0.4, 0.0, 1.0)) * clampf((b.total() - tt) / 0.35, 0.0, 1.0)
 	var bar := 70.0 * k_in
 	var cur: int = b.current()
 	var r := Rect2(48, bar + 26.0, 640, 66 + b.steps.size() * 50)
-	c.draw_rect(r, Color(0.02, 0.022, 0.026, 0.88 * k_in))
+	c.draw_style_box(UiSkin.box("tag", 0.88 * k_in), r)
 	UI.panel(c, r, 0.9 * k_in, 0.0, Pal.HEAT, 1.0)
 	_text(b.head(), r.position + Vector2(20, 32), 16, Pal.ink(0.95 * k_in), font_b)
 	# the incoming ship's outline, named
@@ -831,11 +1116,11 @@ func _build_overlay(s: Vector2) -> void:
 		var a: float = (1.0 if on else (0.75 if done else 0.32)) * k_in
 		var dc := Vector2(r.position.x + 30, y - 5)
 		if done:
-			c.draw_polyline(PackedVector2Array([dc + Vector2(-6, 0), dc + Vector2(-1, 5), dc + Vector2(7, -6)]), Pal.tint(Pal.FLUID, a, 1.3), 2.0, true)
+			FastDraw.polyline(c, PackedVector2Array([dc + Vector2(-6, 0), dc + Vector2(-1, 5), dc + Vector2(7, -6)]), Pal.tint(Pal.FLUID, a, 1.3), 2.0, true)
 		elif on:
-			c.draw_arc(dc, 6.0, tt * 6.0, tt * 6.0 + PI * 1.4, 12, Pal.heat(a, 1.4), 2.0, true)
+			FastDraw.arc(c, dc, 6.0, tt * 6.0, tt * 6.0 + PI * 1.4, 12, Pal.heat(a, 1.4), 2.0, true)
 		else:
-			c.draw_arc(dc, 5.0, 0.0, TAU, 12, Pal.ink(a), 1.2, true)
+			FastDraw.arc(c, dc, 5.0, 0.0, TAU, 12, Pal.ink(a), 1.2, true)
 		_text("%d  %s" % [i + 1, g.txt("bb_n_" + str(b.steps[i][0]))], Vector2(r.position.x + 48, y), 15, Pal.ink(a), font_b)
 		if on or done:
 			_text(b.detail(i), Vector2(r.position.x + 48, y + 20), 12, Pal.ink((0.7 if on else 0.45) * k_in), font, -1, r.size.x - 60)
@@ -849,7 +1134,7 @@ func _build_overlay(s: Vector2) -> void:
 		var cr := Rect2(Vector2(s.x * 0.5 + 120.0 - w * 0.5 - 30.0, s.y * 0.5 - 40.0), Vector2(w + 60.0, 80.0))
 		c.draw_set_transform(cr.get_center(), 0.0, Vector2.ONE * lerpf(1.4, 1.0, e))
 		var lr := Rect2(-cr.size * 0.5, cr.size)
-		c.draw_rect(lr, Color(0.02, 0.022, 0.026, 0.85 * k_in))
+		c.draw_style_box(UiSkin.box("tag", 0.85 * k_in), lr)
 		c.draw_rect(lr, Pal.tint(Pal.FLUID, 0.9 * k_in, 1.3), false, 2.0)
 		c.draw_rect(lr.grow(-6.0), Pal.tint(Pal.FLUID, 0.4 * k_in, 1.1), false, 1.0)
 		_text(txt, Vector2(0, 12), 34, Pal.tint(Pal.FLUID, k_in, 1.2), font_l, 0)
@@ -858,6 +1143,23 @@ func _build_overlay(s: Vector2) -> void:
 	c.draw_rect(Rect2(0, 0, s.x, bar), Color(0, 0, 0, 1))
 	c.draw_rect(Rect2(0, s.y - bar, s.x, bar), Color(0, 0, 0, 1))
 	c.draw_rect(Rect2(0, s.y - bar, s.x * clampf(tt / b.total(), 0.0, 1.0), 2.0), Pal.heat(0.9, 1.3))
+
+
+# a repair shown at the berth (scripts/repair_show.gd): letterbox, which one of how many, its progress
+func _repair_overlay(s: Vector2, b) -> void:
+	var g = game
+	var done_f: float = (b.i + clampf(b.t / b.PER, 0.0, 1.0)) / maxf(1.0, b.ids.size())
+	var k_in := Pal.ease_out(clampf((b.i * b.PER + b.t) / 0.4, 0.0, 1.0)) * clampf((b.total() - (b.i * b.PER + b.t)) / 0.35, 0.0, 1.0)
+	var bar := 70.0 * k_in
+	var r := Rect2(48, bar + 26.0, 520, 66)
+	c.draw_style_box(UiSkin.box("tag", 0.88 * k_in), r)
+	UI.panel(c, r, 0.9 * k_in, 0.0, Pal.HEAT, 1.0)
+	_text(g.txt("rp_show_head") % [b.i + 1, b.ids.size()], r.position + Vector2(20, 30), 16, Pal.ink(0.95 * k_in), font_b)
+	_text(RepairShow._title(b.current()) if b.current() != "" else "", r.position + Vector2(20, 54), 15, Pal.heat(0.9 * k_in, 1.2), font_b)
+	_text(g.txt("sv_skip"), Vector2(s.x - 70, s.y - bar - 30.0), 13, Pal.ink(0.5 * k_in), font, 1)
+	c.draw_rect(Rect2(0, 0, s.x, bar), Color(0, 0, 0, 1))
+	c.draw_rect(Rect2(0, s.y - bar, s.x, bar), Color(0, 0, 0, 1))
+	c.draw_rect(Rect2(0, s.y - bar, s.x * clampf(done_f, 0.0, 1.0), 2.0), Pal.heat(0.9, 1.3))
 
 
 # a measured dimension: the line, arrowheads and end ticks, the value in the middle
@@ -869,15 +1171,15 @@ func _dim(a: Vector2, b: Vector2, label: String, al: float) -> void:
 	for e in [[a, d], [b, -d]]:
 		var p: Vector2 = e[0]
 		var f: Vector2 = e[1]
-		c.draw_colored_polygon(PackedVector2Array([p, p + f * 10.0 + n * 4.0, p + f * 10.0 - n * 4.0]), col)
+		FastDraw.poly(c, PackedVector2Array([p, p + f * 10.0 + n * 4.0, p + f * 10.0 - n * 4.0]), col)
 		c.draw_line(p - n * 9.0, p + n * 9.0, col, 1.2)
 	var mid := (a + b) * 0.5
 	var w := font_b.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
 	if absf(d.x) > 0.5:
-		c.draw_rect(Rect2(mid - Vector2(w * 0.5 + 8.0, 11.0), Vector2(w + 16.0, 22.0)), Color(0.02, 0.022, 0.026, 0.9 * al))
+		c.draw_style_box(UiSkin.box("tag", 0.9 * al), Rect2(mid - Vector2(w * 0.5 + 8.0, 11.0), Vector2(w + 16.0, 22.0)))
 		_text(label, mid + Vector2(0, 6), 15, col, font_b, 0)
 	else:
-		c.draw_rect(Rect2(mid + Vector2(8.0, -11.0), Vector2(w + 16.0, 22.0)), Color(0.02, 0.022, 0.026, 0.9 * al))
+		c.draw_style_box(UiSkin.box("tag", 0.9 * al), Rect2(mid + Vector2(8.0, -11.0), Vector2(w + 16.0, 22.0)))
 		_text(label, mid + Vector2(16.0, 6.0), 15, col, font_b)
 
 
@@ -917,17 +1219,17 @@ func _contract_panel() -> void:
 			var d2 := PackedVector2Array()
 			for q in dia:
 				d2.append(dc + (q - dc) * sc)
-			c.draw_colored_polygon(d2, Pal.ink(0.95 * k))
+			FastDraw.poly(c, d2, Pal.ink(0.95 * k))
 		var cl := dia.duplicate()
 		cl.append(dia[0])
 		var lost: bool = g.mandatory_lost.has(items[i][0])
-		c.draw_polyline(cl, Pal.heat(0.95, 1.3) if lost else Pal.ink(0.7), 1.2, true)
+		FastDraw.polyline(c, cl, Pal.heat(0.95, 1.3) if lost else Pal.ink(0.7), 1.2, true)
 		if lost:
 			c.draw_line(dc + Vector2(-6, -6), dc + Vector2(6, 6), Pal.heat(1.0, 1.4), 2.0)
 			c.draw_line(dc + Vector2(6, -6), dc + Vector2(-6, 6), Pal.heat(1.0, 1.4), 2.0)
 		if must_t.has(i) and t - must_t[i] < 0.7:
 			var e := Pal.ease_out((t - must_t[i]) / 0.7)
-			c.draw_arc(dc, 6.0 + 22.0 * e, 0.0, TAU, 24, Pal.ink(0.8 * (1.0 - e), 1.3), 1.5, true)
+			FastDraw.arc(c, dc, 6.0 + 22.0 * e, 0.0, TAU, 24, Pal.ink(0.8 * (1.0 - e), 1.3), 1.5, true)
 			Pal.band(c, Rect2(x + 18, yy - 17, 300.0 * e, 22), 0.12 * (1.0 - e))
 		_text(items[i][1] + "  " + items[i][0], Vector2(x + 22, yy), 14, Pal.ink(0.55 + 0.4 * k), font)
 	# recovery bar (below however many items the contract asks for)
@@ -957,7 +1259,7 @@ func _contract_panel() -> void:
 		var grow := 6.0 * (1.0 - Pal.ease_out(pe))
 		c.draw_line(Vector2(mx, by + 9 - grow), Vector2(mx, by + 19 + grow), Pal.ink(0.5 if pct < mark else 0.9) if pe >= 1.0 else Pal.heat(1.0, 1.4), 1.0 + grow * 0.3)
 		if pe < 1.0:
-			c.draw_arc(Vector2(mx, by + 14), 4.0 + 18.0 * Pal.ease_out(pe), 0.0, TAU, 24, Pal.heat(0.8 * (1.0 - pe), 1.3), 1.4, true)
+			FastDraw.arc(c, Vector2(mx, by + 14), 4.0 + 18.0 * Pal.ease_out(pe), 0.0, TAU, 24, Pal.heat(0.8 * (1.0 - pe), 1.3), 1.4, true)
 	_text(g.txt("target") + " 70% · 80% · 92%", Vector2(x, by + 36), 13, Pal.ink(0.5), font)
 	if not g.training and g.exam == null:
 		var nl: int = g.left_count()
@@ -991,8 +1293,8 @@ func _recall(x: float, y: float) -> void:
 		var e: float = cd[2]
 		var k := Pal.ease_out(clampf(e / 0.25, 0.0, 1.0)) * clampf((Assist.CARD_T - e) / 0.4, 0.0, 1.0)
 		var r := Rect2(x - (1.0 - k) * 40.0, yy, 300, 46)
-		c.draw_rect(r, Color(0.03, 0.032, 0.037, 0.9 * k))
-		c.draw_rect(Rect2(r.position, Vector2(3, r.size.y)), Pal.tint(Pal.AIR, k, 1.0))
+		c.draw_style_box(UiSkin.box("panel", k), r)
+		c.draw_rect(Rect2(r.position + Vector2(8, 9), Vector2(3, r.size.y - 18)), Color(UiSkin.DATA, k))
 		_text(game.txt("rc_title") + " · " + game.txt("rc_l") % cd[0], r.position + Vector2(14, 18), 13, Pal.tint(Pal.AIR, 0.9 * k, 1.1), font)
 		_text(game.txt(cd[1]), r.position + Vector2(14, 37), 15, Pal.ink(0.92 * k), font_b)
 		yy += 54
@@ -1027,9 +1329,183 @@ func _credits(s: Vector2) -> void:
 
 
 # the berth's machines (arm, hauler) and the work plan: running, stopped, waiting for what
+func _work_order(s: Vector2) -> void:
+	var order = game.work_order
+	if order == null or not order.active() or Career.data.get("work_orders",{}).get("tracked",order.id) != order.id: return
+	var x := s.x*0.5
+	UI.panel(c,Rect2(x-240,20,480,88),0.94)
+	_text(order.text(order.id),Vector2(x,44),16,Pal.ink(0.9),font,0)
+	_text(order.status_line(),Vector2(x,65),14,Pal.ink(0.7),font,0)
+	_text(game.txt("g4_order_sold" if order.sell else "g4_order_tracking"),Vector2(x,86),13,Pal.ink(0.55),font,0)
+
+
+# the empty berth's corner (design/…/22_*): the port's four lamps and how many things wait
+# on the operator; the whole overview is the terminal's home screen. Never a pop-up (Q49).
+var ops_strip: Dictionary = {}
+var _ops_t := 9.0
+
+
+# ---------------------------------------------------------------- the on-site guide (27 号)
+var guide_end: Button
+var guide_act: Button
+var main_go: Button          # the main line's "take me" (28 号)
+const GUIDE_W := 720.0
+
+
+func _guide_on() -> bool:
+	return game != null and game.guide != null and game.guide.active() and game.in_berth() and game.state == "play" and not game.port_view
+
+
+func _guide_rect(s: Vector2) -> Rect2:
+	return Rect2(s.x * 0.5 - GUIDE_W * 0.5, 118.0, GUIDE_W, 112.0)
+
+
+# the main line's chapter and step, worked out twice a second (Mainline.step walks the repairs and
+# the port's works: too dear for every frame)
+var _main_c := {}
+var _main_ct := -1.0
+func _main() -> Dictionary:
+	var now := Time.get_ticks_msec() / 1000.0
+	if _main_c.is_empty() or now - _main_ct > 0.5:
+		_main_ct = now
+		var ch := Mainline.chapter()
+		_main_c = {"chapter": ch, "step": Mainline.step(ch) if ch != "" else {}}
+	return _main_c
+
+
+func _main_on() -> bool:
+	return game != null and not game.coach_on() and not game.walk_on() and game.career() and not game.training and game.exam == null and game.in_berth() and game.state == "play" and not game.port_view and _main().chapter != "" and Career.usable()
+
+
+func _main_rect() -> Rect2:
+	# 61 号: room for a whole plain sentence on two lines
+	return Rect2(22.0, 22.0, 760.0, 88.0)
+
+
+func _guide_keys() -> void:
+	var mon := _main_on()
+	var go := str(_main().step.get("go", "wait")) if mon else "wait"
+	main_go.visible = mon and go != "wait" and not (_guide_on() and go.begins_with("guide:"))
+	if main_go.visible:
+		var mr := _main_rect()
+		main_go.text = Ops.w("带我去", "TAKE ME")
+		main_go.size = Vector2(96, 34)
+		main_go.position = Vector2(mr.end.x - 106, mr.position.y + 27)
+	var on := _guide_on()
+	var st: Dictionary = game.guide.step if on else {}
+	guide_end.visible = on
+	guide_act.visible = on and str(st.get("action", "")) != ""
+	if not on:
+		return
+	var r := _guide_rect(size())
+	guide_end.text = Ops.w("结束引导", "END GUIDE")
+	# in the card's head row, clear of the title and its text (user 2026-10-26: they sat on the title)
+	guide_end.size = Vector2(104, 28)
+	guide_end.position = Vector2(r.end.x - 114, r.position.y + 6)
+	# user 2026-10-26: it said "打开交易行" whatever it opened — named by what it does
+	guide_act.text = {"starmap": Ops.w("打开星图", "STAR MAP"), "clients": Ops.w("打开客户", "CLIENTS"), "feed": Ops.w("打开交易行", "EXCHANGE"),
+		"exchange": Ops.w("打开交易行", "EXCHANGE"), "contracts": Ops.w("打开合同", "CONTRACTS"), "repair": Ops.w("打开船坞修缮", "REPAIRS")}.get(str(st.get("action", "")), Ops.w("去做", "GO"))
+	guide_act.reset_size()
+	guide_act.position = Vector2(r.end.x - 124 - guide_act.size.x, r.position.y + 6)
+
+
+# the main line in the empty berth's corner (28 号 Q17): chapter, and the next step
+func _main_line(s: Vector2) -> void:
+	if not _main_on():
+		return
+	var id := str(_main().chapter)
+	var r := _main_rect()
+	UI.panel(c, r, 0.9)
+	c.draw_rect(Rect2(r.position + Vector2(8, 10), Vector2(3, r.size.y - 20)), UiSkin.ACCENT)
+	_text(Ops.w("主线 · 第 %d 章 · %s", "MAIN LINE · CHAPTER %d · %s") % [Mainline.index(id), Mainline.name_of(id)], r.position + Vector2(16, 24), 14, Pal.heat(0.95, 1.3), font_b, -1)
+	c.draw_multiline_string(font, r.position + Vector2(16, 50), str(_main().step.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 130.0, 15, 2, Pal.ink(0.9))
+
+
+func _guide(s: Vector2) -> void:
+	_main_line(s)
+	var g = game.guide
+	if g == null:
+		return
+	# a finished task says so for a few seconds, even after the guide has ended
+	if g.note != "" and g.note_t < 6.0:
+		var nr := Rect2(s.x * 0.5 - GUIDE_W * 0.5, 222.0 if _guide_on() else 118.0, GUIDE_W, 34.0)
+		UI.panel(c, nr, 0.9)
+		_text(g.note, Vector2(nr.position.x + 16, nr.position.y + 23), 15, Hmi.ok_col(), font_b, -1)
+	if not _guide_on() or g.step.is_empty():
+		return
+	var st: Dictionary = g.step
+	var r := _guide_rect(s)
+	UI.panel(c, r, 0.94)
+	c.draw_rect(Rect2(r.position + Vector2(8, 10), Vector2(3, r.size.y - 20)), UiSkin.ACCENT)
+	var head := Ops.w("引导 · %s · 第 %d / %d 步", "GUIDE · %s · STEP %d / %d") % [Guide.task_name(str(st.get("task", ""))), int(st.get("n", 1)), int(st.get("of", 1))]
+	_text(head, r.position + Vector2(18, 26), 13, Pal.heat(0.9, 1.3), font_b, -1)
+	c.draw_string(font_b, r.position + Vector2(18, 74), str(st.get("title", "")), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 36.0, 19 if _tw(str(st.get("title", "")), 22) > r.size.x - 36.0 else 22, Pal.ink(0.98))
+	c.draw_string(font, r.position + Vector2(18, 100), str(st.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 36.0, 14, Pal.ink(0.65))
+	# the target: a ring and its name on screen, an arrow at the edge when it is off it
+	var target: Vector2 = st.get("target", Vector2.INF)
+	if not target.is_finite():
+		return
+	var p := to_screen(target)
+	var k := 0.6 + 0.4 * absf(sin(Time.get_ticks_msec() * 0.005))
+	var view := Rect2(Vector2(40, 240), s - Vector2(80, 340))
+	if view.has_point(p):
+		var rr := 46.0 + 8.0 * k
+		FastDraw.arc(c, p, rr, 0.0, TAU, 48, Pal.heat(k, 1.6), 3.0, true)
+		FastDraw.arc(c, p, rr + 10.0, 0.0, TAU, 48, Pal.heat(0.35 * k, 1.2), 1.5, true)
+		var name := str(st.get("name", ""))
+		var purpose := str(st.get("purpose", ""))
+		var lw := maxf(_tw(name, 18), _tw(purpose, 13)) + 28.0
+		var lr := Rect2(p + Vector2(rr + 14.0, -30.0), Vector2(minf(lw, 520.0), 58.0))
+		if lr.end.x > s.x - 20.0:
+			lr.position.x = p.x - rr - 14.0 - lr.size.x
+		UI.panel(c, lr, 0.92)
+		_text(name, lr.position + Vector2(14, 24), 18, Pal.heat(1.0, 1.4), font_b, -1)
+		_text(purpose, lr.position + Vector2(14, 46), 13, Pal.ink(0.75), font, -1, lr.size.x - 28.0)
+	else:
+		# from the middle of the view (below the guide card), so the arrow never lands on the card
+		var cpos := view.get_center()
+		var d := (p - cpos).normalized()
+		# the point where the ray from the centre leaves the view, a little inside
+		var tx := (view.size.x * 0.5) / maxf(absf(d.x), 0.0001)
+		var ty := (view.size.y * 0.5) / maxf(absf(d.y), 0.0001)
+		var e := cpos + d * minf(tx, ty)
+		var tip := e
+		var back := e - d * 34.0
+		var side := d.orthogonal() * 16.0
+		FastDraw.poly(c, PackedVector2Array([tip, back + side, back - side]), Pal.heat(k, 1.6))
+		var lab := str(st.get("name", ""))
+		_text(lab, back - d * 26.0 + Vector2(0, 6), 15, Pal.heat(1.0, 1.4), font_b, 0)
+
+
+func _ops_strip(s: Vector2) -> void:
+	var g = game
+	if not g.career() or g.training or g.exam != null or not Onboarding.shown("market_ops"):
+		return
+	_ops_t += get_process_delta_time()
+	if _ops_t > 1.0 or ops_strip.is_empty():
+		_ops_t = 0.0
+		ops_strip = {"cells": Ops.cells(g), "decs": Ops.decisions(g)}
+	var r := Rect2(s.x - 342.0, 22.0, 320.0, 92.0)
+	UI.panel(c, r, 0.82)
+	var cells: Array = ops_strip.cells
+	var cw := (r.size.x - 24.0) / maxf(1.0, cells.size())
+	for i in cells.size():
+		var cell: Dictionary = cells[i]
+		var p := Vector2(r.position.x + 12.0 + i * cw, r.position.y + 14.0)
+		var state := str(cell.lamp)
+		Hmi.lamp(c, p + Vector2(8, 8), OpsSkin.lamp_col(state), state != "idle", 1.0, 5.0)
+		_text(str(cell.title).substr(0, 2) if Txt.zh else str(cell.code), p + Vector2(20, 13), 13, Pal.ink(0.8), font_b, -1)
+		_text(str(cell.value), p + Vector2(0, 34), 12, Pal.ink(0.6), font, -1)
+	var decs: Array = ops_strip.decs
+	var worst := int(decs[0].level) if not decs.is_empty() else Ops.CHANCE
+	var col := OpsSkin.level_col(worst) if not decs.is_empty() else Pal.ink(0.5)
+	var line := (Ops.w("待决策 %d 项", "%d WAITING ON YOU") % decs.size()) if not decs.is_empty() else Ops.w("没有待决策", "NOTHING WAITING")
+	_text(line + "  ·  " + Ops.w("%s 打开终端", "%s TERMINAL") % Keys.label("terminal"), Vector2(r.position.x + 12.0, r.end.y - 14.0), 13, col, font_b, -1)
+
+
 func _machines(s: Vector2) -> void:
 	var g = game
-	var ps: Array = g.plan.status() if g.plan != null else []
+	var ps: Array = g.plan.status() if g.plan != null and Game.G4_OPEN else []
 	if g.arm == null and g.hauler == null and g.crane == null and ps.is_empty():
 		return
 	var x := s.x - 40.0
@@ -1047,17 +1523,18 @@ func _machines(s: Vector2) -> void:
 func _toolbar(s: Vector2) -> void:
 	var g = game
 	var r := _toolbar_rect()
-	for i in 5:
+	for i in _slots():
 		var sx := r.position.x + i * 142.0
 		var oy: float = slot_y[i].x + (1.0 - Pal.ease_out(Motion.stagger(in_t, 3 + i, 0.05, 0.5))) * 150.0
 		var rect := Rect2(sx, r.position.y + 14.0 + oy, 132.0, 70.0)
 		var on: float = slot_glow[i]
-		c.draw_rect(rect, Color(0.035, 0.037, 0.042, 0.88))
-		c.draw_rect(rect, Pal.ink(0.14 + 0.5 * on), false, 1.0)
+		# 54 号: the slots are the new skin's rounded panels; the one in hand lifts and warms
+		rect.position.y -= 4.0 * on
+		c.draw_style_box(UiSkin.box("panel", 1.0, on), rect)
 		if on > 0.5 and tool_pulse < 0.45:
 			var e := Pal.ease_out(tool_pulse / 0.45)
-			c.draw_rect(rect.grow(2.0 + 9.0 * e), Pal.heat(0.7 * (1.0 - e), 1.3), false, 1.5)
-		_text(str(i + 1), rect.position + Vector2(10, 22), 14, Pal.ink(0.5 + 0.5 * on), font_b)
+			c.draw_style_box(UiSkin.box("ring", 1.0 - e), rect.grow(2.0 + 9.0 * e))
+		_text(str(i + 1) if i < 5 else Keys.label("tool6"), rect.position + Vector2(10, 22), 14, Pal.ink(0.5 + 0.5 * on), font_b)
 		var pop := 1.0
 		if on > 0.5 and tool_pulse < 0.35:
 			pop = 1.0 + 0.35 * sin(clampf(tool_pulse / 0.35, 0.0, 1.0) * PI)
@@ -1065,41 +1542,85 @@ func _toolbar(s: Vector2) -> void:
 		_tool_icon(i + 1, Vector2.ZERO, on)
 		c.draw_set_transform(Vector2.ZERO)
 		_text(g.txt("tool_%d" % (i + 1)), rect.position + Vector2(10, 56), 15, Pal.ink(0.5 + 0.45 * on), font)
+		# the consumable part in the meter, the laser and the grapple: its grade and what it has left
+		if Consum.ENABLED and i < 3 and g.career() and not g.job.is_empty():
+			var tool: String = ["probe", "lens", "cap"][i]
+			var tier := Consum.tier(g, tool)
+			if tier >= 0:
+				var left := Consum.left(g, tool)
+				var cap := Consum.capacity(tool, tier)
+				var frac := clampf(left / maxf(cap, 0.001), 0.0, 1.0)
+				var br := Rect2(rect.position.x + 10, rect.end.y - 7, 60, 3)
+				c.draw_rect(br, Pal.ink(0.12))
+				c.draw_rect(Rect2(br.position, Vector2(br.size.x * frac, br.size.y)), Pal.heat(0.9, 1.3) if frac < 0.2 else Pal.ink(0.7 + 0.2 * on))
+				var lab: String = g.txt("cs_out_short") if left <= 0.0 else Consum.tier_name(tier)
+				_text(lab, rect.position + Vector2(rect.size.x - 10, 22), 11, Pal.heat(0.95, 1.2) if left <= 0.0 else Pal.ink(0.45 + 0.3 * on), font, 1)
 		if i == 4:
 			var mode: String = g.txt("mode_" + g.tools.hose_mode)
 			_text(mode, rect.position + Vector2(rect.size.x - 10, 56), 13, Pal.ink(0.5 + 0.3 * on) if g.tools.hose_mode == "recover" else Pal.heat(0.8, 1.0), font, 1)
+		if i == 5 and g.gear != null:
+			var ih: String = g.gear.in_hand()
+			var cnt: int = int(g.gear.carried_counts().get(ih, 0))
+			var what: String = (Gear.name_of(ih) + "  ×%d" % cnt) if ih != "" else g.txt("e_gear_none")
+			_text(what, rect.position + Vector2(rect.size.x - 10, 22), 12, Pal.ink(0.5 + 0.4 * on) if ih != "" else Pal.ink(0.35), font, 1)
+	# 80 号: the guide's step opens only its tools — the others go dark with a lock and shake when asked for
+	if g.tutorial == null and g.guide_coach() != null:
+		for i in _slots():
+			if g.tool_ok(i + 1):
+				continue
+			var lr := Rect2(r.position.x + i * 142.0, r.position.y + 14.0 + slot_y[i].x, 132.0, 70.0)
+			if g.tools.denied_slot == i + 1 and g.tools.denied_t < 0.4:
+				lr.position.x += sin(g.tools.denied_t * 70.0) * 6.0 * (1.0 - g.tools.denied_t / 0.4)
+			# covered, then: the lock, which tool, and why it is shut (user 2026-10-26: a lock alone
+			# reads as "not bought" or "broken")
+			c.draw_rect(lr, Color(0.03, 0.032, 0.038, 0.97))
+			c.draw_rect(lr, Pal.ink(0.12), false, 1.0)
+			var lc := lr.position + Vector2(lr.size.x - 18, 16)
+			c.draw_rect(Rect2(lc - Vector2(6, 1), Vector2(12, 9)), Pal.ink(0.45), false, 1.2)
+			FastDraw.arc(c, lc + Vector2(0, -2), 4.0, PI, TAU, 10, Pal.ink(0.45), 1.2, true)
+			_text("%s  %s" % [str(i + 1) if i < 5 else Keys.label("tool6"), g.txt("tool_%d" % (i + 1))], lr.position + Vector2(10, 30), 14, Pal.ink(0.5), font)
+			_text(Ops.w("教程稍后解锁", "LATER IN THE GUIDE"), lr.position + Vector2(10, 56), 13, Pal.ink(0.72), font)
+		var any := false
+		for i in _slots():
+			any = any or g.tool_ok(i + 1)
+		if not any:
+			_text(Ops.w("现在只需要飞，工具在用到时一件件解锁", "JUST FLY FOR NOW: EACH TOOL UNLOCKS WHEN IT IS NEEDED"), Vector2(r.position.x + r.size.x * 0.5, r.position.y - 4), 16, Pal.ink(0.9), font_b, 0)
 	# the context tool: the tool in hand follows the pointer (out of the laser and the hose)
-	if g.state == "play" and Txt.context and g.tutorial == null and g.bot == null:
+	if g.state == "play" and Txt.context and g.tutorial == null and g.guide_coach() == null and g.bot == null:
 		var auto: bool = g.tools.tool in [1, 3, 4]
 		_text(g.txt("tb_auto") if auto else g.txt("tb_manual"), Vector2(r.position.x, r.position.y + 6), 13, Pal.tint(Pal.AIR, 0.8, 1.0) if auto else Pal.ink(0.5), font)
 	# one marker for the tool in hand: it springs from slot to slot and stretches as it goes
-	var sel := clampi(int(round(sel_x.x)), 0, 4)
+	var sel := clampi(int(round(sel_x.x)), 0, _slots() - 1)
 	var mw := 132.0 + minf(90.0, absf(sel_x.v) * 14.0)
 	var mx := r.position.x + sel_x.x * 142.0 + 66.0
 	var my: float = r.position.y + 14.0 + 70.0 - 3.0 + slot_y[sel].x + (1.0 - Pal.ease_out(Motion.stagger(in_t, 3 + sel, 0.05, 0.5))) * 150.0
-	c.draw_rect(Rect2(mx - mw * 0.5, my, mw, 3), Pal.heat(1.0, 1.0))
+	c.draw_style_box(UiSkin.box("accent", 1.0), Rect2(mx - mw * 0.5 + 14.0, my - 2.0, mw - 28.0, 3))
 
 
 func _tool_icon(n: int, p: Vector2, on: float) -> void:
 	var col := Pal.ink(0.4 + 0.55 * on)
 	match n:
 		1:
-			c.draw_polyline(PackedVector2Array([p + Vector2(0, -9), p + Vector2(9, 0), p + Vector2(0, 9), p + Vector2(-9, 0), p + Vector2(0, -9)]), col, 1.4, true)
-			c.draw_circle(p, 2.0, col)
+			FastDraw.polyline(c, PackedVector2Array([p + Vector2(0, -9), p + Vector2(9, 0), p + Vector2(0, 9), p + Vector2(-9, 0), p + Vector2(0, -9)]), col, 1.4, true)
+			FastDraw.circle(c, p, 2.0, col)
 		2:
 			c.draw_line(p + Vector2(-10, 8), p + Vector2(10, -8), Pal.heat(0.4 + 0.6 * on, 1.0 + on), 2.0, true)
-			c.draw_circle(p + Vector2(10, -8), 2.5, col)
+			FastDraw.circle(c, p + Vector2(10, -8), 2.5, col)
 		3:
-			c.draw_arc(p, 9.0, 0.5, PI - 0.5, 12, col, 2.0, true)
-			c.draw_arc(p, 9.0, PI + 0.5, TAU - 0.5, 12, col, 2.0, true)
+			FastDraw.arc(c, p, 9.0, 0.5, PI - 0.5, 12, col, 2.0, true)
+			FastDraw.arc(c, p, 9.0, PI + 0.5, TAU - 0.5, 12, col, 2.0, true)
 		4:
-			c.draw_arc(p, 6.0, 0.0, TAU, 16, col, 1.6, true)
+			FastDraw.arc(c, p, 6.0, 0.0, TAU, 16, col, 1.6, true)
 			for k in 6:
 				var a := TAU * k / 6.0 + t * on * 0.6
 				c.draw_line(p + Vector2.from_angle(a) * 6.0, p + Vector2.from_angle(a) * 10.0, col, 2.0)
 		5:
-			c.draw_arc(p, 9.0, 0.0, TAU, 20, col, 1.4, true)
-			c.draw_arc(p, 4.0, 0.0, TAU, 12, col, 1.2, true)
+			FastDraw.arc(c, p, 9.0, 0.0, TAU, 20, col, 1.4, true)
+			FastDraw.arc(c, p, 4.0, 0.0, TAU, 12, col, 1.2, true)
+		6:
+			c.draw_rect(Rect2(p + Vector2(-7, -7), Vector2(14, 14)), col, false, 1.4)
+			c.draw_line(p + Vector2(0, -12), p + Vector2(0, -7), col, 1.4)
+			c.draw_line(p + Vector2(0, 7), p + Vector2(0, 12), col, 1.4)
 
 
 func _drone_status(s: Vector2) -> void:
@@ -1108,7 +1629,12 @@ func _drone_status(s: Vector2) -> void:
 	var x := 40.0
 	var y := s.y - 70.0
 	UI.panel(c, Rect2(x - 18, y - 36, 420, 70), 0.82, 0.0, Pal.HEAT, _boot(2))
-	_text("R-02", Vector2(x, y), 18, Pal.ink(0.9), font_b)
+	var title := "R-02"
+	if g.boat != null and g.boat.aboard:
+		title = g.txt("boat_hud")
+	elif g.tram != null and g.tram.riding:
+		title = g.txt("tram_hud") % Port.name_of(g.tram.dest)
+	_text(title, Vector2(x, y), 18, Pal.ink(0.9), font_b)
 	var integ: float = d.integrity if d.alive else 0.0
 	var bw := 180.0
 	# a hit shakes the bar; the lost part hangs on in heat, then drains
@@ -1170,13 +1696,13 @@ func _item_icon(id: String, p: Vector2, a: float, hot: bool) -> void:
 			c.draw_rect(Rect2(p + Vector2(-3, -10), Vector2(6, 20)), col, false, 1.4)
 		"ring":
 			var r := 8.0 + (1.5 * sin(t * 6.0) if hot else 0.0)
-			c.draw_arc(p, r, 0.0, TAU, 24, col, 1.6, true)
+			FastDraw.arc(c, p, r, 0.0, TAU, 24, col, 1.6, true)
 			for k in 8:
 				var d := Vector2.from_angle(TAU * k / 8.0)
 				c.draw_line(p + d * r, p + d * (r + 4.0), Pal.heat(0.9 * a, 1.2), 1.6)
 		"spare":
-			c.draw_polyline(PackedVector2Array([p + Vector2(-10, 6), p + Vector2(0, -9), p + Vector2(10, 6), p + Vector2(-10, 6)]), col, 1.4, true)
-			c.draw_circle(p + Vector2(0, 1), 2.5, col)
+			FastDraw.polyline(c, PackedVector2Array([p + Vector2(-10, 6), p + Vector2(0, -9), p + Vector2(10, 6), p + Vector2(-10, 6)]), col, 1.4, true)
+			FastDraw.circle(c, p + Vector2(0, 1), 2.5, col)
 
 
 # the readied ring: the member it found, the cut it would make and what a click does
@@ -1187,7 +1713,7 @@ func _ring_overlay() -> void:
 	var zoom: float = g.get_viewport().get_canvas_transform().get_scale().x
 	# how far the drone can place it
 	if g.drone.alive:
-		c.draw_arc(to_screen(g.drone.global_position), g.RING_REACH * zoom, 0.0, TAU, 96, Pal.heat(0.18, 1.0), 1.0, true)
+		FastDraw.arc(c, to_screen(g.drone.global_position), g.RING_REACH * zoom, 0.0, TAU, 96, Pal.heat(0.18, 1.0), 1.0, true)
 	var line := ""
 	var col := Pal.heat(1.0, 1.6)
 	if tg.has("piece"):
@@ -1198,13 +1724,13 @@ func _ring_overlay() -> void:
 		for q in poly:
 			sp.append(to_screen(q))
 		sp.append(sp[0])
-		c.draw_polyline(sp, Pal.heat(0.55, 1.2) if ok else Pal.ink(0.3), 1.5, true)
+		FastDraw.polyline(c, sp, Pal.heat(0.55, 1.2) if ok else Pal.ink(0.3), 1.5, true)
 		var a := to_screen(tg.line[0])
 		var b := to_screen(tg.line[1])
 		var pulse := 0.6 + 0.4 * sin(t * 8.0)
 		c.draw_line(a, b, Pal.heat(pulse if ok else 0.3, 2.0 if ok else 1.0), 3.0 if ok else 1.5)
 		var at := to_screen(tg.at)
-		c.draw_arc(at, 12.0, 0.0, TAU, 24, col, 2.0, true)
+		FastDraw.arc(c, at, 12.0, 0.0, TAU, 24, col, 2.0, true)
 		for k in 8:
 			var d := Vector2.from_angle(TAU * k / 8.0 + t * 0.8)
 			c.draw_line(at + d * 12.0, at + d * 17.0, col, 2.0)
@@ -1212,19 +1738,19 @@ func _ring_overlay() -> void:
 			c.draw_dashed_line(mp, at, Pal.ink(0.35), 1.0, 4.0)
 		line = g.txt("ring_ready") if ok else g.txt("ring_far")
 	else:
-		c.draw_arc(mp, g.RING_SNAP * zoom, 0.0, TAU, 48, Pal.ink(0.25), 1.0, true)
+		FastDraw.arc(c, mp, g.RING_SNAP * zoom, 0.0, TAU, 48, Pal.ink(0.25), 1.0, true)
 		line = g.txt("ring_seek")
 	var name: String = g.txt("it_ring") + "  ×%d" % g.stock("ring")
 	var w := maxf(_tw(name, 14, font_b), _tw(line, 13)) + 16.0
 	var op := mp + Vector2(24, 20)
-	c.draw_rect(Rect2(op - Vector2(8, 16), Vector2(w, 42)), Color(0.02, 0.022, 0.026, 0.86))
-	c.draw_rect(Rect2(op - Vector2(8, 16), Vector2(3, 42)), Pal.heat(0.9, 1.3))
+	c.draw_style_box(UiSkin.box("tag", 0.86), Rect2(op - Vector2(8, 16), Vector2(w, 42)))
+	c.draw_rect(Rect2(op - Vector2(2, 8), Vector2(3, 26)), UiSkin.ACCENT)
 	_text(name, op, 14, Pal.ink(0.95), font_b)
 	_text(line, op + Vector2(0, 19), 13, Pal.heat(0.9, 1.2) if tg.get("ok", false) else Pal.ink(0.6), font)
 
 
 func _hint(s: Vector2) -> void:
-	if hint_text == "" or hint_t > 9.0:
+	if hint_text == "" or hint_t > 9.0 or game.state == "porttour":
 		return
 	var a := clampf(hint_t / 0.3, 0.0, 1.0) * clampf((9.0 - hint_t) / 0.6, 0.0, 1.0)
 	var w := minf(980.0, _tw(hint_text, 16) + 60.0)
@@ -1232,12 +1758,20 @@ func _hint(s: Vector2) -> void:
 	if _tw(hint_text, 16) > 920.0:
 		lines = 2
 	# top centre: the bottom of the screen belongs to the radio and the toolbar
-	var r := Rect2(s.x * 0.5 - w * 0.5, 64.0 - (1.0 - Pal.ease_out(a)) * 10.0, w, 18.0 + lines * 22.0)
+	# below the main-line card when it is up (61 号: the card is wider now)
+	var top := 124.0 if _main_on() else 64.0
+	# user 2026-10-26: the guide card and the arrival card sit there too — the line goes under them
+	if _guide_on():
+		top = _guide_rect(s).end.y + 12.0
+	if not game.arrival.is_empty() and game.state == "play":
+		top = arrival_rect(s).end.y + 12.0
+	var r := Rect2(s.x * 0.5 - w * 0.5, top - (1.0 - Pal.ease_out(a)) * 10.0, w, 18.0 + lines * 22.0)
 	var ow := w * (Pal.ease_out(clampf(hint_t / 0.24, 0.0, 1.0)) if hint_t < 1.0 else 1.0)
 	var ta := a * clampf((hint_t - 0.1) / 0.2, 0.0, 1.0)
 	var ro := Rect2(s.x * 0.5 - ow * 0.5, r.position.y, ow, r.size.y)
-	c.draw_rect(ro, Color(0.03, 0.032, 0.037, 0.85 * a))
-	c.draw_rect(Rect2(ro.position, Vector2(3, ro.size.y)), Pal.heat(a, 1.0))
+	# 54 号: a rounded panel with a rounded warm bar inside its left edge
+	c.draw_style_box(UiSkin.box("panel", a), ro)
+	c.draw_rect(Rect2(ro.position + Vector2(8, 9), Vector2(3, ro.size.y - 18)), Color(UiSkin.ACCENT, a))
 	c.draw_multiline_string(font, r.position + Vector2(22, 26 + (1.0 - ta) * 4.0), hint_text, HORIZONTAL_ALIGNMENT_LEFT, w - 40.0, 16, lines, Pal.ink(0.88 * ta))
 
 
@@ -1269,7 +1803,8 @@ func _world_tags() -> void:
 		if not tag_birth.has(key) or tag_birth[key][0] != r.t:
 			tag_birth[key] = [r.t, t]
 		var age: float = t - tag_birth[key][1]
-		var stale: bool = g.sys.stale(r)
+		var live: bool = r.get("live", false)
+		var stale: bool = g.sys.stale(r) and not live
 		var label: String = r.at
 		var val: String = r.text
 		if age < 0.45 and not stale:
@@ -1305,9 +1840,12 @@ func _world_tags() -> void:
 		var pop := Pal.back(clampf(age / 0.25, 0.0, 1.0), 2.0)
 		var a := 1.0 if not stale else 0.5
 		c.draw_line(sp, pos + Vector2(0, 6), Pal.ink(0.3 * a), 1.0, true)
-		c.draw_circle(sp, 2.5, Pal.ink(0.8 * a))
+		FastDraw.circle(c, sp, 2.5, Pal.ink(0.8 * a))
+		if live:
+			# a probe keeps this one live: it breathes in heat
+			FastDraw.arc(c, sp, 5.0 + 1.5 * sin(t * 5.0), 0.0, TAU, 16, Pal.heat(0.7 + 0.3 * sin(t * 5.0), 1.4), 1.2, true)
 		var rr := Rect2(rect.position, Vector2(rect.size.x * pop, rect.size.y))
-		c.draw_rect(rr, Color(0.03, 0.032, 0.037, 0.88))
+		c.draw_style_box(UiSkin.box("tag", 0.88), rr)
 		c.draw_rect(Rect2(rr.position, Vector2(2, rr.size.y)), _kind_col(r.kind, a))
 		if pop > 0.6:
 			_text(label, pos + Vector2(8, 0), 13, Pal.ink(0.5 * a), font)
@@ -1343,9 +1881,9 @@ func _story_card(sp: Vector2, it: Dictionary, info: String, age: float) -> Rect2
 	var r := Rect2(pos, Vector2(w, bh + 56))
 	var pop := Pal.back(clampf(age / 0.25, 0.0, 1.0), 2.0)
 	c.draw_line(sp, pos + Vector2(0, r.size.y), Pal.tint(Pal.AIR, 0.4, 1.0), 1.0, true)
-	c.draw_circle(sp, 2.5, Pal.tint(Pal.AIR, 0.9, 1.1))
+	FastDraw.circle(c, sp, 2.5, Pal.tint(Pal.AIR, 0.9, 1.1))
 	var rr := Rect2(r.position, Vector2(r.size.x * pop, r.size.y))
-	c.draw_rect(rr, Color(0.03, 0.032, 0.037, 0.92))
+	c.draw_style_box(UiSkin.box("tag", 0.92), rr)
 	c.draw_rect(Rect2(rr.position, Vector2(2, rr.size.y)), Pal.tint(Pal.AIR, 0.9, 1.1))
 	if pop > 0.6:
 		_text(st.pair(it.title), pos + Vector2(14, 18), 13, Pal.tint(Pal.AIR, 0.75, 1.0), font)
@@ -1374,8 +1912,75 @@ func _messages() -> void:
 		var y := sp.y - 30.0 - Pal.ease_out(age / 2.6) * 26.0
 		var txt: String = m[3]
 		var w := _tw(txt, 15)
-		c.draw_rect(Rect2(sp.x - w * 0.5 - 8, y - 17, w + 16, 24), Color(0.02, 0.022, 0.026, 0.7 * a))
+		c.draw_style_box(UiSkin.box("tag", 0.7 * a), Rect2(sp.x - w * 0.5 - 8, y - 17, w + 16, 24))
 		_text(txt, Vector2(sp.x, y), 15, Pal.ink(0.95 * a), font, 0)
+
+
+# 91 号 (用户 2026-10-27：“HUD 与机械动效”): the work in hand read at the pointer, where the eye
+# already is — the beam in the plate (and what the plate is), the line's pull on what the grapple
+# holds against what it can take, a measurement or a repair running. A thin ring round the cursor
+# that fills, ticks turning while it works; it fades when the hand is idle.
+func _gauge() -> void:
+	var g = game
+	# user 2026-10-27: "鼠标上这个蓝色的标识提醒太难看了，没有用" — on site the work in hand is read
+	# out by the drone's OSD instead (scripts/look.gd _job_bar, the payload line, the target box)
+	if UiSkin.field:
+		gauge_k = 0.0
+		return
+	if g.tools == null or g.state != "play" or g.bot != null and not g.bot.get("gauge", false):
+		return
+	var tl = g.tools
+	var kind := ""
+	var fill := 0.0
+	var col := Color(UiSkin.ACCENT)
+	var line1 := ""
+	var line2 := ""
+	if tl.cutting:
+		kind = "cut"
+		fill = clampf(tl.material_k, 0.0, 1.0)
+		line1 = Ops.w("切割中", "CUTTING") if tl.in_material else Ops.w("空切", "IN THE OPEN")
+		if tl.cut_mat != null and str(tl.cut_mat.mat) != "":
+			line2 = Mat.name_of(str(tl.cut_mat.mat))
+	elif tl.held_body != null and is_instance_valid(tl.held_body):
+		kind = "pull"
+		var m: float = tl.held_body.total_mass()
+		var cap: float = g.grab_max()
+		fill = clampf(m / maxf(cap, 0.01), 0.0, 1.0)
+		col = Color(UiSkin.DATA) if not tl.overweight else Color(1.0, 0.35, 0.25)
+		line1 = "%.2f / %.1f t" % [m, cap]
+		line2 = Ops.w("超重，拉不动", "TOO HEAVY") if tl.overweight else (Ops.w("拉紧", "TAUT") if tl.tether_force > 0.25 else Ops.w("松", "SLACK"))
+	elif not tl.job.is_empty() and float(tl.job.get("dur", 0.0)) > 0.0:
+		kind = "job"
+		fill = clampf(float(tl.job.get("t", 0.0)) / float(tl.job.dur), 0.0, 1.0)
+		col = Color(UiSkin.DATA)
+		line1 = Ops.w("测量中", "MEASURING") if str(tl.job.get("kind", "")) == "measure" else Ops.w("作业中", "WORKING")
+		line2 = "%d%%" % int(fill * 100.0)
+	var dt := get_process_delta_time()
+	gauge_k = Pal.damp(gauge_k, 1.0 if kind != "" else 0.0, 12.0 if kind != "" else 6.0, dt)
+	if kind != "":
+		gauge_kind = kind
+	gauge_spin += dt * (2.4 if kind != "" else 0.6)
+	if gauge_k < 0.02:
+		return
+	var a := gauge_k
+	var p: Vector2 = c.get_local_mouse_position() if g.bot == null or not g.bot.has("gauge_at") else g.bot.gauge_at
+	var r := 26.0 + 6.0 * (1.0 - Pal.ease_out(a))
+	FastDraw.arc(c, p, r, 0.0, TAU, 48, Pal.ink(0.12 * a), 1.0, true)
+	if fill > 0.005:
+		var a0 := -PI * 0.5
+		FastDraw.arc(c, p, r, a0, a0 + TAU * fill, maxi(6, int(48 * fill)), Color(col.r, col.g, col.b, 0.95 * a), 2.6, true)
+	# the ticks turning while the hand works
+	for k in 6:
+		var an := gauge_spin + TAU * k / 6.0
+		var d := Vector2.from_angle(an)
+		c.draw_line(p + d * (r + 4.0), p + d * (r + 8.0), Color(col.r, col.g, col.b, 0.5 * a), 1.2, true)
+	if gauge_kind == "pull" and game.tools.overweight:
+		var pl := 0.5 + 0.5 * sin(t * 14.0)
+		FastDraw.arc(c, p, r + 12.0, 0.0, TAU, 48, Color(1.0, 0.35, 0.25, 0.4 * pl * a), 2.0, true)
+	var tp := p + Vector2(r + 16.0, -2.0)
+	_text(line1, tp, 13, Color(col.r, col.g, col.b, 0.95 * a), font_b)
+	if line2 != "":
+		_text(line2, tp + Vector2(0, 17), 12, Pal.ink(0.6 * a), font)
 
 
 func _cursor_label() -> void:
@@ -1385,6 +1990,12 @@ func _cursor_label() -> void:
 	if g.ring_armed:
 		_ring_overlay()
 		return
+	# 91 号: on site a part under the pointer is boxed and read out by the drone's OSD
+	# (scripts/look.gd _designator), so its name tag here would only repeat it
+	if UiSkin.field and not h.is_empty() and str(h.get("kind", "")) in ["piece", "inspect"] and g.tools.tool != 2:
+		cur_key = ""
+		cur_last = []
+		return
 	if g.tools.tool == 2 or h.is_empty():
 		if cur_key != "":
 			cur_out = 0.0
@@ -1392,7 +2003,7 @@ func _cursor_label() -> void:
 		if not cur_last.is_empty() and cur_out < 0.12 and Txt.anim_level() > 0:
 			var oa := 1.0 - cur_out / 0.12
 			var op: Vector2 = cur_last[0]
-			c.draw_rect(Rect2(op - Vector2(8, 16), Vector2(cur_last[3], 42)), Color(0.02, 0.022, 0.026, 0.82 * oa))
+			c.draw_style_box(UiSkin.box("tag", 0.82 * oa), Rect2(op - Vector2(8, 16), Vector2(cur_last[3], 42)))
 			_text(cur_last[1], op + Vector2(0, -4.0 * (1.0 - oa)), 14, Pal.ink(0.95 * oa), font_b)
 			_text(cur_last[2], op + Vector2(0, 19 - 4.0 * (1.0 - oa)), 13, Pal.ink(0.55 * oa), font)
 		return
@@ -1428,7 +2039,7 @@ func _cursor_label() -> void:
 	var pos := cur.x + Vector2(22, 30 + (1.0 - Pal.ease_out(la)) * 6.0)
 	var w := maxf(_tw(name, 14), _tw(act, 13)) + 20.0
 	cur_last = [pos, name, act, w]
-	c.draw_rect(Rect2(pos - Vector2(8, 16), Vector2(w, 42)), Color(0.02, 0.022, 0.026, 0.82 * la))
+	c.draw_style_box(UiSkin.box("tag", 0.82 * la), Rect2(pos - Vector2(8, 16), Vector2(w, 42)))
 	c.draw_rect(Rect2(pos - Vector2(8, 16), Vector2(2, 42 * Pal.ease_out(la))), Pal.ink(0.4 * la))
 	_text(name, pos, 14, Pal.ink(0.95 * la), font_b)
 	var heavy: bool = g.tools.tool == 3 and h.kind == "piece" and g.world.group_mass(h.piece) > g.grab_max()
@@ -1494,7 +2105,7 @@ func _contract_card(s: Vector2) -> void:
 	c.draw_rect(Rect2(Vector2.ZERO, s), Color(0, 0, 0, 0.55 * a))
 	var r := _card_rect(s)
 	_panel(r, 0.95 * a)
-	c.draw_rect(Rect2(r.position, Vector2(4, r.size.y)), Pal.heat(a, 1.0))
+	c.draw_rect(Rect2(r.position + Vector2(8, 10), Vector2(3, r.size.y - 20)), Color(UiSkin.ACCENT, a))
 	var g = game
 	var x := r.position.x + 48
 	var y := r.position.y + 58
@@ -1532,7 +2143,7 @@ func _contract_card(s: Vector2) -> void:
 				_text(row[1], Vector2(x + dx, y + 8), row[2], Pal.ink(0.95 * ra), font_l)
 				y += 40
 			"li":
-				c.draw_circle(Vector2(x + 6 + dx, y - 5), 2.0, Pal.ink(0.7 * ra))
+				FastDraw.circle(c, Vector2(x + 6 + dx, y - 5), 2.0, Pal.ink(0.7 * ra))
 				var lines: int = clampi(int(ceil(_tw(row[1], row[2]) / (w - 20.0))), 1, 2)
 				c.draw_multiline_string(font, Vector2(x + 20 + dx, y), row[1], HORIZONTAL_ALIGNMENT_LEFT, w - 20.0, row[2], 2, Pal.ink(0.88 * ra))
 				y += 25 + (lines - 1) * 22
@@ -1546,6 +2157,15 @@ func _contract_card(s: Vector2) -> void:
 			"gap":
 				y += row[2]
 		i += 1
+	# 93 号: the ship's core asset, and the ways to take it, each with its money, time and risk
+	var ca: Dictionary = CoreAsset.card(g)
+	if not ca.is_empty():
+		y = _asset_card(ca, x, y + 12.0, w, a)
+	# 104 号: the dismantling methods this ship has a use for, learned (✓) or not yet (○)
+	var mu := Methods.useful_text(g)
+	if mu != "":
+		c.draw_multiline_string(font, Vector2(x, y + 30.0), mu, HORIZONTAL_ALIGNMENT_LEFT, w, 15, 2, Pal.ink(0.78 * a))
+		y += 30.0 + (22.0 if _tw(mu, 15) > w else 0.0)
 	# what is new on this ship: its own mechanisms, in the book already (I opens it)
 	if g.codex_hud != null:
 		g.codex_hud.draw_brief(c, Vector2(x, maxf(y + 22.0, r.position.y + 470.0)), w, a)
@@ -1666,37 +2286,21 @@ func _offer_rows() -> Array:
 # ---------------------------------------------------------------- pause menu
 
 func _menu_items() -> Array:
-	var g = game
-	if g.exam != null:
-		return [
-			["resume", g.txt("m_resume")],
-			["abandon", g.txt("m_abandon") if menu_confirm != 1 else g.txt("m_confirm")],
-			["settings", g.txt("m_settings")],
-			["title", g.txt("m_title") if menu_confirm != 4 else g.txt("m_confirm")],
-		]
-	if g.training:
-		var tl := [["resume", g.txt("m_resume")]]
-		# a special course can't be skipped: the contract waiting on it needs it
-		if Codex.class_of_course(g.ship_id) == "":
-			tl.append(["skip", g.txt("m_skip") if menu_confirm != 1 else g.txt("m_confirm")])
-		return tl + [
-			["codex", g.txt("m_codex")],
-			["settings", g.txt("m_settings")],
-			["hints", g.txt("m_hints") if g.hints_on else g.txt("m_hints_off")],
-			["title", g.txt("m_title") if menu_confirm != 4 else g.txt("m_confirm")],
-		]
-	return [
-		["resume", g.txt("m_resume")],
-		["end", g.txt("m_end") if menu_confirm != 1 else g.txt("m_confirm")],
-		["codex", g.txt("m_codex")],
-		["settings", g.txt("m_settings")],
-		["title", g.txt("m_title") if menu_confirm != 4 else g.txt("m_confirm")],
+	# user 2026-10-26: the pause menu is three keys and nothing else — no heading, no other rows;
+	# while a ship is being stripped, ending the contract early as well
+	var items := [["resume", game.txt("m_resume")]]
+	if game.can_end_early():
+		items.append(["end", game.txt("m_end") if menu_confirm != 1 else game.txt("m_confirm")])
+	return items + [
+		["settings", game.txt("m_settings")],
+		["title", Ops.w("返回", "BACK") if menu_confirm != 4 else game.txt("m_confirm")],
 	]
 
 
 func _menu_rect(i: int) -> Rect2:
 	var s := size()
-	return Rect2(s.x * 0.5 - 220, s.y * 0.5 - 120 + i * 58, 440, 48)
+	var n := _menu_items().size()
+	return Rect2(s.x * 0.5 - 220, s.y * 0.5 - (n * 58 - 10) * 0.5 + i * 58, 440, 48)
 
 
 func _menu_hover() -> void:
@@ -1708,6 +2312,10 @@ func _menu_hover() -> void:
 
 
 func _menu_click() -> void:
+	if menu_page != "":
+		menu_page = ""
+		game.sfx.play("menu")
+		return
 	if menu_hover < 0:
 		return
 	var id: String = _menu_items()[menu_hover][0]
@@ -1721,28 +2329,8 @@ func _menu_click() -> void:
 				game.finish_contract(true)
 			else:
 				menu_confirm = 1
-		"abandon":
-			if menu_confirm == 1:
-				game.toggle_menu()
-				game.exam.abandon()
-			else:
-				menu_confirm = 1
-		"skip":
-			if menu_confirm == 1:
-				game.toggle_menu()
-				game.skip_training()
-			else:
-				menu_confirm = 1
 		"settings":
 			game.settings_panel.open()
-		"codex":
-			if game.codex_hud != null:
-				game.codex_hud.open_book(game.codex.last if game.codex != null else "")
-		"hints":
-			if game.training:
-				game.toggle_hints()
-			else:
-				game.cycle_tier()
 		"title":
 			if menu_confirm == 4:
 				game.to_title()
@@ -1750,20 +2338,47 @@ func _menu_click() -> void:
 				menu_confirm = 4
 
 
+# 68 号 §4: the pause menu's controls page (every key as bound now, in four groups)
+var menu_page := ""
+func _keys_page(s: Vector2, k: float) -> void:
+	var r := Rect2(s.x * 0.5 - 620, s.y * 0.5 - 400, 1240, 800)
+	UI.panel(c, r, 0.97 * k)
+	_text(Ops.w("操作说明", "CONTROLS"), Vector2(r.position.x + 32, r.position.y + 46), 26, Pal.ink(0.95 * k), font_l, -1)
+	_text(Ops.w("按键可以在 设置 → 按键 里改，这里跟着变。点任意处或按 Esc 返回。", "Keys are changed under Settings; this page follows. Click anywhere or press Esc to go back."), Vector2(r.position.x + 32, r.position.y + 76), 14, Pal.ink(0.6 * k), font, -1)
+	for gi in OpCards.GROUPS.size():
+		var gr: Array = OpCards.GROUPS[gi]
+		var x := r.position.x + 32 + (gi % 2) * 600
+		var y := r.position.y + 120 + (gi / 2) * 340
+		_text(str(gr[0]) if Txt.zh else str(gr[1]), Vector2(x, y), 18, Color(UiSkin.ACCENT, k), font_b, -1)
+		y += 14
+		for a in gr[2]:
+			var kt := OpCards.key_text(a)
+			var kr := Rect2(x, y, maxf(44.0, 11.0 * kt.length() + 18.0), 26)
+			c.draw_style_box(UiSkin.box("tag", k), kr)
+			_text(kt, Vector2(kr.get_center().x, kr.position.y + 19), 13, Pal.ink(0.95 * k), font_b, 0)
+			c.draw_multiline_string(font, Vector2(x + 84, y + 18), OpCards.line(a), HORIZONTAL_ALIGNMENT_LEFT, 500.0, 13, 2, Pal.ink(0.8 * k))
+			y += 37
+
+
 func _menu(s: Vector2) -> void:
 	var k: float = clampf(menu_k.x, 0.0, 1.0)
-	c.draw_rect(Rect2(Vector2.ZERO, s), Color(0, 0, 0, 0.6 * k))
-	_text(game.txt("m_paused"), Vector2(s.x * 0.5, s.y * 0.5 - 170), 30, Pal.ink(0.9 * k), font_l, 0)
+	if menu_page == "keys":
+		c.draw_rect(Rect2(Vector2.ZERO, s), Color(UiSkin.BG1.r, UiSkin.BG1.g, UiSkin.BG1.b, 0.92 * k))
+		_keys_page(s, k)
+		return
+	# 51 号: the new look — the world dimmed under the ground's tint, glass keys, the accent on hover
+	c.draw_rect(Rect2(Vector2.ZERO, s), Color(UiSkin.BG1.r, UiSkin.BG1.g, UiSkin.BG1.b, 0.9 * k))
 	var items := _menu_items()
 	for i in items.size():
 		var r := _menu_rect(i)
 		var rk := Motion.stagger(menu_k.x * 0.6, i, 0.04, 0.2)
 		r.position.y += (1.0 - rk) * 20.0
-		if i == menu_hover:
-			Pal.band(c, r, 0.12 * k)
-			c.draw_rect(Rect2(r.position.x + r.size.x * 0.5 - 40, r.end.y - 2, 80, 2), Pal.heat(k, 1.0))
+		var hov := i == menu_hover
+		if hov:
+			r.position.y -= 2.0
+		c.draw_style_box(UiSkin.box("raised", k * rk, 1.0 if hov else 0.0), r.grow(-2.0))
 		_text(items[i][1], Vector2(r.get_center().x, r.position.y + 32), 20, Pal.ink((0.95 if i == menu_hover else 0.6) * k * rk), font, 0)
-	if menu_confirm == 1 and not game.training and game.exam == null:
+	if menu_confirm == 1:
 		_text(game.txt("end_warn"), Vector2(s.x * 0.5, _menu_rect(items.size()).position.y + 24), 14, Pal.heat(0.85 * k, 1.0), font, 0)
 
 
@@ -1780,7 +2395,8 @@ func _settlement(s: Vector2) -> void:
 	var y := s.y * 0.5 - 300.0
 	# the sheet the books are written on: it rises into place
 	var pk := Pal.ease_out(clampf(e / 0.45, 0.0, 1.0))
-	var sheet := Rect2(cx - 330, y - 50 + (1.0 - pk) * 40.0, 660, (850.0 if not career_rows().is_empty() else 720.0))
+	var crn := career_rows().size()
+	var sheet := Rect2(cx - 330, y - 50 + (1.0 - pk) * 40.0, 660, (850.0 + maxf(0.0, crn - 6) * 30.0 if crn > 0 else 720.0))
 	c.draw_rect(sheet, Color(0.022, 0.024, 0.029, 0.98 * pk))
 	c.draw_rect(sheet, Pal.ink(0.1 * pk), false, 1.0)
 	c.draw_rect(Rect2(sheet.position, Vector2(sheet.size.x * pk, 2)), Pal.heat(pk, 1.2))
@@ -1815,6 +2431,8 @@ func _settlement(s: Vector2) -> void:
 		if g.standard_time() > 0.0:
 			tl += "  /  " + g.txt("e_standard") + "  " + _clock(g.standard_time())
 		_text(tl, Vector2(cx - 260, ny + 46), 14, Pal.ink(0.5), font)
+		if g.plan != null and g.plan.result_key != "":
+			c.draw_multiline_string(font,Vector2(cx - 260,ny + 66),g.plan.result_text(),HORIZONTAL_ALIGNMENT_LEFT,520,12,2,Pal.ink(0.75))
 		var crows := career_rows()
 		for i in crows.size():
 			var ce := ne - 0.6 - i * 0.18
@@ -1843,6 +2461,10 @@ func _settlement(s: Vector2) -> void:
 		var pulse := 0.5 + 0.4 * sin(t * 3.0)
 		var go: String = g.txt("st_go_on") if g.story != null and g.story.wants_epilogue() else g.txt("e_to_terminal" if g.career() else ("e_again_dev" if g.dev_job() else "e_again"))
 		_text(go, Vector2(cx, s.y - 80), 16, Pal.ink(pulse), font_b, 0)
+	# 93 号: the core asset's review, over the sheet, at its right (where the trap rows would be:
+	# a sample ship has none)
+	if traps.is_empty():
+		_asset_review(s, e)
 
 
 # where the money went: value knocked off by reason, money lost by cause, named pieces lost
@@ -1909,8 +2531,8 @@ func _tearing() -> void:
 		return
 	var p := to_screen(tl.grab_point())
 	var k: float = clampf(tl.strain, 0.0, 1.0)
-	c.draw_arc(p, 30.0, -PI / 2, -PI / 2 + TAU * k, 40, Pal.heat(0.95, 1.4), 3.0, true)
-	c.draw_arc(p, 30.0, 0.0, TAU, 40, Pal.ink(0.15), 1.0, true)
+	FastDraw.arc(c, p, 30.0, -PI / 2, -PI / 2 + TAU * k, 40, Pal.heat(0.95, 1.4), 3.0, true)
+	FastDraw.arc(c, p, 30.0, 0.0, TAU, 40, Pal.ink(0.15), 1.0, true)
 	_text(game.txt("tearing"), p + Vector2(40, 6), 15, Pal.heat(0.95, 1.3), font_b)
 
 
@@ -1918,15 +2540,18 @@ func _tearing() -> void:
 func _left_markers(s: Vector2) -> void:
 	if game.training or game.exam != null:
 		return
-	var left: Array = game.pieces_left()
-	if left.is_empty() or left.size() > 8:
+	# 60 FPS (2026-10-27): the cached count first; the list itself only when there are few
+	# (walking all of ARK-01's pieces for it took 1.3 ms a frame)
+	var n: int = game.left_count()
+	if n == 0 or n > 8:
 		return
+	var left: Array = game.pieces_left()
 	var inner := Rect2(Vector2(40, 40), s - Vector2(80, 80))
 	for p in left:
 		var sp := to_screen(game.world.frame(p) * Geom.centroid(p.poly))
 		if inner.has_point(sp):
 			var k := 7.0 + 2.0 * sin(t * 5.0)
-			c.draw_polyline(PackedVector2Array([sp + Vector2(0, -k - 10), sp + Vector2(k, -10), sp + Vector2(0, k - 10), sp + Vector2(-k, -10), sp + Vector2(0, -k - 10)]), Pal.heat(0.9, 1.3), 1.6, true)
+			FastDraw.polyline(c, PackedVector2Array([sp + Vector2(0, -k - 10), sp + Vector2(k, -10), sp + Vector2(0, k - 10), sp + Vector2(-k, -10), sp + Vector2(0, -k - 10)]), Pal.heat(0.9, 1.3), 1.6, true)
 		else:
 			var cpos := s * 0.5
 			var dir := (sp - cpos).normalized()
@@ -1936,7 +2561,7 @@ func _left_markers(s: Vector2) -> void:
 			if absf(dir.y) > 0.001:
 				tt = minf(tt, ((inner.end.y if dir.y > 0.0 else inner.position.y) - cpos.y) / dir.y)
 			var at := cpos + dir * tt
-			c.draw_circle(at, 5.0, Pal.heat(0.8, 1.3))
+			FastDraw.circle(c, at, 5.0, Pal.heat(0.8, 1.3))
 
 
 # the radio log (L): what Liang and the terminal said, newest at the bottom
@@ -1957,9 +2582,8 @@ func _radio_log(s: Vector2) -> void:
 func _trap_rows(traps: Array, at: Vector2, e: float) -> void:
 	var a := clampf(e / 0.3, 0.0, 1.0)
 	var card := Rect2(at + Vector2(-24, -36 + (1.0 - Pal.ease_out(a)) * 20.0), Vector2(528, 60 + traps.size() * 78))
-	c.draw_rect(card, Color(0.022, 0.024, 0.029, 0.98 * a))
-	c.draw_rect(card, Pal.ink(0.1 * a), false, 1.0)
-	c.draw_rect(Rect2(card.position, Vector2(3, card.size.y * a)), Pal.heat(a, 1.1))
+	c.draw_style_box(UiSkin.box("panel", a), card)
+	c.draw_rect(Rect2(card.position + Vector2(8, 12), Vector2(3, (card.size.y - 24) * a)), Color(UiSkin.ACCENT, a))
 	_text(game.txt("e_traps"), at, 15, Pal.ink(0.5 * a), font)
 	var yy := at.y + 34.0
 	for i in traps.size():
@@ -1995,8 +2619,8 @@ func _stamp(p: Vector2, e: float) -> void:
 	var col := Pal.heat(a, 1.2) if gr == 0 else Pal.ink(a)
 	var r := 74.0 * sc
 	c.draw_set_transform(p, -0.18, Vector2.ONE)
-	c.draw_arc(Vector2.ZERO, r, 0.0, TAU, 48, col, 3.0, true)
-	c.draw_arc(Vector2.ZERO, r - 8, 0.0, TAU, 48, Color(col.r, col.g, col.b, col.a * 0.5), 1.0, true)
+	FastDraw.arc(c, Vector2.ZERO, r, 0.0, TAU, 48, col, 3.0, true)
+	FastDraw.arc(c, Vector2.ZERO, r - 8, 0.0, TAU, 48, Color(col.r, col.g, col.b, col.a * 0.5), 1.0, true)
 	var txt := game.txt("grade_%d" % gr)
 	var w := _tw(txt, int(28 * sc), font_b)
 	c.draw_string(font_b, Vector2(-w * 0.5, 10 * sc), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, int(28 * sc), col)
@@ -2018,7 +2642,140 @@ func _draw_add() -> void:
 			fadd.draw_texture_rect(tex, Rect2(p - Vector2(r, r), Vector2(r, r) * 2.0), false, Pal.ink(0.9 * (1.0 - j * 0.2), 1.6))
 	for b in bursts:
 		var e := Pal.ease_out(b[1] / 0.45)
-		fadd.draw_arc(b[0], 6.0 + 30.0 * e, 0.0, TAU, 32, Pal.ink(0.6 * (1.0 - e), 1.5), 2.0, true)
+		FastDraw.arc(fadd, b[0], 6.0 + 30.0 * e, 0.0, TAU, 32, Pal.ink(0.6 * (1.0 - e), 1.5), 2.0, true)
 	if credit_pop > 0.0:
 		var s := size()
 		fadd.draw_texture_rect(tex, Rect2(Vector2(s.x - 260, 40), Vector2(240, 70)), false, Pal.ink(0.12 * credit_pop, 1.4))
+
+
+# ---------------------------------------------------------------- 93 号: the core asset, read three times
+
+func _money_range(lo: float, hi: float) -> String:
+	if absf(hi - lo) < 1.0:
+		return "≈" + Pal.money(lo)
+	return Pal.money(lo) + "–" + Pal.money(hi)
+
+
+# on the contract card: what is worth most aboard, and what each way of taking it fetches
+func _asset_card(ca: Dictionary, x: float, y: float, w: float, a: float) -> float:
+	var head := Ops.w("核心资产 · %s（%s）· 满价 %s", "CORE ASSET · %s (%s) · WHOLE %s") % [ca.name, ca.units, Pal.money(ca.full)]
+	# (a long name wraps inside the column, not over the numbers beside it)
+	var hl := clampi(ceili(_tw(head, 13) / maxf(w, 1.0)), 1, 2)
+	c.draw_multiline_string(font, Vector2(x, y), head, HORIZONTAL_ALIGNMENT_LEFT, w, 13, 2, Color(UiSkin.ACCENT, 0.9 * a))
+	y += 26.0 + (hl - 1) * 17.0
+	for m in ca.methods:
+		var mins: Array = m.minutes
+		var line := Ops.w("%s　%s %s · 约 %d–%d 分钟", "%s　%s %s · ABOUT %d–%d MIN") % [m.name, ca.name, _money_range(m.lo, m.hi), mins[0], mins[1]]
+		_text(line, Vector2(x, y), 16, Pal.ink(0.94 * a), font_b)
+		y += 22.0
+		if str(m.get("need", "")) != "":
+			_text(str(m.need), Vector2(x + 14.0, y), 13, Pal.heat(0.85 * a, 1.1) if not str(m.need).begins_with(Ops.w("船坞已有", "THE BERTH HAS")) else Pal.ink(0.6 * a), font)
+			y += 20.0
+		# (up to four lines: the measured numbers ride at the end of the risks)
+		var risk: String = Ops.w("风险：", "RISK: ") + str(m.risks)
+		var rl := clampi(ceili(_tw(risk, 13) * 1.15 / maxf(w - 14.0, 1.0)), 1, 4)
+		c.draw_multiline_string(font, Vector2(x + 14.0, y), risk, HORIZONTAL_ALIGNMENT_LEFT, w - 14.0, 13, 4, Pal.ink(0.58 * a))
+		y += 24.0 + (rl - 1) * 18.0
+	return y
+
+
+func _grade_col(g: float, a: float) -> Color:
+	if g >= 0.9:
+		return Pal.ink(0.95 * a)
+	if g >= 0.7:
+		return Pal.ink(0.78 * a)
+	if g >= 0.45:
+		return Pal.heat(0.75 * a, 1.0)
+	return Pal.heat(0.95 * a, 1.3)
+
+
+# on the job, under the contract panel: each corner's pull, progress and grade, and the last losses
+func _asset_board(cr: Rect2) -> void:
+	var b: Dictionary = CoreAsset.board(game)
+	if b.is_empty():
+		return
+	var rows: Array = b.rows
+	var recent: Array = b.recent
+	var warn: Array = b.get("warn", [])
+	var head: String = Ops.w("核心资产 · %s", "CORE ASSET · %s") % b.name
+	var now: String = Ops.w("预估 %s / %s", "NOW %s / %s") % [Pal.money(b.worth), Pal.money(b.full)]
+	# a long name: the worth on a line of its own
+	var two := font.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + font_b.get_string_size(now, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 24.0 > cr.size.x - 34.0
+	var h := 64.0 + (18.0 if two else 0.0) + rows.size() * 24.0 + warn.size() * 18.0 + (10.0 + recent.size() * 20.0 if not recent.is_empty() else 0.0)
+	var r := Rect2(cr.position.x, cr.end.y + 12.0, cr.size.x, h)
+	UI.panel(c, r, 0.82, 0.0, UiSkin.ACCENT, 1.0)
+	var x := r.position.x + 18.0
+	var y := r.position.y + 24.0
+	_text(head, Vector2(x, y), 13, Pal.ink(0.55), font)
+	if two:
+		y += 18.0
+	_text(now, Vector2(r.end.x - 16.0, y), 13, Pal.ink(0.9), font_b, 1)
+	y += 10.0
+	var bar := Rect2(x, y, r.size.x - 34.0, 3.0)
+	c.draw_rect(bar, Pal.ink(0.12))
+	c.draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(float(b.worth) / maxf(float(b.full), 1.0), 0.0, 1.0), 3.0)), UiSkin.ACCENT)
+	y += 24.0
+	for wl in warn:
+		_text(str(wl), Vector2(x, y - 6.0), 12, Pal.heat(0.9, 1.2), font)
+		y += 18.0
+	for row in rows:
+		_text(str(row.name), Vector2(x, y), 14, Pal.ink(0.85), font_b)
+		_text(str(row.text), Vector2(x + maxf(44.0, font_b.get_string_size(str(row.name), HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 8.0), y), 12, Pal.heat(0.8, 1.1) if row.get("alert", false) else Pal.ink(0.6), font)
+		_text(str(row.right), Vector2(r.end.x - 16.0, y), 14, _grade_col(float(row.grade), 1.0), font_b, 1)
+		y += 24.0
+	if not recent.is_empty():
+		y += 4.0
+		for ev in recent:
+			_text("−%s  %s" % [Pal.money(ev.money).trim_prefix("$"), ev.text], Vector2(x, y), 12, Pal.heat(0.9, 1.25), font)
+			y += 20.0
+
+
+# at the settlement, right of the sheet: what came of the asset, what it lost and why, one thing to do
+func _asset_review(s: Vector2, e: float) -> void:
+	var rv: Dictionary = CoreAsset.review(game)
+	if rv.is_empty():
+		return
+	var a := clampf((e - 1.2) / 0.6, 0.0, 1.0)
+	if a <= 0.0:
+		return
+	var w := 400.0
+	var x := s.x * 0.5 + 330.0 + 100.0
+	var y := s.y * 0.5 - 300.0
+	var lines: int = 6 + (rv.units as Array).size() + (rv.lost as Array).size() + (rv.reasons as Array).size() * 2
+	var r := Rect2(x, y, w, 120.0 + lines * 22.0)
+	c.draw_rect(r, Color(0.022, 0.024, 0.029, 0.97 * a))
+	c.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(UiSkin.ACCENT, a))
+	var px := x + 22.0
+	var py := y + 34.0
+	_text(Ops.w("%s复盘", "%s · REVIEW") % rv.name, Vector2(px, py), 16, Pal.ink(0.7 * a), font)
+	py += 34.0
+	_text((Ops.w("收成 %s", "ROLLED %s") if CoreAsset.ship_key(game) == "sa200" else Ops.w("保住 %s", "KEPT %s")) % Pal.money(rv.rolled), Vector2(px, py), 26, Pal.ink(0.98 * a), font_l)
+	_text(Ops.w("满价 %s", "WHOLE %s") % Pal.money(rv.full), Vector2(r.end.x - 22.0, py), 13, Pal.ink(0.5 * a), font, 1)
+	py += 24.0
+	if float(rv.got) + 1.0 < float(rv.rolled):
+		_text(Ops.w("已送走 %s", "SENT %s") % Pal.money(rv.got), Vector2(px, py), 13, Pal.heat(0.85 * a, 1.1), font)
+		py += 20.0
+	py += 6.0
+	for u in rv.units:
+		_text("%s  %s" % [u.text, Pal.money(u.value)], Vector2(px, py), 14, Pal.ink(0.88 * a), font_b)
+		py += 18.0
+		_text(str(u.sub), Vector2(px + 14.0, py), 12, Pal.ink(0.5 * a), font)
+		py += 22.0
+	if not rv.lost.is_empty():
+		py += 4.0
+		_text(Ops.w("拆坏的", "LOST"), Vector2(px, py), 13, Pal.ink(0.5 * a), font)
+		py += 22.0
+		for ls in rv.lost:
+			var lt := "−%s  %s（%d 次）" % [Pal.money(ls.money).trim_prefix("$"), ls.text, ls.n] if Txt.zh else "−%s  %s (%d)" % [Pal.money(ls.money).trim_prefix("$"), ls.text, ls.n]
+			c.draw_multiline_string(font, Vector2(px, py), lt, HORIZONTAL_ALIGNMENT_LEFT, w - 44.0, 13, 2, Pal.heat(0.9 * a, 1.2))
+			py += 22.0 + (18.0 if _tw(lt, 13) > w - 44.0 else 0.0)
+	py += 6.0
+	_text(Ops.w("为什么", "WHY"), Vector2(px, py), 13, Pal.ink(0.5 * a), font)
+	py += 22.0
+	for reason in rv.reasons:
+		c.draw_multiline_string(font, Vector2(px, py), "· " + str(reason), HORIZONTAL_ALIGNMENT_LEFT, w - 44.0, 13, 2, Pal.ink(0.82 * a))
+		py += 22.0 + (18.0 if _tw("· " + str(reason), 13) > w - 44.0 else 0.0)
+	py += 8.0
+	_text(Ops.w("下次", "NEXT TIME"), Vector2(px, py), 13, Color(UiSkin.ACCENT, 0.8 * a), font)
+	py += 22.0
+	c.draw_multiline_string(font_b, Vector2(px, py), str(rv.advice), HORIZONTAL_ALIGNMENT_LEFT, w - 44.0, 14, 3, Pal.ink(0.95 * a))

@@ -1,0 +1,155 @@
+{
+  "version": 1,
+  "pages": [
+    {
+      "id": "M01",
+      "title": [
+        "先买能直接炼钢的炉料",
+        "Buy furnace-ready feed"
+      ],
+      "body": [
+        "先把正在做的拆船合同结算掉。再按 B 打开终端，进入交易行。\n\n左边选「黑色炉料」，品质选「等级 1」。在卖家列表里挑一笔，买 1 吨就够试一炉。\n\n先别买「未分选金属」来炼钢：那是另一条分选流程。",
+        "Finish the active salvage contract. Press B and open the exchange.\n\nChoose Ferrous Feed, grade 1, and buy 1 tonne from a seller. Mixed Metal uses the separate sorting line."
+      ]
+    },
+    {
+      "id": "M02",
+      "title": [
+        "买好了，先等货到仓库",
+        "Wait for warehouse delivery"
+      ],
+      "body": [
+        "付完钱，货还在路上，不是马上就能投进炉子。\n\n打开「交付记录」，等这笔货显示「已收货」。下方的仓库炉料数量增加后，再去炉台。\n\n贸易港要恢复营业，加工区也要完成基础修复。",
+        "Payment does not put feed in the furnace.\n\nOpen Deliveries and wait for Received. Check that stored feed has increased. Basic trade and processing facilities must be restored."
+      ]
+    },
+    {
+      "id": "M03",
+      "title": [
+        "去下方炉台，把买的料运过来",
+        "Bring your feed to the furnace"
+      ],
+      "body": [
+        "关掉交易行。从船坞地板的右端绕下去，找到左侧的「炉体操作」，靠近按 E。\n\n选好本炉要用的数量，点「把仓库炉料送到炉口」。机器人会从仓库把你买的料运过来。\n\n这一步只是叫机器人送料，不是凭空生成材料。等原料到炉口，再开始装炉。",
+        "Close the exchange. Go around the right end of the berth floor and underneath. Use E at Furnace Control on the left.\n\nChoose the charge size and click Bring Stored Feed to Furnace. The robot moves your owned stock; it does not create material. Wait for arrival."
+      ]
+    },
+    {
+      "id": "M04",
+      "title": [
+        "装炉，然后加热",
+        "Charge, then heat"
+      ],
+      "body": [
+        "原料送到后，点「开始装炉」。\n\n把加热功率调高，再点「设置功率」。快到 1640℃ 时降功率，尽量稳在 1640～1680℃，别一直满功率烧。超过 1710℃ 可能把成品烧成低等级。\n\n温度够了还不能急着出钢：要等炉料全熔完，再测温取样。",
+        "After feed arrives, click Start Charging. Set heating power and apply it. Watch temperature and melting; reduce power near tapping temperature. The console explains what is still needed."
+      ]
+    },
+    {
+      "id": "M05",
+      "title": [
+        "测温取样，等探头收回，再出钢",
+        "Sample, retract, then tap"
+      ],
+      "body": [
+        "炉料完全熔化、温度达到 1640℃ 后，点「测温取样」。\n\n等测温探头完全收回，再点「倾炉出钢」。探头没收回、温度不够等情况，机器会拦住并提示原因。\n\n这里用的是炉子的测温机构，不需要购买手持工具探针。",
+        "When the charge is melted and hot enough, take a temperature sample. Wait for the furnace probe to retract before tapping. The console explains any safety interlock. This is the furnace mechanism, not a purchased handheld probe."
+      ]
+    },
+    {
+      "id": "M06",
+      "title": [
+        "等钢坯冷却，再运回仓库",
+        "Cool and return the billets"
+      ],
+      "body": [
+        "出钢后还要浇铸、冷却，然后把钢坯运回仓库。\n\n在炉子里看见钢水，或看见刚浇好的钢坯，都不代表已经能卖。\n\n等仓库里的合格钢坯数量增加，再安排交货。过热烧坏的低等级产品不能交给要求高等级的客户。",
+        "After tapping, wait for casting, cooling and transport back to storage. Visible molten steel or a fresh billet is not yet sellable warehouse stock. Check qualified billet stock before dispatch."
+      ]
+    },
+    {
+      "id": "M07",
+      "title": [
+        "把钢坯交给客户，收到货才收钱",
+        "Deliver the product and get paid"
+      ],
+      "body": [
+        "回到交易行，打开「工业客户」。选一份需求，点「接下这笔订单」。\n\n再选本次交货数量，点「从仓库发货」。只有自己仓库里符合等级的货才能发。\n\n机器人把货送到客户处，客户收到后才付款。也可以用「自主挂单」给自己的库存定价出售。",
+        "Open Industrial Clients in the exchange and accept a demand. Choose a shipment quantity and click Ship From Warehouse. Only owned eligible stock can ship. Payment follows actual receipt. You may also list stock through Limit Orders."
+      ]
+    },
+    {
+      "id": "M08",
+      "title": [
+        "自己拆下来的外壳和龙骨，怎么算？",
+        "What about salvaged hull and keel?"
+      ],
+      "body": [
+        "外壳、甲板、龙骨拆下来后是废料。完整设备走设备口，危险物走危险品口。\n\n受托拆船是在替客户干活：交回东西后拿回收款，不会再把同一份料免费放进你的仓库。只有明确归公司的留料和买到的货，才是你的库存。\n\n目前分选出来的料还是未评级原料，升级成合格炉料的流程尚未开放。现在练习炼钢，先用买来的等级 1 黑色炉料；不要把没做完的环节当成你漏找了入口。",
+        "Hull, decks and keel become scrap; whole equipment and hazards use their designated receivers. Commissioned salvage belongs to the client and pays a salvage fee. Only explicitly company-owned material and purchases become your stock.\n\nSorting currently produces unrated material. Certification into qualified feed is not available yet; use purchased grade 1 feed for steelmaking."
+      ]
+    }
+  ],
+  "labels": {
+    "heat.send_feed": [
+      "把仓库炉料送到炉口",
+      "BRING STORED FEED TO FURNACE"
+    ],
+    "heat.feed_on": [
+      "开始装炉",
+      "START CHARGING"
+    ],
+    "heat.feed_off": [
+      "停止装炉",
+      "STOP CHARGING"
+    ],
+    "heat.power_apply": [
+      "设置功率",
+      "SET POWER"
+    ],
+    "heat.idle": [
+      "下一步：选好数量，点「把仓库炉料送到炉口」。还没买料的话，先去交易行买等级 1 黑色炉料，并等它入库。",
+      "NEXT: choose a quantity and bring stored feed to the furnace. Buy grade 1 feed and await warehouse receipt first."
+    ],
+    "heat.transport": [
+      "下一步：等搬运车把料送到炉口，再按「通电熔化」。",
+      "NEXT: wait for the feed at the furnace, then strike the arcs."
+    ],
+    "heat.processing": [
+      "下一步：按「通电熔化」——炉盖合上、电极落下起弧，功率自动控制。化完、温度够了按「测温取样」，探头收回后按「倾炉出钢」。",
+      "NEXT: strike the arcs — the roof closes, the electrodes come down, power runs itself. Melted and hot: sample, then tap once the probe is up."
+    ],
+    "heat.returning": [
+      "下一步：等钢坯冷却并运回仓库。到库后再去交易行交货。",
+      "NEXT: wait for cooling and warehouse return before selling."
+    ],
+    "heat.complete": [
+      "这一炉已回仓。去交易行的「工业客户」安排交货。",
+      "THIS HEAT IS BACK IN STOCK. Arrange delivery under Industrial Clients."
+    ],
+    "heat.success": [
+      "已开始。看炉口和机器人，等原料送到后再装炉。",
+      "STARTED. Wait for the robot to bring feed before charging."
+    ],
+    "sort.send_feed": [
+      "把仓库废料送到分选机",
+      "BRING STORED SCRAP TO SORTER"
+    ],
+    "market.purchase_success": [
+      "买好了。先等货到仓库，再去下方炉台按 E，点「把仓库炉料送到炉口」。",
+      "PURCHASED. Wait for warehouse receipt, then use E at the furnace and bring the stored feed over."
+    ],
+    "market.customer_accept": [
+      "接下这笔订单",
+      "ACCEPT THIS ORDER"
+    ],
+    "market.customer_ship": [
+      "按这个价挂牌出售",
+      "LIST AT THIS PRICE"
+    ],
+    "heat.melt": [
+      "通电熔化",
+      "STRIKE THE ARCS"
+    ]
+  }
+}

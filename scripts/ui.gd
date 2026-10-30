@@ -13,17 +13,23 @@ static func panel(ci: CanvasItem, r: Rect2, a: float = 1.0, chosen: float = 0.0,
 	if boot < 1.0:
 		panel_boot(ci, r, a, boot)
 		return
-	ci.draw_rect(r, Color(PLATE.r + 0.012 * chosen, PLATE.g + 0.012 * chosen, PLATE.b + 0.012 * chosen, 0.95 * a))
-	ci.draw_rect(r, Pal.ink((0.14 + 0.4 * chosen) * a), false, 1.0)
+	# 54 号: the new skin's rounded panel; what is chosen gets a warm edge and a rounded bar
+	ci.draw_style_box(UiSkin.box("panel", a, chosen), r)
 	if chosen > 0.005:
-		var h := r.size.y * chosen
-		ci.draw_rect(Rect2(r.position.x, r.position.y + (r.size.y - h) * 0.5, 3, h), Color(accent.r, accent.g, accent.b, a))
+		var h := (r.size.y - 20.0) * chosen
+		var bar := Rect2(r.position.x + 6, r.position.y + (r.size.y - h) * 0.5, 3, h)
+		ci.draw_rect(bar, Color(accent.r, accent.g, accent.b, a))
 
 
 # A panel coming on (UI animation, 2026-10-17): a bright pen draws its edge
 # round from the top left (k 0..0.5), the plate fills in under it (0.3..0.7).
 # What is drawn on it is uncovered after, top down, by boot_cover.
 static func panel_boot(ci: CanvasItem, r: Rect2, a: float, k: float) -> void:
+	# 54 号: the new skin fades the rounded panel in and lifts it a little
+	var e := clampf(k / 0.7, 0.0, 1.0)
+	e = 1.0 - (1.0 - e) * (1.0 - e)
+	ci.draw_style_box(UiSkin.box("panel", a * e), Rect2(r.position + Vector2(0, (1.0 - e) * 8.0), r.size))
+	return
 	var f := clampf((k - 0.3) / 0.4, 0.0, 1.0)
 	ci.draw_rect(r, Color(PLATE.r, PLATE.g, PLATE.b, 0.95 * a * f))
 	var pts := [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y), r.position]
@@ -45,7 +51,8 @@ static func panel_boot(ci: CanvasItem, r: Rect2, a: float, k: float) -> void:
 
 # the content of a booting panel shows from the top down behind a scan line
 static func boot_cover(ci: CanvasItem, r: Rect2, k: float) -> void:
-	if k >= 1.0:
+	# 54 号: no scan line with the new skin; the content shows as the panel fades in
+	if k >= 0.0:
 		return
 	var u := clampf((k - 0.45) / 0.55, 0.0, 1.0)
 	var y := r.position.y + r.size.y * u
@@ -56,7 +63,7 @@ static func boot_cover(ci: CanvasItem, r: Rect2, k: float) -> void:
 
 # a full-screen sheet behind a result (settlement, assessment): nothing of the scene shows through
 static func sheet(ci: CanvasItem, s: Vector2, a: float) -> void:
-	ci.draw_rect(Rect2(Vector2.ZERO, s), Color(0.012, 0.013, 0.016, 0.94 * a))
+	ci.draw_rect(Rect2(Vector2.ZERO, s), Color(UiSkin.BG0.r, UiSkin.BG0.g, UiSkin.BG0.b, 0.94 * a))
 
 
 static func text(ci: CanvasItem, font: Font, s: String, pos: Vector2, size_px: int, col: Color, align: int = -1) -> void:

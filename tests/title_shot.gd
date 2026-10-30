@@ -32,6 +32,18 @@ func _run() -> void:
 	Txt.zh = Txt.test_zh
 	await _frames(200)
 	Cap.save(root, "res://tests/out/title%s.png" % l)
+	# the port sheet, as a returning company sees it (made-up save data)
+	title.home_slots = [{"company": "Kessler & Daughters", "money": 48210.0, "loan": 12000.0, "done": 6, "rep": 9, "certified": true, "active": {}, "port": {"power": 1, "salvage": 1, "trade": 2, "cargo": 1, "ring": 1}}, {}, {}]
+	title.home_stamps = [1761300000, 0, 0]
+	title.recent_slot = 0
+	title.sheet_mode = "port"
+	title.mode_chosen = true
+	title.scan_time = 0.0
+	await _frames(150)
+	Cap.save(root, "res://tests/out/title_port%s.png" % l)
+	title.sheet_mode = "ship"
+	title.home_slots = [{}, {}, {}]
+	title.recent_slot = -1
 	title._open_slots()
 	title.slots = [
 		{"company": "BERTH 07", "money": 0.0, "loan": 0.0, "done": 0, "rep": 0, "time": 640.0, "certified": false, "active": {"id": "GR-001"}},

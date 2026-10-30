@@ -1,5 +1,6 @@
 class_name Dock
 extends Node2D
+const FastDraw = preload("res://scripts/fast_draw.gd")
 
 const Smelter = preload("res://scripts/smelter.gd")
 const CanvasBatch = preload("res://scripts/canvas_batch.gd")
@@ -22,6 +23,7 @@ const BAY := Vector2(-5.0, -6.0)
 # middle third, the boom reaches further. Set once per contract (configure).
 const STANDARD := 50.0
 const EXTENDED := 88.0
+const MIN_REBUILD := 20.0     # m: what is left standing of the berth after a detonation (scripts/nuke.gd)
 # the berth's lengths a career can buy, each needing the one before
 # (fleet expansion 2026-10-19: PT-34 and the R2 fleet are 96-138 m; ARK-01, roadmap 6.1, ~600 m)
 const TIERS := [[50.0, ""], [88.0, "berth88"], [120.0, "berth120"], [200.0, "berth200"], [620.0, "berth620"]]
@@ -176,6 +178,43 @@ static func nearest(k: String, from: Vector2) -> String:
 	return best
 
 
+# Full-width equipment goes to the open receiving cradle beyond the boom.
+# Small loads retain the existing rail mouths and their original handling.
+# 78 号 P0-1: equipment goes to the nearest equipment mouth its real outline can pass, turned
+# the best way: a small bay first, the outside receiving rack (equip_bulk) for what only it takes,
+# and "" when no mouth can take it whole (it has to be cut, or kept out of the equipment mouths)
+# turnable: false for a load in the player's grapple — it cannot be swung round (its spin only
+# dies away), so it goes by how it lies now (user 2026-10-26: TUG-001's 6.8 m thruster pod was
+# sent to the 4.2 m bay, which only takes it stood on end; only the rack took it)
+static func for_load(k: String, body, turnable: bool = true) -> String:
+	var motion = preload("res://scripts/load_motion.gd")
+	var from: Vector2 = body.global_transform*body.center_of_mass
+	var best := ""
+	var distance := INF
+	for id in ZONES:
+		if kind(id) != k: continue
+		if k == "equip" and not (motion.fits_turned(body, ZONES[id].w*Geom.M, ZONES[id].face) if turnable else motion.fits(body, ZONES[id].w*Geom.M, ZONES[id].face)): continue
+		var d := from.distance_to(zpos(id))
+		if d < distance:
+			distance = d
+			best = id
+	if k == "equip":
+		return best
+	return best if best != "" else nearest(k,from)
+
+
+# why no equipment mouth takes this load whole ("" when one does)
+static func no_mouth_text(body, turnable: bool = true) -> String:
+	var motion = preload("res://scripts/load_motion.gd")
+	var widest := 0.0
+	for id in ZONES:
+		if kind(id) == "equip":
+			widest = maxf(widest, float(ZONES[id].w))
+	var n: float = (motion.narrowest(body, Vector2.DOWN).x if turnable else motion.span(body, Vector2.DOWN).y - motion.span(body, Vector2.DOWN).x) / Geom.M
+	var key := "rej_no_mouth" if turnable else "rej_no_mouth_lie"
+	return Txt.t(key) % [n, widest] if Txt.has(key) else "%.1f m > %.1f m" % [n, widest]
+
+
 # the buffer platform (roadmap 4.4): a parking deck over the berth's near end,
 # on top of the boom, where the tractor field holds whatever is let go on it
 # until it is fetched (clear of the boom: what rests on it never touches it)
@@ -305,11 +344,26 @@ var stern := Vector2(42.0, 0.0)   # m: where the tug pushes, the ship's aft end
 
 
 # the floor, the tower and the boom as walls (the berth's length set by configure)
+func port_open() -> bool:
+	return game != null and game.in_berth() and game.career()
+
+
+# metres: enough clearance for the drone, aligned with the hub access spoke.
+func port_gate() -> Rect2:
+	var x := clampf(centre().x,TOWER_X + 3.0,ARM_X1 - 3.0)
+	return Rect2(x - 2.0,RAIL_Y - 0.6,4.0,0.6)
+
+
 func _bounds() -> void:
 	for ch in bounds_body.get_children():
 		ch.queue_free()
 	var M := Geom.M
 	var segs := [[Vector2(TOWER_X, FLOOR_Y) * M, Vector2(FLOOR_X1, FLOOR_Y) * M], [Vector2(TOWER_X + 0.6, RAIL_Y - 2.6) * M, Vector2(TOWER_X + 0.6, FLOOR_Y) * M], [Vector2(TOWER_X, RAIL_Y) * M, Vector2(ARM_X1, RAIL_Y) * M]]
+	if port_open():
+		var gate := port_gate()
+		segs.pop_back()
+		segs.append([Vector2(TOWER_X,RAIL_Y) * M,Vector2(gate.position.x,RAIL_Y) * M])
+		segs.append([Vector2(gate.end.x,RAIL_Y) * M,Vector2(ARM_X1,RAIL_Y) * M])
 	for s in segs:
 		var cs := CollisionShape2D.new()
 		var sh := SegmentShape2D.new()
@@ -320,6 +374,23 @@ func _bounds() -> void:
 
 
 func set_ship(ship: Dictionary) -> void:
+	# Size the outside receiving rack for this ship's original equipment, including
+	# old contracts with tanks much wider than a rail mouth. It remains outside
+	# the structural boom rather than enlarging a mouth through that structure.
+	var width := 8.0
+	var height := 8.0
+	for piece in ship.get("pieces", []):
+		if str(piece.get("cls", "")) != "equip": continue
+		var lo := Vector2(INF,INF)
+		var hi := Vector2(-INF,-INF)
+		for q in piece.get("poly", []):
+			lo = lo.min(Vector2(q[0],q[1]))
+			hi = hi.max(Vector2(q[0],q[1]))
+		if lo.is_finite():
+			width = maxf(width,hi.x-lo.x+0.5)
+			height = maxf(height,hi.y-lo.y+0.5)
+	var side_entry := ARM_X1+4.5+width+0.5 > BOUNDS.end.x
+	ZONES["equip_bulk"] = {"pos":Vector2(FLOOR_X1+3.0,(RAIL_Y+FLOOR_Y)*0.5) if side_entry else Vector2(ARM_X1+4.5+width*0.5,-8.4-LIFT),"face":Vector2.LEFT if side_entry else Vector2.DOWN,"w":height if side_entry else width,"kind":"equip"}
 	# the berth as configured for this contract
 	for k in ZONES:
 		if not zone_state.has(k):
@@ -388,7 +459,7 @@ func move_mouth(x: float) -> void:
 func _equip_home() -> void:
 	equip_x.clear()
 	for id in ZONES:
-		if kind(id) == "equip":
+		if kind(id) == "equip" and id != "equip_bulk":
 			equip_x[id] = ZONES[id].pos.x
 	equip_goal = equip_x.duplicate()
 
@@ -397,7 +468,7 @@ func _equip_home() -> void:
 # stopping at the rail's ends and short of the other bay
 func move_equip(x: float) -> void:
 	for id in ZONES:
-		if kind(id) == "equip" and not equip_x.has(id):
+		if kind(id) == "equip" and id != "equip_bulk" and not equip_x.has(id):
 			equip_x[id] = ZONES[id].pos.x
 			equip_goal[id] = equip_x[id]
 	var best := ""
@@ -424,16 +495,56 @@ func move_equip(x: float) -> void:
 func _physics_process(dt: float) -> void:
 	if game == null or game.paused_sim:
 		return
+	# 60 FPS (2026-10-27): what does not change from body to body, once a frame
+	var _t0 := Time.get_ticks_usec()
+	var reserved: bool = Career.plant_reserved(game)
+	var reach_max := maxf(FIELD, SCRAP_FIELD) * Geom.M
+	var M := Geom.M
+	var inner := Rect2((BOUNDS.position + Vector2(0.0, 2.0)) * M, (BOUNDS.size - Vector2(2.5, 2.0)) * M)
+	var trough_near := (TROUGH_Y - 12.0) * M
+	var has_buffer: bool = game.has_upgrade("buffer")
+	var zps: Array = []
+	# the mouths as this step has them: [id, position, kind, field reach px]
+	var zl: Array = []
+	for id in ZONES:
+		var zp := zpos(id)
+		zps.append(zp)
+		var kd := kind(id)
+		zl.append([id, zp, kd, (SCRAP_FIELD if kd == "metal" else FIELD) * M])
+	var held_b = game.tools.held_body
+	# 60 FPS (2026-10-27): each loose piece is worked every other physics step (120 Hz), half of
+	# them one step and half the next, its pushes given as the impulse of both steps — the same
+	# field at 60 Hz, half the work (250 pieces near the mouths took 9 ms a frame)
+	var parity := Engine.get_physics_frames() % 2
+	var sdt := dt * 2.0
 	for b in world.bodies.duplicate():
-		if not is_instance_valid(b) or b.capture != null:
+		if not is_instance_valid(b):
 			continue
-		b.rejected_t = maxf(0.0, b.rejected_t - dt)
+		var held: bool = held_b == b
+		if not held and int(b.get_instance_id() >> 3) % 2 != parity:
+			continue
+		if b.capture != null or b.get_meta("arm_parked",false) or b.has_meta("crew_part"):
+			continue
+		b.rejected_t = maxf(0.0, b.rejected_t - sdt)
 		var com: Vector2 = b.global_transform * b.center_of_mass
-		var held: bool = game.tools.held_body == b
-		var scrap := is_scrap(b)
+		if not com.is_finite():
+			continue
+		var step := sdt if not held else dt
+		var rad := _body_radius(b)
+		# far from everything the berth does to a loose piece: inside the field's edge, above the
+		# trough's reach, off the buffer platform, out of every mouth's reach: nothing to do
+		if not held and inner.has_point(com) and com.y < trough_near and not (has_buffer and BUFFER.has_point(com / M)):
+			var near := false
+			for zp in zps:
+				if (zp as Vector2).distance_to(com) - rad <= reach_max:
+					near = true
+					break
+			if not near:
+				continue
+		var scrap := _scrap_cached(b)
 		# scrap rides the belt the moment any of it touches it, even on the
 		# grapple (which lets go); anything else is lifted back out
-		if scrap and touches_trough(b, com):
+		if scrap and not reserved and com.y + rad > TROUGH_Y * M - 2.0 and touches_trough(b, com):
 			if held:
 				game.tools.release_grab(false)
 			_start_convey(b)
@@ -444,39 +555,77 @@ func _physics_process(dt: float) -> void:
 				b.apply_central_impulse(Vector2(0, -260.0) * b.mass)
 				game.say("trough_only_scrap", com)
 		# scrap let go over the trough is drawn down onto the belt
-		if scrap and not held:
+		if scrap and not held and not reserved:
 			var k := suction(com)
 			if k > 0.0:
-				b.apply_central_force(Vector2(0.0, (SUCK_ACC * k + 90.0) * b.mass))
-				b.linear_velocity.x *= exp(-2.0 * dt)
+				b.apply_central_impulse(Vector2(0.0, (SUCK_ACC * k * Grid.salvage_k(game, "mouth", 0.2) + 90.0) * b.mass) * step)
+				b.linear_velocity.x *= exp(-2.0 * step)
 				suck_glow = 1.0
 				suck_x = com.x
 		# parked on the buffer platform: held still until something fetches it
-		if not held and b.get_meta("arm", false) == false and in_buffer(b):
-			b.linear_velocity *= exp(-5.0 * dt)
-			b.angular_velocity *= exp(-5.0 * dt)
+		if not held and has_buffer and b.get_meta("arm", false) == false and BUFFER.has_point(com / M):
+			b.linear_velocity *= exp(-5.0 * step)
+			b.angular_velocity *= exp(-5.0 * step)
 			continue
 		# the tractor field eases strays back in over the open edges
-		var pull := field_pull(com)
+		var pull := Vector2.ZERO if inner.has_point(com) else field_pull(com)
 		if pull != Vector2.ZERO:
-			b.apply_central_force(pull * b.mass)
-			b.linear_velocity *= exp(-0.8 * dt)
-		for id in ZONES:
-			var zp := zpos(id)
+			b.apply_central_impulse(pull * b.mass * step)
+			b.linear_velocity *= exp(-0.8 * step)
+		# A gripped rail-arm load belongs to its assigned mouth until release.
+		# Other receivers must not steal it while the arm passes their fields.
+		var arm_receiver: String = str(b.get_meta("arm_receiver","")) if b.has_meta("arm_receiver") else ""
+		for z in zl:
+			var id: String = z[0]
+			var kd: String = z[2]
+			if reserved and kd == "metal": continue
+			if arm_receiver != "" and id != arm_receiver: continue
+			var zp: Vector2 = z[1]
 			var d := zp - com
 			var dist := d.length()
+			# nowhere near this mouth's field even at the body's far edge: nothing to work out (scrap
+			# is drawn only by the scrap mouth; at any other it matters only right at the lip)
+			if dist - rad > float(z[3]):
+				continue
+			if kd != "metal" and scrap and not held and dist - rad > CATCH * M:
+				continue
+			var catch_equipment := false
+			if kd == "equip":
+				var motion = preload("res://scripts/load_motion.gd")
+				var face: Vector2 = ZONES[id].face
+				var tangent := Vector2(-face.y,face.x)
+				var edges: Vector2 = motion.span(b,face)-Vector2.ONE*zp.dot(tangent)
+				var half_width: float = ZONES[id].w*Geom.M*0.5-1.0
+				if edges.x < -half_width or edges.y > half_width: continue
+				# Engage when the leading surface reaches the receiving lip. Waiting
+				# for a tall tank's centre to enter would drive it into the overhead beam.
+				var front := INF
+				var back := -INF
+				for piece in b.pieces:
+					if piece.gone: continue
+					for point in world.world_poly(piece):
+						var along: float = (point-zp).dot(face)
+						front = minf(front,along)
+						back = maxf(back,along)
+				catch_equipment = front < CATCH*Geom.M and back > -CATCH*Geom.M and (com-zp).dot(face) > -CATCH*Geom.M
+				dist = maxf(0.0,front)
 			var reach := SCRAP_FIELD if id == "metal" and scrap and not held else FIELD
 			if dist > reach * Geom.M or b.rejected_t > 0.0:
+				continue
+			# 60 FPS (2026-10-27): an equipment or hazard mouth's field draws in only what that mouth
+			# takes; plain scrap near it is not pulled in to be thrown back again and again (it still
+			# gets the mouth's refusal if it is pushed right into the lip)
+			if kd != "metal" and scrap and not held and not catch_equipment and dist >= CATCH * M:
 				continue
 			zone_state[id].glow = 1.0
 			var k := 1.0 - dist / (reach * Geom.M)
 			# scrap let go near the furnace is drawn in hard: a throw in its general direction is enough
 			var pullk := 2.6 if id == "metal" and scrap and not held else 1.0
-			b.apply_central_force(d.normalized() * b.mass * (220.0 * k + 40.0) * pullk)
-			b.linear_velocity *= exp(-1.6 * k * dt * pullk)
+			b.apply_central_impulse(d.normalized() * b.mass * (220.0 * k + 40.0) * pullk * step)
+			b.linear_velocity *= exp(-1.6 * k * step * pullk)
 			var catch_r: float = (CATCH * 1.5 if id == "metal" and scrap else CATCH)
-			if dist < catch_r * Geom.M:
-				var verdict: Dictionary = game.judge(b, kind(id))
+			if catch_equipment or kd != "equip" and dist < catch_r * M:
+				var verdict: Dictionary = game.judge(b, kd)
 				if verdict.ok:
 					_start_swallow(b, id)
 				else:
@@ -485,9 +634,21 @@ func _physics_process(dt: float) -> void:
 					b.apply_central_impulse(-ZONES[id].face * b.mass * 380.0 + Vector2(randf_range(-60, 60), 0) * b.mass)
 					game.on_reject(b, id, verdict)
 				break
+	prof_bodies_us = Time.get_ticks_usec() - _t0
+	World._ps("dock_bodies", _t0)
+
+
+var prof_bodies_us := 0
+var prof_process_us := 0
 
 
 func _process(dt: float) -> void:
+	var _t1 := Time.get_ticks_usec()
+	_process_inner(dt)
+	prof_process_us = Time.get_ticks_usec() - _t1
+
+
+func _process_inner(dt: float) -> void:
 	t += dt
 	if absf(metal_x - mouth_target) > 0.001:
 		metal_x = move_toward(metal_x, mouth_target, RAIL_SPEED * dt)
@@ -502,9 +663,15 @@ func _process(dt: float) -> void:
 		z.glow = maxf(0.0, z.glow - dt * 2.0)
 		z.reject = maxf(0.0, z.reject - dt * 1.6)
 		z.eat = maxf(0.0, z.eat - dt * 1.4)
+	var _ta := Time.get_ticks_usec()
 	_step_convey(dt)
+	World._ps("dock_convey", _ta)
+	_ta = Time.get_ticks_usec()
 	_step_swallow(dt)
+	World._ps("dock_swallow", _ta)
+	_ta = Time.get_ticks_usec()
 	_step_debris(dt)
+	World._ps("dock_debris", _ta)
 	_step_hoses(dt)
 	if furnace_x == -INF:
 		furnace_x = metal_home
@@ -515,11 +682,13 @@ func _process(dt: float) -> void:
 	# the berth rebuilt longer: the furnace rolls along its foundation rails to the new middle
 	furnace_x = move_toward(furnace_x, metal_home, maxf(3.0, absf(metal_home - furnace_x) * 0.8) * dt)
 	smelter.X = furnace_x
-	smelter.step(dt)
+	# 71 号: the berth furnace heats on what the grid gives it
+	smelter.grid_cap = Smelter.P_RATED * Grid.salvage_k(game, "berth_furnace", 0.0)
+	if game.industrial_heat == null or game.industrial_heat.fault == "": smelter.step(dt)
 	scrapline.X = furnace_x
 	scrapline.game = game
 	scrapline.smelter = smelter
-	scrapline.step(dt)
+	if game.industrial_sort == null or game.industrial_sort.fault == "": scrapline.step(dt)
 	ships.game = game
 	ships.step(dt)
 	_step_net(dt)
@@ -531,8 +700,8 @@ func _process(dt: float) -> void:
 	if _furnace_seen():
 		# the plant's slow motion (the melt stirring, the coil's current, the pumps) at half
 		# the frame rate; tapping, pressing and shredding at the full
-		var plant_busy: bool = smelter.phase in ["tilt", "pour", "back"] or scrapline.busy() > 0 or not scrapline.frags.is_empty() or not scrapline.fines.is_empty()
-		if draw_now and (plant_busy or _frame_n % 2 == 0):
+		var plant_busy: bool = smelter.phase in ["tilt", "pour", "back"] or smelter.lance_phase != "idle" or scrapline.busy() > 0 or not scrapline.pucks.is_empty() or not scrapline.frags.is_empty() or not scrapline.fines.is_empty()
+		if plant_busy or draw_now and _frame_n % 2 == 0:
 			furnace_node.queue_redraw()
 		var sig := [furnace_x, FLOOR_Y, metal_x, roundf(game.cam_zoom() * 20.0), Txt.zh, roundf(smelter.tilt * 40.0), roundf(smelter.hood * 20.0), int(t * 4.0)]
 		if sig != _text_sig:
@@ -594,10 +763,38 @@ func field_pull(p: Vector2) -> Vector2:
 	var depth := p.distance_to(q)
 	if field_glow.size() < 40:
 		field_glow.append([q, 1.0])
-	return (q - p).normalized() * (60.0 + depth * 1.6) + (c - p).normalized() * 10.0
+	# the run-down berth: the field is weak until the power is repaired
+	var weak := 1.0 if game == null or game.has_upgrade("lights") else 0.5
+	return ((q - p).normalized() * (60.0 + depth * 1.6) + (c - p).normalized() * 10.0) * weak
 
 
 # scrap: nothing whole to save and nothing dangerous in it
+# the farthest any of the body's outline lies from its centre of mass (px), kept until its parts change
+# 60 FPS (2026-10-27): worked out again twice a second, and at once when the body is refreshed
+# (a cut, a piece added or dropped); the signature walk every step was 0.7 ms a frame at 250 pieces
+func _body_radius(b) -> float:
+	var now := Time.get_ticks_msec()
+	if now - int(b.rad_at) <= 500:
+		return b.rad_v
+	b.rad_at = now
+	var r := 0.0
+	var c: Vector2 = b.center_of_mass
+	for p in b.pieces:
+		for v in p.poly:
+			r = maxf(r, v.distance_to(c))
+	b.rad_v = r
+	return r
+
+
+# what a loose piece is does not change from step to step: looked at again twice a second
+func _scrap_cached(b) -> bool:
+	var now := Time.get_ticks_msec()
+	if now - int(b.scrap_at) > 500:
+		b.scrap_at = now
+		b.scrap_is = is_scrap(b)
+	return b.scrap_is
+
+
 func is_scrap(b) -> bool:
 	for p in b.pieces:
 		if p.cls == "equip" and p.intact:
@@ -661,8 +858,10 @@ func _step_convey(dt: float) -> void:
 		var com_off: Vector2 = b.global_transform.basis_xform(b.center_of_mass)
 		var com: Vector2 = b.global_position + com_off
 		var lane := (TROUGH_Y + 0.45) * M
-		var nx := move_toward(com.x, mouth.x, CONVEY * M * dt)
-		var ny := move_toward(com.y, lane, CONVEY * M * dt)
+		# 71 号: the belt runs as fast as the grid lets it (its standby motor keeps 20 %)
+		var cv := CONVEY * Grid.salvage_k(game, "mouth", 0.2)
+		var nx := move_toward(com.x, mouth.x, cv * M * dt)
+		var ny := move_toward(com.y, lane, cv * M * dt)
 		b.global_position = Vector2(nx, ny) - com_off
 		b.rotation = lerp_angle(b.rotation, 0.0, 1.0 - exp(-3.0 * dt))
 		if absf(nx - mouth.x) < 0.4 * M:
@@ -675,6 +874,7 @@ func _step_convey(dt: float) -> void:
 
 func _start_swallow(b, id: String) -> void:
 	b.capture = id
+	b.remove_meta("arm_receiver")
 	b.freeze_mode = RigidBody2D.FREEZE_MODE_KINEMATIC
 	b.set_deferred("freeze", true)
 	b.collision_layer = 0
@@ -694,7 +894,11 @@ func _step_swallow(dt: float) -> void:
 			done.append(s)
 			continue
 		s[2] += dt
-		var k: float = clampf(s[2] / 0.55, 0.0, 1.0)
+		# the run-down berth: the furnace on its small fire takes its time over scrap
+		var dur := 0.55
+		if kind(s[1]) == "metal" and game != null and not game.has_upgrade("furnace_main"):
+			dur = 1.5
+		var k: float = clampf(s[2] / dur, 0.0, 1.0)
 		var e := Pal.ease_in(k)
 		var tgt := inside(s[1])
 		var com_off: Vector2 = b.global_transform.basis_xform(b.center_of_mass)
@@ -777,6 +981,11 @@ func _step_debris(dt: float) -> void:
 		for i in poly.size():
 			area += poly[i].cross(poly[(i + 1) % poly.size()])
 		net_load += absf(area) * 0.5 / (Geom.M * Geom.M) * 0.025
+		# the run-down berth: a third of what reaches the torn net slips through it
+		if game != null and not game.has_upgrade("net_fix") and randf() < 0.35:
+			game.fx.puff(net + Vector2(0, 30), Vector2(0, 60), 0.6, 8.0, 30.0, Pal.ink(0.08))
+			game.on_debris_lost(d[6], net)
+			continue
 		game.on_debris_in(d[6], net)
 
 
@@ -859,8 +1068,8 @@ func _draw_overlay_body(ov) -> void:
 	# hoses
 	for id in hoses:
 		var pts := PackedVector2Array(hoses[id].pts)
-		ov.draw_polyline(pts, Pal.ink(0.55), 3.4, true)
-		ov.draw_polyline(pts, Color(0.05, 0.05, 0.06), 1.4, true)
+		FastDraw.polyline(ov, pts, Pal.ink(0.55), 3.4, true)
+		FastDraw.polyline(ov, pts, Color(0.05, 0.05, 0.06), 1.4, true)
 	# the tug that brings GR-7 in
 	var tug := tug_pos()
 	if tug != Vector2.INF:
@@ -872,11 +1081,20 @@ func _draw_overlay_body(ov) -> void:
 		var tr := Transform2D(d[4], d[0])
 		var poly: PackedVector2Array = tr * (d[3] as PackedVector2Array)
 		if Geom.valid(poly):
-			ov.draw_colored_polygon(poly, Color(0.09, 0.093, 0.1))
+			FastDraw.poly(ov, poly, Color(0.09, 0.093, 0.1))
 		var cl := poly.duplicate()
 		if cl.size() > 0:
 			cl.append(poly[0])
-			ov.draw_polyline(cl, Pal.ink(0.6), 1.0, true)
+			FastDraw.polyline(ov, cl, Pal.ink(0.6), 1.0, true)
+
+
+# 91 号 Q4: a small note in the scene, shown near the cursor (a CanvasBatch hands it to Look);
+# drawn plainly when something else draws this part (the tow traffic draws the tug itself)
+func _note(ci, f: Font, pos: Vector2, text: String, align: int = HORIZONTAL_ALIGNMENT_LEFT, width: float = -1.0, size: int = 12, col: Color = Color.WHITE) -> void:
+	if ci.has_method("note"):
+		ci.note(f, pos, text, align, width, size, col)
+	else:
+		ci.draw_string(f, pos, text, align, width, size, col)
 
 
 func _draw_static() -> void:
@@ -893,7 +1111,7 @@ func _draw_static_body(ci) -> void:
 	var low := -5.0 - LIFT
 	var wall := PackedVector2Array([Vector2(TOWER_X + 0.6, RAIL_Y) * M, Vector2(ARM_X1, RAIL_Y) * M, Vector2(ARM_X1 + 4.0, low) * M,
 		Vector2(FLOOR_X1 - 6.0, low) * M, Vector2(FLOOR_X1 - 2.0, FLOOR_Y) * M, Vector2(TOWER_X + 0.6, FLOOR_Y) * M])
-	ci.draw_colored_polygon(wall, Color(0.015, 0.017, 0.021, 0.92))
+	FastDraw.poly(ci, wall, Color(0.015, 0.017, 0.021, 0.92))
 	var wx := TOWER_X + 6.0
 	while wx < FLOOR_X1 - 6.0:
 		var top := RAIL_Y if wx <= ARM_X1 else (low if wx >= ARM_X1 + 4.0 else lerpf(RAIL_Y, low, (wx - ARM_X1) / 4.0))
@@ -909,7 +1127,7 @@ func _draw_static_body(ci) -> void:
 		px += 1.2
 	var wcl := wall.duplicate()
 	wcl.append(wall[0])
-	ci.draw_polyline(wcl, Pal.ink(0.16), 1.2, true)
+	FastDraw.polyline(ci, wcl, Pal.ink(0.16), 1.2, true)
 	ci.draw_string(font_b, Vector2(TOWER_X + 1.2, 2.6) * M, "07", HORIZONTAL_ALIGNMENT_LEFT, -1, int(4.4 * M), Pal.ink(0.035))
 	# the berth: floor platform with legs into the dark, the tower, the arm
 	_truss(Rect2(TOWER_X * M, FLOOR_Y * M, (FLOOR_X1 - TOWER_X) * M, 0.6 * M))
@@ -918,7 +1136,12 @@ func _draw_static_body(ci) -> void:
 		ci.draw_line(l0, l0 + Vector2(-0.8 * M, 5.0 * M), Pal.ink(0.18), 1.4)
 		ci.draw_line(l0 + Vector2(0.6 * M, 0), l0 + Vector2(1.4 * M, 5.0 * M), Pal.ink(0.18), 1.4)
 	_truss_v(Rect2(TOWER_X * M, (RAIL_Y - 2.6) * M, 0.6 * M, (FLOOR_Y - RAIL_Y + 2.6) * M))
-	_truss(Rect2(TOWER_X * M, (RAIL_Y - 0.6) * M, (ARM_X1 - TOWER_X) * M, 0.6 * M))
+	if port_open():
+		var gate := port_gate()
+		_truss(Rect2(TOWER_X * M,(RAIL_Y - 0.6) * M,(gate.position.x - TOWER_X) * M,0.6 * M))
+		_truss(Rect2(gate.end.x * M,(RAIL_Y - 0.6) * M,(ARM_X1 - gate.end.x) * M,0.6 * M))
+	else:
+		_truss(Rect2(TOWER_X * M, (RAIL_Y - 0.6) * M, (ARM_X1 - TOWER_X) * M, 0.6 * M))
 	ci.draw_line(Vector2(TOWER_X + 0.6, RAIL_Y + 4.0) * M, Vector2(TOWER_X + 6.0, RAIL_Y) * M, Pal.ink(0.22), 2.0)
 	ci.draw_rect(Rect2((ARM_X1 - 0.3) * M, (RAIL_Y - 0.8) * M, 0.5 * M, 1.0 * M), Color(0.07, 0.073, 0.082))
 	ci.draw_rect(Rect2((ARM_X1 - 0.3) * M, (RAIL_Y - 0.8) * M, 0.5 * M, 1.0 * M), Pal.ink(0.5), false, 1.2)
@@ -950,11 +1173,13 @@ func _draw_static_body(ci) -> void:
 		var hx := ARM_X1 + 4.0
 		while hx < rx1 / M - 0.5:
 			ci.draw_line(Vector2(hx, RAIL_Y - 0.4) * M, Vector2(hx, BOUNDS.position.y + 1.0) * M, Pal.ink(0.1), 1.4)
-			ci.draw_circle(Vector2(hx, RAIL_Y - 0.4) * M, 2.0, Pal.ink(0.3))
+			FastDraw.circle(ci, Vector2(hx, RAIL_Y - 0.4) * M, 2.0, Pal.ink(0.3))
 			hx += 6.0
 		_truss(Rect2((ARM_X1 + 0.2) * M, (RAIL_Y - 0.4) * M, rx1 - (ARM_X1 + 0.2) * M, 0.4 * M))
-	ci.draw_line(Vector2(rx0, RAIL_Y * M + 2), Vector2(rx1, RAIL_Y * M + 2), Pal.ink(0.5), 2.0)
-	ci.draw_line(Vector2(rx0, RAIL_Y * M + 5), Vector2(rx1, RAIL_Y * M + 5), Pal.ink(0.16), 1.0)
+	for rail in [Vector2(rx0,port_gate().position.x * M),Vector2(port_gate().end.x * M,rx1)] if port_open() else [Vector2(rx0,rx1)]:
+		if rail.y <= rail.x: continue
+		ci.draw_line(Vector2(rail.x,RAIL_Y * M + 2),Vector2(rail.y,RAIL_Y * M + 2),Pal.ink(0.5),2.0)
+		ci.draw_line(Vector2(rail.x,RAIL_Y * M + 5),Vector2(rail.y,RAIL_Y * M + 5),Pal.ink(0.16),1.0)
 	for ex in [rx0, rx1]:
 		ci.draw_rect(Rect2(ex - 3, RAIL_Y * M - 2, 6, 10), Pal.heat(0.6, 1.1))
 	# the berth's own plate on the tower: its number, and whose it is
@@ -971,18 +1196,25 @@ func _draw_static_body(ci) -> void:
 	for i in 17:
 		var a := lerpf(PI * 1.05, PI * 1.95, i / 16.0)
 		net_pts.append(nc + Vector2(cos(a) * 78.0, -sin(a) * 30.0 + 30.0))
-	ci.draw_colored_polygon(net_pts, Color(0.04, 0.042, 0.048))
+	FastDraw.poly(ci, net_pts, Color(0.04, 0.042, 0.048))
 	for i in range(1, 16):
 		ci.draw_line(net_pts[i], nc + Vector2((i - 8) * 3.0, 58), Pal.ink(0.12), 1.0)
 	for ring in [0.4, 0.7]:
 		var rp := PackedVector2Array()
 		for q in net_pts:
 			rp.append(nc + Vector2(0, 30) + (q - nc - Vector2(0, 30)) * ring)
-		ci.draw_polyline(rp, Pal.ink(0.12), 1.0, true)
-	ci.draw_polyline(net_pts, Pal.ink(0.7), 2.4, true)
+		FastDraw.polyline(ci, rp, Pal.ink(0.12), 1.0, true)
+	FastDraw.polyline(ci, net_pts, Pal.ink(0.7), 2.4, true)
+	if game != null and not game.has_upgrade("net_fix") and not WorksPlan.off("net_fix"):
+		# the torn net: a dark rent in the mesh with a strand hanging from it
+		var hole := PackedVector2Array([nc + Vector2(-26, 14), nc + Vector2(6, 8), nc + Vector2(18, 34), nc + Vector2(-12, 44)])
+		FastDraw.poly(ci, hole, Color(0.0, 0.0, 0.0, 0.92))
+		FastDraw.polyline(ci, hole, Pal.ink(0.45), 1.2, true)
+		ci.draw_line(nc + Vector2(6, 8), nc + Vector2(12, 62), Pal.ink(0.4), 1.0, true)
+		ci.draw_string(font, nc + Vector2(28, 48), game.txt("rp_tag_broken"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.heat(0.85, 1.1))
 	_net_detail(ci, true)
 	for e in [net_pts[0], net_pts[16]]:
-		ci.draw_circle(e, 4.0, Pal.ink(0.7))
+		FastDraw.circle(ci, e, 4.0, Pal.ink(0.7))
 	var cap := 0.5 if game != null and game.has_upgrade("net05") else 0.1
 	var nr := Rect2(nc + Vector2(-98, -42), Vector2(196, 30))
 	ci.draw_rect(nr, Color(0.035, 0.037, 0.042, 0.94))
@@ -992,14 +1224,14 @@ func _draw_static_body(ci) -> void:
 	var bc := BAY * M
 	var hr := Rect2(bc + Vector2(-100, -48), Vector2(100, 96))
 	ci.draw_rect(hr, Color(0.05, 0.053, 0.06))
-	ci.draw_polyline(PackedVector2Array([bc + Vector2(0, -48), bc + Vector2(-100, -48), bc + Vector2(-100, 48), bc + Vector2(0, 48)]), Pal.ink(0.7), 2.0, true)
+	FastDraw.polyline(ci, PackedVector2Array([bc + Vector2(0, -48), bc + Vector2(-100, -48), bc + Vector2(-100, 48), bc + Vector2(0, 48)]), Pal.ink(0.7), 2.0, true)
 	# the launch pad: the drone's outline painted on it (nose to the door), with landing marks
 	var pc := bc + Vector2(-46, 0)
 	var pad := PackedVector2Array()
 	for v in preload("res://scripts/drone_art.gd").ARROW:
 		pad.append(pc + (v as Vector2) * 1.25)
 	pad.append(pad[0])
-	ci.draw_polyline(pad, Pal.ink(0.3), 1.4, true)
+	FastDraw.polyline(ci, pad, Pal.ink(0.3), 1.4, true)
 	for i in 4:
 		var d := Vector2.from_angle(TAU * i / 4.0)
 		ci.draw_line(pc + d * 34.0, pc + d * 42.0, Pal.ink(0.4), 2.0)
@@ -1019,16 +1251,166 @@ func _draw_static_body(ci) -> void:
 		ci.draw_rect(Rect2(mp + Vector2(-14, -16), Vector2(28, 22)), Color(0.06, 0.063, 0.07))
 		ci.draw_rect(Rect2(mp + Vector2(-14, -16), Vector2(28, 22)), Pal.ink(0.6), false, 1.4)
 		# the hose reel
-		ci.draw_arc(mp + Vector2(0, -5), 7.0, 0.0, TAU, 16, Pal.ink(0.55), 1.4, true)
+		FastDraw.arc(ci, mp + Vector2(0, -5), 7.0, 0.0, TAU, 16, Pal.ink(0.55), 1.4, true)
 		for sp in 3:
 			ci.draw_line(mp + Vector2(0, -5), mp + Vector2(0, -5) + Vector2.from_angle(TAU * sp / 3.0) * 7.0, Pal.ink(0.35), 1.0)
-		ci.draw_string(font, mp + Vector2(18, 0), game.txt("dk_mast"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.45))
+		_note(ci, font, mp + Vector2(18, 0), game.txt("dk_mast"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.45))
 		if pump2:
 			# the high-flow pump: a second, bigger housing with an impeller ring
 			ci.draw_rect(Rect2(mp + Vector2(12, -18), Vector2(22, 22)), Color(0.07, 0.073, 0.082))
 			ci.draw_rect(Rect2(mp + Vector2(12, -18), Vector2(22, 22)), Pal.ink(0.6), false, 1.4)
-			ci.draw_arc(mp + Vector2(23, -7), 7.0, 0.0, TAU, 16, Pal.ink(0.55), 1.2, true)
+			FastDraw.arc(ci, mp + Vector2(23, -7), 7.0, 0.0, TAU, 16, Pal.ink(0.55), 1.2, true)
 			ci.draw_line(mp + Vector2(10, -6), mp + Vector2(12, -6), Pal.ink(0.5), 2.0)
+	_draw_wrecks(ci)
+
+
+# the run-down berth (G2; 65 号, player 2026-10-25: "it looks new — this is a wrecked yard"): what
+# is not repaired stands where it will stand as the wreck it is — no dashed outline — with a small
+# plate; and until the three base repairs are done the deck carries scrap, its rail breaks and the
+# tower shows rust, a third of it cleared with each of them
+func _draw_wrecks(ci) -> void:
+	if game == null or not game.career():
+		return
+	var M := Geom.M
+	_draw_grime(ci)
+	for id in ["port2", "crane", "hauler", "buffer", "arm", "furnace_main", "lights"]:
+		# 82 号: once the crew has the broken part off, it is not drawn any more
+		if game.has_upgrade(id) or WorksPlan.off(id):
+			continue
+		var at := RepairShow.spot(id)
+		var dark := Color(0.06, 0.062, 0.07)
+		var edge := Pal.ink(0.42)
+		var rust := Color(0.42, 0.24, 0.14, 0.75)
+		var tag_at := at + Vector2(-1.6, -1.6) * M
+		match id:
+			"hauler", "hauler2":
+				# the hauling drone on its side on the deck, a rotor bent, scorch on its hull
+				var c := Vector2(at.x, FLOOR_Y * M - 0.7 * M)
+				var body := PackedVector2Array()
+				for k in 6:
+					body.append(c + Vector2.from_angle(TAU * k / 6.0 + 0.35).rotated(0.5) * Vector2(1.2, 0.7) * M)
+				FastDraw.poly(ci, body, dark)
+				var ob := body.duplicate()
+				ob.append(body[0])
+				FastDraw.polyline(ci, ob, edge, 1.3, true)
+				ci.draw_line(c + Vector2(0.9, -0.4) * M, c + Vector2(1.9, -1.3) * M, edge, 1.6)
+				ci.draw_line(c + Vector2(1.9, -1.3) * M, c + Vector2(2.4, -0.9) * M, edge, 1.6)
+				FastDraw.circle(ci, c + Vector2(-0.3, 0.1) * M, 0.35 * M, Color(0.02, 0.02, 0.02, 0.8))
+				tag_at = c + Vector2(-1.4, -2.2) * M
+			"arm":
+				# the arm off its mount, lying along the deck in two pieces
+				var y := FLOOR_Y * M - 0.35 * M
+				ci.draw_rect(Rect2(Vector2(at.x - 3.0 * M, y - 0.3 * M), Vector2(3.2 * M, 0.6 * M)), dark)
+				ci.draw_rect(Rect2(Vector2(at.x - 3.0 * M, y - 0.3 * M), Vector2(3.2 * M, 0.6 * M)), edge, false, 1.2)
+				var seg := PackedVector2Array([Vector2(at.x + 0.4 * M, y + 0.3 * M), Vector2(at.x + 2.8 * M, y - 0.9 * M), Vector2(at.x + 3.1 * M, y - 0.5 * M), Vector2(at.x + 0.7 * M, y + 0.3 * M)])
+				FastDraw.poly(ci, seg, dark)
+				var os := seg.duplicate()
+				os.append(seg[0])
+				FastDraw.polyline(ci, os, edge, 1.2, true)
+				FastDraw.circle(ci, Vector2(at.x + 0.2 * M, y), 0.3 * M, edge)
+				tag_at = Vector2(at.x - 3.0 * M, y - 1.6 * M)
+			"crane":
+				# the trolley stuck on the rail, its hoist rope snapped and hanging
+				var tx := (TOWER_X + 8.0) * M
+				var ty := (RAIL_Y - 0.4) * M
+				ci.draw_rect(Rect2(Vector2(tx - 1.2 * M, ty - 0.5 * M), Vector2(2.4, 1.0) * M), dark)
+				ci.draw_rect(Rect2(Vector2(tx - 1.2 * M, ty - 0.5 * M), Vector2(2.4, 1.0) * M), edge, false, 1.2)
+				ci.draw_line(Vector2(tx, ty + 0.5 * M), Vector2(tx + 0.4 * M, ty + 3.6 * M), Pal.ink(0.35), 1.2)
+				ci.draw_line(Vector2(tx + 0.4 * M, ty + 3.6 * M), Vector2(tx + 0.1 * M, ty + 4.0 * M), Pal.ink(0.35), 1.2)
+				ci.draw_line(Vector2(tx - 0.6 * M, ty - 0.5 * M), Vector2(tx - 0.6 * M, ty + 0.5 * M), rust, 2.0)
+				tag_at = Vector2(tx - 1.2 * M, ty - 1.6 * M)
+			"port2":
+				# the second mouth plated over, welds along the edge
+				var r := Rect2(at - Vector2(1.8, 0.5) * M, Vector2(3.6, 1.0) * M)
+				ci.draw_rect(r, Color(0.09, 0.09, 0.1))
+				ci.draw_rect(r, edge, false, 1.4)
+				var wx := r.position.x + 0.2 * M
+				while wx < r.end.x - 0.1 * M:
+					ci.draw_line(Vector2(wx, r.position.y), Vector2(wx + 0.15 * M, r.position.y), Pal.ink(0.6), 2.0)
+					wx += 0.45 * M
+				ci.draw_line(r.position + Vector2(0.3 * M, 0.5 * M), r.end - Vector2(0.3 * M, 0.5 * M), rust, 1.5)
+				tag_at = r.position + Vector2(0, -1.0 * M)
+			"buffer":
+				# the buffer platform's grating fallen in at one end
+				var br := Rect2(BUFFER.position * M, BUFFER.size * M)
+				var deck_y := br.end.y - 10.0
+				ci.draw_line(Vector2(br.position.x, deck_y), Vector2(br.position.x + br.size.x * 0.55, deck_y), edge, 2.0)
+				ci.draw_line(Vector2(br.position.x + br.size.x * 0.55, deck_y), Vector2(br.end.x - 6.0, deck_y + 1.6 * M), edge, 2.0)
+				var gx := br.position.x + 8.0
+				while gx < br.position.x + br.size.x * 0.55:
+					ci.draw_line(Vector2(gx, deck_y), Vector2(gx, deck_y + 8.0), Pal.ink(0.25), 1.0)
+					gx += 12.0
+				tag_at = Vector2(br.position.x, deck_y - 1.6 * M)
+			"furnace_main":
+				# the furnace cold: its mouth dark, the status lamp red
+				var mp := at + Vector2(2.8 * M, 0.2 * M)
+				ci.draw_rect(Rect2(mp, Vector2(2.0, 1.2) * M), Color(0.03, 0.03, 0.035))
+				ci.draw_rect(Rect2(mp, Vector2(2.0, 1.2) * M), edge, false, 1.2)
+				FastDraw.circle(ci, mp + Vector2(1.7, 0.25) * M, 0.12 * M, Color(0.9, 0.2, 0.15, 0.6 + 0.4 * sin(t * 2.0)))
+				tag_at = mp + Vector2(0, -1.0 * M)
+			"lights":
+				# the dead floodlight: its head cracked, its feed cable hanging
+				var hp := at + Vector2(0, -0.3 * M)
+				ci.draw_line(hp, hp + Vector2(0.3, 1.8) * M, Pal.ink(0.3), 1.2)
+				ci.draw_line(hp + Vector2(-0.4, 0) * M, hp + Vector2(0.4, 0.15) * M, edge, 2.0)
+				tag_at = hp + Vector2(-0.9, -1.2) * M
+		# the plate: what this is, broken (no outline round the place)
+		var label: String = game.txt("rp_tag_broken") + " · " + Repair.name_of(id)
+		var tw: float = font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x + 20.0
+		var tag := Rect2(tag_at, Vector2(tw, 20))
+		ci.draw_rect(tag, Color(0.035, 0.037, 0.042, 0.85))
+		ci.draw_rect(Rect2(tag.position + Vector2(5, 5), Vector2(2, 10)), Pal.heat(0.8, 1.1))
+		ci.draw_string(font, tag.position + Vector2(11, 15), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.78))
+
+
+# the deck's grime: scrap lying about, a broken rail, rust down the tower — less with each base repair
+func _draw_grime(ci) -> void:
+	var done := 0
+	for id in Repair.BASE:
+		if game.has_upgrade(id):
+			done += 1
+	var left := 3 - done
+	if left <= 0:
+		return
+	var M := Geom.M
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7707
+	var n := 8 * left
+	for k in 24:
+		var x := rng.randf_range(TOWER_X + 3.0, FLOOR_X1 - 2.0)
+		var w := rng.randf_range(0.3, 1.1)
+		var h := rng.randf_range(0.12, 0.4)
+		var ang := rng.randf_range(-0.6, 0.6)
+		if k >= n:
+			continue
+		var c := Vector2(x, FLOOR_Y - h * 0.5) * M
+		var pts := PackedVector2Array([c + Vector2(-w, -h).rotated(ang) * 0.5 * M, c + Vector2(w, -h * 0.6).rotated(ang) * 0.5 * M, c + Vector2(w * 0.8, h).rotated(ang) * 0.5 * M, c + Vector2(-w * 0.7, h).rotated(ang) * 0.5 * M])
+		FastDraw.poly(ci, pts, Color(0.12, 0.11, 0.1))
+		var o := pts.duplicate()
+		o.append(pts[0])
+		FastDraw.polyline(ci, o, Pal.ink(0.3), 1.0)
+	# the deck rail: gaps in it
+	var ry := (FLOOR_Y - 1.1) * M
+	var x0 := (TOWER_X + 2.0) * M
+	var x1 := (FLOOR_X1 - 1.0) * M
+	var gaps := [0.18, 0.47, 0.81].slice(0, left)
+	var segs := 14
+	for s in segs:
+		var a := lerpf(x0, x1, float(s) / segs)
+		var b := lerpf(x0, x1, float(s + 1) / segs)
+		var broken := false
+		for gpos in gaps:
+			if absf(float(s) / segs - float(gpos)) < 0.04:
+				broken = true
+		if broken:
+			ci.draw_line(Vector2(a, ry), Vector2(a + (b - a) * 0.3, ry + 0.4 * M), Pal.ink(0.3), 1.2)
+		else:
+			ci.draw_line(Vector2(a, ry), Vector2(b, ry), Pal.ink(0.28), 1.0)
+	# rust down the tower's legs
+	for k in left * 3:
+		var tx := (TOWER_X + rng.randf_range(-1.2, 1.2)) * M
+		var ty0 := (RAIL_Y + rng.randf_range(0.5, 3.0)) * M
+		ci.draw_line(Vector2(tx, ty0), Vector2(tx + rng.randf_range(-3.0, 3.0), ty0 + rng.randf_range(1.5, 4.0) * M), Color(0.42, 0.24, 0.14, 0.5), 1.5)
 
 
 func _draw_clamps() -> void:
@@ -1043,50 +1425,57 @@ func _draw_clamps() -> void:
 		for yy in range(int(top + 22), int(FLOOR_Y * M), 18):
 			clamp_node.draw_line(Vector2(x - 7, yy), Vector2(x + 7, yy + 9), Pal.ink(0.12), 1.0)
 		var open := k * 9.0
-		clamp_node.draw_polyline(PackedVector2Array([Vector2(x - 16 - open, top + 2), Vector2(x - 16 - open, top + 12), Vector2(x + 16 + open, top + 12), Vector2(x + 16 + open, top + 2)]), Pal.ink(0.75), 2.0, true)
+		FastDraw.polyline(clamp_node, PackedVector2Array([Vector2(x - 16 - open, top + 2), Vector2(x - 16 - open, top + 12), Vector2(x + 16 + open, top + 12), Vector2(x + 16 + open, top + 2)]), Pal.ink(0.75), 2.0, true)
 		clamp_node.draw_string(font, Vector2(x + 12, top + 34), "CL-0%d" % (i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.4))
 
 
-# the tug's acceleration along x (px/s², + to the right), from how it moves
-func tug_accel() -> float:
+# the tug's acceleration (px/s²), from how it moves: its burns are drawn from this
+func tug_accel() -> Vector2:
 	if game == null or not game.state in ["intro", "towout"]:
-		return 0.0
+		return Vector2.ZERO
 	var h := 1.0 / 60.0
 	var tt: float = game.state_t
-	return (_tug_x(tt + h) - 2.0 * _tug_x(tt) + _tug_x(tt - h)) / (h * h)
+	return (_tug_at(tt + h) - 2.0 * _tug_at(tt) + _tug_at(tt - h)) / (h * h)
 
 
-func _tug_x(tt: float) -> float:
+# where the tug is (px, its contact face on the hull's stern) tt s into the opening or the tow out.
+# user 2026-10-28 ("推的东西不见了，跑其他地方去了"): it stays on the stern all the way round the
+# station (it kept the berth's height and peeled off as if the push were done)
+func _tug_at(tt: float) -> Vector2:
+	var M := Geom.M
 	if game.state == "towout":
-		return game.ship_offset * pow(clampf(tt / game.TOW_T, 0.0, 1.0), 3.0) + stern.x * Geom.M
-	var x: float = game.ship_offset * (1.0 - Pal.ease_io(clampf(tt / 3.4, 0.0, 1.0))) + stern.x * Geom.M
+		return Vector2(game.ship_offset * pow(clampf(tt / game.TOW_T, 0.0, 1.0), 3.0) + stern.x * M, stern.y * M)
+	var yt: float = game.yard_push_t()
+	if tt < yt:
+		return game.yard_at(tt) + stern * M
+	tt -= yt
+	var x: float = game.ship_offset * (1.0 - Pal.ease_io(clampf(tt / 3.4, 0.0, 1.0))) + stern.x * M
+	# pushed home, it backs off and leaves
 	if tt > 3.4:
 		x += pow(tt - 3.4, 2.0) * 900.0
-	return x
+	return Vector2(x, stern.y * M)
 
 
 func tug_pos() -> Vector2:
-	if game != null and game.state == "towout":
-		return Vector2(world.position.x + stern.x * Geom.M, stern.y * Geom.M)
-	if game == null or game.state != "intro":
+	if game == null or not game.state in ["intro", "towout"]:
 		return Vector2.INF
-	var tt: float = game.state_t
-	var x: float = world.position.x + stern.x * Geom.M
-	if tt > 3.4:
-		x += pow(tt - 3.4, 2.0) * 900.0
-	return Vector2(x, stern.y * Geom.M)
+	return _tug_at(game.state_t)
 
 
 func _tug(p: Vector2, ci) -> void:
 	var M := Geom.M
 	var hull := PackedVector2Array([p + Vector2(0.2 * M, -0.9 * M), p + Vector2(4.6 * M, -1.3 * M), p + Vector2(6.0 * M, -0.6 * M), p + Vector2(6.0 * M, 0.6 * M), p + Vector2(4.6 * M, 1.3 * M), p + Vector2(0.2 * M, 0.9 * M)])
-	ci.draw_colored_polygon(hull, Color(0.07, 0.073, 0.082))
+	FastDraw.poly(ci, hull, Color(0.07, 0.073, 0.082))
 	var cl := hull.duplicate()
 	cl.append(hull[0])
-	ci.draw_polyline(cl, Pal.ink(0.8), 1.4, true)
+	FastDraw.polyline(ci, cl, Pal.ink(0.8), 1.4, true)
 	ci.draw_line(p + Vector2(0.0, -0.7 * M), p + Vector2(0.0, 0.7 * M), Pal.ink(0.9), 3.0)
 	ci.draw_rect(Rect2(p + Vector2(2.0 * M, -0.5 * M), Vector2(1.6 * M, 1.0 * M)), Pal.ink(0.3), false, 1.0)
-	ci.draw_string(font, p + Vector2(2.1 * M, -0.6 * M), "TUG-04", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.5))
+	# the dorsal and ventral thruster pods (the burns up and down come from these)
+	for s: float in [-1.0, 1.0]:
+		for xm: float in [1.6, 4.4]:
+			ci.draw_rect(Rect2(p + Vector2(xm * M - 6.0, (1.05 * s - 0.1) * M), Vector2(12.0, 0.2 * M)), Pal.ink(0.7), false, 1.0)
+	_note(ci, font, p + Vector2(2.1 * M, -0.6 * M), "TUG-04", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.5))
 
 
 # the buffer platform: a grated deck with tractor emitters along its edge
@@ -1103,7 +1492,7 @@ func _buffer(ci) -> void:
 		var ex := r.position.x + (i + 0.5) / 6.0 * r.size.x
 		var a := 0.12 + 0.06 * sin(t * 3.0 + i)
 		ci.draw_line(Vector2(ex, deck.position.y), Vector2(ex, r.position.y), Pal.tint(Pal.AIR, a, 1.2), 1.0)
-		ci.draw_circle(Vector2(ex, deck.position.y - 2.0), 2.4, Pal.tint(Pal.AIR, 0.6, 1.3))
+		FastDraw.circle(ci, Vector2(ex, deck.position.y - 2.0), 2.4, Pal.tint(Pal.AIR, 0.6, 1.3))
 	ci.draw_rect(r, Pal.tint(Pal.AIR, 0.18), false, 1.0)
 	ci.draw_string(font_b, r.position + Vector2(8, 18), game.txt("dk_buffer"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Pal.tint(Pal.AIR, 0.75, 1.1))
 
@@ -1147,7 +1536,7 @@ func _wanted(id: String) -> bool:
 	var b = game.tools.held_body
 	if b == null or not is_instance_valid(b) or game.hud == null:
 		return false
-	return game.hud._zone_for(b) == id
+	return Dock.for_load(game.hud._zone_for(b),b,false) == id
 
 
 func _mouth_batched(id: String, node: Node2D) -> void:
@@ -1173,16 +1562,16 @@ func _mouth(id: String, ci) -> void:
 	if want:
 		var reach: float = (SCRAP_FIELD if id == "metal" else FIELD) * M
 		var pulse := 0.5 + 0.5 * sin(t * 4.0)
-		ci.draw_circle(c, reach, zone_col(id, 0.035 + 0.025 * pulse))
+		FastDraw.circle(ci, c, reach, zone_col(id, 0.035 + 0.025 * pulse))
 		var n := 48
 		for i in n:
 			if i % 2 == 0:
-				ci.draw_arc(c, reach, TAU * i / n + t * 0.2, TAU * (i + 1) / n + t * 0.2, 4, zone_col(id, 0.55), 2.0, true)
+				FastDraw.arc(ci, c, reach, TAU * i / n + t * 0.2, TAU * (i + 1) / n + t * 0.2, 4, zone_col(id, 0.55), 2.0, true)
 	# the housing: a funnel from a wide lip down to a narrow throat
 	var lip := hw + 26.0
-	var throat_w := hw * 0.55
+	var throat_w := hw * (0.94 if id == "equip_bulk" else 0.55)
 	var hous := PackedVector2Array([c + side * lip, c - side * lip, c - side * throat_w - f * depth, c + side * throat_w - f * depth])
-	ci.draw_colored_polygon(hous, Color(0.05, 0.053, 0.06))
+	FastDraw.poly(ci, hous, Color(0.05, 0.053, 0.06))
 	# depth: bands that get darker toward the throat
 	for i in 5:
 		var e := (i + 1) / 6.0
@@ -1190,7 +1579,7 @@ func _mouth(id: String, ci) -> void:
 		ci.draw_line(c + side * wl - f * depth * e, c - side * wl - f * depth * e, zone_col(id, 0.05 + 0.1 * st.glow + 0.25 * st.eat * (1.0 - e)), 1.0)
 	var outline := hous.duplicate()
 	outline.append(hous[0])
-	ci.draw_polyline(outline, col, 2.0, true)
+	FastDraw.polyline(ci, outline, col, 2.0, true)
 	# the lip: a heavy rim with lamps that chase inward while it takes something in
 	ci.draw_line(c + side * (lip + 8), c - side * (lip + 8), col, 4.0)
 	var lamps := 7
@@ -1202,9 +1591,19 @@ func _mouth(id: String, ci) -> void:
 			on = 0.35 + 0.65 * maxf(0.0, sin(t * 10.0 - absf(u) * 4.0))
 		elif want:
 			on = 0.4 + 0.4 * sin(t * 4.0)
-		ci.draw_circle(p, 2.6, zone_col(id, on, 1.3))
+		FastDraw.circle(ci, p, 2.6, zone_col(id, on, 1.3))
 	match kind(id):
 		"equip":
+			if id == "equip_bulk":
+				# An open receiving rack, visibly clear of the structural boom.
+				# Parallel guides retain the assembly's width through the cradle.
+				for s in [-1.0,1.0]:
+					var outer: Vector2 = c+side*s*(lip+10.0)
+					ci.draw_line(outer+f*44.0,outer-f*(depth+18.0),Pal.ink(0.55),4.0)
+					for i in 5:
+						var roller: Vector2 = outer-f*(i*depth/4.0)
+						FastDraw.circle(ci, roller,5.0,Pal.ink(0.6))
+				ci.draw_line(c+side*(lip+10)-f*(depth+18),c-side*(lip+10)-f*(depth+18),Pal.ink(0.55),4.0)
 			# the trolley it hangs from on the rail, wheels turning while it moves
 			var ty := RAIL_Y * M + 4.0
 			var moving: bool = equip_goal.has(id) and equip_x.has(id) and absf(equip_x[id] - equip_goal[id]) > 0.001
@@ -1212,19 +1611,19 @@ func _mouth(id: String, ci) -> void:
 			ci.draw_rect(Rect2(Vector2(c.x - 0.75 * M, ty), Vector2(1.5 * M, 10)), col, false, 1.4)
 			for wx in [-0.5, 0.5]:
 				var wc := Vector2(c.x + wx * M, ty)
-				ci.draw_circle(wc, 5.0, Color(0.05, 0.053, 0.06))
-				ci.draw_arc(wc, 5.0, 0.0, TAU, 12, col, 1.4, true)
+				FastDraw.circle(ci, wc, 5.0, Color(0.05, 0.053, 0.06))
+				FastDraw.arc(ci, wc, 5.0, 0.0, TAU, 12, col, 1.4, true)
 				var sp := c.x / 5.0
 				ci.draw_line(wc, wc + Vector2(cos(sp), sin(sp)) * 4.0, col, 1.2)
 			if moving:
-				ci.draw_circle(Vector2(c.x, ty + 5), 2.6, Pal.heat(0.6 + 0.4 * sin(t * 12.0), 1.6))
+				FastDraw.circle(ci, Vector2(c.x, ty + 5), 2.6, Pal.heat(0.6 + 0.4 * sin(t * 12.0), 1.6))
 			# padded cradle arms either side, guide rails down the throat
 			for s in [-1.0, 1.0]:
 				var a0: Vector2 = c + side * s * (lip + 4.0)
 				var a1: Vector2 = a0 + f * 26.0 - side * s * 10.0
 				ci.draw_line(a0, a1, col, 3.0, true)
-				ci.draw_circle(a1, 5.0, Color(0.05, 0.053, 0.06))
-				ci.draw_arc(a1, 5.0, 0.0, TAU, 14, col, 1.6, true)
+				FastDraw.circle(ci, a1, 5.0, Color(0.05, 0.053, 0.06))
+				FastDraw.arc(ci, a1, 5.0, 0.0, TAU, 14, col, 1.6, true)
 				ci.draw_line(c + side * s * hw * 0.5, c + side * s * throat_w * 0.6 - f * depth * 0.9, Pal.ink(0.25), 1.2)
 			_equip_detail(id, c, f, side, lip, throat_w, depth, st, ci)
 		"metal":
@@ -1251,10 +1650,13 @@ func _mouth(id: String, ci) -> void:
 
 # the sign beside a mouth: an icon, the name, what goes in, and a status lamp
 func _sign(id: String, c: Vector2, f: Vector2, side: Vector2, lip: float, st: Dictionary, ci) -> void:
-	var sz := Vector2(262, 66)
+	# 80 号: while the first-ship guide works inside the hull, the big mouth signs keep out of the view
+	if game != null and game.coach_on() and not game.coach.mouth_signs():
+		return
+	var sz := Vector2(350 if id == "equip_bulk" else 262, 66)
 	# beside the mouth, on the side with room (the hazard bay is at the berth's end)
 	# the hazard bay sits at the berth's end: its sign goes straight above it
-	var above := id == "hazard"
+	var above := id in ["hazard", "equip_bulk"]
 	var at: Vector2 = (c + Vector2(-sz.x * 0.5, -2.3 * Geom.M - sz.y)) if above else (c + Vector2(lip + 40.0, -sz.y * 0.5) + f * 1.2 * Geom.M)
 	var r := Rect2(at, sz)
 	ci.draw_rect(r, Color(0.035, 0.037, 0.042, 0.94))
@@ -1265,8 +1667,10 @@ func _sign(id: String, c: Vector2, f: Vector2, side: Vector2, lip: float, st: Di
 	else:
 		ci.draw_line(Vector2(r.position.x, r.get_center().y), c + Vector2(lip + 8.0, 0), zone_col(id, 0.35), 1.0)
 	_icon(id, r.position + Vector2(30, 33), ci)
-	ci.draw_string(font_b, r.position + Vector2(58, 28), game.txt("zone_" + kind(id)), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Pal.ink(0.95))
-	ci.draw_string(font, r.position + Vector2(58, 50), game.txt("zone_" + kind(id) + "_d"), HORIZONTAL_ALIGNMENT_LEFT, sz.x - 66, 13, Pal.ink(0.6))
+	var label := "zone_equip_bulk" if id == "equip_bulk" else "zone_"+kind(id)
+	ci.draw_string(font_b, r.position + Vector2(58, 28), game.txt(label), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Pal.ink(0.95))
+	var description := "zone_equip_side_d" if id == "equip_bulk" and f == Vector2.LEFT else label+"_d"
+	ci.draw_string(font, r.position + Vector2(58, 50), ("%.1f m · " % ZONES[id].w if id == "equip_bulk" else "")+game.txt(description), HORIZONTAL_ALIGNMENT_LEFT, sz.x - 66, 13, Pal.ink(0.6))
 	# status
 	var key := "dk_ready"
 	var lc := Pal.tint(Pal.FLUID, 0.9, 1.3)
@@ -1277,7 +1681,7 @@ func _sign(id: String, c: Vector2, f: Vector2, side: Vector2, lip: float, st: Di
 		key = "dk_taking"
 		lc = Pal.ink(0.6 + 0.4 * sin(t * 12.0), 1.4)
 	var sw := font.get_string_size(game.txt(key), HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-	ci.draw_circle(Vector2(r.end.x - 14, r.position.y + 14), 4.0, lc)
+	FastDraw.circle(ci, Vector2(r.end.x - 14, r.position.y + 14), 4.0, lc)
 	ci.draw_string(font, Vector2(r.end.x - 24 - sw, r.position.y + 18), game.txt(key), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.6))
 
 
@@ -1287,16 +1691,16 @@ func _icon(id: String, p: Vector2, ci) -> void:
 		"equip":
 			# a crate with a check
 			ci.draw_rect(Rect2(p - Vector2(13, 11), Vector2(26, 22)), col, false, 1.8)
-			ci.draw_polyline(PackedVector2Array([p + Vector2(-6, 0), p + Vector2(-1, 5), p + Vector2(7, -5)]), col, 2.0, true)
+			FastDraw.polyline(ci, PackedVector2Array([p + Vector2(-6, 0), p + Vector2(-1, 5), p + Vector2(7, -5)]), col, 2.0, true)
 		"metal":
 			# a flame over a hopper
-			ci.draw_polyline(PackedVector2Array([p + Vector2(-12, 4), p + Vector2(-6, 13), p + Vector2(6, 13), p + Vector2(12, 4)]), col, 1.8, true)
-			ci.draw_colored_polygon(PackedVector2Array([p + Vector2(0, -14), p + Vector2(7, -2), p + Vector2(3, 4), p + Vector2(-3, 4), p + Vector2(-7, -2)]), col)
+			FastDraw.polyline(ci, PackedVector2Array([p + Vector2(-12, 4), p + Vector2(-6, 13), p + Vector2(6, 13), p + Vector2(12, 4)]), col, 1.8, true)
+			FastDraw.poly(ci, PackedVector2Array([p + Vector2(0, -14), p + Vector2(7, -2), p + Vector2(3, 4), p + Vector2(-3, 4), p + Vector2(-7, -2)]), col)
 		"hazard":
 			# a warning diamond
-			ci.draw_polyline(PackedVector2Array([p + Vector2(0, -14), p + Vector2(14, 0), p + Vector2(0, 14), p + Vector2(-14, 0), p + Vector2(0, -14)]), col, 1.8, true)
+			FastDraw.polyline(ci, PackedVector2Array([p + Vector2(0, -14), p + Vector2(14, 0), p + Vector2(0, 14), p + Vector2(-14, 0), p + Vector2(0, -14)]), col, 1.8, true)
 			ci.draw_line(p + Vector2(0, -6), p + Vector2(0, 3), col, 2.4)
-			ci.draw_circle(p + Vector2(0, 8), 1.8, col)
+			FastDraw.circle(ci, p + Vector2(0, 8), 1.8, col)
 
 
 # the scrap trough: a recessed channel along the floor, a belt of slats running
@@ -1321,6 +1725,10 @@ func _trough_live(cb) -> void:
 		cb.draw_texture_rect(game.fx.glow_tex, Rect2(Vector2(suck_x - 1.6 * M, y0 - sh * 0.8), Vector2(3.2 * M, sh)), false, Pal.heat(0.22 * suck_glow, 1.5))
 	# chevrons, belt slats and rail arrows: one batched call each (they were
 	# ~200 calls a frame)
+	# 60 FPS (2026-10-27): pulled right out they are under a third of a pixel wide and the whole
+	# belt is in view (hundreds of them, 0.9 ms a frame): not drawn
+	if game != null and game.cam_zoom() < 0.15:
+		return
 	var vis := _vis_x()
 	var fall := fposmod(t * 0.9, 1.0)
 	var chev := PackedVector2Array()
@@ -1450,7 +1858,7 @@ func _stripes(r: Rect2, a: float = 0.55) -> void:
 			var pts := PackedVector2Array([Vector2(x, r.end.y), Vector2(x + r.size.y, r.position.y), Vector2(x + r.size.y + 10, r.position.y), Vector2(x + 10, r.end.y)])
 			for j in pts.size():
 				pts[j] = Vector2(clampf(pts[j].x, r.position.x, r.end.x), pts[j].y)
-			ci.draw_colored_polygon(pts, Pal.heat(a, 1.0))
+			FastDraw.poly(ci, pts, Pal.heat(a, 1.0))
 		x += 10
 		i += 1
 
@@ -1489,15 +1897,38 @@ const FLOODS := [9.5, 19.0]      # m along the boom: lamps that light the ship f
 func _draw_lights() -> void:
 	var M := Geom.M
 	var tex: Texture2D = game.fx.glow_tex
+	# the run-down berth (G2): with the lighting and power unrepaired only one floodlight
+	# burns, dim and unsteady, and the deck lamps are sparse
+	var lit: bool = game == null or game.has_upgrade("lights")
+	var dim := 1.0 if lit else 0.4 + 0.12 * sin(t * 23.0) + 0.08 * sin(t * 7.3)
 	# floodlights: a soft cone down onto the ship, a bright head on the boom
-	for fx_ in FLOODS:
+	for fi in FLOODS.size():
+		if not lit and fi > 0:
+			continue
+		var fx_: float = FLOODS[fi]
 		var hp := Vector2(fx_, RAIL_Y + 0.1) * M
-		# the cone fades out downwards (bright at the lamp, nothing by the hull's far side)
-		var cone := PackedVector2Array([hp + Vector2(-10, 0), hp + Vector2(10, 0), hp + Vector2(3.2 * M, 8.0 * M), hp + Vector2(-3.2 * M, 8.0 * M)])
-		var cc := PackedColorArray([Pal.ink(0.045, 1.2), Pal.ink(0.045, 1.2), Pal.ink(0.0), Pal.ink(0.0)])
-		_ab.draw_polygon(cone, cc)
-		_ab.draw_texture_rect(tex, Rect2(hp - Vector2(26, 14), Vector2(52, 28)), false, Pal.ink(0.5, 1.6))
-		_ab.draw_circle(hp, 3.0, Pal.ink(0.95, 2.0))
+		# the cone fades out away from the lamp (bright at the lamp, nothing by the hull's far
+		# side). 44 号 (player 2026-10-25: "why light an empty spot?"): in a course it swings to
+		# the step's target, and with no target within reach below the boom it stays dark
+		var aim := Vector2(0, 8.0 * M)
+		var lit_cone := true
+		if game != null and game.tutorial != null and not game.tutorial.done:
+			var tp: Vector2 = game.tutorial.target_pos()
+			if tp == Vector2.INF or tp.y < hp.y or tp.distance_to(hp) > 30.0 * M:
+				lit_cone = false
+			else:
+				aim = (tp - hp).normalized() * minf(tp.distance_to(hp) + 2.0 * M, 14.0 * M)
+		if lit_cone:
+			var side := aim.normalized().orthogonal()
+			var cone := PackedVector2Array([hp - side * 10.0, hp + side * 10.0, hp + aim + side * 3.2 * M, hp + aim - side * 3.2 * M])
+			var cc := PackedColorArray([Pal.ink(0.045 * dim, 1.2), Pal.ink(0.045 * dim, 1.2), Pal.ink(0.0), Pal.ink(0.0)])
+			_ab.draw_polygon(cone, cc)
+		_ab.draw_texture_rect(tex, Rect2(hp - Vector2(26, 14), Vector2(52, 28)), false, Pal.ink(0.5 * dim, 1.6))
+		FastDraw.circle(_ab, hp, 3.0, Pal.ink(0.95 * dim, 2.0))
+	if not lit and not WorksPlan.off("lights"):
+		# the dead lamp's dark head
+		var hp2 := Vector2(FLOODS[1], RAIL_Y + 0.1) * M
+		FastDraw.circle(_ab, hp2, 3.0, Pal.ink(0.12))
 	# marker lights along the deck edge and under the boom, chasing slowly toward the furnace
 	var mx: float = zpos("metal").x / M
 	var vis := _vis_x() / M
@@ -1508,8 +1939,8 @@ func _draw_lights() -> void:
 	while x < minf(FLOOR_X1 - 0.5, vis.y):
 		var ph := fposmod(t * 0.8 - absf(x - mx) * 0.08, 1.0)
 		var a := 0.15 + 0.55 * pow(1.0 - ph, 6.0)
-		_lamp(pts, cols, idx, Vector2(x, FLOOR_Y) * M + Vector2(0, -2), 2.2, Pal.heat(a, 1.6))
-		x += 2.0
+		_lamp(pts, cols, idx, Vector2(x, FLOOR_Y) * M + Vector2(0, -2), 2.2, Pal.heat(a * dim, 1.6))
+		x += 2.0 if lit else 6.0
 	x = maxf(TOWER_X + 1.0, TOWER_X + 1.0 + floorf((vis.x - TOWER_X - 1.0) / 3.0) * 3.0)
 	while x < minf(ARM_X1 - 0.5, vis.y):
 		var a2 := 0.12 + 0.12 * sin(t * 1.5 + x)
@@ -1534,7 +1965,7 @@ func _draw_add_body() -> void:
 	var blink := 0.5 + 0.5 * sin(t * 2.4)
 	for bp in [Vector2(ARM_X1, RAIL_Y - 0.3), Vector2(FLOOR_X1, FLOOR_Y + 0.3)]:
 		_ab.draw_texture_rect(tex, Rect2(bp * M - Vector2(18, 18), Vector2(36, 36)), false, Pal.heat(0.25 + 0.6 * blink, 1.8))
-		_ab.draw_circle(bp * M, 2.5, Pal.heat(0.6 + 0.4 * blink, 2.0))
+		FastDraw.circle(_ab, bp * M, 2.5, Pal.heat(0.6 + 0.4 * blink, 2.0))
 	var fr := Rect2((BOUNDS.position + Vector2(0.0, 2.0)) * M, (BOUNDS.size - Vector2(2.5, 2.0)) * M)
 	var fb := 0.5 + 0.5 * sin(t * 1.3 + 1.0)
 	for cp in [fr.position, Vector2(fr.end.x, fr.position.y), Vector2(fr.end.x, fr.end.y)]:
@@ -1565,24 +1996,37 @@ func _draw_add_body() -> void:
 		# blows backwards, slowing down is a reverse burn): the main engine at the
 		# back pushes the ship in, the forward-facing retros either side of the
 		# bow stop it, and then pull the tug away
-		var ax := tug_accel()
-		var fl := 0.8 + 0.2 * sin(t * 50.0)
+		var acc := tug_accel()
+		var ax := acc.x
+		# drawn larger when the camera is pulled back (the route round the station is shot at 0.22)
+		var fl := (0.8 + 0.2 * sin(t * 50.0)) * clampf(0.5 / maxf(game.cam_zoom(), 0.05), 1.0, 2.4)
 		var main := clampf(-ax / 2400.0, 0.0, 1.0)
 		var retro := clampf(ax / 2400.0, 0.0, 1.0)
+		# user 2026-10-28: up and down the same, like the drone — to go down (or stop going up)
+		# the dorsal thrusters blow upwards; to go up (or stop going down) the ventral ones blow down
+		for s: float in [-1.0, 1.0]:
+			var vk := clampf(-s * acc.y / 2400.0, 0.0, 1.0)
+			if vk > 0.03:
+				for xm: float in [1.6, 4.4]:
+					var vb := tug + Vector2(xm * Geom.M, 1.2 * Geom.M * s)
+					var vl := 70.0 * fl * (0.4 + 0.6 * vk)
+					var vw := 8.0 * fl
+					FastDraw.poly(_ab, PackedVector2Array([vb + Vector2(-vw, 0), vb + Vector2(0, vl * s), vb + Vector2(vw, 0)]), Pal.heat(0.6 * vk, 1.8))
+					_ab.draw_texture_rect(tex, Rect2(vb - Vector2(26, 26) * fl, Vector2(52, 52) * fl), false, Pal.heat(0.45 * vk, 1.6))
 		if main > 0.03:
 			var base := tug + Vector2(6.0 * Geom.M, 0)
-			_ab.draw_colored_polygon(PackedVector2Array([base + Vector2(0, -16), base + Vector2(90 * fl * (0.4 + 0.6 * main), 0), base + Vector2(0, 16)]), Pal.heat(0.6 * main, 1.8))
+			FastDraw.poly(_ab, PackedVector2Array([base + Vector2(0, -16), base + Vector2(90 * fl * (0.4 + 0.6 * main), 0), base + Vector2(0, 16)]), Pal.heat(0.6 * main, 1.8))
 			_ab.draw_texture_rect(tex, Rect2(base - Vector2(40, 40), Vector2(80, 80)), false, Pal.heat(0.5 * main, 1.6))
 		if retro > 0.03:
 			for s: float in [-1.0, 1.0]:
 				var rb := tug + Vector2(1.2 * Geom.M, 1.0 * Geom.M * s)
 				var ln := 60.0 * fl * (0.4 + 0.6 * retro)
-				_ab.draw_colored_polygon(PackedVector2Array([rb + Vector2(0, -7), rb + Vector2(-ln, 3.0 * s), rb + Vector2(0, 7)]), Pal.heat(0.6 * retro, 1.8))
+				FastDraw.poly(_ab, PackedVector2Array([rb + Vector2(0, -7), rb + Vector2(-ln, 3.0 * s), rb + Vector2(0, 7)]), Pal.heat(0.6 * retro, 1.8))
 				_ab.draw_texture_rect(tex, Rect2(rb - Vector2(24, 24), Vector2(48, 48)), false, Pal.heat(0.45 * retro, 1.6))
 	for d in debris:
 		var tr: Array = d[7]
 		if tr.size() >= 2:
-			_ab.draw_polyline(PackedVector2Array(tr), Pal.ink(0.25, 1.2), 2.0, true)
+			FastDraw.polyline(_ab, PackedVector2Array(tr), Pal.ink(0.25, 1.2), 2.0, true)
 
 
 # ---------------------------------------------------------------- the furnace below the mouth
@@ -1608,6 +2052,7 @@ func _draw_furnace() -> void:
 	var tx := func(k: String) -> String: return Txt.t(k)
 	var cb = CanvasBatch.new(furnace_node)
 	cb.no_text = true
+	cb.pad = 2.0 / maxf(z, 0.02)
 	var t0 := Time.get_ticks_usec()
 	smelter.draw(cb, FLOOR_Y, metal_x, font, font_b, z, tx)
 	var t1 := Time.get_ticks_usec()
@@ -1620,8 +2065,14 @@ func _draw_furnace() -> void:
 	prof_draw[3] += 1
 
 
+# user 2026-10-26: "那几个炉子的图片，就不用介绍了，完全没必要，直接去掉" — the machines' written
+# explanations round the furnace and the scrap line are not drawn (the mouth's sign and the melt
+# strip under it stay)
+const FURNACE_LABELS := false
+
+
 func _draw_furnace_text() -> void:
-	if not _furnace_seen():
+	if not FURNACE_LABELS or not _furnace_seen():
 		return
 	var z: float = game.cam_zoom() if game != null else 1.0
 	var tx := func(k: String) -> String: return Txt.t(k)
@@ -1664,13 +2115,13 @@ func _equip_detail(id: String, c: Vector2, f: Vector2, side: Vector2, lip: float
 		var a0: Vector2 = c + side * s * (lip + 4.0)
 		var a1: Vector2 = a0 + f * 26.0 - side * s * 10.0
 		var bag := 7.0 + (2.0 if on else 0.0)
-		ci.draw_circle(a1 - side * s * 4.0, bag, Color(0.32, 0.18, 0.1, 0.85))
-		ci.draw_arc(a1 - side * s * 4.0, bag, 0.0, TAU, 14, Pal.heat(0.6, 1.1), 1.0, true)
+		FastDraw.circle(ci, a1 - side * s * 4.0, bag, Color(0.32, 0.18, 0.1, 0.85))
+		FastDraw.arc(ci, a1 - side * s * 4.0, bag, 0.0, TAU, 14, Pal.heat(0.6, 1.1), 1.0, true)
 	# the grounding clamp on its spring arm, touching first
 	var g0: Vector2 = c + side * (lip * 0.8) - f * 6.0
 	var g1: Vector2 = g0 + f * (18.0 if on else 6.0) - side * 8.0
 	ci.draw_line(g0, g1, Pal.tint(Pal.VOLT, 0.8, 1.1), 1.6)
-	ci.draw_circle(g1, 2.5, Pal.tint(Pal.VOLT, 0.9, 1.3))
+	FastDraw.circle(ci, g1, 2.5, Pal.tint(Pal.VOLT, 0.9, 1.3))
 	# the scan arch across the funnel: two emitter heads, the laser fan, the X-ray line sweeping
 	var ad := depth * 0.42
 	var aw := lerpf(lip, throat_w, 0.42)
@@ -1708,7 +2159,7 @@ func _equip_detail(id: String, c: Vector2, f: Vector2, side: Vector2, lip: float
 		x += 8.0
 	ci.draw_multiline(rk, Pal.ink(0.35), 1.0)
 	var pin := Vector2(c.x + 0.55 * M, ry - 3.0)
-	ci.draw_arc(pin, 5.0, 0.0, TAU, 10, col, 1.2)
+	FastDraw.arc(ci, pin, 5.0, 0.0, TAU, 10, col, 1.2)
 	ci.draw_line(pin, pin + Vector2.from_angle(c.x / 6.0) * 5.0, col, 1.0)
 	# the drag chain feeding the trolley from the rail's near end
 	var anchor := Vector2((EQUIP_RAIL_X0 - 1.0) * M, ry - 14.0)
@@ -1718,17 +2169,17 @@ func _equip_detail(id: String, c: Vector2, f: Vector2, side: Vector2, lip: float
 		var a := -PI * 0.5 + PI * k / 6.0
 		chain.append(Vector2(mid_x, anchor.y + 5.0) + Vector2(cos(a), sin(a)) * 5.0 * Vector2(-1, 1))
 	chain.append(Vector2(c.x, anchor.y + 10.0))
-	ci.draw_polyline(chain, Pal.ink(0.3), 2.0)
+	FastDraw.polyline(ci, chain, Pal.ink(0.3), 2.0)
 	# the labels, when close enough to read
 	var za: float = clampf((game.cam_zoom() - 0.8) / 0.3, 0.0, 1.0) if game != null else 0.0
 	if za > 0.01:
 		var lc2 := Pal.ink(0.55 * za)
-		ci.draw_string(font, e1 - side * 14.0 + Vector2(0, -2), Txt.t("eq_scan"), HORIZONTAL_ALIGNMENT_RIGHT if side.x > 0 else HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
-		ci.draw_string(font, Vector2(c.x + lip + 16.0, wp.y + 28.0), Txt.t("eq_weigh"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
-		ci.draw_string(font, g1 + Vector2(6, 12), Txt.t("eq_ground"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
-		ci.draw_string(font, Vector2(c.x + throat_w * 0.5 + 6.0, top.y + 14.0), Txt.t("eq_lift"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
-		ci.draw_string(font, c + side * (lip + 16.0) + f * 40.0, Txt.t("eq_bag"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
-		ci.draw_string(font, Vector2(c.x - 1.5 * M - 150.0, ry - 10.0), Txt.t("eq_rack"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
+		_note(ci, font, e1 - side * 14.0 + Vector2(0, -2), Txt.t("eq_scan"), HORIZONTAL_ALIGNMENT_RIGHT if side.x > 0 else HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
+		_note(ci, font, Vector2(c.x + lip + 16.0, wp.y + 28.0), Txt.t("eq_weigh"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
+		_note(ci, font, g1 + Vector2(6, 12), Txt.t("eq_ground"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
+		_note(ci, font, Vector2(c.x + throat_w * 0.5 + 6.0, top.y + 14.0), Txt.t("eq_lift"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
+		_note(ci, font, c + side * (lip + 16.0) + f * 40.0, Txt.t("eq_bag"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
+		_note(ci, font, Vector2(c.x - 1.5 * M - 150.0, ry - 10.0), Txt.t("eq_rack"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
 
 
 # ---------------------------------------------------------------- the debris net's works
@@ -1793,7 +2244,7 @@ func _net_detail(ci, fixed: bool = false) -> void:
 		ci.draw_rect(Rect2(foot - Vector2(4, 2), Vector2(8, 4)), Pal.tint(Pal.FLUID, 0.6, 1.1))
 	# the tractor emitters on the ring's ends
 	for e in [bowl[0], bowl[16]]:
-		ci.draw_circle(e, 5.0, Color(0.08, 0.083, 0.095))
+		FastDraw.circle(ci, e, 5.0, Color(0.08, 0.083, 0.095))
 	# the chute through the floor, the baler's box, the belt to the furnace, the labels
 	var bowl_b := nc + Vector2(0, 60.0)
 	var bx0s := (NET.x - 1.2) * M
@@ -1807,9 +2258,9 @@ func _net_detail(ci, fixed: bool = false) -> void:
 	ci.draw_rect(Rect2(Vector2(bx0s - 1.6 * M, (by0s + by1s) * 0.5 - 8.0), Vector2(0.7 * M, 16.0)), Color(0.08, 0.083, 0.095))
 	ci.draw_line(Vector2(bx1s, (F + 0.8) * M + 8.0), Vector2((metal_home - 0.5) * M, (F + 0.8) * M + 8.0), Pal.ink(0.3), 1.2)
 	var lc0 := Pal.ink(0.5)
-	ci.draw_string(font, bowl[16] + Vector2(10, -6), Txt.t("net_mesh"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc0)
-	ci.draw_string(font, bowl[16] + Vector2(10, 8), Txt.t("net_ring"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc0)
-	ci.draw_string(font, bowl[0] + Vector2(-110, -6), Txt.t("net_emit"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc0)
+	_note(ci, font, bowl[16] + Vector2(10, -6), Txt.t("net_mesh"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc0)
+	_note(ci, font, bowl[16] + Vector2(10, 8), Txt.t("net_ring"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc0)
+	_note(ci, font, bowl[0] + Vector2(-110, -6), Txt.t("net_emit"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc0)
 
 
 # the net's moving parts: the load reading, the dump gate, the baler's ram, the bale on its belt
@@ -1818,7 +2269,7 @@ func _net_moving(ci, nc: Vector2, F: float) -> void:
 	var za: float = clampf((game.cam_zoom() - 0.8) / 0.3, 0.0, 1.0) if game != null else 0.0
 	var blink := 0.5 + 0.5 * sin(t * 3.0)
 	for e in [nc + Vector2(cos(PI * 1.05) * 78.0, -sin(PI * 1.05) * 30.0 + 30.0), nc + Vector2(cos(PI * 1.95) * 78.0, -sin(PI * 1.95) * 30.0 + 30.0)]:
-		ci.draw_circle(e, 2.6, Pal.tint(Pal.AIR, 0.5 + 0.4 * blink, 1.5))
+		FastDraw.circle(ci, e, 2.6, Pal.tint(Pal.AIR, 0.5 + 0.4 * blink, 1.5))
 	# the load reading
 	ci.draw_string(font, Vector2(nc.x - 2.4 * M - 150.0, (F + 1.35) * M), Txt.t("net_cell") % [net_load, NET_DUMP_AT], HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Pal.tint(Pal.FLUID, 0.85, 1.1))
 	# the dump gate at the bottom, opening when the load is reached

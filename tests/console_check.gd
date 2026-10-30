@@ -47,7 +47,11 @@ func _run() -> void:
 	root.add_child(term)
 	await _frames(3)
 	check(term.next_job.get("id", "") == "TUG-001" and term.tab == 0, "the terminal shows it as the next job, on the market page")
+	# G2 (2026-10-21): the run-down berth's hauler needs its lights repaired first
+	check(Repair.fix("lights", false) == "", "the berth lights repaired first (the hauler's prerequisite)")
 	term.buy(term.BERTH.filter(func(b): return b[0] == "hauler")[0])
+	# 65 号: an order starts the crew; the test lets it finish
+	Works.finish()
 	check(Career.data.upgrades.has("hauler"), "bought before it starts: the basic hauler")
 	term.act()
 	await _frames(2)
@@ -63,6 +67,7 @@ func _run() -> void:
 	root.add_child(g)
 	await _frames(5)
 	check(g.consoles != null and g.hauler != null and Consoles.SPOTS.size() == 1, "one computer in the berth (and the hauler bought at the terminal is here)")
+	check(g.dock.ships != null and g.dock.ships.alongside(), "in a contract the freighter and the barge lie alongside")
 	g.drone.global_position = Consoles.centre(0) + Vector2(60, 0)
 	await _frames(2)
 	check(g.consoles.near() == "terminal", "the drone at it: the berth terminal")

@@ -16,6 +16,10 @@ var prev_v := Vector2.ZERO     # its motion at the last upkeep (game.gd: how har
 var prev_w := 0.0
 var tethered := false
 var capture = null          # recovery zone that is swallowing this body
+var scrap_at := -100000       # dock.gd: when it last looked at whether this is plain scrap (ms)
+var scrap_is := false
+var rad_at := -100000         # dock._body_radius: when the reach radius was last worked out
+var rad_v := 0.0
 var capture_t := 0.0
 const INSET := 1.0            # px: collision sits this far inside the outline
 const MAX_SPEED := 900.0      # px/s for anything loose
@@ -54,6 +58,7 @@ var settle := 0.0
 var cols := {}              # piece id -> Array of CollisionPolygon2D
 var age := 0.0
 var rejected_t := 0.0
+var clearance_bounds := Rect2() # body-local broad phase for hauling/clearance
 
 
 func _init() -> void:
@@ -63,6 +68,8 @@ func _init() -> void:
 	angular_damp_mode = RigidBody2D.DAMP_MODE_REPLACE
 	linear_damp = 0.0
 	angular_damp = 0.02
+	# never asleep, always with continuous collision: a body placed by code (a load, the arm) must
+	# be where it was put, and overlaps must come apart gently (60 FPS work tried both: no)
 	can_sleep = false
 	contact_monitor = true
 	max_contacts_reported = 6
@@ -102,9 +109,14 @@ func total_mass() -> float:
 
 
 func refresh() -> void:
+	rad_at = -100000
 	var m := 0.0
 	var com := Vector2.ZERO
+	var first := true
 	for p in pieces:
+		var bounds := Geom.bbox(p.poly)
+		clearance_bounds = bounds if first else clearance_bounds.merge(bounds)
+		first = false
 		var pm: float = maxf(0.01, p.mass + world.content_mass(p))
 		m += pm
 		com += Geom.centroid(p.poly) * pm
@@ -216,6 +228,7 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 
 
 func _physics_process(dt: float) -> void:
+	if get_meta("arm_parked",false): return
 	_ghost_step(dt)
 	# The solver publishes its result before scene physics callbacks. Repair an
 	# invalid result before the dock, tools and FX read the body this step.
@@ -255,11 +268,19 @@ func _ghost_step(dt: float) -> void:
 func _process(_dt: float) -> void:
 	var hot := false
 	for p in pieces:
-		if not p.heat.is_empty():
+		if not p.heat.is_empty() or p.kerf_dt > HOT_GLOW:
 			hot = true
 			break
 	if hot:
 		heat_view.queue_redraw()
+	else:
+		# 60 FPS: a cold piece needs no frame of its own; a cut wakes it again (world.gd)
+		heat_view.queue_redraw()
+		set_process(false)
+
+
+# 87-2: a fragment the cut left hot glows dull red all over as it drifts, fading as it cools
+const HOT_GLOW := 150.0
 
 
 func _draw_view() -> void:
@@ -294,4 +315,7 @@ func _draw_ghost() -> void:
 
 func _draw_heat() -> void:
 	for p in pieces:
+		if p.kerf_dt > HOT_GLOW and p.poly.size() >= 3:
+			var k := clampf((p.kerf_dt - HOT_GLOW) / 600.0, 0.0, 1.0)
+			heat_view.draw_colored_polygon(p.poly, Pal.heat(0.12 + 0.3 * k, 1.0 + 1.2 * k))
 		world.draw_heat(heat_view, p)

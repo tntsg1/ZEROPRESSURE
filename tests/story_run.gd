@@ -18,6 +18,9 @@ var finished := false
 
 
 func _initialize() -> void:
+	# the story layer and its characters are off in the game (user 2026-10-26); this checks it still works
+	Story.ON = true
+	Radio.CHARACTERS = true
 	shots = "shots" in OS.get_cmdline_user_args()
 	Txt.test_zh = not "en" in OS.get_cmdline_user_args()
 	root.add_child(preload("res://tests/test_window.gd").new())

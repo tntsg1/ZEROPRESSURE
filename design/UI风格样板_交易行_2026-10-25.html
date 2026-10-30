@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UI 风格样板</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#050607;color:#dfe8ee;font:14px/1.5 "Microsoft YaHei","PingFang SC",sans-serif}
+header{padding:18px 24px;border-bottom:1px solid #1d2329;background:#0a0c0e;position:sticky;top:0;z-index:20;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+header h1{font-size:18px;margin:0 16px 0 0}
+header button{background:#11161a;color:#cfd8de;border:1px solid #2a333a;padding:8px 14px;cursor:pointer;font:inherit}
+header button.on{border-color:#ff7a2e;color:#fff}
+header .tip{color:#7d8b96;font-size:12px;margin-left:auto}
+.stage{display:none;padding:28px 16px 60px;max-width:1240px;margin:0 auto}
+.stage.on{display:block}
+.note{color:#8a98a3;margin:0 0 14px}
+
+/* ---------- shared skeleton ---------- */
+.ui{position:relative;overflow:hidden;min-height:560px;padding:18px;isolation:isolate}
+.bar{display:flex;align-items:center;gap:8px;margin-bottom:16px;position:relative;z-index:2}
+.title{font-size:20px;font-weight:700;margin-right:18px;letter-spacing:1px}
+.tab{padding:9px 18px;cursor:pointer;position:relative;transition:all .2s}
+.money{margin-left:auto;font-variant-numeric:tabular-nums}
+.body{display:flex;gap:16px;position:relative;z-index:2}
+.side{width:170px;display:flex;flex-direction:column;gap:8px}
+.cat{padding:10px 12px;cursor:pointer;transition:all .2s}
+.grid{flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.card{position:relative;padding:12px;cursor:pointer;transition:transform .15s ease, box-shadow .2s, border-color .2s;transform-style:preserve-3d;will-change:transform}
+.card .nm{font-size:13px;opacity:.8}
+.card svg{display:block;margin:6px auto;height:80px;width:100%}
+.card .sub{font-size:12px;opacity:.6}
+.card .pr{font-size:22px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.card .tag{position:absolute;top:10px;right:10px;font-size:11px;padding:1px 6px}
+.sell{margin-top:16px;display:flex;gap:16px;position:relative;z-index:2}
+.bars{flex:1;height:150px;display:flex;align-items:flex-end;gap:14px;padding:12px 16px}
+.bars i{flex:1;display:block;transform-origin:bottom;animation:grow 1s ease-out both}
+.bars i:nth-child(2){animation-delay:.1s}.bars i:nth-child(3){animation-delay:.2s}.bars i:nth-child(4){animation-delay:.3s}.bars i:nth-child(5){animation-delay:.4s}
+@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.form{width:300px;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;justify-content:space-between;padding:8px 10px}
+.go{padding:14px;text-align:center;font-size:18px;font-weight:700;cursor:pointer;transition:all .15s}
+.go:active{transform:scale(.97)}
+.cursorlight{position:absolute;inset:0;pointer-events:none;z-index:1;opacity:0;transition:opacity .3s}
+.ui:hover .cursorlight{opacity:1}
+.enter .card{animation:cardin .5s cubic-bezier(.2,.8,.2,1) both}
+.enter .card:nth-child(2){animation-delay:.06s}.enter .card:nth-child(3){animation-delay:.12s}.enter .card:nth-child(4){animation-delay:.18s}
+@keyframes cardin{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+
+/* ---------- A 工业全息 ---------- */
+.A{background:linear-gradient(180deg,#0d1114,#080a0c);border:1px solid #2b343b}
+.A::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(80,200,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(80,200,255,.05) 1px,transparent 1px);background-size:32px 32px;z-index:0}
+.A .cursorlight{background:radial-gradient(260px circle at var(--mx) var(--my),rgba(80,210,255,.13),transparent 70%)}
+.A .title{color:#e9f4fa}
+.A .title::before{content:"";display:inline-block;width:10px;height:10px;background:#ff7a2e;margin-right:10px;box-shadow:0 0 10px #ff7a2e}
+.A .tab{background:linear-gradient(180deg,#151b20,#0f1316);border:1px solid #2c363e;clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px);color:#9fb1bd}
+.A .tab:hover{color:#fff;border-color:#59d0ff;box-shadow:inset 0 0 16px rgba(89,208,255,.25)}
+.A .tab.on{color:#fff;background:linear-gradient(180deg,#22180f,#140e09);border-color:#ff7a2e;box-shadow:inset 0 -3px 0 #ff7a2e,0 0 18px rgba(255,122,46,.25)}
+.A .money{color:#59d0ff;text-shadow:0 0 10px rgba(89,208,255,.6)}
+.A .cat{background:#0f1417;border:1px solid #273038;border-left:3px solid #273038;color:#a9b8c2}
+.A .cat:hover,.A .cat.on{border-left-color:#59d0ff;color:#fff;background:linear-gradient(90deg,rgba(89,208,255,.14),transparent)}
+.A .card{background:linear-gradient(160deg,rgba(28,38,45,.92),rgba(12,16,19,.95));border:1px solid #2c3842;clip-path:polygon(14px 0,100% 0,100% calc(100% - 14px),calc(100% - 14px) 100%,0 100%,0 14px)}
+.A .card::after{content:"";position:absolute;left:0;right:0;top:-40%;height:40%;background:linear-gradient(180deg,transparent,rgba(89,208,255,.18),transparent);animation:scan 3.2s linear infinite;pointer-events:none}
+@keyframes scan{to{top:120%}}
+.A .card:hover{border-color:#59d0ff;box-shadow:0 0 0 1px #59d0ff inset,0 0 30px rgba(89,208,255,.25)}
+.A .card .pr{color:#ffd2b0;text-shadow:0 0 10px rgba(255,122,46,.5)}
+.A .card .tag{border:1px solid #ff7a2e;color:#ff9a5a;animation:blink 1.2s steps(2) infinite}
+@keyframes blink{50%{opacity:.35}}
+.A svg .ln{stroke:#9fe3ff;fill:none;stroke-width:1.5;filter:drop-shadow(0 0 4px #59d0ff)}
+.A svg .fl{fill:rgba(89,208,255,.08)}
+.A svg .hot{stroke:#ff7a2e;filter:drop-shadow(0 0 4px #ff7a2e)}
+.A .bars{background:#0a0e11;border:1px solid #26313a}
+.A .bars i{background:linear-gradient(180deg,#59d0ff,rgba(89,208,255,.15));box-shadow:0 0 12px rgba(89,208,255,.35)}
+.A .bars i.r{background:linear-gradient(180deg,#ff7a2e,rgba(255,122,46,.15));box-shadow:0 0 12px rgba(255,122,46,.4)}
+.A .row{background:#0f1417;border:1px solid #26313a}
+.A .go{background:linear-gradient(180deg,#ff8a3e,#d4561a);color:#140a04;clip-path:polygon(12px 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%,0 12px)}
+.A .go:hover{filter:brightness(1.15);box-shadow:0 0 30px rgba(255,122,46,.6)}
+.A .warn{height:6px;background:repeating-linear-gradient(135deg,#ff7a2e 0 10px,#111 10px 20px);margin-bottom:14px;opacity:.85;position:relative;z-index:2}
+
+/* ---------- B 纯全息 HUD ---------- */
+.B{background:radial-gradient(1200px 600px at 50% -10%,#0d2633,#03070a 60%);border:1px solid #0f2a36}
+.B::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(120,230,255,.04) 0 1px,transparent 1px 3px);z-index:0;animation:drift 8s linear infinite}
+@keyframes drift{to{background-position:0 60px}}
+.B .cursorlight{background:radial-gradient(220px circle at var(--mx) var(--my),rgba(120,240,255,.18),transparent 70%)}
+.B *{color:#9ff0ff}
+.B .title{text-shadow:0 0 12px #3fe0ff;letter-spacing:3px}
+.B .tab{border:1px solid rgba(120,240,255,.35);border-radius:2px;background:rgba(20,80,100,.12)}
+.B .tab:hover{background:rgba(60,200,240,.18);box-shadow:0 0 20px rgba(120,240,255,.35)}
+.B .tab.on{background:rgba(120,240,255,.18);box-shadow:0 0 24px rgba(120,240,255,.45);text-shadow:0 0 8px #9ff0ff}
+.B .money{text-shadow:0 0 12px #3fe0ff}
+.B .cat{border-left:2px solid rgba(120,240,255,.3)}
+.B .cat:hover,.B .cat.on{border-left-color:#9ff0ff;background:rgba(120,240,255,.1);text-shadow:0 0 8px #9ff0ff}
+.B .card{background:rgba(10,40,52,.35);border:1px solid rgba(120,240,255,.3);backdrop-filter:blur(4px)}
+.B .card::before,.B .card::after{content:"";position:absolute;width:14px;height:14px;border:2px solid #9ff0ff}
+.B .card::before{left:-1px;top:-1px;border-right:0;border-bottom:0}
+.B .card::after{right:-1px;bottom:-1px;border-left:0;border-top:0}
+.B .card:hover{box-shadow:0 0 40px rgba(120,240,255,.35),inset 0 0 30px rgba(120,240,255,.12)}
+.B .card .pr{text-shadow:0 0 14px #3fe0ff}
+.B .card .tag{border:1px solid #ffb35c;color:#ffb35c!important;text-shadow:0 0 8px #ffb35c}
+.B svg .ln{stroke:#9ff0ff;fill:none;stroke-width:1.2;filter:drop-shadow(0 0 6px #3fe0ff);stroke-dasharray:400;animation:draw 2.2s ease-out both}
+@keyframes draw{from{stroke-dashoffset:400}to{stroke-dashoffset:0}}
+.B svg .fl{fill:rgba(120,240,255,.06)}
+.B svg .hot{stroke:#ffb35c}
+.B .bars{border:1px solid rgba(120,240,255,.25)}
+.B .bars i{background:rgba(120,240,255,.35);box-shadow:0 0 16px rgba(120,240,255,.5);border-top:2px solid #9ff0ff}
+.B .bars i.r{background:rgba(255,179,92,.35);border-top-color:#ffb35c}
+.B .row{border-bottom:1px solid rgba(120,240,255,.2)}
+.B .go{border:1px solid #9ff0ff;background:rgba(120,240,255,.15);text-shadow:0 0 10px #9ff0ff}
+.B .go:hover{background:rgba(120,240,255,.3);box-shadow:0 0 30px rgba(120,240,255,.5)}
+
+/* ---------- C 极简未来 ---------- */
+.C{background:linear-gradient(135deg,#14181d,#0c0e11 60%,#151a1f);border:1px solid #23292f}
+.C::before{content:"";position:absolute;width:600px;height:600px;right:-200px;top:-300px;background:radial-gradient(circle,rgba(255,140,80,.18),transparent 60%);z-index:0;animation:float 9s ease-in-out infinite alternate}
+@keyframes float{to{transform:translate(-120px,80px)}}
+.C .cursorlight{background:radial-gradient(300px circle at var(--mx) var(--my),rgba(255,255,255,.06),transparent 70%)}
+.C .title{font-weight:300;letter-spacing:4px;font-size:22px}
+.C .tab{color:#8f9aa3;border-bottom:2px solid transparent}
+.C .tab:hover{color:#fff}
+.C .tab.on{color:#fff;border-bottom-color:#ff8a50}
+.C .money{color:#fff;font-weight:300;font-size:18px}
+.C .cat{color:#8f9aa3;border-radius:10px}
+.C .cat:hover,.C .cat.on{color:#fff;background:rgba(255,255,255,.06)}
+.C .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;backdrop-filter:blur(10px)}
+.C .card:hover{background:rgba(255,255,255,.07);box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 0 1px rgba(255,138,80,.4)}
+.C .card .pr{font-weight:300;font-size:24px}
+.C .card .tag{background:#ff8a50;color:#1a0d05;border-radius:20px;padding:2px 9px}
+.C svg .ln{stroke:#e8edf0;fill:none;stroke-width:1.2}
+.C svg .fl{fill:rgba(255,255,255,.05)}
+.C svg .hot{stroke:#ff8a50}
+.C .bars{background:rgba(255,255,255,.03);border-radius:14px}
+.C .bars i{background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,.08));border-radius:6px 6px 0 0}
+.C .bars i.r{background:linear-gradient(180deg,#ff8a50,rgba(255,138,80,.1))}
+.C .row{background:rgba(255,255,255,.04);border-radius:10px}
+.C .go{background:#ff8a50;color:#1a0d05;border-radius:12px;font-weight:600}
+.C .go:hover{box-shadow:0 10px 30px rgba(255,138,80,.45);transform:translateY(-2px)}
+
+/* ---------- D 复古 CRT ---------- */
+.D{background:#071006;border:1px solid #1d3a1a;font-family:"Consolas","Courier New",monospace}
+.D *{color:#7dff8a}
+.D::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.35) 0 2px,transparent 2px 4px);z-index:3;pointer-events:none}
+.D::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.7));z-index:3;pointer-events:none;animation:flick 4s infinite}
+@keyframes flick{0%,96%,100%{opacity:1}97%{opacity:.7}98%{opacity:1}}
+.D .cursorlight{background:radial-gradient(200px circle at var(--mx) var(--my),rgba(125,255,138,.1),transparent 70%)}
+.D .title{text-shadow:0 0 8px #3cff5a}
+.D .title::after{content:"_";animation:blink 1s steps(2) infinite}
+.D .tab{border:1px solid #2f6b2f}
+.D .tab:hover,.D .tab.on{background:#7dff8a;color:#071006!important}
+.D .tab.on *{color:#071006}
+.D .cat:hover,.D .cat.on{background:#123012}
+.D .cat::before{content:"> "}
+.D .card{border:1px dashed #3a8a3a;background:rgba(20,60,20,.2)}
+.D .card:hover{border-style:solid;box-shadow:0 0 20px rgba(125,255,138,.3)}
+.D .card .pr{text-shadow:0 0 8px #3cff5a}
+.D .card .tag{background:#ffb000;color:#071006!important}
+.D svg .ln{stroke:#7dff8a;fill:none;stroke-width:1.5}
+.D svg .fl{fill:rgba(125,255,138,.06)}
+.D svg .hot{stroke:#ffb000}
+.D .bars{border:1px solid #2f6b2f}
+.D .bars i{background:repeating-linear-gradient(0deg,#7dff8a 0 3px,transparent 3px 6px)}
+.D .bars i.r{background:repeating-linear-gradient(0deg,#ffb000 0 3px,transparent 3px 6px)}
+.D .row{border:1px solid #2f6b2f}
+.D .go{border:2px solid #7dff8a}
+.D .go:hover{background:#7dff8a;color:#071006!important}
+
+@media (max-width:760px){.body,.sell{flex-direction:column}.side,.form{width:auto}}
+</style>
+</head>
+<body>
+<header>
+  <h1>UI 风格样板 · 交易行</h1>
+  <button data-s="A" class="on">A 工业全息</button>
+  <button data-s="B">B 纯全息 HUD</button>
+  <button data-s="C">C 极简未来</button>
+  <button data-s="D">D 复古终端</button>
+  <span class="tip">鼠标移到卡片上看倾斜和发光；在面板上移动看跟随光；切换风格会重播入场动画</span>
+</header>
+
+<div id="tpl" hidden>
+  <div class="bar">
+    <span class="title">零压港 · 交易行</span>
+    <span class="tab on">购买</span><span class="tab">出售</span><span class="tab">交易记录</span><span class="tab">航运</span><span class="tab">船市</span>
+    <span class="money" data-count="299775">$0</span>
+  </div>
+  <div class="body">
+    <div class="side"><div class="cat on">全部</div><div class="cat">未分选金属</div><div class="cat">黑色炉料</div><div class="cat">有色混合</div><div class="cat">结构钢坯</div></div>
+    <div class="grid">
+      <div class="card"><div class="nm">未分选金属 · 未评级</div>
+        <svg viewBox="0 0 160 80"><path class="fl" d="M20 70 L30 40 L140 40 L150 70 Z"/><path class="ln" d="M20 70 L30 40 L140 40 L150 70 Z M40 40 L55 18 L70 32 L85 10 L100 30 L118 20 L130 40"/></svg>
+        <div class="sub">现货 8.0 t · 小行星带</div><div class="pr">$360 /t</div></div>
+      <div class="card"><div class="nm">黑色炉料 · 等级 1</div>
+        <svg viewBox="0 0 160 80"><g><rect class="fl" x="30" y="44" width="30" height="26"/><rect class="fl" x="64" y="44" width="30" height="26"/><rect class="fl" x="98" y="44" width="30" height="26"/><rect class="fl" x="47" y="16" width="30" height="26"/><rect class="fl" x="81" y="16" width="30" height="26"/></g>
+        <path class="ln" d="M30 44h30v26h-30z M64 44h30v26h-30z M98 44h30v26h-30z M47 16h30v26h-30z M81 16h30v26h-30z"/><path class="ln hot" d="M45 44v26 M79 44v26 M113 44v26 M62 16v26 M96 16v26"/></svg>
+        <div class="sub">现货 2.0 t · 本港柜台 几十秒到</div><div class="pr">$450 /t</div></div>
+      <div class="card"><div class="nm">有色混合 · 未评级</div>
+        <svg viewBox="0 0 160 80"><path class="fl" d="M50 74 L46 26 Q80 12 114 26 L110 74 Z"/><path class="ln" d="M50 74 L46 26 Q80 12 114 26 L110 74 Z M60 24 Q62 10 70 20 M100 24 Q98 10 90 20"/></svg>
+        <div class="sub">吨袋 · 小行星带 货船几分钟</div><div class="pr">$700 /t</div></div>
+      <div class="card"><span class="tag">加急 高价收</span><div class="nm">结构钢坯 · 等级 1</div>
+        <svg viewBox="0 0 160 80"><rect class="fl" x="22" y="22" width="116" height="46"/><path class="ln" d="M22 22h116v14h-116z M22 38h116v14h-116z M22 54h116v14h-116z"/><path class="ln hot" d="M56 18v54 M104 18v54"/></svg>
+        <div class="sub">天衡物流 加急收 $1,560/t · 9 分钟</div><div class="pr">$1,100 /t</div></div>
+    </div>
+  </div>
+  <div class="sell">
+    <div class="bars"><i style="height:30%"></i><i style="height:55%"></i><i style="height:90%"></i><i style="height:65%"></i><i class="r" style="height:40%"></i></div>
+    <div class="form">
+      <div class="row"><span>港务回收价</span><b>$770 /t</b></div>
+      <div class="row"><span>你的价格</span><b>$1,100 /t</b></div>
+      <div class="row"><span>预期到账</span><b data-count="1617">$0</b></div>
+      <div class="go">上 架</div>
+    </div>
+  </div>
+</div>
+
+<section class="stage on" id="A"><p class="note"><b>A 工业全息</b>：深色金属底板、切角面板、青色全息线框发光、橙色警示条、卡片上一道扫描光来回扫、加急牌闪烁、按钮橙色发光。和拆船厂的工业味最搭。</p><div class="ui A"><div class="warn"></div></div></section>
+<section class="stage" id="B"><p class="note"><b>B 纯全息 HUD</b>：几乎没有实体面板，全是悬浮的发光线框和角标、整屏扫描纹缓慢流动、线稿逐笔“画出来”的入场动画。最科幻，但信息多时容易花。</p><div class="ui B"></div></section>
+<section class="stage" id="C"><p class="note"><b>C 极简未来</b>：大圆角毛玻璃卡片、细字、大留白、背景一团暖光缓慢飘动、悬停时卡片浮起带阴影。干净高级，但工业感最弱。</p><div class="ui C"></div></section>
+<section class="stage" id="D"><p class="note"><b>D 复古终端</b>：绿色磷光屏、扫描线、屏幕暗角和偶尔闪烁、光标闪烁、虚线框。像《异形：隔离》的电脑，最有“老飞船”味，但颜色单一。</p><div class="ui D"></div></section>
+
+<script>
+const tpl=document.getElementById('tpl').innerHTML;
+document.querySelectorAll('.ui').forEach(u=>{u.insertAdjacentHTML('beforeend',tpl);u.insertAdjacentHTML('afterbegin','<div class="cursorlight"></div>')});
+function count(el){const to=+el.dataset.count;const t0=performance.now();const step=t=>{const k=Math.min(1,(t-t0)/900);el.textContent='$'+Math.round(to*(1-Math.pow(1-k,3))).toLocaleString('en-US');if(k<1)requestAnimationFrame(step)};requestAnimationFrame(step)}
+function enter(stage){const u=stage.querySelector('.ui');u.classList.remove('enter');void u.offsetWidth;u.classList.add('enter');u.querySelectorAll('[data-count]').forEach(count);u.querySelectorAll('.bars i').forEach(i=>{i.style.animation='none';void i.offsetWidth;i.style.animation=''});u.querySelectorAll('svg .ln').forEach(p=>{p.style.animation='none';void p.offsetWidth;p.style.animation=''})}
+document.querySelectorAll('header button').forEach(b=>b.onclick=()=>{document.querySelectorAll('header button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.stage').forEach(s=>s.classList.toggle('on',s.id===b.dataset.s));enter(document.getElementById(b.dataset.s))});
+document.querySelectorAll('.ui').forEach(u=>{
+  u.addEventListener('mousemove',e=>{const r=u.getBoundingClientRect();u.style.setProperty('--mx',(e.clientX-r.left)+'px');u.style.setProperty('--my',(e.clientY-r.top)+'px')});
+  u.querySelectorAll('.card').forEach(c=>{
+    c.addEventListener('mousemove',e=>{const r=c.getBoundingClientRect();const x=(e.clientX-r.left)/r.width-.5;const y=(e.clientY-r.top)/r.height-.5;c.style.transform=`perspective(700px) rotateX(${-y*10}deg) rotateY(${x*12}deg) translateZ(6px)`});
+    c.addEventListener('mouseleave',()=>{c.style.transform=''});
+  });
+  u.querySelectorAll('.tab,.cat').forEach(t=>t.addEventListener('click',()=>{t.parentElement.querySelectorAll('.'+t.classList[0]).forEach(x=>x.classList.toggle('on',x===t))}));
+});
+enter(document.getElementById('A'));
+</script>
+</body>
+</html>

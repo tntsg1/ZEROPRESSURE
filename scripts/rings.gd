@@ -1,4 +1,5 @@
 extends Node2D
+const FastDraw = preload("res://scripts/fast_draw.gd")
 # Habitat rings still turning when the ship came in (ARK-01 "Voyager",
 # design/ships/ARK-01_远航者_设计稿.md 4-5: "both rings at about 3 rpm: take the
 # ring's loads off, despin the two together with the hub's motor-brakes, lock the
@@ -434,4 +435,4 @@ func _draw() -> void:
 				for j in 13:
 					var a: float = -0.5 + j / 12.0
 					arc.append(c + Vector2(side * (wx + 2.0 * M + 18.0 * M * (1.0 - absf(a))), a * rad * 1.5))
-				draw_polyline(arc, Pal.heat(0.12 + 0.25 * k, 1.3), 1.6, true)
+				FastDraw.polyline(self, arc, Pal.heat(0.12 + 0.25 * k, 1.3), 1.6, true)

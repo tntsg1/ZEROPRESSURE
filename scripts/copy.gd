@@ -20,6 +20,10 @@ static func _load() -> void:
 	var d = JSON.parse_string(FileAccess.get_file_as_string(FILE))
 	if typeof(d) == TYPE_DICTIONARY:
 		_t = d
+	# data/台词.txt is what the author edits; it has the last word (scripts/lines.gd)
+	for id in Lines.ids():
+		if not str(id).contains("."):
+			_t[id] = Lines.get_pair(str(id)).duplicate()
 
 
 static func has(id: String) -> bool:
@@ -50,7 +54,12 @@ static func slot(id: String) -> String:
 static func say(radio: Radio, id: String, who: String = "liang", fill: Array = []) -> bool:
 	var p := pair(id)
 	if p.is_empty():
-		return false
+		# a beat written as several lines (id_1, id_2, …) is said in order
+		var any := false
+		for i in range(1, 10):
+			if has("%s_%d" % [id, i]):
+				any = say(radio, "%s_%d" % [id, i], who, fill) or any
+		return any
 	var zh: String = p[0]
 	var en: String = p[1]
 	if fill.size() == 2:

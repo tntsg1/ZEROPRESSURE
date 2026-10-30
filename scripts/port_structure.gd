@@ -15,13 +15,17 @@ var inside := ""                 # the zone the operator is in ("" outside)
 var walls: StaticBody2D
 var interiors                    # the districts' pipes, platforms and machinery (40 号)
 const Interiors = preload("res://scripts/district_interiors.gd")
+var hub                          # 109 号: the central transfer ring's machines (scripts/hub_view.gd)
+const ConsoleArt = preload("res://scripts/console_art.gd")
 const DOOR := 6.0                # m: a district's door
 const HALF := 3.0                # m: half a corridor's width (PortArt's truss)
 const REACH := 4.0               # m: how close to a console counts
 const HATCH := 4.0               # m: the cargo district's floor hatch over the yard
 # per zone: the machines inside, as rects in the box's local metres (origin: box top-left)
 const MACHINES := {
-	"power": [["reactor_a", Vector2(5, 6), Vector2(8, 12)], ["reactor_b", Vector2(16, 6), Vector2(8, 12)], ["switchgear", Vector2(40, 18), Vector2(14, 5)]],
+	# 100 号: the three reactor bays in their shields (the third empty until stage 2), the switchgear
+	"power": [["reactor_a", Vector2(0.8, 3.2), Vector2(9.4, 14.4)], ["reactor_b", Vector2(10.4, 3.2), Vector2(9.4, 14.4)], ["reactor_c", Vector2(20.0, 3.2), Vector2(9.4, 14.4)],
+		["switchgear", Vector2(38.6, 18.6), Vector2(15.05, 8.2)]],
 	"tug": [["table", Vector2(23.2, 22.3), Vector2(19.1, 4.5)], ["rack", Vector2(39.2, 0.5), Vector2(12.4, 5.2)], ["deck", Vector2(22.6, 10.8), Vector2(29.2, 0.7)]],
 	# the processing district's works are the real machines now (scripts/process_plant.gd, 30 号)
 	"process": [],
@@ -29,9 +33,9 @@ const MACHINES := {
 	"trade": [],
 	"cargo": [["stack_a", Vector2(6, 12), Vector2(10, 9)], ["stack_b", Vector2(42, 12), Vector2(10, 9)]],
 }
-const DRAWN_INSIDE := ["cradle", "table", "deck", "rack", "reactor_a", "reactor_b", "switchgear"]
+const DRAWN_INSIDE := ["cradle", "table", "deck", "rack", "reactor_a", "reactor_b", "reactor_c", "switchgear"]
 const NAMES := {
-	"reactor_a": ["反应堆 A", "REACTOR A"], "reactor_b": ["反应堆 B", "REACTOR B"], "switchgear": ["配电柜", "SWITCHGEAR"],
+	"reactor_a": ["反应堆 A", "REACTOR A"], "reactor_b": ["反应堆 B", "REACTOR B"], "reactor_c": ["机位 C", "BAY C"], "switchgear": ["配电柜", "SWITCHGEAR"],
 	"cradle": ["拖船托架", "TUG CRADLE"], "table": ["吊舱检修台", "POD SERVICE TABLE"], "deck": ["拖船甲板", "TUG DECK"], "rack": ["备件架", "PARTS RACK"],
 	"crusher": ["预处理机", "PRE-SHREDDER"], "furnace": ["精炼炉位", "REFINING BAY"],
 	"counter": ["港务窗口", "PORT COUNTER"], "bench": ["候客席", "WAITING"],
@@ -67,7 +71,10 @@ static func consoles(zone: String) -> Array:
 	var m := M()
 	if zone == "ring":
 		var c := centre()
-		return [c + Vector2(7.0, 13.0) * m, c + Vector2(-7.0, 13.0) * m]
+		# 109 号: on the service deck outside the carousel's pit, clear of the transfer arms (was 7, 13:
+		# over the turning cradles) — between the salvage and cargo spokes, and the desk between the
+		# salvage and processing ones
+		return [c + Vector2.from_angle(deg_to_rad(76.0)) * 18.6 * m, c + Vector2.from_angle(deg_to_rad(125.0)) * 18.6 * m]
 	var d := door(zone)
 	var p: Vector2 = d[0]
 	var n: Vector2 = d[1]
@@ -118,6 +125,9 @@ func _ready() -> void:
 	interiors = Interiors.new()
 	interiors.game = game
 	add_child(interiors)
+	hub = preload("res://scripts/hub_view.gd").new()
+	hub.game = game
+	add_child(hub)
 
 
 # a wall from a to b: a thin solid slab (a zero-width segment lets a fast drone slip through)
@@ -236,6 +246,12 @@ func _draw() -> void:
 		var p: Vector2 = d[0]
 		var n: Vector2 = d[1]
 		var tg := n.orthogonal()
+		# 108 号 帧率: a district out of view (its box, its door and its corridor) is not drawn
+		var zr := Rect2(p, Vector2.ZERO).expand(c + (p - c).normalized() * PortArt.HUB_R * m)
+		if zone != "salvage":
+			zr = zr.merge(box(zone))
+		if not ViewCull.sees(game, zr):
+			continue
 		if zone != "salvage":
 			var r := box(zone)
 			draw_rect(r, wall_col, false, 3.0 * lw)
@@ -261,19 +277,15 @@ func _draw() -> void:
 		var side := axis.orthogonal() * HALF * m
 		draw_line(a0 + side, a1 + side, wall_col, 2.0 * lw)
 		draw_line(a0 - side, a1 - side, wall_col, 2.0 * lw)
-	# the hub's floor when inside it
-	if inside == "ring":
-		draw_circle(c, PortArt.HUB_R * m, Color(0.03, 0.034, 0.04, 0.5))
-		for i in 12:
-			var a := TAU * i / 12.0
-			draw_line(c + Vector2.from_angle(a) * PortArt.CORE_R * m, c + Vector2.from_angle(a) * (PortArt.HUB_R - 0.5) * m, Pal.ink(0.08), lw)
-		draw_arc(c, PortArt.CORE_R * m, 0.0, TAU, 48, Pal.ink(0.5), 2.0 * lw, true)
+	# the hub's floor and machines: scripts/hub_view.gd (109 号)
 	# the consoles: the business console (cyan) and the engineering desk (heat) of every district
 	for zone in Port.ZONES:
 		if zone == "salvage":
 			continue
 		var cs := consoles(zone)
-		_console(cs[0], Txt.t("pt_console_business"), Pal.tint(Pal.AIR, 1.0, 1.3), near == zone, m, lw, font, z, Txt.t("pt_console_open") % Keys.label("use"))
+		if not ViewCull.sees(game, Rect2(cs[0], Vector2.ZERO).grow(8.0 * m)):
+			continue
+		_console(cs[0], zone, near == zone, Txt.t("pt_console_open") % Keys.label("use"))
 	# the hint when the operator enters a district
 	if inside != "" and z >= 0.1:
 		var p: Vector2 = game.drone.global_position + Vector2(0, -3.0 * m)
@@ -282,26 +294,14 @@ func _draw() -> void:
 		draw_set_transform(Vector2.ZERO)
 
 
-func _console(p: Vector2, title: String, col: Color, on: bool, m: float, lw: float, font: Font, z: float, hint: String) -> void:
-	var size := Vector2(1.6, 1.3) * m
-	var r := Rect2(p - size * 0.5, size)
-	# a pedestal and a screen
-	draw_line(p + Vector2(0, size.y * 0.5), p + Vector2(0, size.y * 0.5 + 1.2 * m), Pal.ink(0.4), 3.0 * lw)
-	draw_rect(r, Color(0.03, 0.04, 0.05, 0.98))
-	draw_rect(r, col if on else Color(col.r, col.g, col.b, 0.55), false, 1.6 * lw)
-	var sr := Rect2(r.position + Vector2(0.15, 0.15) * m, Vector2(size.x - 0.3 * m, size.y * 0.55))
-	draw_rect(sr, Color(col.r, col.g, col.b, 0.18 + 0.06 * sin(t * 2.0) + (0.2 if on else 0.0)))
-	for k in 3:
-		var ly := sr.position.y + (0.25 + k * 0.2) * m
-		draw_line(Vector2(sr.position.x + 0.15 * m, ly), Vector2(sr.position.x + sr.size.x * (0.4 + 0.15 * (k % 3)), ly), Color(col.r, col.g, col.b, 0.6), 1.2 * lw)
-	if on:
-		draw_arc(p, 2.0 * m + sin(t * 3.0) * 0.15 * m, 0.0, TAU, 40, col, lw, true)
-	if z >= 0.12 or on:
-		draw_set_transform(p, 0, Vector2.ONE / z)
-		draw_string(font, Vector2(20, -12), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, col)
-		if on:
-			draw_string(font, Vector2(20, 12), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Pal.ink(0.95))
-		draw_set_transform(Vector2.ZERO)
+# 103 号: every console a floor-standing industrial console, the district's figures on its screen
+# (scripts/console_art.gd); the column reaches the floor strip (the hub's: a short stand)
+func _console(p: Vector2, zone: String, on: bool, hint: String) -> void:
+	var m := M()
+	var foot := 2.8
+	if zone != "ring":
+		foot = (box(zone).end.y - 1.2 * m - p.y) / m
+	ConsoleArt.draw(self, p, foot, Txt.t("pt_console_business") + " · " + Port.name_of(zone), hint, on, ConsoleArt.summary(zone, game), t)
 
 
 # the inside of a district: floor grid, the machines, their plates
@@ -350,6 +350,10 @@ func _stock(r: Rect2, m: float, lw: float, font: Font, z: float) -> void:
 
 
 func _interior(zone: String, r: Rect2, m: float, lw: float, font: Font, z: float) -> void:
+	# 101 号: the processing district draws its own hall, floor and all (scripts/process_art.gd); this
+	# veil over it dimmed the furnace and the line
+	if zone in ["process", "cargo"]:
+		return
 	draw_rect(r, Color(0.03, 0.034, 0.04, 0.55))
 	var gx := r.position.x
 	while gx < r.end.x:

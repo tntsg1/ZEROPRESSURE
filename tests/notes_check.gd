@@ -16,6 +16,8 @@ var finished := false
 
 
 func _initialize() -> void:
+	# 68 号: this test reads the hulks the market drew by itself (before the star-map sweep)
+	Scan.ON = false
 	Career.path = "user://zp_test_notes_career.json"
 	SaveGame.path = "user://zp_test_notes_save.json"
 	SaveGame.allow_test = true

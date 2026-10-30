@@ -20,8 +20,11 @@ extends CanvasLayer
 # sandbox (dev job: nothing is settled into the career, nothing autosaved over
 # the career's contract); in the terminal it can also go on the first card.
 
+const LoadMotion = preload("res://scripts/load_motion.gd")
 const TIME_STEPS := [1.0, 2.0, 4.0, 8.0, 0.25]
-const SHIPS := ["gr7", "s09", "tug", "pod", "h22", "m14", "med47", "fr26"]
+# All authored market hulls, without career reputation or berth gates.
+# Keep the lab in sync when a new hull joins the fleet.
+static var SHIPS := Market.POOL.map(func(entry): return entry[0])
 const KIT := [["scan_kit", "up_scan"], ["grapple5", "up_grapple"], ["pump2", "up_pump"], ["arm", "fa_arm"],
 	["mouth_rail", "fa_rail"], ["net05", "fa_net"], ["hauler", "fa_hauler"],
 	["berth88", "fa_berth"], ["hauler2", "fa_hauler2"], ["crane", "fa_crane"], ["port2", "fa_port2"], ["buffer", "fa_buffer"], ["zones", "fa_zones"]]
@@ -99,13 +102,13 @@ func rows() -> Array:
 		"game":
 			return [["F1", "dev_xray", xray], ["F2", "dev_safe", null], ["F3", "dev_free", null], ["F4", "dev_god", god],
 				["F5", "dev_time", time_k != 1.0], ["F6", "dev_rooms", null], ["F7", "dev_items", null], ["F8", "dev_end", null],
-				["F9", "dev_inspect", inspect], ["F10", "dev_again", null], ["", "dev_builder", builder], ["", "dev_sort", sort_on]]
+				["F9", "dev_inspect", inspect], ["F10", "dev_again", null], ["F11", "dev_gear", null], ["", "dev_builder", builder], ["", "dev_sort", sort_on], ["", "dev_heats", null], ["", "dev_skip_guide", null]]
 		"terminal":
 			return [["F1", "dev_money", null], ["F2", "dev_loan", null], ["F3", "dev_rep", null], ["F4", "dev_upgrades", null],
 				["F5", "dev_items", null], ["F6", "dev_offers", null], ["F7", "dev_trap", null], ["F8", "dev_opening", null],
-				["F9", "dev_plans", null], ["", "dev_builder", builder]]
+				["F9", "dev_plans", null], ["F10", "dev_repairs", null], ["F11", "dev_parts", null], ["", "dev_builder", builder], ["", "dev_heats", null], ["", "dev_skip_guide", null]]
 		"title":
-			return [["F1", "dev_certify", null], ["", "dev_builder", builder]]
+			return [["F1", "dev_certify", null], ["F2", "dev_skip_guide", null], ["", "dev_builder", builder]]
 	return []
 
 
@@ -141,7 +144,7 @@ func _handle_key(ev: InputEvent) -> void:
 		set_open(false)
 		get_viewport().set_input_as_handled()
 		return
-	if key >= KEY_F1 and key <= KEY_F10:
+	if key >= KEY_F1 and key <= KEY_F11:
 		var n := key - KEY_F1 + 1
 		if n <= rows().size() and rows()[n - 1][0] != "":
 			get_viewport().set_input_as_handled()
@@ -200,7 +203,7 @@ func disable() -> void:
 	xray = false
 	inspect = false
 	time_k = 1.0
-	Engine.time_scale = 1.0
+	Look.time_k(1.0)
 	Txt.save_settings(game != null and game.testing)
 
 
@@ -213,6 +216,16 @@ func run(n: int) -> void:
 		bench.page = 2
 		bench.refresh()
 		return
+	if row[1] == "dev_skip_guide":
+		skip_guides()
+		say(Txt.t("dev_skip_guide_done"))
+		# on site or at the terminal: straight back to the career's berth, every guide behind it
+		if where != "title" and Career.usable():
+			set_open(false)
+			Look.time_k(1.0)
+			get_tree().paused = false
+			Game.play_career(get_tree())
+		return
 	match where:
 		"game":
 			_game_key(n)
@@ -220,6 +233,75 @@ func run(n: int) -> void:
 			_terminal_key(n)
 		"title":
 			_title_key(n)
+
+
+# user 2026-10-26 ("管理员的测试者代码……直接跳过新手教程"): the save as if every guide were done —
+# the belt prologue, TS-1 (certified), the seven special courses, the first ship (TUG-001 in the
+# record, the berth empty), the berth tour, the second-hulk and lights steps, the star map's and
+# the port's tours, every shuttle stop known. Money, the market and the opening contracts are
+# left as they are (F8 at the terminal opens the market).
+static func skip_guides() -> void:
+	if not Career.usable():
+		return
+	if Career.data.is_empty():
+		Career.load_or_new()
+	var d := Career.data
+	d.prologue_done = true
+	d.certified = true
+	d.cert_kind = "full"
+	d.erase("ts1_required")
+	d.drill = {"granted": true, "done": true}
+	for cls in Codex.CLASSES:
+		Codex.certify(cls, "full")
+	var seen: Dictionary = d.get("seen", {})
+	for k in ["belt_prelude", "intro", "first_ship", "first_tow", "berth_seen", "term_open", "starmap_tour", "tow_tour", "port_tour", "port_walk", "port_walk_started",
+			"market_liang", "repair_first", "parts_first", "berth_broken", "gear_anchor", "retain_switch"]:
+		seen[k] = true
+	d.seen = seen
+	# 86 号: the berth's three faults known
+	for id in Repair.FAULTS:
+		Repair.find_fault(id)
+	var hist: Array = d.get("history", [])
+	if not hist.any(func(h): return str(h.get("id", "")) == "TUG-001"):
+		hist.append({"id": "TUG-001", "ship": "tug", "net": 0.0, "rate": 0.0, "grade": "", "time": 0.0, "stars": 0, "dev": true})
+	d.history = hist
+	d.done = maxi(int(d.get("done", 0)), 1)
+	# the tug from the prologue no longer waits at the berth
+	if str(d.get("active", {}).get("id", "")) == "TUG-001":
+		d.active = {}
+	if str(d.get("story_job", {}).get("id", "")) == "TUG-001":
+		d.story_job = {}
+	d.onboard = "done"
+	var found: Array = d.get("tram_found", [])
+	for z in Tram.stations():
+		if z not in found:
+			found.append(z)
+	d.tram_found = found
+	Career.save()
+	# user 2026-10-28 ("我明明都跳过了，还要我再做一次"): a guide already running in a game ends too
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree != null:
+		for n in tree.root.get_children():
+			if n is Game:
+				_end_guides(n)
+
+
+static func _end_guides(g) -> void:
+	if g.walk_on():
+		g.port_walk.stop()
+	if g.port_tour != null and is_instance_valid(g.port_tour):
+		g.port_tour.finish()
+	if g.coach_on():
+		g.coach.stop()
+
+
+# 39 号: the arc furnace's tapped heats straight to three, so its auto sample-and-tap can be bought
+func _heats() -> void:
+	if Career.data.is_empty():
+		return
+	Career.data.heat_count = maxi(int(Career.data.get("heat_count", 0)), HeatAuto.NEED)
+	Career.save()
+	say(Txt.t("dev_heats"))
 
 
 func say(s: String) -> void:
@@ -234,6 +316,17 @@ func say(s: String) -> void:
 func _game_key(n: int) -> void:
 	var g := game
 	var s = g.sys
+	if n == 11:
+		# one of each deployable tool straight into the drone's hands (G2 debugging)
+		if g.gear != null:
+			for type in Gear.DEPLOY:
+				g.gear.carried.append({"type": type, "lent": false})
+			say(Txt.t("dev_gear"))
+		return
+	# 78 号 P0②: no one-key "make it safe" or "free every piece" on a manual-only ship
+	if n in [2, 3] and g.manual_only():
+		say(Txt.t("manual_only") % Txt.t("dev_safe" if n == 2 else "dev_free"))
+		return
 	match n:
 		1:
 			xray = not xray
@@ -263,7 +356,7 @@ func _game_key(n: int) -> void:
 		5:
 			time_k = TIME_STEPS[(TIME_STEPS.find(time_k) + 1) % TIME_STEPS.size()]
 			if g.warp:
-				Engine.time_scale = g._warp_k()
+				Look.time_k(g._warp_k())
 			say(Txt.t("dev_time") % _time_text())
 			return
 		6:
@@ -279,7 +372,10 @@ func _game_key(n: int) -> void:
 				g.finish_contract(true)
 		9:
 			inspect = not inspect
-		12:
+		14:
+			_heats()
+			return
+		13:
 			sort_on = not sort_on
 			if not sort_on:
 				_sort_release_all()
@@ -300,6 +396,9 @@ func _game_key(n: int) -> void:
 
 func _terminal_key(n: int) -> void:
 	var d := Career.data
+	if n == 13:
+		_heats()
+		return
 	match n:
 		1:
 			d.money = float(d.money) + 100000.0
@@ -312,8 +411,8 @@ func _terminal_key(n: int) -> void:
 		4:
 			for kv in KIT:
 				d.upgrades[kv[0]] = 1
-			for track in Growth.TRACKS:
-				_set_skill(d.upgrades, track[0], 3)
+			for it in Repair.ITEMS:
+				d.upgrades[it[0]] = 1
 		5:
 			for id in ["repair", "ring", "spare", "intel"]:
 				d.items[id] = int(d.items.get(id, 0)) + 3
@@ -349,6 +448,40 @@ func _terminal_key(n: int) -> void:
 			terminal.dealt()
 		9:
 			d.plans = {}
+		10:
+			# the run-down berth (G2): every repair made, or (when they all are) every one broken again
+			var all := true
+			for it in Repair.ITEMS:
+				if not d.upgrades.has(it[0]):
+					all = false
+			for it in Repair.ITEMS:
+				if all:
+					d.upgrades.erase(it[0])
+				else:
+					d.upgrades[it[0]] = 1
+			d.repaired_pending = []
+			say(Txt.t("dev_repairs_broken" if all else "dev_repairs_fixed"))
+			if terminal.repair_panel != null:
+				terminal.repair_panel.refresh()
+			Career.save()
+			return
+		11:
+			# parts of every class on the shelf, structure by the tonne, one of each deployable tool
+			var shelf: Array = d.get("parts", [])
+			var n_parts: int = shelf.size()
+			for spec in [["power", "G-01", "p_gen", 16000.0], ["power", "B-01", "p_battery", 2000.0], ["power", "FC-01", "p_fuelcell", 9000.0],
+					["thermal", "CP-E", "p_pump", 4000.0], ["thermal", "ENV-B", "p_env", 1200.0], ["thermal", "LIFE-S", "p_life", 2200.0],
+					["drive", "ENG-C", "p_engc", 11000.0], ["drive", "NAV-01", "p_nav", 6000.0], ["drive", "WINCH-T", "p_winch", 9000.0]]:
+				n_parts += 1
+				shelf.append({"uid": "dev:%s:%d" % [spec[1], n_parts], "cls": spec[0], "tag": spec[1], "nk": spec[2], "cond": 0.85, "value": float(spec[3]), "ship": "dev", "job": "DEV"})
+			d.parts = shelf
+			d.structure_t = float(d.get("structure_t", 0.0)) + 50.0
+			var g: Dictionary = d.get("gear", {})
+			for type in Gear.DEPLOY:
+				g[type] = int(g.get(type, 0)) + 1
+			d.gear = g
+			if terminal.repair_panel != null:
+				terminal.repair_panel.refresh()
 	Career.save()
 	say(_row_label(rows()[n - 1]))
 
@@ -430,7 +563,7 @@ func _start() -> void:
 	SaveGame.load_requested = false
 	builder = false
 	set_open(false)
-	Engine.time_scale = 1.0
+	Look.time_k(1.0)
 	get_tree().paused = false
 	get_tree().change_scene_to_file("res://scenes/main.tscn")
 
@@ -551,6 +684,7 @@ func _sort_ghost(b, on: bool) -> void:
 		b.collision_layer = 0
 		b.collision_mask = 0
 	elif not on and b.has_meta("sort_layer"):
+		b.remove_meta("sort_in")
 		if b.capture == null:
 			b.collision_layer = b.get_meta("sort_layer")
 			b.collision_mask = b.get_meta("sort_mask")
@@ -579,22 +713,54 @@ func _physics_process(dt: float) -> void:
 			b.set_meta("sort_skip", true)
 		if b.get_meta("sort_skip", false) or game.tools.held_body == b or b.get_meta("arm", false):
 			continue
-		var z := Dock.nearest(_sort_zone(b), b.global_transform * b.center_of_mass)
-		var to: Vector2 = Dock.zpos(z) - Dock.ZONES[z].face * 0.5 * Geom.M
+		# user 2026-10-28 ("个头太大了，有时候会跑到左上角"): a mouth the load really goes into, turned
+		# its narrowest way (a big one to the outside rack), as the crane and the hauler pick it —
+		# not just the nearest of its kind, which turned it away and left it where it was
+		var z := Dock.for_load(_sort_zone(b), b)
+		if z == "":
+			# no mouth takes it whole: it has to be cut first
+			_sort_ghost(b, false)
+			b.set_meta("sort_skip", true)
+			continue
 		var com: Vector2 = b.global_transform * b.center_of_mass
-		free.append([b, to, com.distance_to(to) - (1e6 if b.has_meta("sort_layer") else 0.0)])
+		free.append([b, z, com.distance_to(Dock.zpos(z)) - (1e6 if b.has_meta("sort_layer") else 0.0)])
 	# the ones already on their way first, then the nearest
 	free.sort_custom(func(x, y): return x[2] < y[2])
 	for i in mini(SORT_AT_ONCE, free.size()):
 		var b = free[i][0]
-		var to: Vector2 = free[i][1]
+		var z: String = free[i][1]
 		_sort_ghost(b, true)
 		var com: Vector2 = b.global_transform * b.center_of_mass
+		var face: Vector2 = Dock.ZONES[z].face
+		var to: Vector2 = Dock.zpos(z) - face * 0.5 * Geom.M
+		var lined := true
+		if Dock.kind(z) == "equip":
+			# swung round to its narrowest across the mouth on the way
+			lined = _sort_turn(b, z, dt)
+			# in from the open side: first out in front of the mouth, square to it, then straight in
+			if not b.get_meta("sort_in", false):
+				var front: Vector2 = LoadMotion.plan_intake(b, z) + face * 1.5 * Geom.M
+				to = front
+				if lined and com.distance_to(front) < 0.6 * Geom.M:
+					b.set_meta("sort_in", true)
+		else:
+			b.angular_velocity *= exp(-3.0 * dt)
 		var d := to - com
 		# cruise, then brake into the mouth so it arrives slowly enough to be caught
 		var want := d.normalized() * minf(SORT_SPEED, sqrt(2.0 * SORT_ACC * d.length()) * 0.9)
 		b.linear_velocity = b.linear_velocity.move_toward(want, SORT_ACC * dt)
-		b.angular_velocity *= exp(-3.0 * dt)
+
+
+# a load turned toward the pose it goes into an equipment mouth by (true once it is there)
+func _sort_turn(b, z: String, dt: float) -> bool:
+	var w: float = float(Dock.ZONES[z].w)
+	var face: Vector2 = Dock.ZONES[z].face
+	if LoadMotion.fits(b, (w - LoadMotion.TURN_SPARE) * Geom.M, face):
+		b.angular_velocity *= exp(-6.0 * dt)
+		return true
+	var n: Vector2 = LoadMotion.narrowest(b, face)
+	b.angular_velocity = move_toward(b.angular_velocity, clampf(n.y * 3.0, -1.2, 1.2), 4.0 * dt)
+	return absf(n.y) < 0.03 or LoadMotion.fits(b, w * Geom.M, face)
 
 
 # A compact status badge stays on site; the old shortcut list is gone.
@@ -613,12 +779,14 @@ func _process(dt: float) -> void:
 func _draw_panel() -> void:
 	hits = []
 	if Txt.dev and not workbench_open:
-		# over a terminal its readouts own the top right: the badge goes to the bottom
-		var term_open := not c.get_tree().get_nodes_in_group("terminal").is_empty()
-		var r := Rect2(c.size.x - 350, c.size.y - 54 if term_open else 18, 330, 36)
-		c.draw_rect(r, Color(0.025, 0.03, 0.035, 0.94))
-		c.draw_rect(Rect2(r.position, Vector2(3, 36)), Pal.heat(0.9))
-		c.draw_string(font_b, r.position + Vector2(12, 24), Growth.text(["DEV 在线 · F12 工作台", "DEV ACTIVE · F12 WORKBENCH"]), HORIZONTAL_ALIGNMENT_LEFT, 310, 15, Pal.ink(0.9))
+		# 107 号 (user's screenshots: the badge covered the terminal's exchange key and the star map's
+		# header): a small tab hung from the top edge's middle, where no page puts anything
+		var label := Growth.text(["DEV · F12 工作台", "DEV · F12 BENCH"])
+		var lw := font_b.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x + 22.0
+		var r := Rect2(c.size.x * 0.5 - lw * 0.5, 0, lw, 20)
+		c.draw_rect(r, Color(0.025, 0.03, 0.035, 0.9))
+		c.draw_rect(Rect2(r.position.x, r.end.y - 2, r.size.x, 2), Pal.heat(0.9))
+		c.draw_string(font_b, r.position + Vector2(11, 14), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.8))
 	if Txt.dev and inspect and game != null and not workbench_open:
 		_inspect_card()
 	if toast_t < 2.5 and not workbench_open:

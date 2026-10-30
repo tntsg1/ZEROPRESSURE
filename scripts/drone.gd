@@ -1,5 +1,6 @@
 class_name Drone
 extends RigidBody2D
+const FastDraw = preload("res://scripts/fast_draw.gd")
 # R-02, the dock's remote salvage drone. Thrusters on four sides, real vacuum
 # inertia: let go of the keys and it keeps drifting until you burn the other
 # way (Space burns every nozzle against the drift). Shift is a hard burn.
@@ -115,10 +116,12 @@ func _physics_process(dt: float) -> void:
 			acc = Vector2.ZERO
 	if assist and not braking:
 		# fly-by-wire: steer the velocity toward what the keys ask for
+		# (the fine hover module steers harder and settles sooner)
+		var fine: bool = game != null and game.has_mod("mod_hover")
 		var v_des := mv.normalized() * vmax if mv.length() > 0.05 else Vector2.ZERO
-		var cap := accel * (DASH_K + 0.4 if dashing else 2.3)
-		acc = ((v_des - linear_velocity) * 9.0).limit_length(cap)
-		if mv.length() < 0.05 and linear_velocity.length() < 6.0 and external.length() < 1.0:
+		var cap := accel * (DASH_K + 0.4 if dashing else (3.4 if fine else 2.3))
+		acc = ((v_des - linear_velocity) * (18.0 if fine else 9.0)).limit_length(cap)
+		if mv.length() < 0.05 and linear_velocity.length() < (14.0 if fine else 6.0) and external.length() < 1.0:
 			linear_velocity = Vector2.ZERO
 			acc = Vector2.ZERO
 	if braking:
@@ -232,7 +235,7 @@ func _draw() -> void:
 			var p: Vector2 = trail[i] - global_position
 			var k := 1.0 - float(i) / trail.size()
 			draw_set_transform(p, heading, Vector2.ONE * (0.8 + 0.2 * k))
-			draw_colored_polygon(PackedVector2Array(Art.ARROW), Pal.ink(0.035 * k))
+			FastDraw.poly(self, PackedVector2Array(Art.ARROW), Pal.ink(0.035 * k))
 		draw_set_transform(Vector2.ZERO)
 	Art.set_scale(game.cam_zoom() if game != null else 2.0)
 	Art.draw(self, DESIGN, art_state())
@@ -252,17 +255,17 @@ func _draw() -> void:
 			Art.outline(self, hull, Pal.ink(0.22), 1.0)
 		var shield := Growth.level(kit, "shield")
 		for i in shield:
-			draw_arc(Vector2.ZERO, 33.0 + i * 4, heading - 0.6, heading + 0.6, 20, Pal.ink(0.6), 1.0, true)
+			FastDraw.arc(self, Vector2.ZERO, 33.0 + i * 4, heading - 0.6, heading + 0.6, 20, Pal.ink(0.6), 1.0, true)
 		var drive := Growth.level(kit, "drive")
 		for i in drive:
 			var tail := Vector2(-19 - i * 3, 0).rotated(heading)
 			var n := Vector2(0, 5).rotated(heading)
 			draw_line(tail - n, tail + n, Pal.ink(0.8), 1.6)
 		if game.has_upgrade("grapple5"):
-			draw_arc(Vector2(-2, 0).rotated(heading), 11.5, 0.0, TAU, 28, Pal.ink(0.5), 1.2, true)
+			FastDraw.arc(self, Vector2(-2, 0).rotated(heading), 11.5, 0.0, TAU, 28, Pal.ink(0.5), 1.2, true)
 	# integrity tick ring
 	if integrity < 100.0:
-		draw_arc(Vector2.ZERO, R + 9.0, -PI / 2.0, -PI / 2.0 + TAU * integrity / 100.0, 40, Pal.ink(0.35) if integrity > 35.0 else Pal.heat(0.8, 1.2), 1.6, true)
+		FastDraw.arc(self, Vector2.ZERO, R + 9.0, -PI / 2.0, -PI / 2.0 + TAU * integrity / 100.0, 40, Pal.ink(0.35) if integrity > 35.0 else Pal.heat(0.8, 1.2), 1.6, true)
 
 
 # what the airframe drawing needs this frame

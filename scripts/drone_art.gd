@@ -1,4 +1,5 @@
 extends RefCounted
+const FastDraw = preload("res://scripts/fast_draw.gd")
 # The drone's airframe, drawn procedurally (2026-10-17 redesign, three concept
 # directions for the player to choose from). Everything is drawn in the drone's
 # own frame, x pointing where it looks, so one call serves the game and the
@@ -50,9 +51,9 @@ static func outline_part(ci: CanvasItem, poly: PackedVector2Array, col: Color, w
 		out.append(pts[i + 1])
 		left -= seg
 	if out.size() >= 2:
-		ci.draw_polyline(out, col, w, true)
+		FastDraw.polyline(ci, out, col, w, true)
 		# the pen: a bright point where the line is being drawn
-		ci.draw_circle(out[out.size() - 1], w * 0.9, Color(col.r * 1.4, col.g * 1.4, col.b * 1.4, col.a))
+		FastDraw.circle(ci, out[out.size() - 1], w * 0.9, Color(col.r * 1.4, col.g * 1.4, col.b * 1.4, col.a))
 
 
 static func heat(a: float, k: float = 1.0) -> Color:
@@ -82,7 +83,7 @@ static func rot(pts: Array, a: float, s: float = 1.0) -> PackedVector2Array:
 static func outline(ci: CanvasItem, poly: PackedVector2Array, col: Color, w: float) -> void:
 	var c := poly.duplicate()
 	c.append(poly[0])
-	ci.draw_polyline(c, col, w, true)
+	FastDraw.polyline(ci, c, col, w, true)
 
 
 static func draw(ci: CanvasItem, design: String, st: Dictionary) -> void:
@@ -98,7 +99,7 @@ static func draw(ci: CanvasItem, design: String, st: Dictionary) -> void:
 
 # an iris of n blades: open 0 (a pin-hole) to 1 (wide), lit in the tool's colour
 static func iris(ci: CanvasItem, c: Vector2, r: float, open: float, n: int, spin: float, col: Color) -> void:
-	ci.draw_circle(c, r, Color(0.025, 0.026, 0.03))
+	FastDraw.circle(ci, c, r, Color(0.025, 0.026, 0.03))
 	var hole := r * (0.2 + 0.32 * open)
 	for i in (0 if lite else n):
 		var a0 := spin + TAU * i / n
@@ -106,10 +107,10 @@ static func iris(ci: CanvasItem, c: Vector2, r: float, open: float, n: int, spin
 		var p0 := c + Vector2.from_angle(a0) * r
 		var p1 := c + Vector2.from_angle(a1) * r
 		var p2 := c + Vector2.from_angle(a1 + 0.6) * hole
-		ci.draw_colored_polygon(PackedVector2Array([p0, p1, p2]), Color(0.09, 0.095, 0.108))
+		FastDraw.poly(ci, PackedVector2Array([p0, p1, p2]), Color(0.09, 0.095, 0.108))
 		ci.draw_line(p1, p2, ink(0.35), 0.8, true)
-	ci.draw_circle(c, hole, col)
-	ci.draw_arc(c, r, 0.0, TAU, 24, ink(0.7), 1.0, true)
+	FastDraw.circle(ci, c, hole, col)
+	FastDraw.arc(ci, c, r, 0.0, TAU, 24, ink(0.7), 1.0, true)
 
 
 # a thruster's flame along d (unit, in the drone's frame), f 0..1
@@ -119,8 +120,8 @@ static func flame(ci: CanvasItem, base: Vector2, d: Vector2, f: float, w: float,
 	var n := Vector2(-d.y, d.x)
 	var flick := 0.85 + 0.15 * sin(t * 61.0 + base.x)
 	var ln := (8.0 + 16.0 * f) * flick * (1.6 if dash else 1.0)
-	ci.draw_colored_polygon(PackedVector2Array([base + n * w, base + d * ln, base - n * w]), heat(0.55 * f, 1.8))
-	ci.draw_colored_polygon(PackedVector2Array([base + n * w * 0.45, base + d * ln * 0.55, base - n * w * 0.45]), Color(1.8, 1.4, 1.0, 0.85 * f))
+	FastDraw.poly(ci, PackedVector2Array([base + n * w, base + d * ln, base - n * w]), heat(0.55 * f, 1.8))
+	FastDraw.poly(ci, PackedVector2Array([base + n * w * 0.45, base + d * ln * 0.55, base - n * w * 0.45]), Color(1.8, 1.4, 1.0, 0.85 * f))
 
 
 # the tool's head at the front (x forward), opened by o
@@ -136,7 +137,7 @@ static func tool_head(ci: CanvasItem, nose: Vector2, tool: int, o: float, t: flo
 			for i in 3:
 				var fx := nose.x + 1.5 + i * 3.0 * e
 				ci.draw_line(Vector2(fx, nose.y - 2.6 - 3.0 * e), Vector2(fx, nose.y + 2.6 + 3.0 * e), heat(0.35 + 0.4 * e, 1.0 + 1.2 * e), 1.0)
-			ci.draw_circle(tip, 2.2, heat(0.9 * e, 2.6))
+			FastDraw.circle(ci, tip, 2.2, heat(0.9 * e, 2.6))
 		3:
 			# grapple: two coil rings spin up ahead of the nose
 			for i in 2:
@@ -144,15 +145,15 @@ static func tool_head(ci: CanvasItem, nose: Vector2, tool: int, o: float, t: flo
 				var sp := t * (5.0 if i == 0 else -3.5)
 				for k in 4:
 					var a0 := sp + TAU * k / 4.0
-					ci.draw_arc(nose + Vector2(3.0 + 4.0 * e, 0), r * (0.6 + 0.4 * e), a0, a0 + 0.9, 6, ink(0.4 + 0.5 * e, 1.0 + 0.6 * e), 1.2, true)
-			ci.draw_circle(nose + Vector2(3.0 + 4.0 * e, 0), 1.6, ink(0.9, 1.8))
+					FastDraw.arc(ci, nose + Vector2(3.0 + 4.0 * e, 0), r * (0.6 + 0.4 * e), a0, a0 + 0.9, 6, ink(0.4 + 0.5 * e, 1.0 + 0.6 * e), 1.2, true)
+			FastDraw.circle(ci, nose + Vector2(3.0 + 4.0 * e, 0), 1.6, ink(0.9, 1.8))
 		1:
 			# meter: a dish swings up and sweeps a scan arc
 			var dc := nose + Vector2(3.0 * e, 0)
-			ci.draw_arc(dc, 5.0, -1.2, 1.2, 10, ink(0.85), 1.4, true)
+			FastDraw.arc(ci, dc, 5.0, -1.2, 1.2, 10, ink(0.85), 1.4, true)
 			var sw := fposmod(t * 1.4, 1.0)
-			ci.draw_arc(dc, 6.0 + 16.0 * sw * e, -0.6, 0.6, 12, air(0.7 * (1.0 - sw) * e, 1.6), 1.2, true)
-			ci.draw_circle(dc, 1.5, air(0.95, 1.8))
+			FastDraw.arc(ci, dc, 6.0 + 16.0 * sw * e, -0.6, 0.6, 12, air(0.7 * (1.0 - sw) * e, 1.6), 1.2, true)
+			FastDraw.circle(ci, dc, 1.5, air(0.95, 1.8))
 		4:
 			# wrench: a two-joint manipulator unfolds forward with a socket
 			var sh := nose + Vector2(-4, 0)
@@ -160,14 +161,14 @@ static func tool_head(ci: CanvasItem, nose: Vector2, tool: int, o: float, t: flo
 			var hd := el + Vector2.from_angle(-0.2 * (1.0 - e)) * 8.0 * (0.4 + 0.6 * e)
 			ci.draw_line(sh, el, ink(0.85), 2.0, true)
 			ci.draw_line(el, hd, ink(0.85), 1.6, true)
-			ci.draw_circle(el, 1.6, HULL_HI)
-			ci.draw_arc(el, 1.6, 0.0, TAU, 8, ink(0.8), 0.8, true)
-			ci.draw_arc(hd, 2.2, 0.0, TAU, 8, ink(0.95, 1.4), 1.0, true)
+			FastDraw.circle(ci, el, 1.6, HULL_HI)
+			FastDraw.arc(ci, el, 1.6, 0.0, TAU, 8, ink(0.8), 0.8, true)
+			FastDraw.arc(ci, hd, 2.2, 0.0, TAU, 8, ink(0.95, 1.4), 1.0, true)
 		5:
 			# recovery: a port irises open and a hose coupling peeks out
 			var pc := nose + Vector2(1.0, 0)
-			ci.draw_arc(pc, 4.0, 0.0, TAU, 16, Pal.tint(Pal.FLUID, 0.85), 1.2, true)
-			ci.draw_circle(pc, 2.6 * e, Pal.tint(Pal.FLUID, 0.8, 1.6))
+			FastDraw.arc(ci, pc, 4.0, 0.0, TAU, 16, Pal.tint(Pal.FLUID, 0.85), 1.2, true)
+			FastDraw.circle(ci, pc, 2.6 * e, Pal.tint(Pal.FLUID, 0.8, 1.6))
 
 
 # ------------------------------------------------------------ A · GIMBAL
@@ -186,13 +187,13 @@ static func _gimbal(ci: CanvasItem, st: Dictionary) -> void:
 		var root := Vector2.from_angle(a) * 9.0
 		var pod := Vector2.from_angle(a) * 19.0
 		ci.draw_line(root, pod, ink(0.55), 2.2, true)
-		ci.draw_circle(pod, 2.2, HULL_HI)
+		FastDraw.circle(ci, pod, 2.2, HULL_HI)
 		# the nacelle swivels toward the push
 		var na := lerp_angle(a, away, 0.75) if push > 0.05 else a
 		var nd := Vector2.from_angle(na)
 		var nn := Vector2(-nd.y, nd.x)
 		var cap := PackedVector2Array([pod - nd * 5 + nn * 3.4, pod + nd * 4 + nn * 2.6, pod + nd * 4 - nn * 2.6, pod - nd * 5 - nn * 3.4])
-		ci.draw_colored_polygon(cap, HULL)
+		FastDraw.poly(ci, cap, HULL)
 		outline(ci, cap, ink(0.9), 1.2)
 		var f := clampf(push * maxf(0.0, nd.dot(Vector2.from_angle(away))) * 1.2, 0.0, 1.0)
 		flame(ci, pod + nd * 4.5, nd, f, 2.4, t + k, st.get("dash", false))
@@ -200,12 +201,12 @@ static func _gimbal(ci: CanvasItem, st: Dictionary) -> void:
 	var spin := t * 0.6
 	for k in 4:
 		var a0 := spin + k * PI / 2.0 + 0.2
-		ci.draw_arc(Vector2.ZERO, 13.5, a0, a0 + PI / 2.0 - 0.4, 12, ink(0.8), 2.0, true)
+		FastDraw.arc(ci, Vector2.ZERO, 13.5, a0, a0 + PI / 2.0 - 0.4, 12, ink(0.8), 2.0, true)
 		var lit := 0.5 + 0.5 * sin(t * 3.0 - k * 1.57)
-		ci.draw_circle(Vector2.from_angle(a0 - 0.2) * 13.5, 1.1, tool_col(st.tool, 0.3 + 0.6 * lit, 1.0 + lit))
+		FastDraw.circle(ci, Vector2.from_angle(a0 - 0.2) * 13.5, 1.1, tool_col(st.tool, 0.3 + 0.6 * lit, 1.0 + lit))
 	# the core and its iris looking ahead
-	ci.draw_circle(Vector2.ZERO, 10.0, HULL)
-	ci.draw_arc(Vector2.ZERO, 10.0, 0.0, TAU, 28, ink(0.95), 1.6, true)
+	FastDraw.circle(ci, Vector2.ZERO, 10.0, HULL)
+	FastDraw.arc(ci, Vector2.ZERO, 10.0, 0.0, TAU, 28, ink(0.95), 1.6, true)
 	var fw := Vector2.from_angle(h)
 	iris(ci, fw * 2.5, 5.5, st.open, 6, t * 0.4, tool_col(st.tool, 0.95, 1.35))
 	_tool_at(ci, st, fw * 10.0, h)
@@ -233,21 +234,21 @@ static func _wedge(ci: CanvasItem, st: Dictionary) -> void:
 			var hd := Vector2(lerpf(4.0, 26.0, arm_o), lerpf(7.0, 9.0, arm_o) * s)
 			ci.draw_line(sh.rotated(h), el.rotated(h), ink(0.8), 2.2, true)
 			ci.draw_line(el.rotated(h), hd.rotated(h), ink(0.8), 1.6, true)
-			ci.draw_circle(el.rotated(h), 1.6, HULL_HI)
-			ci.draw_arc(el.rotated(h), 1.6, 0.0, TAU, 8, ink(0.8), 0.8, true)
-			ci.draw_arc(hd.rotated(h), 2.0, 0.0, TAU, 8, ink(0.95, 1.4), 1.0, true)
-	ci.draw_colored_polygon(hull, HULL)
+			FastDraw.circle(ci, el.rotated(h), 1.6, HULL_HI)
+			FastDraw.arc(ci, el.rotated(h), 1.6, 0.0, TAU, 8, ink(0.8), 0.8, true)
+			FastDraw.arc(ci, hd.rotated(h), 2.0, 0.0, TAU, 8, ink(0.95, 1.4), 1.0, true)
+	FastDraw.poly(ci, hull, HULL)
 	# a lighter top plate, seams
-	ci.draw_colored_polygon(rot([Vector2(19, 0), Vector2(4, -6), Vector2(-6, -9), Vector2(-6, 9), Vector2(4, 6)], h), HULL_HI)
+	FastDraw.poly(ci, rot([Vector2(19, 0), Vector2(4, -6), Vector2(-6, -9), Vector2(-6, 9), Vector2(4, 6)], h), HULL_HI)
 	outline(ci, hull, ink(0.95), 1.6)
 	var seam_lit := 0.5 + 0.5 * sin(t * 2.4)
-	ci.draw_polyline(rot([Vector2(4, -9), Vector2(-3, 0), Vector2(4, 9)], h), ink(0.35), 1.0, true)
+	FastDraw.polyline(ci, rot([Vector2(4, -9), Vector2(-3, 0), Vector2(4, 9)], h), ink(0.35), 1.0, true)
 	ci.draw_line(Vector2(-6, -9).rotated(h), Vector2(-6, 9).rotated(h), tool_col(st.tool, 0.25 + 0.35 * seam_lit, 1.0 + seam_lit * 0.6), 1.0, true)
 	# twin mains at the back corners
 	for s: float in [-1.0, 1.0]:
 		var m := Vector2(-14, 8 * s)
 		var nz := rot([m + Vector2(2, -2.6), m + Vector2(-3, -3.2), m + Vector2(-3, 3.2), m + Vector2(2, 2.6)], h)
-		ci.draw_colored_polygon(nz, HULL_HI)
+		FastDraw.poly(ci, nz, HULL_HI)
 		outline(ci, nz, ink(0.85), 1.0)
 		var f := clampf(lth.x, 0.0, 1.0)
 		flame(ci, (m + Vector2(-3, 0)).rotated(h), Vector2.LEFT.rotated(h), f, 2.6, t + s, st.get("dash", false))
@@ -284,10 +285,10 @@ static func _tripod(ci: CanvasItem, st: Dictionary) -> void:
 		if not lite:
 			for s: float in [-1.0, 1.0]:
 				ci.draw_line(tip, tip + Vector2.from_angle(a + s * (0.5 + 0.4 * flex)) * 3.5, ink(0.9), 1.2, true)
-			ci.draw_circle(sh, 2.2, HULL_HI)
-			ci.draw_arc(sh, 2.2, 0.0, TAU, 10, ink(0.8), 0.9, true)
-			ci.draw_circle(el, 1.8, HULL_HI)
-			ci.draw_arc(el, 1.8, 0.0, TAU, 10, ink(0.8), 0.9, true)
+			FastDraw.circle(ci, sh, 2.2, HULL_HI)
+			FastDraw.arc(ci, sh, 2.2, 0.0, TAU, 10, ink(0.8), 0.9, true)
+			FastDraw.circle(ci, el, 1.8, HULL_HI)
+			FastDraw.arc(ci, el, 1.8, 0.0, TAU, 10, ink(0.8), 0.9, true)
 		# the elbow jet pushes opposite the way it points, when that helps
 		var jd := Vector2.from_angle(a + 0.45)
 		var f := clampf(push * maxf(0.0, -jd.dot(th.normalized() if push > 0.05 else Vector2.ZERO)) * 1.3, 0.0, 1.0)
@@ -296,11 +297,11 @@ static func _tripod(ci: CanvasItem, st: Dictionary) -> void:
 	var hexp := PackedVector2Array()
 	for i in 6:
 		hexp.append(Vector2.from_angle(h + TAU * i / 6.0 + PI / 6.0) * 12.0)
-	ci.draw_colored_polygon(hexp, HULL)
+	FastDraw.poly(ci, hexp, HULL)
 	outline(ci, hexp, ink(0.95), 1.6)
 	for i in (0 if lite else 6):
 		var lit := 0.5 + 0.5 * sin(t * 3.0 - i * 1.05)
-		ci.draw_circle(hexp[i] * 0.78, 0.9, tool_col(st.tool, 0.25 + 0.6 * lit, 1.0 + lit))
+		FastDraw.circle(ci, hexp[i] * 0.78, 0.9, tool_col(st.tool, 0.25 + 0.6 * lit, 1.0 + lit))
 	var fw := Vector2.from_angle(h)
 	iris(ci, fw * 1.5, 6.0, st.open, 6, -t * 0.3, tool_col(st.tool, 0.95, 1.35))
 	_tool_at(ci, st, fw * 12.0, h)
@@ -310,17 +311,17 @@ static func _tripod(ci: CanvasItem, st: Dictionary) -> void:
 
 static func ring_core(ci: CanvasItem, c: Vector2, st: Dictionary, r_core: float, r_ring: float) -> void:
 	var t: float = st.t
-	ci.draw_circle(c, r_ring + 1.5, HULL)
+	FastDraw.circle(ci, c, r_ring + 1.5, HULL)
 	var spin := t * 0.6 + float(st.get("spin", 0.0))
 	for k in 4:
 		var a0 := spin + k * PI / 2.0 + 0.2
-		ci.draw_arc(c, r_ring, a0, a0 + PI / 2.0 - 0.4, 12, ink(0.8), 1.8, true)
+		FastDraw.arc(ci, c, r_ring, a0, a0 + PI / 2.0 - 0.4, 12, ink(0.8), 1.8, true)
 		if lite:
 			continue
 		var lit := 0.5 + 0.5 * sin(t * 3.0 - k * 1.57)
-		ci.draw_circle(c + Vector2.from_angle(a0 - 0.2) * r_ring, 1.0, tool_col(st.tool, 0.3 + 0.6 * lit, 1.0 + lit * 0.8))
-	ci.draw_circle(c, r_core, HULL_HI)
-	ci.draw_arc(c, r_core, 0.0, TAU, 24, ink(0.95), 1.4, true)
+		FastDraw.circle(ci, c + Vector2.from_angle(a0 - 0.2) * r_ring, 1.0, tool_col(st.tool, 0.3 + 0.6 * lit, 1.0 + lit * 0.8))
+	FastDraw.circle(ci, c, r_core, HULL_HI)
+	FastDraw.arc(ci, c, r_core, 0.0, TAU, 24, ink(0.95), 1.4, true)
 	iris(ci, c + Vector2.from_angle(st.heading) * 1.5, r_core * 0.62, st.open, 6, t * 0.4, tool_col(st.tool, 0.95, 1.35))
 
 
@@ -337,10 +338,10 @@ static func claw(ci: CanvasItem, sh: Vector2, a: float, flex: float, reach: floa
 	var spread := 0.35 + 0.35 * reach
 	for s: float in [-1.0, 1.0]:
 		ci.draw_line(tip, tip + Vector2.from_angle(a + s * spread) * 3.2, ink(0.9), 1.1, true)
-	ci.draw_circle(sh, 1.9, HULL_HI)
-	ci.draw_arc(sh, 1.9, 0.0, TAU, 10, ink(0.8), 0.9, true)
-	ci.draw_circle(el, 1.5, HULL_HI)
-	ci.draw_arc(el, 1.5, 0.0, TAU, 10, ink(0.8), 0.9, true)
+	FastDraw.circle(ci, sh, 1.9, HULL_HI)
+	FastDraw.arc(ci, sh, 1.9, 0.0, TAU, 10, ink(0.8), 0.9, true)
+	FastDraw.circle(ci, el, 1.5, HULL_HI)
+	FastDraw.arc(ci, el, 1.5, 0.0, TAU, 10, ink(0.8), 0.9, true)
 	return el
 
 
@@ -348,7 +349,7 @@ static func claw(ci: CanvasItem, sh: Vector2, a: float, flex: float, reach: floa
 static func pod(ci: CanvasItem, at: Vector2, d: Vector2, f: float, st: Dictionary, big: float = 1.0) -> void:
 	var n := Vector2(-d.y, d.x)
 	var cap := PackedVector2Array([at - d * 4.5 * big + n * 3.0 * big, at + d * 3.5 * big + n * 2.4 * big, at + d * 3.5 * big - n * 2.4 * big, at - d * 4.5 * big - n * 3.0 * big])
-	ci.draw_colored_polygon(cap, HULL)
+	FastDraw.poly(ci, cap, HULL)
 	outline(ci, cap, ink(0.9), 1.1)
 	flame(ci, at + d * 4.0 * big, d, f, 2.2 * big, st.t + at.x, st.get("dash", false))
 
@@ -370,8 +371,8 @@ static func mandible(ci: CanvasItem, h: float, sh: Vector2, side: float, reach: 
 	if lite:
 		return
 	for j in [sh, el]:
-		ci.draw_circle((j as Vector2).rotated(h), 1.7, HULL_HI)
-		ci.draw_arc((j as Vector2).rotated(h), 1.7, 0.0, TAU, 10, ink(0.85), 0.9, true)
+		FastDraw.circle(ci, (j as Vector2).rotated(h), 1.7, HULL_HI)
+		FastDraw.arc(ci, (j as Vector2).rotated(h), 1.7, 0.0, TAU, 10, ink(0.85), 0.9, true)
 
 
 # how far the claws reach: out with the grapple and the wrench, in otherwise
@@ -399,7 +400,7 @@ static func _arrowring(ci: CanvasItem, st: Dictionary) -> void:
 		var b1 := clampf(boot / 0.55, 0.0, 1.0)
 		var b2 := clampf((boot - 0.45) / 0.55, 0.0, 1.0)
 		var hull0 := rot(ARROW, h)
-		ci.draw_colored_polygon(hull0, Color(HULL.r, HULL.g, HULL.b, b2))
+		FastDraw.poly(ci, hull0, Color(HULL.r, HULL.g, HULL.b, b2))
 		outline_part(ci, hull0, ink(0.95, 1.0 + 0.8 * (1.0 - b2)), 1.6, b1)
 		if b2 > 0.0:
 			var st2 := st.duplicate()
@@ -418,16 +419,16 @@ static func _arrowring(ci: CanvasItem, st: Dictionary) -> void:
 		d = d.normalized() if d.length() > 0.05 else Vector2(0, s)
 		pod(ci, at.rotated(h), d.rotated(h), clampf(maxf(side, brake), 0.0, 1.0), st, 0.9)
 	var hull := rot(ARROW, h)
-	ci.draw_colored_polygon(hull, HULL)
+	FastDraw.poly(ci, hull, HULL)
 	outline(ci, hull, ink(0.95), 1.6)
-	ci.draw_colored_polygon(rot([Vector2(22, 0), Vector2(10, -5), Vector2(-2, -12), Vector2(-2, 12), Vector2(10, 5)], h), HULL_HI)
+	FastDraw.poly(ci, rot([Vector2(22, 0), Vector2(10, -5), Vector2(-2, -12), Vector2(-2, 12), Vector2(10, 5)], h), HULL_HI)
 	if not lite:
-		ci.draw_polyline(rot([Vector2(12, -7), Vector2(20, 0), Vector2(12, 7)], h), ink(0.3), 1.0, true)
+		FastDraw.polyline(ci, rot([Vector2(12, -7), Vector2(20, 0), Vector2(12, 7)], h), ink(0.3), 1.0, true)
 	# twin mains at the wing tips
 	for s: float in [-1.0, 1.0]:
 		var m := Vector2(-12, 14 * s)
 		var nz := rot([m + Vector2(2, -2.4), m + Vector2(-3, -3.0), m + Vector2(-3, 3.0), m + Vector2(2, 2.4)], h)
-		ci.draw_colored_polygon(nz, HULL_HI)
+		FastDraw.poly(ci, nz, HULL_HI)
 		outline(ci, nz, ink(0.85), 1.0)
 		flame(ci, (m + Vector2(-3, 0)).rotated(h), Vector2.LEFT.rotated(h), clampf(lth.x, 0.0, 1.0), 2.6, t + s, st.get("dash", false))
 	ring_core(ci, Vector2(-2, 0).rotated(h), st, 6.0, 8.8)
@@ -474,10 +475,10 @@ static func _coreclaw(ci: CanvasItem, st: Dictionary) -> void:
 		pod(ci, at, nd, f, st, 1.15)
 	# the arrow hood the core sits in
 	var hood := rot([Vector2(27, 0), Vector2(8, -12), Vector2(-6, -13), Vector2(-2, 0), Vector2(-6, 13), Vector2(8, 12)], h)
-	ci.draw_colored_polygon(hood, HULL)
+	FastDraw.poly(ci, hood, HULL)
 	outline(ci, hood, ink(0.95), 1.5)
 	if not lite:
-		ci.draw_polyline(rot([Vector2(12, -8), Vector2(21, 0), Vector2(12, 8)], h), ink(0.3), 1.0, true)
+		FastDraw.polyline(ci, rot([Vector2(12, -8), Vector2(21, 0), Vector2(12, 8)], h), ink(0.3), 1.0, true)
 	ring_core(ci, Vector2(1, 0).rotated(h), st, 6.5, 9.5)
 	for s: float in [-1.0, 1.0]:
 		mandible(ci, h, Vector2(13, 7.5 * s), s, rc, 0.06 * sin(t * 2.0 + s) * s)

@@ -68,15 +68,68 @@ static func _unxf(a: Array) -> Transform2D:
 
 
 static func save(g) -> void:
-	if (g.testing and not allow_test) or g.ended or g.state != "play":
+	settle()
+	var d := snapshot(g)
+	if not d.is_empty():
+		write_file(file_for(g), d)
+
+
+# the autosave (game.gd, every 25 s): the snapshot is taken here, a deep copy of it written out
+# on a worker thread — text, checksum, tmp file and swap — so the frame does not stop for it
+# (ARK-01: ~150 ms a time). One at a time; a call while the last is still writing is skipped.
+static var _writing := -1
+const FRESH := ["pieces", "joints", "lines", "ctrls", "bodies", "readings", "leaks", "clouds", "debris"]
+
+
+static func save_async(g) -> void:
+	if _writing >= 0 and not WorkerThreadPool.is_task_completed(_writing):
 		return
+	if _writing >= 0:
+		WorkerThreadPool.wait_for_task_completion(_writing)
+		_writing = -1
+	var d := snapshot(g)
+	if d.is_empty():
+		return
+	# the world's pieces, joints, lines, controls and bodies are built fresh for the save; the
+	# modules' states may be their live dictionaries: only those are copied for the worker
+	var copy := _copy_live(d, true)
+	var file := file_for(g)
+	_writing = WorkerThreadPool.add_task(func(): write_file(file, copy))
+
+
+# a copy the worker can read while the game goes on: deep, except the arrays the snapshot built
+# fresh (in "world", "sys" and "game", one level down)
+static func _copy_live(d: Dictionary, top: bool) -> Dictionary:
+	var out := d.duplicate(false)
+	for k in out:
+		var v = out[k]
+		if k in FRESH:
+			continue
+		if top and k in ["world", "sys", "game"] and v is Dictionary:
+			out[k] = _copy_live(v, false)
+		elif v is Dictionary or v is Array:
+			out[k] = v.duplicate(true)
+	return out
+
+
+# before anything else reads or writes the contract's file: the autosave in flight is finished
+static func settle() -> void:
+	if _writing >= 0:
+		WorkerThreadPool.wait_for_task_completion(_writing)
+		_writing = -1
+
+
+# what a save holds, or {} when this contract is not one to save
+static func snapshot(g) -> Dictionary:
+	if (g.testing and not allow_test) or g.ended or g.state != "play":
+		return {}
 	# a developer's test contract is never written over the career's contract in progress
 	if g.dev_job():
-		return
+		return {}
 	# a special course is short and starts over (scripts/codex.gd): never written over the
 	# base course's training save
 	if Codex.class_of_course(str(g.ship_id)) != "" and not g.testing:
-		return
+		return {}
 	var w = g.world
 	var s = g.sys
 	# a cut made this frame splits the body before it is written, as it would next physics step
@@ -96,6 +149,10 @@ static func save(g) -> void:
 			bodies.append({"xf": _xf(taken[b]), "v": [0.0, 0.0], "w": 0.0})
 		else:
 			bodies.append({"xf": _xf(b.global_transform), "v": _v2(b.linear_velocity), "w": b.angular_velocity})
+		for key in ["manual_mark","hauled","plan_zone","plan_dispatch","arm_extraction","arm_receiver"]:
+			if b.has_meta(key): bodies[-1][key] = b.get_meta(key)
+		if b.capture == null and (b.get_meta("arm_parked",false) or (b.get_meta("arm_extraction",false) and str(b.get_meta("arm_receiver","")) != "")):
+			bodies[-1].arm_parked = true
 	var pieces: Array = []
 	for id in w.order:
 		var p = w.pieces[id]
@@ -104,13 +161,14 @@ static func save(g) -> void:
 		if p.body != null and not body_ids.has(p.body):
 			continue
 		pieces.append({
-			"id": p.id, "kind": p.kind, "tag": p.tag, "nk": p.name_key, "poly": _poly(p.poly),
+			"id": p.id, "kind": p.kind, "tag": p.tag, "key": p.key, "cut_seq":p.cut_seq, "nk": p.name_key, "poly": _poly(p.poly),
 			"body": body_ids.get(p.body, -1), "mass": p.mass, "den": p.density, "cls": p.cls, "val": p.value,
 			"cond": p.cond, "intact": p.intact, "art": p.art, "axf": _xf(p.art_xf), "asz": _v2(p.art_size),
 			"frag": p.fragile, "contam": p.contam, "cs": p.cut_speed, "room": p.room, "bar": p.barrier,
 			"door": p.door, "open": p.door_open, "odir": _v2(p.open_dir), "haz": p.hazard, "temp": p.temp,
 			"must": p.mandatory, "dest": p.dest, "hid": p.hidden_by, "seen": p.seen, "label": p.label,
-			"scope": p.scope, "seg": p.get_meta("segments", []),
+			"scope": p.scope, "seg": (p.get_meta("segments", []) as Array).duplicate(true), "segcut": p.get_meta("seg_cut", false),
+			"mat": p.mat, "kdt": p.kerf_dt, "loss": p.loss, "crk": p.cracks,
 		})
 	var joints: Array = []
 	for j in w.joints:
@@ -157,6 +215,9 @@ static func save(g) -> void:
 	var d := {
 		"version": VERSION,
 		"ship": g.ship_id,
+		"exchange_cargo": g.exchange_logistics.field_state() if g.exchange_logistics != null else {},
+		"industrial_cargo": g.industrial_heat.field_state() if g.industrial_heat != null else {},
+		"sorting_cargo": g.industrial_sort.field_state() if g.industrial_sort != null else {},
 		"mech": g.mech.save_state() if g.mech != null else {},
 		"munitions": g.munitions.save_state() if g.munitions != null and g.munitions.active() else {},
 		"rails": g.rails.save_state() if g.rails != null and g.rails.active() else {},
@@ -193,18 +254,23 @@ static func save(g) -> void:
 		"ore": g.ore.save_state() if g.ore != null else {},
 		"cryo": g.cryo.save_state() if g.cryo != null else {},
 		"plan": g.plan.save_state() if g.plan != null else {},
+		"operator_hauls": _operator_hauls(g),
+		"auto_paused": g.auto_paused,
+		"gear": g.gear.save_state() if g.gear != null else {},
+		"work_order":g.work_order.save_state() if g.work_order != null else {},
 		"keepout": g.keepout.map(func(r): return [r.position.x, r.position.y, r.size.x, r.size.y]),
 		"world": {"pieces": pieces, "joints": joints, "lines": lines, "ctrls": ctrls, "rooms": rooms, "bodies": bodies,
-			"next_id": w.next_id, "next_joint": w.next_joint, "metal_price": w.metal_price, "smass": w.structural_mass},
+			"next_id": w.next_id, "next_joint": w.next_joint, "metal_price": w.metal_price, "smass": w.structural_mass, "mat_priced": w.mat_priced},
 		"sys": {"vols": vols, "switch": s.switch, "src": src, "iso": iso, "fluid": fluid, "frec": s.fluid_rec, "aux": s.aux,
-			"remote": s.remote_sent, "T": s.loop_T, "grec": s.gas_recovered, "glost": s.gas_lost, "flost": s.fluid_lost,
+			"remote": s.remote_sent, "T": s.loop_T, "grec": s.gas_recovered, "gtake": s.gas_take, "gtanks": s.gas_tanks, "glost": s.gas_lost, "flost": s.fluid_lost,
 			"time": s.time, "hoses": s.hoses, "readings": readings, "vol_ver": s.vol_ver, "elec_ver": s.elec_ver,
 			"elec_sig": s._elec_sig, "leaks": leaks, "clouds": clouds, "blown": s.blown},
-		"game": {"ie": g.income_equip, "im": g.income_metal, "ih": g.income_hazard, "loss": g.losses, "lines": g.loss_lines,
+		"game": {"ie": g.income_equip, "im": g.income_metal, "iore": g.income_ore, "ih": g.income_hazard, "loss": g.losses, "lines": g.loss_lines,
 			"must": g.mandatory_ok, "incidents": g.incidents, "time": g.playtime, "hints": g.hints_seen, "ledger": g.ledger,
 			"drone": {"p": _v2(g.drone.global_position), "v": _v2(g.drone.linear_velocity), "hp": g.drone.integrity, "alive": g.drone.alive},
 			"tool": g.tools.tool, "hose_mode": g.tools.hose_mode, "reveals": g.reveal_count, "respawn": g.drone_respawn, "used": g.used, "verified": g.verified, "ops": g.ops,
-			"debris": debris, "must_value": g.must_value, "changed": g.changed, "time_by": g.time_by},
+			"debris": debris, "must_value": g.must_value, "changed": g.changed, "time_by": g.time_by,
+			"receiver_commits":g.receiver_commits, "material_receipts":g.material_receipts, "parts_in": g.parts_in, "parts_value": g.parts_value, "spot_paid": g.spot_paid, "structure_t": g.structure_t},
 	}
 	if not g.job.is_empty():
 		d.job = g.job
@@ -212,7 +278,7 @@ static func save(g) -> void:
 		d.tutorial = g.tutorial.save_state()
 	if g.story != null:
 		d.story = g.story.save_state()
-	write_file(file_for(g), d)
+	return d
 
 
 # tmp first, then swap: whatever happens mid-write, either the old save or the
@@ -234,6 +300,7 @@ static func write_file(file: String, d: Dictionary) -> bool:
 
 
 static func read(file: String = "") -> Dictionary:
+	settle()
 	return _read(path if file == "" else file, true)
 
 
@@ -323,9 +390,11 @@ static func apply(g, d: Dictionary) -> bool:
 		p.id = int(pd.id)
 		p.kind = pd.kind
 		p.tag = pd.tag
+		p.key = str(pd.get("key", ""))
 		p.name_key = pd.nk
 		p.poly = _unpoly(pd.poly)
 		p.mass = pd.mass
+		p.cut_seq = int(pd.get("cut_seq", 0))
 		p.density = pd.den
 		p.cls = pd.cls
 		p.value = pd.val
@@ -337,9 +406,16 @@ static func apply(g, d: Dictionary) -> bool:
 		p.fragile = pd.frag
 		p.contam = pd.contam
 		p.scope = pd.get("scope", true)
+		if pd.get("segcut", false):
+			p.set_meta("seg_cut", true)
 		if not pd.get("seg", []).is_empty():
 			p.set_meta("segments", pd.seg)
 		p.cut_speed = pd.cs
+		# 87-1: a contract saved before materials keeps its parts plain (and its scrap price, below)
+		p.mat = str(pd.get("mat", ""))
+		p.kerf_dt = float(pd.get("kdt", 0.0))
+		p.loss = float(pd.get("loss", 0.0))
+		p.cracks = int(pd.get("crk", 0))
 		p.room = pd.room
 		p.barrier = pd.bar
 		p.door = pd.door
@@ -356,6 +432,7 @@ static func apply(g, d: Dictionary) -> bool:
 		p.set_meta("body", int(pd.body))
 		w.pieces[p.id] = p
 		w.order.append(p.id)
+	w.pick_reset()
 	for jd in wd.joints:
 		var j := Model.Joint.new()
 		j.id = int(jd.id)
@@ -425,6 +502,10 @@ static func apply_late(g, d: Dictionary) -> void:
 	var w = g.world
 	var wd: Dictionary = d.world
 	w.metal_price = wd.metal_price
+	w.mat_priced = bool(wd.get("mat_priced", false))
+	for id in w.pieces:
+		if w.pieces[id].kerf_dt > 0.0:
+			w._warm[id] = true
 	w.structural_mass = wd.smass
 	for n in wd.rooms:
 		if w.rooms.has(n) and wd.rooms[n]:
@@ -438,6 +519,15 @@ static func apply_late(g, d: Dictionary) -> void:
 		if bi >= 0 and bi < wd.bodies.size():
 			b.linear_velocity = _p2(wd.bodies[bi].v)
 			b.angular_velocity = wd.bodies[bi].w
+			for key in ["manual_mark","hauled","plan_zone","plan_dispatch","arm_extraction","arm_receiver"]:
+				if wd.bodies[bi].has(key): b.set_meta(key,wd.bodies[bi][key])
+			if wd.bodies[bi].get("arm_parked",false):
+				b.set_meta("arm_parked",true)
+				b.freeze = true
+				b.collision_layer = 0
+				b.collision_mask = 0
+				b.linear_velocity = Vector2.ZERO
+				b.angular_velocity = 0.0
 	var s = g.sys
 	var sd: Dictionary = d.sys
 	for k in sd.vols:
@@ -461,6 +551,8 @@ static func apply_late(g, d: Dictionary) -> void:
 	s.remote_sent = sd.remote
 	s.loop_T = sd.T
 	s.gas_recovered = sd.grec
+	s.gas_take = sd.get("gtake", {})
+	s.gas_tanks = sd.get("gtanks", {})
 	s.gas_lost = sd.glost
 	s.fluid_lost = sd.flost
 	s.time = sd.time
@@ -487,6 +579,7 @@ static func apply_late(g, d: Dictionary) -> void:
 	var gd: Dictionary = d.game
 	g.income_equip = gd.ie
 	g.income_metal = gd.im
+	g.income_ore = float(gd.get("iore", 0.0))
 	g.income_hazard = gd.ih
 	g.losses = gd.loss
 	g.loss_lines = gd.lines
@@ -495,6 +588,16 @@ static func apply_late(g, d: Dictionary) -> void:
 	g.must_value = gd.get("must_value", {})
 	g.changed = gd.get("changed", {})
 	g.time_by = gd.get("time_by", {})
+	g.material_receipts = gd.get("material_receipts", []).duplicate(true)
+	g.receiver_commits = gd.get("receiver_commits", {}).duplicate(true)
+	# Field saves from the first G5 foundation already know retained piece IDs.
+	for receipt in g.material_receipts:
+		g.receiver_commits[str(receipt.get("id", ""))] = true
+	g.material_recovery_value = preload("res://scripts/material_batches.gd").recovery_value(g.material_receipts)
+	g.parts_in = gd.get("parts_in", [])
+	g.parts_value = float(gd.get("parts_value", 0.0))
+	g.spot_paid = float(gd.get("spot_paid", 0.0))
+	g.structure_t = float(gd.get("structure_t", 0.0))
 	g.incidents = gd.get("incidents", [])
 	g.playtime = gd.time
 	g.hints_seen = gd.hints
@@ -517,13 +620,61 @@ static func apply_late(g, d: Dictionary) -> void:
 	g.drone.integrity = dr.hp
 	g.drone.alive = dr.alive
 	g.drone.reset_physics_interpolation()
+	g.auto_paused = bool(d.get("auto_paused",false))
+	_restore_operator_hauls(g,d.get("operator_hauls",null))
 	w.redraw_all()
 	w.back_layer.queue_redraw()
 	w.cover_layer.queue_redraw()
 
 
+static func _load_keys(b) -> Array:
+	var keys: Array = []
+	for p in b.pieces:
+		if not p.gone and p.key != "": keys.append(p.key)
+	keys.sort()
+	return keys
+
+static func _operator_hauls(g) -> Array:
+	var machines: Array = g.haulers()
+	if g.crane != null: machines.append(g.crane)
+	var candidates: Array = []
+	for machine in machines:
+		if is_instance_valid(machine.body): candidates.append(machine.body)
+	for machine in machines: candidates.append_array(machine.queue)
+	# Older pause/drop paths retain the mark on the physical object. Preserve
+	# that explicit intent as well, without reviving an unmarked plan dispatch.
+	candidates.append_array(g.world.bodies)
+	var seen := {}
+	var result: Array = []
+	for body in candidates:
+		if not is_instance_valid(body) or body.capture != null or not body.get_meta("manual_mark",false) or body.get_meta("plan_dispatch",false): continue
+		var instance: int = body.get_instance_id()
+		if seen.has(instance): continue
+		seen[instance] = true
+		var keys := _load_keys(body)
+		if not keys.is_empty(): result.append({"keys":keys})
+	return result
+
+static func _restore_operator_hauls(g, saved) -> void:
+	var records: Array = saved if saved is Array else []
+	if not saved is Array:
+		for body in g.world.bodies:
+			if body.get_meta("manual_mark",false) and not body.get_meta("plan_dispatch",false): records.append({"keys":_load_keys(body)})
+	for record in records:
+		if not record is Dictionary or not record.get("keys",null) is Array: continue
+		for body in g.world.bodies:
+			if body.capture != null or not body.get_meta("manual_mark",false) or body.get_meta("plan_dispatch",false) or _load_keys(body) != record.keys: continue
+			if body.get_meta("arm_extraction",false):
+				g.arm_extract(body,str(body.get_meta("plan_zone","")),false)
+				break
+			var machine = g.hauler if g.hauler != null and body.total_mass() <= Hauler.MAX_T else g.crane
+			if machine != null and not machine.queue.has(body): machine.queue.append(body)
+			break
+
+
 # the contract is over: keep the files for reference, but never offer them as "continue"
 static func clear(file: String = "") -> void:
+	settle()
 	var f := path if file == "" else file
 	for ext in ["", ".bak"]:
 		if FileAccess.file_exists(f + ext):

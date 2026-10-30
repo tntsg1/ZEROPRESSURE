@@ -13,28 +13,22 @@ const DArt = preload("res://scripts/drone_art.gd")
 
 # the terminal's look (P.7, industrial HMI): keys standing out of the console
 static func _key_box(state: String) -> StyleBoxFlat:
-	var box := StyleBoxFlat.new()
-	var down := state in ["pressed"]
-	box.bg_color = Color(0.16, 0.165, 0.18) if down else (Color(0.13, 0.135, 0.15) if state in ["hover", "focus"] else (Color(0.08, 0.084, 0.092) if state == "disabled" else Hmi.PANEL))
-	box.border_color = Pal.heat(1.0, 1.3) if down or state == "focus" else Color(0, 0, 0, 0.7)
-	box.set_border_width_all(2 if down or state == "focus" else 1)
-	box.border_width_bottom = 4 if down else 3
+	# 51 号: the new look's glass key — the edge warms on hover and focus, deeper when pressed
+	var box: StyleBoxFlat
+	match state:
+		"pressed": box = UiSkin.glass(0.12, 0.55, 12, 10.0, UiSkin.ACCENT)
+		"hover", "focus": box = UiSkin.glass(0.08, 0.35, 12, 10.0, UiSkin.ACCENT)
+		"disabled": box = UiSkin.glass(0.02, 0.04, 12, 10.0)
+		_: box = UiSkin.glass(0.05, 0.1, 12, 10.0)
 	box.content_margin_left = 44
 	box.content_margin_right = 16
-	box.content_margin_top = 10
-	box.content_margin_bottom = 10
 	return box
 
 
 static func _plate_box() -> StyleBoxFlat:
-	var box := StyleBoxFlat.new()
-	box.bg_color = Hmi.PLATE
-	box.border_color = Color(1, 1, 1, 0.2)
-	box.set_border_width_all(1)
+	var box := UiSkin.solid(Color(0, 0, 0, 0.25), 10, 6.0)
 	box.content_margin_left = 12
 	box.content_margin_right = 12
-	box.content_margin_top = 6
-	box.content_margin_bottom = 6
 	return box
 
 

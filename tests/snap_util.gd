@@ -113,8 +113,9 @@ static func diff(a: Dictionary, b: Dictionary) -> Array:
 			bad.append("piece %d appeared" % id)
 	if a.joints != b.joints:
 		bad.append("joints differ (%d vs %d)" % [a.joints.size(), b.joints.size()])
-	# a fresh cut-off may reach the debris net in the frames between save and check (it is then gone from the pieces)
-	if int(b.debris) < int(a.debris) or int(b.debris) - int(a.debris) > 2:
+	# a fresh cut-off may reach the debris net in the frames between save and check (it is then gone from the pieces);
+	# a piece already flying may land in the net in those frames too (it is then gone from the debris)
+	if absi(int(b.debris) - int(a.debris)) > 2:
 		bad.append("debris differ: %d vs %d" % [int(a.debris), int(b.debris)])
 	for k in ["lines", "ctrls", "rooms", "flags", "hoses", "leaks", "clouds"]:
 		if a[k] != b[k]:

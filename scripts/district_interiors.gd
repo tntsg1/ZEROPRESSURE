@@ -14,17 +14,26 @@ extends Node2D
 const CanvasBatch = preload("res://scripts/canvas_batch.gd")
 const TugArt = preload("res://scripts/tug_station_art.gd")
 const TugWorks = preload("res://scripts/tug_works.gd")
+const PowerArt = preload("res://scripts/power_station_art.gd")
+const PowerWorks = preload("res://scripts/power_works.gd")
+const ProcArt = preload("res://scripts/process_art.gd")
+const ProcWorks = preload("res://scripts/process_works.gd")
+const CargoArt = preload("res://scripts/cargo_art.gd")
+const CargoWorks = preload("res://scripts/cargo_works.gd")
 
 # floor-standing pieces with collision, box-local metres: [id, position, size]
 const SOLIDS := {
-	"power": [["turbine", Vector2(38, 7), Vector2(17, 6)], ["pumps", Vector2(4, 21), Vector2(9, 5.8)]],
+	# 100 号: the turbine deck, the condenser under it, the fuel cells, the feed pumps, the radiator pumps
+	"power": [["turbine", Vector2(37.6, 6.2), Vector2(20.4, 6.4)], ["condenser", Vector2(43.0, 12.6), Vector2(6.6, 3.8)], ["fuelcell", Vector2(0.8, 19.6), Vector2(8.0, 7.2)],
+		["feedpumps", Vector2(10.0, 23.4), Vector2(10.4, 3.4)], ["radpumps", Vector2(54.4, 19.4), Vector2(5.2, 7.4)]],
 	"tug": [["fuel", Vector2(42.7, 12.4), Vector2(3.9, 14.4)], ["bins", Vector2(47.2, 19.4), Vector2(4.6, 7.4)]],
 	"process": [["baghouse", Vector2(31, 19), Vector2(8, 7.8)], ["transformer", Vector2(2, 20), Vector2(6, 6.8)]],
 	"trade": [],
 	"cargo": [["pallets", Vector2(53, 21), Vector2(5, 5.8)]],
 }
 const NAMES := {
-	"turbine": ["汽轮发电机", "TURBINE-GENERATOR"], "pumps": ["主冷却泵", "COOLANT PUMPS"],
+	"turbine": ["汽轮发电机", "TURBINE-GENERATOR"], "pumps": ["主冷却泵", "COOLANT PUMPS"], "condenser": ["冷凝器", "CONDENSER"],
+	"fuelcell": ["应急燃料电池", "FUEL CELLS"], "feedpumps": ["给水泵", "FEED PUMPS"], "radpumps": ["散热泵", "RADIATOR PUMPS"],
 	"fuel": ["推进剂储罐", "PROPELLANT TANK"], "bins": ["零件箱", "PARTS BINS"], "gantry": ["龙门吊", "GANTRY"],
 	"baghouse": ["除尘布袋室", "BAGHOUSE"], "transformer": ["炉用变压器", "FURNACE TRANSFORMER"], "duct": ["排烟道", "FUME DUCT"],
 	"sorter": ["传单分拣", "TUBE SORTER"], "tube": ["气动传单管", "PNEUMATIC TUBE"],
@@ -41,10 +50,43 @@ var t := 0.0
 var speed := {}                # zone → how fast its machinery runs now (0 still … 1 working hard)
 var phase := {}                # zone → its machinery's running phase
 var power_mw := 0.0            # what the bus draws now (the turbine's readout)
+var power_art                  # 100 号: the power district's plant (scripts/power_station_art.gd)
+var power_tick_us := 0.0       # tests: its plant's step, and its moving parts' drawing a frame (µs, smoothed)
+var power_draw_us := 0.0
+var _pw_read_t := 0.0
+var power_words: Node2D        # its plates' and meters' words, redrawn five times a second
+var _pw_words_t := 0.0
 var tug_art                    # 96 号: the tug station's machines (scripts/tug_station_art.gd)
 var card                       # 96 号: the hover card
 var tug_tick_us := 0.0         # 96 号: what the tug station costs a frame (µs, smoothed): its machines' step
 var tug_draw_us := 0.0         # … and its moving parts' drawing (the commands; the GPU's share is apart)
+# 101 号: the processing district as a steelworks (scripts/process_art.gd, process_works.gd): its still
+# hall behind the furnace, the moving parts behind and in front of it, the arcs' light added on top
+var proc_art
+var proc_still: Node2D
+var proc_back: Node2D
+var proc_front: Node2D
+var proc_glow: Node2D
+var proc_plates: Node2D        # the plates' text: four times a second (shaped text is dear)
+var _plates_t := 0.0
+# 102 号: the cargo district as a warehouse (scripts/cargo_art.gd, cargo_works.gd), on the same layers
+var cargo_art
+var cargo_still: Node2D
+var cargo_back: Node2D
+var cargo_front: Node2D
+var cargo_glow: Node2D
+var cargo_plates: Node2D
+var _cargo_key := ""
+var _cplates_t := 0.0
+var _cplates_sig := ""
+var cargo_tick_us := 0.0       # tests: the machines' step, their drawing a frame (µs, smoothed)
+var cargo_draw_us := 0.0
+var cargo_front_us := 0.0
+var _proc_key := ""
+var _glow_tex: Texture2D
+var proc_tick_us := 0.0        # tests: the machines' step, and their drawing a frame (µs, smoothed)
+var proc_draw_us := 0.0
+var proc_front_us := 0.0
 
 
 static func w(zh: String, en: String) -> String:
@@ -73,8 +115,64 @@ func _ready() -> void:
 	tug_art.font = font
 	# 96 号: the facility card over the machines (scripts/facility_card.gd)
 	card = preload("res://scripts/facility_card.gd").new()
-	card.items = func() -> Array: return tug_art.hover_items() if visible and _zone() == "tug" else []
+	card.items = func() -> Array:
+		if not visible:
+			# 105 号: out in the berth, the terminal on the tower and the parts rack
+			return _desk_items("") if game != null and game.in_berth() else []
+		var list: Array = []
+		if _zone() == "tug":
+			list = tug_art.hover_items()
+		elif _zone() == "process":
+			list = proc_art.hover_items(game)
+		elif _zone() == "cargo":
+			list = cargo_art.hover_items(game)
+		elif _zone() == "power":
+			list = power_art.hover_items(Port.stage("power"))
+		elif _zone() == "ring" and get_parent() != null and get_parent().get("hub") != null:
+			# 109 号: the carousel, its drives and arms, the bridge
+			list = get_parent().hub.art.hover_items(game)
+		# 103 号: the district's business console has its card too; 105 号: and its work desks
+		return list + [_console_item(_zone())] + _desk_items(_zone())
 	add_child(card)
+	PowerWorks.reset()
+	power_art = PowerArt.new()
+	power_art.font = font
+	power_words = Node2D.new()
+	power_words.draw.connect(_draw_power_words)
+	add_child(power_words)
+	move_child(power_words, 0)
+	ProcWorks.reset()
+	proc_art = ProcArt.new()
+	proc_art.font = font
+	_glow_tex = Fx.make_glow_texture(1.6)
+	# behind the furnace and the line (scripts/process_plant.gd draws them at 1), in front of them, light
+	proc_still = _layer(0, _draw_proc_still)
+	proc_back = _layer(0, _draw_proc_back)
+	proc_front = _layer(3, _draw_proc_front)
+	proc_glow = _layer(3, _draw_proc_glow)
+	proc_plates = _layer(3, _draw_proc_plates)
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	proc_glow.material = add
+	CargoWorks.reset()
+	cargo_art = CargoArt.new()
+	cargo_art.font = font
+	cargo_still = _layer(0, _draw_cargo_still)
+	cargo_back = _layer(0, _draw_cargo_back)
+	cargo_front = _layer(3, _draw_cargo_front)
+	cargo_glow = _layer(3, _draw_cargo_glow)
+	cargo_plates = _layer(3, _draw_cargo_plates)
+	cargo_glow.material = add
+
+
+func _layer(z: int, draw: Callable) -> Node2D:
+	var n := Node2D.new()
+	n.z_index = z
+	n.z_as_relative = false
+	n.visible = false
+	n.draw.connect(draw)
+	add_child(n)
+	return n
 
 
 func _zone() -> String:
@@ -90,11 +188,8 @@ func _busy(zone: String) -> float:
 	var k := 0.3
 	match zone:
 		"power":
-			var mw := 0.0
-			for l in Grid.loads(game):
-				mw += float(l.mw)
-			power_mw = mw
-			k = clampf(mw / maxf(1.0, Grid.capacity()), 0.15, 1.0)
+			power_mw = PowerWorks.own + PowerWorks.shore
+			k = clampf(PowerWorks.frac(), 0.15, 1.0)
 		"process":
 			var p = game.get("plant")
 			if p != null and is_instance_valid(p) and (float(p.smelter.power) > 0.1 or bool(p.scrapline.company_powered)):
@@ -128,6 +223,46 @@ func _process(dt: float) -> void:
 	if card != null:
 		card.game = game
 	# the station's one-shots, heard only near it (the berth would hear them faintly otherwise)
+	# 101 号: the processing district's machines run on its real state, seen or not
+	if game != null and game.in_berth() and game.career():
+		var t1 := Time.get_ticks_usec()
+		ProcWorks.tick(game, dt)
+		proc_tick_us = lerpf(proc_tick_us, float(Time.get_ticks_usec() - t1), 0.05)
+		if not ProcWorks.events.is_empty():
+			var inside := game.drone != null and PortStructure.box("process").grow(6.0 * PortStructure.M()).has_point(game.drone.global_position)
+			for e in ProcWorks.events:
+				if inside and game.get("sfx") != null:
+					game.sfx.play(str(e[0]), PortStructure.box("process").position + (e[1] as Vector2) * PortStructure.M(), 0.7)
+			ProcWorks.events.clear()
+	# 100 号: the power district's plant, run on the grid's real figures (read four times a second)
+	if game != null and game.in_berth() and game.career():
+		var t2 := Time.get_ticks_usec()
+		_pw_read_t -= dt
+		var rd := {}
+		if _pw_read_t <= 0.0:
+			_pw_read_t = 0.25
+			rd = PowerWorks.read(game)
+		PowerWorks.tick(dt, rd)
+		power_tick_us = lerpf(power_tick_us, float(Time.get_ticks_usec() - t2), 0.05)
+		if not PowerWorks.events.is_empty():
+			var pn := power_near()
+			for e in PowerWorks.events:
+				if pn > 0.0 and game.get("sfx") != null:
+					game.sfx.play(str(e[0]), PortStructure.box("power").position + (e[1] as Vector2) * PortStructure.M(), 0.7 * pn)
+			PowerWorks.events.clear()
+	# 102 号: the warehouse's trucks and crane run on its real jobs, seen or not
+	if game != null and game.in_berth() and game.career():
+		var t3 := Time.get_ticks_usec()
+		var cp := crane_pose()
+		cp["key"] = str(haul.get("key", ""))
+		CargoWorks.tick(game, dt, cp)
+		cargo_tick_us = lerpf(cargo_tick_us, float(Time.get_ticks_usec() - t3), 0.05)
+		if not CargoWorks.events.is_empty():
+			var inside_c := game.drone != null and PortStructure.box("cargo").grow(6.0 * PortStructure.M()).has_point(game.drone.global_position)
+			for e in CargoWorks.events:
+				if inside_c and game.get("sfx") != null:
+					game.sfx.play(str(e[0]), PortStructure.box("cargo").position + (e[1] as Vector2) * PortStructure.M(), 0.6)
+			CargoWorks.events.clear()
 	if not TugWorks.events.is_empty():
 		var near := _tug_near()
 		for e in TugWorks.events:
@@ -136,8 +271,45 @@ func _process(dt: float) -> void:
 		TugWorks.events.clear()
 	var zone := _zone()
 	visible = zone != "" and game != null and game.in_berth()
+	power_words.visible = visible and zone == "power"
+	for n in [proc_still, proc_back, proc_front, proc_glow, proc_plates]:
+		n.visible = visible and zone == "process"
+	for n in [cargo_still, cargo_back, cargo_front, cargo_glow, cargo_plates]:
+		n.visible = visible and zone == "cargo"
 	if not visible:
 		return
+	if zone == "power":
+		_pw_words_t -= dt
+		if _pw_words_t <= 0.0:
+			_pw_words_t = 0.2
+			power_words.queue_redraw()
+	if zone == "process":
+		var pk := "%d/%d" % [int(Port.stage("process") >= 1), lod()]
+		if pk != _proc_key:
+			_proc_key = pk
+			proc_still.queue_redraw()
+		proc_back.queue_redraw()
+		proc_front.queue_redraw()
+		proc_glow.queue_redraw()
+		_plates_t -= dt
+		if _plates_t <= 0.0:
+			_plates_t = 0.25
+			proc_plates.queue_redraw()
+	if zone == "cargo":
+		var ck := "%d/%d/%d" % [int(Port.stage("cargo") >= 1), lod(), ProcessQueue.entries().reduce(func(acc, e): return acc + int(float(e.melted) * 10.0) + 1000, 0)]
+		if ck != _cargo_key:
+			_cargo_key = ck
+			cargo_still.queue_redraw()
+		cargo_back.queue_redraw()
+		cargo_front.queue_redraw()
+		cargo_glow.queue_redraw()
+		_cplates_t -= dt
+		if _cplates_t <= 0.0:
+			_cplates_t = 0.25
+			var sig2: String = cargo_art.plates_sig(game)
+			if sig2 != _cplates_sig:
+				_cplates_sig = sig2
+				cargo_plates.queue_redraw()
 	t += dt
 	var target := _busy(zone)
 	speed[zone] = move_toward(float(speed.get(zone, target)), target, dt * 0.5)
@@ -148,7 +320,7 @@ func _process(dt: float) -> void:
 	if zone == "cargo":
 		sig = _stock_sig()
 	elif zone == "power":
-		sig = "%d/%s" % [int(_power_frac() * 10.0), _feeders_sig()]
+		sig = str(lod())
 	elif zone == "tug":
 		sig = str(lod())
 	var key := "%s/%d/%s" % [zone, Port.stage(zone) if zone != "ring" else Port.stage("power"), sig]
@@ -203,10 +375,6 @@ func _catwalk(cb, x0: float, x1: float, y: float, ladder_x := -1.0, ladder_to :=
 			yy += 0.6
 
 
-func _tray(cb, pts: Array) -> void:
-	_pipe(cb, pts, 0.35, Pal.ink(0.22))
-
-
 # ------------------------------------------------------------------ the still parts
 func _draw() -> void:
 	var zone := _zone()
@@ -219,30 +387,17 @@ func _draw() -> void:
 	var lit := Pal.tint(Pal.AIR, 0.55, 1.1) if on else Pal.ink(0.3)
 	var hot := Pal.heat(0.55, 1.0) if on else Pal.ink(0.3)
 	if zone == "ring":
-		_ring_still(cb)
+		# 109 号: the hub is scripts/hub_view.gd's
 		cb.flush()
 		return
 	_r = PortStructure.box(zone)
 	match zone:
 		"power":
-			# coolant loop: reactor heads → header along the ceiling → turbine; returns under the floor plates to the pumps
-			_pipe(cb, [Vector2(9, 6), Vector2(9, 3), Vector2(46, 3), Vector2(46, 7)], 0.7, hot)
-			_pipe(cb, [Vector2(20, 6), Vector2(20, 3)], 0.7, hot)
-			_pipe(cb, [Vector2(52, 13), Vector2(52, 16), Vector2(34, 16), Vector2(34, 24.5), Vector2(13, 24.5)], 0.6, lit)
-			_pipe(cb, [Vector2(6, 21), Vector2(6, 18)], 0.6, lit)
-			_pipe(cb, [Vector2(11, 21), Vector2(11, 19.5), Vector2(20, 19.5), Vector2(20, 18)], 0.6, lit)
-			_tray(cb, [Vector2(47, 18), Vector2(47, 1.3), Vector2(58, 1.3)])
-			_tray(cb, [Vector2(55, 7), Vector2(57, 7), Vector2(57, 22), Vector2(54, 22)])
-			_catwalk(cb, 3.0, 26.0, 5.0, 25.0, 18.0)
-			# 48 号 (player 2026-10-25: "not plain geometry — detail, hardcore"): each machine drawn as
-			# what it is; the rods sit as deep as the load asks, the breakers as the feeders stand
-			var frac := _power_frac()
-			_reactor(cb, Vector2(5, 6), "A", frac, on)
-			_reactor(cb, Vector2(16, 6), "B", frac, on)
-			_turbine_set(cb, on)
-			_pumps(cb, on)
-			_switchgear(cb)
-			_label(cb, Vector2(3, 4.2), "catwalk", Pal.ink(0.45))
+			# 100 号: the plant as its three loops (scripts/power_station_art.gd)
+			power_art.r = _r
+			power_art.m = _m
+			cb.flush()
+			power_art.still(self, Port.stage("power"), lod())
 		"tug":
 			# 96 号: the whole station as the machines it holds (scripts/tug_station_art.gd)
 			tug_art.r = _r
@@ -250,36 +405,14 @@ func _draw() -> void:
 			cb.flush()
 			tug_art.still(self, on, lod(), Port.stage("tug"))
 		"process":
-			# the fume hood over the arc furnace, the duct along the ceiling, the baghouse on the floor
-			_pipe(cb, [Vector2(16, 7.5), Vector2(16, 1.6), Vector2(35, 1.6), Vector2(35, 19)], 1.1, Pal.ink(0.32))
-			cb.draw_colored_polygon(PackedVector2Array([_p(Vector2(13, 8)), _p(Vector2(19, 8)), _p(Vector2(17, 6.6)), _p(Vector2(15, 6.6))]), Pal.ink(0.2))
-			_box(cb, Vector2(31, 19), Vector2(8, 7.8), Pal.ink(0.5))
-			for i in 5:
-				cb.draw_line(_p(Vector2(32 + i * 1.5, 20.5)), _p(Vector2(32 + i * 1.5, 25.5)), Pal.ink(0.2), 0.3 * _m)
-			_pipe(cb, [Vector2(39, 21), Vector2(42, 21), Vector2(42, 0.8)], 0.5, Pal.ink(0.25))
-			# the transformer and its bus to the electrode arms
-			_box(cb, Vector2(2, 20), Vector2(6, 6.8), Pal.ink(0.5))
-			for i in 3:
-				cb.draw_line(_p(Vector2(2.6 + i * 1.8, 20.6)), _p(Vector2(2.6 + i * 1.8, 26.2)), Pal.ink(0.18), 0.4 * _m)
-			_pipe(cb, [Vector2(7, 20), Vector2(7, 17.5), Vector2(11, 17.5), Vector2(11, 9.5), Vector2(13, 9.5)], 0.35, hot)
-			_catwalk(cb, 20.0, 30.0, 4.6, 29.0, 9.0)
-			_label(cb, Vector2(31, 18.4), "baghouse", Pal.ink(0.6))
-			_label(cb, Vector2(2, 19.4), "transformer", Pal.ink(0.6))
-			_label(cb, Vector2(21, 1.2), "duct", Pal.ink(0.45))
+			# 101 号: drawn by scripts/process_art.gd on its own layers
+			pass
 		"trade":
 			# 52 号: the hall kept clear — only a light strip along the ceiling
 			cb.draw_line(_p(Vector2(16, 0.8)), _p(Vector2(56, 0.8)), Pal.tint(Pal.AIR, 0.35 if on else 0.1, 1.1), 0.2 * _m)
 		"cargo":
-			cb.draw_line(_p(Vector2(8, 2)), _p(Vector2(52, 2)), Pal.ink(0.4), 0.4 * _m)
-			# 46 号 (player 2026-10-25: "what are these red, yellow, blue, green things? put what I
-			# bought and the billets I made in here"): rack shelves over the two bays, and on them
-			# the stock actually held — each goods as itself, its pile by its tonnes, its name
-			# 73 号: eight rows, A1–A4 and B1–B4, each with its use and how long a pick takes
-			for bx in [6.0, 42.0]:
-				for lv in 4:
-					cb.draw_line(_p(Vector2(bx, 12 + lv * 3.0)), _p(Vector2(bx + 10, 12 + lv * 3.0)), Pal.ink(0.35), 0.15 * _m)
-				for px in [bx, bx + 10.0]:
-					cb.draw_line(_p(Vector2(px, 9)), _p(Vector2(px, 21)), Pal.ink(0.3), 0.15 * _m)
+			# 102 号: the hall, the racks, the floor and the machines are scripts/cargo_art.gd; here the
+			# stock on its rows (46 号, 73 号) and the parts
 			var stock := _stock()
 			var per_row := {}
 			for k in stock:
@@ -290,8 +423,7 @@ func _draw() -> void:
 					per_row[ri].append(str(k))
 			for ri in Warehouse.ROWS.size():
 				var at: Vector2 = Warehouse.ROW_AT[ri]
-				# under the shelf, right-aligned: clear of the works desk's sign at bay A's left
-				cb.draw_string(font, _p(Vector2(at.x, at.y + 0.75)), Warehouse.row_text(ri, game), HORIZONTAL_ALIGNMENT_RIGHT, 9.8 * _m, int(0.42 * _m), Pal.tint(Pal.AIR, 0.6, 1.0))
+				# 102 号: each row's use and pick time are on the warehouse board (scripts/cargo_art.gd)
 				var list: Array = per_row.get(ri, [])
 				for n in list.size():
 					_pile(cb, str(list[n]), float(stock[list[n]]), at + Vector2(0.0, 0.0), n, list.size())
@@ -300,29 +432,7 @@ func _draw() -> void:
 				for i in mini(parts, 3):
 					cb.draw_rect(Rect2(_p(Vector2(53.4 + i * 1.5, 19.6)), Vector2(1.3, 1.3) * _m), Pal.tint(Pal.AIR, 0.35, 0.9))
 				cb.draw_string(font, _p(Vector2(53, 19.2)), w("零件 %d 件", "%d PARTS") % parts, HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.6 * _m), Pal.ink(0.75))
-			cb.draw_line(_p(Vector2(34, 25.6)), _p(Vector2(52, 25.6)), Pal.ink(0.35), 0.2 * _m)
-			_box(cb, Vector2(53, 21), Vector2(5, 5.8), Pal.ink(0.5))
-			for i in 3:
-				cb.draw_line(_p(Vector2(53, 22.8 + i * 1.6)), _p(Vector2(58, 22.8 + i * 1.6)), Pal.ink(0.25), 0.2 * _m)
-			_label(cb, Vector2(53, 20.4), "pallets", Pal.ink(0.6))
-			_label(cb, Vector2(34, 25.0), "rollers", Pal.ink(0.45))
-			_label(cb, Vector2(9, 1.4), "stacker", Pal.ink(0.5))
 	cb.flush()
-
-
-func _ring_still(cb) -> void:
-	var c := PortStructure.centre()
-	var m := PortStructure.M()
-	for zone in PortArt.ANGLE:
-		var a: float = ((PortStructure.door(zone)[0] as Vector2) - c).angle()
-		var on := Port.stage(zone) >= 1
-		var col := Pal.tint(Pal.AIR, 0.28, 1.0) if on else Pal.ink(0.14)
-		for s in [-1.2, 1.2]:
-			var off: Vector2 = Vector2.from_angle(a).orthogonal() * s * m
-			cb.draw_line(c + Vector2.from_angle(a) * (PortArt.CORE_R + 1.0) * m + off, c + Vector2.from_angle(a) * (PortArt.HUB_R - 1.0) * m + off, Color(0.02, 0.022, 0.026), 0.4 * m)
-			cb.draw_line(c + Vector2.from_angle(a) * (PortArt.CORE_R + 1.0) * m + off, c + Vector2.from_angle(a) * (PortArt.HUB_R - 1.0) * m + off, col, 0.22 * m)
-	cb.draw_arc(c, (PortArt.CORE_R + 1.0) * m, 0.0, TAU, 64, Pal.ink(0.3), 0.6 * m)
-	cb.draw_string(font, c + Vector2(-3.0, -(PortArt.CORE_R + 2.0)) * m, w("主管廊", "PIPE GALLERY"), HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.75 * m), Pal.ink(0.5))
 
 
 # ------------------------------------------------------------------ the moving parts
@@ -334,34 +444,16 @@ func _draw_moving() -> void:
 	var ph := float(phase.get(zone, 0.0))
 	var k := float(speed.get(zone, 0.0))
 	if zone == "ring":
-		var c := PortStructure.centre()
-		var m := _m
-		var a0 := ph * 0.6
-		for i in 12:
-			var a := a0 + TAU * i / 12.0
-			moving.draw_line(c + Vector2.from_angle(a) * (PortArt.CORE_R + 0.5) * m, c + Vector2.from_angle(a) * (PortArt.CORE_R + 1.5) * m, Pal.tint(Pal.AIR, 0.3 + 0.5 * k, 1.2), 0.3 * m)
-		for zone2 in PortArt.ANGLE:
-			if Port.stage(zone2) < 1:
-				continue
-			var a2: float = ((PortStructure.door(zone2)[0] as Vector2) - c).angle()
-			var f := fmod(ph * 2.0 + zone2.length() * 0.37, 1.0)
-			var at := c + Vector2.from_angle(a2) * lerpf(PortArt.CORE_R + 1.0, PortArt.HUB_R - 1.0, f) * m
-			moving.draw_circle(at + Vector2.from_angle(a2).orthogonal() * 1.2 * m, 0.2 * m, Pal.tint(Pal.AIR, 0.8, 1.3))
+		# 109 号: the carousel and its arms are scripts/hub_view.gd's
 		return
 	_r = PortStructure.box(zone)
 	match zone:
 		"power":
-			# the shaft turning (marks on the coupling and the exciter) and the flow in the hot leg
-			for cx in [50.2, 54.8]:
-				for i in 3:
-					var a := ph * 9.0 + TAU * i / 3.0
-					moving.draw_line(_p(Vector2(cx, 10.0)), _p(Vector2(cx, 10.0)) + Vector2.from_angle(a) * 0.6 * _m, Pal.ink(0.5 + 0.3 * k), 0.12 * _m)
-			_flow([Vector2(9, 6), Vector2(9, 3), Vector2(46, 3), Vector2(46, 7)], ph * 3.0, Pal.heat(0.9, 1.3), k)
-			_flow([Vector2(52, 13), Vector2(52, 16), Vector2(34, 16), Vector2(34, 24.5), Vector2(13, 24.5)], ph * 3.0, Pal.tint(Pal.AIR, 0.8, 1.2), k)
-			var p_on: bool = Port.stage("power") >= 1
-			if p_on:
-				moving.draw_string(font, _p(Vector2(39, 14.3)), "%.1f MW" % power_mw, HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.7 * _m), Pal.tint(Pal.AIR, 0.8, 1.2))
-			_power_state(p_on, k)
+			power_art.r = _r
+			power_art.m = _m
+			var t3 := Time.get_ticks_usec()
+			power_art.moving(moving, t, Port.stage("power"), lod())
+			power_draw_us = lerpf(power_draw_us, float(Time.get_ticks_usec() - t3), 0.05)
 		"tug":
 			tug_art.r = _r
 			tug_art.m = _m
@@ -369,169 +461,86 @@ func _draw_moving() -> void:
 			tug_art.moving(moving, t, Port.stage("tug") >= 1, lod())
 			tug_draw_us = lerpf(tug_draw_us, float(Time.get_ticks_usec() - t1), 0.05)
 		"process":
-			_flow([Vector2(16, 7.5), Vector2(16, 1.6), Vector2(35, 1.6), Vector2(35, 19)], ph * 2.0, Pal.heat(0.6, 1.1), k if k > 0.5 else 0.0)
-			# the baghouse's pulse-jet: a short flash in turn on each bag
-			if k > 0.5:
-				var bag := int(ph * 2.0) % 5
-				moving.draw_line(_p(Vector2(32 + bag * 1.5, 20.5)), _p(Vector2(32 + bag * 1.5, 25.5)), Pal.tint(Pal.AIR, 0.7, 1.3), 0.3 * _m)
+			pass
 		"trade":
 			pass
 		"cargo":
-			# the stacker: parked and dark until stock really moves, then one lift for that goods
-			var cr := crane_pose()
-			var x3: float = cr.x
-			var drop: float = cr.hook
-			var on: bool = not haul.is_empty()
-			moving.draw_rect(Rect2(_p(Vector2(x3 - 2.0, 1.4)), Vector2(4.0, 1.4) * _m), Pal.heat(0.6, 1.0) if on else Pal.ink(0.3))
-			moving.draw_line(_p(Vector2(x3, 2.8)), _p(Vector2(x3, drop)), Pal.ink(0.5), 0.08 * _m)
-			moving.draw_rect(Rect2(_p(Vector2(x3 - 1.3, drop)), Vector2(2.6, 0.5) * _m), Pal.ink(0.7))
-			if cr.load:
-				_unit(moving, str(haul.key), Vector2(x3 - 1.2, drop + 0.5), 2.4)
-			# 73 号: the forklifts, from the hatch to their row and back
-			var jobs: Array = Warehouse.data().jobs
-			for fi in mini(Warehouse.forklifts(), jobs.size()):
-				var j: Dictionary = jobs[fi]
-				var pr := clampf(1.0 - float(j.left) / maxf(0.01, float(j.total)), 0.0, 1.0)
-				var row_p: Vector2 = Warehouse.ROW_AT[int(j.row)] + Vector2(4.0 + fi * 1.5, -0.2)
-				var hatch := Warehouse.HATCH + Vector2(fi * 2.0, -0.6)
-				var fp := hatch.lerp(row_p, pr * 2.0) if pr < 0.5 else row_p.lerp(hatch, (pr - 0.5) * 2.0)
-				var loaded: bool = (pr >= 0.5) if not str(j.dir) in ["in", "store"] else (pr < 0.5)
-				moving.draw_rect(Rect2(_p(fp + Vector2(-1.1, -1.0)), Vector2(2.2, 1.0) * _m), Pal.heat(0.7, 1.0))
-				moving.draw_line(_p(fp + Vector2(1.1, -1.8)), _p(fp + Vector2(1.1, 0.0)), Pal.ink(0.7), 0.12 * _m)
-				moving.draw_line(_p(fp + Vector2(1.1, -0.1)), _p(fp + Vector2(2.2, -0.1)), Pal.ink(0.7), 0.1 * _m)
-				moving.draw_circle(_p(fp + Vector2(-0.6, 0.1)), 0.3 * _m, Pal.ink(0.5))
-				moving.draw_circle(_p(fp + Vector2(0.6, 0.1)), 0.3 * _m, Pal.ink(0.5))
-				if loaded:
-					_unit(moving, str(j.key), fp + Vector2(1.2, -1.6), 1.2)
-			for i in 9:
-				var rx := 34.5 + i * 2.0
-				var a3 := roll * 8.0 + i
-				moving.draw_circle(_p(Vector2(rx, 26.1)), 0.45 * _m, Pal.ink(0.3), false, 0.08 * _m)
-				moving.draw_line(_p(Vector2(rx, 26.1)), _p(Vector2(rx, 26.1)) + Vector2.from_angle(a3) * 0.45 * _m, Pal.ink(0.5), 0.08 * _m)
+			# 102 号: the trucks, the crane and the rollers are drawn by scripts/cargo_art.gd
+			pass
 
 
-# ------------------------------------------------------------------ the power district (48 号)
-func _power_frac() -> float:
-	return clampf(power_mw / maxf(1.0, Grid.capacity()), 0.0, 1.0)
+# ------------------------------------------------------------------ the warehouse (102 号)
+func _cargo_ready() -> bool:
+	_m = PortStructure.M()
+	cargo_art.r = PortStructure.box("cargo")
+	cargo_art.m = _m
+	return game != null and _zone() == "cargo"
 
 
-const FEEDERS := ["base", "heat", "sort", "trolley", "crane", "tram"]
-func _feeders_on() -> Dictionary:
-	var on := {}
-	if game == null:
-		return on
-	for l in Grid.loads(game):
-		if str(l.state) in ["run", "base"]:
-			on[str(l.id)] = true
-	return on
+func _draw_cargo_still() -> void:
+	if _cargo_ready():
+		cargo_art.still(cargo_still, Port.stage("cargo") >= 1, lod())
 
 
-func _feeders_sig() -> String:
-	var on := _feeders_on()
-	var s := ""
-	for f in FEEDERS:
-		s += "1" if on.has(f) else "0"
-	return s
+func _draw_cargo_back() -> void:
+	if _cargo_ready():
+		var t0 := Time.get_ticks_usec()
+		cargo_art.moving_back(cargo_back, t, Port.stage("cargo") >= 1, game)
+		cargo_draw_us = lerpf(cargo_draw_us, float(Time.get_ticks_usec() - t0), 0.05)
 
 
-# a reactor in section: the shield, the vessel with its heads, the core's fuel assemblies, the
-# control rod drives on top and the rods in as deep as the load lets them out
-func _reactor(cb, at: Vector2, name: String, frac: float, on: bool) -> void:
-	var shield := Rect2(_p(at), Vector2(8, 12) * _m)
-	cb.draw_rect(shield, Color(0.09, 0.095, 0.1))
-	cb.draw_rect(shield, Pal.ink(0.6), false, 0.12 * _m)
-	var inner := Rect2(_p(at + Vector2(0.8, 0.8)), Vector2(6.4, 10.4) * _m)
-	cb.draw_rect(inner, Color(0.035, 0.04, 0.045))
-	# the vessel: a shell with dished heads
-	var vx0 := at.x + 2.0
-	var vx1 := at.x + 6.0
-	var vt := at.y + 3.4
-	var vb := at.y + 9.6
-	cb.draw_rect(Rect2(_p(Vector2(vx0, vt)), Vector2(vx1 - vx0, vb - vt) * _m), Color(0.13, 0.135, 0.14))
-	cb.draw_line(_p(Vector2(vx0, vt)), _p(Vector2(vx0, vb)), Pal.ink(0.8), 0.14 * _m)
-	cb.draw_line(_p(Vector2(vx1, vt)), _p(Vector2(vx1, vb)), Pal.ink(0.8), 0.14 * _m)
-	cb.draw_arc(_p(Vector2((vx0 + vx1) * 0.5, vt)), 2.0 * _m, PI, TAU, 20, Pal.ink(0.8), 0.14 * _m)
-	cb.draw_arc(_p(Vector2((vx0 + vx1) * 0.5, vb)), 2.0 * _m, 0.0, PI, 20, Pal.ink(0.8), 0.14 * _m)
-	# the core: fuel assemblies, glowing with the load
-	for i in 4:
-		for j in 3:
-			var fa := Rect2(_p(Vector2(vx0 + 0.25 + i * 0.9, at.y + 6.6 + j * 0.9)), Vector2(0.75, 0.75) * _m)
-			cb.draw_rect(fa, Pal.heat(0.15 + 0.6 * frac, 1.0) if on else Color(0.12, 0.12, 0.12))
-			cb.draw_rect(fa, Pal.ink(0.4), false, 0.04 * _m)
-	# the drives on top and the rods: in deeper at a light load
-	var depth := lerpf(3.0, 0.6, frac) if on else 3.2
-	for i in 4:
-		var rx := vx0 + 0.6 + i * 0.9
-		cb.draw_rect(Rect2(_p(Vector2(rx - 0.25, at.y + 0.3)), Vector2(0.5, 1.6) * _m), Color(0.16, 0.17, 0.18))
-		cb.draw_rect(Rect2(_p(Vector2(rx - 0.25, at.y + 0.3)), Vector2(0.5, 1.6) * _m), Pal.ink(0.6), false, 0.05 * _m)
-		cb.draw_line(_p(Vector2(rx, at.y + 1.9)), _p(Vector2(rx, at.y + 6.6 + depth)), Pal.ink(0.75), 0.1 * _m)
-	# the primary nozzles out to the steam generator line
-	cb.draw_line(_p(Vector2(vx1, at.y + 5.0)), _p(Vector2(at.x + 7.6, at.y + 5.0)), Pal.heat(0.7, 1.0) if on else Pal.ink(0.3), 0.3 * _m)
-	cb.draw_string(font, _p(at + Vector2(0.3, -0.3)), w("反应堆 %s · 控制棒抽出 %d%%", "REACTOR %s · RODS %d%% OUT") % [name, int(round((1.0 - depth / 3.2) * 100.0))], HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.5 * _m), Pal.ink(0.75))
+func _draw_cargo_front() -> void:
+	if _cargo_ready():
+		var t0 := Time.get_ticks_usec()
+		cargo_art.front(cargo_front, t, Port.stage("cargo") >= 1, lod(), game)
+		cargo_front_us = lerpf(cargo_front_us, float(Time.get_ticks_usec() - t0), 0.05)
 
 
-# the turbine-generator on its block (38..55 × 7..13): HP and LP casings, the shaft, the coupling,
-# the generator with its cooling fins, the exciter; the condenser under the LP casing
-func _turbine_set(cb, on: bool) -> void:
-	var y := 10.0
-	cb.draw_rect(Rect2(_p(Vector2(38, 12.2)), Vector2(17, 0.8) * _m), Color(0.1, 0.105, 0.11))
-	# HP casing, small; LP casing, big
-	cb.draw_colored_polygon(PackedVector2Array([_p(Vector2(38.6, y - 1.0)), _p(Vector2(42.4, y - 1.6)), _p(Vector2(42.4, y + 1.6)), _p(Vector2(38.6, y + 1.0))]), Color(0.15, 0.16, 0.17))
-	cb.draw_polyline(PackedVector2Array([_p(Vector2(38.6, y - 1.0)), _p(Vector2(42.4, y - 1.6)), _p(Vector2(42.4, y + 1.6)), _p(Vector2(38.6, y + 1.0)), _p(Vector2(38.6, y - 1.0))]), Pal.ink(0.8), 0.1 * _m)
-	cb.draw_colored_polygon(PackedVector2Array([_p(Vector2(42.8, y - 1.6)), _p(Vector2(49.4, y - 2.6)), _p(Vector2(49.4, y + 2.0)), _p(Vector2(42.8, y + 1.6))]), Color(0.14, 0.15, 0.16))
-	cb.draw_polyline(PackedVector2Array([_p(Vector2(42.8, y - 1.6)), _p(Vector2(49.4, y - 2.6)), _p(Vector2(49.4, y + 2.0)), _p(Vector2(42.8, y + 1.6)), _p(Vector2(42.8, y - 1.6))]), Pal.ink(0.8), 0.1 * _m)
-	for bx in [44.2, 45.6, 47.0, 48.4]:
-		cb.draw_line(_p(Vector2(bx, y - 1.9)), _p(Vector2(bx, y + 1.7)), Pal.ink(0.3), 0.05 * _m)
-	# the shaft through, the coupling
-	cb.draw_line(_p(Vector2(38.2, y)), _p(Vector2(55.2, y)), Pal.ink(0.7), 0.18 * _m)
-	cb.draw_circle(_p(Vector2(50.2, y)), 0.6 * _m, Color(0.12, 0.12, 0.13))
-	cb.draw_arc(_p(Vector2(50.2, y)), 0.6 * _m, 0.0, TAU, 12, Pal.ink(0.7), 0.08 * _m)
-	# the generator: stator with fins, the exciter at the end
-	var gen := Rect2(_p(Vector2(51.0, y - 1.8)), Vector2(3.2, 3.6) * _m)
-	cb.draw_rect(gen, Color(0.13, 0.14, 0.15))
-	cb.draw_rect(gen, Pal.tint(Pal.AIR, 0.6, 1.0) if on else Pal.ink(0.5), false, 0.1 * _m)
-	for fy in range(6):
-		cb.draw_line(_p(Vector2(51.0, y - 1.5 + fy * 0.6)), _p(Vector2(54.2, y - 1.5 + fy * 0.6)), Pal.ink(0.25), 0.05 * _m)
-	cb.draw_circle(_p(Vector2(54.8, y)), 0.7 * _m, Color(0.12, 0.12, 0.13))
-	cb.draw_arc(_p(Vector2(54.8, y)), 0.7 * _m, 0.0, TAU, 12, Pal.ink(0.7), 0.08 * _m)
-	# the condenser under the LP casing, cooling water in and out
-	cb.draw_rect(Rect2(_p(Vector2(43.4, y + 2.0)), Vector2(5.6, 0.9) * _m), Color(0.1, 0.12, 0.14))
-	cb.draw_rect(Rect2(_p(Vector2(43.4, y + 2.0)), Vector2(5.6, 0.9) * _m), Pal.tint(Pal.AIR, 0.5, 1.0), false, 0.06 * _m)
-	cb.draw_string(font, _p(Vector2(38.4, 6.4)), w("汽轮发电机 · 高压缸 / 低压缸 / 发电机 / 励磁机 · 冷凝器", "TURBINE-GENERATOR · HP / LP / GENERATOR / EXCITER · CONDENSER"), HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.5 * _m), Pal.ink(0.75))
+func _draw_cargo_glow() -> void:
+	if _cargo_ready():
+		cargo_art.glow(cargo_glow, _glow_tex, t, game)
 
 
-# the main coolant pumps (4..13 × 21..26.8): three motor-pump sets, motor above, volute below
-func _pumps(cb, on: bool) -> void:
-	for i in 3:
-		var x := 5.4 + i * 3.0
-		cb.draw_rect(Rect2(_p(Vector2(x - 0.8, 21.4)), Vector2(1.6, 2.2) * _m), Color(0.14, 0.15, 0.16))
-		cb.draw_rect(Rect2(_p(Vector2(x - 0.8, 21.4)), Vector2(1.6, 2.2) * _m), Pal.ink(0.7), false, 0.07 * _m)
-		for k in 4:
-			cb.draw_line(_p(Vector2(x - 0.8, 21.7 + k * 0.45)), _p(Vector2(x + 0.8, 21.7 + k * 0.45)), Pal.ink(0.3), 0.04 * _m)
-		cb.draw_circle(_p(Vector2(x, 24.9)), 1.0 * _m, Color(0.12, 0.13, 0.14))
-		cb.draw_arc(_p(Vector2(x, 24.9)), 1.0 * _m, 0.0, TAU, 16, Pal.tint(Pal.AIR, 0.6, 1.0) if on else Pal.ink(0.5), 0.08 * _m)
-		cb.draw_line(_p(Vector2(x, 23.6)), _p(Vector2(x, 23.9)), Pal.ink(0.7), 0.15 * _m)
-	cb.draw_string(font, _p(Vector2(4, 20.6)), w("主冷却泵 ×3", "COOLANT PUMPS ×3"), HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.5 * _m), Pal.ink(0.75))
+func _draw_cargo_plates() -> void:
+	if _cargo_ready():
+		cargo_art.plates(cargo_plates, t, Port.stage("cargo") >= 1, game)
 
 
-# the switchgear (40..54 × 18..23): a row of cubicles, one per feeder; on the door a lamp (lit when
-# its breaker is closed) and an ammeter; the busbar along the top
-func _switchgear(cb) -> void:
-	var on := _feeders_on()
-	for i in 3:
-		cb.draw_line(_p(Vector2(40.2, 18.2 + i * 0.25)), _p(Vector2(53.8, 18.2 + i * 0.25)), Pal.heat(0.55, 1.0), 0.08 * _m)
-	var names := [["基础", "BASE"], ["电弧炉", "EAF"], ["分选", "SORT"], ["吊轨", "RAIL"], ["码头吊", "CRANE"], ["接驳", "TRAM"]]
-	for i in FEEDERS.size():
-		var x := 40.2 + i * 2.27
-		var door := Rect2(_p(Vector2(x, 19.0)), Vector2(2.1, 4.0) * _m)
-		cb.draw_rect(door, Color(0.12, 0.13, 0.14))
-		cb.draw_rect(door, Pal.ink(0.6), false, 0.06 * _m)
-		var closed := on.has(FEEDERS[i])
-		cb.draw_circle(_p(Vector2(x + 0.5, 19.6)), 0.25 * _m, Pal.tint(Pal.FLUID, 0.95, 1.3) if closed else Pal.heat(0.5, 1.0))
-		cb.draw_arc(_p(Vector2(x + 1.4, 20.4)), 0.45 * _m, PI, TAU, 10, Pal.ink(0.6), 0.05 * _m)
-		cb.draw_line(_p(Vector2(x + 0.3, 21.6)), _p(Vector2(x + 1.8, 21.6)), Pal.ink(0.35), 0.05 * _m)
-		cb.draw_string(font, _p(Vector2(x + 0.2, 22.7)), names[i][0] if Txt.zh else names[i][1], HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.42 * _m), Pal.ink(0.8))
-	cb.draw_string(font, _p(Vector2(40.2, 17.6)), w("配电柜 · 每面柜一条馈线（绿灯 = 合闸）", "SWITCHGEAR · ONE FEEDER EACH (GREEN = CLOSED)"), HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.5 * _m), Pal.ink(0.75))
+# ------------------------------------------------------------------ the processing district (101 号)
+func _proc_ready() -> bool:
+	_m = PortStructure.M()
+	proc_art.r = PortStructure.box("process")
+	proc_art.m = _m
+	return game != null and _zone() == "process"
+
+
+func _draw_proc_still() -> void:
+	if _proc_ready():
+		proc_art.still(proc_still, Port.stage("process") >= 1, lod())
+
+
+func _draw_proc_back() -> void:
+	if _proc_ready():
+		var t0 := Time.get_ticks_usec()
+		proc_art.moving_back(proc_back, t, Port.stage("process") >= 1, lod(), game)
+		proc_draw_us = lerpf(proc_draw_us, float(Time.get_ticks_usec() - t0), 0.05)
+
+
+func _draw_proc_plates() -> void:
+	if _proc_ready():
+		proc_art.plates(proc_plates, t, Port.stage("process") >= 1, game)
+
+
+func _draw_proc_front() -> void:
+	if _proc_ready():
+		var t0 := Time.get_ticks_usec()
+		proc_art.front(proc_front, t, Port.stage("process") >= 1, lod(), game)
+		proc_front_us = lerpf(proc_front_us, float(Time.get_ticks_usec() - t0), 0.05)
+
+
+func _draw_proc_glow() -> void:
+	if _proc_ready():
+		proc_art.glow(proc_glow, _glow_tex, t, game)
 
 
 # ------------------------------------------------------------------ the tug station's shop (47 号, 96 号)
@@ -544,6 +553,70 @@ func _tug_near() -> float:
 	if not b.has_point(p):
 		return 0.0
 	return 1.0 if PortStructure.box("tug").has_point(p) else 0.5
+
+
+func _draw_power_words() -> void:
+	power_art.r = PortStructure.box("power")
+	power_art.m = PortStructure.M()
+	power_art.words(power_words, t, Port.stage("power"), lod())
+
+
+# 103 号: the business console's card (its use, its figures now, how to open it)
+func _console_item(zone: String) -> Dictionary:
+	var at := PortStructure.console_spot(zone)
+	var m := PortStructure.M()
+	var s: Dictionary = preload("res://scripts/console_art.gd").summary(zone, game)
+	return {"rect": Rect2(at + Vector2(-1.5, -1.8) * m, Vector2(3.0, 4.0) * m), "title": Txt.t("pt_console_business") + " · " + Port.name_of(zone),
+		"use": str(s.use), "now": str(s.now), "can": str(s.can), "lamp": str(s.lamp)}
+
+
+# 105 号: the work desks' cards — in the processing district the furnace desk, the sorting desk and
+# the assay bench; in the berth the terminal on the tower and the parts rack
+func _desk_items(zone: String) -> Array:
+	var out: Array = []
+	if game == null:
+		return out
+	var CA = preload("res://scripts/console_art.gd")
+	var m := PortStructure.M()
+	var add := func(at: Vector2, kind: String, title: String, use: String, now: String, can: String, lamp: String) -> void:
+		var e: Rect2 = CA.extent(kind, minf(3.0, CA.foot_at(at)))
+		out.append({"rect": Rect2(at + e.position * m, e.size * m), "title": title, "use": use, "now": now, "can": can, "lamp": lamp})
+	var use_key := Keys.label("use")
+	if zone == "process":
+		var h = game.get("industrial_heat")
+		if h != null and is_instance_valid(h):
+			var b: Dictionary = h.heat()
+			add.call(h.site(), "furnace", w("炉体操作台", "FURNACE DESK"), w("电弧炉的操作台：投炉、熔炼、出钢，看功率和电价。挡板后的观察窗随炉火发亮。", "The arc furnace's desk: charge, melt, tap; the power and its price. The viewing port glows with the fire."),
+				Ops.batch_state(b), w("飞到台前按 %s 打开炉体操作。", "At the desk press %s.") % use_key, "work" if str(b.get("state", "")) == "processing" else "ok")
+		var so = game.get("industrial_sort")
+		if so != null and is_instance_valid(so):
+			var b2: Dictionary = so.heat()
+			add.call(so.site(), "sort", w("分选台", "SORTING DESK"), w("分选线的操作台：把混合废料分成铁、有色和弃料。急停拉绳沿着线拉过去。", "The sorting line's desk: mixed scrap into iron, non-ferrous and reject. The stop cord runs along the line."),
+				Ops.batch_state(b2), w("飞到台前按 %s 打开分选操作。", "At the desk press %s.") % use_key, "work" if str(b2.get("state", "")) == "processing" else "ok")
+		var asy = game.get("industrial_assay")
+		if asy != null and is_instance_valid(asy):
+			add.call(asy.site(), "assay", w("化验位", "ASSAY BENCH"), w("光谱仪读出一批料的铁和杂质含量，转盘上是样品杯。化验过的料卖价更准。", "The spectrometer reads a lot's iron and impurity; the carousel holds the sample cups. An assayed lot sells at its true worth."),
+				(w("化验中", "READING") if asy.running() else w("有 %d 批可化验", "%d LOTS TO ASSAY") % asy.candidates().size()), w("飞到台前按 %s 打开化验。", "At the bench press %s.") % use_key, "work" if asy.running() else "ok")
+	elif zone == "":
+		var c = game.get("consoles")
+		if c != null and is_instance_valid(c):
+			add.call(Consoles.centre(0) + Vector2(0.55, 0.0) * m, "wall", w("船坞终端", "BERTH TERMINAL"), w("船坞的电脑：接合同、买装备、管船坞和成长建设。和随时按 %s 打开的是同一台。", "The berth's computer: contracts, gear, the berth and its growth. The same one %s opens anywhere.") % Keys.label("terminal"),
+				Pal.money(float(Career.data.get("money", 0.0))) if not Career.data.is_empty() else "", w("飞到它前面按 %s 打开。", "In front of it press %s.") % use_key, "ok")
+			if Consoles.rack_on() and game.career():
+				var n: int = Career.data.get("parts", []).size()
+				add.call(Consoles.rack_centre() + Vector2(0.2, 0.0) * m, "rack", w("零件架", "PARTS RACK"), w("拆下来留着的零件放在这里，一格一件。货运区修好后零件改放仓库货架。", "The parts kept from the ships, one to a cubby. Once the cargo district is mended they live on its racks."),
+					w("%d 件" % n, "%d PARTS" % n), w("飞到架前按 %s 打开零件架。", "At the rack press %s.") % use_key, "ok" if n > 0 else "off")
+	return out
+
+
+# 100 号: the same for the power district
+func power_near() -> float:
+	if game == null or game.get("drone") == null:
+		return 0.0
+	var p: Vector2 = game.drone.global_position
+	if PortStructure.box("power").has_point(p):
+		return 1.0
+	return 0.5 if PortStructure.box("power").grow(30.0 * PortStructure.M()).has_point(p) else 0.0
 
 # how much to draw: 1 (every bolt) when a metre is big enough on screen to see them
 func lod() -> int:
@@ -642,8 +715,9 @@ func _pile(cb, k: String, have: float, row_at: Vector2 = Vector2.INF, n: int = 0
 	for i in mini(units, per_row):
 		_unit(cb, k, Vector2(x0 + i * 2.5, y_shelf - 1.5), 2.4)
 	# bay A's labels start clear of the works desk's sign at its left
-	var lx := x0 + (3.6 if float(s[0]) < 20.0 and y_shelf > 16.0 and n == 0 else 0.0)
-	cb.draw_string(font, _p(Vector2(lx, y_shelf - 1.7)), "%s · %.2f t" % [Ops.item_name(k), have], HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.55 * _m), Pal.ink(0.8))
+	# 102 号: two goods on a row: their names stacked over the row's left end, not run into each other
+	var lx := float(s[0]) + 0.3
+	cb.draw_string(font, _p(Vector2(lx, y_shelf - 1.75 - n * 0.6)), "%s · %.2f t" % [Ops.item_name(k), have], HORIZONTAL_ALIGNMENT_LEFT, 9.4 * _m, int(0.5 * _m), Pal.ink(0.85))
 
 
 # light pulses running along a pipe, spaced 3 m, as fast as the district works
@@ -663,72 +737,3 @@ func _flow(pts: Array, run: float, col: Color, k: float) -> void:
 				break
 			left -= seg
 		s += 3.0
-
-
-# ------------------------------------------------------------------ 91 号: the power district reads its own state
-# (user 2026-10-27: "像动力区那几个核动力炉，它应该怎么做…对玩家更有利" — Jev A: say at a glance
-# whether it runs, why not, what fixing it does, and where the power goes)
-var _loads: Array = []
-var _loads_t := 0.0
-
-
-func _power_loads() -> Array:
-	if t - _loads_t > 0.5 or _loads.is_empty():
-		_loads_t = t
-		_loads = Grid.loads(game) if game != null else []
-	return _loads
-
-
-func _plate(rect_m: Rect2, edge: Color, lines: Array) -> void:
-	var r := Rect2(_p(rect_m.position), rect_m.size * _m)
-	moving.draw_rect(r, Color(0.02, 0.022, 0.026, 0.86))
-	moving.draw_rect(Rect2(r.position, Vector2(0.25 * _m, r.size.y)), edge)
-	moving.draw_rect(r, Color(edge.r, edge.g, edge.b, 0.35), false, 0.06 * _m)
-	var y := r.position.y + 0.95 * _m
-	for ln in lines:
-		var size: float = ln[1]
-		moving.draw_string(font, Vector2(r.position.x + 0.7 * _m, y), str(ln[0]), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 1.0 * _m, int(size * _m), ln[2])
-		y += size * _m * 1.45
-
-
-func _power_state(on: bool, k: float) -> void:
-	var frac := _power_frac()
-	if not on:
-		# shut down, and why: the plain words, what fixing it does, where to fix it
-		var blink := 0.55 + 0.45 * absf(sin(t * 2.2))
-		_plate(Rect2(Vector2(4.4, 12.4), Vector2(21.0, 7.4)), Color(1.0, 0.35, 0.25, blink), [
-			[w("停堆 · 冷态 · 没有电", "SHUT DOWN · COLD · NO POWER"), 0.95, Color(1.0, 0.45, 0.35)],
-			[w("动力区还没修好（第 1 期），两座堆都停着。", "The power district isn't fixed yet (stage 1): both reactors are down."), 0.55, Pal.ink(0.85)],
-			[w("修好后：堆启动、汽轮机转起来，各区才有电，干活更快。", "Fixed: the reactors start, the turbine turns, the districts get power."), 0.55, Pal.ink(0.85)],
-			[w("去修：船坞终端 → 成长与建设 → 零压港 → 动力区", "Fix it: berth terminal → growth → the port → power"), 0.55, Color(UiSkin.ACCENT)],
-		])
-		_plate(Rect2(Vector2(38.4, 13.6), Vector2(12.0, 1.9)), Pal.ink(0.5), [[w("汽轮机停机 · 0 rpm", "TURBINE STOPPED · 0 rpm"), 0.6, Pal.ink(0.7)]])
-		return
-	# running: what it puts out against what it can, the load as a bar, the cores breathing with it
-	var cap := Grid.capacity()
-	var bar_w := 10.0
-	_plate(Rect2(Vector2(25.6, 6.8), Vector2(11.8, 5.2)), Color(UiSkin.DATA), [
-		[w("运行中", "RUNNING"), 0.85, Color(UiSkin.DATA)],
-		[w("输出 %.1f MW / 容量 %.0f MW", "OUT %.1f MW / CAP %.0f MW") % [power_mw, cap], 0.55, Pal.ink(0.9)],
-		[w("负荷 %d%%", "LOAD %d%%") % int(round(frac * 100.0)), 0.55, Pal.ink(0.9)],
-	])
-	var bar := Rect2(_p(Vector2(26.3, 11.2)), Vector2(bar_w, 0.35) * _m)
-	moving.draw_rect(bar, Pal.ink(0.12))
-	moving.draw_rect(Rect2(bar.position, Vector2(bar.size.x * frac, bar.size.y)), Pal.heat(0.9, 1.2) if frac > 0.85 else Color(UiSkin.DATA))
-	for at in [Vector2(9, 15.5), Vector2(20, 15.5)]:
-		var pulse := 0.6 + 0.4 * sin(t * 1.3 + at.x)
-		moving.draw_circle(_p(at), (1.6 + 0.5 * frac) * _m, Pal.heat(0.05 + 0.12 * frac * pulse, 1.4))
-	# where it goes: each feeder's draw under its panel
-	var by_id := {}
-	for l in _power_loads():
-		by_id[str(l.id)] = l
-	for i in FEEDERS.size():
-		var x := 40.2 + i * 2.27
-		var l = by_id.get(FEEDERS[i])
-		var mw: float = float(l.mw) if l != null else 0.0
-		var st := str(l.state) if l != null else ""
-		var col := Pal.tint(Pal.FLUID, 0.95, 1.2) if st in ["run", "base"] and mw > 0.01 else (Pal.heat(0.9, 1.2) if st == "short" else Pal.ink(0.45))
-		var txt := ("%.1f" % mw) if mw > 0.01 else "—"
-		if st == "short":
-			txt = w("缺电", "SHORT")
-		moving.draw_string(font, _p(Vector2(x + 0.2, 23.6)), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.5 * _m), col)

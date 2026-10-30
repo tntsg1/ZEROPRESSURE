@@ -6,7 +6,7 @@ extends CanvasLayer
 
 signal closed
 
-const ROWS := ["vol_master", "vol_music", "vol_sfx", "quality", "window", "anim", "calm", "lang", "context", "codex_cards", "keys_row", "back"]
+const ROWS := ["vol_master", "vol_music", "vol_sfx", "quality", "window", "anim", "calm", "film", "slowmo", "lang", "context", "codex_cards", "playtest", "keys_row", "back"]
 
 var testing := false
 var is_open := false
@@ -20,6 +20,7 @@ var font_b: Font
 var keys_open := false     # the key list instead of the settings
 var ksel := 0
 var waiting := false       # the next key press goes to Keys.ORDER[ksel]
+var _t := 0.0              # the new skin's drifting glow (54 号)
 
 
 func _ready() -> void:
@@ -51,7 +52,7 @@ func close() -> void:
 
 func _row_rect(i: int) -> Rect2:
 	var s := c.size
-	return Rect2(s.x * 0.5 - 300, s.y * 0.5 - 300 + i * 56, 600, 48)
+	return Rect2(s.x * 0.5 - 300, s.y * 0.5 - 350 + i * 50, 600, 46)
 
 
 func _key_rect(i: int) -> Rect2:
@@ -160,10 +161,16 @@ func change(row: String, dir: int) -> void:
 			Txt.context = not Txt.context
 		"codex_cards":
 			Txt.codex_cards = not Txt.codex_cards
+		"playtest":
+			Txt.playtest = not Txt.playtest
 		"window":
 			Txt.fullscreen = not Txt.fullscreen
 		"calm":
 			Txt.calm = not Txt.calm
+		"film":
+			Txt.film = not Txt.film
+		"slowmo":
+			Txt.slowmo_on = not Txt.slowmo_on
 		"anim":
 			var i := Txt.ANIM_LEVELS.find(Txt.anim)
 			Txt.anim = Txt.ANIM_LEVELS[(i + (1 if dir >= 0 else -1) + Txt.ANIM_LEVELS.size()) % Txt.ANIM_LEVELS.size()]
@@ -190,16 +197,23 @@ func value(row: String) -> String:
 			return Txt.t("s_on") if Txt.context else Txt.t("s_off")
 		"codex_cards":
 			return Txt.t("s_on") if Txt.codex_cards else Txt.t("s_off")
+		"playtest":
+			return Txt.t("s_on") if Txt.playtest else Txt.t("s_off")
 		"window":
 			return Txt.t("s_win_full") if Txt.fullscreen else Txt.t("s_win_window")
 		"calm":
 			return Txt.t("s_off") if Txt.no_flash() else Txt.t("s_on")
+		"film":
+			return Txt.t("s_on") if Txt.film else Txt.t("s_off")
+		"slowmo":
+			return Txt.t("s_on") if Txt.slowmo_on else Txt.t("s_off")
 		"anim":
 			return Txt.t("s_anim_" + Txt.anim)
 	return ""
 
 
 func _process(dt: float) -> void:
+	_t += dt
 	k = Pal.damp(k, 1.0 if is_open else 0.0, 14.0, dt)
 	hover = -1
 	if is_open:
@@ -225,19 +239,24 @@ func _draw_ui() -> void:
 	if k < 0.005:
 		return
 	var s := c.size
-	c.draw_rect(Rect2(Vector2.ZERO, s), Color(0, 0, 0, 0.82 * k))
+	# 54 号: the new skin's ground, faded in with the page
+	c.draw_set_transform(Vector2.ZERO)
+	if k > 0.98:
+		UiSkin.draw_ground(c, s, _t, c.get_local_mouse_position())
+	else:
+		c.draw_rect(Rect2(Vector2.ZERO, s), Color(UiSkin.BG0.r, UiSkin.BG0.g, UiSkin.BG0.b, 0.95 * k))
 	if keys_open:
 		_draw_keys(s)
 		return
-	_text(Txt.t("s_title"), Vector2(s.x * 0.5, s.y * 0.5 - 330), 30, Pal.ink(0.9 * k), font_l, 0)
+	_text(Txt.t("s_title"), Vector2(s.x * 0.5, s.y * 0.5 - 385), 30, Pal.ink(0.9 * k), font_l, 0)
 	for i in ROWS.size():
 		var row: String = ROWS[i]
 		var r := _row_rect(i)
 		r.position.y += (1.0 - Motion.stagger(k * 0.6, i, 0.04, 0.2)) * 16.0
 		var on := i == sel or i == hover
 		if on:
-			Pal.band(c, r, 0.12 * k)
-			c.draw_rect(Rect2(r.position.x, r.end.y - 2, 3, 2), Pal.heat(k, 1.0))
+			r.position.y -= 2.0
+		c.draw_style_box(UiSkin.box("raised", k, 1.0 if on else 0.0), r)
 		if row == "back":
 			_text(Txt.t("s_back"), Vector2(r.get_center().x, r.position.y + 32), 20, Pal.ink((0.95 if on else 0.6) * k), font, 0)
 			continue
@@ -252,9 +271,10 @@ func _draw_ui() -> void:
 		_text("▸", Vector2(r.end.x - 30, r.position.y + 32), 18, Pal.ink(0.4 * k), font, 0)
 		if row.begins_with("vol_"):
 			var f: float = {"vol_master": Txt.vol_master, "vol_music": Txt.vol_music, "vol_sfx": Txt.vol_sfx}[row]
-			var br := Rect2(r.position.x + 20, r.end.y - 9, 300, 3)
-			c.draw_rect(br, Pal.ink(0.12 * k))
-			c.draw_rect(Rect2(br.position, Vector2(br.size.x * f, 3)), Pal.ink(0.8 * k))
+			var br := Rect2(r.position.x + 20, r.end.y - 10, 300, 4)
+			c.draw_style_box(UiSkin.box("sunk", k), br)
+			if f > 0.01:
+				c.draw_style_box(UiSkin.box("accent", k), Rect2(br.position, Vector2(maxf(4.0, br.size.x * f), 4)))
 	_text(Txt.t("s_keys"), Vector2(s.x * 0.5, _row_rect(ROWS.size()).position.y + 30), 13, Pal.ink(0.35 * k), font, 0)
 
 
@@ -264,7 +284,7 @@ func _draw_keys(s: Vector2) -> void:
 	for i in Keys.ORDER.size() + 1:
 		var r := _key_rect(i)
 		var on := i == ksel
-		UI.panel(c, r, k, 1.0 if on else 0.0)
+		c.draw_style_box(UiSkin.box("raised", k, 1.0 if on else 0.0), r)
 		if i == Keys.ORDER.size():
 			_text(Txt.t("s_reset"), r.position + Vector2(20, 28), 16, Pal.ink((0.95 if on else 0.6) * k), font)
 			continue

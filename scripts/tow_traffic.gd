@@ -91,7 +91,9 @@ func _refresh() -> void:
 	if not Career.data.has("ship_market") or not Career.usable():
 		return
 	for a in ShipMarket.data().assets:
-		if str(a.state) == "arrived" and a.get("seen_in", false) and str(arrival.get("id", "")) != str(a.id):
+		# 96 号: a contract taken but not started (the berth empty) still lies in the yard
+		var in_hand: bool = str(a.state) == "stripping" and game != null and game.in_berth()
+		if (str(a.state) == "arrived" or in_hand) and a.get("seen_in", false) and str(arrival.get("id", "")) != str(a.id):
 			var sh := _shape(str(a.listing.offer.ship))
 			_parked.append({"id": str(a.id), "polys": sh[0], "stern": sh[1], "slot": TugYard.assign(a), "ship": str(a.listing.offer.ship)})
 
@@ -130,9 +132,12 @@ func _process(dt: float) -> void:
 		# 84 号: the port on foot comes first, once, in the empty berth (83 号's cards stay in the menu)
 		if game.walk_on():
 			return
-		if game.state == "play" and game.in_berth() and game.console_ui == null and not game.menu_open and not game.port_view and arrival.is_empty() and preload("res://scripts/port_walk.gd").due() and not game.testing:
-			game.start_port_walk(true)
-			return
+		# 108 号 Q13: the core walk after the first ship, then each district's when it is first of use
+		if game.state == "play" and game.in_berth() and game.console_ui == null and not game.menu_open and not game.port_view and arrival.is_empty() and not game.testing:
+			var part: String = preload("res://scripts/port_walk.gd").due_part(game)
+			if part != "":
+				game.start_port_walk(true, part)
+				return
 		# brought in only over the empty berth, never in the middle of a job
 		if arrival.is_empty() and game.state == "play" and game.in_berth() and game.console_ui == null and not game.menu_open and not game.port_view:
 			var a := due()

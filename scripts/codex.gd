@@ -24,6 +24,10 @@ const QUEUE := 3
 
 # the seven special courses (one per family of mechanism) and the ships that need them
 const CLASSES := ["energy", "cryo", "fluid", "atmos", "load", "precise", "isolate"]
+# 61 号 (player 2026-10-25, 60 号 Q7): the special courses are offered, never required
+# user 2026-10-26: "这是主线必练的，而不是选择练的" — a ship with a mechanism not trained for sends
+# its "start stripping" through those courses first (61 号 had made them optional)
+const COURSES_REQUIRED := true
 const CLASS_SHIPS := {
 	"energy": ["fx70", "md160", "pt34", "ps12", "h22", "cv138"],
 	"cryo": ["qc30", "hg170", "fr26", "cl104", "ic120"],
@@ -151,6 +155,19 @@ static func classes_of(ship: String) -> Array:
 		if ship in CLASS_SHIPS[cls]:
 			out.append(cls)
 	return out
+
+
+# the courses a ship's contract must wait on (none while they are only offered)
+static func required(ship: String) -> Array:
+	return missing(ship) if COURSES_REQUIRED else []
+
+
+# the course families a ship has, in plain words, that the player has not trained for
+static func untrained_text(ship: String) -> String:
+	var names: Array = []
+	for cls in missing(ship):
+		names.append(str(Txt.t("cxu_cls_" + cls)).replace("专项 · ", "").replace("COURSE · ", "").to_lower() if not Txt.zh else str(Txt.t("cxu_cls_" + cls)).replace("专项 · ", ""))
+	return "、".join(names) if Txt.zh else ", ".join(names)
 
 
 static func missing(ship: String) -> Array:
@@ -505,7 +522,8 @@ func _event(ev: String) -> bool:
 		"field":
 			# out past the berth's edge, where the tractor field pulls things back
 			var inner := Rect2((Dock.BOUNDS.position + Vector2(0.0, 2.0)) * Geom.M, (Dock.BOUNDS.size - Vector2(2.5, 2.0)) * Geom.M)
-			return g.drone.alive and not inner.has_point(g.drone.global_position)
+			# out in the belt there is no berth and no field (32 号)
+			return g.drone.alive and not g.get("belt") and not inner.has_point(g.drone.global_position)
 		"scope":
 			return g.scope() != "full"
 		"hauler":

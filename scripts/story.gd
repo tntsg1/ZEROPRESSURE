@@ -8,6 +8,8 @@ extends Node
 # chapter card and the next contract card. Nothing here changes the ship or
 # the books; StoryHud draws it.
 
+# user 2026-10-26: no story layer (Liang, the recordings, the chapter cards) for now; ship.story is kept
+static var ON := false
 const TYPE_CPS := 30.0          # subtitle characters a second
 const GAP := 1.3                # silence between recorded lines
 

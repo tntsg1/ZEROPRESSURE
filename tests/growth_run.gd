@@ -23,6 +23,8 @@ var finished := false
 
 
 func _initialize() -> void:
+	# 68 号: this test reads the hulks the market drew by itself (before the star-map sweep)
+	Scan.ON = false
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("n="):
 			n = int(a.substr(2))

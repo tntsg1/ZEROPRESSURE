@@ -65,7 +65,10 @@ func _run() -> void:
 	check(g.sail.pull("ST-2") > 10.0, "the tension gauge reads a stay (%.0f kN)" % g.sail.pull("ST-2"))
 	check(g.sail.torn.has("FM-9") and not g.sail.torn.has("FM-8"), "the top right panel is torn already")
 	await _cut(g, "FM-5")
-	check(_count(g, "film_tear") == 1 and g.sail.torn.has("FM-4") and g.sail.torn.has("FM-6"), "a panel cut taut tears, and the tear runs into the panels either side")
+	# 87-2: the tear runs across the panel first (TEAR_RATE), then into the panels either side
+	check(not g.sail.torn.has("FM-4") and not g.sail.torn.has("FM-6"), "the tear starts in the panel cut")
+	await _frames(90)
+	check(_count(g, "film_tear") >= 1 and g.sail.torn.has("FM-4") and g.sail.torn.has("FM-6"), "a panel cut taut tears, and the tear runs into the panels either side")
 	check(_count(g, "static_zap") == 1, "and the sail not yet earthed, it discharges into the drone")
 	await _cut(g, "ST-2")
 	check(_count(g, "stay_snap") == 1 and g.world.tag("WINCH-1").cond <= 0.5 and g.sail.torn.has("FM-2"), "a stay cut taut snaps: its panels tear, its spar whips into the gondola (%.2f)" % g.world.tag("WINCH-1").cond)

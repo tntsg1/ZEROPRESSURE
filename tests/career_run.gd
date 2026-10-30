@@ -14,6 +14,8 @@ var finished := false
 
 
 func _initialize() -> void:
+	# 68 号: this test reads the hulks the market drew by itself (before the star-map sweep)
+	Scan.ON = false
 	Career.path = "user://zp_test_career.json"
 	SaveGame.path = "user://zp_test_career_save.json"
 	SaveGame.allow_test = true
@@ -70,7 +72,21 @@ func _terminal(buy: Array) -> Dictionary:
 			if it[0] == id:
 				term.buy(it)
 	var o: Dictionary = term.offers()[0].duplicate(true)
-	term.take(0)
+	if o.get("find", false):
+		# 62 号: a belt find is sent for (the card's fee is the tow), flown home, then taken
+		ShipMarket.tow_find(0)
+		var a := ShipMarket.asset(str(o.id))
+		Shipping.data().day = float(a.run.depart) + float(a.run.tof) + 0.01
+		ShipMarket.tick()
+		a.seen_in = true
+		Career.save()
+		var idx := -1
+		for k in term.offers().size():
+			if str(term.offers()[k].get("id", "")) == str(o.id):
+				idx = k
+		term.take(idx)
+	else:
+		term.take(0)
 	term.queue_free()
 	await _frames(2)
 	return o
@@ -86,6 +102,13 @@ func _run() -> void:
 	print("CAREER: new career")
 	Career.data = {}
 	Career.start_new()
+	# the same market every run (the seed was random: the ships drawn, and so the scrap counts, the
+	# fees and the save/load comparison, changed run to run); the special courses are not this
+	# test's business (tests/training_mandatory_check.gd), so this career holds them all
+	Career.data.seed = 4242
+	for cls in Codex.CLASSES:
+		Codex.certify(cls, "auto")
+	Career.save()
 	check(Career.exists(), "the career file is written")
 	check(Career.active().get("id", "") == "TUG-001", "the first contract is the work tug")
 	# ---- the opening: the work tug, then S-09; after each the market is open with
@@ -126,8 +149,10 @@ func _run() -> void:
 	check(r1.sum.ended and r1.sum.incidents == 0, "GR-001 taken apart safely")
 	var cr: Dictionary = g1.career_result
 	check(not cr.is_empty() and not cr.prepaid and int(Career.data.done) == 3 and Career.data.market and Career.story_job().is_empty(), "GR-001 settled with the career; the opening is through, nothing pinned")
-	var expect_money: float = money_open + r1.sum.net + cr.bonus - cr.installment - cr.interest
-	check(absf(float(Career.data.money) - expect_money) < 1.0, "funds = net %d + bonuses %d − installment %d − interest %d = %d (%d)" % [r1.sum.net, cr.bonus, cr.installment, cr.interest, expect_money, Career.data.money])
+	var parts_v: float = float(cr.get("parts", {}).get("value", 0.0))
+	# 64 号: the furnace's scrap is ingots in the warehouse, not cash
+	var expect_money: float = money_open + r1.sum.net + cr.bonus - parts_v - cr.installment - cr.interest - float(cr.get("ingot_value", 0.0)) - float(cr.get("tow", 0.0))
+	check(absf(float(Career.data.money) - expect_money) < 1.0, "funds = net %d + bonuses %d − parts shelved %d − installment %d − interest %d = %d (%d)" % [r1.sum.net, cr.bonus, parts_v, cr.installment, cr.interest, expect_money, Career.data.money])
 	check(float(Career.data.loan) == 0.0 and cr.installment == 0.0 and cr.interest == 0.0, "no debt from a clean first contract: loan %d" % Career.data.loan)
 	g1.queue_free()
 	await _frames(2)
@@ -135,11 +160,12 @@ func _run() -> void:
 	var money_before := float(Career.data.money)
 	var o2: Dictionary = await _terminal(["repair", "ring"])
 	check(Career.data.items.get("repair", 0) == 1 and Career.data.items.get("ring", 0) == 1, "two items in stock")
-	check(absf(float(Career.data.money) - (money_before - 3000.0 - 9000.0 - float(o2.fee))) < 1.0, "items and the contract fee paid from funds")
+	# 80 号 Q2: this is the career's first tow — Liang pays for it
+	check(absf(float(Career.data.money) - (money_before - 3000.0 - 9000.0)) < 1.0 and Career.data.seen.get("first_tow", false), "items paid from funds, the first tow free")
 	check(Career.active().get("id", "") == o2.id and Career.active().get("fee_paid", false), "contract %s in progress, fee paid" % o2.id)
 	var g2 = _game()
 	await _frames(2)
-	check(g2.job.get("id", "") == o2.id and not g2.ship.has("story") and g2.fee == float(o2.fee), "the game plays the offer's contract at its fee")
+	check(g2.job.get("id", "") == o2.id and not g2.ship.has("story") and g2.fee == float(Career.active().get("fee", 0.0)), "the game plays the offer's contract at its fee (a find: the tow was its price)")
 	var half: Dictionary = await _play(g2, 300)
 	SaveGame.save(g2)
 	var before := Snap.snap(g2)
@@ -152,8 +178,17 @@ func _run() -> void:
 	Career.load_or_new()
 	var after := _books()
 	for k in books:
-		var same := JSON.stringify(books[k], "", true) == JSON.stringify(after[k], "", true)
-		check(same, "%s where it was: %s" % [k, JSON.stringify(after[k], "", true).left(90)])
+		# the save keeps numbers as JSON does (34 comes back 34.0): compare both as saved
+		var same := JSON.stringify(JSON.parse_string(JSON.stringify(books[k])), "", true) == JSON.stringify(JSON.parse_string(JSON.stringify(after[k])), "", true)
+		var diff := ""
+		if not same and books[k] is Dictionary and after[k] is Dictionary:
+			for kk in books[k]:
+				if JSON.stringify(books[k][kk]) != JSON.stringify(after[k].get(kk)):
+					diff += " %s: %s → %s;" % [kk, JSON.stringify(books[k][kk]).left(60), JSON.stringify(after[k].get(kk)).left(60)]
+			for kk in after[k]:
+				if not books[k].has(kk):
+					diff += " +%s;" % kk
+		check(same, "%s where it was: %s%s" % [k, JSON.stringify(after[k], "", true).left(90), diff])
 	Game.contract = Career.active()
 	Game.start_ship = Career.active().ship
 	SaveGame.load_requested = true

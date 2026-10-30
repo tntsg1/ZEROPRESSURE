@@ -14,7 +14,7 @@ TARGETS = {
     "dock.gd": ["_process", "_physics_process", "_draw", "_draw_add"],
     "drone.gd": ["_process", "_physics_process", "_draw", "_draw_add"],
     "free_body.gd": ["_process", "_draw_view", "_draw_heat"],
-    "backdrop.gd": ["_process", "_draw"],
+    "backdrop.gd": ["_process", "_draw", "_draw_moving", "_draw_halo", "_draw_stars"],
     "blueprint.gd": ["_process", "_draw"],
     "sfx.gd": ["_process"],
     "hauler.gd": ["_physics_process", "_process", "_draw"],
@@ -22,6 +22,19 @@ TARGETS = {
     "arm.gd": ["_physics_process", "_process", "_draw"],
     "crane.gd": ["_physics_process", "_process", "_draw"],
     "consoles.gd": ["_process", "_draw"],
+    # 108 号 帧率: the port's newer drawings
+    "port_structure.gd": ["_process", "_draw"],
+    "port_access.gd": ["_process", "_draw"],
+    "workboat.gd": ["_physics_process", "_process", "_draw"],
+    "industrial_assay.gd": ["_process", "_draw"],
+    "industrial_heat.gd": ["_process", "_draw"],
+    "trade_hall.gd": ["_process", "_draw"],
+    "hub_view.gd": ["_process", "_draw"],
+    "cargo_floor.gd": ["_process", "_draw"],
+    "process_plant.gd": ["_process"],
+    "freight_pier.gd": ["_physics_process", "_draw"],
+    "mill_line.gd": ["_process", "_draw"],
+    "tram.gd": ["_process", "_draw"],
 }
 MARK = "# PROF-WRAP"
 

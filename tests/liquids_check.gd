@@ -1,5 +1,5 @@
 extends SceneTree
-# Liquid adrift in free fall (scripts/liquids.gd): a cut fuel line jets globules; they
+# Liquid adrift in free fall (scripts/liquids.gd): a cut fuel line lets out a mass of liquid; they
 # keep their momentum in vacuum, merge when they touch, wet the wall they reach; a
 # cryogen boils away fast, water in vacuum freezes into a ball of ice, mud sticks; a
 # laser through fuel in vacuum lights nothing; BL-88's ball bursts into drifting globules, DR-150's mud
@@ -55,7 +55,8 @@ func _run() -> void:
 	check(lq != null and lq.count() == 0, "nothing adrift at the start")
 	_cut_line(g, "f1")
 	await _frames(90)
-	check(lq.count("fuel") > 3 and lq.spilt_total > 0.001, "the cut fuel line jets globules (%d adrift, %.3f m³)" % [lq.count("fuel"), lq.spilt_total])
+	# 2026-10-27: liquid comes out as one mass swelling on the cut, let go when the flow has filled it
+	check(lq.count("fuel") >= 1 and lq.spilt_total > 0.001 and float(lq.blobs.map(func(b): return b.vol).max()) > 0.02, "the cut fuel line lets its fuel out as a mass on the cut (%d globules, %.3f m³)" % [lq.count("fuel"), lq.spilt_total])
 	var moving: int = lq.blobs.filter(func(b): return int(b.stuck) < 0 and b.vel.length() > 10.0).size()
 	var wet: int = lq.blobs.filter(func(b): return int(b.stuck) >= 0).size()
 	await _frames(240)
@@ -97,12 +98,20 @@ func _run() -> void:
 	lq = g.liquids
 	# thrown down at the C room's floor from just above it
 	lq.spill(Vector2(6.0, 4.6) * Geom.M, Vector2.DOWN, 0.003, "water", 1, 0.0, 0.8, true)
-	await _frames(150)
+	# the room's air slows it a little on the way: until it lands (five seconds at most)
+	for i in 300:
+		await process_frame
+		if lq.blobs.any(func(b): return b.look == "water" and int(b.stuck) >= 0):
+			break
 	var w2: Array = lq.blobs.filter(func(b): return b.look == "water")
 	check(w2.size() == 1 and int(w2[0].stuck) >= 0, "slow onto the floor: it wets it and stays")
 	lq.spill(Vector2(9.0, 4.0) * Geom.M, Vector2.DOWN, 0.01, "water", 1, 0.0, 6.0, true)
-	await _frames(40)
-	check(lq.count("water") >= 3, "fast into it: it splashes apart (%d globules)" % lq.count("water"))
+	# the pieces lying on the wall may run back together after: the most there were at once
+	var most := 0
+	for i in 40:
+		await process_frame
+		most = maxi(most, lq.count("water"))
+	check(most >= 3, "fast into it: it splashes apart (%d globules)" % most)
 	g.queue_free()
 	await _frames(2)
 

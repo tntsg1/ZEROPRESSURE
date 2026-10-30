@@ -21,6 +21,8 @@ var shown := ""               # the entry being drawn (stays while sliding out)
 var page = null               # the book, while open
 var rect := Rect2()
 var brief_rect := Rect2()     # the contract card's "new on this ship" block
+var card_button: Button
+var close_button: Button
 
 
 func _ready() -> void:
@@ -33,6 +35,21 @@ func _ready() -> void:
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.draw.connect(_draw_card)
 	add_child(c)
+	card_button = Button.new()
+	card_button.flat = true
+	card_button.tooltip_text = "打开图鉴" if Txt.zh else "OPEN CODEX"
+	card_button.pressed.connect(func():
+		if game.codex.card != "": open_book(game.codex.card))
+	c.add_child(card_button)
+	close_button = Button.new()
+	close_button.flat = true
+	close_button.tooltip_text = "关闭提示 [Backspace]" if Txt.zh else "DISMISS [Backspace]"
+	close_button.pressed.connect(dismiss_card)
+	c.add_child(close_button)
+	for button in [card_button,close_button]:
+		button.visible = false
+		for state in ["normal","hover","pressed","focus"]:
+			button.add_theme_stylebox_override(state,StyleBoxEmpty.new())
 
 
 func _process(dt: float) -> void:
@@ -46,13 +63,30 @@ func _process(dt: float) -> void:
 	if k < 0.01 and cx.card == "":
 		shown = ""
 	cx.held = cx.card != "" and rect.has_point(c.get_local_mouse_position()) and k > 0.5
+	var interactive := cx.card != "" and k > 0.5 and game.state == "play" and not game.menu_open and page == null and not game.settings_panel.is_open
+	card_button.visible = interactive
+	close_button.visible = interactive
+	card_button.position = rect.position
+	card_button.size = rect.size
+	close_button.position = _close_rect().position
+	close_button.size = _close_rect().size
 	c.queue_redraw()
+
+func pointer_over_card() -> bool:
+	return card_button != null and card_button.visible and rect.has_point(c.get_local_mouse_position())
+
+func dismiss_card() -> void:
+	game.codex.dismiss()
+	# Consume the whole press, including a held mouse after the card fades.
+	game.modal_release = true
+	game.tools.lmb = false
+	game.prev_lmb = false
 
 
 func _input(ev: InputEvent) -> void:
 	if game == null or game.codex == null or page != null:
 		return
-	if game.state != "play" or game.settings_panel.visible:
+	if game.state != "play" or game.settings_panel.is_open:
 		return
 	if Keys.pressed(ev, "codex") and not game.menu_open:
 		if game.contract_open:
@@ -64,13 +98,7 @@ func _input(ev: InputEvent) -> void:
 	if game.codex.card == "" or k < 0.5:
 		return
 	if ev is InputEventKey and ev.pressed and not ev.echo and ev.physical_keycode == KEY_BACKSPACE:
-		game.codex.dismiss()
-		get_viewport().set_input_as_handled()
-	elif ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT and rect.has_point(c.get_local_mouse_position()):
-		if _close_rect().has_point(c.get_local_mouse_position()):
-			game.codex.dismiss()
-		else:
-			open_book(game.codex.card)
+		dismiss_card()
 		get_viewport().set_input_as_handled()
 
 
@@ -84,6 +112,7 @@ func open_brief() -> void:
 func open_book(focus: String = "", filter_ship: String = "", ship_only: bool = false) -> void:
 	if page != null:
 		return
+	Playtest.help("图鉴" if Txt.zh else "CODEX")
 	var was_paused := get_tree().paused
 	get_tree().paused = true
 	if game.codex.card != "" and focus == game.codex.card:
@@ -130,7 +159,7 @@ func _anchor() -> Vector2:
 
 
 func _close_rect() -> Rect2:
-	return Rect2(rect.end.x - 30.0, rect.position.y + 6.0, 24.0, 24.0)
+	return Rect2(rect.end.x - 42.0, rect.position.y + 2.0, 38.0, 38.0)
 
 
 # ---------------------------------------------------------------- drawing

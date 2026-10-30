@@ -63,6 +63,26 @@ func load_state(d: Dictionary) -> void:
 	queue_redraw()
 
 
+# 94 号 (OB-90 sample ship, the second way: the mirror taken off a backplane at a time): a body that
+# is nothing but backplane, actuators and segments, at least one segment whole, is a mirror block —
+# the equipment mouths take it as one unit
+const BLOCK_KEYS := ["p_ob_backplane", "p_ob_actuator", "p_ob_segment"]
+
+
+func is_block(b) -> bool:
+	if not active() or b == null or not is_instance_valid(b):
+		return false
+	var seg := false
+	for p in b.pieces:
+		if p.gone:
+			continue
+		if not str(p.name_key) in BLOCK_KEYS:
+			return false
+		if cfg.get("segments", {}).has(p.tag) and p.intact:
+			seg = true
+	return seg
+
+
 func on_mirror(tag: String) -> bool:
 	var p = world.tag(tag)
 	return p != null and not p.gone and p.body == null
@@ -168,6 +188,10 @@ func _physics_process(dt: float) -> void:
 	if not active():
 		return
 	_t += dt
+	_tag_t += dt
+	if _tag_t > 0.5:
+		_tag_t = 0.0
+		queue_redraw()
 	var mcc: String = str(cfg.get("mcc", ""))
 	for r in cfg.get("locks", {}):
 		var sw: String = str(cfg.locks[r])
@@ -178,7 +202,8 @@ func _physics_process(dt: float) -> void:
 		if _powered(mcc):
 			locked[str(r)] = true
 			game.say("mirror_locked", at, str(r))
-			game.sfx.play("clank", at, 0.4)
+			game.sfx.play("mirror_lock", at, 0.9)
+			queue_redraw()
 		elif not _warned.has(sw):
 			_warned[sw] = true
 			game.say("mirror_lock_dead", at, str(r))
@@ -244,11 +269,14 @@ func on_cut(p) -> void:
 		return
 	_dust_t = _t
 	dusted += 1
+	var mid := Vector2.ZERO
 	for sc in hit:
 		game.fx.puff(sc, Vector2(-30.0, 0.0), 0.8, 10.0, 60.0, Pal.ink(0.12))
+		mid += sc
+	_pop(mid / hit.size(), lost, "dust")
 	game.incident("mirror_dust", p.tag)
 	game.say("mirror_dust", c, str(hit.size()))
-	game.note_loss("loss_mirror_dust", p.tag, lost)
+	# (each segment's own loss is noted where it is dented: the total here would count it twice)
 
 
 func on_freed(b) -> void:
@@ -267,8 +295,9 @@ func on_freed(b) -> void:
 			game._dent(q, minf(q.cond, DROP_KEEP), "dv_mirror_drop")
 			game.incident("mirror_drop", q.tag)
 			game.say("mirror_drop", at, q.tag)
-			game.note_loss("loss_mirror_drop", q.tag, (before - q.cond) * q.value)
-			game.sfx.play("crack", at, 0.8)
+			# (each segment's own loss is noted where it is dented: the total here would count it twice)
+			game.sfx.play("mirror_crack", at, 1.0)
+			_pop(at, (before - q.cond) * q.value, "drop")
 			game.fx.burst_shards(at, 8, 120.0, Pal.ink(0.7), 4.0)
 		# the segments further out on this half lean on this one's edge
 		var lost := 0.0
@@ -286,14 +315,19 @@ func on_freed(b) -> void:
 		if lost > 0.0:
 			game.incident("mirror_unsupported", q.tag)
 			game.say("mirror_unsupported", at, q.tag)
-			game.note_loss("loss_mirror_edge", q.tag, lost)
+			# (each segment's own loss is noted where it is dented: the total here would count it twice)
+			game.sfx.play("mirror_crack", at, 0.6, 1.3)
+			_pop(at + Vector2(0, -0.8 * Geom.M), lost, "edge")
 
 
 # ---------------------------------------------------------------- drawing
 
 # the blind seen edge-on: a band hanging off the roller, folds across it
 func _draw() -> void:
-	if not active() or cover <= 0.0:
+	if not active():
+		return
+	_draw_tags()
+	if cover <= 0.0:
 		return
 	var cv: Dictionary = cfg.get("cover", {})
 	var roller = world.tag(str(cv.get("roller", "")))
@@ -309,3 +343,65 @@ func _draw() -> void:
 		var y: float = top.y + (i + 1) * 0.6 * Geom.M
 		draw_line(Vector2(top.x - hw, y), Vector2(top.x + hw, y - 0.1 * Geom.M), Pal.ink(0.2), 1.0, true)
 	draw_line(bot + Vector2(-hw * 1.6, 0), bot + Vector2(hw * 1.6, 0), Pal.ink(0.6), 2.0, true)
+
+
+# ---------------------------------------------------------------- 94 号: what the mirror lost, on site
+
+const CoreAsset = preload("res://scripts/core_asset.gd")
+var _tag_t := 0.0
+
+
+# a loss: the money off where it happened, a word on why
+func _pop(at: Vector2, money: float, cause: String) -> void:
+	if money < 1.0 or game.fx == null:
+		return
+	game.fx.number(at + Vector2(0, -24), "−%s %s" % [Pal.money(money).trim_prefix("$"), CoreAsset.cause_short(cause)], Pal.heat(0.95, 1.4), 18)
+
+
+# by the mirror (Q2: the board on site too): the cover, each ring's lock, what is on it and its
+# worth, a fixed size on the screen
+func _draw_tags() -> void:
+	var segs: Dictionary = cfg.get("segments", {})
+	var bb := Rect2()
+	var first := true
+	for t in segs:
+		var p = world.tag(str(t))
+		if p == null or p.gone or p.body != null:
+			continue
+		var r := Geom.bbox(world.world_poly(p))
+		bb = r if first else bb.merge(r)
+		first = false
+	if first:
+		return
+	var z: float = maxf(game.cam_zoom(), 0.05)
+	var k := 1.0 / z
+	var font: Font = game.hud.font if game.hud != null else ThemeDB.fallback_font
+	var lines: Array = []
+	var down := cover_down() > 0.5
+	lines.append([("防尘罩 · 已放下" if Txt.zh else "COVER · DOWN") if down else ("防尘罩 · 收起" if Txt.zh else "COVER · UP"), Pal.ink(0.85) if down else Pal.heat(0.9, 1.2)])
+	for ring in [3, 2, 1]:
+		var on := 0
+		var n := 0
+		var worth := 0.0
+		for t in segs:
+			if int(segs[t].ring) != ring:
+				continue
+			n += 1
+			var p = world.tag(str(t))
+			if p != null:
+				worth += float(p.value) * clampf(float(p.cond), 0.0, 1.0)
+			if on_mirror(str(t)):
+				on += 1
+		var ok := ring_locked(ring)
+		var nm: String = CoreAsset._t(CoreAsset.RING_NAMES[ring])
+		var txt := "%s · %s · %s %d/%d · %s" % [nm, ("锁✓" if Txt.zh else "LOCKED") if ok else ("没锁" if Txt.zh else "UNLOCKED"), "镜上" if Txt.zh else "ON", on, n, Pal.money(worth)]
+		lines.append([txt, Pal.ink(0.85) if ok or on == 0 else Pal.heat(0.9, 1.2)])
+	var at := Vector2(bb.end.x + 1.2 * Geom.M, bb.position.y + 1.0 * Geom.M)
+	draw_set_transform(at, 0.0, Vector2(k, k))
+	draw_line(Vector2(-6, -14), Vector2(-6, lines.size() * 19.0 - 8.0), Pal.ink(0.5), 2.0)
+	for i in lines.size():
+		var y := i * 19.0
+		draw_string_outline(font, Vector2(0, y), str(lines[i][0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, 4, Color(0.02, 0.022, 0.028, 0.85))
+		draw_string(font, Vector2(0, y), str(lines[i][0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, lines[i][1])
+	draw_set_transform(Vector2.ZERO)
+

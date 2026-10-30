@@ -44,6 +44,12 @@ func _initialize() -> void:
 # long side, evenly) for every part to be one it can (player 2026-10-19: "anything
 # recoverable must be cuttable or smaller, or the drone can't take it up").
 const GRAB_T := 3.0
+# 2026-10-25 (NR-95's tank slices, 4.16 m against a 4.2 m mouth, bounced off it): a part must
+# also pass the equipment mouth with room to spare — across its long side no wider than this
+const FIT_W := 3.6
+# 2026-10-26 (player: "too wide or too long, cut it, whatever it weighs"; VT-80's 59 m manifold and
+# 4 x 7 m engine never went in): parts no longer than this either
+const MAX_L := 12.0
 
 
 static func _cut_lines(w, id: String) -> void:
@@ -53,10 +59,17 @@ static func _cut_lines(w, id: String) -> void:
 			continue
 		var seg: Array = p.get_meta("segments", [])
 		var need := ceili(float(p.mass) / GRAB_T)
-		if seg.size() + 1 >= need:
-			continue
 		var bb := Geom.bbox(p.poly)
 		var r := Rect2(bb.position / Geom.M, bb.size / Geom.M)
+		# whatever it weighs: a part wider than the mouth on its short side is sliced thin across its
+		# long side; a part longer than the bay takes is cut into lengths it does take
+		var long_side := maxf(r.size.x, r.size.y)
+		if minf(r.size.x, r.size.y) > FIT_W:
+			need = maxi(need, ceili(long_side / FIT_W))
+		if long_side > MAX_L:
+			need = maxi(need, ceili(long_side / MAX_L))
+		if seg.size() + 1 >= need:
+			continue
 		var out: Array = []
 		for i in range(1, need):
 			var f := float(i) / need

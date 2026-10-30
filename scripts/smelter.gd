@@ -82,6 +82,12 @@ var lance_t := 20.0
 var dip := 0.0                # 0 up, 1 in the melt
 var tc_T := 1590.0            # °C the last dip read
 var tc_age := 0.0
+var lance_phase := "idle"    # idle / lower / dwell / lift, mechanically interlocked
+var lance_phase_t := 0.0
+var lance_from := 0.0
+var sample_count := 0
+var bunker_ram := 1.2
+var screw_angle := 0.0
 # the melt's chemistry by optical emission spectrometry of the last sample (mass %)
 var chem := {"C": 0.12, "Mn": 0.55, "Si": 0.22, "Cr": 0.06, "Ni": 0.05, "Cu": 0.10, "S": 0.015, "P": 0.014}
 var bath_chem := chem.duplicate()
@@ -89,8 +95,312 @@ var vapor := 0.0              # how hard the melt is fuming now (0..1): what the
 var hpu_bar := 210.0          # bar in the tilt hydraulics' accumulator
 const DY := 2.65              # m: the furnace sits this far below the pre-processing line
 
+# Opt-in process model for G5. Legacy salvage keeps the automatic display cycle.
+# This class moves/ heats material; it never creates career stock or pays money.
+const LINING_C := 600000.0 # J/K, effective heated refractory capacity
+var manual := false
+var manual_feed := false
+var manual_power := 0.0
+var manual_supply_mw := P_RATED
+var grid_cap := P_RATED        # 71 号: what the port's grid gives the berth furnace (MW)
+var manual_sample := false
+var input_t := 0.0
+var energy_j := 0.0
+var electrical_j := 0.0 # metered inverter input; energy_j is absorbed coil heat
+var initial_heat_j := 0.0 # retained refractory heat at the start of a later batch
+const PROCESS_DEFAULT := {"peak_c":20.0,"tap_min_c":0.0,"tap_max_c":0.0,"sample_c":0.0,"sample_age_at_tap":0.0,"sample_valid":false,"poured_t":0.0,"overheated_s":0.0,"legacy_unverified":false}
+var process_record := PROCESS_DEFAULT.duplicate(true)
+var heat_loss_j := 0.0
+var tapped_j := 0.0
+var manual_shipped_t := 0.0
+const MANUAL_FIELDS := ["manual_feed","manual_power","manual_supply_mw","manual_sample","input_t","energy_j","electrical_j","heat_loss_j","tapped_j","manual_shipped_t","m_l","m_s","T","bunker","yard","power","feed","phase","phase_t","tilt","hood","gate","line_off","line_goal","shipped","shipped_t","ingots","cast_t","t","lance_t","dip","tc_T","tc_age","lance_phase","lance_phase_t","lance_from","sample_count","bunker_ram","screw_angle","hpu_bar"]
 
-func _init() -> void:
+func manual_snapshot() -> Dictionary:
+	if not manual: return {}
+	var state := {"version":1}
+	state.initial_heat_j = initial_heat_j
+	state.process_record = process_record.duplicate(true)
+	for field in MANUAL_FIELDS: state[field] = get(field)
+	return state.duplicate(true)
+
+func restore_manual(state: Dictionary) -> bool:
+	if int(state.get("version",0)) != 1: return false
+	# Validate on a detached furnace so corrupt/partial saves cannot partly
+	# overwrite a running machine. No actor/career inventory is changed here.
+	for field in MANUAL_FIELDS:
+		if not state.has(field): return false
+		var value: Variant = state[field]
+		if field in ["manual_feed","manual_sample"]:
+			if typeof(value) != TYPE_BOOL: return false
+		elif field == "phase":
+			if value not in ["hold","melt","tilt","pour","back"]: return false
+		elif field == "lance_phase":
+			if value not in ["idle","lower","dwell","lift"]: return false
+		elif field == "ingots":
+			if not value is Array: return false
+			for ingot in value:
+				if not ingot is Array or ingot.size() != 3: return false
+				for number in ingot:
+					if typeof(number) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(number)): return false
+				if float(ingot[2]) <= 0.0: return false
+		else:
+			if typeof(value) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(value)): return false
+	var copy = get_script().new(false)
+	copy.begin_manual()
+	for field in MANUAL_FIELDS: copy.set(field,state[field].duplicate(true) if state[field] is Array else state[field])
+	var record: Variant = state.get("process_record",{})
+	if not record is Dictionary: return false
+	if record.is_empty():
+		record = PROCESS_DEFAULT.duplicate(true)
+		# An empty chamber or untouched cold bunker has no missing metal
+		# processing history. Only already processed material is unverified.
+		record.legacy_unverified = copy.input_t-copy.bunker-copy.yard > 0.000001
+		record.poured_t = float(copy.shipped_t)+float(copy.cast_t)
+		for ingot in copy.ingots: record.poured_t += float(ingot[2])
+	for key in PROCESS_DEFAULT:
+		if not record.has(key): return false
+		if key in ["sample_valid","legacy_unverified"]:
+			if typeof(record[key]) != TYPE_BOOL: return false
+		elif typeof(record[key]) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(record[key])) or float(record[key]) < 0.0: return false
+	if float(record.poured_t) > copy.input_t+0.000001: return false
+	copy.process_record = record.duplicate(true)
+	copy.initial_heat_j = float(state.get("initial_heat_j",0.0))
+	if not is_finite(copy.initial_heat_j) or copy.initial_heat_j < 0.0: return false
+	for field in ["m_s","m_l","bunker","yard","input_t","cast_t","shipped_t","energy_j","electrical_j","heat_loss_j","tapped_j","manual_shipped_t","manual_supply_mw"]:
+		if float(copy.get(field)) < 0.0: return false
+	if copy.input_t > CAP or absf(copy.manual_mass()-copy.input_t) > 0.000001: return false
+	if copy.manual_power < 0.0 or copy.manual_power > 1.0 or copy.T < 20.0: return false
+	for field in ["gate","hood","dip","lance_from"]:
+		if float(copy.get(field)) < 0.0 or float(copy.get(field)) > 1.0: return false
+	if copy.tilt < 0.0 or copy.tilt > TILT_MAX: return false
+	var residual: float = copy.manual_enthalpy()+copy.heat_loss_j+copy.tapped_j-copy.energy_j-copy.initial_heat_j
+	if absf(residual) > maxf(1.0,copy.energy_j*0.000001): return false
+	if absf(copy.electrical_j*ETA-copy.energy_j) > maxf(1.0,copy.energy_j*0.000001): return false
+	begin_manual()
+	for field in MANUAL_FIELDS: set(field,copy.get(field))
+	initial_heat_j = copy.initial_heat_j
+	process_record = copy.process_record.duplicate(true)
+	return true
+
+# Conditional on inspected ferrous feed; not a chemical or tensile assay.
+func quality_certificate() -> Dictionary:
+	var ready := manual and input_t > 0.0 and manual_shipped_t >= input_t-0.000001 and float(process_record.poured_t) >= input_t-0.000001
+	var eligible: bool = ready and not process_record.legacy_unverified and process_record.sample_valid and float(process_record.sample_age_at_tap) <= 60.0 and float(process_record.sample_c) >= T_TAP-5.0 and float(process_record.peak_c) <= 1710.0 and float(process_record.tap_min_c) >= 1560.0
+	return {"version":1,"ready":ready,"grade":1 if eligible else 0,"basis":"inspected_ferrous_feed_and_measured_process","trace":process_record.duplicate(true),"criteria":{"maximum_bath_c":1710.0,"minimum_sample_c":T_TAP-5.0,"minimum_tap_c":1560.0,"maximum_sample_age_s":60.0},"laboratory_assay":false}
+
+func next_manual_batch() -> bool:
+	if not manual or phase != "hold" or m_l+m_s+bunker+yard+cast_t > 0.000001 or not ingots.is_empty(): return false
+	var retained_T := T
+	var retained_heat := manual_enthalpy()
+	begin_manual()
+	T = retained_T
+	initial_heat_j = retained_heat
+	return true
+
+# Explicit takeover clears the old decorative heel/bunker/moulds. These are
+# not company inventory. Source reservation/delivery belongs to the controller.
+func begin_manual() -> void:
+	manual = true
+	manual_feed = false
+	manual_power = 0.0
+	manual_supply_mw = P_RATED
+	manual_sample = false
+	m_l = 0.0
+	m_s = 0.0
+	bunker = 0.0
+	yard = 0.0
+	T = 20.0
+	t = 0.0
+	power = 0.0
+	feed = 0.0
+	phase = "hold"
+	phase_t = 0.0
+	tilt = 0.0
+	hood = 0.0
+	gate = 0.0
+	dip = 0.0
+	lance_phase = "idle"
+	lance_phase_t = 0.0
+	lance_from = 0.0
+	lance_t = 0.0
+	tc_T = 20.0
+	tc_age = 0.0
+	sample_count = 0
+	line_off = 0.0
+	line_goal = 0.0
+	cast_t = 0.0
+	shipped = 0
+	shipped_t = 0.0
+	manual_shipped_t = 0.0
+	input_t = 0.0
+	energy_j = 0.0
+	electrical_j = 0.0
+	initial_heat_j = 0.0
+	process_record = PROCESS_DEFAULT.duplicate(true)
+	heat_loss_j = 0.0
+	tapped_j = 0.0
+	incoming.clear()
+	bits.clear()
+	ingots.clear()
+
+func manual_charge(mass: float) -> bool:
+	if not manual or not is_finite(mass) or mass <= 0.0: return false
+	if phase not in ["hold","melt"] or input_t+mass > CAP: return false
+	bunker += mass
+	input_t += mass
+	return true
+
+func manual_command(action: String, value: float = 0.0) -> Dictionary:
+	if not manual: return {"ok":false,"reason":"manual_inactive"}
+	if not is_finite(value): return {"ok":false,"reason":"invalid_value"}
+	match action:
+		"power":
+			if value < 0.0 or value > 1.0: return {"ok":false,"reason":"invalid_power"}
+			manual_power = value
+		"feed":
+			if value != 0.0 and value != 1.0: return {"ok":false,"reason":"invalid_feed"}
+			if value == 1.0 and phase not in ["hold","melt"]: return {"ok":false,"reason":"furnace_moving"}
+			manual_feed = value == 1.0
+		"sample":
+			if m_l < 0.05 or phase not in ["hold","melt"] or tilt > 0.001 or hood > 0.01 or lance_phase != "idle":
+				return {"ok":false,"reason":"sample_interlock"}
+			manual_sample = true
+			lance_t = 40.0
+		"tap":
+			if phase not in ["hold","melt"] or m_l < 0.05 or m_s > 0.000001 or bunker > 0.000001 or T < T_TAP:
+				return {"ok":false,"reason":"melt_not_ready"}
+			if sample_count == 0 or tc_age > 60.0: return {"ok":false,"reason":"fresh_sample_required"}
+			if dip > 0.0001 or lance_phase != "idle": return {"ok":false,"reason":"probe_not_retracted"}
+			manual_feed = false
+			process_record.sample_valid = sample_count > 0
+			process_record.sample_c = tc_T
+			process_record.sample_age_at_tap = tc_age
+			_go("tilt")
+		"stop":
+			manual_power = 0.0
+			manual_feed = false
+			manual_sample = false
+			if phase in ["tilt","pour"]: _go("back")
+		_: return {"ok":false,"reason":"unknown_control"}
+	return {"ok":true}
+
+func manual_enthalpy() -> float:
+	return LINING_C*(T-20.0)+m_s*1000.0*C_S*(T-20.0)+m_l*1000.0*(C_S*(T_LIQ-20.0)+L_FUS+C_L*(T-T_LIQ))
+
+func manual_mass() -> float:
+	var total := bunker+yard+m_s+m_l+cast_t+shipped_t
+	for ingot in ingots: total += float(ingot[2])
+	return total
+
+func _manual_thermal(dt: float) -> void:
+	var mass := (m_s+m_l)*1000.0
+	var enthalpy := manual_enthalpy()
+	power = minf(P_RATED*manual_power,maxf(0.0,manual_supply_mw))
+	# The inverter is disconnected while the body moves or the probe is immersed.
+	if phase in ["tilt","pour","back"] or lance_phase != "idle": power = 0.0
+	if m_s+m_l+bunker <= 0.000001: power = 0.0 # no dry firing an empty crucible
+	var ambient_rad := 0.25*pow(293.0/1913.0,4.0)
+	var loss := (maxf(0.0,q_wall())+maxf(0.0,q_rad()-ambient_rad))*1e6*dt
+	var added := power*ETA*1e6*dt
+	electrical_j += power*1e6*dt
+	loss = minf(loss,maxf(0.0,enthalpy+added))
+	energy_j += added
+	heat_loss_j += loss
+	enthalpy = maxf(0.0,enthalpy+added-loss)
+	var solid_limit := (LINING_C+mass*C_S)*(T_LIQ-20.0)
+	var liquid_limit := solid_limit+mass*L_FUS
+	if enthalpy <= solid_limit:
+		T = 20.0+enthalpy/(LINING_C+mass*C_S)
+		m_s = mass/1000.0
+		m_l = 0.0
+	elif enthalpy < liquid_limit:
+		T = T_LIQ
+		m_l = (enthalpy-solid_limit)/L_FUS/1000.0
+		m_s = mass/1000.0-m_l
+	else:
+		T = T_LIQ+(enthalpy-liquid_limit)/(LINING_C+mass*C_L)
+		m_l = mass/1000.0
+		m_s = 0.0
+	# No temperature clamp grants or destroys heat. Overheat trips the heater.
+	if m_s+m_l > 0.000001:
+		process_record.peak_c = maxf(float(process_record.peak_c),T)
+		if T > 1710.0: process_record.overheated_s = float(process_record.overheated_s)+dt
+	if T >= 1720.0: manual_power = 0.0
+
+func _manual_step(dt: float) -> void:
+	t += dt
+	phase_t += dt
+	feed = 0.0
+	if manual_feed and phase in ["hold","melt"] and lance_phase == "idle":
+		feed = minf(FEED,bunker/dt)
+		var old_h := manual_enthalpy()
+		m_s += feed*dt
+		bunker -= feed*dt
+		# Cold feed adds mass, not energy. Re-establish the temperature/melt mix
+		# through the same enthalpy inversion without charging the power meter.
+		var provisional := manual_enthalpy()
+		var delta_h := provisional-old_h
+		# Add the feed at the current temperature, then remove its fictitious
+		# sensible heat before solving the thermal state.
+		if delta_h > 0.0:
+			T -= delta_h/(LINING_C+1000.0*(m_s*C_S+m_l*C_L))
+		if feed > 0.0: screw_angle += dt*3.0
+	_manual_thermal(dt)
+	_step_lance(dt)
+	if lance_phase == "idle": manual_sample = false
+	match phase:
+		"tilt":
+			if dip <= 0.0001 and lance_phase == "idle": hood = minf(1.0,hood+dt/2.0)
+			if hood >= 1.0 and dip <= 0.0001 and lance_phase == "idle":
+				tilt = minf(TILT_MAX,tilt+TILT_MAX*dt/TILT_T)
+				if tilt >= TILT_MAX: _go("pour")
+		"pour":
+			gate = minf(1.0,gate+dt*2.0)
+			var out := minf(POUR*dt*gate,m_l)
+			if out > 0.0:
+				process_record.tap_min_c = T if float(process_record.poured_t) == 0.0 else minf(float(process_record.tap_min_c),T)
+				process_record.tap_max_c = maxf(float(process_record.tap_max_c),T)
+				process_record.poured_t = float(process_record.poured_t)+out
+			tapped_j += out*1000.0*(C_S*(T_LIQ-20.0)+L_FUS+C_L*(T-T_LIQ))
+			m_l -= out
+			cast_t += out
+			if cast_t >= INGOT:
+				cast_t -= INGOT
+				ingots.append([line_goal,T-60.0,INGOT])
+				line_goal += PITCH
+			if m_l <= 0.000001:
+				if cast_t > 0.0:
+					ingots.append([line_goal,T-60.0,cast_t])
+					line_goal += PITCH
+					cast_t = 0.0
+				_go("back")
+		"back":
+			gate = maxf(0.0,gate-dt*2.0)
+			tilt = maxf(0.0,tilt-TILT_MAX*dt/TILT_T)
+			if tilt <= 0.0:
+				hood = maxf(0.0,hood-dt/2.0)
+				if hood <= 0.0: _go("hold")
+	# Index the final mould to unloading too; no new phantom heat is needed
+	# to push a small batch off the end of the existing casting machine.
+	var goal := line_goal
+	if phase in ["back","hold"] and m_l <= 0.000001 and bunker <= 0.000001 and not ingots.is_empty():
+		goal = maxf(goal,float(ingots.back()[0])+LINE_X1-FILL_X)
+	line_off = move_toward(line_off,goal,0.5*dt)
+	var retained: Array = []
+	for ingot in ingots:
+		ingot[1] = 25.0+(float(ingot[1])-25.0)*exp(-dt/70.0)
+		if FILL_X+line_off-float(ingot[0]) >= LINE_X1-0.3 and float(ingot[1]) < 200.0:
+			shipped += 1
+			shipped_t += float(ingot[2])
+			manual_shipped_t += float(ingot[2])
+		else: retained.append(ingot)
+	ingots = retained
+	bunker_ram = move_toward(bunker_ram,maxf(1.15,2.8-1.55*fill()-0.08),dt*0.35)
+	hpu_bar = move_toward(hpu_bar,175.0 if phase in ["tilt","back"] else 210.0,20.0*dt)
+
+
+func _init(decorative: bool = true) -> void:
+	if not decorative: return
 	# a furnace that has been running: somewhere in its cycle, scrap waiting
 	m_l = randf_range(HEEL + 1.0, CAP - 1.5)
 	T = randf_range(1560.0, 1620.0)
@@ -106,10 +416,14 @@ func _init() -> void:
 # the bunker, shredded fines through the hood; dirty is how much wiring, motors and
 # coatings came with it (0 a clean plate, 1 shredded equipment) - copper and nickel
 # don't come out in an induction furnace, they stay in the steel
-func charge(mass: float, from_x: float, dirty: float = 0.0) -> void:
-	incoming.append([0.0, from_x, mass, 0.6 + absf(from_x - X) / 3.0])
-	ram_open = 1.0
-	var tot := maxf(0.5, m_l + m_s + bunker) + mass
+func charge(mass: float, from_x: float, dirty: float = 0.0, arrived: bool = false) -> void:
+	# Existing paid salvage must never contaminate a company-owned manual batch.
+	# Its original automatic line is separate from commercial source custody.
+	if manual: return
+	var tot := maxf(0.5,m_l + m_s + bunker) + mass
+	if arrived: bunker += mass
+	else: incoming.append([0.0, from_x, mass, 0.6 + absf(from_x - X) / 3.0])
+	ram_open = maxf(ram_open,minf(1.0,mass * 1.5))
 	var add := {"Cu": 0.08 + 0.32 * dirty, "Ni": 0.04 + 0.10 * dirty, "Cr": 0.05 + 0.12 * dirty, "C": 0.12, "Mn": 0.55, "Si": 0.22, "S": 0.015 + 0.01 * dirty, "P": 0.014}
 	for el in bath_chem:
 		bath_chem[el] = (float(bath_chem[el]) * (tot - mass) + float(add[el]) * mass) / tot
@@ -163,6 +477,9 @@ func water_out() -> float:
 func step(dt: float) -> void:
 	if dt <= 0.0:
 		return
+	if manual:
+		_manual_step(dt)
+		return
 	t += dt
 	phase_t += dt
 	ram_open = maxf(0.0, ram_open - dt * 1.2)
@@ -202,8 +519,8 @@ func step(dt: float) -> void:
 				_go("tilt")
 		"tilt":
 			power = (q_wall() + q_rad()) / ETA
-			hood = minf(1.0, hood + dt / 2.0)
-			if hood >= 1.0:
+			if dip <= 0.0001 and lance_phase == "idle": hood = minf(1.0, hood + dt / 2.0)
+			if hood >= 1.0 and dip <= 0.0001 and lance_phase == "idle":
 				tilt = minf(TILT_MAX, tilt + TILT_MAX * dt / TILT_T)
 				if tilt >= TILT_MAX:
 					_go("pour")
@@ -237,6 +554,7 @@ func step(dt: float) -> void:
 					if lining < 62.0:
 						lining = 131.0     # relined between contracts
 					_go("melt")
+	power = minf(power, grid_cap)
 	# the casting line indexes one mould on per ingot
 	line_off = move_toward(line_off, line_goal, 0.5 * dt)
 	for ig in ingots:
@@ -265,25 +583,61 @@ func step(dt: float) -> void:
 	m_l += dm
 	condensate += dm * 0.6
 	vapor = lerpf(vapor, clampf(dm / dt / 0.02, 0.0, 1.0) + clampf((T - 1600.0) / 200.0, 0.0, 0.4), 1.0 - exp(-2.0 * dt))
-	# the lance: down through its port in the hood for a reading and a sample, then out
-	tc_age += dt
-	lance_t += dt
-	if phase in ["melt", "heat", "hold"] and hood < 0.01 and lance_t > 40.0:
-		dip = minf(1.0, dip + dt / 1.2)
-		if dip >= 1.0 and lance_t > 43.0:
-			lance_t = 0.0
-			tc_T = T + randf_range(-3.0, 3.0)
-			tc_age = 0.0
-			for el in bath_chem:
-				chem[el] = float(bath_chem[el]) * randf_range(0.97, 1.03)
-	else:
-		dip = maxf(0.0, dip - dt / 0.8)
+	_step_lance(dt)
+	bunker_ram = move_toward(bunker_ram,maxf(1.15,2.8 - 1.55 * fill() - 0.08 - ram_open * 0.35),dt * 0.35)
+	if feed > 0.0: screw_angle += dt * 3.0
 	hpu_bar = move_toward(hpu_bar, 175.0 if phase in ["tilt", "back"] else 210.0, 20.0 * dt)
 	var e_melt := dm * 1000.0 * (C_S * (T_LIQ - 20.0) + L_FUS + C_L * (T - T_LIQ))
 	var e_in := (power * ETA - q_wall() - q_rad()) * 1e6 * dt
 	var cap_j := m_l * 1000.0 * C_L + m_s * 1000.0 * C_S
 	T += (e_in - e_melt) / maxf(1.0, cap_j)
 	T = clampf(T, 1450.0, 1720.0)
+
+
+func _step_lance(dt: float) -> void:
+	tc_age += dt
+	lance_t += dt
+	var ready := phase in ["melt","hold","heat"] and hood < 0.01 and tilt < 0.001 and not (phase == "heat" and T >= T_TAP) and m_l >= (0.05 if manual else HEEL)
+	if not ready and lance_phase in ["lower","dwell"]:
+		lance_phase = "lift"
+		lance_phase_t = 0.0
+		lance_from = dip
+	if lance_phase == "idle":
+		if ready and lance_t >= 40.0 and (not manual or manual_sample):
+			lance_phase = "lower"
+			lance_phase_t = 0.0
+		else: return
+	lance_phase_t += dt
+	match lance_phase:
+		"lower":
+			dip = Pal.ease_io(clampf(lance_phase_t / 1.8,0,1))
+			if lance_phase_t >= 1.8:
+				lance_phase = "dwell"
+				lance_phase_t = 0.0
+		"dwell":
+			dip = 1.0
+			if lance_phase_t >= 1.6:
+				# Only a completed, immersed dwell can produce a measurement.
+				tc_T = T + randf_range(-3,3)
+				tc_age = 0.0
+				sample_count += 1
+				for el in bath_chem: chem[el] = float(bath_chem[el]) * randf_range(0.97,1.03)
+				lance_phase = "lift"
+				lance_phase_t = 0.0
+				lance_from = dip
+		"lift":
+			dip = lance_from * (1.0 - Pal.ease_io(clampf(lance_phase_t / 1.4,0,1)))
+			if lance_phase_t >= 1.4:
+				dip = 0.0
+				lance_phase = "idle"
+				lance_t = 0.0
+				lance_phase_t = 0.0
+
+
+func lance_tip() -> Vector2:
+	# The melt is an annulus held against the lining. The probe must reach
+	# that band, not point into the empty centre of the rotating crucible.
+	return Vector2(-1.7,3.18).lerp(Vector2(-R_IN + layer(m_l) * 0.5,4.9),dip)
 
 
 func _go(p: String) -> void:
@@ -388,7 +742,7 @@ func draw(ci, F: float, mx: float, font: Font, font_b: Font, zoom: float, txt: C
 		ci.draw_colored_polygon(poly, Color(0.17, 0.165, 0.17))
 		poly.append(poly[0])
 		ci.draw_polyline(poly, Pal.ink(0.38), 1.0)
-	var ram_y := maxf(1.15, pile_top - 0.08 - ram_open * 0.35)
+	var ram_y := bunker_ram
 	ci.draw_rect(Rect2(Vector2(X - 1.32, F + ram_y - 0.1) * M, Vector2(2.64 * M, 0.1 * M)), STEEL_HI)
 	ci.draw_rect(Rect2(Vector2(X - 1.32, F + ram_y - 0.1) * M, Vector2(2.64 * M, 0.1 * M)), Pal.ink(0.55), false, 1.2)
 	for sx: float in [-0.8, 0.8]:
@@ -400,7 +754,7 @@ func draw(ci, F: float, mx: float, font: Font, font_b: Font, zoom: float, txt: C
 	_label(ci, font, Vector2(X + 1.5, F + 1.35) * M, txt.call("fu_bunker"), zoom)
 	# ---- screw feeder into the hood
 	_rect(ci, -0.18, 2.85, 0.18, 3.36, F, Color(0.05, 0.053, 0.06), Pal.ink(0.5))
-	var turn := fposmod(t * (3.0 if feed > 0.0 else 0.0), 1.0)
+	var turn := fposmod(screw_angle, 1.0)
 	for i in 5:
 		var yy := F + 2.9 + (i + turn) * 0.1
 		if yy < F + 3.34:
@@ -448,15 +802,6 @@ func draw(ci, F: float, mx: float, font: Font, font_b: Font, zoom: float, txt: C
 		ci.draw_circle(Vector2(tx, F + 3.7) * M, 0.05 * M, Pal.tint(Pal.AIR, 0.35))
 	_label(ci, font, Vector2(X + hdx - 1.75, F + 3.62) * M + Vector2(0, 4), txt.call("fu_hood"), zoom, true)
 	_condenser(ci, F, hdx, font, zoom, txt)
-	# the immersion lance through its port in the hood: down for a reading and a sample
-	var lx := X + hdx - 0.45
-	var ltip := 3.4 + 1.5 * Pal.ease_io(dip)
-	ci.draw_rect(Rect2(Vector2(lx - 0.12, F + 2.95) * M, Vector2(0.24, 0.38) * M), STEEL_HI)
-	ci.draw_rect(Rect2(Vector2(lx - 0.12, F + 2.95) * M, Vector2(0.24, 0.38) * M), Pal.ink(0.5), false, 1.0)
-	ci.draw_line(Vector2(lx, F + 2.95) * M, Vector2(lx + 0.12 * dip, F + ltip) * M, Pal.ink(0.7), 2.0)
-	if dip > 0.9:
-		ci.draw_circle(Vector2(lx + 0.12 * dip, F + ltip) * M, 3.0, glow_col(T, 0.9))
-	_label(ci, font, Vector2(lx - 0.15, F + 2.9) * M, txt.call("fu_lance"), zoom, true)
 	# ---- the furnace body, tilted on its trunnions
 	# water-cooled power cables and coil-water hoses (flexible: the body swings)
 	var term := body_pt(-1.4, 4.45, F)
@@ -590,6 +935,7 @@ func draw(ci, F: float, mx: float, font: Font, font_b: Font, zoom: float, txt: C
 	ci.draw_line(pv, Vector2(X + 1.0, F + 7.55) * M, ph_c, 1.0)
 	ci.draw_arc(pv, 0.22 * M, 0.0, TAU, 20, Pal.ink(0.55), 2.0)
 	ci.draw_arc(pv, 0.1 * M, 0.0, TAU, 12, Pal.ink(0.35), 1.0)
+	_draw_lance(ci,F,font,zoom,txt)
 	# ---- the stream into the mould at the fill station
 	var tip := body_pt(1.6, 3.77, F)
 	var land := Vector2(X + FILL_X, F + 5.83) * M
@@ -659,6 +1005,42 @@ func draw(ci, F: float, mx: float, font: Font, font_b: Font, zoom: float, txt: C
 		ci.draw_rect(Rect2(Vector2(X + 10.5, F + 0.85) * M, Vector2(6.9 * M, 3.3 * M)), Color(0.035, 0.037, 0.042, 0.96))
 
 
+func _draw_lance(ci, F: float, font: Font, zoom: float, txt: Callable) -> void:
+	var local_tip := lance_tip()
+	var tip := (Vector2(X,F) + local_tip) * M
+	var direction := (Vector2(-R_IN + layer(m_l) * 0.5,4.9) - Vector2(-1.7,3.18)).normalized()
+	var base := Vector2(-1.7,3.18) - direction * 0.9
+	var normal := Vector2(-direction.y,direction.x)
+	var carriage := base + direction * (0.25 + 0.55 * dip)
+	# The sampling gantry stands outside the charge bunker. Its angled
+	# guide enters a separate port on the hood's left, away from the feeder.
+	_rect(ci,-2.95,2.0,-2.35,3.15,F,STEEL_HI,Pal.ink(0.45))
+	for side: float in [-1,1]:
+		var offset := normal * side * 0.16
+		ci.draw_line((Vector2(X,F) + base + offset) * M,(Vector2(X,F) + base + direction * 1.1 + offset) * M,Pal.ink(0.55),1.5)
+	ci.draw_line((Vector2(X,F) + base) * M,(Vector2(X,F) + carriage) * M,Pal.ink(0.7),4)
+	var cross := PackedVector2Array()
+	for q in [carriage - normal * 0.24,carriage + normal * 0.24,carriage + normal * 0.24 + direction * 0.18,carriage - normal * 0.24 + direction * 0.18]:
+		cross.append((Vector2(X,F) + q) * M)
+	ci.draw_colored_polygon(cross,STEEL_HI)
+	cross.append(cross[0])
+	ci.draw_polyline(cross,Pal.ink(0.65),1)
+	var head := (Vector2(X,F) + carriage + direction * 0.18) * M
+	ci.draw_polyline(_curve((Vector2(X,F) + base - normal * 0.3) * M,head,0.15 * M),Pal.ink(0.35),1.2)
+	ci.draw_line(head,tip,Pal.ink(0.72),2.2)
+	var sleeve := tip.lerp(head,0.16)
+	ci.draw_line(sleeve,tip,Color(0.65,0.6,0.48),4.0)
+	if dip > 0.88:
+		ci.draw_line(tip.lerp(sleeve,0.4),tip,glow_col(T,clampf((dip - 0.88) / 0.12,0,1)),3.0)
+		ci.draw_arc(tip,4 + 0.8 * sin(t * 5),0,TAU,12,glow_col(T,0.35),1.0)
+	# Port shutters are clear before the lance moves through the hood.
+	var opening := clampf(dip * 12,0,1)
+	for side: float in [-1,1]:
+		ci.draw_line(Vector2(X - 1.57 + side * 0.04 + side * opening * 0.16,F + 3.36) * M,Vector2(X - 1.57 + side * 0.25 + side * opening * 0.16,F + 3.36) * M,Pal.ink(0.6),2)
+	var stage: String = {"idle":"待机","lower":"下降","dwell":"浸测","lift":"回升"}[lance_phase] if Txt.zh else lance_phase.to_upper()
+	_label(ci,font,Vector2(X - 2.5,F + 1.9) * M,txt.call("fu_lance") + " · " + stage,zoom,true)
+
+
 func _label(ci, font: Font, at: Vector2, s: String, zoom: float, right: bool = false) -> void:
 	var a := clampf((zoom - 0.8) / 0.3, 0.0, 1.0)
 	if a <= 0.01 or ci.no_text:
@@ -683,6 +1065,9 @@ func _callout(ci, font: Font, from: Vector2, to: Vector2, s: String, zoom: float
 
 # the plate beside the bunker: what the furnace is doing, in numbers
 func _panel(ci, F: float, font: Font, font_b: Font, txt: Callable) -> void:
+	# an on-site guide is running: the read-out plate steps back (27 号)
+	if Guide.quiet:
+		return
 	var r := Rect2(Vector2(X + 10.5, F + 0.85) * M, Vector2(6.9 * M, 3.3 * M))
 	ci.draw_rect(r, Color(0.035, 0.037, 0.042, 0.96))
 	ci.draw_rect(Rect2(r.position, Vector2(4, r.size.y)), Pal.heat(0.9, 1.1))
@@ -704,6 +1089,12 @@ func _panel(ci, F: float, font: Font, font_b: Font, txt: Callable) -> void:
 		txt.call("fu_l6") % [chem.C, chem.Mn, chem.Si, chem.Cr, chem.Ni, chem.Cu, chem.S, chem.P],
 		txt.call("fu_l7") % [int(round(tc_T)), int(tc_age), int(round(back_temp())), hpu_bar / 10.0],
 	]
+	if manual:
+		# A cold machine has no inherited measurement or assay. Composition
+		# from the old decorative cycle is not a test result for this batch.
+		lines[4] = ("投料 %.2f t · 已冷却出料 %.2f t" if Txt.zh else "Charged %.2f t · Cooled output %.2f t") % [input_t,manual_shipped_t]
+		lines[5] = ("测温：尚未取样" if Txt.zh else "Temperature sample: not yet taken") if sample_count == 0 else (("测温 %d °C · %d s 前" if Txt.zh else "Sample %d C · %d s ago") % [int(round(tc_T)),int(tc_age)])
+		lines[6] = ("手动控制 · 可用供电 %.1f MW" if Txt.zh else "Manual control · Available supply %.1f MW") % manual_supply_mw
 	if yard > 0.5:
 		lines[2] += txt.call("fu_yard") % yard
 	for i in lines.size():

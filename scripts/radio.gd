@@ -7,6 +7,9 @@ extends RefCounted
 # text (the contract assistant).
 
 const MAX_WAIT := 60.0
+# user 2026-10-26: "台词完全没有必要。把梁工直接去掉" — no character speaks; the terminal's own
+# messages ("term") still come through. The lines stay in data/台词.txt and the courses.
+static var CHARACTERS := false
 const BUSY_HOLD := 2.5        # a line waits this long at most for the hands to be free
 var history: Array = []       # what was said: [text, who], newest last
 
@@ -31,6 +34,8 @@ func say_text(key: String, who: String, zh: String, en: String, once: bool = tru
 
 
 func _push(key: String, line: Dictionary, once: bool) -> void:
+	if not CHARACTERS and str(line.get("who", "liang")) != "term":
+		return
 	if once and said.has(key):
 		return
 	if key == last and not now.is_empty():

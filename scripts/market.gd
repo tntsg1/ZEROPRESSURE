@@ -16,7 +16,15 @@ const STAR_TIME := 4.0 * 60.0     # s more per extra star
 # the short jobs on part of a ship: standard time (the hold's is also its hard stop)
 const SHORT_TIME := {"section": 12.0 * 60.0, "rescue": 8.0 * 60.0}
 const RESCUE_FEE := 0.05           # a rescue's fee: of what its pieces pay
+# Unowned drifting hulks (26 号, player 2026-10-24: "I started out hauling wrecks in from the
+# asteroid belt and selling the material"): no client, so no goal, no named pieces, always the
+# whole ship; the tug tows it in for a fee by the metre (provisional), half once the tug
+# station works. One on every market, two once the tug station is fully built.
+const DRIFT_PER_M := 60.0
+const DRIFT_YEARS := Vector2i(3, 40)
 const TRIES := 30                 # draws per offer before the market gives up on that slot
+const FINDS_ONLY := true          # 62 号: the market is the belt's unowned hulks only
+const BY_BERTH_ONLY := true       # 66 号: what ship turns up depends on the berth's length alone
 
 static var stats := {"made": 0, "discarded": 0, "reasons": {}}   # what the contract validator threw away
 # the ship types on the market and how often each comes up ([type, weight, reputation needed])
@@ -53,7 +61,7 @@ static func pick_ship(rng: RandomNumberGenerator, career: Dictionary, stars: int
 	var pool: Array = []
 	var total := 0
 	for e in POOL:
-		if rep >= int(e[2]) and (e.size() < 4 or stars >= int(e[3])) and FileAccess.file_exists(Ship.DIR + e[0] + ".json") and fits(e[0], career):
+		if (BY_BERTH_ONLY or rep >= int(e[2])) and (e.size() < 4 or stars >= int(e[3])) and FileAccess.file_exists(Ship.DIR + e[0] + ".json") and fits(e[0], career):
 			pool.append(e)
 			total += int(e[1])
 	var k := r.randi_range(1, maxi(1, total))
@@ -88,13 +96,34 @@ static func make(seed: int, career: Dictionary) -> Array:
 	var top := max_stars(int(career.get("rep", 0)))
 	var out: Array = []
 	var used := {}
+	# 62 号 (60 号 Q2 A): no more client contracts — the belt's unowned hulks only, each by the
+	# station it drifts near; the tug station's second stage finds one more
+	if FINDS_ONLY:
+		# 68 号: the hulks are found by sweeping the belt on the star map (scripts/scan.gd)
+		if Scan.ON:
+			return out
+		var w0 := Port.star_weight_of(career)
+		var n := 4 if int(career.get("port", {}).get("tug", 0)) >= 2 else 3
+		for k in n:
+			var dr := valid_offer(rng, career, 1 if k == 0 else roll_stars(rng, top, w0), used, "full", "salvage")
+			if dr.is_empty():
+				continue
+			dr.find = true
+			dr.station = rng.randi_range(0, Orbits.STATIONS.size() - 1)
+			# what the card asks is the tow home, quoted now (the run is drawn again when sent)
+			var fq := ShipMarket.find_quote(dr)
+			dr.fee = float(fq.fee)
+			dr.tow_days = float(fq.run.get("tof", 0.0)) if not fq.run.is_empty() else 0.0
+			out.append(dr)
+		return out
 	# three cards that differ: a plain full strip, a short job, and a third
 	# that is neither of those again (more stars, or the other kind of job)
 	var shorts := ["section", "rescue"]
 	var short1: String = shorts[rng.randi_range(0, 1)]
 	shorts.erase(short1)
+	var w := Port.star_weight_of(career)
 	for i in 3:
-		var stars := 1 if i == 0 else rng.randi_range(1, top)
+		var stars := 1 if i == 0 else roll_stars(rng, top, w)
 		var scope := "full"
 		if i == 1:
 			scope = short1
@@ -105,13 +134,42 @@ static func make(seed: int, career: Dictionary) -> Array:
 		var o := valid_offer(rng, career, stars, used, scope)
 		if not o.is_empty():
 			out.append(o)
+	# the unowned hulks the tug brought in take the last places
+	var drifts := 2 if int(career.get("port", {}).get("tug", 0)) >= 2 else 1
+	for k in drifts:
+		var dr := valid_offer(rng, career, 1 if k == 0 else roll_stars(rng, top, w), used, "full", "salvage")
+		if dr.is_empty():
+			continue
+		var at := out.size() - 1 - k
+		if at >= 0:
+			out[at] = dr
+		else:
+			out.append(dr)
 	return out
 
 
+# an unowned hulk's towing fee: by its length, half once the tug station works
+static func drift_fee(ship: String, career: Dictionary) -> float:
+	var length := float(type_of(ship).get("length", 20.0))
+	var k := 0.5 if int(career.get("port", {}).get("tug", 0)) >= 1 else 1.0
+	return snappedf(length * DRIFT_PER_M * k, 100.0)
+
+
+# a star roll that leans to the top the heavier the weight (the trade port, G6):
+# every level from 1 to top is in the hat once, the top level w times
+static func roll_stars(rng: RandomNumberGenerator, top: int, w: int) -> int:
+	var hat: Array = []
+	for s in range(1, top + 1):
+		hat.append(s)
+	for k in w - 1:
+		hat.append(top)
+	return int(hat[rng.randi_range(0, hat.size() - 1)])
+
+
 # an offer that passed the contract validator (failures are counted and drawn again)
-static func valid_offer(rng: RandomNumberGenerator, career: Dictionary, stars: int, used: Dictionary = {}, scope: String = "") -> Dictionary:
+static func valid_offer(rng: RandomNumberGenerator, career: Dictionary, stars: int, used: Dictionary = {}, scope: String = "", owner: String = "client") -> Dictionary:
 	for k in TRIES:
-		var o := offer(rng, career, stars, used, scope, pick_ship(rng, career, stars))
+		var o := offer(rng, career, stars, used, scope, pick_ship(rng, career, stars), owner)
 		stats.made += 1
 		var v := ContractValidator.check(o._ship)
 		o.erase("_ship")
@@ -147,7 +205,7 @@ static func scope_text(o: Dictionary) -> String:
 
 
 # one offer at a given risk; `used` keeps registrations apart on one market
-static func offer(rng: RandomNumberGenerator, career: Dictionary, stars: int, used: Dictionary = {}, want_scope: String = "", ship: String = "gr7") -> Dictionary:
+static func offer(rng: RandomNumberGenerator, career: Dictionary, stars: int, used: Dictionary = {}, want_scope: String = "", ship: String = "gr7", owner: String = "client") -> Dictionary:
 	var t: Dictionary = type_of(ship)
 	var base := Ship.load_data(ship)
 	var tk := base_time(ship) / BASE_TIME
@@ -158,6 +216,8 @@ static func offer(rng: RandomNumberGenerator, career: Dictionary, stars: int, us
 	var traps := pick_traps(rng, stars, int(career.get("rep", 0)), Traps.allowed(base))
 	# how much of the ship is bought: the whole of it, or a short job on part of it
 	var scope: String = want_scope if want_scope != "" else ["full", "full", "section", "rescue"][rng.randi_range(0, 3)]
+	if owner == "salvage":
+		scope = "full"
 	var o := {
 		"id": "%03d-%s" % [int(career.get("done", 0)) + 2, reg],
 		"ship": ship, "reg": reg, "stars": stars, "traps": traps,
@@ -166,9 +226,19 @@ static func offer(rng: RandomNumberGenerator, career: Dictionary, stars: int, us
 		"reason": "R_reason_%02d" % rng.randi_range(1, REASONS),
 		"variant": rng.randi(),
 	}
+	# a big ship with one tug (G6): it queues one contract before it can be taken (72 号: the tug
+	# yard holds what is towed home now, and its stage says how long a ship can be towed)
+	if not Scan.ON and Port.queues_big(career, float(t.get("length", 0.0))):
+		o.queued = true
 	# the order's goal: a second dimension over its scope (a rescue is a valuable-equipment job by nature);
 	# drawn from the contract's own seed, so it never shifts the market's other draws
 	o.goal = "valuable" if scope == "rescue" else GOALS[int(o.variant) % GOALS.size()]
+	if owner == "salvage":
+		# nobody's ship: no client's goal, its history instead of a reason for scrapping
+		o.owner = "salvage"
+		o.goal = ""
+		o.reason = ""
+		o.drift_years = rng.randi_range(DRIFT_YEARS.x, DRIFT_YEARS.y)
 	if o.goal == "fast":
 		o.time = snappedf(float(o.time) * FAST_TIME, 60.0)
 	var d := Variant.make(base, o)
@@ -181,6 +251,8 @@ static func offer(rng: RandomNumberGenerator, career: Dictionary, stars: int, us
 	if scope == "rescue":
 		# a rescue costs little to take: the pieces are paid one by one
 		o.fee = snappedf(float(d.value.total) * RESCUE_FEE, 100.0)
+	if owner == "salvage":
+		o.fee = drift_fee(ship, career)
 	o.scope_tags = d.get("scope", {}).get("tags", [])
 	o.named = _named(d)
 	o.logs = _logs(rng, traps)

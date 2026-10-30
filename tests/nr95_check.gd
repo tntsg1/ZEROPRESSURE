@@ -5,7 +5,7 @@ extends SceneTree
 # faults; the shield lifted off and hung in front of the core puts a point behind
 # it in shadow; the decay heat comes off only while the coolant pump has power; a
 # petal folded hot deforms; the core lifted with its drums unlocked lets them slip;
-# cut, the core contaminates the ship; cooled, locked and freed it goes whole to
+# cut, the core detonates; cooled, locked and freed it goes whole to
 # the hazard bay.
 # godot --headless --path . --fixed-fps 60 -s tests/nr95_check.gd
 
@@ -133,7 +133,7 @@ func _run() -> void:
 	var cr = g.world.tag("CORE")
 	g.on_cut_into(cr, g.world.frame(cr) * Geom.centroid(cr.poly))
 	await _frames(3)
-	check(_count(g, "core_breach") == 1 and g.reactor.rate_at(_m(8.0, 0.0)) > 2.0, "cut, the core contaminates the ship: the crew module is no longer in shadow (%.0f mSv/h)" % g.reactor.rate_at(_m(8.0, 0.0)))
+	check(_count(g, "core_detonation") == 1 and g.state == "nuke", "cut, the core detonates (scripts/nuke.gd)")
 	g.queue_free()
 	await _frames(2)
 	g = _game()

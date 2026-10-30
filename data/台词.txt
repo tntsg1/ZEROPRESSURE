@@ -1,0 +1,2594 @@
+# 零压拆船厂 · 台词与画面文字（一次性改这里）
+#
+# 前半部分「现在游戏里会出现的」：只改这部分。
+# 后半部分「已停用」：梁工等角色台词（10-26 起不播）和剧情层（关闭），游戏里不会出现，留着只为不丢你写过的字。
+#
+# 怎么改：
+#   每条以 [编号] 开头；「中：」后面写中文，「英：」后面写英文（英文可以空着，空着就显示中文）。
+#   「中：」空着 = 还没写：这句不播；合同卡上显示【待写】。
+#   一个场景写几句就用 _1 _2 _3 编号，游戏按顺序播（比如 L_tug_in_1、L_tug_in_2）。
+#   {name}、%d、%s 这类留着，游戏会填进去。换行写 \n。
+#   # 开头的是说明（谁说、什么时候说、建议长度），不用改。
+#   编号不要改；改完保存，重启游戏就生效。
+#
+
+############################################################
+# 现在游戏里会出现的（只改这部分）
+############################################################
+
+============================================================
+# 一、终端消息与开场卡片 · 成长体系与主线
+============================================================
+
+[L_intro_1]
+# 旁白 · 开场卡 1：零压港当年，六区灯火通明（68 号，只在新档播一次，暂停菜单可回看） · 两到四句
+中：零压港曾经是这一带最大的船舶回收港。六个作业区昼夜不停，拖船排着队，切割机的火光从来没断过。每天都有成千上万吨材料从这里运出去，送往需要它们的地方。
+英：Zero Pressure Port was once the largest ship recycling facility in the region. All six work zones ran around the clock. Tugboats lined up to enter, and cutting torches never stopped burning. Thousands of tons of recovered materials left this port every day, bound for places that needed them.
+
+[L_intro_2]
+# 旁白 · 开场卡 2：同一个镜头，灯一盏盏熄灭，港站衰败成现在的样子 · 两到四句
+中：后来，进港的船越来越少，订单也一年比一年少。一个又一个作业区关门。最后一艘回收船离开以后，港口的灯就再也没亮起来过。
+英：Then fewer and fewer ships came in, and orders declined year after year. First the night shifts ended. Then the work zones shut down, one after another. After the last salvage ship departed, the port's lights never all came back on.
+
+[L_intro_3]
+# 旁白 · 开场卡 3：镜头推到荒废多年的七号坞（BERTH 07） · 两到四句
+中：七号坞已经荒废很多年了。泊位上还留着当年没运走的废料。港务局试过几次重新招人接手，最后都没了下文。直到今天。
+英：Berth 07 has been abandoned for years. Scrap still lies where the last crew left it. A crane hangs motionless overhead, and much of the equipment is broken or corroded. The Port Authority tried several times to find someone to take it over. Nothing ever came of it. Until today.
+
+[L_intro_4]
+# 旁白 · 开场卡 4：回收权使用证弹出，签上玩家的公司名 · 一到两句
+中：七号坞终于有了新的经营者。港务局已经批准了回收权使用申请，剩下的事，就看你能把这个地方经营成什么样了。
+英：Today, Berth 07 finally has a new operator. The Port Authority has approved your salvage rights application. What happens to this place now is up to you.
+
+[L_permit_terms]
+# 文件 · 回收权使用证上的“使用条件”说明段落（编号、日期、公司名、损坏清单由游戏填） · 三到五条
+中：一、本证授予持证企业在核准范围内开展船舶拆解、物资回收、设备维修及相关经营活动的权利。未经批准，不得占用或使用其他封闭作业区。\n二、持证企业可自主承接回收合同、采购设备、雇用人员，并依法处置和销售取得的回收物资。经营产生的收益、成本及债务由持证企业自行承担。\n三、场地按现状交付。现有设施的损坏及缺失情况以随附清单为准。港务局不承担既有设备的修复费用，后续维修、升级及日常维护由持证企业自行安排。\n四、持证企业须对作业安全、危险物处置及港区设施运行负责。未经检测确认的设备不得投入正式作业，涉及高风险船舶及特殊物资的回收活动须符合相应安全要求。\n五、其他停用区域可在满足设施修复、安全验收及经营许可要求后，逐步申请恢复使用。持证企业须遵守港务局的相关管理规定，严重违规者可被暂停或撤销使用权。
+英：1. This permit grants the holder the right to conduct shipbreaking, material recovery, equipment repairs, and related commercial operations within the approved area. Occupation or use of other closed work zones requires separate authorization.\n2. The permit holder may independently accept salvage contracts, purchase equipment, hire personnel, and legally process or sell recovered materials. All operating revenue, expenses, and liabilities remain the responsibility of the permit holder.\n3. The premises are transferred in their existing condition. Known damage and missing equipment are documented in the attached inventory. The Port Authority is not responsible for restoring existing facilities. All subsequent repairs, upgrades, and maintenance shall be arranged by the permit holder.\n4. The permit holder is responsible for workplace safety, hazardous material handling, and the safe operation of port facilities. Equipment that has not passed inspection must not be placed into active service. High-risk vessels and special materials must be handled in accordance with applicable safety requirements.\n5. Additional inactive zones may be reopened progressively, subject to facility restoration, safety inspections, and operating authorization. The permit holder must comply with Port Authority regulations. Serious violations may result in suspension or revocation of operating rights.
+
+[T_contract_signed]
+# 终端 · 合同签下 · 一句
+中：合同已签署，相关作业信息已录入系统。
+英：Contract signed. Job details have been added to the system.
+
+[T_loan_installment]
+# 终端 · 结算扣分期 · 一句
+中：本期贷款还款已从结算收入中自动扣除。
+英：Loan installment automatically deducted from settlement earnings.
+
+[T_loan_paid]
+# 终端 · 贷款还清 · 一句
+中：贷款已全部还清，后续结算将不再扣除还款。
+英：Loan fully repaid. No further deductions will be made.
+
+[T_market_open]
+# 终端 · 市场开放 · 一句
+中：合同市场已开放，现在可以查看并承接新的回收订单。
+英：Contract market unlocked. New salvage jobs are now available.
+
+[T_rep_up]
+# 终端 · 声望升级，{name} 是新等级 · 一句
+中：企业声望已提升至「{name}」，新的经营权限现已开放。
+英：Company reputation increased to {name}. New operating privileges are now available.
+
+============================================================
+# 二、合同卡：报废原因、船载记录、陷阱名与复盘说明
+============================================================
+
+[R_reason_01]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：船体服役年限已满，维护成本持续上升，船东决定退役处理。
+英：The vessel has reached the end of its service life, and rising maintenance costs have led the owner to retire it.
+
+[R_reason_02]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：主推进系统多次发生故障，维修报价已超过船舶剩余价值。
+英：Repeated failures of the main propulsion system have pushed repair costs beyond the vessel's remaining value.
+
+[R_reason_03]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：船舶在上次航行中发生碰撞，内部结构受损，船东放弃修复。
+英：The vessel sustained internal structural damage in a collision during its last voyage, and the owner has decided against repairs.
+
+[R_reason_04]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：船舶长期停泊未使用，多套设备已无法正常启动，船东申请整船报废。
+英：After an extended period in storage, several onboard systems can no longer be started, and the owner has requested full decommissioning.
+
+[R_reason_05]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：船队已完成设备更新，该船型号老旧，现有运营计划不再需要保留。
+英：Following a fleet upgrade, this older vessel is no longer needed for the owner's operations.
+
+[R_reason_06]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：船舶在例行检测中发现多处结构疲劳，继续服役所需的加固费用过高。
+英：Routine inspection revealed structural fatigue in several areas, making the cost of reinforcement too high to justify continued service.
+
+[R_reason_07]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：船体服役年限已超过原定标准，船东认为继续维修不划算，决定整船报废。
+英：The vessel has exceeded its planned service life, and the owner has decided that further repairs are no longer economical.
+
+[R_reason_08]
+# 合同卡 · 船东报废原因（受托合同） · 一句
+中：船东已购入替代船只，原船长期闲置，现委托回收以腾出泊位。
+英：The owner has acquired a replacement vessel and commissioned the recycling of the old ship to free up dock space.
+
+[G_log_01]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：船员交接记录：三号储物柜的钥匙又找不到了。
+英：Crew handover log: The key to locker three is missing again. The spare is in the duty room drawer.
+
+[G_log_02]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：航行日志：本次航程比预计晚了六小时，出发前等补给耽误了时间。
+英：Voyage log: Arrival was six hours behind schedule, mostly because we had to wait for the supply truck before departure.
+
+[G_log_03]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：维修记录：食堂的自动热水机已经修好。
+英：Maintenance log: The galley water heater has been repaired and passed three consecutive tests.
+
+[G_log_04]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：值班记录：船员已完成个人物品清点，剩下的旧家具和生活用品不用带走。
+英：Duty log: The final crew has finished collecting personal belongings. Old furniture and remaining household supplies can be left aboard.
+
+[G_log_05]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：值班日志：昨天轮到老陈做饭，他又把面条煮多了。
+英：Duty log: Chen cooked yesterday and made too many noodles again. There's enough left for another meal.
+
+[G_log_06]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：航行日志：途经中转站时收到了家里的消息，船长批准大家提前半小时结束值班。
+英：Voyage log: We received messages from home while passing the transfer station, so the captain let everyone finish their shifts half an hour early.
+
+[G_log_07]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：物资记录：上次采购的咖啡还有四箱没开封。
+英：Supply log: Four unopened cases of coffee remain from the last resupply and have been reserved for the next crew.
+
+[G_log_08]
+# 合同卡 · 普通船载记录（和陷阱无关的一句） · 一句
+中：交接记录：离船前记得通知大家来拿去年的合照。
+英：Handover log: Last year's crew photo is still on the wall in the lounge. Remind everyone to collect it before leaving.
+
+[X_log_wrong_valve_1]
+# 合同卡 · 船载记录里暗示「wrong_valve」陷阱的一句（第 1 种写法） · 一句
+中：维修记录：上次检修后，二号管路的阀门编号好像贴反了，交接时记得让下一班再核对一下。
+英：Maintenance log: The valve labels on Line 2 may have been swapped during the last inspection. Remind the next shift to double-check them.
+
+[X_log_wrong_valve_2]
+# 合同卡 · 船载记录里暗示「wrong_valve」陷阱的一句（第 2 种写法） · 一句
+中：值班记录：三号阀门压力却一直过高。
+英：Duty log: Closed Valve 3 today, but the pressure wouldn't drop. Tried the one next to it, and everything went back to normal.
+
+[X_log_fake_stop_1]
+# 合同卡 · 船载记录里暗示「fake_stop」陷阱的一句（第 1 种写法） · 一句
+中：维修记录：主控台明明显示设备已经停机，但检修的时候还能听见里面有东西，暂时没查出原因。
+英：Maintenance log: The main console showed the equipment as shut down, but something inside was still spinning during inspection. Cause unknown.
+
+[X_log_fake_stop_2]
+# 合同卡 · 船载记录里暗示「fake_stop」陷阱的一句（第 2 种写法） · 一句
+中：交接记录：按下紧急停机后，设备又运行了十几秒才恢复安静。
+英：Handover log: After the emergency stop was pressed, the equipment kept running for another ten seconds or so before going quiet. Maintenance said they'd check it again.
+
+[X_log_hidden_tank_1]
+# 合同卡 · 船载记录里暗示「hidden_tank」陷阱的一句（第 1 种写法） · 一句
+中：货舱记录：底层隔板后面还有一根旧的管线，图纸上没有标出来，之前的船员也不知道它通向哪里。
+英：Cargo hold log: There's an old pipe behind the lower bulkhead that isn't marked on the plans. None of the previous crew could say where it leads.
+
+[X_log_hidden_tank_2]
+# 合同卡 · 船载记录里暗示「hidden_tank」陷阱的一句（第 2 种写法） · 一句
+中：维修记录：上次拆开货舱侧面的检修板，发现里面还有个小型储罐。
+英：Maintenance log: Opened the cargo hold's side panel and found a small storage tank behind it. Couldn't find a matching entry in the equipment inventory.
+
+[X_log_live_cargo_1]
+# 合同卡 · 船载记录里暗示「live_cargo」陷阱的一句（第 1 种写法） · 一句
+中：货舱记录：三号货箱已经断开外部供电，但箱体上的指示灯还亮着，可能是里面的备用电池。
+英：Cargo log: External power to Container 3 has been disconnected, but its indicator light is still on. The internal backup battery may still be installed.
+
+[X_log_live_cargo_2]
+# 合同卡 · 船载记录里暗示「live_cargo」陷阱的一句（第 2 种写法） · 一句
+中：交接记录：货舱断电以后，靠里侧的几个箱子还是有轻微的嗡嗡声。
+英：Handover log: A few containers near the back were still humming after cargo hold power was cut. The duty officer said to leave them alone until a technician could take a look.
+
+[X_log_welded_hatch_1]
+# 合同卡 · 船载记录里暗示「welded_hatch」陷阱的一句（第 1 种写法） · 一句
+中：维修记录：二号舱门的锁坏了，上次维修班直接把门边焊住了。
+英：Maintenance log: The lock on Hatch 2 broke, so the repair crew welded the hatch shut. They said they'd deal with it at the next port.
+
+[X_log_welded_hatch_2]
+# 合同卡 · 船载记录里暗示「welded_hatch」陷阱的一句（第 2 种写法） · 一句
+中：交接记录：后舱那扇门已经很久没打开过了，但是门框上能看到一道新焊缝，不知道是谁什么时候弄的。
+英：Handover log: The aft compartment door hasn't been opened in a long time. There's a fresh weld along the frame, but nobody knows who put it there or when.
+
+[X_log_rerouted_line_1]
+# 合同卡 · 船载记录里暗示「rerouted_line」陷阱的一句（第 1 种写法） · 一句
+中：维修记录：原来的冷却管线漏水，维修班临时在旁边接了一根管子。
+英：Maintenance log: The original coolant line developed a leak, so the repair crew installed a temporary bypass. Nobody ever got around to restoring the original route.
+
+[X_log_rerouted_line_2]
+# 合同卡 · 船载记录里暗示「rerouted_line」陷阱的一句（第 2 种写法） · 一句
+中：值班记录：今天检查管路时发现，四号舱的管线走向和图纸对不上，问了老船员才知道去年改过一次。
+英：Duty log: During today's inspection, we noticed the piping in Compartment 4 doesn't match the plans. An old crew member said it was rerouted last year.
+
+[X_log_second_source_1]
+# 合同卡 · 船载记录里暗示「second_source」陷阱的一句（第 1 种写法） · 一句
+中：维修记录：主电源关闭后，货舱照明仍然亮着，检查发现是备用供电线路在工作。
+英：Maintenance log: Cargo bay lights remained on after the main power was shut down. The backup power circuit was found to be active.
+
+[X_log_second_source_2]
+# 合同卡 · 船载记录里暗示「second_source」陷阱的一句（第 2 种写法） · 一句
+中：值班记录：昨天断电检修的时候，有台设备一直没停，老周说可能是接了另一组电池。
+英：Duty log: One piece of equipment kept running during yesterday's power shutdown. Zhou thinks it might be connected to another battery bank.
+
+[X_log_hidden_damage_1]
+# 合同卡 · 船载记录里暗示「hidden_damage」陷阱的一句（第 1 种写法） · 一句
+中：维修记录：三号舱壁外侧已完成补焊，内部结构暂未拆开检查。
+英：Maintenance log: Exterior welding repairs on bulkhead three are complete. Internal structures have not been inspected and will be checked during the next docking.
+
+[X_log_hidden_damage_2]
+# 合同卡 · 船载记录里暗示「hidden_damage」陷阱的一句（第 2 种写法） · 一句
+中：船员留言：上次碰撞以后，地板踩上去总有点异响，维修的人看不出有什么问题。
+英：Crew note: Ever since the last collision, that section of flooring has been making noises when stepped on. Maintenance said nothing looked wrong from the outside.
+
+[X_log_explosive_cargo_1]
+# 合同卡 · 船载记录里暗示「explosive_cargo」陷阱的一句（第 1 种写法） · 一句
+中：货运记录：四号货舱的旧货箱未列入本次卸货清单，箱体标签磨损严重，暂时无法确认原装货物。
+英：Cargo log: Old containers in cargo bay four were excluded from the unloading manifest. Their labels are heavily worn, and the original contents remain unidentified.
+
+[X_log_explosive_cargo_2]
+# 合同卡 · 船载记录里暗示「explosive_cargo」陷阱的一句（第 2 种写法） · 一句
+中：装卸记录：有几个箱子搬运时能听到里面有东西晃动，船长让我们先等货主来确认。
+英：Loading log: Something could be heard shifting inside several containers during handling. The captain told us to leave them alone until the cargo owner could verify the contents.
+
+[X_log_fire_system_1]
+# 合同卡 · 船载记录里暗示「fire_system」陷阱的一句（第 1 种写法） · 一句
+中：消防维护记录：二号舱的自动灭火系统上次测试时出现误触发，控制模块尚未更换。
+英：Fire safety log: The automatic suppression system in compartment two activated unexpectedly during its last test. The control module has not yet been replaced.
+
+[X_log_fire_system_2]
+# 合同卡 · 船载记录里暗示「fire_system」陷阱的一句（第 2 种写法） · 一句
+中：值班记录：昨天警报自己响了，最后只能先把声音关掉。
+英：Duty log: The fire alarm went off twice yesterday even though nobody touched the control panel. We ended up muting it.
+
+[X_log_bio_breach_1]
+# 合同卡 · 船载记录里暗示「bio_breach」陷阱的一句（第 1 种写法） · 一句
+中：环境监测记录：生物样本舱的空气过滤器连续三次提前达到更换标准，原因尚未查明。
+英：Environmental monitoring log: Air filters in the biological sample compartment reached their replacement threshold early on three consecutive occasions. The cause remains unknown.
+
+[X_log_bio_breach_2]
+# 合同卡 · 船载记录里暗示「bio_breach」陷阱的一句（第 2 种写法） · 一句
+中：船员留言：实验舱门口最近总有股怪味，清洁组无法清理干净。
+英：Crew note: There's been a strange smell near the laboratory door lately. The cleaning crew came twice, but the smell was back the next day.
+
+[X_log_gate_jam_1]
+# 合同卡 · 船载记录里暗示「gate_jam」陷阱的一句（第 1 种写法） · 一句
+中：维修记录：三号隔离闸门开合时阻力明显增大，润滑后有所改善，但还没找到具体原因。
+英：Maintenance log: Gate three has developed noticeable resistance during operation. Lubrication helped, but the underlying cause remains unknown.
+
+[X_log_gate_jam_2]
+# 合同卡 · 船载记录里暗示「gate_jam」陷阱的一句（第 2 种写法） · 一句
+中：船员留言：货舱那道闸门最近越来越难开了，昨天还卡在一半，最后折腾了半天才关上。
+英：Crew note: The cargo bay gate has been getting harder to open. Yesterday it got stuck halfway, and it took us ages to close it.
+
+[X_log_psv_stuck_1]
+# 合同卡 · 船载记录里暗示「psv_stuck」陷阱的一句（第 1 种写法） · 一句
+中：压力系统检修记录：二号安全泄压阀上次测试时开启延迟，阀芯可能存在卡滞，尚未完成拆检。
+英：Pressure system log: Relief valve two opened late during its last test. The valve mechanism may be sticking and has not yet been inspected internally.
+
+[X_log_psv_stuck_2]
+# 合同卡 · 船载记录里暗示「psv_stuck」陷阱的一句（第 2 种写法） · 一句
+中：值班记录：昨天储气罐压力升得有点高，泄压阀一直没动静，后来我们手动降了压力。
+英：Duty log: Tank pressure climbed unusually high yesterday, but the relief valve didn't respond. We ended up lowering the pressure manually.
+
+[X_log_heater_live_1]
+# 合同卡 · 船载记录里暗示「heater_live」陷阱的一句（第 1 种写法） · 一句
+中：维修记录：加热装置的控制面板已经关闭，但管道温度下降得很慢，怀疑内部加热回路仍在工作。
+英：Maintenance log: The heater control panel was switched off, but the pipes cooled unusually slowly. An internal heating circuit may still be active.
+
+[X_log_heater_live_2]
+# 合同卡 · 船载记录里暗示「heater_live」陷阱的一句（第 2 种写法） · 一句
+中：船员留言：明明已经把加热器关了，旁边那根管子摸着还是烫的，维修组说等下次停机再查。
+英：Crew note: We switched the heater off, but the pipe next to it was still hot. Maintenance said they'd check it during the next shutdown.
+
+[X_log_jacket_loss_1]
+# 合同卡 · 船载记录里暗示「jacket_loss」陷阱的一句（第 1 种写法） · 一句
+中：冷却系统记录：三号设备的冷却夹套压力持续下降，已补充两次冷却液，暂未找到泄漏位置。
+英：Cooling system log: Pressure in unit three's cooling jacket continues to drop. Coolant has been topped up twice, but the leak has not been located.
+
+[X_log_jacket_loss_2]
+# 合同卡 · 船载记录里暗示「jacket_loss」陷阱的一句（第 2 种写法） · 一句
+中：值班记录：那台机器最近比以前热得快，冷却液也总是不够，老周怀疑是外面的冷却层漏了。
+英：Duty log: That machine has been heating up faster than usual, and the coolant keeps running low. Zhou suspects a leak in the outer cooling jacket.
+
+[X_log_valve_leak_1]
+# 合同卡 · 船载记录里暗示「valve_leak」陷阱的一句（第 1 种写法） · 一句
+中：维修记录：四号管路阀门关闭后仍检测到少量介质流动，疑似密封件老化，尚未安排更换。
+英：Maintenance log: A small amount of flow was detected after valve four was closed. The seal may be worn, but replacement has not yet been scheduled.
+
+[X_log_valve_leak_2]
+# 合同卡 · 船载记录里暗示「valve_leak」陷阱的一句（第 2 种写法） · 一句
+中：船员留言：那道阀门明明拧到底了，后面的管子还是有动静，维修组说可能是里面的密封圈坏了。
+英：Crew note: We closed that valve all the way, but there was still flow in the pipe behind it. Maintenance thinks the internal seal might be damaged.
+
+[X_log_pod_armed_1]
+# 合同卡 · 船载记录里暗示「pod_armed」陷阱的一句（第 1 种写法） · 一句
+中：设备检查记录：外挂舱的释放机构仍显示待命状态，拆除前需确认独立控制器是否已断开。
+英：Equipment inspection log: The external pod's release mechanism still shows standby status. The independent controller must be checked before removal.
+
+[X_log_pod_armed_2]
+# 合同卡 · 船载记录里暗示「pod_armed」陷阱的一句（第 2 种写法） · 一句
+中：船员留言：那只外挂舱都停用了，释放指示灯却还亮着，估计是里面的备用电池没断。
+英：Crew note: That external pod is out of service, but its release indicator is still lit. Probably because the backup battery is still connected.
+
+[N_wrong_valve]
+# 复盘 · 陷阱「wrong_valve」的名字 · 几个字
+中：阀门误操作
+英：Wrong Valve Operated
+
+[V_wrong_valve]
+# 复盘 · 陷阱「wrong_valve」的复盘说明 · 一两句
+中：操作时关闭了错误的阀门，目标管路实际上仍未隔离，内部残留的介质在拆解过程中泄漏。下次动手前，先对照管路标识确认阀门位置，再检查目标管段是否卸压。
+英：The wrong valve was closed, leaving the target pipeline connected to the system. Residual fluid escaped during dismantling. Next time, verify the valve against the piping diagram and confirm that the target section is depressurized before cutting.
+
+[N_fake_stop]
+# 复盘 · 陷阱「fake_stop」的名字 · 几个字
+中：虚假停机
+英：False Shutdown
+
+[V_fake_stop]
+# 复盘 · 陷阱「fake_stop」的复盘说明 · 一两句
+中：控制面板显示设备已停止，但实际驱动系统仍在运行，拆解时意外触发了机械动作。下次不要只看面板状态，还要确认设备已经断电，所有运动部件都已停止。
+英：The control panel showed that the equipment was stopped, but the drive system was still active, causing unexpected movement during dismantling. Next time, don't rely on the panel alone. Verify that power is isolated and all moving parts have stopped.
+
+[N_hidden_tank]
+# 复盘 · 陷阱「hidden_tank」的名字 · 几个字
+中：隐藏储罐
+英：Hidden Tank
+
+[V_hidden_tank]
+# 复盘 · 陷阱「hidden_tank」的复盘说明 · 一两句
+中：船体内部藏着一只未标记的储罐，拆解时误伤了罐体，导致内部残留的高压介质泄漏。下次切割封闭结构前，先扫描内部空间，确认没有隐藏的储罐或管路。
+英：An unmarked tank was concealed inside the hull and was damaged during dismantling, releasing its pressurized contents. Next time, scan enclosed sections before cutting and check for hidden tanks or pipelines.
+
+[N_live_cargo]
+# 复盘 · 陷阱「live_cargo」的名字 · 几个字
+中：带电货物
+英：Live Cargo
+
+[V_live_cargo]
+# 复盘 · 陷阱「live_cargo」的复盘说明 · 一两句
+中：货舱内有一批设备仍带着电，搬运时意外触发了内部电路，造成设备损坏。下次处理来源不明的货物前，先检查供电状态，确认断电后再回收。
+英：Some equipment in the cargo bay was still powered. Handling it accidentally activated an internal circuit and caused damage. Next time, check the power status of unidentified cargo and isolate its power supply before recovery.
+
+[N_welded_hatch]
+# 复盘 · 陷阱「welded_hatch」的名字 · 几个字
+中：舱门焊死
+英：Welded Hatch
+
+[V_welded_hatch]
+# 复盘 · 陷阱「welded_hatch」的复盘说明 · 一两句
+中：这道舱门之前被人从外面焊死了，常规开启机构无法工作，强行操作导致门框和连接部件受损。下次遇到打不开的舱门，先检查边缘有没有焊接痕迹，再决定怎么拆除。
+英：The hatch had been welded shut from the outside. Its normal opening mechanism could no longer operate, and forcing it damaged the frame and connecting parts. Next time, check for weld marks around a stuck hatch before attempting removal.
+
+[N_rerouted_line]
+# 复盘 · 陷阱「rerouted_line」的名字 · 几个字
+中：管路改接
+英：Rerouted Pipeline
+
+[V_rerouted_line]
+# 复盘 · 陷阱「rerouted_line」的复盘说明 · 一两句
+中：这段管路之前被人改接过，实际走向与原始图纸不符，拆解时误切了仍在使用的管线，导致内部介质泄漏。下次不要完全依赖旧图纸，动手前先确认管路的实际连接情况。
+英：The pipeline had been rerouted, and its actual layout no longer matched the original diagrams. An active line was cut during dismantling, causing its contents to leak. Next time, verify the actual pipe connections rather than relying solely on old diagrams.
+
+[N_second_source]
+# 复盘 · 陷阱「second_source」的名字 · 几个字
+中：备用电源未断
+英：Backup Power Active
+
+[V_second_source]
+# 复盘 · 陷阱「second_source」的复盘说明 · 一两句
+中：主电源虽然已经关闭，但设备仍连接着另一组独立电源，拆解时意外通电，造成设备损坏。下次除了切断主电源，还要检查备用电池和其他供电线路，确认设备已经完全断电。
+英：The main power was shut down, but the equipment was still connected to an independent power source. It unexpectedly energized during dismantling, causing damage. Next time, check backup batteries and other power connections to confirm that all power sources are isolated.
+
+[N_hidden_damage]
+# 复盘 · 陷阱「hidden_damage」的名字 · 几个字
+中：内部结构暗伤
+英：Hidden Structural Damage
+
+[V_hidden_damage]
+# 复盘 · 陷阱「hidden_damage」的复盘说明 · 一两句
+中：船体表面看起来完好，但内部承重结构早已受损，拆解时局部结构突然坍塌，造成回收件损坏。下次处理有过碰撞或维修记录的船体，先检查内部结构，再决定切割顺序。
+英：The hull appeared intact, but its internal supports were already damaged. Part of the structure collapsed during dismantling, damaging recovered components. Next time, inspect the internal structure of vessels with a history of collisions or repairs before planning your cuts.
+
+[N_explosive_cargo]
+# 复盘 · 陷阱「explosive_cargo」的名字 · 几个字
+中：危险货物爆炸
+英：Explosive Cargo
+
+[V_explosive_cargo]
+# 复盘 · 陷阱「explosive_cargo」的复盘说明 · 一两句
+中：货舱里留有未经申报的爆炸性物品，拆解产生的火花引发了爆炸，损坏了周围的船体和设备。下次切割货舱前，先核对货物清单，检查不明货箱，确认没有易燃易爆物品。
+英：Undeclared explosive materials were left in the cargo bay. Sparks from cutting triggered an explosion, damaging the surrounding hull and equipment. Next time, verify the cargo manifest and inspect unidentified containers for flammable or explosive materials before cutting.
+
+[N_fire_system]
+# 复盘 · 陷阱「fire_system」的名字 · 几个字
+中：消防系统误触发
+英：Fire System Malfunction
+
+[V_fire_system]
+# 复盘 · 陷阱「fire_system」的复盘说明 · 一两句
+中：船上的自动灭火系统存在故障，拆解过程中突然启动，释放的灭火剂污染了部分回收物资，还中断了作业。下次进入相关舱室前，先检查消防系统状态，按规定隔离后再开始拆解。
+英：The ship's automatic fire suppression system was faulty and activated unexpectedly during dismantling. The released suppressant contaminated recovered materials and interrupted operations. Next time, check the fire suppression system and properly isolate it before starting work in the affected compartment.
+
+[N_bio_breach]
+# 复盘 · 陷阱「bio_breach」的名字 · 几个字
+中：生物污染泄漏
+英：Biological Containment Breach
+
+[V_bio_breach]
+# 复盘 · 陷阱「bio_breach」的复盘说明 · 一两句
+中：生物样本舱的密封结构已经受损，拆解时破坏了剩余的隔离层，导致污染物泄漏，部分回收材料受到污染。下次处理生物实验舱前，先检查密封状态和环境监测记录，确认安全后再拆解。
+英：The biological sample compartment had damaged seals. Dismantling breached the remaining containment barrier, releasing contaminants and affecting recovered materials. Next time, inspect the seals and environmental monitoring records before working on biological research compartments.
+
+[N_gate_jam]
+# 复盘 · 陷阱「gate_jam」的名字 · 几个字
+中：闸门卡死
+英：Jammed Gate
+
+[V_gate_jam]
+# 复盘 · 陷阱「gate_jam」的复盘说明 · 一两句
+中：闸门的机械传动机构已经卡住，强行开启时导致驱动部件损坏，闸门也停在了半开位置。下次遇到开合异常的闸门，先检查导轨和传动机构，不要直接强行操作。
+英：The gate's mechanical drive was jammed. Forcing it open damaged the drive components and left the gate stuck halfway. Next time, inspect the guide rails and drive mechanism before attempting to operate a faulty gate.
+
+[N_psv_stuck]
+# 复盘 · 陷阱「psv_stuck」的名字 · 几个字
+中：泄压阀卡滞
+英：Stuck Relief Valve
+
+[V_psv_stuck]
+# 复盘 · 陷阱「psv_stuck」的复盘说明 · 一两句
+中：安全泄压阀内部卡住了，压力升高时没能正常开启，拆解时残留的高压气体突然释放，损坏了周围设备。下次处理压力容器前，先检查泄压阀是否正常，再确认内部压力已经降到安全范围。
+英：The safety relief valve was stuck and failed to open when pressure increased. Trapped high-pressure gas was suddenly released during dismantling, damaging nearby equipment. Next time, check the relief valve and verify that the vessel has been safely depressurized before dismantling.
+
+[N_heater_live]
+# 复盘 · 陷阱「heater_live」的名字 · 几个字
+中：加热回路未断
+英：Heater Circuit Active
+
+[V_heater_live]
+# 复盘 · 陷阱「heater_live」的复盘说明 · 一两句
+中：加热器的控制面板虽然已经关闭，但内部加热回路仍在工作，拆解时高温损坏了附近的回收部件。下次处理加热设备前，先确认供电已切断，再检查设备是否完全冷却。
+英：The heater's control panel was switched off, but an internal heating circuit remained active. The heat damaged nearby components during dismantling. Next time, isolate the power supply and verify that the equipment has cooled down before working on it.
+
+[N_jacket_loss]
+# 复盘 · 陷阱「jacket_loss」的名字 · 几个字
+中：冷却夹套泄漏
+英：Cooling Jacket Leak
+
+[V_jacket_loss]
+# 复盘 · 陷阱「jacket_loss」的复盘说明 · 一两句
+中：设备的冷却夹套已经破损，冷却液不断流失，拆解过程中设备温度升高，导致内部部件受损。下次处理带冷却系统的设备前，先检查夹套是否完好，确认冷却系统的状态。
+英：The equipment's cooling jacket was damaged, causing coolant loss and overheating during dismantling. Internal components were damaged as a result. Next time, inspect the cooling jacket and verify the cooling system's condition before proceeding.
+
+[N_valve_leak]
+# 复盘 · 陷阱「valve_leak」的名字 · 几个字
+中：阀门内漏
+英：Internal Valve Leak
+
+[V_valve_leak]
+# 复盘 · 陷阱「valve_leak」的复盘说明 · 一两句
+中：阀门虽然已经关闭，但内部密封件损坏，仍有介质不断流入管路，拆解时发生泄漏。下次不要只看阀门是否关紧，还要检查下游压力，确认管路已经隔离并卸压。
+英：The valve was closed, but its damaged internal seal allowed fluid to continue entering the pipeline, causing a leak during dismantling. Next time, don't rely on the valve position alone. Check downstream pressure and verify that the line is isolated and depressurized.
+
+[N_pod_armed]
+# 复盘 · 陷阱「pod_armed」的名字 · 几个字
+中：外挂舱待发
+英：Armed External Pod
+
+[V_pod_armed]
+# 复盘 · 陷阱「pod_armed」的复盘说明 · 一两句
+中：外挂舱虽然已经停用，但独立释放机构仍处于待命状态，拆卸时意外触发，导致外挂舱脱离固定装置。下次拆除外挂设备前，先检查独立控制器和备用电源，确认释放机构已经解除待命状态。
+英：The external pod was out of service, but its independent release mechanism remained armed. It activated unexpectedly during removal, detaching the pod from its mounting. Next time, check the independent controller and backup power supply, and confirm the release mechanism is disarmed before removal.
+
+============================================================
+# 三、训练课（TS-1 基础课与七门专项课）的无线电
+============================================================
+
+[course.sp_atmos_course.SO_safe_t]
+# 终端 · sp_atmos_course
+中：舱压已降至安全范围，可以继续作业。
+英：BAY PRESSURE WITHIN SAFE LIMITS. OPERATIONS MAY RESUME.
+
+[course.sp_atmos_course.SO_lock_t]
+# 终端 · sp_atmos_course
+中：安全联锁已触发：舱内氧浓度仍然过高，禁止作业。
+英：SAFETY INTERLOCK ACTIVE: OXYGEN LEVEL TOO HIGH. OPERATIONS BLOCKED.
+
+[course.sp_atmos_course.SM_safe_t]
+# 终端 · sp_atmos_course
+中：舱压已降至安全范围，压力检查通过。
+英：BAY PRESSURE WITHIN SAFE LIMITS. PRESSURE CHECK PASSED.
+
+[course.sp_atmos_course.SM_lock_t]
+# 终端 · sp_atmos_course
+中：安全联锁已触发：舱内空气尚未排尽，禁止作业。
+英：SAFETY INTERLOCK ACTIVE: AIR REMAINS IN THE BAY. OPERATIONS BLOCKED.
+
+[course.sp_atmos_course.SH_safe_t]
+# 终端 · sp_atmos_course
+中：炉芯温度已降至安全范围，冷却检查通过。
+英：CORE TEMPERATURE WITHIN SAFE LIMITS. COOLING CHECK PASSED.
+
+[course.sp_atmos_course.SH_lock_t]
+# 终端 · sp_atmos_course
+中：安全联锁已触发：炉芯温度仍然过高，禁止作业。
+英：SAFETY INTERLOCK ACTIVE: CORE TEMPERATURE TOO HIGH. OPERATIONS BLOCKED.
+
+[course.sp_cryo_course.SC_safe_t]
+# 终端 · sp_cryo_course
+中：储罐已排空，安全泄压阀已解冻，检查通过。
+英：TANK EMPTY. PRESSURE RELIEF VALVE THAWED. SAFETY CHECK PASSED.
+
+[course.sp_cryo_course.SC_lock_t]
+# 终端 · sp_cryo_course
+中：安全联锁已触发：储罐内仍有货物，安全泄压阀状态尚未确认，禁止作业。
+英：SAFETY INTERLOCK ACTIVE: CARGO REMAINS IN TANK. RELIEF VALVE STATUS UNVERIFIED. OPERATIONS BLOCKED.
+
+[course.sp_cryo_course.SD_safe_t]
+# 终端 · sp_cryo_course
+中：设备检查完成，锁定，检查通过。
+英：WARM-UP COMPLETE. VIBRATION ISOLATION TABLE LOCKED. SAFETY CHECK PASSED.
+
+[course.sp_cryo_course.SD_lock_t]
+# 终端 · sp_cryo_course
+中：安全联锁已触发：制冷机尚未完成回温，禁止作业。
+英：SAFETY INTERLOCK ACTIVE: CRYOCOOLER WARM-UP INCOMPLETE. OPERATIONS BLOCKED.
+
+[course.sp_energy_course.SE_safe_t]
+# 终端 · sp_energy_course
+中：线圈储存的磁能已降至安全范围，检查通过。
+英：STORED MAGNETIC ENERGY WITHIN SAFE LIMITS. SAFETY CHECK PASSED.
+
+[course.sp_energy_course.SE_lock_t]
+# 终端 · sp_energy_course
+中：安全联锁已触发：线圈内仍储存大量磁能，禁止作业。
+英：SAFETY INTERLOCK ACTIVE: RESIDUAL MAGNETIC ENERGY TOO HIGH. OPERATIONS BLOCKED.
+
+[course.sp_energy_course.SF_safe_t]
+# 终端 · sp_energy_course
+中：飞轮转速已降至安全范围，检查通过。
+英：FLYWHEEL SPEED WITHIN SAFE LIMITS. SAFETY CHECK PASSED.
+
+[course.sp_energy_course.SF_lock_t]
+# 终端 · sp_energy_course
+中：安全联锁已触发：飞轮仍在高速旋转，禁止作业。
+英：SAFETY INTERLOCK ACTIVE: FLYWHEEL SPEED TOO HIGH. OPERATIONS BLOCKED.
+
+[course.sp_fluid_course.SR_safe_t]
+# 终端 · sp_fluid_course
+中：钻杆扭矩与内部压力已释放，卡瓦已坐定，检查通过。
+英：DRILL STRING TORQUE AND PRESSURE RELEASED. SLIPS SET. SAFETY CHECK PASSED.
+
+[course.sp_fluid_course.SR_lock_t]
+# 终端 · sp_fluid_course
+中：安全联锁已触发：钻杆扭矩或内部压力尚未释放，或卡瓦未坐定，禁止作业。
+英：SAFETY INTERLOCK ACTIVE: RESIDUAL TORQUE OR PRESSURE DETECTED, OR SLIPS NOT SET. OPERATIONS BLOCKED.
+
+[course.sp_fluid_course.SX_safe_t]
+# 终端 · sp_fluid_course
+中：推进剂储罐已排空，检查通过。
+英：PROPELLANT TANKS DRAINED. SAFETY CHECK PASSED.
+
+[course.sp_fluid_course.SX_lock_t]
+# 终端 · sp_fluid_course
+中：安全联锁已触发：储罐内仍有推进剂残留，禁止作业。
+英：SAFETY INTERLOCK ACTIVE: PROPELLANT REMAINS IN TANKS. OPERATIONS BLOCKED.
+
+[course.sp_isolate_course.SN_lock_t]
+# 终端 · sp_isolate_course
+中：安全联锁已触发：小型船只尚未移出，禁止作业。
+英：SAFETY INTERLOCK ACTIVE: SMALL VESSEL NOT YET REMOVED. OPERATIONS BLOCKED.
+
+[course.sp_isolate_course.SV_backfeed_t]
+# 终端 · sp_isolate_course
+中：检测到备用供电回路：舱门锁定装置仍由独立电源供电。
+英：BACKUP POWER CIRCUIT DETECTED: DOOR LOCK STILL POWERED BY AN INDEPENDENT SUPPLY.
+
+[course.sp_isolate_course.SV_lock_t]
+# 终端 · sp_isolate_course
+中：安全联锁已触发：舱门锁定装置仍有供电，禁止作业。
+英：SAFETY INTERLOCK ACTIVE: DOOR LOCK STILL POWERED. OPERATIONS BLOCKED.
+
+[course.sp_load_course.SL_safe_t]
+# 终端 · sp_load_course
+中：蓄能器预压力已释放，检查通过。
+英：ACCUMULATOR PRESSURE RELEASED. SAFETY CHECK PASSED.
+
+[course.sp_load_course.SL_lock_t]
+# 终端 · sp_load_course
+中：安全联锁已触发：蓄能器内仍有残余压力，禁止作业。
+英：SAFETY INTERLOCK ACTIVE: RESIDUAL PRESSURE IN ACCUMULATOR. OPERATIONS BLOCKED.
+
+[course.sp_load_course.SG_lock_t]
+# 终端 · sp_load_course
+中：安全联锁已触发：货物仍固定在运输轨道上，尚未解除锁定，禁止拆解。
+英：SAFETY INTERLOCK ACTIVE: CARGO STILL SECURED TO TRANSPORT RAIL. DISMANTLING BLOCKED.
+
+[course.sp_precise_course.SP_lock_t]
+# 终端 · sp_precise_course
+中：安全联锁已触发：防尘罩尚未就位，精密设备仍暴露在作业环境中，禁止拆解。
+英：SAFETY INTERLOCK ACTIVE: DUST COVER NOT IN POSITION. PRECISION EQUIPMENT EXPOSED. DISMANTLING BLOCKED.
+
+[course.sp_precise_course.SW_safe_t]
+# 终端 · sp_precise_course
+中：舱内压力已降至安全范围，压力检查通过。
+英：CHAMBER PRESSURE WITHIN SAFE LIMITS. PRESSURE CHECK PASSED.
+
+[course.sp_precise_course.SW_lock_t]
+# 终端 · sp_precise_course
+中：安全联锁已触发：玻璃隔板后方仍存在压差，直接拆除可能造成玻璃破裂，禁止作业。
+英：SAFETY INTERLOCK ACTIVE: PRESSURE DIFFERENTIAL REMAINS BEHIND GLASS PANEL. RISK OF GLASS FAILURE. OPERATIONS BLOCKED.
+
+[course.ts1_course.T00_4]
+# 终端 · ts1_course
+中：远程作业权限验证通过，TS-1 基础训练程序已启动。
+英：REMOTE OPERATION ACCESS VERIFIED. TS-1 BASIC TRAINING INITIALIZED.
+
+[course.ts1_course.T01_found]
+# 终端 · ts1_course
+中：已识别目标设备 P-001，设备信息已录入系统。
+英：TARGET P-001 IDENTIFIED. EQUIPMENT DATA REGISTERED.
+
+[course.ts1_course.T02_done_t]
+# 终端 · ts1_course
+中：金属结构回收完成，共回收 0.18 吨材料，估值 120 信用点。
+英：METAL STRUCTURE RECOVERED. TOTAL MASS: 0.18 t. ESTIMATED VALUE: 120 CR.
+
+[course.ts1_course.T03_empty_t]
+# 终端 · ts1_course
+中：舱内气体回收完成，压力已降至训练安全范围。
+英：GAS RECOVERY COMPLETE. BAY PRESSURE WITHIN TRAINING SAFETY LIMITS.
+
+[course.ts1_course.T03_lock_t]
+# 终端 · ts1_course
+中：安全联锁已触发：目标舱室尚未完成状态确认，禁止继续作业。
+英：SAFETY INTERLOCK ACTIVE: TARGET BAY STATUS UNVERIFIED. OPERATIONS BLOCKED.
+
+[course.ts1_course.T04_backup_t]
+# 终端 · ts1_course
+中：检测到独立备用供电回路，目标设备可能仍处于带电状态。
+英：INDEPENDENT BACKUP POWER CIRCUIT DETECTED. TARGET EQUIPMENT MAY STILL BE ENERGIZED.
+
+[course.ts1_course.T04_ok_t]
+# 终端 · ts1_course
+中：目标电气区域检查通过，已确认安全隔离，允许拆卸指定模块。
+英：ELECTRICAL ZONE VERIFIED. SAFE ISOLATION CONFIRMED. DESIGNATED MODULE REMOVAL PERMITTED.
+
+[course.ts1_course.T04_lock_t]
+# 终端 · ts1_course
+中：安全联锁已触发：目标电气区域尚未完成安全检查，禁止拆卸模块。
+英：SAFETY INTERLOCK ACTIVE: ELECTRICAL ZONE NOT VERIFIED. MODULE REMOVAL BLOCKED.
+
+[course.ts1_course.T06_done_t]
+# 终端 · ts1_course
+中：TS-1 训练拆解任务完成，舱段内剩余可回收结构为零。
+英：TS-1 TRAINING DISMANTLING COMPLETE. NO RECOVERABLE STRUCTURES REMAIN.
+
+[course.ts1_course.TF_scrap_t]
+# 终端 · ts1_course
+中：金属废料已接收，回收记录已更新。
+英：METAL SCRAP RECEIVED. RECOVERY RECORD UPDATED.
+
+[course.ts1_course.TF_equip_t]
+# 终端 · ts1_course
+中：设备已完整接收，未检测到拆解损伤。
+英：EQUIPMENT RECEIVED INTACT. NO DISMANTLING DAMAGE DETECTED.
+
+[course.ts1_course.TF_haz_t]
+# 终端 · ts1_course
+中：危险物品已接收，现已转入专用处理区域。
+英：HAZARDOUS MATERIAL RECEIVED. TRANSFERRED TO DESIGNATED HANDLING AREA.
+
+[course.ts1_course.TL_lock_t]
+# 终端 · ts1_course
+中：训练安全联锁启动：容器内仍有液体。
+英：TRAINING INTERLOCK: THE VESSEL STILL HOLDS LIQUID.
+
+[course.ts1_course.TL_empty_t]
+# 终端 · ts1_course
+中：液体回收完成。
+英：LIQUID RECOVERED.
+
+============================================================
+# 五、画面上的提示文字：考核界面、训练回想卡、安全提醒（不是角色说话）
+============================================================
+
+[txt.ex_goal]
+# 提示文字
+中：考核目标：将 E-07 设备完整回收，避免造成结构损伤。
+英：OBJECTIVE: RECOVER UNIT E-07 INTACT WITHOUT STRUCTURAL DAMAGE.
+
+[txt.ex_known]
+# 提示文字
+中：已知条件：缺少有效的现场检测数据，设备实际状态尚未确认。
+英：KNOWN CONDITIONS: NO VALID ON-SITE INSPECTION DATA. EQUIPMENT STATUS UNVERIFIED.
+
+[txt.ex_q]
+# 提示文字
+中：按 Q 查看操作提示，使用提示将影响最终考核评级。
+英：PRESS Q FOR A HINT. USING HINTS WILL AFFECT YOUR FINAL GRADE.
+
+[txt.ex_hints]
+# 提示文字
+中：累计使用提示：%d 次
+英：TOTAL HINTS USED: %d
+
+[txt.ex_l1]
+# 提示文字
+中：最后一项训练了。这次我不告诉你该怎么做，先自己检查一遍，再决定从哪里下手。
+英：This is your final exercise. I'm not walking you through this one. Inspect everything yourself before deciding where to start.
+
+[txt.ex_l2]
+# 提示文字
+中：别太紧张，这里是训练场，安全系统会拦住危险的操作。
+英：Don't worry too much. This is a training rig. The safety systems will stop you from doing anything seriously dangerous.
+
+[txt.ex_l3]
+# 提示文字
+中：不过，真把设备拆坏了，最后的考核成绩可不会好看。
+英：But if you wreck the equipment, don't expect a good score on your final assessment.
+
+[txt.ex_hint_cost]
+# 提示文字
+中：需要提示的话，我可以给你。不过每用一次，最终评级都会受影响。
+英：I can give you a hint if you need one. Just remember, every hint affects your final grade.
+
+[txt.ex_free]
+# 提示文字
+中：干得不错，接下来把拆下来的东西送进对应的回收口。
+英：Good work. Now take the recovered parts to their designated collection bays.
+
+[txt.ex_broken]
+# 提示文字
+中：设备已经损坏了，没办法挽回。先把剩下的材料回收了。
+英：The equipment's damaged. Nothing we can do about that now. Recover what's left and at least finish the job.
+
+[txt.ex_a]
+# 提示文字
+中：干得漂亮。该检查的地方都检查了，拆解也没出什么问题。看来你已经可以自己接活了。
+英：Nice work. You checked everything you needed to, and the dismantling went without a hitch. Looks like you're ready to take on jobs yourself.
+
+[txt.ex_bc]
+# 提示文字
+中：行，至少把活干完了。有些地方还得多练练，以后接了正式合同，可没人替你收拾烂摊子。
+英：Well, you got the job done. There's still room for improvement, though. Once you're taking real contracts, nobody's going to clean up your mistakes.
+
+[txt.ex_done]
+# 提示文字
+中：考核已完成
+英：ASSESSMENT COMPLETE
+
+[txt.ex_incomplete]
+# 提示文字
+中：考核未完成
+英：ASSESSMENT INCOMPLETE
+
+[txt.ex_g_none]
+# 提示文字
+中：你可以再考一次，争取更好的成绩，也可以直接去合同市场接活。
+英：You can retake the assessment for a better grade, or head straight to the contract market and take your first job.
+
+[txt.ex_review]
+# 提示文字
+中：作业事故复盘
+英：OPERATIONAL INCIDENT REVIEW
+
+[txt.ex_clean]
+# 提示文字
+中：本次作业未发生事故。
+英：NO INCIDENTS RECORDED DURING THIS OPERATION.
+
+[txt.ex_retake]
+# 提示文字
+中：重新参加考核
+英：RETAKE ASSESSMENT
+
+[txt.as_p_g]
+# 提示文字
+中：%s 的压力尚未确认，先在 %s 处测量一下，确认安全后再动手。
+英：Pressure in %s hasn't been verified. Take a reading at %s and make sure it's safe before proceeding.
+
+[txt.as_p_g_dl]
+# 提示文字
+中：%s 的压力还没确认。%s 和舱室之间隔着一道阀门 %s，先把阀门打开，再重新测量。
+英：Pressure in %s is still unverified. There's a valve, %s, between %s and the chamber. Open it first, then take another reading.
+
+[txt.as_p_g_known]
+# 提示文字
+中：%s 内还有 %d kPa 的残余压力，先接上回收软管，把里面的气体抽干净。
+英：%s still holds %d kPa. Hose it down first.
+
+[txt.as_p_g_none]
+# 提示文字
+中：%s 的压力尚未确认，先找到对应的压力检测点，测量后再继续作业。
+英：Pressure in %s hasn't been verified. Locate a suitable pressure measurement point and check it before proceeding.
+
+[txt.as_p_s]
+# 提示文字
+中：这片区域的检测记录还没有完成核实，先确认实际情况，别急着动手。
+英：The inspection records for this area haven't been verified yet. Check the actual conditions before proceeding.
+
+[txt.as_v_g]
+# 提示文字
+中：%s 可能仍然带电。先隔离所有供电回路，释放残余电能，再测量确认电压为 0 V。
+英：%s may still be energized. Isolate all power sources, discharge any stored energy, and verify a reading of 0 V before proceeding.
+
+[txt.as_v_s]
+# 提示文字
+中：当前检测数据与事故报告存在出入，可能还有没发现的问题，建议重新检查相关设备。
+英：Current readings don't match the incident report. There may be an issue that was missed. Inspect the relevant equipment again.
+
+[txt.as_c_g]
+# 提示文字
+中：这台设备还连着其他部件，先检查所有连接点，确认全部解除后再进行拆卸。
+英：This equipment is still connected to other components. Check every connection point and make sure they're all disconnected before removal.
+
+[txt.as_c_s]
+# 提示文字
+中：%s 仍有连接未解除，暂时无法安全拆卸。
+英：%s: CONNECTIONS REMAIN. REMOVAL NOT YET SAFE.
+
+[txt.as_f_g]
+# 提示文字
+中：管路里还有残留液体，先从 %s 接入回收软管，把液体排空后再拆。
+英：There's still fluid in the pipeline. Connect a recovery hose at %s and drain the remaining fluid before dismantling.
+
+[txt.as_f_g_np]
+# 提示文字
+中：管路内仍有液体残留，先找到排液位置，确认排空后再继续拆解。
+英：Fluid remains in the pipeline. Locate a suitable drain point and verify the line is empty before proceeding.
+
+[txt.as_f_s]
+# 提示文字
+中：%s 管路尚未完成排液处理，需要进一步检查。
+英：%s: LINE NOT YET DRAINED. FURTHER INSPECTION REQUIRED.
+
+[txt.as_t_g]
+# 提示文字
+中：管路温度仍然过高。先关闭热源，等管路充分冷却，确认温度安全后再动手。
+英：The pipeline is still too hot. Shut down the heat source and allow it to cool. Verify the temperature is safe before proceeding.
+
+[txt.as_t_s]
+# 提示文字
+中：管路温度尚未降至安全范围，需要继续冷却。
+英：LINE TEMPERATURE ABOVE SAFE LIMITS. FURTHER COOLING REQUIRED.
+
+[txt.as_h_g]
+# 提示文字
+中：%s 内仍有危险物质残留，不能按普通材料处理。先确认里面的东西，再送往危险品回收口。
+英：Hazardous material remains in %s. Don't treat it as ordinary scrap. Identify the contents before sending it to the hazardous materials collection bay.
+
+[txt.as_h_s]
+# 提示文字
+中：%s 的回收去向尚未确认。
+英：Recovery destination for %s is unverified. Check for residual hazardous materials before selecting the appropriate collection bay.
+
+[txt.as_cl_g]
+# 提示文字
+中：附近检测到推进剂形成的可燃气体云团，现在使用激光切割可能引燃
+英：Propellant in the air here — keep the laser out of it.
+
+[txt.as_cl_s]
+# 提示文字
+中：附近有可燃气体。
+英：FLAMMABLE GAS NEARBY.
+
+[txt.as_port_g]
+# 提示文字
+中：先检查这个检测接口连接的是哪段管路。仪表有读数，不代表你要拆的地方就是安全的。
+英：Check which section of the pipeline this port actually connects to. A gauge reading doesn't necessarily mean the section you're working on is safe.
+
+[txt.rc_title]
+# 提示文字
+中：训练知识回顾
+英：TRAINING REFERENCE
+
+[txt.rc_l]
+# 提示文字
+中：还记得 TS-1 第 %d 课吗？这里遇到的是同样的问题。
+英：Remember TS-1 Lesson %d? You're dealing with the same problem here.
+
+[txt.rc_s_path]
+# 提示文字
+中：仪表测量范围
+英：GAUGE MEASUREMENT PATH
+
+[txt.rc_s_backup]
+# 提示文字
+中：备用电源
+英：BACKUP POWER
+
+[txt.rc_s_blow]
+# 提示文字
+中：带压舱室
+英：PRESSURISED ROOM
+
+[txt.rc_s_tank]
+# 提示文字
+中：储气罐
+英：GAS BOTTLES
+
+[txt.rc_s_hot]
+# 提示文字
+中：热源
+英：HEAT SOURCE
+
+[txt.rc_s_guard]
+# 提示文字
+中：护板
+英：GUARD PLATE
+
+[txt.rc_s_tied]
+# 提示文字
+中：连接
+英：CONNECTIONS
+
+[txt.rc_s_heavy]
+# 提示文字
+中：超重
+英：OVERWEIGHT
+
+[txt.rc_v02]
+# 提示文字
+中：还记得训练时的 V-02 吗？先想想当时是怎么检查的。
+英：Remember V-02 from training? Think back to how you checked it.
+
+[txt.rc_volts]
+# 提示文字
+中：控制面板显示已停机，但测量结果并不一致。
+英：The control panel says it's shut down, but the readings tell a different story. You've seen this in training. Don't trust the panel alone.
+
+[txt.rc_blow]
+# 提示文字
+中：……还好这次没人站在旁边。不然就不只是损失设备了……好吧还只是设备，毕竟你也只是个无人机。
+英：...Good thing nobody was standing nearby. Otherwise, we'd have more than damaged equipment to worry about.
+
+[txt.rc_tank]
+# 提示文字
+中：舱室里的气体是去除了，可里面的储罐还是满的。这两个地方需要分开检查。
+英：You emptied the gas from the compartment, but the tanks inside are still full. Those need to be checked separately.
+
+[txt.rc_hot]
+# 提示文字
+中：热源还在工作，管路当然降不下温度。先把热源停了，再等它慢慢冷却。
+英：The heat source is still running, so the pipeline can't cool down. Shut it off first, then give the line time to cool.
+
+[txt.rc_guard]
+# 提示文字
+中：这块护板已经变形，把接口挡住了。
+英：The guard is bent and blocking the connection port. Remove it first, then connect the hose once the port is accessible.
+
+[txt.rc_pull]
+# 提示文字
+中：还没拆干净呢，这东西仍然连着其他部件。记得训练时那台泵吗？
+英：It's still attached to other components. Remember that pump from training? Find all the remaining connections before trying to pull it free.
+
+[txt.rc_heavy]
+# 提示文字
+中：这东西太重了，超过了设备的承载上限。先想办法拆成几块，再分别回收。
+英：This thing's too heavy for the equipment to handle. Just like that beam in training, break it into smaller sections and recover them separately.
+
+
+############################################################
+# 已停用：游戏里不会出现（梁工等角色台词 10-26 起不播；剧情层关闭）
+# 这部分不用改，留着只为不丢以前写过的字
+############################################################
+
+============================================================
+# 一、终端消息与开场卡片 · 成长体系与主线
+============================================================
+
+[L_accept_high]
+# 梁工 · 接了三星合同 · 一句
+中：
+英：
+
+[L_accept_low]
+# 梁工 · 接了一星合同 · 一句
+中：
+英：
+
+[L_ark_seen]
+# 梁工 · 生涯里第一次回到船坞，梁工第一次提港外那艘 ARK-01 远航者（约 430 m，停着不动） · 一到两句
+中：
+英：
+
+[L_berth_broken_1]
+# 梁工 · 第一次到破败的船坞 · 两句，_1 _2 依次播
+中：七号坞以前可不是这副样子。那会儿灯一晚上都亮着，炉子基本就没熄过火。
+英：
+
+[L_berth_broken_2]
+# 梁工 · 第一次到破败的船坞 · 两句，_1 _2 依次播
+中：后来没人管了，设备坏一台就停一台。现在还能开工就算不错了，好多地方都得修。
+英：
+
+[L_bonus]
+# 梁工 · 结算拿到奖金 · 一句
+中：
+英：
+
+[L_drift_first]
+# 梁工 · 第一次在市场上看到无主漂流船（拖船巡航拖回、没有委托方、东西全归你） · 一句
+中：
+英：
+
+[L_feat_first]
+# 梁工 · 第一次达成任何工程成果（整段分离 / 压力设备回收）时 · 一句
+中：哎，这一下干得不错啊。能想到这么处理，说明你现在也摸出点门道了。以后碰上类似的活，可以照着来。
+英：
+
+[L_first_upgrade]
+# 梁工 · 第一次在终端买升级 · 一句
+中：
+英：
+
+[L_gear_anchor]
+# 梁工（无线电） · 玩家第一次把牵引锚打在船体上 · 一句
+中：锚打上去了？那先看看锁紧了没有。确定固定住了再切，不然一会儿绞盘拉个空就麻烦了。
+英：
+
+[L_gear_lost]
+# 梁工 · 结算单上第一次出现“遗失装备” · 一句，别说教
+中：哎，怎么还弄丢了一件工具？这东西补起来可不便宜。你回头看看这单赚的钱，够不够赔的。
+英：
+
+[L_late]
+# 梁工 · 拆船超过标准用时 · 一句
+中：
+英：
+
+[L_loan_first]
+# 梁工 · 第一次主动借款 · 一句，别劝
+中：钱借到了是吧？那你可得留点心，每做一单都要扣利息的。账上钱多了，不代表都是咱们赚的。
+英：
+
+[L_loan_limit]
+# 梁工 · 借到额度上限 · 一句
+中：额度用光了，公司那边不会再批了。先把手上的活干好吧，别指望还能借到钱。
+英：
+
+[L_loan_paid_1]
+# 梁工 · 贷款还清 · 一到三句
+中：
+英：
+
+[L_loan_paid_2]
+# 梁工 · 贷款还清 · 一到三句
+中：
+英：
+
+[L_loan_paid_3]
+# 梁工 · 贷款还清 · 一到三句
+中：
+英：
+
+[L_loan_short]
+# 梁工 · 结算时现金不够还分期 · 一句
+中：
+英：
+
+[L_main_ark_start]
+# 梁工 · 主线第 10 章「远航者」开始（回船坞时说一次） · 一句
+中：
+英：
+
+[L_main_berth88_done]
+# 梁工 · 主线第 7 章「船坞扩到 88 m」完成 · 一句
+中：
+英：
+
+[L_main_berth88_start]
+# 梁工 · 主线第 7 章「船坞扩到 88 m」开始（回船坞时说一次） · 一句
+中：
+英：
+
+[L_main_furnace_done]
+# 梁工 · 主线第 3 章「修好熔炉主火和碎屑网」完成 · 一句
+中：
+英：
+
+[L_main_furnace_start]
+# 梁工 · 主线第 3 章「修好熔炉主火和碎屑网」开始（回船坞时说一次） · 一句
+中：
+英：
+
+[L_main_industry_done]
+# 梁工 · 主线第 6 章「修好加工区、货运区」完成 · 一句
+中：
+英：
+
+[L_main_industry_start]
+# 梁工 · 主线第 6 章「修好加工区、货运区」开始（回船坞时说一次） · 一句
+中：
+英：
+
+[L_main_lights_done]
+# 梁工 · 主线第 2 章「修好照明与配电」完成 · 一句
+中：
+英：
+
+[L_main_lights_start]
+# 梁工 · 主线第 2 章「修好照明与配电」开始（回船坞时说一次） · 一句
+中：
+英：
+
+[L_main_opening_done]
+# 梁工 · 主线第 1 章「拆完开局三艘漂流船」完成 · 一句
+中：
+英：
+
+[L_main_opening_start]
+# 梁工 · 主线第 1 章「拆完开局三艘漂流船」开始（回船坞时说一次） · 一句
+中：
+英：
+
+[L_main_power_tug_done]
+# 梁工 · 主线第 8 章「修好动力区、拖船站」完成 · 一句
+中：
+英：
+
+[L_main_power_tug_start]
+# 梁工 · 主线第 8 章「修好动力区、拖船站」开始（回船坞时说一次） · 一句
+中：
+英：
+
+[L_main_ring_done]
+# 梁工 · 主线第 9 章「转运环重启」完成 · 一句
+中：
+英：
+
+[L_main_ring_start]
+# 梁工 · 主线第 9 章「转运环重启」开始（回船坞时说一次） · 一句
+中：
+英：
+
+[L_main_steel_done]
+# 梁工 · 主线第 5 章「拿到第一笔钢坯货款」完成 · 一句
+中：
+英：
+
+[L_main_steel_start]
+# 梁工 · 主线第 5 章「拿到第一笔钢坯货款」开始（回船坞时说一次） · 一句
+中：
+英：
+
+[L_main_trade_done]
+# 梁工 · 主线第 4 章「修好贸易港，开始做买卖」完成 · 一句
+中：
+英：
+
+[L_main_trade_start]
+# 梁工 · 主线第 4 章「修好贸易港，开始做买卖」开始（回船坞时说一次） · 一句
+中：
+英：
+
+[L_market_open_1]
+# 梁工 · 第一单后市场开放 · 一到三句
+中：
+英：
+
+[L_market_open_2]
+# 梁工 · 第一单后市场开放 · 一到三句
+中：
+英：
+
+[L_market_open_3]
+# 梁工 · 第一单后市场开放 · 一到三句
+中：
+英：
+
+[L_notes_first]
+# 梁工 · 第一次在图纸上留笔记 · 一句
+中：
+英：
+
+[L_org_deliver]
+# 公司联络人 · 75 号：长期合同按时交货后 · 一句
+中：
+英：
+
+[L_org_missed]
+# 公司联络人 · 75 号：长期合同没能按时交货、信誉下降时 · 一句
+中：
+英：
+
+[L_parts_first]
+# 梁工 · 第一件供电 / 热工 / 驱动类设备完整进设备口、入库 · 一句，“别急着卖”
+中：这些零件先留着，别全卖了。回头修船坞肯定用得上，省得还得花钱买。
+英：
+
+[L_rep_certified]
+# 梁工 · 声望升到「认证」 · 一句
+中：
+英：
+
+[L_rep_chief]
+# 梁工 · 声望升到「主管」 · 一句
+中：
+英：
+
+[L_rep_senior]
+# 梁工 · 声望升到「资深」 · 一句
+中：
+英：
+
+[L_repair_all]
+# 梁工 · 十六项全部修好 · 两三句，收束
+中：
+英：
+
+[L_repair_all_1]
+中：十六项，全都修完了。我怕自己看漏，还把检修单从头到尾核了一遍。没错，确实一项都不剩。
+英：
+
+[L_repair_all_2]
+中：我在这儿干了二十多年，见过不少船坞停工。有些关了门，就再也没开过。本来还以为七号坞也得这样呢。
+英：
+
+[L_repair_all_3]
+中：行了，设备都好好的，也没什么要交代的了。明天照常开工吧。
+英：
+
+[L_repair_arm]
+# 梁工 · 修好「工业回收机械臂」 · 一句
+中：回收机械臂能用了。我刚试过，伸缩都没问题。以后那些够不着的设备，就让它去拿。
+英：
+
+[L_repair_berth120]
+# 梁工 · 泊位扩到 120 m · 一句
+中：一百二十米了啊。以前有些船，光看尺寸就知道接不了。现在倒是能试试了。
+英：
+
+[L_repair_berth200]
+# 梁工 · 泊位扩到 200 m · 一句
+中：两百米的泊位，我以前想都没想过。往后那些大船也能往咱们这儿停了，不用眼睁睁看着合同被别人接走。
+英：
+
+[L_repair_berth620]
+# 梁工 · 泊位扩到 620 m，能接殖民舰 · 两句
+中：
+英：
+
+[L_repair_berth620_1]
+中：六百二十米……我在锈环站干了这么多年，还真没见过这么大的泊位。你这次可是把纪录都破了。
+英：
+
+[L_repair_berth620_2]
+中：现在连殖民舰都装得下了。那玩意儿随便拆出点东西，都够咱们忙上好一阵子。仓库可得提前腾地方。
+英：
+
+[L_repair_berth88]
+# 梁工 · 泊位扩到 88 m · 一句
+中：泊位扩到八十八米了。现在中型船也能接，以后挑合同总算不用老盯着那几艘小船了。
+英：
+
+[L_repair_buffer]
+# 梁工 · 修好「缓冲平台」 · 一句
+中：缓冲平台能用了。以后重东西先往那上面放，别老直接扔甲板上，迟早给砸坏。
+英：
+
+[L_repair_crane]
+# 梁工 · 修好「重型起重机」 · 一句
+中：起重机也修好了，最多能吊十二吨。不过东西越重越得小心，重心没找准可千万别起吊。
+英：
+
+[L_repair_first]
+# 梁工 · 第一次在终端修好任何一项 · 一句
+中：行，这下修好了。等你下次回来就能用。以后有些东西咱们自己就能处理，不用老往外送。
+英：
+
+[L_repair_furnace_main]
+# 梁工 · 修好「熔炉主火」 · 一句
+中：主炉总算修好了。之前处理点废铁都得等半天，现在干活能快不少。
+英：
+
+[L_repair_hauler]
+# 梁工 · 修好「初级搬运无人机」 · 一句
+中：搬运机能动了。我刚试过，没什么问题。以后那些零零碎碎的东西就交给它搬吧。
+英：
+
+[L_repair_hauler2]
+# 梁工 · 修好「第二台搬运无人机」 · 一句
+中：第二台搬运机也修好了。以后两台一起搬，应该不会再像之前那样，东西堆半天都没人收。
+英：
+
+[L_repair_lights]
+# 梁工 · 修好「照明与配电」，回船坞看施工 · 一句
+中：这下亮堂多了。之前干活还得拿无人机照着，切个东西都费劲。
+英：
+
+[L_repair_mouth_rail]
+# 梁工 · 修好「可移动炉口」 · 一句
+中：炉口的轨道修通了，现在可以直接挪到废铁旁边。碰上大块的，不用再费劲拖过去了。
+英：
+
+[L_repair_net05]
+# 梁工 · 修好「碎屑网升级」 · 一句
+中：新网装好了，半吨以下的碎块都能拦住。再重可就不好说了，你别拿它试极限。
+英：
+
+[L_repair_net_fix]
+# 梁工 · 修好「碎屑网」 · 一句
+中：拦截网补上了。以前那些小碎铁老往外飘，看着都心疼，这下应该能多收回来不少。
+英：
+
+[L_repair_port2]
+# 梁工 · 修好「第二设备回收口」 · 一句
+中：第二个设备口也能用了。以后东西多的时候可以分开处理，不用全堵在一个口等着。
+英：
+
+[L_repair_port_cargo_1]
+# 梁工 · 货运区（2026-10-21 新加的第六区） · 一句
+中：
+英：
+
+[L_repair_port_cargo_2]
+# 梁工 · 货运区（2026-10-21 新加的第六区） · 一句
+中：
+英：
+
+[L_repair_port_power_1]
+# 梁工 · 动力区一、二阶段建成，回船坞看施工 · 一句
+中：
+英：
+
+[L_repair_port_power_2]
+# 梁工 · 动力区一、二阶段建成，回船坞看施工 · 一句
+中：
+英：
+
+[L_repair_port_process_1]
+# 梁工 · 加工区 · 一句
+中：
+英：
+
+[L_repair_port_process_2]
+# 梁工 · 加工区 · 一句
+中：
+英：
+
+[L_repair_port_ring_1]
+# 梁工 · 转运环前半圈亮 / 重启 · 一到两句，_2 是主线收束前最后一句
+中：
+英：
+
+[L_repair_port_ring_2]
+# 梁工 · 转运环前半圈亮 / 重启 · 一到两句，_2 是主线收束前最后一句
+中：
+英：
+
+[L_repair_port_salvage_1]
+# 梁工 · 拆船区 · 一句
+中：
+英：
+
+[L_repair_port_salvage_2]
+# 梁工 · 拆船区 · 一句
+中：
+英：
+
+[L_repair_port_trade_1]
+# 梁工 · 贸易港 · 一句
+中：
+英：
+
+[L_repair_port_trade_2]
+# 梁工 · 贸易港 · 一句
+中：
+英：
+
+[L_repair_port_tug_1]
+# 梁工 · 拖船站 · 一句
+中：
+英：
+
+[L_repair_port_tug_2]
+# 梁工 · 拖船站 · 一句
+中：
+英：
+
+[L_repair_zones]
+# 梁工 · 修好「作业区管理」 · 一句
+中：作业区我重新分好了。切割归切割，搬运归搬运，别再挤在一块儿干活，太容易出事。
+英：
+
+[L_salvage_claim]
+# 梁工 · 生涯第一次到空船坞（在 L_berth_broken 之前），说七号坞是凭回收权申请下来的 · 一到两句
+中：
+英：
+
+[L_swift_done]
+# 梁工 · 雨燕拆完结算 · 一句
+中：
+英：
+
+[L_swift_in_1]
+# 梁工 · 开局第二艘 S09-001 雨燕进坞 · 一到三句
+中：
+英：
+
+[L_swift_in_2]
+# 梁工 · 开局第二艘 S09-001 雨燕进坞 · 一到三句
+中：
+英：
+
+[L_swift_in_3]
+# 梁工 · 开局第二艘 S09-001 雨燕进坞 · 一到三句
+中：
+英：
+
+[L_tow_in]
+# 梁工 · 自己找来或买来的船被拖船拖进港、停到船坞边的待拆泊位（63 号） · 一句
+中：
+英：
+
+[L_trial_g1a_in_1]
+# 梁工 · 修缮任务 A（雨燕，修照明）进坞 · 一到三句，点明“要留蓄电池和配电柜”
+中：这艘雨燕来得正好，上面还有几件供电设备能用。咱们船坞那边正缺这些东西，先拆回来吧。
+英：
+
+[L_trial_g1a_in_2]
+# 梁工 · 修缮任务 A（雨燕，修照明）进坞 · 一到三句，点明“要留蓄电池和配电柜”
+中：蓄电池、燃料电池，还有配电柜，这三样都得完整留下。拆出来以后直接送设备回收口，别扔熔炉里了。
+英：
+
+[L_trial_g1a_in_3]
+# 梁工 · 修缮任务 A（雨燕，修照明）进坞 · 一到三句，点明“要留蓄电池和配电柜”
+中：船坞的灯能不能修好，就看这批零件了。你下刀的时候看准一点，别好好的东西拆出来反倒不能用了。
+英：
+
+[L_trial_g1b_in_1]
+# 梁工 · 修缮任务 B（灰鹭，借锚修碎屑网）进坞 · 一到三句，点明“整段送炉”
+中：这次来的灰鹭有几段船体得整块拆。我从仓库借了套牵引锚，已经给你放到工具架上了。
+英：
+
+[L_trial_g1b_in_2]
+# 梁工 · 修缮任务 B（灰鹭，借锚修碎屑网）进坞 · 一到三句，点明“整段送炉”
+中：先把锚打牢，再沿着连接处把整段切下来。切完以后用绞盘慢慢拖进熔炉槽，别急着硬拽。
+英：
+
+[L_trial_g1b_in_3]
+# 梁工 · 修缮任务 B（灰鹭，借锚修碎屑网）进坞 · 一到三句，点明“整段送炉”
+中：对了，那套牵引锚是借来的，收工记得拿回来。仓库丢了东西可是要赔钱的，最后还得算咱们头上。
+英：
+
+[L_trial_g1c_in_1]
+# 梁工 · 修缮任务 C（灰鹭，借泵修熔炉）进坞 · 一到三句，点明“冷却泵别切坏”
+中：又来一艘灰鹭。不过这艘有点麻烦，抽气接口被阀门堵死了，正常的管路根本接不上。
+英：
+
+[L_trial_g1c_in_2]
+# 梁工 · 修缮任务 C（灰鹭，借泵修熔炉）进坞 · 一到三句，点明“冷却泵别切坏”
+中：我给你借了台独立泵，直接装在舱壁上就能抽气。先看压力表，确认归零了再动刀，这一步可别省。
+英：
+
+[L_trial_g1c_in_3]
+# 梁工 · 修缮任务 C（灰鹭，借泵修熔炉）进坞 · 一到三句，点明“冷却泵别切坏”
+中：还有，里面的冷却泵和散热器都给我留完整了。咱们那台老炉子就缺这两样，弄坏了还得另外找。
+英：
+
+[L_tug_done]
+# 梁工 · TUG-001 拆完结算 · 一句
+中：
+英：
+
+[L_tug_in_1]
+# 梁工 · 开局第一艘 TUG-001 进坞（拖船过场之后） · 一到三句，_1 _2 _3 依次播
+中：
+英：
+
+[L_tug_in_2]
+# 梁工 · 开局第一艘 TUG-001 进坞（拖船过场之后） · 一到三句，_1 _2 _3 依次播
+中：
+英：
+
+[L_tug_in_3]
+# 梁工 · 开局第一艘 TUG-001 进坞（拖船过场之后） · 一到三句，_1 _2 _3 依次播
+中：
+英：
+
+[L_visit_deal]
+# 客人 · 75 号：成交时客人说的 · 一句
+中：
+英：
+
+[L_visit_frank]
+# 客人（爽快） · 75 号：爽快的独立商人或个体船主开船到贸易港、递上名片时（他要买或卖什么由游戏显示） · 一句
+中：
+英：
+
+[L_visit_halfway]
+# 客人（精明） · 75 号：精明的客人不接你的还价、回一个中间价时 · 一句
+中：
+英：
+
+[L_visit_hurry]
+# 客人（急着要货） · 75 号：急着要货的客人到港时（他只等约 60 秒） · 一句
+中：
+英：
+
+[L_visit_leave]
+# 客人 · 75 号：还价被拒或被你拒绝、开船走时 · 一句
+中：
+英：
+
+[L_visit_shrewd]
+# 客人（精明） · 75 号：精明的客人到港时 · 一句
+中：
+英：
+
+============================================================
+# 三、训练课（TS-1 基础课与七门专项课）的无线电
+============================================================
+
+[course.sp_atmos_course.SO_in1]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SO_in2]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SO_done]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SO_lock_l]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SO_bad]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SM_in1]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SM_in2]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SM_done]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SM_lock_l]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SM_bad]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SH_in1]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SH_in2]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SH_done]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SH_lock_l]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SH_bad]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_atmos_course.SB_in]
+# 梁工 · sp_atmos_course
+中：
+英：
+
+[course.sp_cryo_course.SC_in1]
+# 梁工 · sp_cryo_course
+中：
+英：
+
+[course.sp_cryo_course.SC_in2]
+# 梁工 · sp_cryo_course
+中：
+英：
+
+[course.sp_cryo_course.SC_frozen]
+# 梁工 · sp_cryo_course
+中：
+英：
+
+[course.sp_cryo_course.SC_done]
+# 梁工 · sp_cryo_course
+中：
+英：
+
+[course.sp_cryo_course.SC_lock_l]
+# 梁工 · sp_cryo_course
+中：
+英：
+
+[course.sp_cryo_course.SC_bad]
+# 梁工 · sp_cryo_course
+中：
+英：
+
+[course.sp_cryo_course.SD_in1]
+# 梁工 · sp_cryo_course
+中：
+英：
+
+[course.sp_cryo_course.SD_in2]
+# 梁工 · sp_cryo_course
+中：
+英：
+
+[course.sp_cryo_course.SD_done]
+# 梁工 · sp_cryo_course
+中：
+英：
+
+[course.sp_cryo_course.SD_lock_l]
+# 梁工 · sp_cryo_course
+中：
+英：
+
+[course.sp_cryo_course.SD_bad]
+# 梁工 · sp_cryo_course
+中：
+英：
+
+[course.sp_cryo_course.SB_in]
+# 梁工 · sp_cryo_course
+中：
+英：
+
+[course.sp_energy_course.SE_in1]
+# 梁工 · sp_energy_course
+中：
+英：
+
+[course.sp_energy_course.SE_in2]
+# 梁工 · sp_energy_course
+中：
+英：
+
+[course.sp_energy_course.SE_coil_done]
+# 梁工 · sp_energy_course
+中：
+英：
+
+[course.sp_energy_course.SE_lock_l]
+# 梁工 · sp_energy_course
+中：
+英：
+
+[course.sp_energy_course.SE_quench]
+# 梁工 · sp_energy_course
+中：
+英：
+
+[course.sp_energy_course.SF_in1]
+# 梁工 · sp_energy_course
+中：
+英：
+
+[course.sp_energy_course.SF_in2]
+# 梁工 · sp_energy_course
+中：
+英：
+
+[course.sp_energy_course.SF_done]
+# 梁工 · sp_energy_course
+中：
+英：
+
+[course.sp_energy_course.SF_lock_l]
+# 梁工 · sp_energy_course
+中：
+英：
+
+[course.sp_energy_course.SF_bad]
+# 梁工 · sp_energy_course
+中：
+英：
+
+[course.sp_energy_course.SB_in]
+# 梁工 · sp_energy_course
+中：
+英：
+
+[course.sp_fluid_course.SR_in1]
+# 梁工 · sp_fluid_course
+中：
+英：
+
+[course.sp_fluid_course.SR_in2]
+# 梁工 · sp_fluid_course
+中：
+英：
+
+[course.sp_fluid_course.SR_done]
+# 梁工 · sp_fluid_course
+中：
+英：
+
+[course.sp_fluid_course.SR_lock_l]
+# 梁工 · sp_fluid_course
+中：
+英：
+
+[course.sp_fluid_course.SR_bad]
+# 梁工 · sp_fluid_course
+中：
+英：
+
+[course.sp_fluid_course.SX_in1]
+# 梁工 · sp_fluid_course
+中：
+英：
+
+[course.sp_fluid_course.SX_in2]
+# 梁工 · sp_fluid_course
+中：
+英：
+
+[course.sp_fluid_course.SX_done]
+# 梁工 · sp_fluid_course
+中：
+英：
+
+[course.sp_fluid_course.SX_lock_l]
+# 梁工 · sp_fluid_course
+中：
+英：
+
+[course.sp_fluid_course.SX_bad]
+# 梁工 · sp_fluid_course
+中：
+英：
+
+[course.sp_fluid_course.SB_in]
+# 梁工 · sp_fluid_course
+中：
+英：
+
+[course.sp_isolate_course.SN_in1]
+# 梁工 · sp_isolate_course
+中：
+英：
+
+[course.sp_isolate_course.SN_in2]
+# 梁工 · sp_isolate_course
+中：
+英：
+
+[course.sp_isolate_course.SN_done]
+# 梁工 · sp_isolate_course
+中：
+英：
+
+[course.sp_isolate_course.SN_lock_l]
+# 梁工 · sp_isolate_course
+中：
+英：
+
+[course.sp_isolate_course.SN_bad]
+# 梁工 · sp_isolate_course
+中：
+英：
+
+[course.sp_isolate_course.SV_in1]
+# 梁工 · sp_isolate_course
+中：
+英：
+
+[course.sp_isolate_course.SV_in2]
+# 梁工 · sp_isolate_course
+中：
+英：
+
+[course.sp_isolate_course.SV_done]
+# 梁工 · sp_isolate_course
+中：
+英：
+
+[course.sp_isolate_course.SV_lock_l]
+# 梁工 · sp_isolate_course
+中：
+英：
+
+[course.sp_isolate_course.SV_bad]
+# 梁工 · sp_isolate_course
+中：
+英：
+
+[course.sp_isolate_course.SB_in]
+# 梁工 · sp_isolate_course
+中：
+英：
+
+[course.sp_load_course.SL_in1]
+# 梁工 · sp_load_course
+中：
+英：
+
+[course.sp_load_course.SL_in2]
+# 梁工 · sp_load_course
+中：
+英：
+
+[course.sp_load_course.SL_done]
+# 梁工 · sp_load_course
+中：
+英：
+
+[course.sp_load_course.SL_lock_l]
+# 梁工 · sp_load_course
+中：
+英：
+
+[course.sp_load_course.SL_bad]
+# 梁工 · sp_load_course
+中：
+英：
+
+[course.sp_load_course.SG_in1]
+# 梁工 · sp_load_course
+中：
+英：
+
+[course.sp_load_course.SG_in2]
+# 梁工 · sp_load_course
+中：
+英：
+
+[course.sp_load_course.SG_done]
+# 梁工 · sp_load_course
+中：
+英：
+
+[course.sp_load_course.SG_lock_l]
+# 梁工 · sp_load_course
+中：
+英：
+
+[course.sp_load_course.SG_bad]
+# 梁工 · sp_load_course
+中：
+英：
+
+[course.sp_load_course.SB_in]
+# 梁工 · sp_load_course
+中：
+英：
+
+[course.sp_precise_course.SPM_in1]
+# 梁工 · sp_precise_course
+中：
+英：
+
+[course.sp_precise_course.SPM_in2]
+# 梁工 · sp_precise_course
+中：
+英：
+
+[course.sp_precise_course.SPM_done]
+# 梁工 · sp_precise_course
+中：
+英：
+
+[course.sp_precise_course.SP_lock_l]
+# 梁工 · sp_precise_course
+中：
+英：
+
+[course.sp_precise_course.SP_bad]
+# 梁工 · sp_precise_course
+中：
+英：
+
+[course.sp_precise_course.SW_in1]
+# 梁工 · sp_precise_course
+中：
+英：
+
+[course.sp_precise_course.SW_in2]
+# 梁工 · sp_precise_course
+中：
+英：
+
+[course.sp_precise_course.SW_done]
+# 梁工 · sp_precise_course
+中：
+英：
+
+[course.sp_precise_course.SW_lock_l]
+# 梁工 · sp_precise_course
+中：
+英：
+
+[course.sp_precise_course.SW_bad]
+# 梁工 · sp_precise_course
+中：
+英：
+
+[course.sp_precise_course.SB_in]
+# 梁工 · sp_precise_course
+中：
+英：
+
+[course.ts1_course.T00_1]
+# 梁工 · ts1_course
+中：听得见吗？……行，通信正常。
+英：Can you hear me? ...Right, comms are good.
+
+[course.ts1_course.T00_2]
+# 梁工 · ts1_course
+中：欢迎来到 BERTH 07。今天第一天上班，先别碰停在外面的那些大船。
+英：Welcome to Berth 07. First day on the job — leave the big hulls outside alone for now.
+
+[course.ts1_course.T00_3]
+# 梁工 · ts1_course
+中：中间这个是 TS-1，报废穿梭机上切下来的训练舱段，正好拿来练手。
+英：That one in the middle is TS-1, a training section cut off a scrapped shuttle. Good for practice.
+
+[course.ts1_course.T00_5]
+# 梁工 · ts1_course
+中：今天只有一条规矩：不确定的东西，先查清楚再动。
+英：One rule today: if you're not sure, check before you touch it.
+
+[course.ts1_course.T01_in]
+# 梁工 · ts1_course
+中：先把无人机飞起来。穿过那几个光环。
+英：Get the drone moving first. Fly through those rings.
+
+[course.ts1_course.T01_dash]
+# 梁工 · ts1_course
+中：长的那个，按住 Shift 冲过去。
+英：The long one — hold Shift and dash through.
+
+[course.ts1_course.T01_stop]
+# 梁工 · ts1_course
+中：进框，按 Space 停稳。
+英：Into the box, Space to stop dead.
+
+[course.ts1_course.T01_f]
+# 梁工 · ts1_course
+中：F 是飞行稳定。关掉试试，再开回来。
+英：F is flight assist. Switch it off, feel it, switch it back on.
+
+[course.ts1_course.T01_find]
+# 梁工 · ts1_course
+中：看到左侧那块检修盖了吗？找找它的编号。
+英：See the service cover on the left side? Find its number.
+
+[course.ts1_course.T01_tab]
+# 梁工 · ts1_course
+中：现在打开工程图。
+英：Now open the drawing.
+
+[course.ts1_course.T01_bp1]
+# 梁工 · ts1_course
+中：图纸是设计的时候画的，船是后来撞坏的。两边不一定对得上。
+英：The drawing was made at design time. The ship got wrecked later. They won't always agree.
+
+[course.ts1_course.T01_bp2]
+# 梁工 · ts1_course
+中：先用它找东西，至于东西现在是什么样，你自己检查。
+英：Use it to find things. What state they're in now — you check that yourself.
+
+[course.ts1_course.T01_h1]
+# 梁工 · ts1_course
+中：面板就在舱段左侧。先把摄像头拉近。
+英：The panel is on the left end of the section. Zoom in first.
+
+[course.ts1_course.T02_in1]
+# 梁工 · ts1_course
+中：这块盖板已经检查过了，没有压力，也没接电。
+英：That cover's been checked. No pressure behind it, no power.
+
+[course.ts1_course.T02_in2]
+# 梁工 · ts1_course
+中：任务很简单，把它完整拆下来，送进回收口。别直接拿切割器烧。四颗螺栓。
+英：Simple job: take it off in one piece and into a mouth. Don't burn it off. Four bolts.
+
+[course.ts1_course.T02_last]
+# 梁工 · ts1_course
+中：先等等。最后一个螺栓拆掉，这块板就没东西固定了。用抓钩把它稳住。
+英：Hold on. Take the last bolt out and nothing holds that plate. Steady it with the grapple first.
+
+[course.ts1_course.T02_drift]
+# 梁工 · ts1_course
+中：看见没有？这地方没有地板替你接东西。下次先固定，再松最后一个连接。
+英：See that? There's no floor out here to catch things. Secure it first, then the last fixing.
+
+[course.ts1_course.T02_done_l]
+# 梁工 · ts1_course
+中：第一笔收入，够买几杯咖啡。先别急着发财，接下来还有正事。
+英：First earnings — a few coffees' worth. Don't get rich yet, the real work's next.
+
+[course.ts1_course.T02_h1]
+# 梁工 · ts1_course
+中：四个角上那几颗螺栓，用维护工具一颗一颗拧。
+英：The bolts down its edge — wrench them out one by one.
+
+[course.ts1_course.T03_in]
+# 梁工 · ts1_course
+中：这块外壳后面是密封舱。想拆可以，先确认里面还有没有气。
+英：Behind that shell plate is a sealed bay. Fine to take it off — once you know there's no gas in there.
+
+[course.ts1_course.T03_ask]
+# 梁工 · ts1_course
+中：读数出来了。你觉得现在能拆吗？
+英：There's your reading. Safe to take it off now?
+
+[course.ts1_course.T03_A]
+# 梁工 · ts1_course
+中：零倒是零。可它测的是哪儿？先把工程图打开。
+英：It's zero, sure. But zero where? Open the drawing.
+
+[course.ts1_course.T03_B]
+# 梁工 · ts1_course
+中：对，先确定你测的是哪一段。
+英：Right. First work out which bit you actually measured.
+
+[course.ts1_course.T03_found]
+# 梁工 · ts1_course
+中：阀门关着，压力表根本没连到舱室。仪器没坏。是你刚才不知道它测的是什么。
+英：The valve's shut — the gauge never saw the bay. The meter's fine. You just didn't know what it was measuring.
+
+[course.ts1_course.T03_real]
+# 梁工 · ts1_course
+中：这回才是舱里的压力。要是刚才直接拆开，里面的气就全跑到船坞里了。
+英：That's the bay. Open it a minute ago and all that gas goes into the berth.
+
+[course.ts1_course.T03_wait]
+# 梁工 · ts1_course
+中：这回不用着急，等泵把气收完。真空里工作，最没用的就是催机器。
+英：No hurry now. Let the pump take it. Out here, rushing machines gets you nothing.
+
+[course.ts1_course.T03_empty_l]
+# 梁工 · ts1_course
+中：好。现在可以处理这块外壳了。
+英：Good. Now the plate.
+
+[course.ts1_course.T03_open]
+# 梁工 · ts1_course
+中：这就是拆船。你不知道里面是什么，就得一点点把它查清楚。
+英：That's salvage. You don't know what's inside, so you find out, one thing at a time.
+
+[course.ts1_course.T03_lock_l]
+# 梁工 · ts1_course
+中：真船可不会替你拦这一下。
+英：A real ship won't stop you like that.
+
+[course.ts1_course.T03_boom]
+# 梁工 · ts1_course
+中：……还好不是人。重置一下，再来。
+英：...Good thing nobody was in there. Resetting. Again.
+
+[course.ts1_course.T03_h1]
+# 梁工 · ts1_course
+中：看看测压口和舱室之间，管子上还有什么。
+英：Look at what sits on the line between the port and the bay.
+
+[course.ts1_course.T04_in1]
+# 梁工 · ts1_course
+中：现在要回收这个供电模块。
+英：Next: recover the power module.
+
+[course.ts1_course.T04_in2]
+# 梁工 · ts1_course
+中：控制台说主电源关了。不过旁边那盏灯还亮着。你先查查。
+英：The panel says main power's off. That lamp next to it says otherwise. Check.
+
+[course.ts1_course.T04_backup_l]
+# 梁工 · ts1_course
+中：明白了吧？主电源停了，备用电池还在供电。船上的电源从来不保证只有一个。
+英：See? Main's off, the backup battery is still feeding it. A ship never promises just one source.
+
+[course.ts1_course.T04_cap]
+# 梁工 · ts1_course
+中：还有电容。先让设备完成受控放电和状态验证。别急着拆。
+英：And there's the capacitor. Bleed it through the plug and verify. Don't rush it.
+
+[course.ts1_course.T04_done]
+# 梁工 · ts1_course
+中：这就对了。要是把完整模块直接烧成废铁，老板估计比电容炸了还心疼。
+英：That's it. Burn a whole module down to scrap and the boss would cry harder than if the cap blew.
+
+[course.ts1_course.T04_arc]
+# 梁工 · ts1_course
+中：那一下，在真船上能要命。重置。
+英：On a real ship that one kills. Resetting.
+
+[course.ts1_course.T04_h1]
+# 梁工 · ts1_course
+中：灯还亮着，电是从哪儿来的？图纸的电路层里找找。
+英：The lamp's still lit — where's that power coming from? Look at the circuit in the drawing.
+
+[course.ts1_course.T05_in1]
+# 梁工 · ts1_course
+中：那边还有台冷却泵。这东西能卖点钱。你把它完整取下来。
+英：There's a coolant pump over there. Worth something. Get it out whole.
+
+[course.ts1_course.T05_in2]
+# 梁工 · ts1_course
+中：不用我再告诉你先查什么了吧？
+英：I don't need to tell you what to check first, do I?
+
+[course.ts1_course.T05_pull]
+# 梁工 · ts1_course
+中：别拽了。看一眼，下面还有东西连着呢。
+英：Stop pulling. Look — something's still attached.
+
+[course.ts1_course.T05_cut]
+# 梁工 · ts1_course
+中：也行，至少能卖废金属。不过下次可以试着把整台拿下来，价钱差得不少。
+英：Fine, it'll sell as scrap. Next time try getting it out whole — big difference in price.
+
+[course.ts1_course.T05_done_l]
+# 梁工 · ts1_course
+中：不错。这才叫拆设备，不是拆垃圾。
+英：Nice. That's salvaging equipment, not shovelling junk.
+
+[course.ts1_course.T05_h3]
+# 梁工 · ts1_course
+中：还有一个连接没解。
+英：One connection is still on.
+
+[course.ts1_course.T06_in]
+# 梁工 · ts1_course
+中：最后剩这些骨架。拆完训练就结束。
+英：Just the frame left. Clear it and training's done.
+
+[course.ts1_course.T06_heavy1]
+# 梁工 · ts1_course
+中：超重了。你可以去仓库买台更大的设备，前提是老板愿意出钱。
+英：Too heavy. You could buy a bigger grapple — if the boss pays for it.
+
+[course.ts1_course.T06_heavy2]
+# 梁工 · ts1_course
+中：今天就用现有的工具。看看能不能把它分开。
+英：Today you use what you've got. See if it splits.
+
+[course.ts1_course.T06_boom]
+# 梁工 · ts1_course
+中：残液进炉子，就是这个下场。重置。
+英：Residue in the furnace — that's what happens. Resetting.
+
+[course.ts1_course.T06_done_l]
+# 梁工 · ts1_course
+中：行，至少你没把船坞一起拆了。培训先到这儿。
+英：Well, you didn't take the berth apart with it. That's training.
+
+[course.ts1_course.T06_h3]
+# 梁工 · ts1_course
+中：看看图纸，那根梁是两段拼起来的。
+英：Check the drawing — that beam is two pieces joined together.
+
+[course.ts1_course.T_exam_offer]
+# 梁工 · ts1_course
+中：接下来有个小考核。想试就试，不想试也能直接接第一份合同。
+英：There's a short test next. Take it if you like — or go straight to your first contract.
+
+[course.ts1_course.T01_pan]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.T01_zoom]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.T01_hold]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.T02_context]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TF_in1]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TF_in2]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TF_scrap]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TF_equip]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TF_haz]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TF_boom]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TF_done]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TL_in1]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TL_in2]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TL_spill]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TL_drain]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TL_done]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TL_lock_l]
+# 梁工 · ts1_course
+中：
+英：
+
+[course.ts1_course.TL_h1]
+# 梁工 · ts1_course
+中：
+英：
+
+============================================================
+# 四、剧情：GR-7「灰鹭号」
+============================================================
+
+[story.gr7.title]
+中：GR-7「灰鹭号」中型货运船 · 42 m
+英：GR-7 GREY HERON · MEDIUM FREIGHTER · 42 m
+
+[story.gr7.arrive.0]
+中：好了，真家伙来了。
+英：Right. Here's the real thing.
+
+[story.gr7.arrive.1]
+中：灰鹭级货船，四十二米。前些天出了点事故，船主决定直接报废。
+英：Heron-class freighter, forty-two metres. Had an accident a few days back; the owner's scrapping her.
+
+[story.gr7.arrive.2]
+中：送过来的资料不全，尾部肯定有问题，别的还不好说。
+英：The paperwork's incomplete. The stern's definitely bad. The rest, who knows.
+
+[story.gr7.start.0]
+中：这单不像训练舱那么简单。
+英：This one's not like the training rig.
+
+[story.gr7.start.1]
+中：里面还有没有气，哪里通着电，管道里剩下什么，都得自己查。
+英：Gas, power, whatever's left in the pipes — you check all of it yourself.
+
+[story.gr7.start.2]
+中：我会在无线电里待着。有问题可以问，但怎么拆还是你决定。
+英：I'll stay on the radio. Ask if you need to. How you take her apart is your call.
+
+[story.gr7.start.3]
+中：开始吧。
+英：Go on, then.
+
+[story.gr7.lines.fake_off]
+# 梁工 · 现场发现与记录不符时
+中：记录说停了。记录是人写的。
+英：The log says stopped. People write logs.
+
+[story.gr7.inspect.0.text]
+中：「别急着记事故，先记发生了什么。——I. M.」
+英："Don't log the accident yet. Log what happened. —I. M."
+
+[story.gr7.inspect.0.title]
+中：控制台上的便签
+英：NOTE ON THE CONSOLE
+
+[story.gr7.inspect.1.text]
+中：「最后航线：坐标 …… 未命名。预计到达：取消。」
+英："LAST ROUTE: COORDINATES ... UNNAMED. ETA: CANCELLED."
+
+[story.gr7.inspect.1.title]
+中：导航电脑 NAV-01
+英：NAV COMPUTER NAV-01
+
+[story.gr7.inspect.2.text]
+中：「回家前最后一单。——路」
+英："Last job before home. —Lu"
+
+[story.gr7.inspect.2.title]
+中：铺位上的明信片
+英：POSTCARD ON THE BUNK
+
+[story.gr7.inspect.3.text]
+中：「CHARON · KX-0 · 不得开封。」
+英："CHARON · KX-0 · DO NOT OPEN."
+
+[story.gr7.inspect.3.title]
+中：C-02 的封签
+英：SEAL ON C-02
+
+[story.gr7.inspect.4.text]
+中：「C-02：精密机械」被划掉，重写为「KX-0」。
+英："C-02: PRECISION MACHINERY" struck out, rewritten as "KX-0".
+
+[story.gr7.inspect.4.title]
+中：货单（钳在 C-03 门上）
+英：MANIFEST (CLIPPED TO C-03)
+
+[story.gr7.inspect.5.text]
+中：「1 断 K-G · 2 断 K-B · 3 主控停机 失败→本地手柄 · 4 放电容。——韩」
+英："1 OPEN K-G · 2 OPEN K-B · 3 REMOTE STOP failed → LOCAL HANDLE · 4 BLEED CAP. —Han"
+
+[story.gr7.inspect.5.title]
+中：G-01 上的手写步骤
+英：HANDWRITTEN STEPS ON G-01
+
+[story.gr7.inspect.6.text]
+中：一道新鲜的金属划痕，从工具柜一路划到舱门。
+英：A fresh scratch in the metal, from the tool cabinet all the way to the door.
+
+[story.gr7.inspect.6.title]
+中：工具柜上的划痕
+英：SCRATCH ON THE TOOL CABINET
+
+[story.gr7.who.alarm]
+中：警报
+英：ALARM
+
+[story.gr7.who.han]
+中：韩彻
+英：HAN CHE
+
+[story.gr7.who.lu]
+中：小路（远处）
+英：LU (DISTANT)
+
+[story.gr7.who.moran]
+中：莫兰
+英：MORAN
+
+[story.gr7.who.unknown]
+中：未知船员
+英：UNKNOWN CREW
+
+[story.gr7.recorder.before.0]
+中：黑匣子到了？
+英：The recorder's in?
+
+[story.gr7.recorder.before.1]
+中：行，这东西合同里专门点名要回收。顺手看看有没有完整的数据记录。
+英：Good — the contract names it. Let's see if there's anything left on it.
+
+[story.gr7.recorder.fragment.0]
+# unknown · 录音 T−00:46
+中：……主推进系统已经关闭。
+英：...Main propulsion is shut down.
+
+[story.gr7.recorder.fragment.1]
+# unknown · 录音 T−00:45
+中：等一下，为什么控制台还显示有推力？
+英：Wait — why does the console still show thrust?
+
+[story.gr7.recorder.fragment.2]
+# unknown · 录音 T−00:45
+中：确认一下尾部传感器……
+英：Check the aft sensors...
+
+[story.gr7.recorder.after.0]
+中：奇怪。事故报告上说的是冷却系统故障。
+英：Odd. The accident report says cooling failure.
+
+[story.gr7.recorder.after.1]
+中：可能是当时的记录乱了，先存档吧。这不是咱们这份合同要查的事。
+英：Probably the log got scrambled. File it. Not what this contract's about.
+
+[story.gr7.recorder.clue.title]
+中：灰鹭号飞行记录异常
+英：GREY HERON: FLIGHT RECORD ANOMALY
+
+[story.gr7.epilogue.card]
+中：解密完成 · DATA INTEGRITY 100%
+英：DECRYPTED · DATA INTEGRITY 100%
+
+[story.gr7.epilogue.recording.0]
+# han · 录音 T−00:52
+中：冷却回路压力掉了。E 舱在漏。
+英：Coolant loop pressure's dropping. E is leaking.
+
+[story.gr7.epilogue.recording.1]
+# moran · 录音 T−00:47
+中：推进停机。所有人到 B 舱。
+英：Shut down propulsion. Everyone to B.
+
+[story.gr7.epilogue.recording.2]
+# han · 录音 T−00:46
+中：……主推进系统已经关闭。
+英：...Main propulsion is shut down.
+
+[story.gr7.epilogue.recording.3]
+# han · 录音 T−00:45
+中：等一下，为什么控制台还显示有推力？
+英：Wait — why does the console still show thrust?
+
+[story.gr7.epilogue.recording.4]
+# han · 录音 T−00:45
+中：确认一下尾部传感器……
+英：Check the aft sensors...
+
+[story.gr7.epilogue.recording.5]
+# han · 录音 T−00:40
+中：主电源说停了。……我不信，母线还有四百伏。
+英：Main power says it's stopped. ...I don't buy it. The bus still has four hundred volts.
+
+[story.gr7.epilogue.recording.6]
+# moran · 录音 T−00:33
+中：韩彻，回来。
+英：Han, come back.
+
+[story.gr7.epilogue.recording.7]
+# han · 录音 T−00:30
+中：给我两分钟。我去拉本地手柄。
+英：Give me two minutes. I'm going for the local handle.
+
+[story.gr7.epilogue.recording.9]
+# moran · 录音 T−00:14
+中：……韩彻？
+英：...Han?
+
+[story.gr7.epilogue.recording.10]
+# han · 录音 T−00:09
+中：没事，门关上了。手柄卡住了，停不了。
+英：I'm fine, the door held. The handle's jammed. It won't stop.
+
+[story.gr7.epilogue.recording.11]
+# han · 录音 T−00:05
+中：让下一个人来吧。告诉他——别信面板。
+英：Let the next one do it. Tell them — don't trust the panel.
+
+[story.gr7.epilogue.recording.12]
+# moran · 录音 T−00:02
+中：全员撤离。记录：主电源未确认断开。
+英：All hands, abandon ship. Log: main power not confirmed isolated.
+
+[story.gr7.epilogue.recording.13]
+# lu · 录音 T+00:00
+中：韩工出来了！
+英：Han's out!
+
+[story.gr7.epilogue.grade.1.0]
+中：今天赔掉的东西不少。
+英：We lost a fair bit today.
+
+[story.gr7.epilogue.grade.1.1]
+中：好在船坞还在，设备也还在。先看看事故记录，下次别再犯同样的问题。
+英：Still, the berth's here and so's the kit. Read the incident log. Don't do the same thing twice.
+
+[story.gr7.epilogue.grade.2.0]
+中：还行。大件都收回来了，损失也不算大。
+英：Not bad. The big pieces came back, and the losses weren't much.
+
+[story.gr7.epilogue.grade.2.1]
+中：以后熟练了，速度还能提上来。
+英：You'll get faster with practice.
+
+[story.gr7.epilogue.grade.3.0]
+中：第一次接正式合同就做到这个程度，挺少见的。
+英：That's rare, for a first real contract.
+
+[story.gr7.epilogue.grade.3.1]
+中：老板看了应该高兴。就是别指望他给你涨工资。
+英：The boss'll be pleased. Don't expect a raise.
+
+[story.gr7.epilogue.echo]
+中：他说别信面板。你没信。
+英：He said don't trust the panel. You didn't.
+
+[story.gr7.epilogue.echo_arc]
+中：他说别信面板。下次记住。
+英：He said don't trust the panel. Remember that next time.
+
+[story.gr7.epilogue.closing.0]
+中：行，第一天算是干完了。
+英：Right. That's day one.
+
+[story.gr7.epilogue.closing.1]
+中：市场上还有几份单子。接下来拆哪艘，你自己挑。
+英：There are a few jobs on the market. Which one's next is up to you.
+
+[story.gr7.epilogue.terminal.0]
+中：合同市场已开放。
+英：CONTRACT MARKET OPEN.
+
+[story.gr7.epilogue.terminal.1]
+中：设备采购权限已开放。
+英：EQUIPMENT PURCHASING ENABLED.
+
+[story.gr7.epilogue.terminal.2]
+中：公司生涯记录已更新。
+英：CAREER RECORD UPDATED.
+
+[story.gr7.epilogue.chapter.0]
+中：第一章 — 废弃船坞
+英：CHAPTER ONE — THE SCRAP BERTH
+
+[story.gr7.epilogue.next.name]
+中：白鹭号
+英：WHITE EGRET
+
+[story.gr7.epilogue.next.rows.0]
+中：灰鹭号的姐妹船
+英：Sister ship of the Grey Heron
+
+[story.gr7.epilogue.next.rows.1]
+中：失联 41 天后被拖回
+英：Towed in after 41 days missing
+
+[story.gr7.epilogue.next.rows.2]
+中：货单：KX-0，同批次。
+英：Manifest: KX-0, same batch.
+
+[story.gr7.epilogue.next.tbc]
+中：未完待续 · 零压拆船厂
+英：TO BE CONTINUED · ZERO PRESSURE

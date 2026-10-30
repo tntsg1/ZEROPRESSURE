@@ -47,6 +47,8 @@ const BERTH := [
 	["port2", "facility", 50000.0, "fa_port2", "fa_port2_d", true],
 	["buffer", "facility", 30000.0, "fa_buffer", "fa_buffer_d", true],
 	["zones", "facility", 20000.0, "fa_zones", "fa_zones_d", true],
+	["gas_line", "facility", 80000.0, "fa_gas_line", "fa_gas_line_d", true],
+	["lox_tank", "facility", 60000.0, "fa_lox_tank", "fa_lox_tank_d", true],
 ]
 # a facility that only makes sense with another one bought first
 const REQUIRES := {"hauler2": "hauler", "berth120": "berth88", "berth200": "berth120", "berth620": "berth200"}
@@ -54,8 +56,10 @@ const REQUIRES := {"hauler2": "hauler", "berth120": "berth88", "berth200": "bert
 # of apps; on site the same device, opened by its key or at the berth's
 # computer, with what can't be used there locked and the reason written on it.
 const HOME := -1
-# [the page it opens, its name] in tile order; keys 1–8 open them
-const APPS := [[0, "app_contracts"], [1, "app_equip"], [3, "app_skills"], [4, "app_supplies"], [2, "app_ledger"], [5, "app_route"], [6, "app_radio"], [7, "app_training"]]
+# [the page it opens, its name] in tile order; keys 1–4 open them
+# 53 号 (player 2026-10-25): radio, ledger, supplies and tools & techniques taken off, "no use"
+# user 2026-10-26: "把训练舱先关掉…这是主线必练的" — no training page; the courses come with the ships
+const APPS := [[0, "app_contracts"], [1, "app_equip"], [5, "app_route"]]
 const ON_SITE := [3, 4, 5, 6]     # what works in the middle of a job
 # what berth management will offer later, named in one line
 const LATER := ["fa_scan"]
@@ -68,9 +72,11 @@ var font_s: Font
 var t := 0.0
 var tab := 0
 var sel := 0
+var focus_offer := ""      # opened from a hulk's arrival: its card selected
 var hover := -1
 var hover_tab := -1
 var hover_go := false
+var hover_next := false      # 61 号: the home's "take me" on the next step
 var flash := 0.0
 var msg := ""
 var msg_t := 9.0
@@ -102,6 +108,7 @@ var repay_amt := 20000.0   # the repay slider
 var dragging := false
 var shake := 0.0           # the button jolts when it could not act
 var install := {}          # upgrade id -> seconds since it was fitted (the part goes on)
+var remote_box: HBoxContainer   # 108 号: the remote jobs along the foot
 var go_x := Motion.Spring.new(0.0, 300.0, 0.8)   # the take button follows the chosen card
 var hover_minus := false
 var hover_plus := false
@@ -111,13 +118,29 @@ var leave_offer := {}      # the offer being taken (it leaves the market as it i
 # shop and berth pages, Esc closes it and play goes on; what is bought there
 # counts from the next contract
 var overlay := false
+var keep_on_close := false   # 91 号: the game folds the screen away itself
+var berth_view: BerthView = null   # 91 号: the home screen's live section of the berth and its ship
 var on_close: Callable
 var on_skill_changed: Callable
-var book: SkillBook
+var book: SkillBook = null    # withdrawn (G3); kept null so the old page code stays inert
+var tech_panel: Control = null  # techniques and consumable parts (scripts/tech_panel.gd)
 var next_job := {}         # an opening contract still to play: the market shows it, alone
+var loadout: Control = null   # the loadout page over the terminal (scripts/loadout_panel.gd), while it is open
+var repair_panel: Control = null   # the run-down berth's damage list and parts shelf (scripts/repair_panel.gd): the equipment page
+var loadout_in_tests := false  # a test that wants the page sets this
+var show_trials := false       # the market page turned to the three trial contracts (T)
+var _trial_cards: Array = []   # the trial offers as cards, drawn once per visit
 var game_ref = null        # the contract in play, when opened over the berth
 var between := false       # opened over the empty berth, between contracts: nothing is locked
 var hover_home := false
+var hover_cell := -1          # the home screen's overview (scripts/ops.gd): a cell under the pointer
+var hover_dec := -1           # … or a decision row
+var _ops_cells: Array = []
+var _ops_decs: Array = []
+var _ops_t := 9.0
+var _page_off := Vector2.ZERO  # the page slide's offset while it is drawn
+var _goals_cache: Array = []
+var _goals_t := -1.0          # the goals worked out at most four times a second (1.7 ms each, 2026-10-24)
 # page switches slide on a shared axis (player 2026-10-18: "the UI still isn't
 # smooth"): the old page out one way, the new one in from the other
 const SWITCH_OUT := 0.12
@@ -145,6 +168,9 @@ var _focus_tab := -99
 var hover_goal := -1       # one of the header's two goals under the pointer
 var _route_frame := -1
 var _route_cache: Array = []
+var route_panel: Control
+var exchange_button: Button
+var end_button: Button
 var _wiping := false       # the transition out has been asked for
 # a key's travel: the button or rocker last pressed sinks for a moment
 var press_t := 0.0
@@ -161,11 +187,20 @@ func _ready() -> void:
 		Txt.load_settings(false)
 	Career.load_or_new()
 	Career.ensure_offers(Market.make)
-	next_job = Career.active() if (not overlay or between) and not Career.data.get("market", false) else {}
+	# 96 号 (user 2026-10-28: a hulk towed home "不见了"): a contract taken whose loadout page was
+	# closed stays in hand with the berth empty; over the empty berth it is shown to be started
+	# (with the market on it was hidden, and no other card could be taken while it was in hand)
+	next_job = Career.active() if (not overlay or between) and (not Career.data.get("market", false) or between) else {}
 	# between contracts the home screen, the opening's first job straight on its card;
 	# over the berth whatever the game asked for (the home screen)
 	if not overlay or between:
 		tab = 0 if not next_job.is_empty() else HOME
+	# opened from a hulk's arrival: straight to its card under Find ships
+	if focus_offer != "":
+		for k in offers().size():
+			if str(offers()[k].get("id", "")) == focus_offer:
+				tab = 0
+				sel = k
 	font = Fonts.get_font("Regular")
 	font_l = Fonts.get_font("Light")
 	font_b = Fonts.get_font("Medium")
@@ -196,22 +231,94 @@ func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_to_group("terminal")
 	Settings.apply(get_viewport())
-	book = SkillBook.new()
-	book.visible = tab == 3
-	book.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	book.offset_top = 198
-	book.offset_bottom = -70
-	book.changed = func():
-		if on_skill_changed.is_valid():
-			on_skill_changed.call()
-	add_child(book)
+	# the skill book is withdrawn (G3): its slot is the techniques-and-parts page
+	tech_panel = TechPanel.new()
+	tech_panel.terminal = self
+	tech_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tech_panel.offset_top = 200
+	tech_panel.offset_bottom = -60
+	tech_panel.visible = tab == 3
+	add_child(tech_panel)
+	route_panel = preload("res://scripts/route_panel.gd").new()
+	route_panel.terminal = self
+	route_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	route_panel.offset_top = 200
+	route_panel.offset_bottom = -84
+	route_panel.visible = tab == 5
+	add_child(route_panel)
+	repair_panel = RepairPanel.new()
+	repair_panel.terminal = self
+	repair_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	repair_panel.offset_top = 200
+	repair_panel.offset_bottom = -60
+	repair_panel.visible = tab == 1
+	add_child(repair_panel)
 	pour_go = Pour.make(self, Color(1.0, 0.82, 0.62))
 	pour_home = Pour.make(self)
 	settings = SettingsPanel.new()
 	settings.testing = testing
 	add_child(settings)
+	exchange_button = Button.new()
+	exchange_button.name = "IndustrialExchange"
+	exchange_button.text = "交易行 · 买入 / 出售 [F8]" if Txt.zh else "EXCHANGE / BUY & SELL [F8]"
+	# Dedicated footer access: the old button covered the engineering goal
+	# strip, making it look like a tiny clipped part of the build screen.
+	exchange_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	exchange_button.offset_left = -400
+	exchange_button.offset_right = -40
+	exchange_button.offset_top = -64
+	exchange_button.offset_bottom = -12
+	exchange_button.visible = Career.data.get("market",false) and Onboarding.shown("market_ops")
+	exchange_button.add_theme_font_override("font",Fonts.get_font("Medium"))
+	exchange_button.add_theme_font_size_override("font_size",18)
+	exchange_button.pressed.connect(open_exchange)
+	add_child(exchange_button)
+	# user 2026-10-26: a contract can be ended early here too, while its ship is being stripped
+	end_button = Button.new()
+	end_button.name = "EndContract"
+	end_button.text = Txt.t("m_end")
+	end_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	end_button.offset_left = -820 if exchange_button.visible else -400
+	end_button.offset_right = end_button.offset_left + 360
+	end_button.offset_top = -64
+	end_button.offset_bottom = -12
+	end_button.visible = overlay and game_ref != null and game_ref.can_end_early()
+	end_button.add_theme_font_override("font", Fonts.get_font("Medium"))
+	end_button.add_theme_font_size_override("font_size", 18)
+	end_button.pressed.connect(_end_contract)
+	add_child(end_button)
+	# 108 号 Q12: the three remote jobs along the foot, each with its key; locked ones say why
+	remote_box = HBoxContainer.new()
+	remote_box.name = "Remote"
+	remote_box.add_theme_constant_override("separation", 10)
+	# on the right, left of the exchange (and of "end the contract" when it shows): the left of the
+	# foot is the pages' own (the contracts page's start button)
+	remote_box.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	remote_box.offset_right = (end_button.offset_left if end_button.visible else exchange_button.offset_left if exchange_button.visible else -40.0) - 20.0
+	remote_box.offset_left = remote_box.offset_right - 620.0
+	remote_box.offset_top = -64
+	remote_box.offset_bottom = -12
+	remote_box.visible = overlay and game_ref != null
+	for kind in RemoteOps.KINDS:
+		var rb := Button.new()
+		rb.name = "Remote_" + kind
+		rb.text = "%s [%s]" % [RemoteOps.name_of(kind), RemoteOps.key_label(kind)]
+		rb.custom_minimum_size = Vector2(200, 52)
+		rb.add_theme_font_override("font", Fonts.get_font("Medium"))
+		rb.add_theme_font_size_override("font_size", 16)
+		rb.disabled = not RemoteOps.ok(kind)
+		rb.tooltip_text = RemoteOps.why(kind) if rb.disabled else Ops.w("远程办理，不用跑到现场", "Done from here: no need to go there")
+		rb.mouse_filter = Control.MOUSE_FILTER_STOP
+		rb.pressed.connect(open_remote.bind(kind))
+		remote_box.add_child(rb)
+	add_child(remote_box)
 	sfx = Sfx.new()
 	add_child(sfx)
+	# a new career's terminal opens up as it is needed (28 号): say what just opened
+	var opened := Onboarding.refresh()
+	if not opened.is_empty():
+		say("；".join(opened) if Txt.zh else "; ".join(opened))
+	exchange_button.visible = Career.data.get("market",false) and Onboarding.shown("market_ops")
 	# on site (the left computers), with animation off, and under the tests' stills: up at once
 	if overlay or Txt.anim_level() == 0 or testing:
 		boot_t = BOOT_T
@@ -241,6 +348,16 @@ func _ready() -> void:
 		for k in ["L_market_open_1", "L_market_open_2", "L_market_open_3"]:
 			Copy.say(radio, k)
 	_check_milestone()
+	# the first unowned hulk on the market (26 号; the author's line, empty says nothing)
+	var seen_d: Dictionary = Career.data.get("seen", {})
+	if Career.data.get("market", false) and not seen_d.has("drift_first") and offers().any(func(o): return o.get("owner", "") == "salvage"):
+		seen_d["drift_first"] = true
+		Career.data.seen = seen_d
+		Career.save()
+		Copy.say(radio, "L_drift_first")
+	if Game.loadout_after_course:
+		Game.loadout_after_course = false
+		_after_course_loadout.call_deferred()
 	# a new reputation level since the terminal last opened
 	var lv := Career.level()
 	var seen_lv: Dictionary = Career.data.get("seen", {})
@@ -283,6 +400,8 @@ func _is_test() -> bool:
 # what the market shows: the pinned story contract first (when there is one),
 # then the offers, three cards in all
 func offers() -> Array:
+	if show_trials and not overlay:
+		return _trials()
 	var os: Array = Career.data.get("offers", [])
 	var sj: Dictionary = Career.story_job()
 	if sj.is_empty() or overlay:
@@ -290,6 +409,28 @@ func offers() -> Array:
 	var card := sj.duplicate(true)
 	card.story_card = true
 	return [card] + os.slice(0, 2)
+
+
+# the three trial contracts (G1) as market cards: drawn from their fixed seeds once per visit
+func _trials() -> Array:
+	if _trial_cards.is_empty():
+		for id in Career.TRIALS:
+			var o: Dictionary = Career.trial_offer(str(id))
+			if not o.is_empty():
+				o.trial_card = true
+				_trial_cards.append(o)
+	return _trial_cards
+
+
+func toggle_trials() -> void:
+	if tab != 0 or overlay or not next_job.is_empty():
+		return
+	show_trials = not show_trials
+	_trial_cards = []
+	thumbs.clear()
+	sel = 0
+	deal_t = 0.0
+	sfx.play("switch", Vector2.INF, 0.8)
 
 
 # a shown card's place in the career's own offers (-1 for the story card)
@@ -301,10 +442,10 @@ func items() -> Array:
 	match tab:
 		HOME: return APPS
 		0: return offers()
-		1: return _equip_items()
+		1: return [] # the repair panel's own controls
 		2: return [BERTH[0]]
 		4: return _supply_items()
-		5: return _route_nodes()
+		5: return [] # The growth desk uses native, clipped and focusable controls.
 		7: return _training_rows()
 	return []
 
@@ -313,6 +454,8 @@ func items() -> Array:
 # (scripts/codex.gd), the codex
 func _training_rows() -> Array:
 	var out: Array = [["base"]]
+	for id in Career.TRIALS:
+		out.append(["trial", id])
 	for cls in Codex.CLASSES:
 		out.append(["sp", cls])
 	out.append(["codex"])
@@ -345,10 +488,125 @@ func _app_of(page: int) -> int:
 
 
 func _locked(page: int) -> bool:
+	if page != HOME and Onboard.locks(page):
+		return true
 	return overlay and not between and page != HOME and not page in ON_SITE
+
+# 108 号: a remote job from the terminal: the terminal folds away and its panel opens
+func open_remote(kind: String) -> void:
+	if game_ref == null or not RemoteOps.ok(kind):
+		shake = 1.0
+		say(RemoteOps.why(kind))
+		return
+	var current_game = game_ref
+	if on_close.is_valid(): on_close.call()
+	RemoteOps.open(current_game, kind)
+
+
+func open_exchange(page: String = "") -> void:
+	if not Career.data.get("market",false): return
+	if game_ref != null:
+		var current_game = game_ref
+		if on_close.is_valid(): on_close.call()
+		current_game.open_exchange(page)
+	else:
+		# Keep the real station and its freight service alive behind the market,
+		# including when arriving from an old standalone terminal scene.
+		Game.exchange_requested = true
+		Game.play_career(get_tree())
+
+
+# the pinned and next goals, worked out at most every quarter second (the header and the
+# home screen ask every frame); a click or key press starts a fresh one
+func _goals() -> Array:
+	if _goals_t < 0.0 or t - _goals_t > 0.25:
+		_goals_t = t
+		# 61 号: only what the player pinned; the suggestions spoke in shorthand
+		_goals_cache = Route.goals().filter(func(n): return n.get("pinned", false))
+	return _goals_cache
+
+
+# the main line's step, from the terminal (28 号 Q18): the contracts here; a guide on site
+func _take_main() -> void:
+	var st := Mainline.step()
+	var go := str(st.get("go", "wait"))
+	# nothing on the find-ships page to act on: straight to the star map's sweep (user 2026-10-26)
+	if (go == "scan" or (go == "contracts" and Scan.ON and not Mainline._cards_waiting())) and game_ref != null:
+		var gm = game_ref
+		close()
+		gm.open_star_map.call_deferred("find")
+	elif go == "contracts":
+		set_tab(0)
+	elif go.begins_with("guide:") and game_ref != null:
+		var g = game_ref
+		close()
+		Mainline.take_me.call_deferred(g, go)
+	else:
+		say(str(st.get("text", "")))
+
+
+# a cell or decision of the home screen's overview clicked: where it leads (scripts/ops.gd)
+func ops_go(go: String) -> void:
+	if go.begins_with("tab:"):
+		set_tab(int(go.substr(4)))
+	elif go.begins_with("route:"):
+		var key := go.substr(6)
+		set_tab(5)
+		if tab != 5:
+			return
+		var n := Route.find(key)
+		if not n.is_empty() and n.get("kind", "") == "tier":
+			route_panel.select_category(0)
+		else:
+			route_panel.select_key(key)
+	elif go == "starmap" or go == "scan" or (go == "contracts" and Scan.ON and game_ref != null and not Mainline._cards_waiting()):
+		if go == "contracts":
+			go = "scan"
+		if game_ref == null:
+			return
+		var gm = game_ref
+		close()
+		gm.open_star_map.call_deferred("find" if go == "scan" else "ships")
+	elif go == "drill":
+		# the training run: the tonne handed over at the first click, then the guide (30 号)
+		if game_ref == null or game_ref.get("guide") == null:
+			say(str(Drill.step().text))
+			return
+		var g = game_ref
+		var st := Drill.step()
+		if str(st.go) == "drill":
+			var r := Drill.grant()
+			if not r.ok:
+				_refuse(str(r.get("reason", "")))
+				return
+		close()
+		Mainline.take_me.call_deferred(g, str(Drill.step().go))
+	elif game_ref != null and game_ref.get("guide") != null and Guide.task_for(go) != "":
+		# a site job or a client's gap: the on-site guide takes the operator there (27 号)
+		var t := Guide.task_for(go)
+		var g = game_ref
+		g.guide.begin(t)
+		close()
+		if t == "clients":
+			g.open_exchange.call_deferred("clients")
+		elif t == "buy_feed":
+			g.open_exchange.call_deferred("feed")
+	elif go == "exchange" or go == "clients":
+		if Onboard.stage() == "find":
+			_refuse(Onboard.lock_reason())
+			return
+		if not Career.data.get("market", false):
+			_refuse(Ops.w("交易行在第一单完成后开放。", "The exchange opens after the first job."))
+			return
+		open_exchange("clients" if go == "clients" else "")
+	elif go.begins_with("site:"):
+		say(Ops.site_text(go))
+		sfx.play("menu", Vector2.INF, 0.6)
 
 
 func _lock_reason(page: int) -> String:
+	if Onboard.locks(page):
+		return Onboard.lock_reason()
 	match page:
 		0: return Txt.t("tm_lock_contracts")
 		1: return Txt.t("tm_lock_equip")
@@ -381,12 +639,17 @@ func _slide() -> float:
 func _open_app(i: int) -> void:
 	if i < 0 or i >= APPS.size():
 		return
+	if not Onboarding.page_shown(APPS[i][0]):
+		_refuse(Ops.w("还没开放：用到时会自动出现", "NOT OPEN YET: IT APPEARS WHEN NEEDED"))
+		return
 	set_tab(APPS[i][0])
 
 
 # ---------------------------------------------------------------- input
 
 func _process(dt: float) -> void:
+	if game_ref == null and not get_tree().paused and not settings.is_open:
+		preload("res://scripts/industrial_exchange.gd").advance_career(dt)
 	t += dt
 	_dt = dt
 	_push_t += dt
@@ -427,9 +690,24 @@ func _process(dt: float) -> void:
 		if _item_rect(i).has_point(m):
 			hover = i
 	hover_home = tab != HOME and _home_rect().has_point(m)
+	hover_cell = -1
+	hover_dec = -1
+	if tab == HOME:
+		_ops_t += dt
+		if _ops_t > 0.5:
+			_ops_t = 0.0
+			_ops_cells = []
+			_ops_decs = Ops.problems(game_ref)
+		for i in _ops_cells.size():
+			if _cell_rect(i).has_point(m):
+				hover_cell = i
+		for i in _ops_decs.size():
+			if _dec_rect(i).has_point(m):
+				hover_dec = i
+		hover_next = _next_go_rect().has_point(m) and Mainline.chapter() != ""
 	hover_goal = -1
 	if boot_t >= BOOT_T:
-		for i in Route.MAX_PINS:
+		for i in (Route.MAX_PINS if Onboarding.shown("rep") else 0):
 			if _goal_rect(i).has_point(m):
 				hover_goal = i
 	hover_go = _go_rect().has_point(m)
@@ -459,6 +737,12 @@ func _process(dt: float) -> void:
 
 
 func _gui_input(ev: InputEvent) -> void:
+	if ev is InputEventMouseButton and ev.pressed:
+		_goals_t = -1.0
+	if tab == 2 and ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT and _borrow_rect().has_point(get_local_mouse_position()) and not settings.is_open and leaving < 0.0:
+		_borrow()
+		accept_event()
+		return
 	if settings.is_open or leaving >= 0.0:
 		return
 	if boot_t < BOOT_T and ev is InputEventMouseButton and ev.pressed:
@@ -483,6 +767,25 @@ func _gui_input(ev: InputEvent) -> void:
 			_open_goal(hover_goal)
 		elif hover_home:
 			set_tab(HOME)
+		elif tab == HOME and hover_next:
+			_take_main()
+		elif tab == 0 and next_job.is_empty() and Scan.ON and _scan_rect().has_point(get_local_mouse_position()):
+			if game_ref != null:
+				var gm = game_ref
+				close()
+				gm.open_star_map.call_deferred("find")
+		elif tab == 0 and next_job.is_empty() and _shipmkt_rect().has_point(get_local_mouse_position()) and ShipMarket.open():
+			# 62 号: the hulk market from the find-ships page
+			if game_ref != null:
+				var gm = game_ref
+				close()
+				gm.open_ship_market.call_deferred()
+			else:
+				say(Ops.w("回到船坞后再打开二手船市。", "Open the hulk market from the berth."))
+		elif tab == HOME and hover_cell >= 0 and hover_cell < _ops_cells.size():
+			ops_go(str(_ops_cells[hover_cell].go))
+		elif tab == HOME and hover_dec >= 0 and hover_dec < _ops_decs.size():
+			ops_go(str(_ops_decs[hover_dec].go))
 		elif tab == HOME and hover >= 0:
 			# a tile opens at a click
 			sel = hover
@@ -498,7 +801,12 @@ func _gui_input(ev: InputEvent) -> void:
 			dragging = true
 			_slide_to(ev.position.x)
 		elif hover >= 0:
-			# a second click on a market card takes it; elsewhere a click only chooses
+			# a second click on a market card takes it; elsewhere a click only chooses.
+			# A card whose ship needs a special course goes at the first click (25 号, Q4)
+			if tab == 0 and next_job.is_empty() and _needs_course(hover):
+				sel = hover
+				act()
+				return
 			if sel == hover and (tab == 0 or tab == 5):
 				act()
 			if sel != hover:
@@ -507,6 +815,17 @@ func _gui_input(ev: InputEvent) -> void:
 
 
 func _unhandled_input(ev: InputEvent) -> void:
+	if ev is InputEventKey and ev.pressed:
+		_goals_t = -1.0
+	if ev is InputEventKey and ev.pressed and not ev.echo and ev.physical_keycode == KEY_F8 and Career.data.get("market",false):
+		open_exchange()
+		get_viewport().set_input_as_handled()
+		return
+	var rk := RemoteOps.kind_of_key(ev)
+	if rk != "" and overlay and game_ref != null:
+		open_remote(rk)
+		get_viewport().set_input_as_handled()
+		return
 	if DevPanel.workbench_open and Txt.dev:
 		return
 	if _codex_page != null:
@@ -519,10 +838,19 @@ func _unhandled_input(ev: InputEvent) -> void:
 		return
 	if overlay:
 		get_viewport().set_input_as_handled()
+	if loadout != null:
+		if ev.physical_keycode in [KEY_ENTER, KEY_SPACE, KEY_KP_ENTER]:
+			loadout.go()
+		elif ev.physical_keycode == KEY_ESCAPE:
+			loadout.cancel()
+		get_viewport().set_input_as_handled()
+		return
 	if milestone >= 0.0:
 		if milestone > 1.5:
 			milestone = -1.0
 		return
+	if tab in [1, 3, 5] and ev.physical_keycode in [KEY_LEFT, KEY_RIGHT, KEY_UP, KEY_DOWN, KEY_A, KEY_D, KEY_W, KEY_S, KEY_ENTER, KEY_SPACE]:
+		return # Native growth / repair controls own navigation and confirmation.
 	# the key that opens it on site closes it again
 	if overlay and Keys.pressed(ev, "terminal"):
 		close()
@@ -532,28 +860,28 @@ func _unhandled_input(ev: InputEvent) -> void:
 			_open_app(ev.physical_keycode - KEY_1)
 		KEY_LEFT, KEY_A:
 			if tab == 5:
-				_route_move(-1, 0)
+				pass
 			else:
 				sel = maxi(0, sel - 1)
 			qty = 1
 		KEY_RIGHT, KEY_D:
 			if tab == 5:
-				_route_move(1, 0)
+				pass
 			else:
 				sel = mini(items().size() - 1, sel + 1)
 			qty = 1
 		KEY_UP, KEY_W, KEY_EQUAL, KEY_KP_ADD:
 			if tab == 5:
-				_route_move(0, -1)
+				pass
 			elif tab == HOME:
-				sel = maxi(sel % 4, sel - 4)
+				pass # the home screen's keys are one row
 			else:
 				_bump(1)
 		KEY_DOWN, KEY_S, KEY_MINUS, KEY_KP_SUBTRACT:
 			if tab == 5:
-				_route_move(0, 1)
+				pass
 			elif tab == HOME:
-				sel = mini(items().size() - 1, sel + 4)
+				pass
 			else:
 				_bump(-1)
 		KEY_ENTER, KEY_SPACE:
@@ -561,6 +889,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 		KEY_I:
 			if tab == 0:
 				use_intel(sel)
+		KEY_T:
+			toggle_trials()
+		KEY_L:
+			_borrow()
 		KEY_ESCAPE:
 			# out of an app to the home screen; from there, away
 			if tab != HOME:
@@ -573,21 +905,59 @@ func _unhandled_input(ev: InputEvent) -> void:
 				Wipe.go(tree, func(): tree.change_scene_to_file("res://scenes/title.tscn"))
 		KEY_O:
 			settings.open()
+		KEY_G:
+			# the loadout page between contracts (on site the gear is already on the ship)
+			if (not overlay or between) and tab != 5:
+				_open_loadout(Callable())
 
 
 # the on-site console closes: back to the berth
+# two clicks, as in the pause menu: the first says what is lost
+var end_armed := false
+func _end_contract() -> void:
+	if not end_armed:
+		end_armed = true
+		end_button.text = Txt.t("m_confirm")
+		say(Txt.t("end_warn"))
+		return
+	var g = game_ref
+	close()
+	g.finish_contract(true)
+
+
 func close() -> void:
 	Career.save()
 	if on_close.is_valid():
 		on_close.call()
+	# 91 号: over the berth the screen folds back into the drone (scripts/look.gd frees it)
+	if keep_on_close:
+		process_mode = Node.PROCESS_MODE_DISABLED
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		return
 	queue_free()
 
 
 func set_tab(i: int) -> void:
 	i = clampi(i, HOME, 7)
+	if i == HOME:
+		berth_view = null
+	# 62 号: the finds' trip home is quoted again from today when their page opens (the planets move)
+	if i == 0:
+		for o in Career.data.get("offers", []):
+			if o.get("find", false):
+				var fq := ShipMarket.find_quote(o)
+				if not fq.run.is_empty():
+					o.tow_days = float(fq.run.tof)
 	# on site what can't be used is locked: it says why and stays where it is
 	if _locked(i):
 		_refuse(_lock_reason(i))
+		return
+	# nothing on the find-ships page — no hulk found, no market to buy one at: straight to the star
+	# map's sweep, whichever way the page was asked for (user 2026-10-28: "这个我都说多少次了")
+	if i == 0 and _find_empty() and game_ref != null:
+		var gm = game_ref
+		close()
+		gm.open_star_map.call_deferred("find")
 		return
 	press_t = 0.16
 	tab_press = i
@@ -616,7 +986,19 @@ func set_tab(i: int) -> void:
 	sel = _app_of(was) if tab == HOME and was != HOME else 0
 	if tab == 5:
 		_route_frame = -1
-		sel = _route_start()
+		sel = 0
+	if route_panel != null:
+		route_panel.visible = tab == 5
+		if tab == 5:
+			route_panel.refresh()
+	if repair_panel != null:
+		repair_panel.visible = tab == 1
+		if tab == 1:
+			repair_panel.refresh()
+	if tech_panel != null:
+		tech_panel.visible = tab == 3
+		if tab == 3:
+			tech_panel.refresh()
 	qty = 1
 	repay_amt = _repay_default()
 
@@ -626,7 +1008,7 @@ func _bump(d: int) -> void:
 	if _has_qty():
 		qty = clampi(qty + d, 1, 9)
 	elif tab == 2:
-		repay_amt = clampf(snappedf(repay_amt + d * REPAY_STEP, REPAY_STEP), 0.0, _repay_max())
+		repay_amt = clampf(snappedf(repay_amt + d * REPAY_STEP, REPAY_STEP), 0.0, _slider_max())
 
 
 func _has_qty() -> bool:
@@ -637,6 +1019,41 @@ func _repay_max() -> float:
 	return maxf(0.0, minf(float(Career.data.money), float(Career.data.loan)))
 
 
+# the finance slider sets one amount: paid back (up to what is owed and in hand) or
+# borrowed (up to the credit left)
+func _slider_max() -> float:
+	return maxf(_repay_max(), Career.credit_left())
+
+
+func _borrow_amt() -> float:
+	return minf(repay_amt, Career.credit_left())
+
+
+func _borrow_rect() -> Rect2:
+	var f := _finance_rect()
+	return Rect2(f.position.x + f.size.x * 0.5 + 10, f.end.y - 100, f.size.x * 0.5 - 46, 68)
+
+
+func _borrow() -> void:
+	if tab != 2 or (overlay and not between):
+		return
+	var got := Career.borrow(_borrow_amt())
+	if got <= 0.0:
+		_refuse(Txt.t("tm_borrow_none"))
+		return
+	flash = 1.0
+	sfx.play("stamp", Vector2.INF, 0.9)
+	say(Txt.t("tm_borrowed") % [Pal.money(got), Pal.money(float(Career.data.loan))])
+	repay_amt = minf(repay_amt, _slider_max())
+	if not Career.data.get("seen", {}).has("loan"):
+		var seen: Dictionary = Career.data.get("seen", {})
+		seen["loan"] = true
+		Career.data.seen = seen
+		Copy.say(radio, "L_loan_first")
+	elif Career.credit_left() <= 0.5:
+		Copy.say(radio, "L_loan_limit")
+
+
 func _repay_default() -> float:
 	return minf(20000.0, _repay_max())
 
@@ -644,7 +1061,7 @@ func _repay_default() -> float:
 func _slide_to(x: float) -> void:
 	var r := _slider_rect()
 	var k := clampf((x - r.position.x) / r.size.x, 0.0, 1.0)
-	var mx := _repay_max()
+	var mx := _slider_max()
 	repay_amt = mx if k > 0.995 else minf(mx, snappedf(mx * k, REPAY_STEP))
 
 
@@ -726,7 +1143,7 @@ func act() -> void:
 			var sp := _supply_items()
 			buy(sp[sel] if sel < sp.size() else [], qty)
 		5:
-			_pin(sel)
+			route_panel.purchase()
 		7:
 			_training_act(sel)
 
@@ -753,29 +1170,77 @@ func _training_act(i: int) -> void:
 		"codex":
 			if _codex_page == null:
 				_codex_page = CodexPage.open(self, "", "", func(): _codex_page = null)
+		"trial":
+			if overlay and not between:
+				_refuse(Txt.t("tm_onsite_no"))
+				return
+			if not Career.active().is_empty():
+				_refuse(Txt.t("trial_busy"))
+				return
+			leave_from = _item_rect(i)
+			var o: Dictionary = Career.take_trial(str(row[1]))
+			if o.is_empty():
+				_refuse(Txt.t("tm_none"))
+				return
+			leave_offer = o.duplicate(true)
+			_open_loadout(func():
+				var a: Dictionary = Career.active()
+				Game.start_ship = a.get("ship", "gr7")
+				Game.contract = a
+				Copy.say(radio, "T_contract_signed", "term")
+				SaveGame.load_requested = false
+				sfx.play("stamp", Vector2.INF, 1.0)
+				leaving = 0.0)
+
+
+# the loadout page over the terminal: Enter takes the configuration out and goes on
+# with `go`; Esc keeps the choice and comes back (the contract in hand, if any, waits
+# on the market as the next card)
+func _open_loadout(go: Callable) -> void:
+	if loadout != null:
+		return
+	# a test drives the terminal without the page (the saved loadout went out at signing)
+	if _is_test() and not loadout_in_tests:
+		if go.is_valid():
+			go.call()
+		return
+	loadout = LoadoutPanel.open(self, go, func():
+		if not Career.active().is_empty() and Career.data.get("market", false):
+			next_job = Career.active()
+		thumbs.clear()
+		dealt())
+	sfx.play("switch", Vector2.INF, 0.8)
 
 
 var _codex_page = null
 var _cx_link := {}          # offer card -> its "new on this ship" line (a click opens the codex)
 
 
-# the route page: the chosen node pinned as a goal, or no longer
-func _pin(i: int) -> void:
-	var ns := _route_nodes()
-	if i < 0 or i >= ns.size():
+func take_order(id: String, reward: String, whole: bool) -> void:
+	var why: String = load("res://scripts/work_orders.gd").take(id,reward,whole)
+	if why != "":
+		_refuse(why)
 		return
-	var n: Dictionary = ns[i]
-	if n.done and not Route.pinned(n.key):
-		_refuse(Txt.t("rt_done"))
+	_open_loadout(func():
+		var job: Dictionary = Career.active()
+		Game.start_ship = str(job.ship)
+		Game.contract = job
+		SaveGame.load_requested = false
+		leaving = 0.0)
+
+
+# 104 号: a borrow job from the methods page (the rigging order goes the order's way)
+func take_borrow(id: String) -> void:
+	var why: String = Methods.take(id)
+	if why != "":
+		_refuse(why)
 		return
-	var was := Route.pinned(n.key)
-	if not Route.toggle(n.key):
-		_refuse(Txt.t("gr_save_failed") if Txt.has("gr_save_failed") else "SAVE FAILED")
-		return
-	_route_frame = -1
-	sfx.play("ok" if not was else "switch", Vector2.INF, 0.6)
-	msg = (Txt.t("rt_unpinned") if was else Txt.t("rt_pinned_msg")) % n.name.split(" · ")[0]
-	msg_t = 0.0
+	_open_loadout(func():
+		var job: Dictionary = Career.active()
+		Game.start_ship = str(job.ship)
+		Game.contract = job
+		SaveGame.load_requested = false
+		leaving = 0.0)
 
 
 func take(i: int) -> void:
@@ -783,36 +1248,125 @@ func take(i: int) -> void:
 		return
 	leave_from = _item_rect(i)
 	leave_offer = offers()[i].duplicate(true)
+	if offers()[i].get("trial_card", false):
+		if not Career.active().is_empty():
+			_refuse(Txt.t("trial_busy"))
+			return
+		var ot: Dictionary = Career.take_trial(str(offers()[i].trial))
+		if ot.is_empty():
+			_refuse(Txt.t("tm_none"))
+			return
+		show_trials = false
+		_trial_cards = []
+		_open_loadout(func():
+			var a3: Dictionary = Career.active()
+			Game.start_ship = a3.get("ship", "gr7")
+			Game.contract = a3
+			Copy.say(radio, "T_contract_signed", "term")
+			SaveGame.load_requested = false
+			sfx.play("stamp", Vector2.INF, 1.0)
+			leaving = 0.0)
+		return
 	if offers()[i].get("story_card", false):
 		# the story contract: played as the opening contract it is
 		var a: Dictionary = Career.take_story()
 		if a.is_empty():
 			return
-		Game.contract = a
-		Game.start_ship = a.get("ship", "gr7")
-		SaveGame.load_requested = false
-		sfx.play("stamp", Vector2.INF, 1.0)
-		leaving = 0.0
+		_open_loadout(func():
+			var a2: Dictionary = Career.active()
+			Game.contract = a2
+			Game.start_ship = a2.get("ship", "gr7")
+			SaveGame.load_requested = false
+			sfx.play("stamp", Vector2.INF, 1.0)
+			leaving = 0.0)
 		return
+	if offers()[i].get("find", false):
+		# 62 号: a belt find is sent for, not signed: the tug goes, the card leaves
+		var oid := str(offers()[i].get("id", ""))
+		var r := ShipMarket.tow_find(_offer_index(i))
+		if not r.ok:
+			_refuse(str(r.reason))
+			return
+		sfx.play("stamp", Vector2.INF, 1.0)
+		var paid_how := Pal.money(float(r.fee))
+		if r.get("free", false):
+			paid_how = Ops.w("首趟免费", "the first is free")
+		elif float(r.get("owe", 0.0)) > 0.0:
+			paid_how = Ops.w("先赊着 %s，下次结算扣", "%s on credit till the next settlement") % Pal.money(float(r.owe))
+		say(Ops.w("拖船出发了，拖运费：%s", "The tug is away (tow: %s)") % paid_how)
+		sel = 0
+		# user 2026-10-26: the star map opens on the tug, under way
+		var gm = game_ref
+		if gm != null and overlay:
+			close()
+			gm.watch_tow.call_deferred(oid)
+		return
+	if offers()[i].get("queued", false):
+		if Career.hold(_offer_index(i)):
+			sfx.play("stamp", Vector2.INF, 1.0)
+			say(Txt.t("tm_held"))
+		return
+	var needs := _needs_course(i)
 	var o: Dictionary = Career.accept(_offer_index(i))
 	if o.is_empty():
 		return
-	# a family of ship never trained for: its special courses first, then this contract
-	# (design/新手教程与图鉴定案.md Q10/Q15: the contract is kept, the courses run back to back)
-	var miss := Codex.missing(str(o.ship))
-	if not miss.is_empty():
-		Game.start_courses(miss, "contract")
-		Game.contract = {}
+	# a family of ship never trained for: straight into its special courses; the loadout
+	# page comes after them, then the job (25 号, player 2026-10-24)
+	if needs:
+		var miss := Codex.required(str(Career.active().get("ship", "")))
+		if not miss.is_empty():
+			Game.start_courses(miss, "contract_loadout")
+			Game.contract = {}
+			SaveGame.load_requested = false
+			sfx.play("stamp", Vector2.INF, 1.0)
+			leaving = 0.0
+			return
+	_open_loadout(func():
+		var o2: Dictionary = Career.active()
+		# a family of ship never trained for: its special courses first, then this contract
+		# (design/新手教程与图鉴定案.md Q10/Q15: the contract is kept, the courses run back to back)
+		var miss := Codex.required(str(o2.ship))
+		if not miss.is_empty():
+			Game.start_courses(miss, "contract")
+			Game.contract = {}
+			SaveGame.load_requested = false
+			sfx.play("stamp", Vector2.INF, 1.0)
+			leaving = 0.0
+			return
+		Game.start_ship = o2.ship
+		Game.contract = o2
+		Copy.say(radio, "T_contract_signed", "term")
 		SaveGame.load_requested = false
 		sfx.play("stamp", Vector2.INF, 1.0)
-		leaving = 0.0
+		leaving = 0.0)
+
+
+# a market card whose ship needs a special course first (not the opening, trial or queued cards)
+func _needs_course(i: int) -> bool:
+	if i < 0 or i >= offers().size():
+		return false
+	var o: Dictionary = offers()[i]
+	if o.get("trial_card", false) or o.get("story_card", false) or o.get("queued", false):
+		return false
+	return not Codex.required(str(o.get("ship", ""))).is_empty()
+
+
+# back from the special courses a contract waited on: its loadout page, then the job
+func _after_course_loadout() -> void:
+	var a: Dictionary = Career.active()
+	if a.is_empty():
 		return
-	Game.start_ship = o.ship
-	Game.contract = o
-	Copy.say(radio, "T_contract_signed", "term")
-	SaveGame.load_requested = false
-	sfx.play("stamp", Vector2.INF, 1.0)
-	leaving = 0.0
+	_skip_boot()
+	set_tab(0)
+	_open_loadout(func():
+		var a2: Dictionary = Career.active()
+		Game.start_ship = a2.get("ship", "gr7")
+		Game.contract = a2
+		Copy.say(radio, "T_contract_signed", "term")
+		SaveGame.load_requested = false
+		sfx.play("stamp", Vector2.INF, 1.0)
+		leave_from = Rect2(size * 0.5 - Vector2(200, 120), Vector2(400, 240))
+		leaving = 0.0)
 
 
 # the next opening contract: towed in from here, with what the berth owns now
@@ -821,13 +1375,21 @@ func start_next() -> void:
 		return
 	leave_from = _item_rect(0)
 	leave_offer = {}
-	var a: Dictionary = Career.sign_active()
-	Game.contract = a
-	Game.start_ship = a.get("ship", "gr7")
+	Career.sign_active()
+	# a job already under way (saved on site) goes straight back to it: its gear is on the ship
 	var saved := SaveGame.read(SaveGame.path) if SaveGame.exists() else {}
-	SaveGame.load_requested = not saved.is_empty() and saved.get("job", a).get("id", "") == a.get("id", "")
-	sfx.play("stamp", Vector2.INF, 1.0)
-	leaving = 0.0
+	var resume: bool = not saved.is_empty() and saved.get("job", {}).get("id", "") == Career.active().get("id", "")
+	var depart := func():
+		var a: Dictionary = Career.active()
+		Game.contract = a
+		Game.start_ship = a.get("ship", "gr7")
+		SaveGame.load_requested = resume
+		sfx.play("stamp", Vector2.INF, 1.0)
+		leaving = 0.0
+	if resume:
+		depart.call()
+	else:
+		_open_loadout(depart)
 
 
 # a survey report on an offer: one hidden condition, read out before signing
@@ -887,6 +1449,20 @@ func buy(it: Array, n: int = 1) -> void:
 		repay_amt = minf(repay_amt, _repay_max())
 		_check_milestone()
 		return
+	if it[1] == "facility":
+		# the run-down berth (G2): a facility is repaired, with the parts on the shelf when they fit
+		var with_parts: bool = Repair.parts_for(id).ok
+		var why := Works.order_repair(id, with_parts)
+		if why != "":
+			_refuse(why)
+			return
+		install[id] = 0.0
+		flash = 1.0
+		_buy_fx(sel)
+		say(Txt.t("rp_fixed") % Repair.name_of(id))
+		if repair_panel != null:
+			repair_panel.refresh()
+		return
 	if it[1] != "item" and d.upgrades.has(id):
 		_refuse(Txt.t("tm_owned"))
 		return
@@ -896,6 +1472,9 @@ func buy(it: Array, n: int = 1) -> void:
 	if float(d.money) < price:
 		_refuse(Txt.t("tm_short") % Pal.money(price - float(d.money)))
 		return
+	var before := d.duplicate(true)
+	var before_install := install.duplicate()
+	var before_job_items: Dictionary = game_ref.job.get("items", {}).duplicate() if game_ref != null else {}
 	d.money = float(d.money) - price
 	var desk: Dictionary = d.get("desk", {})
 	desk["buy"] = int(desk.get("buy", 0)) + n
@@ -919,7 +1498,13 @@ func buy(it: Array, n: int = 1) -> void:
 		seen["bought"] = true
 		d.seen = seen
 		Copy.say(radio, "L_first_upgrade")
-	Career.save()
+	if not Career.save():
+		Career.data = before
+		install = before_install
+		if game_ref != null:
+			game_ref.job.items = before_job_items
+		_refuse(Txt.t("gr_save_failed"))
+		return
 	flash = 1.0
 	_buy_fx(sel)
 	say(Txt.t("tm_bought") % (Txt.t(it[3]) + (" ×%d" % n if n > 1 else "")))
@@ -954,8 +1539,10 @@ func _item_rect(i: int) -> Rect2:
 		HOME:
 			return _tile_rect(i)
 		0:
-			var w := (s.x - 120 - 2 * 30) / 3.0
-			return Rect2(60 + i * (w + 30), 200, w, s.y - 336)
+			# 62 号: room for a fourth card; the page's head line (on the way, the hulk market) above
+			var n := float(_market_cols())
+			var w := (s.x - 120 - (n - 1.0) * 30) / n
+			return Rect2(60 + i * (w + 30), 236, w, s.y - 372)
 		1:
 			if i < FITTED:
 				return _callout(i)
@@ -965,109 +1552,133 @@ func _item_rect(i: int) -> Rect2:
 		4:
 			return _supply_rect(i)
 		5:
-			return _route_rect(i)
+			return Rect2(-100, -100, 1, 1)
 		7:
 			var tr := _training_page_rect()
-			return Rect2(tr.position.x + 18, tr.position.y + 78 + i * 56, tr.size.x - 36, 50)
+			var pitch := _train_pitch()
+			return Rect2(tr.position.x + 18, tr.position.y + 78 + i * pitch, tr.size.x - 36, pitch - 4.0)
 	return Rect2(-100, -100, 1, 1)
 
 
-# ---------------------------------------------------------------- the route page's map
-func _route_map() -> Rect2:
-	return Rect2(40, 200, size.x - 80, 584)
-
-
-func _route_rect(i: int) -> Rect2:
-	var ns := _route_nodes()
-	if i < 0 or i >= ns.size():
-		return Rect2(-100, -100, 1, 1)
-	var n: Dictionary = ns[i]
-	var m := _route_map()
-	match int(n.row):
-		Route.ROW_BUY, Route.ROW_BUY + 1:
-			var w := (m.size.x - 40.0 - 12.0 * (Route.PER_ROW - 1)) / Route.PER_ROW
-			return Rect2(m.position.x + 20 + int(n.col) * (w + 12.0), m.position.y + 16 + int(n.row) * 84, w, 74)
-		Route.ROW_SHIP:
-			return Rect2(_ship_pos(int(n.col)) - Vector2(72, 92), Vector2(144, 196))
-		Route.ROW_TIER:
-			return Rect2(_rep_x(float(Growth.REP[int(n.col) + 2])) - 150, m.position.y + 446, 300, 60)
-	return Rect2(-100, -100, 1, 1)
-
-
-func _ship_pos(col: int) -> Vector2:
-	var m := _route_map()
-	var n := maxi(2, Market.POOL.size())
-	return Vector2(m.position.x + 120 + col * (m.size.x - 240) / (n - 1), m.position.y + 296)
-
-
-# the reputation ruler: its four levels evenly apart
-func _rep_x(rep: float) -> float:
-	var m := _route_map()
-	var x0 := m.position.x + 120
-	var w := m.size.x - 240
-	var ticks: Array = Career.LEVELS.map(func(l): return float(l[1]))
-	for j in ticks.size() - 1:
-		if rep <= ticks[j + 1]:
-			return x0 + w * (j + (rep - ticks[j]) / maxf(1.0, ticks[j + 1] - ticks[j])) / (ticks.size() - 1)
-	return x0 + w
-
-
-# where the chosen node starts: the first pin on the map, else the next ship to open
-func _route_start() -> int:
-	var ns := _route_nodes()
-	for k in Route.pins():
-		for i in ns.size():
-			if ns[i].key == k:
-				return i
-	for i in ns.size():
-		if ns[i].kind == "ship" and not ns[i].done:
-			return i
-	return 0
-
-
-# arrows on the map: along a row, or to the nearest node of the next row up or down
-func _route_move(dx: int, dy: int) -> void:
-	var ns := _route_nodes()
-	if ns.is_empty():
-		return
-	sel = clampi(sel, 0, ns.size() - 1)
-	var row: int = ns[sel].row
-	if dx != 0:
-		var best := sel
-		var bx := INF
-		var cx := _route_rect(sel).get_center().x
-		for i in ns.size():
-			if ns[i].row != row or i == sel:
-				continue
-			var x := _route_rect(i).get_center().x
-			if signf(x - cx) == float(dx) and absf(x - cx) < bx:
-				bx = absf(x - cx)
-				best = i
-		sel = best
-		return
-	var r := row + dy
-	while r >= Route.ROW_BUY and r <= Route.ROW_TIER:
-		var best := -1
-		var bd := INF
-		var cx := _route_rect(sel).get_center().x
-		for i in ns.size():
-			if ns[i].row == r and absf(_route_rect(i).get_center().x - cx) < bd:
-				bd = absf(_route_rect(i).get_center().x - cx)
-				best = i
-		if best >= 0:
-			sel = best
-			return
-		r += dy
-
-
-# the home screen's tiles: two rows of four
-func _tile_rect(i: int) -> Rect2:
+# the home screen (2026-10-24, design/…/22_*): the port's four cells across the top, what
+# waits on the operator under them, the eight pages as one row of keys along the bottom
+func _home_area() -> Rect2:
 	var s := size
-	var area := Rect2(40, 204, s.x - 80, s.y - 204 - 64)
-	var gap := 22.0
-	var w := (area.size.x - gap * 3.0) / 4.0
-	var h := (area.size.y - gap) / 2.0
-	return Rect2(area.position.x + (i % 4) * (w + gap), area.position.y + (i / 4) * (h + gap), w, h)
+	return Rect2(40, 200, s.x - 80, s.y - 200 - 76)
+
+
+func _keys_h() -> float:
+	return clampf(_home_area().size.y * 0.27, 110.0, 170.0)
+
+
+func _cells_h() -> float:
+	return clampf(_home_area().size.y * 0.30, 112.0, 200.0)
+
+
+func _cell_rect(i: int) -> Rect2:
+	var area := _home_area()
+	var gap := 18.0
+	# 51 号: as many cells as there are systems, filling the row
+	var n := maxi(1, _ops_cells.size())
+	var w := (area.size.x - gap * (n - 1)) / n
+	return Rect2(area.position.x + i * (w + gap), area.position.y, w, _cells_h())
+
+
+func _decs_box() -> Rect2:
+	var area := _home_area()
+	var y0 := area.position.y + (_next_h() if _ops_cells.is_empty() else _cells_h()) + 16.0
+	return Rect2(area.position.x, y0, area.size.x, area.end.y - _keys_h() - 16.0 - y0)
+
+
+func _bv_rect() -> Rect2:
+	var b := _decs_box()
+	if _ops_decs.is_empty():
+		return b
+	var lw := b.size.x * 0.34
+	return Rect2(b.position.x + lw + 18.0, b.position.y, b.size.x - lw - 18.0, b.size.y)
+
+
+func _dec_rect(i: int) -> Rect2:
+	var b := _decs_box()
+	var top := b.position.y + 34.0
+	# 91 号: beside the berth's section, one column down the left
+	if berth_view != null:
+		var lw := b.size.x * 0.34
+		var h1 := clampf((b.end.y - top - 8.0 * 4) / 5.0, 34.0, 76.0)
+		return Rect2(b.position.x, top + i * (h1 + 8.0), lw, h1)
+	var rows := 3
+	var gap := 8.0
+	var h := clampf((b.end.y - top - gap * (rows - 1)) / rows, 34.0, 76.0)
+	var cw := (b.size.x - 18.0) / 2.0
+	return Rect2(b.position.x + (i % 2) * (cw + 18.0), top + (i / 2) * (h + gap), cw, h)
+
+
+# 61 号 (60 号 Q1/Q8): the home's one card — the next step in plain words, and "take me"
+func _next_rect() -> Rect2:
+	var area := _home_area()
+	return Rect2(area.position.x, area.position.y, area.size.x, _next_h())
+
+
+# 107 号 (user's screenshot: the card's lower half empty): as tall as its words, one line or two
+var _next_two := false
+
+
+func _next_h() -> float:
+	return 152.0 if _next_two else 122.0
+
+
+func _next_go_rect() -> Rect2:
+	var r := _next_rect()
+	return Rect2(r.end.x - 230, r.get_center().y - 30, 200, 60)
+
+
+func _next_step_card(a: float) -> void:
+	var k := Pal.ease_out(clampf((deal_t - 0.02) / 0.3, 0.0, 1.0)) * a
+	if k <= 0.0:
+		return
+	var r := _next_rect()
+	r.position.y += (1.0 - k) * 20.0
+	Hmi.raised(self, r, k)
+	var ch := Mainline.chapter()
+	if ch == "":
+		_text(Ops.w("眼下的事都做完了。", "Everything in hand is done."), r.position + Vector2(34, r.size.y * 0.5 + 10), 26, Pal.ink(0.9 * k), font_s)
+		return
+	_text(Ops.w("下一步", "NEXT"), r.position + Vector2(34, 42), 16, Color(UiSkin.ACCENT, 0.95 * k), font_b)
+	_text(Ops.w("第 %d 章 · %s", "CHAPTER %d · %s") % [Mainline.index(ch), Mainline.name_of(ch)], r.position + Vector2(110, 42), 16, Pal.ink(0.6 * k), font_b)
+	var st := Mainline.step(ch)
+	var words := str(st.get("text", ""))
+	_next_two = font_s.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x > r.size.x - 320
+	draw_multiline_string(font_s, r.position + Vector2(34, 86), words, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 320, 26, 2, Pal.ink(0.97 * k), TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_GRAPHEME_BOUND)
+	if str(st.get("go", "wait")) != "wait":
+		var g := _next_go_rect()
+		g.position.y += (1.0 - k) * 20.0
+		Hmi.push(self, font_s, g, Ops.w("带我去", "TAKE ME"), true, 1.0 if hover_next else 0.0, k, t, 0.0, "", "")
+
+
+# a new career's home screen before the market opens (28 号): what to do first, plainly
+func _onboard_welcome(s: Vector2, a: float) -> void:
+	var r := Rect2(_cell_rect(0).position, Vector2(_home_area().size.x, _decs_box().end.y - _cell_rect(0).position.y))
+	var k := Pal.ease_out(clampf((deal_t - 0.05) / 0.3, 0.0, 1.0)) * a
+	Hmi.sunk(self, r, k)
+	var y := r.position.y + 70.0
+	_text(Ops.w("七号坞 · 回收权使用中", "BERTH 07 · UNDER SALVAGE CLAIM"), Vector2(r.position.x + 40, y), 30, Pal.ink(0.95 * k), font_s)
+	var lines := [
+		Ops.w("你的拖船从小行星带拖回了漂流船。拆下来的东西换成钱，钱用来把七号坞修起来。", "Your tug has towed drifting hulks in from the belt. What you strip becomes money; the money mends Berth 07."),
+		Ops.w("第一步：按 1 打开合同，接下等着进坞的那艘船。", "First: press 1 for the contracts and take the hulk that is waiting."),
+		Ops.w("终端里其他的东西，用到时会一样一样亮起来。", "The rest of this terminal lights up as you need it."),
+	]
+	for i in lines.size():
+		_text(lines[i], Vector2(r.position.x + 40, y + 56 + i * 34), 18, Pal.ink((0.85 if i != 1 else 1.0) * k), font_b if i == 1 else font)
+
+
+# the home screen's keys: one row of eight
+func _tile_rect(i: int) -> Rect2:
+	var area := _home_area()
+	var gap := 14.0
+	var n := float(APPS.size())
+	var w := (area.size.x - gap * (n - 1.0)) / n
+	var h := _keys_h()
+	return Rect2(area.position.x + i * (w + gap), area.end.y - h, w, h)
 
 
 # the consumables page: four tiles, two by two, left of the detail
@@ -1081,7 +1692,14 @@ func _supply_rect(i: int) -> Rect2:
 
 func _training_page_rect() -> Rect2:
 	var s := size
-	return Rect2(s.x * 0.5 - 520, 200, 1040, s.y - 336)
+	return Rect2(s.x * 0.5 - 520, 200, 1040, s.y - 270)
+
+
+# the training page's rows fit between its plate and its button, however many there are
+func _train_pitch() -> float:
+	var tr := _training_page_rect()
+	var area := tr.size.y - 78.0 - 96.0
+	return clampf(area / maxf(1.0, _training_rows().size()), 34.0, 56.0)
 
 
 # the header's way home
@@ -1183,19 +1801,20 @@ func _go_rect() -> Rect2:
 	var s := size
 	match tab:
 		0:
-			var w := (s.x - 120 - 2 * 30) / 3.0
+			var n := float(_market_cols())
+			var w := (s.x - 120 - (n - 1.0) * 30) / n
 			return Rect2(go_x.x, s.y - 122, w, 62)
 		1, 4:
 			var r := _detail_rect()
 			return Rect2(r.position.x + 32, r.end.y - 100, r.size.x - 64, 68)
 		2:
 			var f := _finance_rect()
-			return Rect2(f.position.x + 36, f.end.y - 100, f.size.x - 72, 68)
+			return Rect2(f.position.x + 36, f.end.y - 100, f.size.x * 0.5 - 46, 68)
 		5:
 			return Rect2(s.x * 0.5 - 320, s.y - 118, 640, 60)
 		7:
 			var tr := _training_page_rect()
-			return Rect2(tr.position.x + 40, tr.end.y - 110, tr.size.x - 80, 72)
+			return Rect2(tr.position.x + 40, tr.end.y - 84, tr.size.x - 80, 68)
 	return Rect2(-100, -100, 1, 1)
 
 
@@ -1218,7 +1837,8 @@ func _wrap(s: String, pos: Vector2, w: float, size_px: int, col: Color, lines: i
 func _draw() -> void:
 	var s := size
 	var lv := clampf(leaving / 0.45, 0.0, 1.0) if leaving >= 0.0 else 0.0
-	draw_rect(Rect2(Vector2.ZERO, s), Hmi.BG)
+	# 50 号: the ground of the new look, its warm glow drifting and a light under the pointer
+	UiSkin.draw_ground(self, s, t, get_local_mouse_position())
 	# the self-test: the power line first, then each part as it comes up
 	Hmi.lamp_test = boot_t > 0.55 and boot_t < 0.95
 	if boot_t < 0.3:
@@ -1233,18 +1853,21 @@ func _draw() -> void:
 	var pin := _page_in()
 	if pin < 1.0:
 		var po := _page_out()
-		if po < 1.0 and prev_tab != 3:
+		if po < 1.0 and prev_tab not in [3, 5]:
 			var keep := [tab, sel, deal_t]
 			tab = prev_tab
 			sel = prev_sel
 			deal_t = 10.0
-			draw_set_transform(Vector2(-switch_dir * _slide() * po, 0.0))
+			_page_off = Vector2(-switch_dir * _slide() * po, 0.0)
+			draw_set_transform(_page_off)
 			_page(s, ua * (1.0 - po), false)
 			tab = keep[0]
 			sel = keep[1]
 			deal_t = keep[2]
-		draw_set_transform(Vector2(switch_dir * _slide() * (1.0 - pin), 0.0))
+		_page_off = Vector2(switch_dir * _slide() * (1.0 - pin), 0.0)
+		draw_set_transform(_page_off)
 		_page(s, ua * pin, true)
+		_page_off = Vector2.ZERO
 		draw_set_transform(Vector2.ZERO)
 	else:
 		_page(s, ua, true)
@@ -1266,13 +1889,13 @@ func _page(s: Vector2, a: float, with_focus: bool) -> void:
 		0:
 			_market(s, a)
 		1:
-			_shop(s, a)
+			pass # Native RepairPanel draws this page.
 		2:
 			_berth(s, a)
 		4:
 			_supplies(s, a)
 		5:
-			_route_page(s, a)
+			pass # Native RoutePanel draws this page.
 		6:
 			_radio_page(s, a)
 		7:
@@ -1348,7 +1971,16 @@ func _focus_frame(a: float) -> void:
 	var r := Rect2(focus[0].x, focus[1].x, focus[2].x, focus[3].x)
 	var k := Pal.ease_out(clampf((deal_t - 0.08) / 0.3, 0.0, 1.0)) * a
 	var dim := tab == HOME and _locked(APPS[clampi(sel, 0, APPS.size() - 1)][0])
-	draw_rect(r, Pal.heat(k, 1.4) if not dim else Pal.heat(0.5 * k, 1.0), false, 4.0 if tab in [HOME, 0] else 3.0)
+	# 50 号: a soft rounded ring in the accent, glowing a little
+	var ring := StyleBoxFlat.new()
+	ring.draw_center = false
+	ring.set_corner_radius_all(16)
+	ring.set_border_width_all(2)
+	ring.anti_aliasing = true
+	ring.border_color = Color(UiSkin.ACCENT.r, UiSkin.ACCENT.g, UiSkin.ACCENT.b, k * (0.5 if dim else 1.0))
+	ring.shadow_color = Color(UiSkin.ACCENT.r, UiSkin.ACCENT.g, UiSkin.ACCENT.b, 0.25 * k)
+	ring.shadow_size = 14
+	draw_style_box(ring, r)
 
 
 # the skill book is a control of its own: it slides with the pages
@@ -1399,12 +2031,8 @@ func _self_test(s: Vector2) -> void:
 # the room the terminal sits in: a faint dot field drifting, a slow scan, dark corners
 # the console the terminal sits in: plate seams, a slow scan
 func _backdrop(s: Vector2, a: float) -> void:
-	var gx := 0.0
-	while gx < s.x:
-		draw_line(Vector2(gx, 0), Vector2(gx, s.y), Color(1, 1, 1, 0.018 * a), 1.0)
-		gx += 160.0
-	var sy := fposmod(t * 70.0, s.y + 200.0) - 100.0
-	draw_rect(Rect2(0, sy, s.x, 1), Pal.ink(0.02 * a))
+	# 50 号: the ground is UiSkin's now; only a faint rule under the header
+	draw_line(Vector2(40, 116), Vector2(s.x - 40, 116), Color(1, 1, 1, 0.06 * a), 1.0)
 
 
 func _crumb(a: float) -> void:
@@ -1418,7 +2046,6 @@ func _crumb(a: float) -> void:
 	if pin < 1.0:
 		draw_string(font_s, tp + Vector2(-switch_dir * 16.0 * _page_out(), 0), _where(prev_tab), HORIZONTAL_ALIGNMENT_LEFT, pr.size.x - 24, 20, Color(0.95, 0.96, 1.0, ka * (1.0 - _page_out())))
 	draw_string(font_s, tp + Vector2(switch_dir * 16.0 * (1.0 - pin), 0), _where(tab), HORIZONTAL_ALIGNMENT_LEFT, pr.size.x - 24, 20, Color(0.95, 0.96, 1.0, ka * pin))
-	Hmi.lamp(self, Vector2(pr.end.x - 22, pr.get_center().y), Pal.heat(1.0, 1.6), true, ka, 6.0)
 	# the way home fades in and out with the pages that have it
 	var hka := ka
 	if pin < 1.0 and (tab == HOME) != (prev_tab == HOME):
@@ -1431,7 +2058,8 @@ func _crumb(a: float) -> void:
 			Hmi.raised(self, hr, hka, Hmi.PANEL_HI if hover_home else Hmi.PANEL)
 		_text(Txt.t("tm_home_btn"), hr.position + Vector2(18, 30), 18, Pal.ink(0.95 * hka), font_s)
 		_text("ESC", Vector2(hr.end.x - 14, hr.position.y + 30), 14, Pal.ink(0.5 * hka), font_b, 1)
-	_goal_strip(ka)
+	if Onboarding.shown("rep") and tab != HOME:
+		_goal_strip(ka)
 
 
 # the right of the breadcrumb row: the one or two goals, on every page
@@ -1454,14 +2082,27 @@ func _goal_strip(ka: float) -> void:
 	var r := _goal_box()
 	Hmi.sunk(self, r, ka)
 	_text(Txt.t("rt_goals"), Vector2(r.position.x + 18, r.position.y + 29), 14, Pal.ink(0.55 * ka), font_b)
-	var gs := Route.goals()
+	var gs := _goals()
+	# the main line takes the first place (28 号 Q17); the career's own goals follow
+	var main := Mainline.chapter()
+	var off := 0
+	if main != "":
+		off = 1
+		var g0 := _goal_rect(0)
+		if hover_goal == 0:
+			draw_rect(g0.grow(-3), Pal.ink(0.05 * ka))
+		Hmi.lamp(self, Vector2(g0.position.x + 8, g0.get_center().y), Pal.heat(ka, 1.5), true, ka, 5.0)
+		var nm := Ops.w("主线 %d · %s", "MAIN %d · %s") % [Mainline.index(main), Mainline.name_of(main)]
+		draw_string(font_s, Vector2(g0.position.x + 22, g0.position.y + 22), nm, HORIZONTAL_ALIGNMENT_LEFT, g0.size.x - 40, 15, Pal.ink(0.95 * ka))
+		draw_string(font_b, Vector2(g0.position.x + 22, g0.position.y + 39), str(Mainline.step(main).text), HORIZONTAL_ALIGNMENT_LEFT, g0.size.x - 40, 12, Pal.heat(0.9 * ka, 1.2))
 	if gs.is_empty():
-		_text(Txt.t("rt_all_done"), Vector2(r.position.x + 132, r.position.y + 29), 15, Pal.tint(Pal.FLUID, 0.9 * ka, 1.1), font_b)
+		if off == 0:
+			_text(Txt.t("rt_all_done"), Vector2(r.position.x + 132, r.position.y + 29), 15, Pal.tint(Pal.FLUID, 0.9 * ka, 1.1), font_b)
 		return
-	for i in gs.size():
+	for i in mini(gs.size(), Route.MAX_PINS - off):
 		var n: Dictionary = gs[i]
-		var g := _goal_rect(i)
-		var hk := 1.0 if i == hover_goal else 0.0
+		var g := _goal_rect(i + off)
+		var hk := 1.0 if i + off == hover_goal else 0.0
 		if hk > 0.0:
 			draw_rect(g.grow(-3), Pal.ink(0.05 * ka))
 		var pin: bool = n.get("pinned", false)
@@ -1470,6 +2111,11 @@ func _goal_strip(ka: float) -> void:
 		Hmi.lamp(self, Vector2(g.position.x + 8, g.get_center().y), col if pin else Pal.ink(0.4 * ka), pin, ka, 5.0)
 		var name: String = ("★ " if pin else "") + str(n.name).split(" · ")[0]
 		var miss := Route.missing(n)
+		if n.ready and not n.done:
+			miss = Growth.text(["可升级", "UPGRADE"]) if n.kind == "skill" or n.get("purchase_kind", "") == "upgrade" else Growth.text(["可建设", "BUILD"])
+		# a narrow strip (1280): the name and its gauge only
+		if g.size.x < 240.0:
+			miss = ""
 		var mw := font_b.get_string_size(miss, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
 		# no room for every want: the first one
 		if mw > g.size.x * 0.5:
@@ -1482,48 +2128,54 @@ func _goal_strip(ka: float) -> void:
 
 # a goal in the header clicked: its node on the route page (a skill: the skill book)
 func _open_goal(i: int) -> void:
-	var gs := Route.goals()
+	var gs := _goals()
+	if Mainline.chapter() != "":
+		if i == 0:
+			_take_main()
+			return
+		i -= 1
 	if i < 0 or i >= gs.size():
 		return
 	var n: Dictionary = gs[i]
-	if n.kind == "skill":
-		set_tab(3)
-		return
 	if tab != 5:
 		set_tab(5)
-	var ns := _route_nodes()
-	for j in ns.size():
-		if ns[j].key == n.key:
-			sel = j
+	if n.kind == "tier":
+		route_panel.select_category(0)
+	else:
+		route_panel.select_key(str(n.key))
 
 
 func _top(s: Vector2, a: float) -> void:
 	var d := Career.data
 	var ka := a * _bk(0.25, 0.6)
-	Hmi.raised(self, Rect2(0, 0, s.x, 116), ka, Hmi.HEAD)
+	# 50 号: no header slab; the title and the figures stand on the ground
 	var company: String = str(Career.data.get("company", ""))
 	var pr := Rect2(40, 22, 420, 72)
 	Hmi.plate(self, font_s, pr, Txt.t("tm_title"), 28, ka)
-	_text((company if company != "" else "BERTH 07") + "  ·  CHARON-DISPATCH", Vector2(pr.end.x + 24, 50), 14, Pal.ink(0.6 * ka), font_b)
 	var onsite := overlay and not between
-	Hmi.lamp(self, Vector2(pr.end.x + 32, 76), Hmi.warn_col() if onsite else Hmi.ok_col(), true, ka, 6.0)
-	_text(Txt.t("tm_onsite_short") if onsite else Txt.t("tm_online"), Vector2(pr.end.x + 48, 82), 15, Pal.heat(0.95 * ka, 1.2) if onsite else Pal.ink(0.75 * ka), font_b)
+	if s.x >= 1600.0:
+		_text((company if company != "" else "BERTH 07") + "  ·  CHARON-DISPATCH", Vector2(pr.end.x + 24, 50), 14, Pal.ink(0.6 * ka), font_b)
+		Hmi.lamp(self, Vector2(pr.end.x + 32, 76), Hmi.warn_col() if onsite else Hmi.ok_col(), true, ka, 6.0)
+		_text(Txt.t("tm_onsite_short") if onsite else Txt.t("tm_online"), Vector2(pr.end.x + 48, 82), 15, Pal.heat(0.95 * ka, 1.2) if onsite else Pal.ink(0.75 * ka), font_b)
 	var loan_c := Pal.heat(1.0, 1.3) if float(d.loan) > 0.0 else Pal.ink(0.98)
 	var mc := Pal.ink(0.98).lerp(Pal.ink(1.0, 1.5) if money_flash > 0.0 else Pal.heat(1.0, 1.4), absf(money_flash))
-	var cols := [
-		[Txt.t("tm_money"), Pal.money(money_roll.shown), mc, Hmi.ok_col()],
-		[Txt.t("tm_loan"), Pal.money(loan_roll.shown), loan_c.lerp(Pal.ink(1.0, 1.5), maxf(0.0, -loan_flash)), Hmi.warn_col() if float(d.loan) > 0.0 else Hmi.ok_col()],
-		[Txt.t("tm_due"), Pal.money(minf(Career.INSTALLMENT, float(d.loan)) + snappedf(float(d.loan) * Career.INTEREST, 1.0)), Pal.ink(0.9), Hmi.ok_col()],
-		[Txt.t("tm_rep"), Txt.t("rep_" + Career.level()), Pal.ink(0.98), Hmi.ok_col()],
-	]
+	var cols := [[Txt.t("tm_money"), Pal.money(money_roll.shown), mc, Hmi.ok_col()]]
+	# a new career's header grows with it (28 号): the loan once it matters, the reputation once earned
+	if float(d.get("loan", 0.0)) > 0.0:
+		cols.append([Txt.t("tm_loan"), Pal.money(loan_roll.shown), loan_c.lerp(Pal.ink(1.0, 1.5), maxf(0.0, -loan_flash)), Hmi.warn_col() if float(d.loan) > 0.0 else Hmi.ok_col()])
+		cols.append([Txt.t("tm_due"), Pal.money(minf(Career.INSTALLMENT, float(d.loan)) + snappedf(float(d.loan) * Career.INTEREST, 1.0)), Pal.ink(0.9), Hmi.ok_col()])
+	if Onboarding.shown("rep"):
+		cols.append([Txt.t("tm_rep"), Txt.t("rep_" + Career.level()), Pal.ink(0.98), Hmi.ok_col()])
+	# narrow screens (1280): the four boxes give way so the title plate stays clear
+	var rw := clampf((s.x - pr.end.x - 64.0) / cols.size(), 170.0, 296.0)
 	for i in cols.size():
-		var r := Rect2(s.x - 40 - (cols.size() - i) * 296 + 16, 18, 280, 80)
+		var r := Rect2(s.x - 40 - (cols.size() - i) * rw + 16, 18, rw - 16, 80)
 		var ck := a * _bk(0.35 + i * 0.08, 0.7 + i * 0.08)
 		if ck <= 0.0:
 			continue
 		Hmi.readout(self, font_s, font_b, r, cols[i][0], cols[i][1], cols[i][2], cols[i][3], ck)
 	# reputation: how far to the next level, as a gauge under the level box
-	var nx := Career.to_next()
+	var nx := Career.to_next() if Onboarding.shown("rep") else 0
 	if nx > 0:
 		var lo := 0
 		var hi := 0
@@ -1534,7 +2186,7 @@ func _top(s: Vector2, a: float) -> void:
 				hi = int(l[1])
 		var pk := clampf(float(int(d.rep) - lo) / maxf(1.0, hi - lo), 0.0, 1.0)
 		var gk := a * _bk(0.7, 1.0)
-		Hmi.gauge(self, Rect2(s.x - 40 - 296 + 16, 101, 280, 10), _smooth("rep", pk), Pal.heat(1.0, 1.3), gk, 12)
+		Hmi.gauge(self, Rect2(s.x - 40 - rw + 16, 101, rw - 16, 10), _smooth("rep", pk), Pal.heat(1.0, 1.3), gk, 12)
 		_text(Txt.t("tm_rep_next") % nx, Vector2(s.x - 40, 126), 12, Pal.ink(0.5 * gk), font, 1)
 
 
@@ -1555,13 +2207,52 @@ func _stars(n: int, p: Vector2, a: float, delay: float) -> void:
 			draw_polyline(pts, Pal.ink(0.25 * a), 1.0, true)
 
 
+# 62 号: three or four cards across the find-ships page
+func _market_cols() -> int:
+	return clampi(offers().size(), 3, 4)
+
+
+func _shipmkt_rect() -> Rect2:
+	return Rect2(306, 186, 230, 42) if Scan.ON else Rect2(60, 186, 230, 42)
+
+
+# the find-ships page would only say "sweep the belt": no card, no next job, no hulk market open
+func _find_empty() -> bool:
+	return Scan.ON and next_job.is_empty() and not show_trials and offers().is_empty() and not ShipMarket.open()
+
+
+# 68 号: the star map's sweep, the way to new hulks
+func _scan_rect() -> Rect2:
+	return Rect2(60, 186, 230, 42)
+
+
+# the find-ships page's head: the hulk market's key, and the hulks on their way home
+func _find_head(a: float) -> void:
+	var r := _shipmkt_rect()
+	var open := ShipMarket.open()
+	if Scan.ON:
+		var sr := _scan_rect()
+		Hmi.push(self, font_s, sr, Ops.w("星图扫描找船", "SWEEP THE BELT"), true, 1.0 if sr.has_point(get_local_mouse_position()) else 0.0, a, t, 0.0, "", Keys.label("starmap"))
+	Hmi.push(self, font_s, r, Ops.w("二手船市", "HULK MARKET"), open, 1.0 if open and r.has_point(get_local_mouse_position()) else 0.0, a, t, 0.0, "", "")
+	var way := ShipMarket.on_the_way()
+	var line := Ops.w("贸易区修好后才能去二手船市买船。", "The hulk market opens once the trade district is mended.") if not open else ""
+	if not way.is_empty():
+		line = Ops.w("在路上 %d 艘，最快的约 %d 秒后到港。", "%d on the way; the first in about %d s.") % [way.size(), int(float(way[0].left_s))]
+	if line != "":
+		_text(line, Vector2(r.end.x + 24, r.position.y + 18), 16, Pal.ink(0.75 * a), font_b)
+	# 72 号: the tug yard and the tugs
+	_text(TugYard.status(), Vector2(r.end.x + 24, r.position.y + 40), 14, Pal.ink(0.6 * a), font)
+
+
 func _market(s: Vector2, a: float) -> void:
 	if not next_job.is_empty():
 		_next_card(s, a)
 		return
+	if not (overlay and not between):
+		_find_head(a)
 	var os := offers()
 	if os.is_empty():
-		_text(Txt.t("tm_none"), Vector2(s.x * 0.5, s.y * 0.45), 18, Pal.ink(0.6 * a), font, 0)
+		_text(Ops.w("还没找到船。点上面“星图扫描找船”，去小行星带扫一扫。", "No hulks found yet. Sweep the belt on the star map.") if Scan.ON else Txt.t("tm_none"), Vector2(s.x * 0.5, s.y * 0.45), 18, Pal.ink(0.6 * a), font, 0)
 		return
 	# what the cards are compared by: the net, and the net per minute of standard time
 	var best_net := -1
@@ -1573,6 +2264,9 @@ func _market(s: Vector2, a: float) -> void:
 			best_net = i
 		if best_rate < 0 or _rate(os[i]) > _rate(os[best_rate]):
 			best_rate = i
+	# the way to the trial contracts and back (G1): a line over the cards
+	if not overlay:
+		_text(Txt.t("tm_trials_back" if show_trials else "tm_trials_hint"), Vector2(s.x - 60, 190), 14, Pal.heat(0.85 * a, 1.1) if show_trials else Pal.ink(0.55 * a), font_b, 1)
 	for i in os.size():
 		var o: Dictionary = os[i]
 		var r := _item_rect(i)
@@ -1585,6 +2279,9 @@ func _market(s: Vector2, a: float) -> void:
 		if o.get("story_card", false):
 			_story_card(o, r, k, hk, sk)
 			continue
+		if o.get("trial_card", false):
+			_trial_card(o, r, k, hk, sk)
+			continue
 		# dealt from below, lifted on hover; the chosen one framed in heat
 		r.position.y += (1.0 - k) * 36.0 - hk * 6.0
 		Hmi.raised(self, r, k, Hmi.PANEL.lerp(Hmi.PANEL_HI, maxf(hk * 0.6, sk)))
@@ -1596,7 +2293,9 @@ func _market(s: Vector2, a: float) -> void:
 		var scope: String = o.get("scope", "full")
 		# 1 · the plate: what kind of job; its lamp heat for a part job
 		var pl := Rect2(r.position.x + 18, y + 18, r.size.x - 36, 46)
-		Hmi.plate(self, font_s, pl, Txt.t("sc_" + scope), 21, k)
+		var drift: bool = o.get("owner", "") == "salvage"
+		var bought: bool = o.get("bought", false)
+		Hmi.plate(self, font_s, pl, Txt.t(("sc_found" if o.get("found", false) else "sc_bought") if bought else ("sc_drift" if drift else "sc_" + scope)), 21, k)
 		Hmi.lamp(self, Vector2(pl.end.x - 22, pl.get_center().y), Hmi.warn_col() if scope != "full" else Hmi.ok_col(), true, k, 7.0)
 		_text(Txt.t("tm_contract_n") % o.id, Vector2(pl.end.x - 44, pl.get_center().y + 6), 13, Pal.ink(0.5 * k), font, 1)
 		_text("%s  ·  %s  ·  %d m" % [o.reg, (ty.name[0] if Txt.zh else ty.name[1]), int(ty.get("length", 0))], Vector2(x, y + 98), 18, Pal.ink(0.9 * row_k.call(0)), font_s)
@@ -1633,6 +2332,8 @@ func _market(s: Vector2, a: float) -> void:
 			badges.append(Txt.t("tm_best_net"))
 		if i == best_rate and os.size() > 1:
 			badges.append(Txt.t("tm_best_rate"))
+		if o.get("held", false):
+			badges.append(Txt.t("tm_held_badge"))
 		var bx := x + w
 		for bdg in badges:
 			var bw := font_s.get_string_size(bdg, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 18.0
@@ -1641,7 +2342,7 @@ func _market(s: Vector2, a: float) -> void:
 			_text(bdg, Vector2(bx + 9, y + 398), 14, Color(0.03, 0.05, 0.03, rk2), font_s)
 			bx -= 8.0
 		# 4 · what the job is, on the ship
-		var task := Market.scope_text(o) if scope != "full" else Txt.t("tm_task_full")
+		var task := Market.scope_text(o) if scope != "full" else Txt.t("tm_task_drift" if drift else "tm_task_full")
 		c_wrap(task, Vector2(x, y + 440), w, 15, Pal.ink(0.88 * row_k.call(3)))
 		if Market.goal_text(o) != "":
 			_text(Market.goal_text(o), Vector2(x, y + 486), 13, Pal.tint(Pal.FLUID, 0.9 * row_k.call(3), 1.1), font_b)
@@ -1649,7 +2350,7 @@ func _market(s: Vector2, a: float) -> void:
 		var due := Career.due_for(o)
 		var lines := [
 			[Txt.t("tm_value"), Pal.money(float(o.value))],
-			[Txt.t("tm_fee"), "−" + Pal.money(float(o.fee))],
+			[Txt.t("tm_fee_bought" if bought else ("tm_fee_drift" if drift else "tm_fee")), ("−" + Pal.money(float(o.get("paid", 0.0)))) if bought else "−" + Pal.money(float(o.fee))],
 			[Txt.t("tm_due_c"), "−" + Pal.money(due)],
 		]
 		for jx in lines.size():
@@ -1657,13 +2358,15 @@ func _market(s: Vector2, a: float) -> void:
 			var jk: float = row_k.call(4 + jx)
 			_text(lines[jx][0], Vector2(x, yy), 14, Pal.ink(0.6 * jk), font)
 			_text(lines[jx][1], Vector2(r.end.x - 28, yy), 16, Pal.ink(0.92 * jk), font_s, 1)
-		if float(Career.data.money) < float(o.fee):
+		if o.get("queued", false):
+			_text(Txt.t("tm_queued"), Vector2(x, y + 588), 13, Pal.heat(0.9 * k, 1.1), font_b)
+		elif float(Career.data.money) < float(o.fee):
 			_text(Txt.t("tm_borrow") % Pal.money(float(o.fee) - float(Career.data.money)), Vector2(x, y + 588), 13, Pal.heat(0.9 * k, 1.1), font)
 		# 6 · the paperwork: why it was scrapped, what the logs say, what is declared
 		var pk: float = row_k.call(8)
 		draw_line(Vector2(x, y + 596), Vector2(x + w, y + 596), Color(0, 0, 0, 0.5 * pk), 2.0)
-		_text(Txt.t("tm_reason"), Vector2(x, y + 620), 13, Pal.ink(0.55 * pk), font)
-		_text(Copy.slot(o.reason), Vector2(x + 96, y + 620), 14, Pal.ink(0.8 * pk), font)
+		_text(Txt.t("tm_origin" if drift else "tm_reason"), Vector2(x, y + 620), 13, Pal.ink(0.55 * pk), font)
+		_text((Txt.t("tm_found_v" if o.get("found", false) else "tm_bought_v") % Pal.money(float(o.get("paid", 0.0)))) if bought else (Txt.t("tm_drift_v") % int(o.get("drift_years", 0)) if drift else Copy.slot(o.reason)), Vector2(x + 96, y + 620), 14, Pal.ink(0.8 * pk), font)
 		_text(Txt.t("tm_logs"), Vector2(x, y + 646), 13, Pal.ink(0.55 * pk), font)
 		var ly := y + 646.0
 		for li in mini(2, o.logs.size()):
@@ -2120,16 +2823,18 @@ func _berth(s: Vector2, a: float) -> void:
 	var rows := [
 		[Txt.t("tm_fin_loan"), loan, loan2],
 		[Txt.t("tm_fin_inst"), minf(Career.INSTALLMENT, loan), minf(Career.INSTALLMENT, loan2)],
-		[Txt.t("tm_fin_int"), snappedf(loan * Career.INTEREST, 1.0), snappedf(loan2 * Career.INTEREST, 1.0)],
-		[Txt.t("tm_fin_due"), minf(Career.INSTALLMENT, loan) + snappedf(loan * Career.INTEREST, 1.0), minf(Career.INSTALLMENT, loan2) + snappedf(loan2 * Career.INTEREST, 1.0)],
+		[Txt.t("tm_fin_int"), snappedf(loan * Career.rate(), 1.0), snappedf(loan2 * Career.rate(), 1.0)],
+		[Txt.t("tm_fin_due"), minf(Career.INSTALLMENT, loan) + snappedf(loan * Career.rate(), 1.0), minf(Career.INSTALLMENT, loan2) + snappedf(loan2 * Career.rate(), 1.0)],
 		[Txt.t("tm_fin_funds"), float(d.money), float(d.money) - amt],
+		[Txt.t("tm_fin_credit"), Career.credit_left(), Career.credit_left() + amt],
 	]
 	# the slider: how much to pay now
 	var sl := _slider_rect()
 	_text(Txt.t("tm_fin_amt"), Vector2(x, sl.position.y - 26), 15, Pal.ink(0.6 * k0), font)
-	_text(Pal.money(amt), Vector2(sl.end.x, sl.position.y - 22), 26, Pal.ink(0.96 * k0), font_b, 1)
-	var mx := _repay_max()
-	var f := amt / mx if mx > 0.0 else 0.0
+	_text(Pal.money(repay_amt), Vector2(sl.end.x, sl.position.y - 22), 26, Pal.ink(0.96 * k0), font_b, 1)
+	var mx := _slider_max()
+	var f := repay_amt / mx if mx > 0.0 else 0.0
+	_text(Txt.t("tm_fin_rate") % (Career.rate() * 100.0), Vector2(x + w * 0.5, sl.position.y - 22), 14, Pal.ink(0.55 * k0), font, 0)
 	Hmi.gauge(self, Rect2(sl.position.x, sl.position.y - 8, sl.size.x, 24), f, Pal.heat(1.0, 1.3), k0, 20)
 	var kn := Vector2(sl.position.x + sl.size.x * f, sl.get_center().y)
 	var kr := Rect2(kn - Vector2(12, 20), Vector2(24, 40))
@@ -2157,6 +2862,10 @@ func _berth(s: Vector2, a: float) -> void:
 	if loan <= 0.0:
 		Hmi.lamp(self, Vector2(x + 8, fr.end.y - 136), Hmi.ok_col(), true, k0, 8.0)
 		_text(Txt.t("tm_paid_off"), Vector2(x + 26, fr.end.y - 130), 18, Pal.tint(Pal.FLUID, 0.95 * k0, 1.1), font_s)
+	# the credit (G2): the same amount drawn onto the loan, with its own button
+	var br := _borrow_rect()
+	var can_b: bool = _borrow_amt() > 0.0 and not (overlay and not between)
+	Hmi.push(self, font_s, br, Txt.t("tm_borrow_n") % Pal.money(_borrow_amt()), can_b, 1.0 if br.has_point(get_local_mouse_position()) else 0.0, k0, t, 0.0, Txt.t("tm_borrow_note") % Pal.money(Career.credit_limit()), "L")
 	# the books: the contracts done, newest first
 	var hr := _training_rect()
 	hr.size.y = fr.size.y
@@ -2181,7 +2890,7 @@ func _berth(s: Vector2, a: float) -> void:
 
 func _bottom(s: Vector2, a: float) -> void:
 	_go_live = false
-	if tab == 3:
+	if tab in [3, 5]:
 		return
 	var r := _go_rect()
 	var label := ""
@@ -2191,6 +2900,11 @@ func _bottom(s: Vector2, a: float) -> void:
 	match tab:
 		0:
 			label = Txt.t("tm_take") + "   Enter"
+			var o0: Dictionary = offers()[sel] if sel < offers().size() else {}
+			if o0.get("find", false):
+				label = Ops.w("派拖船去拖 · %s · 约 %d 秒", "SEND A TUG · %s · ~%d s") % [str(ShipMarket.tow_terms(o0).text), ShipMarket.quote_s(o0)] + "   Enter"
+			elif o0.get("bought", false):
+				label = Ops.w("开工拆", "START STRIPPING") + "   Enter"
 			if not next_job.is_empty():
 				Hmi.push(self, font_s, _go_rect(), Txt.t("tm_next_go"), true, 1.0 if hover_go else 0.0, a, t, 0.0, "", "ENTER")
 				_go_live = true
@@ -2198,18 +2912,29 @@ func _bottom(s: Vector2, a: float) -> void:
 			var o: Dictionary = offers()[sel] if sel < offers().size() else {}
 			if o.is_empty():
 				return
+			if o.get("queued", false):
+				label = Txt.t("tm_hold") + "   Enter"
+				note = Txt.t("tm_queued")
 			if not o.has("intel") and int(d.items.get("intel", 0)) > 0:
 				_text(Txt.t("tm_use_intel") % int(d.items.intel), Vector2(60, s.y - 84), 14, Pal.tint(Pal.AIR, 0.85 * a, 1.0), font)
-			if float(d.money) < float(o.fee):
+			if float(d.money) < float(o.fee) and not o.get("find", false):
 				note = Txt.t("tm_borrow") % Pal.money(float(o.fee) - float(d.money))
 			# a family of ship never trained for: the special course first (the contract waits)
-			var miss := Codex.missing(str(o.ship))
-			if not miss.is_empty():
-				label = Txt.t("cxu_take_train") + "   Enter"
-				var ns: Array = []
-				for cls in miss:
-					ns.append(Txt.t("cxu_cls_" + cls).split(" · ")[-1])
-				note = Txt.t("cxu_needs") % "、".join(ns) if Txt.zh else Txt.t("cxu_needs") % ", ".join(ns)
+			# 61 号: a ship with something not trained for is taken all the same; a plain note says so
+			if not Codex.missing(str(o.ship)).is_empty():
+				note = Ops.w("这艘船有%s，没练过。点“开工拆”会先带你去练这几门专项（必练），练完直接回来拆它。", "This ship has %s, not trained for: start stripping takes you through those courses first (required), then straight back to it.") % Codex.untrained_text(str(o.ship))
+			# user 2026-10-26: the button lit while the yard was full, the refusal flashed by — "I can't
+			# tow it, what's going on?": greyed, with the reason and what to do next on it
+			if o.get("find", false):
+				var yb := TugYard.block(str(o.ship))
+				var tt := ShipMarket.tow_terms(o)
+				if yb != "" or not tt.ok:
+					ok = false
+					label = Ops.w("现在派不了拖船", "NO TUG CAN GO NOW")
+					note = yb if yb != "" else str(tt.text)
+					var way := ShipMarket.on_the_way()
+					if TugYard.full() and not way.is_empty():
+						note += Ops.w("。路上那艘约 %d 秒到港，到了在这里点“开工拆”。", ". The one on its way docks in ~%d s; then start stripping it here.") % int(float(way[0].left_s))
 		1, 4:
 			var list := items()
 			var it: Array = list[sel] if sel < list.size() else []
@@ -2235,20 +2960,6 @@ func _bottom(s: Vector2, a: float) -> void:
 			label = Txt.t("tm_repay_n") % Pal.money(amt) + ("   Enter" if ok else "")
 			if not ok:
 				note = Txt.t("tm_repay_none")
-		5:
-			var ns := _route_nodes()
-			if sel >= ns.size():
-				return
-			var n: Dictionary = ns[sel]
-			if Route.pinned(n.key):
-				label = Txt.t("rt_unpin") % str(n.name).split(" · ")[0] + "   Enter"
-			elif n.done:
-				label = Txt.t("rt_done")
-				ok = false
-			else:
-				label = Txt.t("rt_pin") % str(n.name).split(" · ")[0] + "   Enter"
-				if Route.pins().size() >= Route.MAX_PINS:
-					note = Txt.t("rt_pin_full")
 		7:
 			var rows := _training_rows()
 			var row: Array = rows[clampi(sel, 0, rows.size() - 1)]
@@ -2261,6 +2972,18 @@ func _bottom(s: Vector2, a: float) -> void:
 						note = Txt.t("cxu_sp_bonus") % Pal.money(Codex.BONUS)
 				"codex":
 					label = Txt.t("cxu_open_book") + "   Enter"
+				"trial":
+					label = Txt.t("tm_take") + "   Enter"
+					var spec: Dictionary = Career.TRIALS.get(str(row[1]), {})
+					var lend: Dictionary = spec.get("lend", {})
+					if not Career.active().is_empty():
+						ok = false
+						note = Txt.t("trial_busy")
+					elif not lend.is_empty():
+						var ls: Array = []
+						for lt in lend:
+							ls.append(Gear.name_of(str(lt)))
+						note = Txt.t("trial_lend") % ", ".join(ls)
 			if overlay and not between and row[0] != "codex":
 				ok = false
 				note = Txt.t("tm_onsite_no")
@@ -2277,7 +3000,13 @@ func _bottom(s: Vector2, a: float) -> void:
 	_text(Txt.t("tm_keys_berth") if between else (Txt.t("tm_keys_onsite") if overlay else Txt.t("tm_keys")), Vector2(60, s.y - 34), 13, Pal.ink(0.45 * a), font)
 	if msg != "" and msg_t < 3.0:
 		var mk := clampf((3.0 - msg_t) / 0.4, 0.0, 1.0) * Pal.ease_out(clampf(msg_t / 0.2, 0.0, 1.0))
-		_text(msg, Vector2(60 + (1.0 - Pal.ease_out(clampf(msg_t / 0.25, 0.0, 1.0))) * 20.0, s.y - 60), 17, Pal.ink(0.95 * a * mk), font_b)
+		# user 2026-10-26: it sat on the button's own note — over the button now, on its own plate
+		var mx := 60.0 + (1.0 - Pal.ease_out(clampf(msg_t / 0.25, 0.0, 1.0))) * 20.0
+		var mw := font_b.get_string_size(msg, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x + 28.0
+		var mr := Rect2(mx - 14.0, r.position.y - 50.0, minf(mw, s.x - 100.0), 36.0)
+		draw_rect(mr, Color(0.07, 0.08, 0.09, 0.96 * mk * a))
+		draw_rect(Rect2(mr.position, Vector2(3, mr.size.y)), Color(UiSkin.ACCENT, mk * a))
+		_text(msg, Vector2(mx, mr.position.y + 24.0), 17, Pal.ink(0.95 * a * mk), font_b)
 	if flash > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, s), Color(1, 1, 1, 0.05 * flash))
 
@@ -2335,10 +3064,51 @@ func _story_card(o: Dictionary, r: Rect2, k: float, hk: float, sk: float) -> voi
 		[Txt.t("tm_fee_story"), Pal.money(float(o.get("fee", 0.0)))],
 		[Txt.t("tm_minutes_h"), Txt.t("tm_min_n") % int(float(o.get("time", 0.0)) / 60.0) if float(o.get("time", 0.0)) > 0.0 else Txt.t("tm_no_limit")],
 	]
+	# an opening hulk (26 号): where it came from
+	if o.get("owner", "") == "salvage":
+		rows.insert(0, [Txt.t("tm_origin"), Txt.t("tm_drift_open")])
+	var pitch := 44.0 if rows.size() <= 4 else 36.0
 	for i in rows.size():
-		_text(rows[i][0], Vector2(x, y + 430 + i * 44), 15, Pal.ink(0.6 * k), font)
-		_text(rows[i][1], Vector2(r.end.x - 28, y + 430 + i * 44), 20, Pal.ink(0.95 * k), font_s, 1)
+		_text(rows[i][0], Vector2(x, y + 430 + i * pitch), 15, Pal.ink(0.6 * k), font)
+		_text(rows[i][1], Vector2(r.end.x - 28, y + 430 + i * pitch), 16 if rows[i][0] == Txt.t("tm_origin") else 20, Pal.ink(0.95 * k), font_s, 1)
 	_wrap(Txt.t("tm_next_d"), Vector2(x, y + 620), r.size.x - 56, 15, Pal.heat(0.9 * k, 1.1), 3)
+
+
+# a trial contract (G1) as a card: what it is for, what the berth lends, how often it was done
+func _trial_card(o: Dictionary, r: Rect2, k: float, hk: float, sk: float) -> void:
+	r.position.y += (1.0 - k) * 36.0 - hk * 6.0
+	Hmi.raised(self, r, k, Hmi.PANEL.lerp(Hmi.PANEL_HI, maxf(hk * 0.6, sk)))
+	var x := r.position.x + 28
+	var y := r.position.y
+	var tid := str(o.get("trial", ""))
+	var spec: Dictionary = Career.TRIALS.get(tid, {})
+	var ty: Dictionary = Market.type_of(str(o.get("ship", "gr7")))
+	var pl := Rect2(r.position.x + 18, y + 18, r.size.x - 36, 46)
+	Hmi.plate(self, font_s, pl, Txt.t("tm_trial_h"), 21, k, Pal.tint(Pal.AIR, 1.0, 1.2))
+	var done_n: int = int(Career.data.get("trials", {}).get(tid, 0))
+	Hmi.lamp(self, Vector2(pl.end.x - 22, pl.get_center().y), Hmi.ok_col() if done_n > 0 else Hmi.can_col(), true, k, 7.0)
+	var sc := Rect2(r.position.x + 18, y + 80, r.size.x - 36, 300)
+	Hmi.screen(self, sc, k)
+	_text(Txt.t("trial_" + tid).split(" · ")[0], sc.position + Vector2(16, 44), 26, Pal.ink(0.98 * k), font_s)
+	_text(Txt.t("trial_" + tid).split(" · ")[-1], sc.position + Vector2(16, 84), 30, Pal.ink(0.95 * k), font_l)
+	_text("%s  ·  %s  ·  %d m" % [o.get("reg", ""), (ty.name[0] if Txt.zh else ty.name[1]) if ty.has("name") else "", int(ty.get("length", 0))], sc.position + Vector2(16, 118), 15, Pal.ink(0.7 * k), font)
+	_thumb(o, Rect2(sc.position.x + 16, sc.position.y + 150, sc.size.x - 32, 130), k)
+	var lend: Dictionary = spec.get("lend", {})
+	var ls: Array = []
+	for lt in lend:
+		ls.append(Gear.name_of(str(lt)) + " ×%d" % int(lend[lt]))
+	var rows := [
+		[Txt.t("rp_task_target"), Repair.name_of(str(spec.get("repair", "")))],
+		[Txt.t("tm_value"), Pal.money(float(o.get("value", 0.0)))],
+		[Txt.t("tm_fee"), Pal.money(float(o.get("fee", 0.0)))],
+		[Txt.t("tm_minutes_h"), Txt.t("tm_min_n") % int(float(o.get("time", 0.0)) / 60.0)],
+		[Txt.t("ld_lent"), ", ".join(ls) if not ls.is_empty() else Txt.t("e_gear_none")],
+		[Txt.t("tm_trial_done"), str(done_n)],
+	]
+	for i in rows.size():
+		_text(rows[i][0], Vector2(x, y + 420 + i * 40), 15, Pal.ink(0.6 * k), font)
+		_text(rows[i][1], Vector2(r.end.x - 28, y + 420 + i * 40), 18, Pal.ink(0.95 * k), font_s, 1)
+	_wrap(Txt.t("trial_" + tid + "_d"), Vector2(x, y + 640), r.size.x - 56, 15, Pal.tint(Pal.AIR, 0.9 * k, 1.1), 3)
 
 
 func _next_card(s: Vector2, a: float) -> void:
@@ -2354,7 +3124,9 @@ func _next_card(s: Vector2, a: float) -> void:
 	var ty: Dictionary = Market.type_of(str(next_job.get("ship", "gr7")))
 	var d := Ship.load_data(str(next_job.get("ship", "gr7")))
 	var pl := Rect2(r.position.x + 18, r.position.y + 18, r.size.x - 36, 46)
-	Hmi.plate(self, font_s, pl, Txt.t("tm_next_first"), 21, k, Pal.heat(1.0, 1.3))
+	# 96 号: with the market open this is a contract taken whose start was left (its loadout page closed)
+	var taken: bool = Career.data.get("market", false)
+	Hmi.plate(self, font_s, pl, Ops.w("已接的合同 · 还没开工", "TAKEN · NOT STARTED") if taken else Txt.t("tm_next_first"), 21, k, Pal.heat(1.0, 1.3))
 	Hmi.lamp(self, Vector2(pl.end.x - 22, pl.get_center().y), Hmi.warn_col(), true, k, 7.0)
 	y += 50
 	var nm: String = ((ty.name[0] if Txt.zh else ty.name[1]) if not ty.is_empty() else str(d.get("name", "")))
@@ -2368,7 +3140,7 @@ func _next_card(s: Vector2, a: float) -> void:
 	for i in rows.size():
 		_text(rows[i][0], Vector2(x, y + 130 + i * 40), 14, Pal.ink(0.55 * k), font)
 		_text(rows[i][1], Vector2(r.end.x - 28, y + 130 + i * 40), 18, Pal.ink(0.92 * k), font_b, 1)
-	_wrap(Txt.t("tm_next_first_d"), Vector2(x, y + 270), r.size.x - 56, 15, Pal.ink(0.7 * k), 4)
+	_wrap(Ops.w("这艘船你已经接下了，但装备页被关掉，所以还没开工：它停在拖船站的船坞口（太高的船停在外面泊位）。点“开始下一单”配好装备，就把它推进船坞开拆。", "You took this hulk but closed its loadout page, so it is not started: it lies in the tug station's mouth (a tall one in the yard outside). Start it, fit out, and it is pushed into the berth.") if taken else Txt.t("tm_next_first_d"), Vector2(x, y + 270), r.size.x - 56, 15, Pal.ink(0.7 * k), 4)
 	# beside it: what the money is for, and what comes later
 	var hx := _item_rect(1).position.x
 	var hw := _item_rect(2).end.x - hx
@@ -2389,9 +3161,6 @@ func _outlook(r: Rect2, a: float) -> void:
 	for it in SHOP + BERTH:
 		if it[1] in ["upgrade", "facility"] and not d.upgrades.has(it[0]):
 			buy.append(it)
-	for row in Growth.TRACKS:
-		if Growth.level(d.upgrades, row[0]) < 3:
-			buy.append([row[0], "skill", Growth.price(row[0]), Growth.text(row[2])])
 	var goal: String = str(d.get("growth_goal", ""))
 	buy.sort_custom(func(p, q):
 		if p[0] == goal or q[0] == goal:
@@ -2468,21 +3237,73 @@ func _radio(s: Vector2, a: float) -> void:
 func _home(s: Vector2, a: float) -> void:
 	var d := Career.data
 	var sj := Career.story_job()
+	if _ops_decs.is_empty():
+		_ops_decs = Ops.problems(game_ref)
+	if not Onboarding.shown("market_ops"):
+		_onboard_welcome(s, a)
+	else:
+		_next_step_card(a)
+	var f := [font, font_b, font_s]
+	var compact := s.y < 900.0
+	# the port now: four cells
+	for i in _ops_cells.size():
+		var k := Pal.ease_out(clampf((deal_t - 0.02 - i * 0.05) / 0.3, 0.0, 1.0)) * a
+		if k <= 0.0:
+			continue
+		var r := _cell_rect(i)
+		r.position.y += (1.0 - k) * 24.0
+		OpsSkin.draw_cell(self, f, r, _ops_cells[i], k, 1.0 if i == hover_cell else 0.0, compact)
+	# 91 号 (user 2026-10-27: "船坞与当前船"): the berth and the ship in it, live
+	if berth_view == null:
+		berth_view = BerthView.new()
+		berth_view.build(game_ref, next_job if not next_job.is_empty() else Career.active())
+	var bvk := Pal.ease_out(clampf((deal_t - 0.12) / 0.45, 0.0, 1.0)) * a
+	if bvk > 0.0:
+		var bvr := _bv_rect()
+		bvr.position.y += (1.0 - bvk) * 18.0
+		berth_view.draw(self, bvr, t, bvk, get_local_mouse_position(), font, font_b, font_s)
+	# what waits on the operator
+	var b := _decs_box()
+	var bx_end: float = b.position.x + b.size.x * 0.34 if berth_view != null else b.end.x
+	var hk0 := Pal.ease_out(clampf((deal_t - 0.2) / 0.3, 0.0, 1.0)) * a
+	if hk0 > 0.0 and Onboarding.shown("market_ops") and not _ops_decs.is_empty():
+		var title := Ops.w("出问题了", "SOMETHING IS WRONG")
+		_text(title, b.position + Vector2(0, 22), 18, Pal.ink(0.9 * hk0), font_s)
+		var tw := font_s.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+		draw_line(b.position + Vector2(tw + 16, 15), Vector2(bx_end, b.position.y + 15), Pal.ink(0.12 * hk0), 1.0)
+		var counts := Ops.w("%d 项", "%d") % _ops_decs.size()
+		_text(counts, Vector2(bx_end, b.position.y + 22), 14, Pal.ink(0.5 * hk0), font_b, 1)
+
+	for i in _ops_decs.size():
+		var k := Pal.ease_out(clampf((deal_t - 0.24 - i * 0.04) / 0.3, 0.0, 1.0)) * a
+		if k <= 0.0:
+			continue
+		var r := _dec_rect(i)
+		r.position.x += (1.0 - k) * 18.0
+		OpsSkin.draw_decision(self, f, r, _ops_decs[i], k, 1.0 if i == hover_dec else 0.0, r.size.y < 54.0)
+	# the eight pages: one row of keys
 	for i in APPS.size():
 		var page: int = APPS[i][0]
 		var r := _tile_rect(i)
-		var k := Pal.ease_out(clampf((deal_t - 0.04 - i * 0.04) / 0.3, 0.0, 1.0)) * a
+		var k := Pal.ease_out(clampf((deal_t - 0.3 - i * 0.03) / 0.3, 0.0, 1.0)) * a
 		if k <= 0.0:
+			continue
+		if not Onboarding.page_shown(page):
+			# not opened yet (28 号): an empty slot
+			Hmi.sunk(self, r, k * 0.6)
 			continue
 		var locked := _locked(page)
 		var hk: float = hover_k[i].x if i < hover_k.size() else 0.0
 		var on := i == sel
-		r.position.y += (1.0 - k) * 30.0 - (hk * 5.0 if not locked else 0.0)
+		r.position.y += (1.0 - k) * 20.0 - (hk * 4.0 if not locked else 0.0)
 		var ka := k * (0.62 if locked else 1.0)
 		Hmi.raised(self, r, ka, Hmi.PANEL_HI if on and not locked else Hmi.PANEL.lerp(Hmi.PANEL_HI, hk * 0.5))
-		var sc := Rect2(r.position.x + 18, r.position.y + 18, r.size.x - 36, r.size.y * 0.5)
+		var icon_h := r.size.y - 64.0
+		var sc := Rect2(r.position.x + 10, r.position.y + 10, r.size.x - 20, icon_h)
 		Hmi.screen(self, sc, ka)
-		_app_icon(page, sc.get_center(), (1.0 if not locked else 0.35) * k)
+		# 107 号 Q4 A: each key's screen shows its page live; a locked one keeps its icon
+		if locked or not _tile_live(page, sc, k):
+			_app_icon(page, sc.get_center(), (1.0 if not locked else 0.35) * k, clampf(icon_h / 150.0, 0.25, 0.55))
 		var line := ""
 		var lamp := Hmi.can_col()
 		match page:
@@ -2490,17 +3311,18 @@ func _home(s: Vector2, a: float) -> void:
 				line = (Txt.t("tm_tile_first") % str(next_job.get("id", ""))) if not next_job.is_empty() else (Txt.t("tm_tile_offers") % offers().size() + ((Txt.t("tm_tile_pinned") % str(sj.get("id", ""))) if not sj.is_empty() else ""))
 				lamp = Hmi.warn_col() if not sj.is_empty() or not next_job.is_empty() else Hmi.ok_col()
 			1:
-				var ups := 0
-				for it in SHOP.slice(0, FITTED):
+				var fixed := 0
+				for it in Repair.ITEMS:
 					if d.upgrades.has(it[0]):
-						ups += 1
-				var fac := 0
-				for it in BERTH.slice(2):
-					if d.upgrades.has(it[0]):
-						fac += 1
-				line = Txt.t("tm_tile_equip") % [ups, FITTED, fac, BERTH.size() - 2]
+						fixed += 1
+				line = Txt.t("rp_tile") % [Repair.ITEMS.size() - fixed, fixed, d.get("parts", []).size()]
+				lamp = Hmi.warn_col() if fixed < Repair.ITEMS.size() else Hmi.ok_col()
 			3:
-				line = Txt.t("tm_tile_skills") % [Growth.progress(), Growth.TRACKS.size() * 3]
+				var fparts: Array = []
+				for tool in (Consum.TOOLS if Consum.ENABLED else []):
+					var ft: Dictionary = Consum.fitted(tool)
+					fparts.append("%s %s" % [Consum.name_of(tool), (Consum.tier_name(int(ft.tier)) + " %d%%" % int(round(100.0 * float(ft.left) / Consum.capacity(tool, int(ft.tier))))) if not ft.is_empty() else Txt.t("cs_out_short")])
+				line = Txt.t("cs_tile") % [d.get("feats", {}).size(), Gear.FEATS.size()] + "  ·  " + "  ·  ".join(fparts)
 				lamp = Hmi.ok_col()
 			4:
 				var parts: Array = []
@@ -2508,38 +3330,176 @@ func _home(s: Vector2, a: float) -> void:
 					parts.append("%s ×%d" % [Txt.t(it[3]), int(d.items.get(it[0], 0))])
 				line = "  ·  ".join(parts)
 			2:
-				line = Txt.t("tm_tile_ledger") % [Pal.money(float(d.loan)), Pal.money(minf(Career.INSTALLMENT, float(d.loan)) + snappedf(float(d.loan) * Career.INTEREST, 1.0))]
+				line = Txt.t("tm_tile_ledger") % [Pal.money(float(d.loan)), Pal.money(minf(Career.INSTALLMENT, float(d.loan)) + snappedf(float(d.loan) * Career.rate(), 1.0))]
 				lamp = Hmi.warn_col() if float(d.loan) > 0.0 else Hmi.ok_col()
 			5:
-				var gs := Route.goals()
+				var gs := _goals()
 				line = Txt.t("tm_tile_route") if gs.is_empty() else ("★ " if gs[0].get("pinned", false) else "") + str(gs[0].name).split(" · ")[0] + " · " + Route.missing(gs[0])
 			6:
 				line = Txt.t("tm_tile_radio") % _radio_lines().size()
 				lamp = Hmi.ok_col()
 			7:
 				line = Txt.t("tm_tile_training")
-		Hmi.lamp(self, Vector2(r.end.x - 30, sc.end.y + 32), lamp if not locked else Pal.ink(0.3), not locked, k)
-		_text("%d  %s" % [i + 1, Txt.t(APPS[i][1])], Vector2(r.position.x + 22, sc.end.y + 44), 28, Pal.ink((0.98 if not locked else 0.45) * k), font_s)
-		draw_string(font_b, Vector2(r.position.x + 22, sc.end.y + 78), line, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 44, 15, Pal.ink((0.8 if not locked else 0.4) * k))
-		if locked:
-			draw_string(font_b, Vector2(r.position.x + 22, sc.end.y + 106), Txt.t("tm_locked") + _lock_reason(page), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 44, 14, Pal.heat(0.9 * k, 1.2))
-		else:
-			draw_string(font_b, Vector2(r.position.x + 22, sc.end.y + 106), Txt.t(APPS[i][1] + "_d"), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 44, 14, Pal.tint(Pal.AIR, 0.9 * k, 1.2))
+		Hmi.lamp(self, Vector2(r.end.x - 16, sc.end.y + 20), lamp if not locked else Pal.ink(0.3), not locked, k, 5.0)
+		draw_string(font_s, Vector2(r.position.x + 12, sc.end.y + 26), "%d  %s" % [i + 1, Txt.t(APPS[i][1])], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 40, 18, Pal.ink((0.98 if not locked else 0.45) * k))
+		var foot := (Txt.t("tm_locked") + _lock_reason(page)) if locked else line
+		draw_string(font_b, Vector2(r.position.x + 12, sc.end.y + 48), foot, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 24, 12, Pal.heat(0.9 * k, 1.2) if locked else Pal.ink(0.62 * k))
 
 
-func _app_icon(page: int, c: Vector2, a: float) -> void:
+# 107 号 Q4 A (user 2026-10-29: the home's three keys were big screens with a small icon in each):
+# what each page holds, live — the find page a radar sweep with the signals swept so far and the
+# tugs out; the berth its section with the floodlights and the facilities fixed and broken; the
+# methods page the ones learned and the next one's silhouette. false: nothing to show, use the icon
+func _tile_live(page: int, sc: Rect2, a: float) -> bool:
+	var r := sc.grow(-8.0)
+	if r.size.y < 40.0:
+		return false
+	var data_c := Color(UiSkin.DATA)
+	match page:
+		0:
+			# the radar: rings, a sweeping beam, every signal swept (hulks in the accent), the tugs out
+			var c := Vector2(r.position.x + r.size.y * 0.5 + 6.0, r.get_center().y)
+			var rad := r.size.y * 0.5 - 2.0
+			for k in 3:
+				draw_arc(c, rad * (k + 1) / 3.0, 0.0, TAU, 40, Color(data_c, 0.18 * a), 1.0, true)
+			draw_line(c - Vector2(rad, 0), c + Vector2(rad, 0), Color(data_c, 0.1 * a), 1.0)
+			draw_line(c - Vector2(0, rad), c + Vector2(0, rad), Color(data_c, 0.1 * a), 1.0)
+			var ang := fmod(t * 1.4, TAU)
+			var fan := PackedVector2Array([c])
+			for q in 9:
+				fan.append(c + Vector2.from_angle(ang - 0.6 * q / 8.0) * rad)
+			draw_colored_polygon(fan, Color(data_c, 0.1 * a))
+			draw_line(c, c + Vector2.from_angle(ang) * rad, Color(data_c, 0.7 * a), 1.5, true)
+			var sigs := 0
+			var hulks := 0
+			for i in Scan.order():
+				for sg in Scan.signals(i):
+					sigs += 1
+					var h := hash(str(sg.id))
+					var p := c + Vector2.from_angle(float(h % 628) / 100.0) * rad * (0.25 + 0.7 * float((h / 628) % 100) / 100.0)
+					var ship: bool = sg.get("known", false) and str(sg.get("kind", "")) == "ship"
+					hulks += 1 if ship else 0
+					# a blip brightens as the beam passes it
+					var since := fposmod(ang - (p - c).angle(), TAU)
+					var glow := clampf(1.0 - since / 2.5, 0.25, 1.0)
+					draw_circle(p, 3.0 if ship else 2.0, Color(UiSkin.ACCENT if ship else data_c, glow * a))
+			var tx := c.x + rad + 18.0
+			var way := ShipMarket.on_the_way().size()
+			_text(Ops.w("信号 %d", "SIGNALS %d") % sigs, Vector2(tx, r.position.y + 22), 15, Pal.ink(0.85 * a), font_b)
+			_text(Ops.w("是船 %d", "HULKS %d") % hulks, Vector2(tx, r.position.y + 42), 13, Color(UiSkin.ACCENT, 0.9 * a), font_b)
+			if way > 0:
+				_text(Ops.w("拖运途中 %d", "UNDER TOW %d") % way, Vector2(tx, r.position.y + 60), 13, Pal.ink(0.6 * a), font_b)
+			return true
+		1:
+			# the berth in section: tower, boom, floodlights (lit when mended), the floor; a dot per facility
+			var fy := r.end.y - 16.0
+			var x0 := r.position.x + 18.0
+			var x1 := r.end.x - 12.0
+			var by := r.position.y + 8.0
+			draw_line(Vector2(x0, by), Vector2(x0, fy), Pal.ink(0.6 * a), 2.0)
+			draw_line(Vector2(x0, by), Vector2(x1, by), Pal.ink(0.55 * a), 1.5)
+			draw_line(Vector2(x0, by + 5.0), Vector2(x1, by + 5.0), Pal.ink(0.35 * a), 1.0)
+			var zx := x0
+			var up := false
+			while zx < x1 - 6.0:
+				draw_line(Vector2(zx, by + (5.0 if up else 0.0)), Vector2(zx + 6.0, by + (0.0 if up else 5.0)), Pal.ink(0.2 * a), 1.0)
+				up = not up
+				zx += 6.0
+			draw_line(Vector2(x0 - 6.0, fy), Vector2(x1, fy), Pal.ink(0.6 * a), 2.0)
+			var lit := Repair.done("lights")
+			for q in 2:
+				var hx := lerpf(x0, x1, 0.32 + 0.36 * q)
+				var on := lit or q == 0
+				var kk := 1.0 if lit else (0.4 + 0.2 * sin(t * 23.0)) * (1.0 if q == 0 else 0.0)
+				if on:
+					draw_colored_polygon(PackedVector2Array([Vector2(hx - 3, by + 6), Vector2(hx + 3, by + 6), Vector2(hx + 22, fy), Vector2(hx - 22, fy)]), Pal.ink(0.08 * kk * a))
+				draw_rect(Rect2(hx - 4, by + 5, 8, 3), Pal.ink((0.3 + 0.6 * kk) * a))
+			# the ship in it, when there is one: its hull as a slab on the floor
+			if berth_view != null and berth_view.mode == "live":
+				var hull := Rect2(lerpf(x0, x1, 0.18), fy - (fy - by) * 0.38, (x1 - x0) * 0.62, (fy - by) * 0.38 - 2.0)
+				draw_rect(hull, Pal.ink(0.12 * a))
+				draw_rect(hull, Pal.ink(0.5 * a), false, 1.0)
+				draw_rect(Rect2(hull.position, Vector2(hull.size.x * clampf(berth_view.rate, 0.0, 1.0), hull.size.y)), Color(UiSkin.ACCENT, 0.18 * a))
+			var n := 0
+			var fixed := 0
+			for it in Repair.ITEMS:
+				if not str(it[0]).begins_with("berth") and not str(it[0]) in ["gas_line", "lox_tank"]:
+					n += 1
+			var dx := minf(12.0, (x1 - x0 - 10.0) / maxf(1.0, n))
+			var k2 := 0
+			for it in Repair.ITEMS:
+				var id := str(it[0])
+				if id.begins_with("berth") or id in ["gas_line", "lox_tank"]:
+					continue
+				var ok := Repair.done(id)
+				fixed += 1 if ok else 0
+				var dp := Vector2(x0 + 8.0 + k2 * dx, fy + 9.0)
+				draw_circle(dp, 2.5, Pal.ink(0.8 * a) if ok else Color(UiSkin.ACCENT, (0.55 + 0.35 * sin(t * 3.0 + k2)) * a))
+				k2 += 1
+			_text("%d / %d" % [fixed, n], Vector2(x1, fy + 13.0), 12, Pal.ink(0.55 * a), font_b, 1)
+			return true
+		5:
+			# the methods: a cell each — learned bright, the next one a dashed outline, the rest dim
+			var ids: Array = Methods.ORDER
+			var nxt := Methods.next_id()
+			var cw := minf(r.size.y - 6.0, (r.size.x - 8.0 * (ids.size() - 1)) / ids.size())
+			var x := r.get_center().x - (cw * ids.size() + 8.0 * (ids.size() - 1)) * 0.5
+			var y := r.get_center().y - cw * 0.5
+			for i in ids.size():
+				var id: String = ids[i]
+				var cr := Rect2(x + i * (cw + 8.0), y, cw, cw)
+				if Methods.learned(id):
+					draw_rect(cr, Color(UiSkin.ACCENT, 0.22 * a))
+					draw_rect(cr, Color(UiSkin.ACCENT, 0.9 * a), false, 1.5)
+					for lv in Methods.level(id):
+						draw_rect(Rect2(cr.position.x + 3.0 + lv * 6.0, cr.end.y - 6.0, 4.0, 3.0), Color(UiSkin.ACCENT, a))
+				elif id == nxt:
+					var dash := 4.0
+					var e := 0.0
+					var per := cr.size.x * 4.0
+					while e < per:
+						var p0 := _perim(cr, e)
+						var p1 := _perim(cr, minf(e + dash, per))
+						draw_line(p0, p1, Pal.ink((0.5 + 0.3 * sin(t * 3.0)) * a), 1.2)
+						e += dash * 2.0
+					_text("?", cr.get_center() + Vector2(0, 6), 16, Pal.ink(0.6 * a), font_s, 0)
+				else:
+					draw_rect(cr, Pal.ink(0.12 * a), false, 1.0)
+			return true
+	return false
+
+
+# a point along a square's edge, clockwise from its top left
+func _perim(r: Rect2, e: float) -> Vector2:
+	var side := r.size.x
+	if e < side:
+		return r.position + Vector2(e, 0)
+	if e < side * 2.0:
+		return Vector2(r.end.x, r.position.y + e - side)
+	if e < side * 3.0:
+		return Vector2(r.end.x - (e - side * 2.0), r.end.y)
+	return Vector2(r.position.x, r.end.y - (e - side * 3.0))
+
+
+func _app_icon(page: int, c: Vector2, a: float, scale_k: float = 1.0) -> void:
 	var col := Pal.tint(Pal.AIR, 0.95 * a, 1.3)
+	# drawn smaller (the home screen's keys): the icon about its own centre
+	if scale_k != 1.0:
+		draw_set_transform(c + _page_off, 0.0, Vector2(scale_k, scale_k))
+		c = Vector2.ZERO
 	match page:
 		0:
 			for k in 3:
 				draw_rect(Rect2(c + Vector2(-70 + k * 50, -36 + k * 6), Vector2(44, 64)), col, false, 2.0)
 		1:
-			var xf := Transform2D(0.0, Vector2(2.6, 2.6), 0.0, c)
-			draw_set_transform_matrix(xf)
-			DArt.tint = Color(Pal.AIR.r * a, Pal.AIR.g * a, Pal.AIR.b * a)
-			DArt.draw(self, "arrowring", {"heading": -0.3, "tool": 0, "open": 0.4, "t": 1.0, "thrust": Vector2.ZERO, "dash": false, "design": "arrowring", "base_xf": xf})
-			DArt.tint = Color(1, 1, 1)
-			draw_set_transform_matrix(Transform2D.IDENTITY)
+			# 86 号: the berth in a few lines — the tower, the boom, the floor, a fault marked
+			draw_line(c + Vector2(-70, -46), c + Vector2(-70, 40), col, 3.0)
+			draw_line(c + Vector2(-70, -30), c + Vector2(72, -30), col, 2.0)
+			draw_line(c + Vector2(-70, -22), c + Vector2(72, -22), col, 2.0)
+			draw_line(c + Vector2(72, -30), c + Vector2(72, 40), col, 2.0)
+			draw_line(c + Vector2(-70, 40), c + Vector2(72, 40), col, 3.0)
+			draw_rect(Rect2(c + Vector2(-8, 32), Vector2(30, 8)), col, false, 2.0)
+			draw_arc(c + Vector2(30, 6), 11.0, 0.0, TAU, 20, Pal.heat(a, 1.3), 2.4, true)
 		3:
 			draw_rect(Rect2(c + Vector2(-40, -40), Vector2(80, 80)), col, false, 2.0)
 			for k in 4:
@@ -2563,6 +3523,7 @@ func _app_icon(page: int, c: Vector2, a: float) -> void:
 		7:
 			draw_rect(Rect2(c + Vector2(-60, -30), Vector2(120, 60)), col, false, 2.0)
 			draw_circle(c, 10.0, col)
+	draw_set_transform(_page_off)
 
 
 # the consumables page: the four tiles, and the chosen one's detail with how many to buy
@@ -2573,170 +3534,6 @@ func _supplies(_s: Vector2, a: float) -> void:
 
 
 # what there is to work for, on its own page
-func _route_page(s: Vector2, a: float) -> void:
-	var m := _route_map()
-	var k := Pal.ease_out(clampf(deal_t / 0.35, 0.0, 1.0)) * a
-	Hmi.screen(self, m, k, true)
-	var ns := _route_nodes()
-	var green := Pal.tint(Pal.FLUID, 0.9 * k, 1.1)
-	var byk := {}
-	for i in ns.size():
-		byk[ns[i].key] = i
-	# the berth extension hangs over the ships that need it; a facility over the one it needs first
-	for i in ns.size():
-		if ns[i].kind != "ship":
-			continue
-		var need := Dock.needs(float(ns[i].length))
-		if need != "" and byk.has("buy:" + need):
-			var br := _route_rect(byk["buy:" + need])
-			var p := _ship_pos(int(ns[i].col))
-			draw_line(Vector2(br.get_center().x, br.end.y), p + Vector2(0, -84), green if ns[i].done else Pal.ink(0.35 * k), 2.0, true)
-	for need in REQUIRES:
-		if byk.has("buy:" + need) and byk.has("buy:" + REQUIRES[need]):
-			var a0 := _route_rect(byk["buy:" + REQUIRES[need]])
-			var a1 := _route_rect(byk["buy:" + need])
-			var lc := green if ns[byk["buy:" + REQUIRES[need]]].done else Pal.ink(0.35 * k)
-			if absf(a0.position.y - a1.position.y) < 1.0:
-				var yb := a0.end.y + 6.0
-				draw_polyline(PackedVector2Array([Vector2(a0.get_center().x, a0.end.y), Vector2(a0.get_center().x, yb), Vector2(a1.get_center().x, yb), Vector2(a1.get_center().x, a1.end.y)]), lc, 2.0, true)
-			else:
-				draw_line(a0.get_center(), a1.get_center(), lc, 2.0, true)
-	# the ships' line: lit as far as it is open, the next one in heat
-	var first_open := -1
-	for i in ns.size():
-		if ns[i].kind == "ship" and not ns[i].done and first_open < 0:
-			first_open = int(ns[i].col)
-	var nship := Market.POOL.size()
-	for c in nship - 1:
-		var lc := green if first_open < 0 or c + 1 < first_open else (Pal.heat(0.9 * k, 1.3) if c + 1 == first_open else Pal.ink(0.25 * k))
-		draw_line(_ship_pos(c), _ship_pos(c + 1), lc, 4.0 if lc == green else 2.5, true)
-	for i in ns.size():
-		var n: Dictionary = ns[i]
-		var hk: float = hover_k[i].x if i < hover_k.size() else 0.0
-		var on := i == sel
-		match int(n.row):
-			Route.ROW_SHIP:
-				_route_ship(n, _ship_pos(int(n.col)), int(n.col) == first_open, on, hk, k)
-			_:
-				_route_box(n, _route_rect(i), on, hk, k)
-	# the reputation ruler, the volumes on it, and where the career is
-	var ry := m.position.y + 524
-	draw_line(Vector2(_rep_x(0), ry), Vector2(_rep_x(float(Career.LEVELS[-1][1])), ry), Pal.ink(0.3 * k), 2.0)
-	for l in Career.LEVELS:
-		var x := _rep_x(float(l[1]))
-		draw_line(Vector2(x, ry - 8), Vector2(x, ry + 8), Pal.ink(0.6 * k), 2.0)
-		_text(Txt.t("rep_" + l[0]) + " · %d" % int(l[1]), Vector2(x, ry + 26), 13, Pal.ink(0.6 * k), font_b, 0)
-	var rep := int(Career.data.get("rep", 0))
-	var me := _rep_x(float(rep))
-	draw_colored_polygon(PackedVector2Array([Vector2(me, ry + 4), Vector2(me - 9, ry + 20), Vector2(me + 9, ry + 20)]), Pal.heat(k, 1.6))
-	_text(Txt.t("rt_you") % rep, Vector2(me, ry + 46), 14, Pal.heat(k, 1.3), font_s, 0)
-	_route_detail(s, a)
-
-
-func _route_ship(n: Dictionary, p: Vector2, next: bool, on: bool, hk: float, k: float) -> void:
-	var green := Pal.tint(Pal.FLUID, 0.9 * k, 1.1)
-	var open: bool = n.done
-	var pin := Route.pinned(n.key)
-	p.y -= hk * 4.0
-	draw_circle(p, 26.0, Color(0.02, 0.024, 0.028, k))
-	if open:
-		draw_circle(p, 18.0, green)
-	var rc := green if open else (Pal.heat(k, 1.5) if next or pin else Pal.ink(0.4 * k))
-	draw_arc(p, 26.0, 0.0, TAU, 36, rc, 3.0 if next else 2.0, true)
-	if next:
-		draw_arc(p, 34.0 + 3.0 * sin(t * 3.0), 0.0, TAU, 40, Pal.heat(0.5 * k, 1.3), 2.0, true)
-	if hk > 0.0 and not on:
-		draw_rect(Rect2(p - Vector2(72, 92), Vector2(144, 196)), Pal.ink(0.3 * hk * k), false, 1.5)
-	var lit := open or next or pin
-	_text(("★ " if pin else "") + str(n.cls), p + Vector2(0, -60), 22, Pal.heat(k, 1.3) if pin else Pal.ink((0.95 if lit else 0.55) * k), font_s, 0)
-	# the type's name under its letters, if it fits between the nodes
-	var sub := "%s · %d m" % [n.short, int(n.length)]
-	if font_b.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x > 210.0:
-		sub = "%d m" % int(n.length)
-	_text(sub, p + Vector2(0, -38), 13, Pal.ink((0.8 if lit else 0.5) * k), font_b, 0)
-	# what it still waits for, one want to a line
-	var lines: Array = []
-	if open:
-		lines = [Txt.t("rt_stripped") % int(n.stripped) if int(n.stripped) > 0 else Txt.t("rt_open")]
-	else:
-		lines = Array(Route.missing(n).split(" · "))
-	for j in lines.size():
-		_text(str(lines[j]), p + Vector2(0, 58 + j * 18), 12 if j > 0 else 13, green if open else (Pal.heat(k, 1.3) if next or pin else Pal.ink(0.55 * k)), font_b, 0)
-
-
-func _route_box(n: Dictionary, r: Rect2, on: bool, hk: float, k: float) -> void:
-	var green := Pal.tint(Pal.FLUID, 0.9 * k, 1.1)
-	var pin := Route.pinned(n.key)
-	var done: bool = n.done
-	r.position.y -= hk * 3.0
-	var ka := k * (0.6 if done else 1.0)
-	Hmi.raised(self, r, ka, Hmi.PANEL_HI if on else Hmi.PANEL.lerp(Hmi.PANEL_HI, hk * 0.5))
-	if pin and not on:
-		draw_rect(r.grow(2.0), Pal.heat(0.9 * k, 1.3), false, 2.0)
-	# installed: dimmed, a grey tick; affordable: cyan and lit; still short: heat, and by how much
-	var cyan := Pal.tint(Pal.AIR, 0.95 * k, 1.3)
-	var state_col := Pal.ink(0.5 * k) if done else (cyan if n.ready else Pal.heat(k, 1.25))
-	Hmi.lamp(self, r.position + Vector2(14, 16), Hmi.ok_col() if done else (Pal.tint(Pal.AIR, 1.0, 1.4) if n.ready else Hmi.warn_col()), not done, ka, 4.5)
-	var right := Pal.money(float(n.price)) if n.kind == "buy" else ""
-	var rw := font_b.get_string_size(right, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
-	draw_string(font_s, r.position + Vector2(26, 21), ("★ " if pin else "") + str(n.name), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - rw - 46, 14, Pal.ink((0.95 if not done else 0.55) * k))
-	if right != "":
-		_text(right, Vector2(r.end.x - 12, r.position.y + 21), 13, Pal.ink((0.9 if not done else 0.45) * k), font_b, 1)
-	if not done:
-		Hmi.gauge(self, Rect2(r.position.x + 12, r.position.y + 29, r.size.x - 24, 5), _smooth("rb:" + str(n.key), Route.progress(n)), cyan if n.ready else Pal.heat(k, 1.2), ka, 14)
-	var note := ("✓ " + (Txt.t("rt_owned") if n.kind == "buy" else Txt.t("rt_open"))) if done else (Txt.t("rt_can_buy") if n.ready else Route.missing(n))
-	draw_string(font_b, r.position + Vector2(12, 50), note, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 24, 12, state_col)
-	var pts := Route.points(str(n.id)) if n.kind == "buy" else []
-	if not pts.is_empty():
-		draw_string(font, r.position + Vector2(12, 66), str(pts[0]), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 24, 12, Pal.ink((0.62 if not done else 0.4) * k))
-
-
-# the chosen node: what it is; on the left each condition with how far along
-# and what comes of it, on the right what it does, point by point
-func _route_detail(s: Vector2, a: float) -> void:
-	var ns := _route_nodes()
-	if sel < 0 or sel >= ns.size():
-		return
-	var n: Dictionary = ns[sel]
-	var k := Pal.ease_out(clampf((deal_t - 0.1) / 0.35, 0.0, 1.0)) * a
-	var dr := Rect2(40, 796, s.x - 80, 152)
-	Hmi.raised(self, dr, k, Hmi.PANEL_HI)
-	var green := Pal.tint(Pal.FLUID, 0.9 * k, 1.1)
-	var title: String = str(n.name)
-	var tw := clampf(font_s.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x + 60, 360, 720)
-	Hmi.plate(self, font_s, Rect2(dr.position.x + 18, dr.position.y + 14, tw, 40), title, 19, k)
-	var lw := dr.size.x * 0.48
-	var conds: Array = n.conds
-	for i in conds.size():
-		var c: Dictionary = conds[i]
-		var cy := dr.position.y + 72 + i * 22
-		var cc := green if c.ok else Pal.heat(k, 1.3)
-		_text(str(c.label), Vector2(dr.position.x + 30, cy), 14, Pal.ink(0.6 * k), font_b)
-		_text(("✓ " if c.ok else "") + str(c.now), Vector2(dr.position.x + 30 + lw - 260, cy), 15, cc, font_s, 1)
-		Hmi.gauge(self, Rect2(dr.position.x + 40 + lw - 250, cy - 9, 220, 8), _smooth("rd:%s:%d" % [n.key, i], float(c.frac)), cc, k, 14)
-	var hint := ""
-	match str(n.kind):
-		"ship":
-			hint = (Txt.t("rt_ship_done") % int(n.stripped)) if n.done else Txt.t("rt_ship_then")
-		"buy":
-			hint = Txt.t("rt_owned") if n.done else (Txt.t("rt_buy_then") if n.ready else Txt.t("rt_buy_save"))
-		"tier":
-			hint = Txt.t("rt_tier_then") if n.done else Txt.t("rt_tier_d")
-	draw_string(font_b, Vector2(dr.position.x + 30, dr.end.y - 12), hint, HORIZONTAL_ALIGNMENT_LEFT, lw - 30, 14, Pal.tint(Pal.AIR, 0.95 * k, 1.2))
-	# what it does
-	var px := dr.position.x + lw + 30
-	draw_line(Vector2(px - 18, dr.position.y + 16), Vector2(px - 18, dr.end.y - 16), Pal.ink(0.12 * k), 1.0)
-	_text(Txt.t("rt_points"), Vector2(px, dr.position.y + 38), 14, Pal.ink(0.5 * k), font_b)
-	var pts: Array = Route.points(str(n.id)) if n.kind == "buy" else []
-	if pts.is_empty() and str(n.get("note", "")) != "":
-		pts = [str(n.note)]
-	for i in pts.size():
-		var pk := Pal.ease_out(clampf((deal_t - 0.15 - i * 0.06) / 0.3, 0.0, 1.0)) * k
-		var py := dr.position.y + 70 + i * 26
-		draw_rect(Rect2(px + 2 + (1.0 - pk) * 10.0, py - 8, 6, 6), Pal.heat(pk, 1.3) if not n.done else Pal.ink(0.4 * pk))
-		draw_string(font_b, Vector2(px + 18 + (1.0 - pk) * 10.0, py), str(pts[i]), HORIZONTAL_ALIGNMENT_LEFT, dr.end.x - px - 40, 16, Pal.ink(0.9 * pk))
-
-
 # what was said over the radio: here, and on site what was said on the job
 func _radio_lines() -> Array:
 	var out: Array = radio.history.duplicate()
@@ -2795,13 +3592,31 @@ func _training_page(s: Vector2, a: float) -> void:
 				info = ", ".join(codes)
 				var kind: String = str(Codex._certs().get(row[1], ""))
 				lamp = Hmi.ok_col() if kind != "" else Hmi.warn_col()
-				_text(Txt.t("cxu_cert_" + (kind if kind != "" else "none")), Vector2(rr.end.x - 20, rr.position.y + 32), 15, Pal.tint(Pal.FLUID, 0.9 * k, 1.0) if kind != "" else Pal.ink(0.5 * k), font_b, 1)
+				_text(Txt.t("cxu_cert_" + (kind if kind != "" else "none")), Vector2(rr.end.x - 20, rr.get_center().y + 6), 15, Pal.tint(Pal.FLUID, 0.9 * k, 1.0) if kind != "" else Pal.ink(0.5 * k), font_b, 1)
 			"codex":
 				name = Txt.t("cxu_book")
 				var have := 0
 				for c in Codex.CATS:
 					have += Codex.count(c).x
 				info = Txt.t("cxu_row_codex_d") % [have, CodexData.E.size()]
+			"trial":
+				var tid := str(row[1])
+				name = Txt.t("trial_" + tid)
+				var spec: Dictionary = Career.TRIALS.get(tid, {})
+				var ty: Dictionary = Market.type_of(str(spec.get("ship", "gr7")))
+				var parts: Array = [(ty.name[0] if Txt.zh else ty.name[1]) if ty.has("name") else str(spec.get("ship", ""))]
+				var lend: Dictionary = spec.get("lend", {})
+				if not lend.is_empty():
+					var ls: Array = []
+					for lt in lend:
+						ls.append(Gear.name_of(str(lt)) + " ×%d" % int(lend[lt]))
+					parts.append(Txt.t("trial_lend") % ", ".join(ls))
+				var done_n: int = int(Career.data.get("trials", {}).get(tid, 0))
+				parts.append(Txt.t("trial_done") % done_n)
+				info = "  ·  ".join(parts)
+				lamp = Hmi.ok_col() if done_n > 0 else Hmi.can_col()
+				_text(Txt.t("trial_" + tid + "_d"), Vector2(rr.end.x - 20, rr.get_center().y + 5), 12, Pal.ink(0.45 * k), font, 1)
 		Hmi.lamp(self, Vector2(rr.position.x + 24, rr.get_center().y), lamp, true, k, 6.0)
-		_text(name, Vector2(rr.position.x + 46, rr.position.y + 22), 18, Pal.ink(0.95 * k), font_s)
-		_text(info, Vector2(rr.position.x + 46, rr.position.y + 42), 13, Pal.ink(0.55 * k), font)
+		var tight: bool = rr.size.y < 46.0
+		_text(name, Vector2(rr.position.x + 46, rr.position.y + (17 if tight else 22)), 16 if tight else 18, Pal.ink(0.95 * k), font_s)
+		_text(info, Vector2(rr.position.x + 46, rr.position.y + (31 if tight else 42)), 12 if tight else 13, Pal.ink(0.55 * k), font)

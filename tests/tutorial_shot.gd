@@ -21,7 +21,7 @@ func _process(_dt: float) -> bool:
 	frame += 1
 	if frame == 90:
 		Cap.save(root, "res://tests/out/tut_radio.png")
-		print("lesson %d step %d line %s" % [game.tutorial.lesson_i, game.tutorial.step_i, game.tutorial.line_now.get("id", "-")])
+		print("lesson %d step %d" % [game.tutorial.lesson_i, game.tutorial.step_i])
 	if frame == 100:
 		game.tools.set_tool(2)
 	if frame == 104:

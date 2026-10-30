@@ -34,6 +34,9 @@ func _init() -> void:
 	z_index = 8
 	z_as_relative = false
 	font = Fonts.get_font("Regular")
+	var mat := ShaderMaterial.new()
+	mat.shader = preload("res://scripts/blueprint_dashes.gdshader")
+	material = mat
 
 
 func snapshot() -> void:
@@ -153,6 +156,11 @@ func _process(dt: float) -> void:
 	var redraw := not is_equal_approx(k, was) or (was >= 0.01 and k < 0.01)
 	if k > 0.01:
 		var zoom: float = game.cam_zoom()
+		var view: Rect2 = get_global_transform_with_canvas().affine_inverse() * get_viewport_rect().grow(4.0)
+		# The four-pixel culling margin covers subpixel camera easing. Rebuild
+		# when the view moves two pixels, rather than for its floating-point tail.
+		if view.position.distance_squared_to(_view_rect.position) * zoom * zoom > 4.0 or view.size.distance_squared_to(_view_rect.size) * zoom * zoom > 4.0:
+			redraw = true
 		if not is_equal_approx(zoom, _draw_zoom) or Txt.zh != _draw_zh:
 			redraw = true
 		var state: Array = []
@@ -186,6 +194,7 @@ func _dash_points(points: PackedVector2Array, a: Vector2, b: Vector2, seg: float
 
 
 func _dpoly(poly: PackedVector2Array, c: Color, w: float) -> void:
+	if not Geom.bbox(poly).grow(w).intersects(_view_rect): return
 	if not _poly_dashes.has(poly):
 		var points := PackedVector2Array()
 		for i in poly.size():
@@ -193,10 +202,11 @@ func _dpoly(poly: PackedVector2Array, c: Color, w: float) -> void:
 		_poly_dashes[poly] = points
 	var points: PackedVector2Array = _poly_dashes[poly]
 	if not points.is_empty():
-		draw_multiline(points, c, w)
+		_draw_dashes(points, poly, c, w, _poly_meshes)
 
 
 func _dpath(path: PackedVector2Array, c: Color, w: float) -> void:
+	if not Geom.bbox(path).grow(w).intersects(_view_rect): return
 	if not _path_dashes.has(path):
 		var points := PackedVector2Array()
 		for i in path.size() - 1:
@@ -204,7 +214,41 @@ func _dpath(path: PackedVector2Array, c: Color, w: float) -> void:
 		_path_dashes[path] = points
 	var points: PackedVector2Array = _path_dashes[path]
 	if not points.is_empty():
-		draw_multiline(points, c, w)
+		_draw_dashes(points, path, c, w, _path_meshes)
+
+
+# Positive-width draw_multiline expands into one canvas command per dash in
+# Godot. Keep the same butt-ended quads in a retained mesh instead. The vertex
+# shader adjusts only width on zoom, so the endpoints/indices never rebuild.
+var _poly_meshes := {}
+var _path_meshes := {}
+
+func _draw_dashes(points: PackedVector2Array, key: PackedVector2Array, col: Color, width: float, cache: Dictionary) -> void:
+	if not cache.has(key):
+		var verts := PackedVector2Array()
+		var offsets := PackedVector2Array()
+		var indices := PackedInt32Array()
+		var weight := width * _z / 1.1
+		for i in range(0, points.size(), 2):
+			var a := points[i]
+			var b := points[i + 1]
+			var normal := (a - b).orthogonal().normalized() * 0.5 * weight
+			var base := verts.size()
+			verts.append_array([a, a, b, b])
+			for offset in [normal, -normal, -normal, normal]:
+				offsets.append(Vector2(-10.0 + offset.x, offset.y))
+			indices.append_array([base, base + 1, base + 2, base, base + 2, base + 3])
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = verts
+		arrays[Mesh.ARRAY_TEX_UV] = offsets
+		arrays[Mesh.ARRAY_INDEX] = indices
+		var mesh := ArrayMesh.new()
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, Mesh.ARRAY_FLAG_USE_2D_VERTICES)
+		# Include the width added by the shader in the mesh's culling bounds.
+		mesh.custom_aabb = mesh.get_aabb().grow(256.0)
+		cache[key] = mesh
+	draw_mesh(cache[key], null, Transform2D.IDENTITY, col)
 
 
 # Labels are drawn at their size on screen, whatever the zoom: rasterised at
@@ -214,23 +258,52 @@ var _z := 1.0
 var _poly_dashes := {}
 var _path_dashes := {}
 var _placed: Array = []      # label rects this frame, in screen-scale units
+var _view_rect := Rect2()
+var _label_cells := {}
+var _text_widths := {}
+const LABEL_CELL := 64.0
 
 
 # a point label: the first of a few spots beside the point that is still free
 # Keep the original candidate ordering and rectangle predicate, without a
 # per-candidate closure or a spatial index that costs more on small layouts.
 func _label_occupied(r: Rect2) -> bool:
-	for placed in _placed:
-		if placed.intersects(r): return true
+	var first := Vector2i((r.position / LABEL_CELL).floor())
+	var last := Vector2i((r.end / LABEL_CELL).floor())
+	for x in range(first.x, last.x + 1):
+		for y in range(first.y, last.y + 1):
+			for placed in _label_cells.get(Vector2i(x, y), []):
+				if placed.intersects(r): return true
 	return false
 
 
 func _remember_label(r: Rect2) -> void:
 	_placed.append(r)
+	var first := Vector2i((r.position / LABEL_CELL).floor())
+	var last := Vector2i((r.end / LABEL_CELL).floor())
+	for x in range(first.x, last.x + 1):
+		for y in range(first.y, last.y + 1):
+			var key := Vector2i(x, y)
+			if not _label_cells.has(key): _label_cells[key] = []
+			_label_cells[key].append(r)
+
+
+func _text_width(text: String, size_px: int) -> float:
+	if not _text_widths.has(size_px): _text_widths[size_px] = {}
+	var cache: Dictionary = _text_widths[size_px]
+	if not cache.has(text):
+		# ARK-01 has more unique labels than Font's bounded shaping cache.
+		# Retain each shaped line here rather than evicting/re-shaping it on zoom.
+		var line := TextLine.new()
+		line.direction = TextServer.DIRECTION_AUTO
+		line.text_overrun_behavior = TextServer.OVERRUN_TRIM_CHAR
+		line.add_string(text, font, size_px)
+		cache[text] = line
+	return (cache[text] as TextLine).get_size().x
 
 
 func _point_label(at: Vector2, text: String, col: Color) -> void:
-	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 6.0
+	var w := _text_width(text, 14) + 6.0
 	var base := at * _z
 	for off in [Vector2(8, -7), Vector2(8, 19), Vector2(8, -25), Vector2(8, 37), Vector2(-w - 8, -7), Vector2(-w - 8, 19)]:
 		var r := Rect2(base + off + Vector2(-3, -14), Vector2(w, 18))
@@ -244,21 +317,31 @@ func _point_label(at: Vector2, text: String, col: Color) -> void:
 func _label(at: Vector2, text: String, size_px: int, col: Color, off: Vector2 = Vector2(4, -4)) -> void:
 	if text == "":
 		return
+	var w := _text_width(text, size_px)
+	var label_rect := Rect2(at + (off + Vector2(-3, -size_px * 0.95)) / _z, Vector2(w + 6, size_px * 1.25) / _z)
+	if not label_rect.intersects(_view_rect): return
 	draw_set_transform(at, 0.0, Vector2.ONE / _z)
-	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x
 	draw_rect(Rect2(off + Vector2(-3, -size_px * 0.95), Vector2(w + 6, size_px * 1.25)), Color(0.02, 0.03, 0.05, 0.72 * k))
-	draw_string(font, off, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, col)
+	var line: TextLine = _text_widths[size_px][text]
+	line.draw(get_canvas_item(), off - Vector2(0, line.get_line_ascent()), col)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
+const CODES_ZOOM := 1.0         # the camera zoom from which part codes are drawn
 func _draw() -> void:
 	if k < 0.01:
 		return
 	var z: float = game.cam_zoom()
 	_z = z
+	_view_rect = get_global_transform_with_canvas().affine_inverse() * get_viewport_rect().grow(4.0)
+	(material as ShaderMaterial).set_shader_parameter("dash_width", 1.1 / z)
 	_placed = []
+	_label_cells.clear()
 	var lw := 1.1 / z
 	var a := k
+	# 44 号 (player 2026-10-25: the drawing's part codes crowd the course): codes on equipment,
+	# lines and points only once zoomed in to read them; room names and outlines always
+	var codes := z >= CODES_ZOOM
 	var col := Color(0.62, 0.86, 1.0, 0.75 * a)
 	var dim := Color(0.62, 0.86, 1.0, 0.35 * a)
 	# sweep: the drawing draws itself from bow to stern
@@ -271,13 +354,14 @@ func _draw() -> void:
 		if Geom.bbox(e[0]).position.x > sweep:
 			continue
 		_dpoly(e[0], dim, lw)
-		_label(Geom.bbox(e[0]).position, e[1], 13, Color(0.62, 0.86, 1.0, 0.6 * a))
+		if codes:
+			_label(Geom.bbox(e[0]).position, e[1], 13, Color(0.62, 0.86, 1.0, 0.6 * a))
 	for r in runs:
 		var path: PackedVector2Array = r[0]
 		if path.is_empty() or path[0].x > sweep:
 			continue
 		_dpath(path, Color(0.62, 0.86, 1.0, (0.55 if r[2] == "pipe" else 0.4) * a), lw * (1.6 if r[2] == "pipe" else 1.0))
-		if r[1] != "":
+		if r[1] != "" and codes:
 			_label(path[path.size() / 2], r[1], 12, Color(0.62, 0.86, 1.0, 0.55 * a))
 	for p in points:
 		var pos: Vector2 = p[0]
@@ -293,9 +377,9 @@ func _draw() -> void:
 				draw_rect(Rect2(pos - Vector2(s, 0), Vector2(s * 2, s)), dim, false, lw)
 			_:
 				draw_rect(Rect2(pos - Vector2(s, s) * 0.7, Vector2(s, s) * 1.4), col, false, lw)
-		if p[1] != "":
+		if p[1] != "" and codes:
 			_point_label(pos, p[1], Color(0.62, 0.86, 1.0, 0.9 * a))
-	_label(Vector2(x0 + 2.0 * 48.0, y_top - 1.2 * 48.0), game.ship.get("name", "") + "  ·  " + game.txt("blueprint"), 18, col, Vector2.ZERO)
+	_label(Vector2(x0 + 2.0 * 48.0, y_top - 1.2 * 48.0), game.ship.get("name", "") + "  ·  " + game.txt("blueprint"), 12, dim, Vector2.ZERO)
 	if has_notes():
 		_draw_notes(lw, a)
 

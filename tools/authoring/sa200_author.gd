@@ -17,6 +17,11 @@ class_name Sa200Author
 # slack; then the film comes off whole, panel by panel, and the stays and braces
 # after it. Taut, a panel cut or freed tears (and the tear runs on), a stay cut or
 # freed snaps and its spar whips into the gondola.
+# The way in (user 2026-10-27: "外框把路挡住了……给无人机一条不破坏光帆的实际进入路线"; Jev
+# A 0.59): the frame and the stays closed the gondola off on every side, so the right
+# edge spar has a service gate and a film-free service lane runs from it to the
+# hatch, hemmed by two parallel stays (ST-11 above, ST-11B below). The vent port
+# G-G sits on the right wall beside the hatch, in reach from the lane.
 
 const K = preload("res://tools/authoring/kit.gd")
 const T := 0.9
@@ -26,6 +31,11 @@ const SPAR := 1.2
 const OUT_G := [Vector2(80.0, -8.0), Vector2(100.0, -8.0), Vector2(102.0, -6.0), Vector2(102.0, 6.0), Vector2(100.0, 8.0),
 	Vector2(80.0, 8.0), Vector2(78.0, 6.0), Vector2(78.0, -6.0)]
 const GC := Vector2(90.0, 0.0)
+# the service lane: its hems' centre lines (y, m) and the gate in the right spar between them
+const LANE_TOP := 2.3
+const LANE_BOT := 6.25
+const GATE0 := LANE_TOP + 0.15
+const GATE1 := LANE_BOT - 0.15
 
 static var w
 static var by_tag := {}
@@ -72,7 +82,15 @@ static func _plan() -> void:
 	var ry := [-6.0, -3.0, 3.0, 6.0]
 	for k in range(1, 5):
 		var f := Vector2(R, TT + (BB - TT) * k / 5.0)
-		members.append(["ST-%d" % (8 + k), Vector2(102.0, ry[k - 1]), f, _quad(f), null])
+		var g := Vector2(102.0, ry[k - 1])
+		if k == 3:
+			# the service lane's hems, straight out to the gate
+			members.append(["ST-11", Vector2(102.0, LANE_TOP), Vector2(R, LANE_TOP), "NE", null])
+			members.append(["ST-11B", Vector2(101.75, LANE_BOT), Vector2(R, LANE_BOT), "SE", null])
+			continue
+		if k == 4:
+			g = Vector2(101.5, 6.5)
+		members.append(["ST-%d" % (8 + k), g, f, _quad(f), null])
 	members.append(["BR-3", Vector2(101.0, 7.0), Vector2(R, BB), "SE", Vector2(100.0, 8.0)])
 	for k in range(1, 9):
 		var f := Vector2(R - (R - L) * k / 9.0, BB)
@@ -91,7 +109,22 @@ static func _spar_at(p: Vector2) -> String:
 	if p.y >= H - SPAR - 0.01:
 		return "SP-B%d" % (clampi(int(p.x / 60.0), 0, 2) + 1)
 	var s := clampi(int((p.y + H - SPAR) / ((2.0 * H - 2.0 * SPAR) / 3.0)), 0, 2) + 1
+	if p.x >= 90.0 and s == 2 and p.y >= GATE1:
+		return "SP-R2G"
 	return ("SP-L%d" if p.x < 90.0 else "SP-R%d") % s
+
+
+# the film panels in order round the gondola: [tag, member before, member after]; none in the lane
+static func _panels() -> Array:
+	var out: Array = []
+	var n := members.size()
+	for i in n:
+		var m0: Array = members[i]
+		var m1: Array = members[(i + 1) % n]
+		if m0[0] == "ST-11" and m1[0] == "ST-11B":
+			continue
+		out.append(["FM-%d" % (out.size() + 1), i, (i + 1) % n])
+	return out
 
 
 # ---------------------------------------------------------------- the frame
@@ -106,14 +139,19 @@ static func _frame() -> void:
 	for i in 3:
 		var y0 := -H + SPAR + seg * i
 		K.plate("SP-L%d" % (i + 1), K.R(0.0, y0, SPAR, y0 + seg), S, "beam")
-		K.plate("SP-R%d" % (i + 1), K.R(W - SPAR, y0, W, y0 + seg), S, "beam")
+		if i == 1:
+			# the service gate: the middle right section stops either side of the lane
+			K.plate("SP-R2", K.R(W - SPAR, y0, W, GATE0), S, "beam")
+			K.plate("SP-R2G", K.R(W - SPAR, GATE1, W, y0 + seg), S, "beam")
+		else:
+			K.plate("SP-R%d" % (i + 1), K.R(W - SPAR, y0, W, y0 + seg), S, "beam")
 	for i in 2:
 		var x := 60.0 * (i + 1)
 		K.bolt(by_tag["SP-T%d" % (i + 1)], by_tag["SP-T%d" % (i + 2)], x, -H + SPAR * 0.5, "bolt")
 		K.bolt(by_tag["SP-B%d" % (i + 1)], by_tag["SP-B%d" % (i + 2)], x, H - SPAR * 0.5, "bolt")
 		var y := -H + SPAR + seg * (i + 1)
 		K.bolt(by_tag["SP-L%d" % (i + 1)], by_tag["SP-L%d" % (i + 2)], SPAR * 0.5, y, "bolt")
-		K.bolt(by_tag["SP-R%d" % (i + 1)], by_tag["SP-R%d" % (i + 2)], W - SPAR * 0.5, y, "bolt")
+		K.bolt(by_tag["SP-R2G" if i == 1 else "SP-R%d" % (i + 1)], by_tag["SP-R%d" % (i + 2)], W - SPAR * 0.5, y, "bolt")
 	# the corners, hinged
 	K.bolt(by_tag["SP-T1"], by_tag["SP-L1"], SPAR * 0.5, -H + SPAR, "bolt")
 	K.bolt(by_tag["SP-T3"], by_tag["SP-R1"], W - SPAR * 0.5, -H + SPAR, "bolt")
@@ -186,10 +224,9 @@ static func _members() -> void:
 # ---------------------------------------------------------------- the film, a panel between each two members
 
 static func _film() -> void:
-	var n := members.size()
-	for i in n:
-		var m0: Array = members[i]
-		var m1: Array = members[(i + 1) % n]
+	for pn in _panels():
+		var m0: Array = members[pn[1]]
+		var m1: Array = members[pn[2]]
 		var pts: Array = [m0[1], m0[2]]
 		# round a frame corner between them
 		var f0: Vector2 = m0[2]
@@ -201,7 +238,7 @@ static func _film() -> void:
 		if m0[4] != null:
 			pts.append(m0[4])
 		var poly := K.mp(pts)
-		var fm = K.plate("FM-%d" % (i + 1), poly, {"cls": "metal", "dest": "metal", "mass": 0.03, "density": 0.05, "barrier": false, "cut_speed": 400.0, "name_key": "p_sail_film"}, "film")
+		var fm = K.plate(pn[0], poly, {"cls": "metal", "dest": "metal", "mass": 0.03, "density": 0.05, "barrier": false, "cut_speed": 400.0, "name_key": "p_sail_film"}, "film")
 		# its edge ropes: along both members and the spar
 		for t in [0.35, 0.75]:
 			var p0: Vector2 = (m0[1] as Vector2).lerp(m0[2], t)
@@ -229,7 +266,8 @@ static func _lines() -> void:
 # ---------------------------------------------------------------- controls
 
 static func _controls() -> void:
-	K.ctrl("G-G", "port", K.at(85.0, -7.8, ["hull"]), Vector2(85.0, -8.25), {"medium": "gas", "target": "G"})
+	# the vent port beside the hatch, over the service lane
+	K.ctrl("G-G", "port", K.at(101.55, 2.8, ["hull"]), Vector2(102.25, 2.8), {"medium": "gas", "target": "G"})
 	K.door("HT-G", "")
 	K.ctrl("K-G", "switch", by_tag["AV-G"], Vector2(81.0, -5.0), {"target": "K-G", "state": true, "hidden_room": "G"})
 	K.ctrl("E-1", "test", by_tag["AV-G"], Vector2(82.2, -5.6), {"medium": "volt", "target": "bus", "hidden_room": "G"})
@@ -238,6 +276,8 @@ static func _controls() -> void:
 		var wp = by_tag[e[1]]
 		var bb := Geom.bbox(wp.poly)
 		K.ctrl(e[0], "switch", wp, Vector2(e[2], bb.get_center().y / Geom.M), {"target": e[0], "state": true, "hidden_room": "G"})
+		# 87-4: the furling motor beside each winch's brake (scripts/sail.gd): it reels the corner's film in
+		K.ctrl("F-" + e[0].substr(2), "switch", wp, Vector2(e[2] - 1.2, bb.get_center().y / Geom.M), {"target": "F-" + e[0].substr(2), "state": false, "hidden_room": "G"})
 		k += 1
 	K.ctrl("PW", "port", by_tag["TANK-G"], Vector2(90.0, 3.8), {"medium": "water", "target": "water", "hidden_room": "G"})
 	# the earthing clamp on the bottom left spar
@@ -261,27 +301,41 @@ static func _rooms() -> void:
 static func meta() -> Dictionary:
 	if members.is_empty():
 		_plan()
-	var n := members.size()
 	var panels := {}
 	var stays := {}
 	var hits := {"NW": ["WINCH-1", "AV-G"], "NE": ["WINCH-2", "ENG-G"], "SE": ["WINCH-4", "TANK-G"], "SW": ["WINCH-3", "DOCK"]}
-	for i in n:
-		var c: Vector2 = ((members[i][2] as Vector2) + (members[(i + 1) % n][2] as Vector2)) * 0.5
-		panels["FM-%d" % (i + 1)] = {"quad": _quad(c), "next": ["FM-%d" % ((i - 1 + n) % n + 1), "FM-%d" % ((i + 1) % n + 1)]}
-	for i in n:
+	# a panel's neighbours share a member with it (across the lane there is none)
+	var pl := _panels()
+	var on_member := {}
+	for pn in pl:
+		for mi in [pn[1], pn[2]]:
+			if not on_member.has(mi):
+				on_member[mi] = []
+			on_member[mi].append(pn[0])
+	for pn in pl:
+		var c: Vector2 = ((members[pn[1]][2] as Vector2) + (members[pn[2]][2] as Vector2)) * 0.5
+		var nx: Array = []
+		for mi in [pn[1], pn[2]]:
+			for o in on_member[mi]:
+				if o != pn[0]:
+					nx.append(o)
+		panels[pn[0]] = {"quad": _quad(c), "next": nx}
+	for i in members.size():
 		var m: Array = members[i]
-		stays[m[0]] = {"quad": m[3], "panels": ["FM-%d" % ((i - 1 + n) % n + 1), "FM-%d" % (i + 1)], "hits": hits[m[3]], "kn": 12.0}
+		stays[m[0]] = {"quad": m[3], "panels": on_member.get(i, []), "hits": hits[m[3]], "kn": 12.0}
 	return {
 		"id": "sa200",
 		"name": "SA-200 KITE",
 		"title": ["SA-200「纸鸢」光帆货船 · 帆展 180 m", "SA-200 KITE · LIGHT-SAIL FREIGHTER · 180 m SAIL"],
 		"contract": "SA-200",
 		"length": 180.0,
-		"value": {"total": 201300.0, "metal": 12000.0},
+		# 87-4: the sail furled whole is the ship's prize (168,000 for all four corners, by area)
+		"value": {"total": 369300.0, "metal": 12000.0},
 		"clamps": [[30.0, H], [150.0, H]],
 		"room_names": {"G": "room_saG"},
 		"gas": {"rooms": {"G": 101.0}, "vessels": {}, "valves": [], "value": 1500.0},
-		"sail": {"quads": {"NW": "W-NW", "NE": "W-NE", "SE": "W-SE", "SW": "W-SW"}, "panels": panels, "stays": stays, "torn": ["FM-9"], "ground": "GND"},
+		"sail": {"quads": {"NW": "W-NW", "NE": "W-NE", "SE": "W-SE", "SW": "W-SW"}, "panels": panels, "stays": stays, "torn": ["FM-9"], "ground": "GND",
+			"roll": {"value": 168000.0, "winch": {"NW": "WINCH-1", "NE": "WINCH-2", "SE": "WINCH-4", "SW": "WINCH-3"}, "furl": {"NW": "F-NW", "NE": "F-NE", "SE": "F-SE", "SW": "F-SW"}}},
 		"power": {
 			"bus": "AV-G",
 			"sources": [
@@ -295,7 +349,8 @@ static func meta() -> Dictionary:
 		}, "joins": [], "value": {"water": 800.0}},
 		"ctrls_cfg": {"G-G": {"rate": 30.0}},
 		"labels": {"BAT-G": "BAT", "AV-G": "AV", "FC-G": "FUEL CELL", "TANK-G": "H2O", "WINCH-1": "WINCH NW", "WINCH-2": "WINCH NE", "WINCH-3": "WINCH SW", "WINCH-4": "WINCH SE"},
-		"hints": {},
+		"hints": {"start": ["整帆收起来才值钱：先左下角接地线 GND；绕到右侧外框，从检修门洞进通道，舱门旁气口 G-G 抽气到 5 kPa 以下，再开舱门 HT-G 进去；松开四台绞盘刹车 W-xx，再开四台收帆电机 F-xx；卷好的帆卷拆下送设备口。",
+			"The furled sail is the prize: earth it bottom-left (GND); round to the right edge and in through the service gate down the lane; vent the gondola at G-G beside the hatch below 5 kPa, then open the hatch HT-G; let off the four winch brakes W-xx, then switch on the four furling motors F-xx; take the rolls to the equipment mouth."]},
 		"market": {
 			"class": "SA", "name": ["纸鸢级光帆货船", "KITE-CLASS LIGHT-SAIL FREIGHTER"], "time": 45.0,
 			"rooms": {"G": [0.2, 40.0, 101.0]},

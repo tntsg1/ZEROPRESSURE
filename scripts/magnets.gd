@@ -19,6 +19,11 @@ extends Node
 #   held, helium boiled off, and the coils beside it quench a moment later if they
 #   are still energised.
 # Saved: each coil's energy and temperature, which quenched.
+#   87-2: the field is drawn as it is. Round each energised coil its flux loops, as wide and as
+#   bright as the energy still in it, creeping round the slower the less is left; with the dump
+#   switch closed the dump resistor glows with the power going into it (the energy's fall per
+#   second), cooling as the coils run down. A quench: the coil's loops collapse into it in a
+#   moment, a flash of arcs, the field gone.
 
 const WRECK_KEEP := 0.25
 const SPREAD_T := 0.6            # s from one coil's quench to its neighbours'
@@ -31,6 +36,10 @@ var temp := {}                   # coil -> K
 var quenched := {}
 var _pending := {}               # coil -> time left before it quenches (spreading)
 var _support_of := {}            # support piece tag -> its coil
+var overlay: Node2D
+var _collapse := {}              # coil -> seconds since it quenched (its field falling in)
+var dump_power := 0.0            # 87-2: fraction of the full stored energy going into the dump a second
+var _t := 0.0
 
 
 func setup(g, ship: Dictionary) -> void:
@@ -42,6 +51,12 @@ func setup(g, ship: Dictionary) -> void:
 		temp[c] = float(cfg.get("T0", 4.5))
 		for f in cfg.coils[c].get("fix", []):
 			_support_of[str(f)] = str(c)
+	if active():
+		overlay = Node2D.new()
+		overlay.z_index = 3
+		overlay.z_as_relative = false
+		overlay.draw.connect(_draw_field)
+		world.add_child(overlay)
 
 
 func active() -> bool:
@@ -130,17 +145,26 @@ func _physics_process(dt: float) -> void:
 	var tau: float = maxf(1.0, float(cfg.get("tau", 35.0)))
 	var tc: float = float(cfg.get("Tc", 9.0))
 	var t0: float = float(cfg.get("T0", 4.5))
+	var before := 0.0
+	var after := 0.0
 	for c in energy:
 		if quenched.has(c):
 			continue
+		before += float(energy[c])
 		if dumping:
 			energy[c] = float(energy[c]) * exp(-dt / tau)
+		after += float(energy[c])
 		if cooled(c):
 			temp[c] = maxf(t0, float(temp[c]) - float(cfg.get("cool", 0.2)) * dt)
 		else:
 			temp[c] = float(temp[c]) + float(cfg.get("warm", 0.04)) * dt
 		if float(temp[c]) > tc and energised(c):
 			_quench(c, "magnet_quench_warm")
+	dump_power = (before - after) / maxf(dt, 0.0001) / maxf(1.0, float(energy.size()))
+	for c in _collapse.keys():
+		_collapse[c] = float(_collapse[c]) + dt
+		if float(_collapse[c]) > 0.8:
+			_collapse.erase(c)
 	for c in _pending.keys():
 		_pending[c] = float(_pending[c]) - dt
 		if float(_pending[c]) <= 0.0:
@@ -170,6 +194,7 @@ func _quench(c: String, why: String) -> void:
 	if quenched.has(c):
 		return
 	quenched[c] = true
+	_collapse[c] = 0.0
 	var e: float = float(energy[c])
 	energy[c] = 0.0
 	temp[c] = maxf(float(temp[c]), 80.0)
@@ -207,3 +232,71 @@ func _quench(c: String, why: String) -> void:
 	game.incident("magnet_quench", c)
 	game.say(why, at, c)
 	game.note_loss("loss_magnet_quench", c, lost)
+
+
+func _process(dt: float) -> void:
+	if overlay == null:
+		return
+	_t += dt
+	if any_energised() or not _collapse.is_empty() or dump_power > 0.0001:
+		overlay.queue_redraw()
+
+
+func _coil_at(c: String) -> Array:
+	var p = world.tag(c)
+	if p == null or p.gone:
+		return []
+	var poly: PackedVector2Array = world.world_poly(p)
+	var bb := Geom.bbox(poly)
+	return [Geom.centroid(poly), bb.size]
+
+
+# 87-2: flux loops round each coil (an ellipse along the coil, a few nested), dashed, the dashes
+# creeping round at a speed set by the energy left; the dump resistor's glow; a quench's collapse
+var draw_us := 0               # what the last redraw of the field took (µs)
+
+func _draw_field() -> void:
+	var t0 := Time.get_ticks_usec()
+	for c in energy:
+		var at := _coil_at(str(c))
+		if at.is_empty():
+			continue
+		var centre: Vector2 = at[0]
+		var size: Vector2 = at[1]
+		var e := float(energy[c])
+		if not quenched.has(c) and e > 0.01:
+			var grow := sqrt(e)
+			for k in 3:
+				var rx := (size.x * 0.5 + (0.9 + 0.9 * k) * Geom.M * grow)
+				var ry := (size.y * 0.5 + (0.9 + 0.9 * k) * Geom.M * grow)
+				var phase := _t * (0.4 + 1.6 * e) * (1.0 if k % 2 == 0 else -1.0)
+				_dashed_ellipse(centre, Vector2(rx, ry), phase, Pal.ink((0.07 + 0.2 * e) * (1.0 - 0.25 * k)), 1.2)
+		if _collapse.has(c):
+			var t := float(_collapse[c]) / 0.8
+			var r := (1.0 - t) * 3.0 * Geom.M
+			_dashed_ellipse(centre, Vector2(size.x * 0.5 + r, size.y * 0.5 + r), 0.0, Pal.heat(0.8 * (1.0 - t), 2.0), 2.4)
+			for i in 5:
+				var a0 := float(i) * 1.26 + t * 9.0
+				var p0 := centre + Vector2.from_angle(a0) * (size.length() * 0.3 + r)
+				var p1 := centre + Vector2.from_angle(a0 + 0.4) * (size.length() * 0.2)
+				overlay.draw_line(p0, p1, Color(2.0, 2.0, 2.4, 0.7 * (1.0 - t)), 1.4, true)
+	# the dump resistor glows with what is going into it
+	var dc = world.ctrls.get(str(cfg.get("dump", "")))
+	if dc != null and dump_power > 0.0001:
+		var host = world.pieces.get(dc.piece)
+		var pos: Vector2 = (world.frame(host) * dc.pos) if host != null else dc.pos
+		var k := clampf(dump_power * float(cfg.get("tau", 35.0)), 0.0, 1.0)
+		var tex: Texture2D = game.fx.glow_tex
+		var r := (0.6 + 1.6 * k) * Geom.M
+		overlay.draw_texture_rect(tex, Rect2(pos - Vector2(r, r), Vector2(r, r) * 2.0), false, Pal.heat(0.55 * k, 1.0 + 1.6 * k))
+	draw_us = Time.get_ticks_usec() - t0
+
+
+func _dashed_ellipse(c: Vector2, r: Vector2, phase: float, col: Color, w: float) -> void:
+	var n := 40
+	for i in n:
+		if i % 2 == 1:
+			continue
+		var a0 := TAU * float(i) / n + phase
+		var a1 := TAU * float(i + 1) / n + phase
+		overlay.draw_line(c + Vector2(cos(a0) * r.x, sin(a0) * r.y), c + Vector2(cos(a1) * r.x, sin(a1) * r.y), col, w, true)

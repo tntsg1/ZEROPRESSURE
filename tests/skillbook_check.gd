@@ -40,42 +40,32 @@ func _run() -> void:
 	Career.data.rep = 30
 	Career.data.done = 10
 	Career.save()
-	check(Growth.TRACKS.size() == 17 and Growth.progress() == 0, "17 routes / 51 volumes; stock equipment is level zero")
-	var funds := float(Career.data.money)
+	check(Growth.TRACKS.size() == 18 and Growth.progress() == 0, "18 routes / 54 volumes (87-3 adds the field grapple); stock equipment is level zero")
+	# G3: the skill book is withdrawn (abilities come from achievements and parts). Buying a
+	# volume is refused and leaves the career exactly as it was, money included.
+	var refused := 0
 	for row in Growth.TRACKS:
-		for tier in range(1, 4):
-			var cost := Growth.price(row[0])
-			check(Growth.buy(row[0]) == "" and Growth.level(Career.data.upgrades, row[0]) == tier, "%s level %d purchased" % [row[0], tier])
-			funds -= cost
-	check(is_equal_approx(funds, float(Career.data.money)) and funds >= 0.0, "exact incremental prices charged once")
-	var snapshot := Career.data.duplicate(true)
-	check(Growth.buy("drive") != "" and Career.data == snapshot, "mastered route refuses further charge")
+		var snapshot := Career.data.duplicate(true)
+		if Growth.buy(row[0]) != "" and Career.data == snapshot:
+			refused += 1
+	check(refused == Growth.TRACKS.size(), "every volume's purchase is refused and nothing is charged (%d of %d)" % [refused, Growth.TRACKS.size()])
 	check(Growth.set_goal("drive"), "savings goal is persisted through the career writer")
 	Career.data = {}
 	Career.load_or_new()
-	check(Growth.progress() == 51 and Career.data.growth_goal == "drive", "all 51 levels and savings goal survive career disk roundtrip")
+	check(Career.data.get("growth_goal", "") == "" and Career.data.has("skills_refunded"), "loaded, the withdrawn book's savings goal is cleared and the refund recorded (Growth.refund_all)")
 	Career.data = Career.fresh()
 	Career.data.upgrades = {"scan_kit": 1, "grapple5": 1, "pump2": 1}
-	check(Growth.progress() == 3 and Growth.price("grapple_mass") == 97500.0, "old purchases credited as volume I; next price is volume II")
-	Career.data = Career.fresh()
-	Career.data.money = 500000.0
-	check(Growth.buy("drive") == "", "first volume available without reputation grind")
-	snapshot = Career.data.duplicate(true)
-	check(Growth.buy("drive") != "" and Career.data == snapshot, "volume II blocked without completed jobs and reputation")
-	Career.data.money = 0.0
-	snapshot = Career.data.duplicate(true)
-	check(Growth.buy("armor") != "" and Career.data == snapshot, "insufficient funds leaves all career state intact")
-	Career.data.money = 500000.0
-	var good_path := Career.path
-	Career.path = "user://missing_skillbook_directory/career.json"
-	snapshot = Career.data.duplicate(true)
-	var live_job: Dictionary = Career.active()
-	check(Growth.buy("armor") != "" and Career.data == snapshot and live_job == snapshot.active, "failed disk write rolls back funds, level and aliased live job")
-	Career.path = good_path
+	check(Growth.progress() == 3, "old purchases are still credited as volume I")
+	# levels granted the new way (achievements) are stored as before: every route at expert
 	Career.data = Career.fresh()
 	Career.data.money = 10000000.0
 	Career.data.done = 10
 	Career.data.rep = 30
+	for row in Growth.TRACKS:
+		Career.data.upgrades["skill_" + row[0]] = 3
+	for id in Growth.LEGACY:
+		Career.data.upgrades[Growth.LEGACY[id]] = 1
+	Career.save()
 	Career.sign_active()
 	Game.contract = Career.active().duplicate(true)
 	Game.start_ship = "tug"
@@ -88,24 +78,13 @@ func _run() -> void:
 	var term = g.console_ui
 	term.set_tab(3)
 	await frames()
-	check(term.book.visible and paused, "onsite field manual accessible while simulation is paused")
-	term.book.selected = "grapple_mass"
-	term.book.refresh_detail()
-	await frames()
-	var purchase_button: Button = term.book.detail.get_children().filter(func(node): return node is Button)[0]
-	purchase_button.grab_focus()
-	await press_key(KEY_ENTER)
-	check(g.grab_max() == 5.0 and g.has_upgrade("grapple5"), "Enter on focused purchase button fits 5 t grapple on current contract immediately")
-	# Esc: out of the manual to the terminal's home screen, Esc again: back to work
+	check(term.book == null and term.tech_panel.visible and paused, "the book's slot is the techniques-and-parts page, the simulation paused")
 	await press_key(KEY_ESCAPE)
 	await frames()
-	check(g.console_ui != null and term.tab == term.HOME, "Esc in the manual goes back to the terminal's home screen")
+	check(g.console_ui != null and term.tab == term.HOME, "Esc goes back to the terminal's home screen")
 	await press_key(KEY_ESCAPE)
 	await frames()
-	check(not paused and g.console_ui == null, "closing manual resumes same dismantling session")
-	for row in Growth.TRACKS:
-		while Growth.level(Career.data.upgrades, row[0]) < 3:
-			Growth.buy(row[0])
+	check(not paused and g.console_ui == null, "closing the terminal resumes the same dismantling session")
 	g.fit_skills()
 	check(g.grab_max() == 8.0 and g.tools.reach(3) == 9.0 * Geom.M and g.skill_value("haul_speed") == 1.9, "expert grapple has 8 t capacity, 9 m reach and 1.9x haul")
 	check(g.tools.reach(1) == 12.0 * Geom.M and g.tools.reach(5) == 9.0 * Geom.M, "meter and hose reach used by actual tool targeting")

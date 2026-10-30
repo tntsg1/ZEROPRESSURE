@@ -440,6 +440,8 @@ static func _settle(d: Dictionary, w, bad: Array) -> void:
 	# what a ship pays on top of its parts when it goes out whole (LC-140's nested ship)
 	sum += float(v.get("bonus", 0.0))
 	sum += float(d.get("ore", {}).get("fines", 0.0)) * float(d.get("ore", {}).get("price", 0.0))
+	# 87-4: a light sail furled whole
+	sum += preload("res://scripts/sail.gd").asset_full(d)
 	for f in d.get("fluids", {}).get("value", {}):
 		sum += float(d.fluids.value[f])
 	for id in w.order:
@@ -457,7 +459,7 @@ static func _settle(d: Dictionary, w, bad: Array) -> void:
 			for id in w.order:
 				var p = w.pieces[id]
 				if p.scope:
-					sum += p.value if p.cls == "equip" else p.mass * w.metal_price
+					sum += p.value if p.cls == "equip" else w.scrap_value(p)
 	if absf(sum - total) > total * 0.05:
 		bad.append("parts add up to $%d but the contract is worth $%d" % [int(sum), int(total)])
 	if w.structural_mass <= 0.0:

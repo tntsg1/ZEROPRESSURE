@@ -52,6 +52,7 @@ var gas0 := 0.0
 var gas_recovered := 0.0
 var gas_lost := 0.0
 var gas_take := {}                # 76 号: what the hoses really took in, kg by species ("bio": the culture carried with it)
+var gas_tanks := {}               # 108 号: with the pump's second tier, each single-gas tank in its own bottle: id -> {species: kg}
 var blown := {}                   # room -> time of last blowout
 var flow_rate := {}               # room -> kPa/s (negative when draining)
 
@@ -1266,6 +1267,15 @@ func species_of(v: String) -> Dictionary:
 
 func _log_take(v: String, take: float) -> void:
 	if take <= 0.0 or not vols.has(v):
+		return
+	# 108 号 Q15: the pump's second tier keeps a single-gas tank apart (an oxygen tank stays oxygen,
+	# a hydrogen tank does not turn the whole take into fuel-bearing gas)
+	var sp1 := species_of(v)
+	if vessel_cfg.has(v) and sp1.size() == 1 and Methods.level("pump") >= 2:
+		var bottle: Dictionary = gas_tanks.get(v, {})
+		for sp in sp1:
+			bottle[sp] = float(bottle.get(sp, 0.0)) + take * MOL_PER_KPAM3 * float(MOLAR[sp])
+		gas_tanks[v] = bottle
 		return
 	for sp in species_of(v):
 		var f: float = species_of(v)[sp]

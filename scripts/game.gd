@@ -135,11 +135,13 @@ var arm: RecoveryArm
 var hauler: Hauler
 var hauler2: Hauler             # the second hauling drone (roadmap 4.4)
 var crane: Crane                # the heavy crane (roadmap 4.4)
+var crane_wreck: CraneWreck     # 106 号: the dead one, until it is mended
 var keepout: Array = []         # Rect2 (px): keep-out zones the operator set; no machine goes in
 var consoles: Consoles          # the berth's two computers: shop and berth management, on site
 var gear: Gear                  # field gear out on this job: deployable tools, drone modules (scripts/gear.gd)
 var parts_in: Array = []        # whole equipment shelved for the berth's repairs this job (scripts/repair.gd)
 var parts_value := 0.0          # what it was worth (counted in the recovery, not paid in cash)
+var spot_paid := 0.0            # 108 号: cash already paid on the spot this job (the career's first machine)
 var material_receipts: Array = [] # actual G5 raw intake, pending atomic career settlement
 var receiver_commits: Dictionary = {} # every piece of a G5 mixed receipt, including sold goods
 var material_recovery_value := 0.0 # retained value counts as recovery, never cash
@@ -195,6 +197,7 @@ var aim := Vector2.ZERO
 # economy
 var income_equip := 0.0
 var income_metal := 0.0
+var income_ore := 0.0           # 108 号: the share of income_metal that is a hopper's ore (sold as ore, never cast)
 var income_hazard := 0.0
 var losses := 0.0
 var loss_lines: Array = []   # [text_key, amount]
@@ -243,6 +246,7 @@ func _ready() -> void:
 	testing = _is_test()
 	Look.mark("start")
 	Txt.load_settings(testing)
+	Playtest.attach(self)
 	hints_on = Txt.hints
 	fx = Fx.new()
 	fx.game = self
@@ -614,6 +618,11 @@ func _ready() -> void:
 		crane.game = self
 		crane.process_mode = Node.PROCESS_MODE_PAUSABLE
 		add_child(crane)
+	elif career() and not dev_job() and not training and exam == null and Career.usable() and not Career.data.is_empty():
+		# 106 号: the dead crane stands in the berth until it is mended
+		crane_wreck = CraneWreck.new()
+		crane_wreck.game = self
+		add_child(crane_wreck)
 	if has_upgrade("arm"):
 		arm = RecoveryArm.new()
 		arm.game = self
@@ -1140,6 +1149,12 @@ func _unhandled_input(ev: InputEvent) -> void:
 	# a berth computer is open over the berth: it has the keys
 	if console_ui != null or dev_overlay_open:
 		return
+	# 108 号: the three remote jobs' keys, anywhere in play
+	var rk := RemoteOps.kind_of_key(ev)
+	if rk != "" and state == "play" and not menu_open:
+		RemoteOps.open(self, rk)
+		get_viewport().set_input_as_handled()
+		return
 	if ev is InputEventKey and ev.pressed and not ev.echo:
 		var k: int = ev.physical_keycode
 		if state == "nuke":
@@ -1241,6 +1256,12 @@ func _unhandled_input(ev: InputEvent) -> void:
 			"plan":
 				# 61 号: work plans stay out of sight until the second berth (G7)
 				if plan != null and G4_OPEN:
+					# 108 号 Q15: Shift + the plan key skips the step the machine is on (the cutter's second tier)
+					if plan.running and ev is InputEventKey and ev.shift_pressed and plan.editing():
+						if plan.skip_step():
+							say("plan_skipped", drone.global_position + Vector2(0, -44))
+							sfx.play("switch")
+						return
 					if plan.has_plan() and not plan.running:
 						open_plan_panel()
 						return
@@ -1366,7 +1387,7 @@ func arm_extract(b, zone: String = "", by_plan: bool = false) -> bool:
 		return false
 	# Explicit user choice: a rail arm extracts planned loads through hulls.
 	# Keep the purchased carrier's load rating and actual receiver settlement.
-	var rated_t: float = Crane.MAX_T if crane != null else (Hauler.MAX_T if hauler != null else (RecoveryArm.MAX_T if arm != null else 0.0))
+	var rated_t: float = Methods.crane_t() if crane != null else (Hauler.MAX_T if hauler != null else (RecoveryArm.MAX_T if arm != null else 0.0))
 	if rated_t > 0.0 and b.total_mass() <= rated_t:
 		if arm == null:
 			arm = RecoveryArm.new()
@@ -1463,6 +1484,29 @@ func open_order_review(early: bool) -> void:
 	paused_sim = true
 	get_tree().paused = true
 	layer.add_child(panel)
+
+
+# 106 号: the settlement's second page — where the recovered goods go (scripts/disposal_panel.gd)
+var disposal_ui = null
+func open_disposal() -> bool:
+	if disposal_ui != null:
+		return true
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	var panel = load("res://scripts/disposal_panel.gd").new()
+	panel.game = self
+	var close := func():
+		disposal_ui = null
+		layer.queue_free()
+	panel.on_done = func():
+		close.call()
+		leave()
+	panel.on_back = close
+	disposal_ui = panel
+	layer.add_child(panel)
+	return true
 
 
 func open_heat() -> void:
@@ -1603,7 +1647,7 @@ func auto_refused(what: String) -> bool:
 # 84 号: the port on foot — out of the berth, the shuttle, every district's consoles; forced the
 # first time (once the first ship is stripped), from the menu after
 var port_walk = null
-func start_port_walk(forced: bool) -> void:
+func start_port_walk(forced: bool, part := "core") -> void:
 	if walk_on() or state != "play":
 		return
 	if not in_berth():
@@ -1612,7 +1656,7 @@ func start_port_walk(forced: bool) -> void:
 		return
 	# 90 号 (user 2026-10-27: "every time I load, now and then the whole tour starts over"): forced only
 	# the first time; a walk cut short comes back as one the player may end ("关掉导览")
-	if forced and Career.usable() and not Career.data.is_empty():
+	if forced and part == "core" and Career.usable() and not Career.data.is_empty():
 		var seen: Dictionary = Career.data.get("seen", {})
 		if seen.has("port_walk_started"):
 			forced = false
@@ -1623,6 +1667,7 @@ func start_port_walk(forced: bool) -> void:
 	port_walk = preload("res://scripts/port_walk.gd").new()
 	port_walk.game = self
 	port_walk.forced = forced
+	port_walk.part = part
 	add_child(port_walk)
 
 
@@ -1717,13 +1762,41 @@ func open_transit(mode: String, here: String) -> void:
 
 
 # 86 号 Q11: the parts rack (by the berth's terminal; the cargo district's racks once it is mended)
-func open_parts_rack() -> void:
+func open_parts_rack(remote := false) -> void:
 	if console_ui != null or menu_open or state != "play":
 		return
+	# 108 号: used once at the rack itself, it can be opened from anywhere after (scripts/remote_ops.gd)
+	if not remote and Career.usable() and not Career.data.is_empty():
+		var seen: Dictionary = Career.data.get("seen", {})
+		if not seen.has("rack_used"):
+			seen["rack_used"] = true
+			Career.data.seen = seen
 	var layer := CanvasLayer.new()
 	layer.layer = 60
 	add_child(layer)
 	var panel = preload("res://scripts/parts_rack_panel.gd").new()
+	panel.game = self
+	# 107 号: the rack fills the screen; the berth behind is not drawn while it is open
+	_cover_world(true)
+	panel.on_close = func():
+		_cover_world(false)
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+	console_ui = panel
+	layer.add_child(panel)
+	sfx.play("menu")
+
+
+# 108 号 Q12: the processing queue, from anywhere (scripts/queue_panel.gd)
+func open_queue_panel() -> void:
+	if console_ui != null or menu_open or state != "play":
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	var panel = preload("res://scripts/queue_panel.gd").new()
 	panel.game = self
 	panel.on_close = func():
 		console_ui = null
@@ -2770,9 +2843,17 @@ func settle_report() -> Dictionary:
 		tb[k] = snappedf(float(time_by[k]), 0.1)
 	return {"job_id":str(job.get("id","")),"earned": earned(), "losses": losses, "rate": recovery_rate(), "grade": hud.grade(), "time": playtime, "fee": fee, "bonus": bonus(), "used": used, "ops": ops,
 		"bonuses": bonuses(), "incidents": incidents.duplicate(true), "time_by": tb, "gear": gear.settlement_report() if gear != null else {},
-		"material_receipts":material_receipts.duplicate(true), "parts": parts_in.duplicate(true), "parts_value": parts_value,
+		"material_receipts":material_receipts.duplicate(true), "parts": parts_in.duplicate(true), "parts_value": parts_value, "spot_paid": spot_paid, "uses": method_uses(),
 		# 64 号: the furnace's scrap, cast into ingots (tonnes from its value at this ship's metal rate)
-		"ingot_value": income_metal, "ingot_t": income_metal / maxf(1.0, world.metal_price), "nuke": nuked, "structure_t": snappedf(structure_t, 0.01), "gas_take": sys.gas_take.duplicate() if GasLine.keeping() else {},"work_order":work_order.report() if work_order != null and work_order.active() else {}}
+		"ingot_value": income_metal, "ore_value": income_ore, "ingot_t": maxf(0.0, income_metal - income_ore) / maxf(1.0, world.metal_price), "nuke": nuked, "structure_t": snappedf(structure_t, 0.01), "gas_take": sys.gas_take.duplicate() if GasLine.keeping() else {}, "gas_tanks": sys.gas_tanks.duplicate(true) if GasLine.keeping() else {},"work_order":work_order.report() if work_order != null and work_order.active() else {}}
+
+
+# 108 号: what this job did with each method (the showcase's settlement compares it)
+func method_uses() -> Dictionary:
+	var pl: Dictionary = gear.placed if gear != null else {}
+	return {"anchor": int(pl.get("anchor", 0)), "pump": int(pl.get("pump", 0)), "probe": int(pl.get("probe", 0)), "prop": int(pl.get("prop", 0)),
+		"furnace": gear.furnace_n if gear != null else 0, "equip_v": gear.equip_v if gear != null else 0.0,
+		"arm": int(ops.get("arm_haul", 0)), "crane": int(ops.get("crane_lift", 0)), "plan": plan.machine_steps if plan != null else 0}
 
 
 # the contract's standard time (0: none, like the first contract)
@@ -3169,6 +3250,7 @@ func net() -> float:
 
 func incident(kind: String, detail: String = "") -> void:
 	incidents.append([snappedf(playtime, 0.1), kind, detail])
+	Playtest.incident(kind, detail)
 	if plan != null and plan.running and kind in ["blowout","fire","arc","burst","blast","prop_blast","o2_fire","tank_burst","tank_rupture","drone_lost"]:
 		plan.cancel()
 	if assist != null:
@@ -3185,6 +3267,39 @@ func _dent(p, new_cond: float, reason: String) -> void:
 	if p.cls == "equip" and p.intact and new_cond < p.cond:
 		note_loss(reason, p.tag, (p.cond - new_cond) * p.value)
 	p.cond = new_cond
+
+
+# 108 号 Q3 (user 2026-10-29 "b"): the career's first whole machine delivered is bought by the
+# recovery station on the spot — cash in the account now, not on the rack — with its own receipt,
+# once; the settlement takes off what was paid here
+func _first_receipt(b, zone: String) -> void:
+	if not career() or not Career.usable() or Career.data.get("seen", {}).has("first_receipt"):
+		return
+	var best = null
+	for p in b.pieces:
+		if p.cls == "equip" and p.intact and (best == null or float(p.value) > float(best.value)):
+			best = p
+	if best == null:
+		return
+	var seen: Dictionary = Career.data.get("seen", {})
+	seen["first_receipt"] = true
+	Career.data.seen = seen
+	var pay := piece_value(best, zone)
+	# bought, not shelved: off this job's parts, so it is neither kept nor paid twice
+	for i in range(parts_in.size() - 1, -1, -1):
+		if str(parts_in[i].tag) == str(best.tag):
+			parts_in.remove_at(i)
+			parts_value = maxf(0.0, parts_value - pay)
+			break
+	Career.data.money = float(Career.data.get("money", 0.0)) + pay
+	spot_paid += pay
+	Career.save()
+	var r = preload("res://scripts/first_receipt.gd").new()
+	var nm: String = Txt.t(str(best.name_key)) if Txt.has(str(best.name_key)) else str(best.tag)
+	r.item = "%s  %s" % [nm, best.tag]
+	r.value = pay
+	add_child(r)
+	sfx.play("receipt", Vector2.INF, 1.0)
 
 
 # a named piece of the contract is past saving: say so now, not at the settlement
@@ -3224,6 +3339,7 @@ func on_ore_in(v: float) -> void:
 	_ore_t = playtime
 	var at := Vector2(Dock.metal_x, Dock.TROUGH_Y - 1.0) * Geom.M
 	ledger.append([txt("ore_fines"), "metal", _ore_due])
+	income_ore += _ore_due
 	gain("metal", _ore_due, at, txt("ore_fines"))
 	log_op("arm_haul")
 	_ore_due = 0.0
@@ -3401,6 +3517,7 @@ func on_swallowed(b, mouth: String) -> void:
 		log_op("deliver_hazard")
 	elif b.pieces.any(func(p): return p.cls == "equip" and p.intact):
 		log_op("deliver_equip")
+		_first_receipt(b, zone)
 	else:
 		log_op("haul_scrap")
 	if zone == "metal" and b.pieces.any(func(p): return p.cls == "equip" and p.intact):
@@ -3409,6 +3526,12 @@ func on_swallowed(b, mouth: String) -> void:
 		tutorial.on_recovered(b, zone)
 	if exam != null:
 		exam.on_delivered(b, zone)
+	# 108 号: a hopper's ore chunks pay as ore — booked apart from the structure's scrap, which the
+	# furnace casts into ingots (the ingots' tonnes and their sale count the structure only)
+	if zone == "metal" and world.ore_price > 0.0:
+		for p in b.pieces:
+			if p.kind == "ore":
+				income_ore += piece_value(p, zone)
 	gain("equip" if zone == "equip" else ("hazard" if zone == "hazard" else "metal"), v, at, label)
 	var col := Pal.heat(1.0, 2.2) if zone == "metal" else (Pal.tint(Pal.FLUID, 0.9, 1.4) if zone == "hazard" else Pal.ink(0.9, 1.5))
 	fx.flash(Dock.zpos(mouth), 140.0, 0.5, col)
@@ -4194,6 +4317,7 @@ func _holds(p) -> bool:
 
 
 func on_kerf(p, res: Dictionary) -> void:
+	Playtest.cut(not res.get("new", []).is_empty())
 	for j in res.killed:
 		var jp: Vector2 = world.joint_world(j)
 		fx.sparks(jp, Vector2.from_angle(randf() * TAU), 4, Pal.heat(1.0, 2.0), 160.0, 0.25, PI)
@@ -4610,9 +4734,21 @@ func _inspect_text(p) -> String:
 		parts.append(txt("j_segments") % p.get_meta("segments").size())
 	if p.cls == "equip" and p.intact and has_upgrade("scan_kit"):
 		parts.append(txt("j_cond") % int(round(p.cond * 100.0)))
+		# 108 号 Q15 (precision inspection's second tier): how long it has left in service — the
+		# years before it falls under what a repair can use — so keeping or selling is decided here
+		if Methods.level("precise") >= 2:
+			parts.append(life_text(p))
 	if parts.size() == 1 and p.body == null:
 		parts.append(txt("j_none"))
 	return " · ".join(parts)
+
+
+const LIFE_YEARS := 12.0         # 108 号: a machine new off the line, in years before the repair line
+func life_text(p) -> String:
+	var k := (float(p.cond) - Repair.COND_MIN) / (1.0 - Repair.COND_MIN)
+	if k <= 0.0:
+		return txt("j_life_out")
+	return txt("j_life") % maxi(1, int(round(k * LIFE_YEARS)))
 
 
 # cables and pipes that run behind an attached plate of the hull or a deck
@@ -4810,11 +4946,29 @@ func skill_value(id: String) -> float:
 	# the fine lens cuts a finer kerf than any volume did (scripts/consum.gd)
 	if id == "laser_kerf" and Consum.is_fine(self, "lens"):
 		return Consum.FINE_KERF
-	var kit: Dictionary = job.get("kit", {})
+	var kit: Dictionary = method_kit()
 	if bot != null and not bot.get("kit", {}).is_empty():
 		kit = kit.duplicate()
 		kit.merge(bot.get("kit", {}), true)
 	return Growth.value(kit, id)
+
+
+# 104 号: the contract's kit with the career's dismantling methods and what a borrow job
+# fits for itself laid over it (the higher level wins)
+func method_kit() -> Dictionary:
+	var kit: Dictionary = job.get("kit", {})
+	var over: Dictionary = job.get("kit_lend", {})
+	if career() and not dev_job() and Career.usable():
+		over = over.duplicate()
+		var mk := Methods.kit()
+		for k in mk:
+			over[k] = maxi(int(over.get(k, 0)), int(mk[k]))
+	if over.is_empty():
+		return kit
+	kit = kit.duplicate()
+	for k in over:
+		kit[k] = maxi(int(kit.get(k, 0)), int(over[k]))
+	return kit
 
 
 func fit_skills() -> void:
@@ -4836,7 +4990,7 @@ func has_upgrade(id: String) -> bool:
 	# between contracts there's no contract's kit: the berth has what the career bought
 	if ship.get("berth", false) and Career.data.get("upgrades", {}).has(id):
 		return true
-	return job.get("kit", {}).has(id) or (bot != null and bot.get("kit", {}).has(id))
+	return method_kit().has(id) or (bot != null and bot.get("kit", {}).has(id))
 
 
 func do_wrench(tg: Dictionary, by_plan: bool = false) -> void:
@@ -5270,6 +5424,10 @@ func say(key: String, at: Vector2, arg: String = "") -> void:
 	var text := txt(key)
 	if text.find("%s") >= 0:
 		text = text % arg
+	# 108 号: the playtest recorder hears what the game says, and counts the refusals
+	Playtest.hint(text)
+	if "locked" in key or "deny" in key or "guard" in key:
+		Playtest.deny(text)
 	for m in messages:
 		if m[3] == text and m[2] < 1.2:
 			m[2] = 0.0

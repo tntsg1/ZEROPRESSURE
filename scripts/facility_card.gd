@@ -18,6 +18,7 @@ var k := 0.0
 var _over := ""
 var _held := 0.0
 var _shown := {}
+var _drawn := -1.0             # the k last drawn (a fade's last step must be drawn too, or it stays)
 var _list: Array = []
 var _age := 0.0
 var probe := Vector2.INF        # tests: a world point standing in for the pointer (the mouse is never moved)
@@ -36,7 +37,8 @@ func _ready() -> void:
 
 func _process(dt: float) -> void:
 	var hit := {}
-	if items.is_valid() and game != null and is_instance_valid(game) and game.console_ui == null and not game.menu_open and not game.port_view:
+	var over_hud: bool = probe == Vector2.INF and game != null and is_instance_valid(game) and game.get("hud") != null and game.hud.has_method("pointer_over_ui") and game.hud.pointer_over_ui()
+	if items.is_valid() and game != null and is_instance_valid(game) and game.console_ui == null and not game.menu_open and not game.port_view and not over_hud:
 		var vp := get_viewport()
 		var world: Vector2 = probe if probe != Vector2.INF else vp.get_canvas_transform().affine_inverse() * vp.get_mouse_position()
 		# the cards' words are made at most ten times a second (they name live states)
@@ -57,7 +59,8 @@ func _process(dt: float) -> void:
 	if want > 0.0:
 		_shown = hit
 	k = move_toward(k, want, dt * 7.0)
-	if k > 0.0 or want > 0.0:
+	if k != _drawn:
+		_drawn = k
 		c.queue_redraw()
 
 
@@ -86,7 +89,7 @@ func _draw_card() -> void:
 		var hh: float = font.get_multiline_string_size(str(r[1]), HORIZONTAL_ALIGNMENT_LEFT, lw, 14).y
 		heights.append(hh)
 		h += hh + 8.0
-	var vs := c.size
+	var vs := get_viewport().get_visible_rect().size
 	var pos := mouse + Vector2(22, 18)
 	if pos.x + W > vs.x - 12.0:
 		pos.x = mouse.x - W - 22.0

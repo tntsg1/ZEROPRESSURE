@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>交易行与船市版面草图</title>
+<style>
+:root{--bg:#0b0d10;--panel:#141a1f;--panel2:#1a2228;--line:#2c3740;--ink:#d8e2ea;--dim:#7d8b96;--heat:#ff6a2b;--air:#6fd3ff;--ok:#7be38f;--warn:#ffb35c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Microsoft YaHei","PingFang SC",sans-serif;padding:24px 16px}
+h1{font-size:22px;margin:0 0 6px}
+h2{font-size:18px;margin:36px 0 8px;color:var(--heat)}
+p.note{color:var(--dim);margin:0 0 14px;max-width:980px}
+.frame{border:1px solid var(--line);background:#0e1215;max-width:1180px;margin-bottom:10px;overflow:hidden}
+.top{display:flex;align-items:center;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel)}
+.top .title{font-weight:700;font-size:16px;margin-right:18px}
+.tab{padding:6px 16px;border:1px solid var(--line);color:var(--dim);background:#11171b}
+.tab.on{color:var(--ink);border-color:var(--heat);box-shadow:inset 0 -3px 0 var(--heat)}
+.top .money{margin-left:auto;color:var(--air);font-weight:700}
+.top .x{margin-left:12px;color:var(--dim);border:1px solid var(--line);padding:4px 10px}
+.body{display:flex;min-height:360px}
+.side{width:170px;border-right:1px solid var(--line);padding:10px;background:var(--panel)}
+.side .cat{padding:9px 10px;margin-bottom:6px;border:1px solid var(--line);background:#11171b;color:var(--dim)}
+.side .cat.on{color:var(--ink);border-color:var(--air)}
+.main{flex:1;padding:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px}
+.card{border:1px solid var(--line);background:var(--panel2);padding:8px;position:relative}
+.card .nm{font-size:13px;color:var(--dim)}
+.card .pic{height:84px;display:flex;align-items:center;justify-content:center}
+.card .pr{text-align:right;font-weight:700}
+.card .tag{position:absolute;top:8px;right:8px;font-size:11px;padding:1px 6px;border:1px solid var(--warn);color:var(--warn)}
+.sub{font-size:12px;color:var(--dim)}
+.modal{border:1px solid var(--heat);background:#10161a;display:flex;gap:16px;padding:14px;margin:12px 0 0}
+.bars{display:flex;align-items:flex-end;gap:10px;height:170px;padding:10px;border:1px solid var(--line);flex:1}
+.bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;font-size:11px;color:var(--dim)}
+.bar i{display:block;width:100%;background:#2a3640}
+.bar.buy i{background:#24485a}
+.bar.rush i{background:#7a4a1c}
+.bar.me i{outline:2px solid var(--ok)}
+.form{width:300px;display:flex;flex-direction:column;gap:8px}
+.row{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);padding:8px 10px;background:#11171b}
+.btn{padding:10px;text-align:center;border:1px solid var(--line);background:#16202a}
+.btn.big{border-color:var(--ok);color:var(--ok);font-weight:700;font-size:16px}
+.btn.alt{border-color:var(--air);color:var(--air)}
+table{width:100%;border-collapse:collapse}
+td,th{border-bottom:1px solid var(--line);padding:8px 6px;text-align:left}
+th{color:var(--dim);font-weight:400}
+.st{padding:1px 8px;border:1px solid var(--line);font-size:12px}
+.st.ok{color:var(--ok);border-color:var(--ok)}.st.go{color:var(--air);border-color:var(--air)}.st.w{color:var(--warn);border-color:var(--warn)}
+.list .item{display:flex;gap:12px;align-items:center;border:1px solid var(--line);background:var(--panel2);padding:8px 10px;margin-bottom:6px}
+.list .item .pic{width:90px}
+.list .item .grow{flex:1}
+.vside{width:150px;border-right:1px solid var(--line);background:var(--panel);padding:10px}
+.vside .nav{padding:12px;border:1px solid var(--line);margin-bottom:8px;background:#11171b;color:var(--dim);font-size:15px}
+.vside .nav.on{color:var(--ink);border-color:var(--heat);box-shadow:inset 3px 0 0 var(--heat)}
+.drawer{width:330px;border-left:1px solid var(--line);background:var(--panel);padding:12px;display:flex;flex-direction:column;gap:8px}
+.ship{display:flex;gap:16px}
+.ship .big{flex:1;border:1px solid var(--line);background:#0f1418;display:flex;align-items:center;justify-content:center;min-height:200px;position:relative}
+.mark{position:absolute;font-size:11px;color:var(--warn);border:1px solid var(--warn);padding:0 4px}
+.choose{display:inline-block;margin:6px 0 0;padding:4px 12px;border:1px solid var(--heat);color:var(--heat)}
+@media (max-width:760px){.body,.modal,.ship{flex-direction:column}.side,.vside,.drawer,.form{width:auto}}
+</style>
+</head>
+<body>
+<h1>交易行与船市 · 版面草图（2026-10-25）</h1>
+<p class="note">按《三角洲行动》交易行的思路做了两种版面，A 和 B，每种都包括交易行的“购买 / 出售上架 / 交易记录”和船市。看完告诉我选 A、选 B，或者“A 的哪块 + B 的哪块”。数字是示意，做出来全读真实数据；物品图会用游戏里的实物渲染（钢坯捆、压块、吨袋、船的侧视图），这里先用简笔代替。</p>
+
+<!-- ======================= A ======================= -->
+<h2>方案 A：顶部大页签 + 左侧分类 + 大图卡片（最像三角洲）</h2>
+<p class="note">顶部只有页签、资金和关闭。“航运”和“船市”是和买卖平级的页签，不再是右上角按钮。出售时在卡片上点一下，弹出上架窗：左边是价格分布柱状图，右边定价；“港务回收价”和“挂牌”两种卖法并排摆。</p>
+
+<div class="frame">
+ <div class="top"><span class="title">零压港 · 交易行</span>
+  <span class="tab on">购买</span><span class="tab">出售</span><span class="tab">交易记录</span><span class="tab">航运</span><span class="tab">船市</span>
+  <span class="money">资金 $99,695</span><span class="x">关闭 Esc</span></div>
+ <div class="body">
+  <div class="side"><div class="cat on">全部</div><div class="cat">未分选金属</div><div class="cat">黑色炉料</div><div class="cat">有色混合</div><div class="cat">钢坯</div><div class="sub" style="margin-top:10px">最近买过</div><div class="cat">黑色炉料 · 等级 1</div></div>
+  <div class="main"><div class="grid">
+   <div class="card"><div class="nm">未分选金属</div><div class="pic"><svg width="120" height="70"><rect x="10" y="30" width="100" height="34" fill="#2a3138" stroke="#55626d"/><path d="M14 30 L30 12 L48 26 L62 8 L80 24 L96 14 L106 30" fill="#3a434b" stroke="#6d7b86"/></svg></div><div class="sub">现货 31 t · 本港 + 小行星带</div><div class="pr">最低 $312/t</div></div>
+   <div class="card"><div class="nm">黑色炉料 · 等级 1</div><div class="pic"><svg width="120" height="70"><g fill="#3b3f44" stroke="#7a838c"><rect x="16" y="34" width="28" height="26"/><rect x="46" y="34" width="28" height="26"/><rect x="76" y="34" width="28" height="26"/><rect x="31" y="8" width="28" height="26"/><rect x="61" y="8" width="28" height="26"/></g></svg></div><div class="sub">现货 6 t · 本港柜台 几十秒到</div><div class="pr">最低 $450/t</div></div>
+   <div class="card"><div class="nm">有色混合</div><div class="pic"><svg width="120" height="70"><path d="M30 64 L26 22 Q60 8 94 22 L90 64 Z" fill="#33393f" stroke="#7a838c"/><path d="M40 22 L44 10 M80 22 L76 10" stroke="#7a838c"/></svg></div><div class="sub">吨袋 · 小行星带 货船几分钟</div><div class="pr">最低 $700/t</div></div>
+   <div class="card"><span class="tag">加急 高价收</span><div class="nm">结构钢坯 · 等级 1</div><div class="pic"><svg width="120" height="70"><g fill="#4a4f55" stroke="#9aa4ad"><rect x="14" y="40" width="92" height="9"/><rect x="14" y="50" width="92" height="9"/><rect x="14" y="30" width="92" height="9"/></g><path d="M40 28 V62 M80 28 V62" stroke="#ff8a4a" stroke-width="2"/></svg></div><div class="sub">在收：天衡物流 $1,560/t（加急 9 分钟）</div><div class="pr">最低卖价 $1,100/t</div></div>
+  </div>
+  <div class="sub" style="margin-top:12px">点一张卡 → 卖家列表（一行一家：谁、在哪、几时到、单价、剩余、[购买]）</div>
+  </div>
+ </div>
+</div>
+
+<div class="frame">
+ <div class="top"><span class="title">出售 · 结构钢坯 等级 1（库存 1.50 t）</span><span class="money">上架窗</span></div>
+ <div class="modal">
+  <div style="flex:1">
+   <div class="sub">价格分布：蓝 = 在收（买单），灰 = 在卖（卖单），橙 = 加急，绿框 = 你的价</div>
+   <div class="bars">
+    <div class="bar"><i style="height:30px"></i>$1,000</div>
+    <div class="bar buy"><i style="height:60px"></i>$1,050 收</div>
+    <div class="bar buy me"><i style="height:90px"></i>$1,100 收</div>
+    <div class="bar"><i style="height:120px"></i>$1,200</div>
+    <div class="bar"><i style="height:70px"></i>$1,300</div>
+    <div class="bar rush"><i style="height:40px"></i>$1,560 加急</div>
+   </div>
+  </div>
+  <div class="form">
+   <div class="row"><span>港务回收价（立刻到账）</span><b>$770/t</b></div>
+   <div class="btn alt">按回收价卖掉 · 到账 $1,155</div>
+   <div class="row"><span>挂牌数量</span><b>1.50 t ▬▬▬▬●</b></div>
+   <div class="row"><span>你的价格</span><b>− $1,560 +</b></div>
+   <div class="row"><span>预期到账（扣 2%）</span><b style="color:var(--ok)">$2,293</b></div>
+   <div class="sub">这个价 ≤ 天衡物流的加急价 → <b style="color:var(--ok)">立即成交</b></div>
+   <div class="btn big">上架</div>
+  </div>
+ </div>
+</div>
+
+<div class="frame">
+ <div class="top"><span class="title">交易记录</span></div>
+ <div class="main"><table>
+  <tr><th>时间</th><th>货</th><th>买 / 卖</th><th>数量</th><th>单价</th><th>状态</th><th></th></tr>
+  <tr><td>12:41</td><td>结构钢坯 1</td><td>卖给 天衡物流</td><td>0.50 t</td><td>$1,560</td><td><span class="st ok">已卖出 · 已到账</span></td><td></td></tr>
+  <tr><td>12:30</td><td>未分选金属</td><td>从 独立商户 020 买</td><td>1.00 t</td><td>$312</td><td><span class="st go">货船在路上 · 2 分钟</span></td><td><span class="btn" style="padding:3px 10px">看星图</span></td></tr>
+  <tr><td>12:12</td><td>有色混合</td><td>挂牌卖</td><td>0.05 t</td><td>$700</td><td><span class="st w">挂牌中</span></td><td><span class="btn" style="padding:3px 10px">撤回</span></td></tr>
+  <tr><td>11:58</td><td>黑色炉料 1</td><td>从 恒岳工业 买</td><td>2.00 t</td><td>$450</td><td><span class="st ok">已到库</span></td><td></td></tr>
+ </table></div>
+</div>
+
+<div class="frame">
+ <div class="top"><span class="title">零压港 · 交易行</span><span class="tab">购买</span><span class="tab">出售</span><span class="tab">交易记录</span><span class="tab">航运</span><span class="tab on">船市</span><span class="money">资金 $99,695</span></div>
+ <div class="body">
+  <div class="side"><div class="cat on">全部挂牌</div><div class="cat">小型（≤ 40 m）</div><div class="cat">中型（40–70 m）</div><div class="cat">大型（≥ 70 m）</div><div class="cat">我的船</div></div>
+  <div class="main"><div class="grid">
+   <div class="card"><div class="nm">绒默级医疗船 · 82 m</div><div class="pic"><svg width="170" height="70"><path d="M8 40 L24 24 H140 L162 36 L140 52 H24 Z" fill="#2b333a" stroke="#8c99a4"/><rect x="40" y="28" width="40" height="18" fill="none" stroke="#6fd3ff"/><circle cx="120" cy="38" r="6" fill="none" stroke="#8c99a4"/></svg></div><div class="sub">戴维星站 · 拖回约 3 分钟 · 评级 ★★★★☆ 7</div><div class="pr">$122,500</div></div>
+   <div class="card"><div class="nm">斑鸠级快件艇 · 37 m</div><div class="pic"><svg width="170" height="70"><path d="M30 40 L44 28 H118 L136 38 L118 50 H44 Z" fill="#2b333a" stroke="#8c99a4"/></svg></div><div class="sub">灵神星站 · 约 2 分钟 · ★★★☆☆ 6</div><div class="pr">$68,000</div></div>
+   <div class="card"><div class="nm">霜线级低温运输船 · 72 m</div><div class="pic"><svg width="170" height="70"><path d="M10 40 L26 26 H146 L160 38 L146 50 H26 Z" fill="#2b333a" stroke="#8c99a4"/><circle cx="60" cy="38" r="9" fill="none" stroke="#6fd3ff"/><circle cx="90" cy="38" r="9" fill="none" stroke="#6fd3ff"/></svg></div><div class="sub">司理星站 · 约 4 分钟 · ★★★★★ 9</div><div class="pr">$167,000</div></div>
+  </div></div>
+ </div>
+ <div class="modal">
+  <div class="ship" style="flex:1">
+   <div class="big"><svg width="420" height="140"><path d="M20 70 L60 30 H340 L400 62 L340 100 H60 Z" fill="#232b31" stroke="#9aa6b0" stroke-width="2"/><rect x="100" y="42" width="90" height="44" fill="none" stroke="#6fd3ff"/><rect x="210" y="42" width="60" height="44" fill="none" stroke="#6fd3ff"/></svg>
+    <span class="mark" style="left:30%;top:28%">结构外检：隔离舱失压污染</span></div>
+  </div>
+  <div class="form">
+   <div class="row"><span>要价</span><b>$122,500</b></div>
+   <div class="row"><span>经纪估值</span><b>$259,000</b></div>
+   <div class="row"><span>卖家说</span><span class="sub">结构有已知问题；系统正常停机</span></div>
+   <div class="row"><span>评级</span><span class="sub">7/10 · 环带船检所</span></div>
+   <div style="display:flex;gap:8px"><div class="btn" style="flex:1">结构检验 $5,700</div><div class="btn" style="flex:1">系统检验 $7,800</div></div>
+   <div class="btn big">买下并拖回 · 合计 $134,400</div>
+   <div class="sub">更多 ▾（还价 · 保留报价 · 拖运 Δv · 评估机构记录）</div>
+  </div>
+ </div>
+</div>
+<span class="choose">选 A</span>
+
+<!-- ======================= B ======================= -->
+<h2>方案 B：左侧大竖导航 + 行式列表（带小图）+ 右侧固定操作栏</h2>
+<p class="note">左边一列大导航（购买 / 出售 / 交易记录 / 航运 / 船市），中间是带小图的行式列表，信息一行看完。右边固定一条操作栏：点哪一行，右边就显示怎么买或怎么卖，不弹窗。比 A 更“表格”，同屏能看到的条目更多。</p>
+
+<div class="frame">
+ <div class="top"><span class="title">零压港 · 交易行</span><span class="money">资金 $99,695</span><span class="x">关闭 Esc</span></div>
+ <div class="body">
+  <div class="vside"><div class="nav">购买</div><div class="nav on">出售</div><div class="nav">交易记录</div><div class="nav">航运</div><div class="nav">船市</div></div>
+  <div class="main list">
+   <div class="sub" style="margin-bottom:8px">我的库存（点一行出售）</div>
+   <div class="item"><div class="pic"><svg width="90" height="44"><g fill="#4a4f55" stroke="#9aa4ad"><rect x="6" y="24" width="78" height="7"/><rect x="6" y="16" width="78" height="7"/></g></svg></div><div class="grow"><b>结构钢坯 · 等级 1</b><div class="sub">1.50 t · 最高收价 $1,560（天衡物流 · 加急）</div></div><span class="tag" style="position:static;border:1px solid var(--warn);color:var(--warn);padding:1px 6px">加急</span></div>
+   <div class="item"><div class="pic"><svg width="90" height="44"><path d="M22 40 L18 12 Q45 2 72 12 L68 40 Z" fill="#33393f" stroke="#7a838c"/></svg></div><div class="grow"><b>有色混合</b><div class="sub">0.05 t · 最高收价 $700</div></div></div>
+   <div class="item"><div class="pic"><svg width="90" height="44"><rect x="10" y="18" width="70" height="22" fill="#2a3138" stroke="#55626d"/></svg></div><div class="grow"><b>未分选金属</b><div class="sub">0.00 t</div></div></div>
+  </div>
+  <div class="drawer">
+   <b>出售 · 结构钢坯 1</b>
+   <div class="bars" style="height:120px"><div class="bar buy"><i style="height:40px"></i>$1,050</div><div class="bar buy me"><i style="height:60px"></i>$1,100</div><div class="bar"><i style="height:80px"></i>$1,200</div><div class="bar rush"><i style="height:30px"></i>$1,560</div></div>
+   <div class="row"><span>港务回收价</span><b>$770/t</b></div>
+   <div class="btn alt">按回收价卖掉</div>
+   <div class="row"><span>数量</span><b>1.50 t</b></div>
+   <div class="row"><span>价格</span><b>− $1,560 +</b></div>
+   <div class="row"><span>预期到账</span><b style="color:var(--ok)">$2,293</b></div>
+   <div class="btn big">上架</div>
+  </div>
+ </div>
+</div>
+
+<div class="frame">
+ <div class="top"><span class="title">零压港 · 交易行</span><span class="money">资金 $99,695</span></div>
+ <div class="body">
+  <div class="vside"><div class="nav">购买</div><div class="nav">出售</div><div class="nav">交易记录</div><div class="nav">航运</div><div class="nav on">船市</div></div>
+  <div class="main list">
+   <div class="item"><div class="pic" style="width:150px"><svg width="150" height="50"><path d="M6 26 L20 12 H124 L144 22 L124 36 H20 Z" fill="#2b333a" stroke="#8c99a4"/></svg></div><div class="grow"><b>绒默级医疗船 · 82 m</b><div class="sub">戴维星站 · 拖回约 3 分钟 · 评级 7 · 卖家：结构有已知问题</div></div><b>$122,500</b></div>
+   <div class="item"><div class="pic" style="width:150px"><svg width="150" height="50"><path d="M24 26 L36 16 H104 L120 24 L104 34 H36 Z" fill="#2b333a" stroke="#8c99a4"/></svg></div><div class="grow"><b>斑鸠级快件艇 · 37 m</b><div class="sub">灵神星站 · 约 2 分钟 · 评级 6</div></div><b>$68,000</b></div>
+  </div>
+  <div class="drawer">
+   <div class="big" style="border:1px solid var(--line);height:120px;display:flex;align-items:center;justify-content:center"><svg width="290" height="90"><path d="M10 46 L40 20 H230 L278 40 L230 66 H40 Z" fill="#232b31" stroke="#9aa6b0" stroke-width="2"/></svg></div>
+   <div class="row"><span>要价 / 估值</span><b>$122,500 / $259,000</b></div>
+   <div style="display:flex;gap:8px"><div class="btn" style="flex:1">结构检验</div><div class="btn" style="flex:1">系统检验</div></div>
+   <div class="btn big">买下并拖回 · $134,400</div>
+   <div class="sub">更多 ▾</div>
+  </div>
+ </div>
+</div>
+<span class="choose">选 B</span>
+</body>
+</html>

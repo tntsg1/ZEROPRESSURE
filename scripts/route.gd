@@ -106,6 +106,10 @@ static func buys() -> Array:
 	for it in Terminal.SHOP + Terminal.BERTH:
 		if it[1] in ["upgrade", "facility"]:
 			list.append(it)
+	# Base repairs are prerequisites too; they must be selectable on this desk.
+	for repair in Repair.ITEMS:
+		if not list.any(func(it): return it[0] == repair[0]):
+			list.append([repair[0], "facility", repair[3], repair[4], repair[4] + "_d"])
 	list.sort_custom(func(p, q): return float(p[2]) < float(q[2]) if float(p[2]) != float(q[2]) else str(p[0]) < str(q[0]))
 	return list
 
@@ -116,13 +120,40 @@ static func buy_node(it: Array) -> Dictionary:
 	var price := float(it[2])
 	var owned: bool = d.get("upgrades", {}).has(it[0])
 	var conds: Array = []
+	var repair := Repair.find(str(it[0])) if it[1] == "facility" else []
+	var why := ""
+	var prerequisites: Array = []
+	if not repair.is_empty():
+		# the run-down berth (G2): the price is the repair's, half with the parts on the shelf
+		var pf := Repair.parts_for(str(it[0]))
+		price = Repair.price(str(it[0]), pf.ok)
+		var lack: Array = []
+		for cls in pf.missing:
+			lack.append("%s ×%d" % [Repair.class_name_of(cls), int(pf.missing[cls])])
+		if pf.tons_missing > 0.001:
+			lack.append("%s %.1f t" % [Repair.class_name_of("structure"), pf.tons_missing])
+		if float(pf.get("section_missing", 0.0)) > 0.001:
+			lack.append("%s %.1f t" % [Repair.class_name_of("section"), float(pf.section_missing)])
+		var parts_label := Growth.text(["零件折价（可选）", "Parts discount (optional)"])
+		conds.append(_cond(parts_label, Growth.text(["已采用半价", "Half price applied"]) if pf.ok else Growth.text(["纯现金全价；缺 ", "Cash price; missing "]) + ", ".join(lack), 1.0, true))
+		for dep in repair[1]:
+			prerequisites.append(str(dep))
+			var has: bool = owned or Repair.done(str(dep))
+			conds.append(_cond(Txt.t("rt_first"), Repair.name_of(str(dep)), 1.0 if has else 0.0, has))
+		if str(it[0]) in Port.POWER_ITEMS:
+			var powered: bool = owned or Port.power_ok(str(it[0]))
+			conds.append(_cond(Growth.text(["港区供电", "Port power"]), Growth.text(["动力区 I", "Power district I"]), 1.0 if powered else 0.0, powered))
+		why = "" if owned else Repair.reason(str(it[0]), pf.ok)
 	conds.append(_cond(Txt.t("rt_money"), "%s / %s" % [Pal.money(money), Pal.money(price)], 1.0 if owned else money / price, owned or money >= price))
-	if Terminal.REQUIRES.has(it[0]):
+	if repair.is_empty() and Terminal.REQUIRES.has(it[0]):
 		var need: String = Terminal.REQUIRES[it[0]]
+		prerequisites.append(need)
 		var has: bool = d.get("upgrades", {}).has(need)
 		conds.append(_cond(Txt.t("rt_first"), _need_name(need), 1.0 if has else 0.0, has))
 	return {"key": "buy:" + str(it[0]), "kind": "buy", "row": ROW_BUY, "id": it[0], "name": Txt.t(it[3]), "price": price,
-		"conds": conds, "done": owned, "ready": not owned and conds.all(func(c): return c.ok), "note": Txt.t(it[4]) if it.size() > 4 else "",
+		"purchase_kind": it[1],
+		"conds": conds, "done": owned, "ready": not owned and why == "" and conds.all(func(c): return c.ok), "blocked_reason": why, "prerequisites": prerequisites,
+		"note": Txt.t(it[4]) if it.size() > 4 and Txt.has(it[4]) else "",
 		"page": 1}
 
 
@@ -172,8 +203,41 @@ static func skill_node(id: String) -> Dictionary:
 
 
 # everything on the route page, in drawing order: two rows of buys, the ships, the volumes
+# a district of the port (G6): its next stage, the parts and money it wants
+static func port_node(z: String) -> Dictionary:
+	var d := Career.data
+	var n := Port.stage(z)
+	var done := n >= 2
+	var conds: Array = []
+	if not done:
+		var needs := Port.needs(z, n + 1)
+		var pf := Repair.parts_for_needs(needs)
+		var lack: Array = []
+		for cls in pf.missing:
+			lack.append("%s ×%d" % [Repair.class_name_of(cls), int(pf.missing[cls])])
+		if pf.tons_missing > 0.001:
+			lack.append("%s %.1f t" % [Repair.class_name_of("structure"), pf.tons_missing])
+		if float(pf.get("section_missing", 0.0)) > 0.001:
+			lack.append("%s %.1f t" % [Repair.class_name_of("section"), float(pf.section_missing)])
+		conds.append(_cond(Txt.t("rp_needs"), Txt.t("rt_have") if pf.ok else ", ".join(lack), 1.0 if pf.ok else 0.5, true))
+		var money := float(d.get("money", 0.0))
+		var price := Port.cash(z, n + 1, pf.ok)
+		conds.append(_cond(Txt.t("rt_money"), "%s / %s" % [Pal.money(money), Pal.money(price)], clampf(money / maxf(price, 1.0), 0.0, 1.0), money >= price))
+		for dep in Port.DEPS.get(z, []):
+			var ok: bool = Port.stage(str(dep[0])) >= int(dep[1])
+			conds.append(_cond(Txt.t("rt_first"), Port.name_of(str(dep[0])), 1.0 if ok else 0.0, ok))
+	var ready_p: bool = not done and Port.reason(z, true) == ""
+	var ready_c: bool = not done and Port.reason(z, false) == ""
+	return {"key": "port:" + z, "kind": "port", "row": -1, "id": z, "name": Port.name_of(z), "conds": conds,
+		"done": done, "ready": ready_p or ready_c, "stage": n, "note": Port.desc_of(z, mini(n + 1, 2)),
+		"price": Port.cash(z, mini(n + 1, 2), ready_p) if not done else 0.0}
+
+
 static func nodes() -> Array:
 	var out: Array = []
+	if not Career.data.is_empty():
+		for z in Port.ZONES:
+			out.append(port_node(z))
 	var bs := buys()
 	for i in bs.size():
 		var n := buy_node(bs[i])
@@ -184,10 +248,6 @@ static func nodes() -> Array:
 	for i in sh.size():
 		var n := ship_node(sh[i])
 		n.col = i
-		out.append(n)
-	for k in [2, 3]:
-		var n := tier_node(k)
-		n.col = k - 2
 		out.append(n)
 	return out
 
@@ -214,11 +274,8 @@ static func pins() -> Array:
 	var d := Career.data
 	var out: Array = []
 	for k in d.get("route_goals", []):
-		if str(k) not in out:
+		if str(k) not in out and not str(k).begins_with("skill:"):
 			out.append(str(k))
-	var g: String = str(d.get("growth_goal", ""))
-	if g != "" and ("skill:" + g) not in out and out.size() < MAX_PINS:
-		out.append("skill:" + g)
 	return out.slice(0, MAX_PINS)
 
 
@@ -288,10 +345,14 @@ static func goals() -> Array:
 
 # one line for a goal: what's still missing, or that it's ready
 static func missing(n: Dictionary) -> String:
+	if str(n.get("blocked_reason", "")) != "":
+		return str(n.blocked_reason)
 	if n.get("done", false):
 		return Txt.t("rt_done")
 	if n.get("ready", false):
 		return Txt.t("rt_ready_buy") if n.kind in ["buy", "skill"] else Txt.t("rt_ready")
+	if n.kind == "port":
+		return Port.reason(str(n.id), true)
 	var d := Career.data
 	# a ship names everything it still waits for; the rest their first want
 	if n.kind == "ship":

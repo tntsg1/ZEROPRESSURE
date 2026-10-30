@@ -232,7 +232,7 @@ const E := {
 	"m_media": {"cat": "mech", "cls": "fluid", "ships": ["fl116"], "arts": ["manifold", "separator_3ph", "coriolis"], "inc": ["media_mixed", "manifold_spill"], "draw": "manifold", "size": [2.4, 1.0]},
 	"m_o2_flash": {"cat": "mech", "cls": "atmos", "ships": ["hb86", "my48"], "arts": ["growlamp", "plants", "electrolyser"], "inc": ["o2_fire"], "draw": "", "glyph": "heat"},
 	"m_composite": {"cat": "mech", "cls": "atmos", "ships": ["st40"], "inc": ["composite_fumes"], "draw": "", "glyph": "gas"},
-	"m_radiation": {"cat": "mech", "cls": "atmos", "ships": ["nr95"], "arts": ["ntr_core", "shadow_shield", "control_drum"], "inc": ["dose_fault", "core_breach", "drum_slip"], "draw": "shadow_shield", "size": [1.0, 2.0]},
+	"m_radiation": {"cat": "mech", "cls": "atmos", "ships": ["nr95"], "arts": ["ntr_core", "shadow_shield", "control_drum"], "inc": ["dose_fault", "core_detonation", "drum_slip"], "draw": "shadow_shield", "size": [1.0, 2.0]},
 	"m_decay_heat": {"cat": "mech", "cls": "atmos", "ships": ["nr95", "mf126"], "arts": ["ntr_core", "arc_furnace", "radiator"], "inc": ["core_cracked", "petal_hot"], "draw": "arc_furnace", "size": [2.4, 1.8]},
 	"m_thermal": {"cat": "mech", "cls": "atmos", "ships": ["ev55"], "arts": ["armor", "coronagraph"], "inc": ["tile_shatter", "heat_spoil"], "draw": "", "glyph": "heat"},
 	"m_bio": {"cat": "mech", "cls": "atmos", "ships": ["med47"], "arts": ["biobox", "filter"], "inc": ["bio", "bio_spread"], "draw": "filter", "size": [1.0, 1.6]},

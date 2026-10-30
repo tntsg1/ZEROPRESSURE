@@ -566,8 +566,8 @@
 				{
 					"id": "find",
 					"text": {
-						"zh": "用测量（1）点选检修盖 P-001",
-						"en": "MEASURE (1): SELECT COVER P-001"
+						"zh": "训练探针已配备：用测量（1）点选检修盖 P-001",
+						"en": "TRAINING PROBE SUPPLIED: MEASURE (1), SELECT COVER P-001"
 					},
 					"tools": [
 						1

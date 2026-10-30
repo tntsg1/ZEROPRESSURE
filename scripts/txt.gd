@@ -20,7 +20,10 @@ static var dev := false               # developer mode (F12)
 static var context := true            # the tool follows what the cursor is on (not the laser)
 static var fullscreen := false
 static var calm := false              # no screen shake, flashes or hit-stops
+static var film := true               # 91 号: film grain and the colour fringe (scripts/look.gd)
+static var slowmo_on := true          # 91 号: the slow-motion moment when a big piece comes free
 static var codex_cards := true        # a card the first time something new is met (scripts/codex.gd)
+static var playtest := false          # 108 号: the playtest recorder (scripts/playtest.gd), off by default
 # animation intensity (UI animation, 2026-10-17): "full" (glow, particles,
 # trails), "lite" (the motion without particles, afterimages or big glows),
 # "off" (screens switch at once, no transitions; shake and flashes off too)
@@ -110,7 +113,7 @@ const S := {
 	"st_to_terminal": ["任意键前往船坞终端", "ANY KEY: BERTH TERMINAL"],
 	"st_found": ["物件 %d / %d", "FOUND %d / %d"],
 	"st_go_on": ["任意键继续   ·   R  重新拆一艘", "ANY KEY: CONTINUE   ·   R  ANOTHER HERON"],
-	"end_warn": ["梁工：确认要结束？剩下的结构会按废料处理，收益比你自己拆低。", "LIANG: You sure? What's left goes as scrap — less than you'd get taking it apart."],
+	"end_warn": ["确认要结束？剩下的结构会按废料处理，收益比你自己拆低。", "You sure? What's left goes as scrap — less than you'd get taking it apart."],
 	# hint tiers
 	"mf_title": ["船舶清单（按船籍文件）", "SHIP MANIFEST (AS REGISTERED)"],
 	"mf_more": [" 等 %d 个", " (%d IN ALL)"],
@@ -184,6 +187,11 @@ const S := {
 	"tut_exam": ["学徒考核", "APPRENTICE ASSESSMENT"],
 	"tut_contract": ["接第一份合同", "TAKE THE FIRST CONTRACT"],
 	"tool_locked": ["这一步还用不到这件工具", "NOT THIS TOOL YET"],
+	"tool_locked_use": ["这一步用%s", "THIS STEP: %s"],
+	"tut_next_prefix": ["接着：", "THEN: "],
+	"manual_only": ["远航者只能亲手拆：%s 在这艘船上不能用", "THE ARK IS STRIPPED BY HAND: NO %s ON THIS SHIP"],
+	"plan_manual_only": ["远航者只能亲手拆：作业方案、回放和自动作业包在这艘船上不能用。吊机、牵引、泵和仪器你自己操作照常可以。", "THE ARK IS STRIPPED BY HAND: NO WORK PLAN, REPLAY OR PACKAGE HERE. YOUR OWN CRANE, TOWING, PUMPS AND INSTRUMENTS STILL WORK."],
+	"coach_guard": ["光束停在绞车上：设备要整件保住，只切它的固定座", "THE BEAM STOPS AT THE WINCH: KEEP IT WHOLE, CUT ONLY ITS MOUNTS"],
 	"interlock": ["训练安全联锁", "TRAINING INTERLOCK"],
 	"m_skip": ["跳过训练", "SKIP TRAINING"],
 	"t_train": ["训练", "TRAINING"],
@@ -192,6 +200,14 @@ const S := {
 	# dock
 	"net": ["碎屑收集网", "DEBRIS NET"],
 	"zone_equip": ["设备回收", "EQUIPMENT"],
+	"zone_equip_bulk": ["重载接收架", "HEAVY RECEIVING RACK"],
+	"zone_equip_bulk_d": ["大件总成 · 从下方送入", "ASSEMBLIES · FROM BELOW"],
+	"zone_equip_side_d": ["超长总成 · 从左侧送入", "LONG ASSEMBLIES · FROM LEFT"],
+	"load_no_route": ["载荷无法通过 · 请拓宽通道", "LOAD CANNOT PASS · CLEAR A WIDER ROUTE"],
+	"load_obstructed": ["载荷受阻 · 清障后继续", "LOAD BLOCKED · CLEAR TO RESUME"],
+	"load_pickup_blocked": ["取件接触未解除 · 等待脱离", "PICKUP CONTACT · WAITING FOR SEPARATION"],
+	"load_structure": ["固定结构", "FIXED STRUCTURE"],
+	"e_work_surplus": ["多余预留物返还", "SURPLUS RESERVATION RETURN"],
 	"zone_metal": ["金属熔炉", "FURNACE"],
 	"trough": ["废料长槽  →  熔炉", "SCRAP TROUGH  →  FURNACE"],
 	"zone_equip_d": ["完整设备 · 从下方送入", "WHOLE EQUIPMENT · FROM BELOW"],
@@ -269,7 +285,6 @@ const S := {
 	"bb_test": ["管路氦气 %.2f / 1.80 MPa（1.5 倍工作压力）· 1.25 倍载荷 · 挠度 %.1f ≤ %.1f mm（放大 200 倍显示）", "HELIUM %.2f / 1.80 MPa (1.5 × WORKING) · 1.25 × LOAD · SAG %.1f ≤ %.1f mm (SHOWN 200 ×)"],
 	"bb_cert": ["回收口与熔炉就位 · 牵引场重新标定 · 泊位 %.0f m", "MOUTHS AND FURNACE IN PLACE · FIELD RECALIBRATED · %.0f m BERTH"],
 	"bb_done": ["BERTH 07 · %.0f m · 认证通过", "BERTH 07 · %.0f m · CERTIFIED"],
-	"dk_ready": ["就绪", "READY"],
 	"fu_vip_d": ["整流 → 直流电抗 → IGBT 全桥逆变 → 谐振补偿电容", "RECTIFIER → DC CHOKE → IGBT BRIDGE → RESONANT CAPACITORS"],
 	"fu_lance": ["测温取样枪（定时插入钢水）", "TEMPERATURE / SAMPLE LANCE (DIPS ON A CYCLE)"],
 	"fu_tc": ["炉衬热电偶", "LINING THERMOCOUPLES"],
@@ -323,6 +338,7 @@ const S := {
 	"net_cell": ["称重 %.3f / %.2f t", "LOAD %.3f / %.2f t"],
 	"net_baler": ["碎屑压块机 · 已压 %d 块 → 熔炉", "DEBRIS BALER · %d BALES → THE FURNACE"],
 	"net_emit": ["牵引发射器", "TRACTOR EMITTER"],
+	"dk_ready": ["就绪", "READY"],
 	"dk_taking": ["接收中", "TAKING"],
 	"dk_refused": ["拒收", "REFUSED"],
 	"dk_bay": ["无人机舱 · R-02", "DRONE BAY · R-02"],
@@ -373,8 +389,11 @@ const S := {
 	"scrap_metal": ["废金属", "SCRAP"],
 	"equip_as_scrap": ["完整设备当废金属熔掉了", "WHOLE EQUIPMENT MELTED AS SCRAP"],
 	"rej_hazard": ["含危险残余物 · 送危险品回收", "HAZARDOUS CONTENTS · HAZMAT BAY"],
+	"rej_plant_reserved": ["加工线已被公司批次占用 · 请等待完成交接", "PLANT RESERVED BY COMPANY BATCH / WAIT FOR HANDOFF"],
 	"rej_scrap": ["废料 · 送金属熔炉", "SCRAP · FURNACE"],
 	"rej_mixed": ["还连着废金属 · 先拆开", "STILL ATTACHED TO SCRAP · SEPARATE IT"],
+	"rej_no_mouth_lie": ["这件躺着有 %.1f m 宽，最大的设备口只有 %.1f m · 先切开，或整件送熔炉当废料", "%.1f m WIDE AS IT LIES; THE WIDEST EQUIPMENT MOUTH IS %.1f m · CUT IT, OR FURNACE IT AS SCRAP"],
+	"rej_no_mouth": ["怎么转都有 %.1f m 宽，最大的设备口只有 %.1f m · 先切开，或整件留作废料", "%.1f m WIDE HOWEVER IT TURNS; THE WIDEST EQUIPMENT MOUTH IS %.1f m · CUT IT OR SCRAP IT"],
 	"rej_not_hazard": ["不是危险品 · 送设备回收", "NOT HAZARDOUS · EQUIPMENT BAY"],
 	"loss_furnace": ["熔炉爆燃", "FURNACE FLASH"],
 	"loss_drone": ["R-02 损毁", "R-02 LOST"],
@@ -601,6 +620,8 @@ const S := {
 	"beam_kink": ["这一列卸空了，外侧的箱位还满着：箱梁在这里折弯，外侧还在位的货柜全被砸坏", "THIS BAY WAS EMPTIED WITH THE BAYS BEYOND IT STILL FULL: THE WALL KINKED HERE, AND EVERYTHING STILL ON BEYOND IT WAS DAMAGED"],
 	"dv_kink": ["箱梁折弯", "BEAM KINKED"],
 	"loss_kink": ["箱梁折弯", "BEAM KINKED"],
+	"prop_over": ["撑杆超载：扛着 %s t，过了 60 t 的额定载荷，正在弯", "PROP OVERLOADED: %s t ON IT, PAST ITS 60 t RATING, IT IS BOWING"],
+	"prop_buckle": ["第 %s 列下的撑杆折断了：那几列的重量又压回箱梁上", "THE PROP UNDER BAY %s BUCKLED: THOSE BAYS BEAR ON THE WALL AGAIN"],
 	"stack_sag": ["从下面先抽走了货柜：上面还在位的货柜压下来受损", "A CONTAINER CAME OUT FROM UNDER OTHERS: THE STACK ABOVE SAGGED ONTO IT"],
 	"dv_sag": ["货柜压塌", "STACK SAGGED"],
 	"loss_sag": ["货柜压塌", "STACK SAGGED"],
@@ -626,6 +647,10 @@ const S := {
 	"p_crane_trolley": ["吊车小车", "CRANE TROLLEY"],
 	"film_tear": ["帆还绷着就动了薄膜：薄膜撕开，裂口顺着缝跑到旁边", "THE SAIL WAS STILL TAUT: THE FILM TORE, AND THE TEAR RAN ON ALONG ITS SEAMS"],
 	"loss_film": ["薄膜撕裂", "FILM TORN"],
+	"loss_film_overload": ["光帆收卷过载", "SAIL FURL OVERLOAD"],
+	"loss_film_static": ["光帆静电击穿", "SAIL STATIC PINHOLES"],
+	"loss_film_holes": ["光帆被碎件打孔", "SAIL HOLED"],
+	"loss_film_soot": ["光帆被熔渣熏黑", "SAIL SOOTED"],
 	"stay_snap": ["帆还绷着就拆了撑索：索一断，角梁甩向吊舱", "A STAY CAME AWAY WITH THE SAIL STILL TAUT: IT SNAPPED AND THE CORNER SPAR WHIPPED INTO THE GONDOLA"],
 	"dv_spar_whip": ["角梁甩打", "SPAR WHIP"],
 	"loss_spar_whip": ["角梁甩打", "SPAR WHIP"],
@@ -638,11 +663,17 @@ const S := {
 	"p_sail_brace": ["斜撑", "SAIL BRACE"],
 	"p_sail_stay": ["撑索", "SAIL STAY"],
 	"p_sail_film": ["帆面薄膜", "SAIL FILM"],
+	"p_sail_roll": ["光帆卷", "SAIL ROLL"],
 	"leak_water": ["水喷出", "WATER SPRAY"],
 	"dose_warn": ["无人机累计剂量已过一半（%s mSv）：回阴影里", "THE DRONE HAS SOAKED UP HALF ITS DOSE (%s mSv): GET BACK INTO THE SHADOW"],
 	"dose_fault": ["剂量超限：无人机电子设备紊乱", "DOSE LIMIT: THE DRONE'S ELECTRONICS FAULTED"],
 	"core_breach": ["切开了堆芯：包壳破了，全船污染，罚款", "THE CORE WAS CUT: ITS CLADDING IS BREACHED, THE SHIP IS CONTAMINATED, A FINE"],
 	"loss_breach": ["堆芯污染罚款", "CORE BREACH FINE"],
+	"core_near": ["激光靠近反应堆堆芯：切到就直接核爆", "THE BEAM IS AT A REACTOR CORE: CUT INTO IT AND IT DETONATES"],
+	"core_detonation": ["堆芯核爆", "CORE DETONATION"],
+	"loss_nuke": ["核事故罚款", "NUCLEAR FINE"],
+	"loss_berth_rebuild": ["拆船坞重建", "BERTH REBUILT"],
+	"loss_nuke_zone": ["港区核爆维修", "PORT REPAIRS AFTER THE DETONATION"],
 	"drum_slip": ["控制鼓没锁就吊堆芯：控制鼓滑转，一阵剂量冲出来", "THE CORE CAME OUT WITH A CONTROL DRUM UNLOCKED: IT SLIPPED, A BURST OF DOSE"],
 	"dv_drum_slip": ["控制鼓滑转", "DRUM SLIPPED"],
 	"petal_hot": ["堆芯还没冷就收散热瓣：瓣变形", "A RADIATOR PETAL FOLDED WHILE THE CORE WAS STILL HOT: IT DEFORMED"],
@@ -1024,6 +1055,7 @@ const S := {
 	"nb_locks": ["托架还锁着", "THE CRADLE IS STILL LOCKED"],
 	"nb_door": ["首门没开", "THE BOW DOOR IS SHUT"],
 	"nb_winch": ["绞车没电", "THE WINCH HAS NO POWER"],
+	"nb_exit": ["出口路线上还有东西挡着（现场标红）", "SOMETHING IS STILL IN THE WAY OUT (OUTLINED RED)"],
 	"nested_lurch": ["先松了靠首的 %s：小飞船绕着尾部的锁一歪，撞上了首门", "%s LET GO BEFORE THE ONES AFT OF IT: THE COURIER PIVOTED AND LURCHED INTO THE BOW DOOR"],
 	"nested_cut": ["%s 被切开：小飞船不再完整，只能按零件算钱", "%s CUT: THE COURIER IS NO LONGER WHOLE, ONLY ITS PARTS ARE PAID"],
 	"nested_out": ["小飞船整艘拖出，按整船结算 %s", "THE COURIER IS OUT WHOLE, PAID AS ONE: %s"],
@@ -1536,6 +1568,7 @@ const S := {
 	"loss_thaw": ["货物解冻", "CARGO THAWED"],
 	"glass_craze": ["切割热量把旁边的精密罩板烤裂了", "THE BEAM'S HEAT CRAZED THE GLASS BESIDE IT"],
 	"dv_glass": ["切割热量烤裂", "CRAZED BY THE BEAM'S HEAT"],
+	"leak_nutrient": ["营养液喷出", "NUTRIENT SPRAY"],
 	"prop_fire": ["推进剂被点着了：火顺着漏出来的液团烧过去！", "THE PROPELLANT CAUGHT: THE FIRE RUNS THROUGH THE SPILL!"],
 	"hyper_ignite": ["甲基肼碰上四氧化二氮：自燃了！", "MMH MET THE TETROXIDE: IT LIT ON CONTACT!"],
 	"prop_blast": ["推进剂爆燃！", "PROPELLANT DEFLAGRATION!"],
@@ -1544,7 +1577,6 @@ const S := {
 	"loss_prop_blast": ["推进剂爆燃", "PROPELLANT DEFLAGRATION"],
 	"p_mmh_tank": ["甲基肼燃料罐", "MMH FUEL TANK"],
 	"p_nto_tank": ["四氧化二氮氧化剂罐", "N2O4 OXIDISER TANK"],
-	"leak_nutrient": ["营养液喷出", "NUTRIENT SPRAY"],
 	"o2_fire": ["富氧空气被切割引燃：整舱闪燃！", "THE CUT LIT THE OXYGEN-RICH AIR: THE HALL FLASHES OVER!"],
 	"loss_o2_fire": ["富氧闪燃", "OXYGEN FLASH FIRE"],
 	"hull_twist": ["船体扭了：一边的重物先拆走，另一边把船体拽歪了", "THE HULL TWISTS: ONE SIDE'S WEIGHT CAME OFF FIRST, THE OTHER PULLED IT OUT OF TRUE"],
@@ -1767,8 +1799,43 @@ const S := {
 	"preload_snap": ["%s 带着预紧力弹开了", "%s SPRANG UNDER LOAD"],
 	"loss_preload": ["预紧释放：拖臂撞坏", "PRELOAD RELEASED: ARM SMASHED"],
 	"dv_preload": ["预紧释放撞击", "PRELOAD IMPACT"],
+	"dv_ore_spill": ["细矿洒落", "FINES LOST"],
 	"inst_field": ["磁场探头", "FIELD PROBE"],
 	"seg_cut": ["%s 沿分段线切开：每段都还是完整设备", "%s CUT ALONG ITS MARKED LINE: EACH PART STILL WHOLE"],
+	# 87-6 the work boat's tow line
+	"tow_not_aboard": ["先上作业艇", "BOARD THE WORK BOAT FIRST"],
+	"tow_too_heavy": ["%s 吨，超过作业艇的拖带能力（60 吨）", "%s t: MORE THAN THE BOAT CAN TOW (60 t)"],
+	"tow_too_far": ["靠近一点：船尾要到它的拖眼 6 米以内", "CLOSER: THE STERN WITHIN 6 m OF ITS TOW EYE"],
+	"tow_too_fast": ["太快了：相对速度降到每秒 1.5 米以下再挂缆", "TOO FAST: UNDER 1.5 m/s RELATIVE TO HITCH"],
+	"tow_on": ["拖缆挂上（%s 吨）。慢慢拉紧，猛拉会断", "LINE ON (%s t). TAKE UP THE SLACK GENTLY: A JERK PARTS IT"],
+	"tow_off": ["拖缆摘下", "LINE CAST OFF"],
+	"tow_parted": ["拖缆崩断了：拉得太猛", "THE LINE PARTED: PULLED TOO HARD"],
+	"tow_done": ["舱段交付：清障费 %s，钢材入库", "SECTION DELIVERED: FEE %s, ITS STEEL ON THE BOOKS"],
+	# 87-4 the light sail
+	"furl_overload": ["%s 角还绷着就收卷：帆膜过载撕裂，收卷电机跳闸。先松绞车刹车", "%s CORNER FURLED WHILE TAUT: THE FILM OVERLOADED AND TORE, THE MOTOR TRIPPED. LET THE WINCH BRAKE OFF FIRST"],
+	"furl_done": ["光帆卷收好：%s。拆下螺栓送设备回收口", "SAIL ROLL WOUND: %s. UNBOLT IT AND TAKE IT TO THE EQUIPMENT MOUTH"],
+	# 87-3 field grapple
+	"mg_on": ["抓钩：范围模式 · 半径 %s m · 最多 %s 件", "GRAPPLE: FIELD MODE · %s m RADIUS · UP TO %s PIECES"],
+	"mg_pick_more": [" · 再按 X 挑材质", " · X AGAIN PICKS BY MATERIAL"],
+	"mg_pick_steel": ["范围抓钩：只抓钢（不碰整件设备）· 再按 X 只抓设备", "FIELD: STEEL ONLY (NO WHOLE MACHINES) · X FOR MACHINES ONLY"],
+	"mg_pick_equip": ["范围抓钩：只抓整件设备 · 再按 X 关掉", "FIELD: WHOLE MACHINES ONLY · X TURNS IT OFF"],
+	"mg_off": ["抓钩：单体模式", "GRAPPLE: SINGLE MODE"],
+	"mg_unfitted": ["还没装范围抓取：终端「技能」里升级「范围抓取」", "NO FIELD GRAPPLE FITTED: UPGRADE «FIELD GRAPPLE» IN THE TERMINAL'S SKILLS"],
+	"mg_guard_on": ["范围抓取防护：开（不抓精密件、危险件、核心资产）", "FIELD GUARD ON (KEEPS OFF PRECISION KIT, HAZARDS, CORE ASSETS)"],
+	"mg_guard_off": ["范围抓取防护：关（会连精密件、危险件一起抓，小心碰撞）", "FIELD GUARD OFF (TAKES PRECISION KIT AND HAZARDS TOO: MIND THE KNOCKS)"],
+	"mg_none": ["范围内没有能抓的散料（固定件要先切开）", "NOTHING LOOSE TO CATCH IN THE FIELD (CUT FIXED PARTS FREE FIRST)"],
+	"mg_over": ["过载：拉力被摊薄", "OVERLOAD: THE PULL IS SPREAD THIN"],
+	# 87-2 physics
+	"ore_jam": ["%s 卡住了：几块矿石在出口上方挤成一拱。用抓钩拽出一块就通", "%s IS JAMMED: CHUNKS HAVE WEDGED INTO AN ARCH OVER IT. PULL ONE OUT WITH THE GRAPPLE TO CLEAR IT"],
+	"ore_unjam": ["%s 通了", "%s RUNS AGAIN"],
+	# 87-1 materials
+	"mat_crack": ["%s 受热太快开裂：崩掉一块，这块料掉价了", "%s CRACKED FROM THE HEAT: A PIECE SPALLED OFF, IT IS WORTH LESS"],
+	"hint_mat_armor": ["军规装甲钢：普通激光要慢三到四倍。升级切割功率对它提速最明显；能拆螺栓就整块卸下", "MILITARY ARMOUR: THREE TO FOUR TIMES SLOWER FOR A PLAIN LASER. MORE CUTTING POWER HELPS IT MOST; UNBOLT IT WHOLE WHERE YOU CAN"],
+	"hint_mat_ti": ["钛合金：每切一米熔掉一点价值，切缝很久才冷。整件卸下最值钱", "TITANIUM: EVERY METRE OF KERF MELTS SOME VALUE AWAY AND STAYS HOT. WHOLE PARTS FETCH THE MOST"],
+	"hint_mat_ceramic": ["陶瓷复合装甲：连续切会受热开裂、掉价。切一小段停几秒让它散热，或者整块卸下", "CERAMIC ARMOUR: CUT ON AND IT CRACKS FROM THE HEAT AND LOSES VALUE. CUT A LITTLE, LET IT COOL A FEW SECONDS, OR TAKE IT OFF WHOLE"],
+	"hint_mat_shield": ["隔热反射层：反光、不吸热，切得慢；这层不值钱，先剥掉再切里面", "HEAT-SHIELD LAYER: IT REFLECTS AND SHRUGS OFF HEAT, SO IT CUTS SLOWLY; IT IS WORTH LITTLE, STRIP IT FIRST"],
+	"hint_mat_al": ["铝合金：反光、散热快，火花少熔渣多，比钢略慢；回收价比钢高", "ALUMINIUM: REFLECTIVE AND QUICK TO SHED HEAT, FEW SPARKS AND MUCH DROSS, A LITTLE SLOWER THAN STEEL; IT FETCHES MORE THAN STEEL"],
+	"hint_mat_composite": ["碳纤维复合材料：切得快但冒烟，回收价低", "CARBON COMPOSITE: CUTS FAST BUT SMOKES, AND FETCHES LITTLE"],
 	"ore_fines": ["碎矿（按吨）", "ORE FINES (BY THE TONNE)"],
 	"hopper_tear": ["%s 被硬撬开：满仓矿石一边倒，矿仓焊缝撕裂", "%s FORCED OPEN: THE FULL HOPPER DUMPS ONE WAY AND TEARS ITS WELDS"],
 	"loss_hopper": ["矿仓撕裂", "HOPPER TORN"],
@@ -1930,6 +1997,8 @@ const S := {
 	"j_behind": ["条线缆/管线在背后", "LINE(S) BEHIND"],
 	"j_explosive": ["危险货物标记", "DANGEROUS GOODS MARKING"],
 	"j_cond": ["完好度 %d%%", "CONDITION %d%%"],
+	"j_life": ["剩余寿命约 %d 年（修缮能用）", "ABOUT %d YEARS LEFT (FIT FOR REPAIRS)"],
+	"j_life_out": ["寿命已到：修缮用不上，只能卖", "WORN OUT: NO USE FOR REPAIRS, SELL IT"],
 	"stale": ["已过期", "STALE"],
 	"nt_void": ["已变化，需重新核实", "CHANGED: CHECK AGAIN"],
 	"read_at": ["测点", "AT"],
@@ -2042,7 +2111,7 @@ const S := {
 	"k_equip": ["设备残骸", "WRECKED EQUIPMENT"],
 	"k_fixture": ["附件", "FITTING"],
 	# hud
-	"contract": ["拆解合同", "SALVAGE CONTRACT"],
+	"contract": ["拆解作业", "SALVAGE JOB"],
 	"ship": ["GR-7「灰鹭号」中型货运船 · 42 m", "GR-7 GREY HERON · MEDIUM FREIGHTER · 42 m"],
 	"must": ["强制回收", "MUST RECOVER"],
 	"rate": ["回收率", "RECOVERY"],
@@ -2051,7 +2120,7 @@ const S := {
 	"integrity": ["完好度", "INTEGRITY"],
 	"speed": ["速度", "SPEED"],
 	"blueprint": ["出厂图纸 · 仅代表原始设计", "FACTORY DRAWING · ORIGINAL DESIGN ONLY"],
-	"keys": ["WASD 移动 · Shift 冲刺 · Space 刹停 · F 飞行稳定 · 1–5 工具 · Tab 图纸 · C 合同 · Esc 菜单", "WASD MOVE · SHIFT BURN · SPACE BRAKE · F ASSIST · 1–5 TOOLS · TAB DRAWING · C CONTRACT · ESC MENU"],
+	"keys": ["WASD 移动 · Shift 冲刺 · Space 刹停 · F 飞行稳定 · 1–6 工具 · Tab 图纸 · C 合同 · Esc 菜单", "WASD MOVE · SHIFT BURN · SPACE BRAKE · F ASSIST · 1–6 TOOLS · TAB DRAWING · C CONTRACT · ESC MENU"],
 	# contract card
 	"c_title": ["拆解合同 GR-001 · 未开工", "SALVAGE CONTRACT GR-001 · NOT STARTED"],
 	"c_req": ["合同要求", "REQUIREMENTS"],
@@ -2073,7 +2142,7 @@ const S := {
 	"c_brief": ["事故简报：推进系统维护期间尾部设备事故，船员已撤离。现场未完成危险能源隔离检查，所有历史安全状态须重新验证。", "INCIDENT: AFT EQUIPMENT ACCIDENT DURING PROPULSION MAINTENANCE. CREW EVACUATED. HAZARDOUS ENERGY ISOLATION WAS NEVER VERIFIED — RE-CHECK EVERYTHING."],
 	"c_drawing": ["出厂工程图：按 Tab 随时查看（只代表原始设计）", "FACTORY DRAWING: PRESS TAB ANY TIME (ORIGINAL DESIGN ONLY)"],
 	"c_start": ["开工  ·  空格 / 点击", "BEGIN  ·  SPACE / CLICK"],
-	"c_fee": ["合同费用 $9,000 · 无时限", "CONTRACT FEE $9,000 · NO TIME LIMIT"],
+	"c_fee": ["无主漂流船 · 你的拖船拖回 · 不收费 · 无时限", "UNOWNED HULK · TOWED IN BY YOUR TUG · NO FEE · NO TIME LIMIT"],
 	"c_title_n": ["拆解合同 %s · 未开工", "SALVAGE CONTRACT %s · NOT STARTED"],
 	"c_req2_n": ["强制回收：%s（完整送设备回收）", "MUST RECOVER: %s (WHOLE, TO EQUIPMENT BAY)"],
 	"c_req3_n": ["回收至少 70%% 可回收价值（预估 %s）", "RECOVER AT LEAST 70%% OF AN ESTIMATED %s"],
@@ -2084,7 +2153,7 @@ const S := {
 	"m_end": ["提前结束合同", "END CONTRACT NOW"],
 	"m_lang": ["语言：中文", "LANGUAGE: ENGLISH"],
 	"m_hints": ["提示：开", "HINTS: ON"],
-	"hints_auto_on": ["自动提示：开（卡住时梁工会提醒）", "AUTO HINTS ON (LIANG SPEAKS UP WHEN YOU'RE STUCK)"],
+	"hints_auto_on": ["自动提示：开（卡住时会提醒）", "AUTO HINTS ON (A NUDGE WHEN YOU'RE STUCK)"],
 	"hints_auto_off": ["自动提示：关（按 Q 仍可求助）", "AUTO HINTS OFF (Q STILL ASKS)"],
 	"m_hints_off": ["提示：关", "HINTS: OFF"],
 	"m_title": ["保存并返回标题", "SAVE AND QUIT TO TITLE"],
@@ -2093,7 +2162,7 @@ const S := {
 	# ending
 	"e_done": ["GR-7 DISASSEMBLY COMPLETE", "GR-7 DISASSEMBLY COMPLETE"],
 	"e_early": ["合同提前结束", "CONTRACT CLOSED EARLY"],
-	"e_contract": ["拆解合同", "SALVAGE CONTRACT"],
+	"e_contract": ["拆解作业", "SALVAGE JOB"],
 	"e_rate": ["舰体有效回收率", "EFFECTIVE RECOVERY"],
 	"e_equip": ["设备完整回收", "EQUIPMENT RECOVERED WHOLE"],
 	"e_metal": ["金属与零件", "METAL & PARTS"],
@@ -2175,6 +2244,8 @@ const S := {
 	"hauler_marked": ["已标记，搬运无人机会来取", "MARKED FOR THE HAULER"],
 	"hauler_unmarked": ["取消标记", "MARK REMOVED"],
 	"hauler_heavy": ["超过 1.5 t，搬运无人机搬不动", "OVER 1.5 t: TOO HEAVY FOR THE HAULER"],
+	"hauler_no_mouth": ["这件设备怎么转都进不了任何设备口 · 先切开再搬", "NO EQUIPMENT MOUTH TAKES THIS WHOLE · CUT IT FIRST"],
+	"no_mouth": ["进不了设备口：%s", "NO MOUTH: %s"],
 	"fa_hauler2": ["第二台搬运无人机", "SECOND HAULING DRONE"],
 	"fa_hauler2_d": ["和第一台分着搬同一张标记清单（需先有初级搬运无人机）", "WORKS THE SAME MARKS AS THE FIRST (NEEDS THE BASIC HAULER)"],
 	"fa_crane": ["重型起重机", "HEAVY CRANE"],
@@ -2185,7 +2256,7 @@ const S := {
 	"fa_buffer_d": ["近端上方的停放台：放在上面的件被牵引场定住，等你或机器来取", "A PARKING DECK OVER THE NEAR END: WHAT YOU LEAVE ON IT STAYS PUT"],
 	"fa_zones": ["作业区管理", "WORK ZONES"],
 	"fa_zones_d": ["现场按 K 划禁入区（最多 3 个），机械不进去；在区内再按 K 取消", "PRESS K TO SET A KEEP-OUT ZONE (UP TO 3) NO MACHINE ENTERS; K INSIDE ONE CLEARS IT"],
-	"tm_needs": ["需先购置：%s", "NEEDS: %s"],
+	"tm_needs": ["要先修好：%s", "MEND FIRST: %s"],
 	"crane_marked": ["已标记，起重机会来吊", "MARKED FOR THE CRANE"],
 	"crane_unmarked": ["取消起重机标记", "CRANE MARK REMOVED"],
 	"crane_heavy": ["超过 12 t，起重机也吊不动", "OVER 12 t: TOO HEAVY EVEN FOR THE CRANE"],
@@ -2227,9 +2298,9 @@ const S := {
 	"rt_points": ["升级点", "WHAT IT DOES"],
 	"rt_can_buy": ["买得起", "AFFORDABLE"],
 	"berth_hint": ["船坞空着：按 %s 或飞到船坞电脑旁，打开终端挑下一单", "THE BERTH IS EMPTY: PRESS %s OR FLY TO THE BERTH COMPUTER TO PICK THE NEXT JOB"],
-	"keys_berth": ["WASD 移动 · Shift 冲刺 · Space 刹停 · F 飞行稳定 · %s 船坞终端（挑下一单）· Esc 菜单", "WASD MOVE · SHIFT BOOST · SPACE BRAKE · F ASSIST · %s BERTH TERMINAL (NEXT JOB) · ESC MENU"],
-	"tm_keys_berth": ["1–8 应用 · ←→↑↓ 选择 · Enter 确认 · O 设置 · Esc 回首页 / 回到船坞", "1–8 APPS · ARROWS CHOOSE · Enter CONFIRM · O SETTINGS · Esc HOME / BACK TO THE BERTH"],
-	"rt_goals": ["下一个目标", "NEXT GOALS"],
+	"keys_berth": ["WASD 移动 · Shift 冲刺 · Space 刹停 · F 飞行稳定 · %s 船坞终端（挑下一单）· %s 港口全景 · Esc 菜单", "WASD MOVE · SHIFT BOOST · SPACE BRAKE · F ASSIST · %s BERTH TERMINAL (NEXT JOB) · %s PORT PANORAMA · ESC MENU"],
+	"tm_keys_berth": ["1–3 应用 · ←→↑↓ 选择 · Enter 确认 · O 设置 · Esc 回首页 / 回到船坞", "1–3 APPS · ARROWS CHOOSE · Enter CONFIRM · O SETTINGS · Esc HOME / BACK TO THE BERTH"],
+	"rt_goals": ["下一步", "NEXT"],
 	"rt_all_done": ["路线上的都拿到了", "EVERYTHING ON THE ROUTE IS YOURS"],
 	"rt_rep": ["声望", "Reputation"],
 	"rt_jobs": ["完成的合同", "Jobs done"],
@@ -2250,8 +2321,8 @@ const S := {
 	"rt_short_money": ["还差 %s", "%s SHORT"],
 	"rt_short_rep": ["还差 %d 点声望", "%d REPUTATION SHORT"],
 	"rt_short_jobs": ["还差 %d 单", "%d JOBS SHORT"],
-	"rt_short_berth": ["要扩建船坞", "NEEDS BERTH EXTENSION"],
-	"rt_short_market": ["主线后开放", "AFTER THE STORY"],
+	"rt_short_berth": ["船坞要扩大才放得下", "THE BERTH MUST BE BIGGER"],
+	"rt_short_market": ["主线往后走才出现", "COMES LATER IN THE STORY"],
 	"rt_open": ["已开放", "OPEN"],
 	"rt_owned": ["已装好", "INSTALLED"],
 	"rt_stripped": ["拆过 %d 艘", "STRIPPED ×%d"],
@@ -2275,18 +2346,19 @@ const S := {
 	"rt_ship_med47": ["12 个独立医疗舱、多隔离区", "Twelve sealed medical bays, several isolation zones"],
 	"tm_tile_radio": ["%d 条记录", "%d LINES"],
 	"tm_tile_training": ["训练舱 TS-1 · 六课", "TS-1 · SIX LESSONS"],
-	"app_contracts": ["合同", "CONTRACTS"],
+	"app_contracts": ["找船", "FIND SHIPS"],
+	"e_ingots": ["钢锭进仓库", "INGOTS TO THE WAREHOUSE"],
 	"app_contracts_d": ["挑下一单", "Pick the next job"],
-	"app_equip": ["装备", "EQUIPMENT"],
-	"app_equip_d": ["升级件和船坞设施，下一单生效", "Upgrades and berth facilities, fitted next job"],
-	"app_skills": ["技能书", "FIELD MANUAL"],
-	"app_skills_d": ["买下立即装配", "Fitted the moment it is bought"],
+	"app_equip": ["船坞", "BERTH"],
+	"app_equip_d": ["报修和扩建计划，都在船坞图上", "Faults and expansion plans, on the berth drawing"],
+	"app_skills": ["工具与技术", "TOOLS & TECHNIQUES"],
+	"app_skills_d": ["永久工具升级 · 工程成果与作业能力", "Permanent tool upgrades / engineering achievements and capabilities"],
 	"app_supplies": ["消耗品", "SUPPLIES"],
 	"app_supplies_d": ["现场买的直接进本单库存", "Bought on site: into this job's stock"],
 	"app_ledger": ["账本", "LEDGER"],
 	"app_ledger_d": ["还款、看收支", "Repay, see the books"],
-	"app_route": ["路线", "ROUTE"],
-	"app_route_d": ["能解锁什么、还差多少", "What opens next and what it takes"],
+	"app_route": ["拆法与建设", "METHODS & BUILD"],
+	"app_route_d": ["升级工具、建设船坞、查看船型", "Upgrade tools, build the berth, browse ships"],
 	"app_radio": ["无线电", "RADIO"],
 	"app_radio_d": ["回看对话和记录", "What was said"],
 	"app_training": ["训练舱", "TRAINING"],
@@ -2310,7 +2382,7 @@ const S := {
 	"tm_no_limit": ["不限时", "NO LIMIT"],
 	"tm_next_side": ["开工前按 4 打开「技能书」，选一项攒钱目标。设备商店备消耗品，船坞管理添设施；作业中也能在左侧两台电脑打开。", "Press 4 for the field manual and set a savings goal. Stock up at the shop and fit facilities in berth management. Both computers on the left also open these pages on site."],
 	"tm_next_go": ["开始下一单", "START THE NEXT JOB"],
-	"tm_keys_onsite": ["1–8 应用 · ←→↑↓ 选择 · Enter 确认 · Esc 回首页 / 回到作业", "1–8 APPS · ARROWS CHOOSE · Enter CONFIRM · Esc HOME / BACK TO WORK"],
+	"tm_keys_onsite": ["1–3 应用 · ←→↑↓ 选择 · Enter 确认 · Esc 回首页 / 回到作业", "1–3 APPS · ARROWS CHOOSE · Enter CONFIRM · Esc HOME / BACK TO WORK"],
 	"tm_out_buy": ["赚了钱能买的", "WHAT THE MONEY BUYS"],
 	"tm_out_can": ["买得起", "AFFORDABLE"],
 	"tm_out_short": ["还差 %s", "%s SHORT"],
@@ -2347,15 +2419,33 @@ const S := {
 	"key_log": ["无线电记录", "RADIO LOG"],
 	"key_auto": ["停下 / 恢复船坞机器", "STOP / RESUME THE BERTH'S MACHINES"],
 	"key_plan": ["运行 / 停止作业方案", "RUN / STOP THE WORK PLAN"],
+	"key_port": ["零压港全景（船坞里切换）", "PORT PANORAMA (TOGGLE, AT THE BERTH)"],
+	"key_starmap": ["星图：扫描小行星带找船", "STAR MAP: SWEEP THE BELT FOR HULKS"],
 	"auto_on": ["船坞机器恢复运行", "BERTH MACHINES RUNNING"],
 	"auto_on_short": ["船坞机器：运行", "MACHINES: RUNNING"],
 	"auto_off": ["船坞机器：已停", "MACHINES: STOPPED"],
 	"plan_title": ["作业方案 %d/%d", "WORK PLAN %d/%d"],
-	"plan_none": ["这个船型还没有作业方案（干净完成一单后生成）", "NO WORK PLAN FOR THIS TYPE YET (A CLEAN JOB MAKES ONE)"],
+	"plan_needs_method": ["这一刀请手动切：切割机照方案切要先学会拆法「%s」", "MAKE THIS CUT BY HAND: THE CUTTER WORKS A PLAN ONCE YOU LEARN %s"],
+	"plan_none": ["此船型暂无方案：手动操作开关、阀门或软管后结算即可保存；只检测不录入步骤", "NO PLAN: WORK CONTROLS OR HOSES, THEN SETTLE. MEASURING ALONE RECORDS NO STEPS"],
+	"plan_no_actions": ["未生成方案：本单没有成功的开关、阀门或软管操作；只检测不录入步骤", "NO PLAN SAVED: NO SUCCESSFUL CONTROL OR HOSE OPERATIONS; MEASURING ALONE RECORDS NO STEPS"],
+	"plan_pending": ["已记录 %s 步，结算后保存（从菜单结算也可）", "%s STEPS RECORDED; SAVED AT SETTLEMENT, INCLUDING MENU SETTLEMENT"],
+	"plan_pending_prefix": ["已记录 %s 步；异常操作后停止续录，结算时保留此前步骤", "%s STEPS RECORDED; RECORDING STOPPED AFTER AN UNSAFE OPERATION; SETTLEMENT KEEPS THE PREFIX"],
+	"plan_record_blocked": ["未生成方案：操作 %s 引发事故，之前没有可保存步骤", "NO PLAN SAVED: OPERATION %s CAUSED AN INCIDENT WITH NO EARLIER VALID STEPS"],
+	"plan_rejected": ["暂无可保存步骤：%s 操作未成功；处理阻碍后重试，再结算", "NO STEPS TO SAVE: %s DID NOT SUCCEED; CLEAR THE OBSTRUCTION, RETRY, THEN SETTLE"],
+	"plan_career_only": ["作业方案仅在正式合同结算时保存", "WORK PLANS ARE SAVED WHEN SETTLING CAREER CONTRACTS"],
+	"plan_saved": ["作业方案已保存：%s 步；下次同船型按 P 执行", "WORK PLAN SAVED: %s STEPS; PRESS P ON THE NEXT SHIP OF THIS TYPE"],
+	"plan_saved_prefix": ["作业方案已保存：事故操作之前的 %s 步；异常步骤未录入", "WORK PLAN SAVED: %s STEPS BEFORE THE UNSAFE OPERATION; UNSAFE STEP EXCLUDED"],
 	"plan_ready": ["待命，按键开始", "READY"],
+	"plan_preset_running": ["灰鹭预置方案启动：自动检测、断电、泄压与回路处理；P 暂停", "GREY HERON PRESET RUNNING: CHECKS, ISOLATION, RECOVERY; P TO PAUSE"],
+	"plan_preset_ready": ["灰鹭预置方案已就绪，下次同型船按 P 即可使用", "GREY HERON PRESET READY; PRESS P ON THIS SHIP TYPE"],
+	"plan_preset_title": ["灰鹭预置方案 %d/%d", "GREY HERON PRESET %d/%d"],
+	"plan_preset_idle": ["按 P 自动准备 · 无需先录制", "P: AUTO PREP · NO RECORDING NEEDED"],
+	"plan_preset_wait": ["自动复测 %s · 等待读数达标", "RECHECK %s · WAIT FOR SAFE READING"],
+	"plan_preset_blocked": ["暂停：%s 受阻，请检查", "PAUSED: %s BLOCKED; CHECK FITTING"],
 	"plan_running": ["作业方案开始执行", "WORK PLAN RUNNING"],
 	"plan_stopped": ["作业方案已停", "WORK PLAN STOPPED"],
 	"plan_done": ["作业方案已走完", "WORK PLAN DONE"],
+	"plan_skipped": ["跳过这一刀：下次的方案里没有它", "STEP SKIPPED: THE NEXT PLAN LEAVES IT OUT"],
 	"plan_step": ["下一步：%s", "NEXT: %s"],
 	"plan_measure": ["暂停：先重测 %s", "PAUSED: MEASURE %s AGAIN"],
 	"plan_differs": ["暂停：%s 读数和方案不符", "PAUSED: %s DOES NOT READ AS PLANNED"],
@@ -2368,17 +2458,20 @@ const S := {
 	"tb_auto": ["工具跟随指针自动切换 · 数字键锁定 · 2 激光", "TOOL FOLLOWS THE POINTER · NUMBER KEYS PIN · 2 LASER"],
 	"tb_manual": ["手动工具 · 按 1 / 3 / 4 回到自动", "MANUAL TOOL · 1 / 3 / 4 FOR AUTO"],
 	"tm_risk_1": ["低风险", "LOW RISK"], "tm_risk_2": ["中风险", "MEDIUM RISK"], "tm_risk_3": ["高风险", "HIGH RISK"],
-	"tm_contract_n": ["合同 %s", "CONTRACT %s"],
+	"tm_contract_n": ["编号 %s", "No. %s"],
 	"tm_per_min": ["每分钟 %s", "%s A MINUTE"],
 	"tm_minutes": ["标准用时 %d 分钟", "STANDARD TIME %d MIN"],
 	"tm_best_net": ["净赚最高", "BEST NET"],
 	"tm_best_rate": ["每分钟最划算", "BEST PER MINUTE"],
 	"tm_task_full": ["拆完整艘船：指定设备完整送设备口，其余分类送对回收口", "THE WHOLE SHIP: NAMED EQUIPMENT WHOLE TO THE EQUIPMENT MOUTH, THE REST SORTED"],
 	"s_context": ["情境工具", "CONTEXT TOOL"],
+	"s_playtest": ["记录试玩数据（F7 标记）", "RECORD PLAYTEST (F7 TO MARK)"],
 	"s_window": ["显示模式", "DISPLAY"],
 	"s_win_full": ["全屏", "FULLSCREEN"],
 	"s_win_window": ["窗口", "WINDOW"],
 	"s_calm": ["震屏 / 闪白 / 顿帧", "SHAKE / FLASH / HIT-STOP"],
+	"s_film": ["胶片颗粒 / 色差", "FILM GRAIN / FRINGE"],
+	"s_slowmo": ["大件分离慢动作", "SLOW MOTION ON BIG PIECES"],
 	"s_anim": ["动画强度", "ANIMATION"],
 	"s_anim_full": ["完整", "FULL"],
 	"s_anim_lite": ["精简", "REDUCED"],
@@ -2396,8 +2489,30 @@ const S := {
 	"key_tool1": ["测量", "MEASURE"], "key_tool2": ["激光切割", "LASER"], "key_tool3": ["磁力抓钩", "GRAPPLE"],
 	"key_tool4": ["维护工具", "WRENCH"], "key_tool5": ["气液回收", "HOSE"], "key_blueprint": ["图纸", "DRAWING"],
 	"key_contract": ["合同", "CONTRACT"], "key_repair": ["维修包", "REPAIR KIT"], "key_ring": ["爆破切割环", "BREACHING RING"],
+	"key_multi": ["抓钩单体/范围（Shift：防护）", "GRAPPLE SINGLE/FIELD (SHIFT: GUARD)"],
+	"key_tow": ["作业艇挂缆 / 摘缆", "WORK BOAT: HITCH / CAST OFF"],
 	"key_assist": ["飞行稳定", "FLIGHT ASSIST"], "key_hints": ["提示", "HINTS"], "key_warp": ["加速时间（按住）", "TIME WARP (HOLD)"],
 	"sc_full": ["完整拆解", "FULL STRIP"],
+	"sc_drift": ["小行星带漂流船", "DRIFTING HULK IN THE BELT"],
+	# 36 号: the processing district's electric arc furnace
+	"eaf_name": ["电弧炉 EAF-3", "ARC FURNACE EAF-3"],
+	"eaf_electrodes": ["石墨电极", "GRAPHITE ELECTRODES"],
+	"eaf_basket": ["装料吊篮", "CHARGING BASKET"],
+	"eaf_moulds": ["铸模线", "MOULD LINE"],
+	"eaf_tap": ["偏心底出钢口", "BOTTOM TAP HOLE"],
+	"eaf_roof": ["旋开炉盖", "SWING ROOF"],
+	"eaf_rockers": ["倾动摇架", "TILTING ROCKERS"],
+	"eaf_line": ["分选线（压块 · 撕碎 · 磁选）", "SORTING LINE (PRESS · SHRED · MAGNETS)"],
+	"sc_bought": ["自有船 · 船市购入", "OWN HULK · BOUGHT"],
+	"sc_found": ["自有船 · 星图找到", "OWN HULK · FOUND IN THE BELT"],
+	"tm_found_v": ["星图扫描找到 · 拖运费 %s · 已拖进港", "FOUND IN THE BELT · TOW %s · TOWED IN"],
+	"tm_fee_bought": ["船款与拖运（已付）", "PRICE AND TOW (PAID)"],
+	"tm_bought_v": ["船市购入 · 已付 %s · 拖运入港", "BOUGHT ON THE MARKET · %s PAID · TOWED IN"],
+	"tm_fee_drift": ["拖回来的运费（派拖船时付）", "THE TOW HOME (PAID WHEN THE TUG GOES)"],
+	"tm_origin": ["来历", "HISTORY"],
+	"tm_task_drift": ["没人要的船，拖回来就归你：拆下的东西全是你的，只付拖运费。", "Nobody's ship: tow it home and all of it is yours. You only pay the tow."],
+	"tm_drift_v": ["在小行星带漂了 %d 年，船籍已经注销", "ADRIFT IN THE BELT %d YEARS, REGISTRY CANCELLED"],
+	"tm_drift_open": ["你的拖船从小行星带拖回 · 船籍已注销", "TOWED IN FROM THE BELT BY YOUR TUG · REGISTRY CANCELLED"],
 	"sc_rescue": ["抢救设备", "EQUIPMENT RESCUE"],
 	"sc_section": ["分段拆解", "SECTION STRIP"],
 	"sc_section_d": ["只拆 27 号肋位以后的区段（D、E 舱、发动机和尾部船壳）；区段外的零件能动，但拆走或切坏按违约扣钱", "ONLY THE SECTION AFT OF FRAME 27; PIECES OUTSIDE MAY BE MOVED, BUT TAKING OR CUTTING THEM IS A BREACH"],
@@ -2465,10 +2580,10 @@ const S := {
 	"tm_fin": ["贷款与还款", "LOAN AND REPAYMENT"],
 	"tm_fin_loan": ["贷款余额", "LOAN"],
 	"tm_fin_inst": ["每单分期", "INSTALLMENT PER CONTRACT"],
-	"tm_fin_int": ["每单利息（2%）", "INTEREST PER CONTRACT (2%)"],
+	"tm_fin_int": ["每单利息", "INTEREST PER CONTRACT"],
 	"tm_fin_due": ["每单应付合计", "DUE PER CONTRACT"],
 	"tm_fin_funds": ["资金", "FUNDS"],
-	"tm_fin_amt": ["本次还款  ← → 或拖动", "PAY NOW  ← → OR DRAG"],
+	"tm_fin_amt": ["金额（还款 / 借款）  ← → 或拖动", "AMOUNT (REPAY / BORROW)  ← → OR DRAG"],
 	"tm_fin_after": ["现在  →  还款后", "NOW  →  AFTER"],
 	"tm_repay_n": ["还款  %s", "PAY  %s"],
 	"tm_repay_none": ["资金或贷款为零，没有可还的", "NOTHING TO PAY (NO FUNDS OR NO LOAN)"],
@@ -2539,9 +2654,12 @@ const S := {
 	"dev_inspect": ["查看指针下的零件", "INSPECT UNDER THE POINTER"],
 	"dev_again": ["这一单从头再来", "THIS CONTRACT AGAIN"],
 	"dev_builder": ["测试合同…", "TEST CONTRACT…"],
+	"dev_heats": ["出钢炉数跳到 3", "TAPPED HEATS TO 3"],
 	"dev_opening": ["跳过开局合同（开放市场）", "SKIP THE OPENING (MARKET OPEN)"],
 	"dev_plans": ["清空作业方案", "FORGET THE WORK PLANS"],
 	"dev_certify": ["跳过训练（直接持证）", "SKIP TRAINING (CERTIFIED)"],
+	"dev_skip_guide": ["跳过全部新手引导", "SKIP EVERY GUIDE"],
+	"dev_skip_guide_done": ["新手引导已全部跳过", "EVERY GUIDE SKIPPED"],
 	"dt_wrong_valve": ["错标阀门", "WRONG VALVE"],
 	"dt_fake_stop": ["假急停", "FAKE STOP"],
 	"dt_hidden_tank": ["隐藏储罐", "HIDDEN TANK"],
@@ -2601,7 +2719,7 @@ const S := {
 	"tm_short": ["资金不足，还差 %s", "NOT ENOUGH FUNDS: %s SHORT"],
 	"tm_bought": ["已购买：%s", "BOUGHT: %s"],
 	"tm_stock": ["库存", "IN STOCK"],
-	"tm_keys": ["1–8 应用 · ← → ↑ ↓ 选择 / 数量 · Enter 确认 · O 设置 · Esc 回首页 / 返回标题", "1–8 APPS · ARROWS SELECT / AMOUNT · ENTER CONFIRM · O SETTINGS · ESC HOME / TITLE"],
+	"tm_keys": ["1–3 应用 · ← → ↑ ↓ 选择 / 数量 · Enter 确认 · O 设置 · Esc 回首页 / 返回标题", "1–3 APPS · ARROWS SELECT / AMOUNT · ENTER CONFIRM · O SETTINGS · ESC HOME / TITLE"],
 	"rep_trainee": ["见习", "TRAINEE"],
 	"rep_certified": ["认证", "CERTIFIED"],
 	"rep_senior": ["资深", "SENIOR"],
@@ -2662,10 +2780,17 @@ const S := {
 }
 
 
+# Liang's lines as the author last wrote them in data/台词.txt (scripts/lines.gd)
+static var ov := {}
+
+
 static func t(key: String) -> String:
-	var v = S.get(key)
+	Lines._load()
+	var v = ov.get(key, S.get(key))
 	if v == null:
 		v = CodexTxt.S.get(key)
+	if v == null:
+		v = GearTxt.S.get(key)
 	if v == null:
 		return key
 	var text: String = v[0] if zh else v[1]
@@ -2677,7 +2802,7 @@ static func t(key: String) -> String:
 
 
 static func has(key: String) -> bool:
-	return S.has(key) or CodexTxt.S.has(key)
+	return S.has(key) or CodexTxt.S.has(key) or GearTxt.S.has(key)
 
 
 # a declared cargo label ("IND. METAL") by its name in the player's language
@@ -2724,6 +2849,7 @@ static func load_settings(testing: bool) -> void:
 		fullscreen = cf.get_value("video", "fullscreen", false)
 		calm = cf.get_value("video", "calm", false)
 		codex_cards = cf.get_value("ui", "codex_cards", true)
+		playtest = cf.get_value("ui", "playtest", false)
 		anim = cf.get_value("video", "anim", "full")
 		if not anim in ANIM_LEVELS:
 			anim = "full"
@@ -2732,6 +2858,8 @@ static func load_settings(testing: bool) -> void:
 		vol_music = cf.get_value("audio", "music", 0.8)
 		vol_sfx = cf.get_value("audio", "sfx", 0.9)
 		quality = cf.get_value("video", "quality", "high")
+		film = cf.get_value("video", "film", true)
+		slowmo_on = cf.get_value("video", "slowmo", true)
 
 
 static func save_settings(testing: bool) -> void:
@@ -2752,10 +2880,13 @@ static func save_settings(testing: bool) -> void:
 	cf.set_value("video", "fullscreen", fullscreen)
 	cf.set_value("video", "calm", calm)
 	cf.set_value("ui", "codex_cards", codex_cards)
+	cf.set_value("ui", "playtest", playtest)
 	cf.set_value("video", "anim", anim)
 	Keys.store(cf)
 	cf.set_value("audio", "master", vol_master)
 	cf.set_value("audio", "music", vol_music)
 	cf.set_value("audio", "sfx", vol_sfx)
 	cf.set_value("video", "quality", quality)
+	cf.set_value("video", "film", film)
+	cf.set_value("video", "slowmo", slowmo_on)
 	cf.save(cfg_path)

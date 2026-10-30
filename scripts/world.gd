@@ -27,6 +27,7 @@ var static_cols := {}
 var bodies_node: Node2D
 var back_layer: Node2D
 var line_layer: Node2D
+var rope_fx                    # 87-2: scripts/rope_fx.gd
 var piece_layer: Node2D
 # The attached pieces are drawn in strips along the ship, one canvas item each,
 # so the renderer leaves out the ones off the screen (2026-10-18: a big hull
@@ -37,7 +38,8 @@ var _chunks := {}               # [part, strip index] -> Node2D
 # outline, the equipment art, the fixings on top. Zoomed far out (the whole
 # ship on the screen) the art fades away: at that size its lines and lettering
 # are below a pixel, and it was half of what such a view drew.
-const PASSES := ["fill", "line", "art", "joint"]
+const PASSES := ["fill", "line", "line_far", "art", "joint"]
+const LINE_FAR := 0.3                     # zoom under which outlines are hairlines (line_far)
 const ART_FADE := Vector2(0.6, 0.75)    # zoom: gone below .x, whole above .y
 var _pass_roots := {}
 var _chunk_lists := {}          # strip index -> its pieces
@@ -51,8 +53,14 @@ var light_layer: Node2D
 var dirty_links := false
 var dirty_cols := {}
 var dirty_draw := false
+# pieces whose outline changes every frame (a sail panel winding onto its drum): left out of the
+# strips, their owner draws them each frame with draw_pieces (a strip redraw a frame would cost
+# far more; user 2026-10-27, the furl went in visible steps)
+var live := {}
 var dirty_back := false
 var metal_price := 120.0
+var ore_price := 0.0          # 96 号 (user 2026-10-28 "按矿价算"): a hopper's chunks pay as ore, $/t, not as scrap
+var mat_priced := false       # 87-1: scrap by material (false: a contract saved before materials)
 var structural_mass := 0.0
 var bodies: Array = []
 var anim_doors := false
@@ -94,6 +102,12 @@ func _init() -> void:
 	bodies_node = Node2D.new()
 	add_child(bodies_node)
 	heat_layer = _layer(4, true, _draw_heat_static)
+	# 87-2: cut cables spring back and settle slack
+	rope_fx = preload("res://scripts/rope_fx.gd").new()
+	rope_fx.world = self
+	rope_fx.z_index = 1
+	rope_fx.z_as_relative = false
+	add_child(rope_fx)
 
 
 # the cut-up equipment still on the ship: piece id -> a node whose own drawing (the
@@ -163,6 +177,10 @@ func add_piece(kind: String, poly: PackedVector2Array, opts: Dictionary = {}):
 		p.barrier = true
 	pieces[p.id] = p
 	order.append(p.id)
+	if _rank_n == order.size() - 1:
+		_rank[p.id] = _rank_n
+		_rank_n += 1
+	pick_touch(p)
 	return p
 
 
@@ -213,11 +231,17 @@ func add_room(name: String, poly: PackedVector2Array) -> void:
 # metal_value: what the whole structure fetches as scrap (the ship file says)
 func finalize(metal_value: float = 12000.0) -> void:
 	structural_mass = 0.0
+	var weighted := 0.0
 	for id in order:
 		var p = pieces[id]
-		if p.cls == "metal":
+		# (a hopper's chunks are ore, priced on their own, not a share of the structure's scrap)
+		if p.cls == "metal" and not (ore_price > 0.0 and p.kind == "ore"):
 			structural_mass += p.mass
-	metal_price = metal_value / maxf(1.0, structural_mass)
+			weighted += p.mass * Mat.price_k(p)
+	# 87-1: the ship's scrap value is shared out by mass x its material's price weight
+	# (titanium fetches more a tonne than plain plate, composite less), the whole the same
+	mat_priced = true
+	metal_price = metal_value / maxf(1.0, weighted if weighted > 0.0 else structural_mass)
 	for id in order:
 		rebuild_cols(pieces[id])
 	var shells := _room_shells()
@@ -225,6 +249,85 @@ func finalize(metal_value: float = 12000.0) -> void:
 		rooms[n].shell0 = shells[n]
 	relink()
 	redraw_all(true)
+
+
+# 87-2: move an attached part (structure that bends, sags or kinks) by a small transform, with
+# what is fixed to it: its art, kerf edges and glow, the joints held in its frame, the ends and
+# route of lines on it, its controls. Collision and drawing follow.
+func displace(p, xf: Transform2D) -> void:
+	if p == null or p.gone or p.body != null:
+		return
+	var bb := Geom.bbox(p.poly).grow(4.0)
+	p.poly = xf * p.poly
+	pick_touch(p)
+	p.art_xf = xf * p.art_xf
+	p.open_dir = xf.basis_xform(p.open_dir)
+	if p.has_meta("cuts"):
+		p.set_meta("cuts", xf * (p.get_meta("cuts") as PackedVector2Array))
+		p.remove_meta("cuts_draw")
+	p.heat = p.heat.map(func(h): return [xf * (h[0] as PackedVector2Array), h[1]])
+	for j in joints:
+		if j.a == p.id:
+			j.pos = xf * j.pos
+	for lid in lines:
+		var l = lines[lid]
+		if l.a == p.id:
+			l.pa = xf * l.pa
+		if l.b == p.id:
+			l.pb = xf * l.pb
+		if l.a == p.id or l.b == p.id:
+			var path: PackedVector2Array = l.path
+			for i in path.size():
+				if bb.has_point(path[i]):
+					path[i] = xf * path[i]
+			l.path = path
+	for cid in ctrls:
+		var c = ctrls[cid]
+		if c.piece == p.id:
+			c.pos = xf * c.pos
+	rebuild_cols(p)
+	redraw_near([p])
+
+
+# 87-2: a part cut free of the ship does not just hang where it was. The stress locked in the
+# structure lets go along the kerf and the cut's own gas pushes on the new edge: it pops away
+# from the last cut, turning a little, lighter parts faster, then the berth's damping field
+# settles it (FreeBody.settle). Only for parts freed by a fresh cut (still glowing from it).
+const KICK_V := 26.0           # px/s for a 1 t part
+const KICK_SPIN := 0.25        # rad/s at most
+
+func _separation_kick(b, group: Array, com: Vector2, m: float) -> void:
+	# where it was cut: the middle of its kerf-made edges, on the parts still warm from the cut
+	var sum := Vector2.ZERO
+	var n := 0
+	for p in group:
+		if p.kerf_dt <= 1.0 or not p.has_meta("cuts"):
+			continue
+		var cuts: PackedVector2Array = p.get_meta("cuts")
+		for q in cuts:
+			sum += q
+			n += 1
+	if n == 0:
+		return
+	var from: Vector2 = b.global_transform * (sum / n)
+	var away := (com - from)
+	if away.length() < 1.0:
+		return
+	var v := KICK_V / sqrt(maxf(0.25, m))
+	b.linear_velocity = away.normalized() * minf(v, 60.0)
+	var side := signf(away.cross(Vector2.DOWN)) if away.cross(Vector2.DOWN) != 0.0 else 1.0
+	b.angular_velocity = side * minf(KICK_SPIN, KICK_SPIN / sqrt(maxf(0.25, m)))
+	b.settle = FreeBody.SETTLE_T
+
+
+# what a part fetches as scrap: its mass at the ship's price, by its material, less what the
+# cutting melted or cracked off it (87-1)
+func scrap_value(p) -> float:
+	if ore_price > 0.0 and p.kind == "ore":
+		return p.mass * ore_price
+	if not mat_priced:
+		return p.mass * metal_price
+	return p.mass * metal_price * Mat.value_k(p)
 
 
 # how much of the structure around a room is still there (back wall fades with it)
@@ -289,7 +392,20 @@ var _tag_n := -1
 var _doors: Array = []         # the door pieces' ids (re-gathered when pieces come or go)
 var _door_n := -1
 var _hot := {}                 # ids of pieces still glowing from a cut
+var _warm := {}
+const JOINT_FADE := Vector2(0.16, 0.26)   # zoom over which the joints' marks fade in                # 87-1: ids of pieces the cutting warmed (Mat.cool)
 var gone_n := 0                # pieces gone so far (what counts what is left keys on it)
+
+
+# the piece with a ship-file key (a work plan's cut finds its piece on the next ship of the type)
+func key_piece(k: String):
+	if k == "":
+		return null
+	for id in order:
+		var p = pieces[id]
+		if not p.gone and p.key == k:
+			return p
+	return null
 
 
 func tag(t: String):
@@ -331,15 +447,94 @@ func world_poly(p) -> PackedVector2Array:
 
 
 func piece_contains(p, wpos: Vector2) -> bool:
-	var lp: Vector2 = frame(p).affine_inverse() * wpos - door_offset(p)
-	if not Geom.bbox(p.poly).grow(1.0).has_point(lp):
+	var lp: Vector2 = (frame(p).affine_inverse() * wpos - door_offset(p)) if p.body != null or p.door else wpos
+	if not _bounds(p).has_point(lp):
 		return false
 	return Geometry2D.is_point_in_polygon(lp, p.poly)
 
 
+# 60 FPS (2026-10-27): what is under a point is looked up in a grid of the attached pieces' bounds
+# (a walk through every piece took 1.35 ms on ARK-01, and the hover, the hints and the laser ask
+# every frame). A piece goes into the cells its bounds cover when it is made and whenever its
+# outline moves (pick_touch: displace, rebuild_cols, the sail's winding); a cut only shrinks the
+# old piece, so its cells still cover it. Pieces that came loose are looked at on their bodies.
+# The candidates come back top first, as the draw order has them.
+const PICK_CELL := 4.0 * Geom.M
+var _pick := {}             # Vector2i cell -> {piece id: true}
+var _pick_ready := false
+var _rank := {}             # piece id -> its place in the draw order
+var _rank_n := -1           # how much of the order _rank has (-1: work it out again)
+
+
+func pick_reset() -> void:
+	_pick = {}
+	_pick_ready = false
+	_rank_n = -1
+
+
+func pick_touch(p) -> void:
+	if not _pick_ready or p.gone or p.body != null:
+		return
+	var r := _bounds(p)
+	if p.door and p.open_dir != Vector2.ZERO:
+		r = r.merge(Rect2(r.position + p.open_dir, r.size))
+	var c0 := Vector2i((r.position / PICK_CELL).floor())
+	var c1 := Vector2i((r.end / PICK_CELL).floor())
+	for x in range(c0.x, c1.x + 1):
+		for y in range(c0.y, c1.y + 1):
+			var k := Vector2i(x, y)
+			if not _pick.has(k):
+				_pick[k] = {}
+			_pick[k][p.id] = true
+
+
+func _pick_cands(wpos: Vector2) -> Array:
+	if not _pick_ready:
+		_pick_ready = true
+		for id in order:
+			pick_touch(pieces[id])
+	# only what the point is inside the bounds of: attached pieces from the cell, loose ones body by
+	# body (the point taken into the body's frame once, its whole bounds first)
+	var cand: Array = []
+	for id in _pick.get(Vector2i((wpos / PICK_CELL).floor()), {}):
+		var p = pieces.get(id)
+		if p != null and not p.gone and p.body == null and (p.door or _bounds(p).has_point(wpos)):
+			cand.append(p)
+	for b in bodies:
+		if not is_instance_valid(b):
+			continue
+		var lp: Vector2 = b.global_transform.affine_inverse() * wpos
+		var cb: Rect2 = b.clearance_bounds
+		if cb.size != Vector2.ZERO and not cb.grow(2.0).has_point(lp):
+			continue
+		for q in b.pieces:
+			if not q.gone and (q.door or _bounds(q).has_point(lp)):
+				cand.append(q)
+	if cand.is_empty():
+		return cand
+	if _rank_n != order.size():
+		_rank = {}
+		for i in order.size():
+			_rank[order[i]] = i
+		_rank_n = order.size()
+	var ranked: Array = []
+	for p in cand:
+		ranked.append([_rank.get(p.id, -1), p])
+	ranked.sort_custom(func(a, b): return a[0] > b[0])
+	return ranked.map(func(e): return e[1])
+
+
+# 60 FPS (2026-10-27): a piece's bounds, worked out again only when its outline is another (the
+# vertex walk for every piece on every look-up was 2 ms on ARK-01, the hint scan five times a second)
+func _bounds(p) -> Rect2:
+	if p.bb_of != p.poly:
+		p.bb_of = p.poly
+		p.bb = Geom.bbox(p.poly).grow(1.0)
+	return p.bb
+
+
 func piece_at(wpos: Vector2, kinds: Array = [], free_ok: bool = true):
-	for i in range(order.size() - 1, -1, -1):
-		var p = pieces[order[i]]
+	for p in _pick_cands(wpos):
 		if p.gone:
 			continue
 		if not kinds.is_empty() and not p.kind in kinds:
@@ -356,8 +551,7 @@ func piece_at(wpos: Vector2, kinds: Array = [], free_ok: bool = true):
 # Pieces under a point, top first. Free bodies draw above attached structure.
 func pieces_at(wpos: Vector2) -> Array:
 	var out: Array = []
-	for i in range(order.size() - 1, -1, -1):
-		var p = pieces[order[i]]
+	for p in _pick_cands(wpos):
 		if p.gone or (p.door and p.door_open):
 			continue
 		if piece_contains(p, wpos):
@@ -651,6 +845,8 @@ func make_body(group: Array, from_body):
 		b.calm = FreeBody.CALM_T
 		if od.ship:
 			b.start_ghost(od.dir)
+	elif from_body == null:
+		_separation_kick(b, group, com, m)
 	bodies.append(b)
 	# a wall that floats away leaves a hole, however it came loose
 	if group.any(func(q): return q.barrier) and game != null and game.sys != null:
@@ -809,7 +1005,38 @@ func kill_line(l, at: Vector2 = Vector2.INF) -> void:
 	l.alive = false
 	l.cut_at = at
 	dirty_links = true
-	redraw_near([pieces.get(l.a), pieces.get(l.b)])
+	# 87-2: a cable (not a stiff pipe) that ran between two attached parts held some tension;
+	# cut, both ends spring back and curl (rope_fx.gd), then hang where they settled
+	var pa = pieces.get(l.a)
+	var pb = pieces.get(l.b)
+	if rope_fx != null and l.kind == "cable" and pa != null and pb != null and pa.body == null and pb.body == null and l.path.size() >= 2:
+		var halves := _cut_halves(l)
+		rope_fx.cut_line(l, halves[0], halves[1], LINE_TENSION.get(l.net, 0.3))
+	redraw_near([pa, pb])
+
+
+# 87-2: how tight each kind of cable is run (0..1): power trunks are pulled taut on their
+# hangers, signal looms lie slack
+const LINE_TENSION := {"power": 0.45, "electric": 0.45, "nav": 0.15, "data": 0.15, "signal": 0.15, "none": 0.6}
+
+
+# a cut line's two halves (world points): from end A to the kerf, from the kerf to end B
+func _cut_halves(l) -> Array:
+	var cut: Vector2 = l.cut_at if l.cut_at != Vector2.INF else l.path[l.path.size() / 2]
+	var a_side := PackedVector2Array()
+	var b_side := PackedVector2Array()
+	var passed := false
+	for i in l.path.size():
+		var q: Vector2 = l.path[i]
+		if not passed:
+			a_side.append(q)
+			if i + 1 < l.path.size() and Geom.dist_to_segment(cut, q, l.path[i + 1]) < 6.0:
+				a_side.append(cut + (q - cut).limit_length(5.0))
+				b_side.append(cut + (l.path[i + 1] - cut).limit_length(5.0))
+				passed = true
+		else:
+			b_side.append(q)
+	return [a_side, b_side]
 
 
 # ---------------------------------------------------------------- collision
@@ -818,6 +1045,7 @@ func rebuild_cols(p) -> void:
 	if p.body != null:
 		p.body.rebuild_cols(p)
 		return
+	pick_touch(p)
 	if static_cols.has(p.id):
 		for c in static_cols[p.id]:
 			free_shape(c)
@@ -860,6 +1088,17 @@ func _process(dt: float) -> void:
 		var k := clampf((game.cam_zoom() - ART_FADE.x) / (ART_FADE.y - ART_FADE.x), 0.0, 1.0)
 		art.modulate.a = k
 		art.visible = k > 0.01
+	if _pass_roots.has("line") and game != null:
+		var far_out: bool = game.cam_zoom() < LINE_FAR
+		_pass_roots["line"].visible = not far_out
+		_pass_roots["line_far"].visible = far_out
+	# 60 FPS: bolt heads and weld beads are under a pixel far out (ARK-01's thousands of them were
+	# the zoomed-out frame); they fade with the equipment art
+	if _pass_roots.has("joint") and game != null:
+		var jn: Node2D = _pass_roots["joint"]
+		var kj := clampf((game.cam_zoom() - JOINT_FADE.x) / (JOINT_FADE.y - JOINT_FADE.x), 0.0, 1.0)
+		jn.modulate.a = kj
+		jn.visible = kj > 0.01
 	var moving := false
 	if order.size() != _door_n:
 		_door_n = order.size()
@@ -893,13 +1132,19 @@ func _process(dt: float) -> void:
 	if animating:
 		cover_layer.queue_redraw()
 	var hot := false
+	# 87-1: parts the cutting warmed cool off at their material's rate
+	for id in _warm.keys():
+		var p = pieces.get(id)
+		if p == null or p.gone or not Mat.cool(p, dt):
+			_warm.erase(id)
 	for id in _hot.keys():
 		var p = pieces.get(id)
 		if p == null or p.heat.is_empty():
 			_hot.erase(id)
 			continue
 		var now := Time.get_ticks_msec() / 1000.0
-		p.heat = p.heat.filter(func(h): return now - h[1] < 3.2)
+		var glow: float = Mat.glow_t(p) + 0.2
+		p.heat = p.heat.filter(func(h): return now - h[1] < glow)
 		if p.heat.is_empty():
 			_hot.erase(id)
 		if p.body == null:
@@ -962,9 +1207,9 @@ func reveal(room: String, from: Vector2) -> void:
 
 # Apply a kerf (a polyline in the piece's frame) to one piece. Returns what
 # happened so the caller can react (split, joints cut, lines cut).
-func commit_cut(p, pl: PackedVector2Array, r: float = KERF) -> Dictionary:
+func commit_cut(p, pl: PackedVector2Array, r: float = KERF, source: Dictionary = {}) -> Dictionary:
 	var t0 := Time.get_ticks_usec()
-	var out := _commit_cut(p, pl, r)
+	var out := _commit_cut(p, pl, r, source)
 	_p("commit", t0)
 	return out
 
@@ -1007,16 +1252,57 @@ func segment_cut(p, wpl: PackedVector2Array) -> bool:
 	return false
 
 
-func _commit_cut(p, pl: PackedVector2Array, r: float = KERF) -> Dictionary:
+func _commit_cut(p, pl: PackedVector2Array, r: float = KERF, source: Dictionary = {}) -> Dictionary:
 	var res := {"split": 0, "killed": [], "new": [], "lines": [], "gone": false}
 	if p.gone or pl.is_empty():
 		return res
 	var whole := segment_cut(p, frame(p) * pl)
+	# 87-1: the kerf heats the part, melts titanium away, cracks ceramic (the parts inherit it)
+	var kerf_m := 0.0
+	for i in range(1, pl.size()):
+		kerf_m += pl[i - 1].distance_to(pl[i])
+	res["cracked"] = Mat.kerf(p, kerf_m / Geom.M)
+	if p.kerf_dt > 0.0:
+		_warm[p.id] = true
+	if res.cracked > 0:
+		p.remove_meta("cuts_draw")
 	var value0: float = p.value
+	# 2026-10-25: the marked-line loss is taken once per item, not once per cut (cut along all its
+	# lines the parts keep SEGMENT_KEEP of it between them; compounding left NR-95's 12-part tank half)
+	var keep: float = 1.0 if p.get_meta("seg_cut", false) else SEGMENT_KEEP
 	var cutters := Geom.stroke(pl, r)
-	var parts: Array = Geom.cut(p.poly, cutters)
+	# A physically traversed continuous stroke may be published in smaller
+	# physics steps than the player's 50 ms commits. Recompute its *completed*
+	# prefix from the original outline, rather than repeatedly simplifying the
+	# last approximation. The executor validates the current shape and links
+	# before every prefix and resets the basis when a fragment separates.
+	var basis: PackedVector2Array = p.poly
+	if source.has("basis"):
+		basis = PackedVector2Array()
+		for point in source.basis: basis.append(Vector2(float(point[0]),float(point[1])))
+	var parts: Array = Geom.cut(basis, cutters)
 	parts = parts.filter(func(q): return Geom.area(q) >= 8.0)
 	parts.sort_custom(func(a, b): return Geom.area(a) > Geom.area(b))
+	# A recorded stroke identifies which *real* resulting fragment retains the
+	# parent's key. During continuous cutting the near-equal areas can swap order
+	# before the final sample. Match identity by overlap, never by replacing the
+	# computed geometry with the recorded polygon or deleting the other fragment.
+	if parts.size() > 1 and not source.get("keep_shape",[]).is_empty():
+		var expected := PackedVector2Array()
+		for token in source.keep_shape:
+			var xy: PackedStringArray = str(token).split(":")
+			if xy.size() == 2: expected.append(Vector2(float(xy[0]),float(xy[1])))
+		if Geom.valid(expected):
+			var best := 0
+			var best_area := -1.0
+			for index in parts.size():
+				var overlap := 0.0
+				for actual in Geometry2D.intersect_polygons(parts[index],expected): overlap += Geom.area(actual)
+				if overlap > best_area:
+					best_area = overlap
+					best = index
+			var retained: PackedVector2Array = parts.pop_at(best)
+			parts.push_front(retained)
 	var now := Time.get_ticks_msec() / 1000.0
 	# fixings the kerf passes over are gone
 	for j in joints:
@@ -1034,6 +1320,7 @@ func _commit_cut(p, pl: PackedVector2Array, r: float = KERF) -> Dictionary:
 	var old_area := Geom.area(p.poly)
 	var old_mass: float = p.mass
 	var old_poly: PackedVector2Array = p.poly
+	p.cut_seq = int(source.sequence) if source.has("sequence") else p.cut_seq+1
 	var old_cuts: PackedVector2Array = p.get_meta("cuts", PackedVector2Array())
 	# what the equipment looked like before it was cut up: each part keeps it, drawn
 	# clipped to what is left of it (free_body.gd)
@@ -1046,7 +1333,9 @@ func _commit_cut(p, pl: PackedVector2Array, r: float = KERF) -> Dictionary:
 	var all_parts: Array = [p]
 	for i in range(1, parts.size()):
 		var q = add_piece(p.kind, parts[i], {})
-		for prop in ["density", "cls", "value", "cond", "intact", "fragile", "contam", "cut_speed", "room", "barrier", "temp", "dest", "body", "hazard", "scope"]:
+		if p.key != "":
+			q.key = "%s~%d.%d" % [p.key, p.cut_seq, i]
+		for prop in ["density", "cls", "value", "cond", "intact", "fragile", "contam", "cut_speed", "room", "barrier", "temp", "dest", "body", "hazard", "scope", "mat", "kerf_dt", "loss", "cracks"]:
 			q.set(prop, p.get(prop))
 		q.value = 0.0
 		q.intact = false
@@ -1055,7 +1344,8 @@ func _commit_cut(p, pl: PackedVector2Array, r: float = KERF) -> Dictionary:
 		if whole:
 			# cut along its marked line: this part is a piece of equipment in its own right
 			q.intact = true
-			q.value = value0 * SEGMENT_KEEP * Geom.area(parts[i]) / old_area
+			q.value = value0 * keep * Geom.area(parts[i]) / old_area
+			q.set_meta("seg_cut", true)
 			q.tag = "%s-%d" % [p.tag, i + 1]
 			q.set_meta("segments", p.get_meta("segments", []))
 		q.name_key = p.name_key if p.cls == "equip" else ""
@@ -1069,6 +1359,7 @@ func _commit_cut(p, pl: PackedVector2Array, r: float = KERF) -> Dictionary:
 		# draw it right after its parent
 		order.erase(q.id)
 		order.insert(order.find(p.id) + 1, q.id)
+		_rank_n = -1
 		all_parts.append(q)
 		res.new.append(q)
 	if parts.size() > 1:
@@ -1081,7 +1372,8 @@ func _commit_cut(p, pl: PackedVector2Array, r: float = KERF) -> Dictionary:
 					_ghosts[q.id].queue_redraw()
 		res.split = parts.size()
 		if whole:
-			p.value = value0 * SEGMENT_KEEP * Geom.area(parts[0]) / old_area
+			p.value = value0 * keep * Geom.area(parts[0]) / old_area
+			p.set_meta("seg_cut", true)
 			# each part keeps only the marked lines that still run through it
 			for q in all_parts:
 				var left: Array = []
@@ -1093,13 +1385,17 @@ func _commit_cut(p, pl: PackedVector2Array, r: float = KERF) -> Dictionary:
 	for q in all_parts:
 		_mark_cut_edges(q, old_poly, old_cuts)
 		var a := Geom.area(q.poly)
-		if q.cls == "metal":
-			q.mass = a / (Geom.M * Geom.M) * q.density
-		else:
-			q.mass = old_mass * a / maxf(old_area, 1.0)
+		# 78 号 P0-1: a cut shares out the mass the piece had, never area x density —
+		# a film or stay declared 0.03 t but "density" 0.05 t/m² came out at 11 t a part
+		# (SA-200's scrap paid 127 % of the ship)
+		q.mass = old_mass * a / maxf(old_area, 1.0)
 		q.heat = keep_heat.filter(func(h): return Geom.dist_to_boundary(_heat_mid(h[0]), q.poly) < r + 6.0)
 		if not q.heat.is_empty():
 			_hot[q.id] = true
+		if q.body != null and is_instance_valid(q.body):
+			q.body.set_process(true)
+		if q.kerf_dt > 0.0:
+			_warm[q.id] = true
 	# hand each fixing, line end and control to whichever part now holds it
 	for j in joints:
 		if not j.alive:
@@ -1216,7 +1512,7 @@ func cut_region(poly: PackedVector2Array, _events: bool) -> void:
 		p.poly = parts[0]
 		p.mass = Geom.area(p.poly) / (Geom.M * Geom.M) * p.density
 		for i in range(1, parts.size()):
-			var q = add_piece(p.kind, parts[i], {"density": p.density, "barrier": p.barrier, "cut_speed": p.cut_speed})
+			var q = add_piece(p.kind, parts[i], {"density": p.density, "barrier": p.barrier, "cut_speed": p.cut_speed, "mat": p.mat})
 			for j in joints:
 				if j.a == p.id and Geometry2D.is_point_in_polygon(j.pos, q.poly):
 					j.a = q.id
@@ -1271,7 +1567,14 @@ func _style(p) -> Array:
 		line_c = Pal.ink(0.42)
 	if p.contam:
 		line_c = line_c.lerp(Pal.tint(Pal.FLUID, line_c.a), 0.55)
+	# 87-1: the material shows in the plate's tone (armour darker, titanium and ceramic paler)
+	if p.mat != "":
+		var dk := float(Mat.of(p).get("fill", 0.0))
+		fill = Color(fill.r + dk, fill.g + dk, fill.b + dk * 1.1)
 	return [fill, line_c]
+
+
+const HEAVY_KINDS := ["hull", "hatch", "keel", "beam", "equip"]
 
 
 func draw_piece(ci: CanvasItem, p) -> void:
@@ -1287,6 +1590,9 @@ func draw_pieces(ci: CanvasItem, list: Array, part: String = "all") -> void:
 	var fi := PackedInt32Array()
 	var segs := PackedVector2Array()
 	var sc := PackedColorArray()
+	# 91 号: the load-carrying outline (hull, keel, beams, equipment) heavier than the rest
+	var segs2 := PackedVector2Array()
+	var sc2 := PackedColorArray()
 	var arts: Array = []
 	for p in list:
 		if p.gone:
@@ -1297,26 +1603,49 @@ func draw_pieces(ci: CanvasItem, list: Array, part: String = "all") -> void:
 			poly = Transform2D(0.0, off) * poly
 		var st := _style(p)
 		var tri := _tri_cached(p)
+		# 91 号 Q7: a plate, not a drawing — the fill brighter toward the light, the edges on the
+		# lit side brighter than those in the shade
+		var bb := Geom.bbox(poly)
+		var cc := bb.get_center()
+		var rr := maxf(maxf(bb.size.x, bb.size.y) * 0.5, 1.0)
 		if not tri.is_empty():
 			var base := fp.size()
 			fp.append_array(poly)
-			var cs := PackedColorArray()
-			cs.resize(poly.size())
-			cs.fill(st[0])
-			fc.append_array(cs)
+			var f0: Color = st[0]
+			for v in poly:
+				var lk := clampf((v - cc).dot(Look.LIGHT_DIR) / rr, -1.0, 1.0)
+				var g := 1.5 + 0.75 * lk if Look.on else 1.0
+				fc.append(Color(f0.r * g, f0.g * g, f0.b * g, f0.a))
 			for k in tri:
 				fi.append(base + k)
+		var heavy: bool = Look.on and p.kind in HEAVY_KINDS
+		var s_out := segs2 if heavy else segs
+		var c_out := sc2 if heavy else sc
+		var l0: Color = st[1]
 		var n := poly.size()
 		for i in n:
-			segs.append(poly[i])
-			segs.append(poly[(i + 1) % n])
-			sc.append(st[1])
-		if p.art != "" or p.has_meta("cuts"):
+			var a := poly[i]
+			var b := poly[(i + 1) % n]
+			s_out.append(a)
+			s_out.append(b)
+			var ek := clampf(((a + b) * 0.5 - cc).dot(Look.LIGHT_DIR) / rr, -1.0, 1.0)
+			var lg := 0.84 + 0.3 * ek if Look.on else 1.0
+			c_out.append(Color(l0.r * lg, l0.g * lg, l0.b * lg, l0.a))
+		if p.art != "" or p.has_meta("cuts") or (p.mat != "" and str(Mat.of(p).get("pattern", "")) != "") or (Look.on and p.kind in ["hull", "hatch"]):
 			arts.append([p, poly, off])
 	if not fi.is_empty() and part in ["all", "fill"]:
 		RenderingServer.canvas_item_add_triangle_array(ci.get_canvas_item(), fi, fp, fc)
-	if not segs.is_empty() and part in ["all", "line"]:
-		ci.draw_multiline_colors(segs, sc, 1.3)
+	if part in ["all", "line"]:
+		if not segs.is_empty():
+			ci.draw_multiline_colors(segs, sc, 1.1 if Look.on else 1.3)
+		if not segs2.is_empty():
+			ci.draw_multiline_colors(segs2, sc2, 1.8)
+	elif part == "line_far":
+		# 60 FPS: far out, the outlines as one-pixel hairlines (the cheapest lines there are)
+		segs.append_array(segs2)
+		sc.append_array(sc2)
+		if not segs.is_empty():
+			ci.draw_multiline_colors(segs, sc, -1.0)
 	if not part in ["all", "art"] or arts.is_empty():
 		return
 	Art.EQ.batch_begin()
@@ -1325,10 +1654,63 @@ func draw_pieces(ci: CanvasItem, list: Array, part: String = "all") -> void:
 		if p.art != "":
 			Art.EQ.bxf = Transform2D(0.0, a[2]) * p.art_xf
 			Art.draw(ci, p.art, p.art_size, p, font)
+		if Look.on and p.kind in ["hull", "hatch"]:
+			_hull_dress(ci, p, a[1])
+		if p.mat != "":
+			_mat_face(ci, p, a[2])
 		if p.has_meta("cuts"):
 			_cut_edges(ci, p, a[2])
 	Art.EQ.bxf = Transform2D.IDENTITY
 	Art.EQ.batch_end(ci)
+
+
+# 外部画面定案 Q4 a: a hull plate as built — welded panel seams across it every couple of metres
+# with a rivet where each meets the edge; and on the biggest plate the ship's name, painted on
+var _reg_id := -2
+
+
+func _hull_dress(ci: CanvasItem, p, poly: PackedVector2Array) -> void:
+	var bb := Geom.bbox(poly)
+	if bb.size.x < 1.2 * Geom.M and bb.size.y < 1.2 * Geom.M:
+		return
+	var along_x := bb.size.x >= bb.size.y
+	var step := 1.8 * Geom.M
+	var n := int((bb.size.x if along_x else bb.size.y) / step)
+	var seam := Pal.ink(0.16)
+	var rivet := Pal.ink(0.32)
+	for i in range(1, n + 1):
+		var a: Vector2
+		var b: Vector2
+		if along_x:
+			var x := bb.position.x + i * (bb.size.x / (n + 1))
+			a = Vector2(x, bb.position.y - 1.0)
+			b = Vector2(x, bb.end.y + 1.0)
+		else:
+			var y := bb.position.y + i * (bb.size.y / (n + 1))
+			a = Vector2(bb.position.x - 1.0, y)
+			b = Vector2(bb.end.x + 1.0, y)
+		for seg in Geometry2D.clip_polyline_with_polygon(PackedVector2Array([a, b]), poly):
+			if seg.size() < 2:
+				continue
+			ci.draw_line(seg[0], seg[seg.size() - 1], seam, 1.0)
+			ci.draw_rect(Rect2(seg[0] - Vector2(1, 1), Vector2(2, 2)), rivet)
+			ci.draw_rect(Rect2(seg[seg.size() - 1] - Vector2(1, 1), Vector2(2, 2)), rivet)
+	if _reg_id == -2:
+		_reg_id = -1
+		var best := 0.0
+		for id in order:
+			var q = pieces[id]
+			if q.kind == "hull" and not q.gone and q.body == null:
+				var ar := Geom.area(q.poly)
+				if ar > best:
+					best = ar
+					_reg_id = q.id
+	if p.id == _reg_id and game != null:
+		var name := str(game.ship.get("name", ""))
+		if name != "":
+			var sz := int(clampf(minf(bb.size.y * 0.42, bb.size.x / maxf(name.length(), 1) * 1.3), 12.0, 72.0))
+			var tw := font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, sz).x
+			ci.draw_string(font, Vector2(bb.get_center().x - tw * 0.5, bb.get_center().y + sz * 0.36), name, HORIZONTAL_ALIGNMENT_LEFT, -1, sz, Pal.ink(0.24))
 
 
 # triangulating every outline on every redraw is the expensive part: remember
@@ -1370,6 +1752,126 @@ func _mark_cut_edges(q, old_poly: PackedVector2Array, old_cuts: PackedVector2Arr
 		q.set_meta("cuts", out)
 	if q.has_meta("cuts_draw"):
 		q.remove_meta("cuts_draw")
+
+
+# 87-1: the material's face, inside the outline: armour's laminated edge (two plates bonded
+# behind the face), ceramic's tile joints, composite's weave, titanium's brushed grain,
+# aluminium's rivet line; a ceramic part's heat cracks. Built once per outline, then replayed.
+func _mat_face(ci: CanvasItem, p, off: Vector2) -> void:
+	var sig: int = hash([p.poly, p.cracks, p.mat])
+	var cache = p.get_meta("mat_draw") if p.has_meta("mat_draw") else null
+	if cache == null or cache[2] != sig:
+		cache = _mat_face_build(p)
+		cache.append(sig)
+		p.set_meta("mat_draw", cache)
+	if cache[0].is_empty():
+		return
+	var pts: PackedVector2Array = Transform2D(0.0, off) * (cache[0] as PackedVector2Array)
+	if Art.EQ._batch != null:
+		Art.EQ.batch_tris(pts, cache[1])
+	else:
+		RenderingServer.canvas_item_add_triangle_array(ci.get_canvas_item(), PackedInt32Array(), pts, cache[1])
+
+
+func _mat_face_build(p) -> Array:
+	var poly: PackedVector2Array = p.poly
+	var tp := PackedVector2Array()
+	var tc := PackedColorArray()
+	if poly.size() < 3:
+		return [tp, tc]
+	var bb := Geom.bbox(poly)
+	var segs := PackedVector2Array()
+	var col := Pal.ink(0.1)
+	var wd := 1.0
+	var add_lines := func(a: Vector2, b: Vector2) -> void:
+		for piece in Geometry2D.intersect_polyline_with_polygon(PackedVector2Array([a, b]), poly):
+			for i in range(1, piece.size()):
+				segs.append(piece[i - 1])
+				segs.append(piece[i])
+	match str(Mat.of(p).get("pattern", "")):
+		"layers":
+			# the face plate and the backing plate: two inset outlines
+			for inset in [3.0, 6.5]:
+				for ring in Geometry2D.offset_polygon(poly, -inset):
+					for i in ring.size():
+						segs.append(ring[i])
+						segs.append(ring[(i + 1) % ring.size()])
+			col = Pal.ink(0.2)
+			wd = 1.2
+		"tiles":
+			# 60 FPS: at most ~30 joints each way on a big part (they are triangles every frame)
+			var step := maxf(15.0, maxf(bb.size.x, bb.size.y) / 30.0)
+			var x := floorf(bb.position.x / step) * step
+			while x < bb.end.x:
+				add_lines.call(Vector2(x, bb.position.y - 1), Vector2(x, bb.end.y + 1))
+				x += step
+			var y := floorf(bb.position.y / step) * step
+			while y < bb.end.y:
+				add_lines.call(Vector2(bb.position.x - 1, y), Vector2(bb.end.x + 1, y))
+				y += step
+			col = Pal.ink(0.13)
+		"weave":
+			var step := maxf(7.0, (bb.size.x + bb.size.y) / 40.0)
+			var span := bb.size.x + bb.size.y
+			var c := -bb.size.y
+			while c < bb.size.x:
+				var o := bb.position + Vector2(c, 0)
+				add_lines.call(o, o + Vector2(span, span))
+				add_lines.call(o + Vector2(0, bb.size.y), o + Vector2(span, bb.size.y - span))
+				c += step
+			col = Pal.ink(0.06)
+		"brushed":
+			var step := maxf(5.0, bb.size.y / 30.0)
+			var y := bb.position.y + 2.0
+			var i := 0
+			while y < bb.end.y:
+				var h: float = fposmod(sin(float(p.id) * 3.1 + i * 12.9898) * 43758.5453, 1.0)
+				var x0 := bb.position.x + h * bb.size.x * 0.3
+				add_lines.call(Vector2(x0, y), Vector2(x0 + bb.size.x * (0.4 + 0.5 * h), y))
+				y += step
+				i += 1
+			col = Pal.ink(0.08)
+		"rivets":
+			for ring in Geometry2D.offset_polygon(poly, -4.0):
+				for i in ring.size():
+					var a: Vector2 = ring[i]
+					var b: Vector2 = ring[(i + 1) % ring.size()]
+					var n := mini(int(a.distance_to(b) / 16.0), 24)
+					for k in n:
+						var c: Vector2 = a.lerp(b, (k + 0.5) / maxf(1.0, n))
+						segs.append(c - Vector2(0.8, 0))
+						segs.append(c + Vector2(0.8, 0))
+			col = Pal.ink(0.3)
+			wd = 1.8
+	if not segs.is_empty():
+		var t: Array = Art.EQ.seg_tris(segs, PackedColorArray([col]), wd)
+		tp.append_array(t[0])
+		tc.append_array(t[1])
+	# ceramic heat cracks: a jagged line from a point inside out to the edge, one per crack
+	if p.cracks > 0:
+		var cs := PackedVector2Array()
+		var c0 := Geom.centroid(poly)
+		var r := bb.size.length()
+		for k in p.cracks:
+			var h := fposmod(sin(float(p.id) * 7.7 + k * 4.1) * 43758.5453, 1.0)
+			var ang := TAU * h
+			var at := c0 + Vector2.from_angle(ang + 1.3) * r * 0.08
+			var pts := PackedVector2Array([at])
+			for st in 7:
+				var j := fposmod(sin(float(p.id) + k * 9.3 + st * 2.7) * 4375.85, 1.0) - 0.5
+				at += Vector2.from_angle(ang + j * 1.1) * r * 0.1
+				pts.append(at)
+			for piece in Geometry2D.intersect_polyline_with_polygon(pts, poly):
+				for i in range(1, piece.size()):
+					cs.append(piece[i - 1])
+					cs.append(piece[i])
+		var t1: Array = Art.EQ.seg_tris(cs, PackedColorArray([Color(0, 0, 0, 0.7)]), 3.2)
+		var t2: Array = Art.EQ.seg_tris(cs, PackedColorArray([Pal.ink(0.7)]), 1.1)
+		tp.append_array(t1[0])
+		tc.append_array(t1[1])
+		tp.append_array(t2[0])
+		tc.append_array(t2[1])
+	return [tp, tc]
 
 
 # a kerf's edge as cut metal looks: not ruler-straight but wandering a little, a
@@ -1501,7 +2003,8 @@ func draw_joints_of(ci: CanvasItem, list: Array, js = null) -> void:
 		for sg in p.get_meta("segments"):
 			var a := Vector2(sg[0], sg[1]) * Geom.M
 			var b := Vector2(sg[2], sg[3]) * Geom.M
-			var n := maxi(2, int(a.distance_to(b) / 9.0))
+			# 60 FPS: at most 60 dashes a line (SA-200's braces carry 21 lines of 90 m: 40,000 dashes)
+			var n := clampi(int(a.distance_to(b) / 9.0), 2, 60)
 			for k in range(0, n, 2):
 				dashes.append(a.lerp(b, float(k) / n))
 				dashes.append(a.lerp(b, float(k + 1) / n))
@@ -1556,7 +2059,7 @@ func _sync_chunks() -> void:
 	var sig := {}
 	for id in order:
 		var p = pieces[id]
-		if p.gone or p.body != null:
+		if p.gone or p.body != null or live.has(id):
 			continue
 		# a closed room is under an opaque cover: what's in it isn't drawn until it opens
 		if p.room != "" and rooms.has(p.room) and not rooms[p.room].revealed:
@@ -1727,7 +2230,8 @@ func _draw_cover() -> void:
 
 # a closed room's hatching, gathered as line pairs (drawn in one batch with the rest)
 func _hatch(out: PackedVector2Array, poly: PackedVector2Array, bb: Rect2) -> void:
-	var s := 22.0
+	# 60 FPS: at most ~40 strokes a room (ARK-01's 40 rooms at 22 px drew tens of thousands a frame)
+	var s := maxf(22.0, (bb.size.x + bb.size.y) / 40.0)
 	var x := bb.position.x - bb.size.y
 	while x < bb.end.x:
 		var seg := PackedVector2Array([Vector2(x, bb.end.y), Vector2(x + bb.size.y, bb.position.y)])
@@ -1751,24 +2255,14 @@ func _draw_lines() -> void:
 		if l.alive:
 			_draw_line_path(line_layer, l, l.path, 1.0)
 		else:
-			# a cut line hangs as two stubs
-			var cut: Vector2 = l.cut_at if l.cut_at != Vector2.INF else l.path[l.path.size() / 2]
-			var a_side := PackedVector2Array()
-			var b_side := PackedVector2Array()
-			var passed := false
-			for i in l.path.size():
-				var q: Vector2 = l.path[i]
-				if not passed:
-					a_side.append(q)
-					if i + 1 < l.path.size() and Geom.dist_to_segment(cut, q, l.path[i + 1]) < 6.0:
-						a_side.append(cut + (q - cut).limit_length(5.0))
-						b_side.append(cut + (l.path[i + 1] - cut).limit_length(5.0))
-						passed = true
-				else:
-					b_side.append(q)
-			if a_side.size() >= 2 and pieces[l.a] != null and not pieces[l.a].gone:
+			# a cut line hangs as two stubs; a cable as the slack tail it settled into (87-2),
+			# not drawn here while it is still moving (rope_fx draws it)
+			var halves := _cut_halves(l)
+			var a_side: PackedVector2Array = l.get_meta("tail_a", halves[0])
+			var b_side: PackedVector2Array = l.get_meta("tail_b", halves[1])
+			if a_side.size() >= 2 and pieces[l.a] != null and not pieces[l.a].gone and not l.has_meta("tail_a_live"):
 				_draw_line_path(line_layer, l, a_side, 0.5)
-			if b_side.size() >= 2 and pieces[l.b] != null and not pieces[l.b].gone:
+			if b_side.size() >= 2 and pieces[l.b] != null and not pieces[l.b].gone and not l.has_meta("tail_b_live"):
 				_draw_line_path(line_layer, l, b_side, 0.5)
 
 
@@ -1783,9 +2277,10 @@ func _draw_line_path(ci: CanvasItem, l, path: PackedVector2Array, a: float) -> v
 # kerf edges glow, then cool: white-hot -> orange -> dull red -> gone
 func draw_heat(ci: CanvasItem, p) -> void:
 	var now := Time.get_ticks_msec() / 1000.0
+	var glow: float = Mat.glow_t(p)
 	for h in p.heat:
 		var age: float = now - h[1]
-		var k := clampf(1.0 - age / 3.0, 0.0, 1.0)
+		var k := clampf(1.0 - age / glow, 0.0, 1.0)
 		if k <= 0.0:
 			continue
 		var pl: PackedVector2Array = h[0]

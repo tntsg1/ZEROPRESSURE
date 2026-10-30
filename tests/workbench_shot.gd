@@ -35,6 +35,17 @@ func _run() -> void:
 	dev.set_open(true)
 	var suffix := "_en" if not Txt.zh else "_zh"
 	if OS.get_cmdline_user_args().has("small"): suffix += "_720"
+	if OS.get_cmdline_user_args().has("fleet"):
+		DevPanel.b_ship = "tb180"
+		dev.bench.page = 2
+		dev.bench.refresh()
+		await shot("workbench_fleet_preview" + suffix)
+		dev.bench.scroll.ensure_control_visible(dev.bench.buttons.ship_tb180)
+		await shot("workbench_fleet_cards" + suffix)
+		term.queue_free()
+		await frames(3)
+		quit()
+		return
 	await shot("workbench_actions" + suffix)
 	dev.bench.page = 1
 	dev.bench.refresh()

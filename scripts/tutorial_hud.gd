@@ -21,6 +21,10 @@ var done_text := ""
 var choice_k := 0.0
 var lock_shake := 0.0
 var stamp_t := -1.0
+var intro := 0                 # 44 号: a special course's "why and what" card: 0 not yet, 1 up, 2 read
+var intro_k := 0.0
+const OVERVIEW_RECT := Rect2(22,326,220,40)
+var overview_button: Button
 
 
 func _ready() -> void:
@@ -34,6 +38,12 @@ func _ready() -> void:
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.draw.connect(_draw_ui)
 	add_child(c)
+	overview_button = Button.new()
+	overview_button.text = "查看整套教程" if Txt.zh else "TUTORIAL OVERVIEW"
+	overview_button.position = OVERVIEW_RECT.position
+	overview_button.size = OVERVIEW_RECT.size
+	overview_button.pressed.connect(open_overview)
+	c.add_child(overview_button)
 	fadd = Control.new()
 	fadd.set_anchors_preset(Control.PRESET_FULL_RECT)
 	fadd.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -54,6 +64,27 @@ func _ready() -> void:
 	game.tutorial.step_changed.connect(_on_step)
 	game.tutorial.finished.connect(func(): stamp_t = 0.0)
 
+func open_overview() -> void:
+	if game.console_ui != null: return
+	var was_paused := get_tree().paused
+	var was_sim_paused: bool = game.paused_sim
+	var layer := CanvasLayer.new()
+	layer.layer = 70
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	game.add_child(layer)
+	var panel = preload("res://scripts/tutorial_overview.gd").new()
+	game.console_ui = panel
+	game.paused_sim = true
+	game.modal_release = true
+	get_tree().paused = true
+	panel.on_close = func():
+		game.console_ui = null
+		game.paused_sim = was_sim_paused
+		get_tree().paused = was_paused
+		game.modal_release = true
+		layer.queue_free()
+	layer.add_child(panel)
+
 
 func _on_step() -> void:
 	var tut := game.tutorial
@@ -65,6 +96,11 @@ func _on_step() -> void:
 
 func _input(ev: InputEvent) -> void:
 	if game == null or game.tutorial == null:
+		return
+	if intro == 1 and ((ev is InputEventKey and ev.pressed and not ev.echo) or (ev is InputEventMouseButton and ev.pressed)):
+		intro = 2
+		if ev is InputEventMouseButton or (ev is InputEventKey and ev.physical_keycode in [KEY_ENTER, KEY_SPACE, KEY_KP_ENTER]):
+			get_viewport().set_input_as_handled()
 		return
 	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
 		var m := c.get_local_mouse_position()
@@ -94,6 +130,11 @@ func _process(dt: float) -> void:
 	t += dt
 	tick_t += dt
 	row_shift = Pal.damp(row_shift, 0.0, 9.0, dt)
+	if intro == 0 and game.tutorial.special() != "" and not game.tutorial.done:
+		intro = 1
+	if intro == 1 and (game.tutorial.lesson_i > 1 or game.tutorial.step_i > 0 or game.tutorial.done):
+		intro = 2
+	intro_k = Pal.damp(intro_k, 1.0 if intro == 1 else 0.0, 10.0, dt)
 	choice_k = Pal.damp(choice_k, 1.0 if game.tutorial.choice_open() else 0.0, 14.0, dt)
 	if game.tools.denied_t < 0.05:
 		lock_shake = 1.0
@@ -132,48 +173,118 @@ func _draw_ui() -> void:
 		_choice(s, choice_k)
 	if stamp_t >= 0.0:
 		_certificate(s)
+	if intro_k > 0.01:
+		_intro(s, intro_k)
+
+
+func _w(zh: String, en: String) -> String:
+	return zh if Txt.zh else en
+
+
+# 44 号 (player 2026-10-25: "what is this course, where did it come from?"): why this course now,
+# what its lessons are, and what passing it gives, before the first step
+func intro_lines() -> Array:
+	var tut := game.tutorial
+	var sp: String = tut.special()
+	var name: String = Txt.t("cxu_cls_" + sp).split(" · ")[-1]
+	var out: Array = []
+	var then := Game.course_then
+	if then in ["contract", "contract_loadout"] and Career.usable():
+		var ty: Dictionary = Market.type_of(str(Career.active().get("ship", "")))
+		var ship_name: String = (ty.name[0] if Txt.zh else ty.name[1]) if ty.has("name") else str(Career.active().get("ship", ""))
+		out.append(_w("为什么现在上：你刚接的合同（%s）船上有这一类系统，按港务规定先取得「%s」资质才能开工。合同给你留着。", "WHY NOW: the job you just took (%s) carries this kind of system; port rules want the %s certificate first. The job waits for you.") % [ship_name, name])
+	else:
+		out.append(_w("为什么现在上：你在训练页选了这门课。", "WHY NOW: you picked it on the training page."))
+	var ls: Array = tut.lessons()
+	var titles: Array = []
+	for i in range(1, ls.size()):
+		titles.append("%d. %s" % [i, tut.text(ls[i].get("title", ""))])
+	out.append(_w("这门课 %d 节：", "%d LESSONS:") % titles.size())
+	out.append_array(titles)
+	var after := _w("上完：取得「%s」资质", "AFTER IT: the %s certificate") % name
+	if not Codex.certified(sp):
+		after += _w("，首次通过奖金 %s", ", first-pass bonus %s") % Pal.money(Codex.BONUS)
+	if not Game.course_chain.is_empty():
+		after += _w("；接着还有 %d 门课", "; %d more course(s) after it") % Game.course_chain.size()
+	elif then in ["contract", "contract_loadout"]:
+		after += _w("；然后直接回到这单", "; then straight on to the job")
+	out.append(after + _w("。", "."))
+	return out
+
+
+func _intro(s: Vector2, k: float) -> void:
+	var lines := intro_lines()
+	var w := 620.0
+	var h := 96.0 + lines.size() * 26.0
+	var r := Rect2(Vector2(s.x * 0.5 - w * 0.5, s.y * 0.5 - h * 0.5 + (1.0 - k) * 30.0), Vector2(w, h))
+	c.draw_rect(r, Color(0.02, 0.024, 0.03, 0.94 * k))
+	c.draw_rect(r, Pal.heat(0.8 * k, 1.2), false, 2.0)
+	c.draw_rect(Rect2(r.position, Vector2(4, r.size.y)), Pal.heat(k, 1.3))
+	var sp: String = game.tutorial.special()
+	_text(Txt.t("cxu_sp_course") % Txt.t("cxu_cls_" + sp).split(" · ")[-1], r.position + Vector2(24, 38), 22, Pal.ink(0.95 * k), font_b)
+	var y := r.position.y + 72.0
+	for i in lines.size():
+		var line: String = lines[i]
+		var indent := 40.0 if line.length() > 1 and line[0].is_valid_int() and line[1] == "." else 24.0
+		_text(line, Vector2(r.position.x + indent, y), 15, Pal.ink((0.9 if indent < 30.0 else 0.75) * k), font)
+		y += 26.0
+	_text(_w("按任意键开始", "PRESS ANY KEY TO BEGIN"), Vector2(r.get_center().x, r.end.y - 14), 13, Pal.heat(0.8 * k, 1.2), font, 0)
+
+
+# the course card, top left (user 2026-10-26: "左上角这个操作提示放大一点，起码放到一个正常人能看得到的地方"):
+# a solid panel, the step to do now in large type, the one before and after under and over it
+const CARD := Rect2(22, 22, 700, 290)
 
 
 func _task_list() -> void:
 	var tut := game.tutorial
-	var x := 40.0
-	var y := 46.0
+	var x := CARD.position.x + 22.0
+	var y := CARD.position.y + 30.0
+	c.draw_rect(CARD, Color(0.03, 0.034, 0.042, 0.95))
+	c.draw_rect(CARD, Pal.ink(0.16), false, 1.0)
+	c.draw_rect(Rect2(CARD.position + Vector2(0, 12), Vector2(4, CARD.size.y - 24)), Pal.heat(0.95, 1.2))
 	var sp: String = tut.special()
-	_text(game.txt("tut_course") if sp == "" else Txt.t("cxu_sp_course") % Txt.t("cxu_cls_" + sp).split(" · ")[-1], Vector2(x, y), 13, Pal.ink(0.45))
+	_text(game.txt("tut_course") if sp == "" else Txt.t("cxu_sp_course") % Txt.t("cxu_cls_" + sp).split(" · ")[-1], Vector2(x, y), 16, Pal.ink(0.62))
 	var ls: Array = tut.lessons()
 	var li: int = mini(tut.lesson_i, ls.size() - 1)
 	var l: Dictionary = ls[li] if li >= 0 else {}
 	var head: String = game.txt("tut_lesson") % li + "  " + tut.text(l.get("title", "")) if li > 0 else tut.text(l.get("title", ""))
-	_text(head, Vector2(x, y + 26), 22, Pal.ink(0.94), font_b)
+	_text(head, Vector2(x, y + 36), 28, Pal.ink(0.97), font_b)
 	# lessons as a row of marks
 	for i in range(1, ls.size()):
-		var mx := x + (i - 1) * 22.0
-		var my := y + 44.0
-		var col := Pal.ink(0.9) if i < tut.lesson_i else (Pal.heat(1.0, 1.2) if i == tut.lesson_i else Pal.ink(0.2))
-		c.draw_rect(Rect2(mx, my, 14, 3), col)
+		var mx := x + (i - 1) * 26.0
+		var my := y + 52.0
+		var col := Pal.ink(0.9) if i < tut.lesson_i else (Pal.heat(1.0, 1.2) if i == tut.lesson_i else Pal.ink(0.25))
+		c.draw_rect(Rect2(mx, my, 18, 4), col)
 	if tut.done:
-		_text(game.txt("tut_done"), Vector2(x, y + 80), 16, Pal.ink(0.8))
+		_text(game.txt("tut_done"), Vector2(x, y + 110), 22, Pal.ink(0.9))
 		return
 	var mode: String = game.txt("tut_lockstep") if tut.lockstep() else game.txt("tut_goal")
-	_text(mode, Vector2(x + (ls.size() - 1) * 22.0 + 6.0, y + 49), 11, Pal.ink(0.35))
+	_text(mode, Vector2(x + (ls.size() - 1) * 26.0 + 8.0, y + 58), 14, Pal.ink(0.5))
 	var steps: Array = l.get("steps", [])
 	var si: int = tut.step_i
-	var ry := y + 112.0 + row_shift * 26.0
-	# the step just done, ticked and fading; the current one; the next one
+	var ry := y + 140.0 + row_shift * 34.0
+	# the step just done, ticked and fading; the current one, large; the next one
 	if si > 0 and tut.lockstep():
 		var prev: Dictionary = steps[si - 1]
-		var a := 0.35 * clampf(1.0 - (tick_t - 0.6) / 0.5, 0.4, 1.0)
-		_tick(Vector2(x + 6, ry - 34), clampf(tick_t / 0.25, 0.0, 1.0), a + 0.3)
-		_text(tut.text(prev.text), Vector2(x + 22, ry - 28), 14, Pal.ink(a))
+		var a := 0.45 * clampf(1.0 - (tick_t - 0.6) / 0.5, 0.4, 1.0)
+		_tick(Vector2(x + 6, ry - 46), clampf(tick_t / 0.25, 0.0, 1.0), a + 0.3)
+		_text(tut.text(prev.text), Vector2(x + 26, ry - 36), 17, Pal.ink(a))
 	if si < steps.size():
 		var cur: Dictionary = steps[si]
 		var pop := Pal.back(clampf((1.0 - row_shift) * 1.2, 0.0, 1.0), 1.8)
-		c.draw_rect(Rect2(x, ry - 16, 3, 22), Pal.heat(1.0, 1.0))
-		_text(tut.text(cur.text), Vector2(x + 14 + (1.0 - pop) * 10.0, ry), 17, Pal.ink(0.96 * pop + 0.04))
+		c.draw_rect(Rect2(x, ry - 24, 5, 32), Pal.heat(1.0, 1.0))
+		_text(tut.text(cur.text), Vector2(x + 18 + (1.0 - pop) * 10.0, ry), 26, Pal.ink(0.98 * pop + 0.02), font_b)
 		if tut.lockstep() and si + 1 < steps.size():
-			_text(tut.text(steps[si + 1].text), Vector2(x + 14, ry + 28), 13, Pal.ink(0.28))
+			_text(game.txt("tut_next_prefix") + tut.text(steps[si + 1].text), Vector2(x + 18, ry + 38), 17, Pal.ink(0.45))
+	# stuck: the step's hint on the card (it used to be Liang's line on the radio, which is off now)
+	if tut.hint_level >= 1 and si < steps.size() and steps[si].has("hint"):
+		var ln: Dictionary = tut.course.get("lines", {}).get(str(steps[si].hint), {})
+		var ht := str(ln.get("zh", "") if Txt.zh else ln.get("en", ln.get("zh", "")))
+		if ht != "":
+			c.draw_string(font, Vector2(x, ry + 76), _w("提示：", "HINT: ") + ht, HORIZONTAL_ALIGNMENT_LEFT, CARD.size.x - 44.0, 16, Pal.heat(0.95, 1.3))
 	if tut.hint_level >= 1:
-		_text(game.txt("tut_q"), Vector2(x, ry + 60), 12, Pal.ink(0.4 + 0.2 * sin(t * 3.0)))
+		_text(game.txt("tut_q"), Vector2(x, OVERVIEW_RECT.end.y + 28), 16, Pal.ink(0.55 + 0.25 * sin(t * 3.0)))
 
 
 func _tick(p: Vector2, k: float, a: float) -> void:

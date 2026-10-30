@@ -12,6 +12,7 @@ const TRACKS := [
 	["thermal", 1, ["隔热组件", "Thermal insulation"], "%", [100, 80, 55, 35], [10000, 54000, 315000], ["烫伤、火焰和爆燃对无人机的伤害。", "Scald, fire and combustion damage to the drone."]],
 	["grapple_mass", 2, ["重载抓钩", "Heavy grapple"], "t", [3, 5, 6.5, 8], [38000, 97500, 465000], ["提高可牵引吨位；高阶同时增强最大牵引力。", "Raises the mass limit; advanced volumes also strengthen towing force."]],
 	["grapple_range", 2, ["长距牵引", "Extended tether"], "m", [5, 6, 7.5, 9], [8000, 45000, 270000], ["抓取、拖曳目标和断绳距离同步增加。", "Acquisition, towing target and snap distance grow together."]],
+	["grapple_multi", 2, ["范围抓取", "Field grapple"], "件", [0, 4, 7, 11], [18000, 70000, 360000], ["按 X 切换单体/范围：一次抓起半径内的多件散料，各自保持质量和碰撞；每阶件数、半径、总承重和稳定性一起提高。", "X switches single/field: catch several loose pieces within a radius at once, each keeping its mass and collisions; each volume adds pieces, radius, total mass and steadiness."]],
 	["grapple_stable", 2, ["牵引阻尼", "Tether damping"], "×", [1.0, 1.12, 1.26, 1.4], [11000, 57000, 330000], ["增加牵引阻尼并减轻无人机受到的反作用力。", "More tether damping and less recoil on the drone."]],
 	["haul_speed", 2, ["重物牵引", "Heavy haul"], "×", [1.0, 1.25, 1.55, 1.9], [12000, 60000, 345000], ["牵引力更大，重物拖得更快；无人机受到的拖拽更小。", "More towing force: heavy loads move faster and drag the drone less."]],
 	["meter_range", 3, ["远程读数", "Remote probing"], "m", [6, 8, 10, 12], [6000, 39000, 240000], ["可见目标的读数距离；不透视未打开的舱室。", "Probe visible targets farther away; no seeing through sealed rooms."]],
@@ -72,7 +73,32 @@ static func reason(id: String) -> String:
 		return text(["还差 %s", "Need %s more"]) % Pal.money(price(id) - float(Career.data.money))
 	return ""
 
+# the skill book's numbered volumes were withdrawn (G3, player 2026-10-21): whatever a
+# career paid for them comes back, the levels go; the shop's own fittings stay
+static func refund_all() -> void:
+	var d := Career.data
+	if d.is_empty() or d.has("skills_refunded"):
+		return
+	var back := 0.0
+	var ups: Dictionary = d.get("upgrades", {})
+	for row in TRACKS:
+		var n := clampi(int(ups.get("skill_" + row[0], 0)), 0, 3)
+		for i in n:
+			back += float(row[5][i])
+		ups.erase("skill_" + row[0])
+	d.upgrades = ups
+	d.money = float(d.get("money", 0.0)) + back
+	d.skills_refunded = back
+	d.growth_goal = ""
+	d.route_goals = d.get("route_goals", []).filter(func(k): return not str(k).begins_with("skill:"))
+	var a: Dictionary = d.get("active", {})
+	if not a.is_empty() and a.has("kit"):
+		for row in TRACKS:
+			a.kit.erase("skill_" + row[0])
+
+
 static func buy(id: String) -> String:
+	return text(["技能书已停用：数值卷已退款，能力来自工程成果与消耗件。", "The skill book is withdrawn: its volumes were refunded; abilities come from achievements and parts."])
 	var why := reason(id)
 	if why != "":
 		return why

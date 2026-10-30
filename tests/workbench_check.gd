@@ -104,6 +104,15 @@ func _run() -> void:
 	check(Growth.progress() == Growth.TRACKS.size() * 3, "legacy F4 shortcut now grants all skillbook levels")
 	dev.set_open(true)
 	await click(dev.bench.buttons.page_2)
+	for entry in Market.POOL:
+		var sid: String = entry[0]
+		var hull_button: Button = dev.bench.buttons.get("ship_" + sid)
+		check(hull_button != null, "%s has a hull card" % sid)
+		if hull_button == null: continue
+		await click(hull_button)
+		var result := dev._checked()
+		check(DevPanel.b_ship == sid and result.ok and result.offer.ship == sid and not dev.bench.buttons.start_sandbox.disabled,
+			"%s selected through native input and ready for sandbox" % sid)
 	DevPanel.b_ship = "h22"
 	DevPanel.b_kit = {"skill_grapple_mass": 3, "grapple5": 1}
 	dev.bench.refresh()
@@ -113,6 +122,17 @@ func _run() -> void:
 	var offers_before: Array = Career.data.offers.duplicate(true)
 	dev._to_card()
 	check(dev.bench.buttons.to_offer.disabled and Career.data.offers == offers_before, "an active career job blocks an unreachable market offer")
+	await click(dev.bench.buttons.ship_tb180)
+	var career_before := JSON.stringify(Career.data)
+	await click(dev.bench.buttons.start_sandbox)
+	await frames(6)
+	var sandbox := current_scene as Game
+	check(sandbox != null and sandbox.ship_id == "tb180" and sandbox.dev_job() and not sandbox.world.pieces.is_empty(),
+		"native start button loads the new TB-180 hull as a playable sandbox")
+	check(JSON.stringify(Career.data) == career_before, "starting a new hull sandbox preserves the active career")
+	if sandbox != null:
+		sandbox.queue_free()
+		await frames()
 	await key(KEY_ESCAPE)
 	term.queue_free()
 	await frames()

@@ -34,7 +34,8 @@ func target():
 
 
 func _say(key: String) -> void:
-	game.radio.say_text("ex:" + key, "liang", Txt.S[key][0], Txt.S[key][1])
+	var p: Array = Txt.ov.get(key, Txt.S[key])
+	game.radio.say_text("ex:" + key, "liang", p[0], p[1])
 
 
 func on_start() -> void:

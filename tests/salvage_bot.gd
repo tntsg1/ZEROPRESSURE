@@ -41,14 +41,19 @@ var snapped := 0
 var rec: Array = []        # what it did to make the ship safe, in order: ["w"|"h", ctrl] / ["o", room, ctrl] / ["g", guard]
 var replay = null          # a remembered order (rec of an earlier ship) done blindly, instead of reading this ship
 var replay_wait := 0.0     # sim s it waits after the remembered order before it strips (as long as it took then)
+var props := false           # 97 号: on a container wall, two props under the outer bays and the inner bays first
 var crane_hauls := 0         # loads too heavy for the grapple that the heavy crane took whole
 var safe_at := 0.0         # sim s when it judged the ship safe
+
+
+var refused := false          # a manual-only ship: the bot stood down
 
 
 func _init(game, opts: Dictionary = {}) -> void:
 	g = game
 	careless = opts.get("careless", false)
 	paced = opts.get("paced", false)
+	props = opts.get("props", false)
 	replay = opts.get("replay", null)
 	replay_wait = opts.get("replay_wait", 0.0)
 
@@ -126,6 +131,12 @@ func _once(key: String) -> bool:
 func step() -> bool:
 	if finished:
 		return true
+	# 78 号 P0②: ARK-01 is never stripped by a bot
+	if g.manual_only():
+		_note("manual-only ship (%s): the bot does not strip it" % g.ship_id)
+		refused = true
+		finished = true
+		return true
 	t += 1
 	phase_t += 1
 	if t < 3:
@@ -157,6 +168,7 @@ func step() -> bool:
 		finished = true
 	elif t > timeout:
 		_note("TIMEOUT in %s" % phase)
+		_dump_left()
 		Engine.time_scale = 1.0
 		finished = true
 	return finished
@@ -387,6 +399,18 @@ func _prep() -> void:
 				_note("winch %s let off" % wc)
 				_work(2.5)
 				return
+		# 87-4: the sail is the prize: each slack corner furled on its winch before anything else
+		var fc: Dictionary = g.sail.cfg.get("roll", {}).get("furl", {})
+		for q in fc:
+			var mc: String = str(fc[q])
+			if not g.sail.taut(q) and not g.sail.furled(q) and not g.sail.motor_on(q) and not _hidden(mc) and _once("furl " + mc):
+				_w(mc)
+				_note("corner %s furling" % q)
+				_work(1.5)
+				return
+		if g.sail.furling():
+			_work(1.0)
+			return
 	# a container wall's pretension rods: their turnbuckles slackened before anything is cut
 	if g.boxbeam != null and g.boxbeam.active():
 		for r in g.boxbeam.cfg.get("rods", {}):
@@ -885,13 +909,43 @@ func _cut_segments(p) -> bool:
 	for sg in p.get_meta("segments"):
 		var a := Vector2(sg[0], sg[1]) * M
 		var b := Vector2(sg[2], sg[3]) * M
-		var on = w.piece_at(w.frame(p) * a.lerp(b, 0.5))
+		var on = _seg_piece(p, w.frame(p) * a.lerp(b, 0.5))
 		if on == null or not on.intact:
 			continue
 		g.cut_kerf(on, PackedVector2Array([w.frame(on) * a, w.frame(on) * b]))
 		_work(4.0)
 	_note("cut %s along its marked lines" % p.tag)
 	return true
+
+
+# a loose load no mouth takes whole: cut it along whatever marked lines it still has
+func _cut_loose(b) -> bool:
+	for p in b.pieces.duplicate():
+		if not p.gone and _cut_segments(p):
+			return true
+	return false
+
+
+func _tags(b) -> String:
+	var out: Array = []
+	for p in b.pieces:
+		if not p.gone and p.tag != "":
+			out.append(p.tag)
+	return ",".join(out) if not out.is_empty() else "#%d" % b.get_instance_id()
+
+
+# 78 号 P0-1: the part of this piece (or one cut from it) under a marked line — not whatever
+# lies on top there (SA-200's braces run under the sail film: piece_at() handed the bot the
+# film, and its 4 brace cuts tore 22 panels)
+func _seg_piece(p, at: Vector2):
+	var origin: String = p.get_meta("origin", p.tag)
+	for id in g.world.order:
+		var q = g.world.pieces[id]
+		if q.gone or (q != p and (origin == "" or q.get_meta("origin", q.tag) != origin)):
+			continue
+		if Geometry2D.is_point_in_polygon(g.world.frame(q).affine_inverse() * at, q.poly):
+			return q
+	return null
 
 
 func _once_done(k: String) -> bool:
@@ -1105,7 +1159,31 @@ func _go_strip() -> void:
 	# a container wall comes down from the ends inwards, each bay from the top
 	if g.boxbeam != null and g.boxbeam.active():
 		var seq: Array = []
-		for t in g.boxbeam.unload_order():
+		var tags: Array = g.boxbeam.unload_order()
+		# 97 号: or with a prop under the second bay out each side, the bays either side of the
+		# berth's grip first, then the rest
+		if props and g.gear != null:
+			var sup := int(g.boxbeam.cfg.get("support", 0))
+			for bay in [sup - 2, sup + 2]:
+				if bay < 0 or bay >= g.boxbeam.cfg.bays.size():
+					continue
+				var c = g.world.tag(str(g.boxbeam.cfg.bays[bay][0]))
+				var ci: int = g.gear.carried.find_custom(func(x): return x.type == "prop")
+				if c == null or ci < 0:
+					continue
+				g.gear.sel = g.gear.carried_types().find("prop")
+				var at: Vector2 = g.world.frame(c) * Geom.centroid(c.poly)
+				var tg: Dictionary = g.gear.target(at, {}, {"kind": "piece", "piece": c, "pos": at})
+				if not tg.is_empty():
+					g.gear.act(tg)
+					_note("prop under bay %d" % (bay + 1))
+					_work(15.0)
+			var first: Array = []
+			for bay in [sup - 1, sup + 1]:
+				if bay >= 0 and bay < g.boxbeam.cfg.bays.size():
+					first.append_array(g.boxbeam.cfg.bays[bay])
+			tags = first + tags.filter(func(t): return not first.has(t))
+		for t in tags:
 			var p = g.world.tag(t)
 			if p != null:
 				seq.append(p.id)
@@ -1142,7 +1220,10 @@ func _strip() -> void:
 	var w = g.world
 	if phase_t % 3 == 0:
 		for b in w.bodies:
-			if not is_instance_valid(b) or b.capture != null or sent.has(b):
+			if not is_instance_valid(b) or b.capture != null:
+				continue
+			# 78 号 P0-1: a load the mouth didn't take is offered again (it used to lie there for good)
+			if sent.has(b) and (g.sys.time - float(b.get_meta("sent_t", -99.0)) < RESEND_S or int(b.get_meta("bot_sends", 0)) >= RESEND_MAX):
 				continue
 			if not _unmix(b):
 				_send(b)
@@ -1258,9 +1339,18 @@ func _strip_paced() -> void:
 					p.intact = false
 					scrapped += 1
 			zone = zone_for(b)
+		# 97 号: equipment goes to the mouth its outline can pass (a 11 m container only fits the
+		# heavy receiving rack; the small bay never takes it, and the bot waited on it for good)
+		if Dock.kind(zone) == "equip":
+			var fit: String = Dock.for_load("equip", b)
+			if fit != "":
+				zone = fit
 		var mouth: Vector2 = Dock.zpos(zone)
 		# one load at a time into a mouth: the last one in first (two dropped on the same spot fly apart)
-		for o in sent:
+		# (bodies the mouths took are freed: walking a dictionary keyed by freed objects never ends
+		# in 4.7, so the live ones first, over a copy of the keys)
+		_prune_sent()
+		for o in sent.keys():
 			if is_instance_valid(o) and o.capture == null and sent[o] == zone and g.sys.time - float(o.get_meta("sent_t", -99.0)) < 3.0 and (o.global_transform * o.center_of_mass).distance_to(mouth) < 4.0 * M:
 				return
 		sent[b] = zone
@@ -1278,6 +1368,11 @@ func _strip_paced() -> void:
 			scrap_hauls += k
 			scrap_masses.append(snappedf(m, 0.01))
 		b.set_meta("hauled", true)
+		# 97 号: equipment turned its narrowest way across its mouth, as _send does (an 11 m
+		# container dropped flat over the bay only bounced off it)
+		if Dock.kind(zone) == "equip":
+			_offer_equipment(b, zone, mouth)
+			return
 		b.global_position = mouth - b.global_transform.basis_xform(b.center_of_mass)
 		b.linear_velocity = Vector2.ZERO
 		b.angular_velocity = 0.0
@@ -1326,6 +1421,14 @@ func _strip_paced() -> void:
 			var p = w.pieces[id]
 			if not p.gone and p.body == null and p.scope:
 				order.append(id)
+
+
+func _prune_sent() -> void:
+	var live := {}
+	for o in sent.keys():
+		if is_instance_valid(o):
+			live[o] = sent[o]
+	sent = live
 
 
 func _crack_in(b):
@@ -1463,13 +1566,93 @@ func _rail_blocked(rs: String) -> bool:
 	return false
 
 
+# 78 号 P0-1: what is left when the bot runs out of time, piece by piece
+func _dump_left() -> void:
+	var motion = preload("res://scripts/load_motion.gd")
+	var n := 0
+	for id in g.world.pieces:
+		var p = g.world.pieces[id]
+		if p.gone:
+			continue
+		n += 1
+		if n > 60:
+			continue
+		var wp: PackedVector2Array = g.world.world_poly(p)
+		var lo := Vector2(INF, INF)
+		var hi := Vector2(-INF, -INF)
+		for v in wp:
+			lo = lo.min(v)
+			hi = hi.max(v)
+		var b = p.body
+		var info := "LEFT %d %s kind=%s cls=%s intact=%s m=%.2ft aabb=%.1fx%.1fm at=(%.1f,%.1f) dest=%s" % [int(id), str(p.tag), str(p.kind), str(p.cls), str(p.intact), float(p.mass), (hi.x - lo.x) / M, (hi.y - lo.y) / M, (lo.x + hi.x) * 0.5 / M, (lo.y + hi.y) * 0.5 / M, str(g.sys.dest_of(p))]
+		if b == null:
+			info += " ATTACHED joints=%d lines=%d" % [g.world.joints_of(p).size(), g.world.lines_of(p).size()]
+		elif is_instance_valid(b):
+			var span_d: Vector2 = motion.span(b, Vector2.DOWN)
+			var span_r: Vector2 = motion.span(b, Vector2.RIGHT)
+			info += " BODY pieces=%d mass=%.2ft sent=%s sends=%d capture=%s minwidth=%.1fm" % [b.pieces.size(), float(b.mass), str(sent.get(b, "-")), int(b.get_meta("bot_sends", 0)), str(b.capture), minf(span_d.y - span_d.x, span_r.y - span_r.x) / M]
+		print(info)
+	print("LEFT_TOTAL %d pieces; rate %.4f; earned %.0f" % [n, g.recovery_rate(), g.earned()])
+
+
 # a loose body straight to the mouth that takes it
+const RESEND_S := 8.0
+const RESEND_MAX := 4
+
+
 func _send(b) -> void:
 	var zone := zone_for(b)
+	if zone == "equip":
+		# 78 号 P0-1: the bay that takes it turned its narrowest way, the big rack if neither small one does
+		var to := Dock.for_load("equip", b)
+		# offered twice at an equipment mouth and not taken: as good as no mouth (a load right
+		# at the rack's width can turn narrower on paper than its flapping outline goes in)
+		if to != "" and Dock.kind(str(sent.get(b, ""))) == "equip" and int(b.get_meta("bot_sends", 0)) >= 2:
+			_note("%s refused twice at %s" % [_tags(b), sent[b]])
+			to = ""
+		if to == "":
+			# no mouth takes it whole: cut it along its marked lines, else it goes as scrap
+			if _cut_loose(b):
+				return
+			_note("no mouth takes %s whole: scrap (%s)" % [_tags(b), Dock.no_mouth_text(b)])
+			zone = "metal"
+		else:
+			zone = to
+	elif sent.get(b, "") == zone and zone == "metal" and int(b.get_meta("bot_sends", 0)) >= 2:
+		_note("%s refused twice at %s" % [_tags(b), zone])
 	sent[b] = zone
+	b.set_meta("sent_t", g.sys.time)
+	b.set_meta("bot_sends", int(b.get_meta("bot_sends", 0)) + 1)
 	var mouth: Vector2 = Dock.zpos(zone)
+	if (zone == "equip" or Dock.kind(zone) == "equip") and not OS.get_cmdline_user_args().has("oldsend"):
+		_offer_equipment(b, zone, mouth)
+		return
 	var com_off: Vector2 = b.global_transform.basis_xform(b.center_of_mass)
 	b.global_position = mouth - com_off
+	b.linear_velocity = Vector2.ZERO
+	b.angular_velocity = 0.0
+	b.reset_physics_interpolation()
+
+
+# what a player does with the grapple at the equipment bay: turn a long load end-on to the mouth
+# and hold its leading edge just under the lip (a long radiator or a tank slice parked at its
+# centre stood half inside the bay's structure and was pushed back out)
+func _offer_equipment(b, zone: String, mouth: Vector2) -> void:
+	var motion = preload("res://scripts/load_motion.gd")
+	var face: Vector2 = Dock.ZONES[zone].face
+	var tangent := Vector2(-face.y, face.x)
+	# 78 号 P0-1: turned to its narrowest across the mouth (it used to try only 0° and 90°)
+	b.rotation += motion.narrowest(b, face).y
+	# centre it across the mouth, its leading surface 0.3 m short of the lip
+	var sp2: Vector2 = motion.span(b, face)
+	b.global_position += tangent * (mouth.dot(tangent) - (sp2.x + sp2.y) * 0.5)
+	var front := INF
+	for p in b.pieces:
+		if p.gone:
+			continue
+		for q in g.world.world_poly(p):
+			front = minf(front, (q - mouth).dot(face))
+	b.global_position += face * (0.3 * Geom.M - front)
 	b.linear_velocity = Vector2.ZERO
 	b.angular_velocity = 0.0
 	b.reset_physics_interpolation()
