@@ -2716,7 +2716,12 @@ func _asset_board(cr: Rect2) -> void:
 			if row.get("alert", false) and str(row.get("fix", "")) != "":
 				fixes += 1
 	var nx_h := (42.0 + nx_how * 17.0) if not nx.is_empty() else 0.0
-	var h := 64.0 + (18.0 if two else 0.0) + nx_h + rows.size() * 24.0 + fixes * 17.0 + warn.size() * 18.0 + (10.0 + recent.size() * 20.0 if not recent.is_empty() else 0.0)
+	# 112 号: a long warning wraps inside the board instead of running past its edge
+	var warn_w := cr.size.x - 34.0
+	var warn_n := 0
+	for wl in warn:
+		warn_n += clampi(ceili(_tw(str(wl), 12) / maxf(warn_w, 1.0)), 1, 3)
+	var h := 64.0 + (18.0 if two else 0.0) + nx_h + rows.size() * 24.0 + fixes * 17.0 + warn_n * 17.0 + (10.0 + recent.size() * 20.0 if not recent.is_empty() else 0.0)
 	var r := Rect2(cr.position.x, cr.end.y + 12.0, cr.size.x, h)
 	asset_rect = r
 	UI.panel(c, r, 0.82, 0.0, UiSkin.ACCENT, 1.0)
@@ -2744,8 +2749,9 @@ func _asset_board(cr: Rect2) -> void:
 			y += nx_how * 17.0
 		y += 22.0
 	for wl in warn:
-		_text(str(wl), Vector2(x, y - 6.0), 12, Pal.heat(0.9, 1.2), font)
-		y += 18.0
+		var wn := clampi(ceili(_tw(str(wl), 12) / maxf(warn_w, 1.0)), 1, 3)
+		c.draw_multiline_string(font, Vector2(x, y - 6.0), str(wl), HORIZONTAL_ALIGNMENT_LEFT, warn_w, 12, wn, Pal.heat(0.9, 1.2))
+		y += 17.0 * wn
 	for row in rows:
 		_text(str(row.name), Vector2(x, y), 14, Pal.ink(0.85), font_b)
 		_text(str(row.text), Vector2(x + maxf(44.0, font_b.get_string_size(str(row.name), HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 8.0), y), 12, Pal.heat(0.8, 1.1) if row.get("alert", false) else Pal.ink(0.6), font)

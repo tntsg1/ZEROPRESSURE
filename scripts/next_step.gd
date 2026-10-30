@@ -11,6 +11,7 @@ extends RefCounted
 # a closed room: vent the room at its own gas port, then open the door into it.
 
 const CoreAsset = preload("res://scripts/core_asset.gd")
+const FLUIDS := {"fuel": ["燃料", "THE FUEL"], "lng": ["LNG", "THE LNG"], "lh2": ["液氢", "THE HYDROGEN"], "lhe": ["液氦", "THE HELIUM"], "coolant": ["冷却液", "THE COOLANT"], "loop": ["冷却液", "THE COOLANT"], "water": ["水", "THE WATER"], "hydraulic": ["液压油", "THE HYDRAULIC OIL"], "lube": ["润滑油", "THE OIL"]}
 const LOW := 5.0               # kPa: a room this low is safe to open (the procedures' figure)
 
 
@@ -52,6 +53,26 @@ static func of(g) -> Dictionary:
 			return _ev55(g)
 		"ih55":
 			return _ih55(g)
+		"fx70":
+			return _fx70(g)
+		"tw64":
+			return _tw64(g)
+		"fr26":
+			return _fr26(g)
+		"med47":
+			return _med47(g)
+		"dc84":
+			return _dc84(g)
+		"bl88":
+			return _bl88(g)
+		"hb86":
+			return _vented_first(g)
+		"nr95":
+			return _nr95(g)
+		"vt80":
+			return _vt80(g)
+		"cl104":
+			return _cl104(g)
 	return {}
 
 
@@ -289,14 +310,20 @@ static func _make_safe(g) -> Dictionary:
 						if c.state:
 							return _step(w("电容放电中：%s", "THE CAPACITOR IS DRAINING: %s") % id, w("等它放完", "let it finish"), _ctrl_at(g, str(id)), true)
 						return _step(w("放掉电容：%s", "DRAIN THE CAPACITOR: %s") % id, w("维护工具（4）", "wrench (4)"), _ctrl_at(g, str(id)))
+	var own := {}
+	for gr in CoreAsset.spec(g).get("groups", []):
+		for t in gr.tags:
+			own[str(t)] = true
 	for k in s.fvol:
+		if own.has(str(s.fvol[k].get("piece", ""))):
+			continue
 		if s.fvol[k].amount > 0.02:
 			for id in g.world.ctrls:
 				var c = g.world.ctrls[id]
 				if c.kind == "port" and str(c.target) == str(k) and g.world.ctrl_alive(c) and not s.hoses.has(str(id)):
 					var r5 := _reach(g, str(id))
 					if r5.is_empty():
-						var what: String = {"fuel": w("燃料", "THE FUEL"), "cryo": w("低温液", "THE CRYOGEN"), "loop": w("冷却液", "THE COOLANT"), "coolant": w("冷却液", "THE COOLANT"), "water": w("水", "THE WATER"), "hydraulic": w("液压油", "THE HYDRAULIC OIL"), "lube": w("润滑油", "THE OIL")}.get(str(c.medium), w("管路里的液体", "THE LINE"))
+						var what: String = FLUIDS.get(str(s.fvol[k].fluid), FLUIDS.get(str(c.medium), [w("管路里的液体", "THE LINE")]))[0 if Txt.zh else 1] if FLUIDS.has(str(s.fvol[k].fluid)) or FLUIDS.has(str(c.medium)) else w("管路里的液体", "THE LINE")
 						return _step(w("抽空%s：接 %s", "DRAIN %s AT %s") % [what, id], w("气液回收（5）对着接口", "hose (5) on the port"), _ctrl_at(g, str(id)))
 	return {}
 
@@ -525,6 +552,240 @@ static func _lc140(g) -> Dictionary:
 		if not st3.is_empty():
 			return st3
 	return {}
+
+
+# ---------------------------------------------------------------- 112 号: shared
+
+# a port hosed until what it reaches is empty: the step to hose it, or the wait while it runs
+static func _drain(g, port: String, what: String, how: String, left: String = "") -> Dictionary:
+	var r := _reach(g, port)
+	if not r.is_empty():
+		return r
+	if g.sys.hoses.has(port):
+		return _step(w("%s中%s", "%s UNDER WAY%s") % [what, left], "", _ctrl_at(g, port), true)
+	return _step(w("%s：接 %s", "%s AT %s") % [what, port], how, _ctrl_at(g, port))
+
+
+# preloaded arms (H-22, TW-64): each one's vessel bled below its figure, then its pins out
+static func _preloads(g) -> Dictionary:
+	var m = g.mech
+	if m == null:
+		return {}
+	for l in m.loads:
+		if not l.alive or l.fired:
+			continue
+		var vk := str(l.cfg.get("vessel", ""))
+		if vk != "" and g.sys.vols.has(vk) and g.sys.P(vk) > float(l.cfg.get("kpa", 300.0)):
+			for id in g.world.ctrls:
+				var c = g.world.ctrls[id]
+				if c.kind == "port" and str(c.target) == vk and g.world.ctrl_alive(c):
+					return _drain(g, str(id), w("给蓄能器泄压", "BLEED THE ACCUMULATOR"), w("气液回收（5）；带压拆会弹出", "hose (5); taken under pressure it springs"), w("：%.0f kPa", ": %.0f kPa") % g.sys.P(vk))
+		for pt in l.cfg.get("pins", []):
+			var j = m._joint(str(pt))
+			if j != null:
+				return _step(w("拔销子 %s", "PULL THE PIN %s") % pt, w("维护工具（4）；销子在，拆枢轴时会弹出", "wrench (4); pinned, it springs when the pivot comes out"), g.world.joint_world(j))
+	return {}
+
+
+# ---------------------------------------------------------------- FX-70: the coils dumped with the cooling on
+
+static func _fx70(g) -> Dictionary:
+	var mg = g.magnets
+	if mg != null and mg.active() and mg.any_energised():
+		var dump := str(mg.cfg.get("dump", ""))
+		if not g.sys.on(dump):
+			var st := _flip(g, dump, true, w("开泄能开关：拨 %s", "CLOSE THE DUMP: %s") % dump, w("维护工具（4）；之后线圈储能慢慢放进泄能电阻，制冷别断", "wrench (4); the energy runs down into the dump resistor; keep the cooling on"))
+			if not st.is_empty():
+				return st
+		return _step(w("泄能中：还剩 %d%%", "DUMPING: %d%% LEFT") % int(round(mg.field())), w("降到 5%% 以下再断电、动线圈支架；别断制冷", "under 5%% before the power or the supports; keep the cooling on"), _tag_at(g, str(mg.cfg.get("plant", ""))), true)
+	return _plain(g)
+
+
+# ---------------------------------------------------------------- TW-64: propped, bled, unpinned
+
+static func _tw64(g) -> Dictionary:
+	var safe := _make_safe(g)
+	if not safe.is_empty():
+		return safe
+	var pl := _preloads(g)
+	if not pl.is_empty():
+		return pl
+	var m = g.mech
+	if m != null:
+		var sup := str(m.balance.get("support", ""))
+		if sup != "" and not g.sys.on(sup):
+			var both := 0
+			for t in ["ENG-U", "ENG-L"]:
+				var p = CoreAsset._unit(g, t)
+				if p != null and not p.gone and p.body == null:
+					both += 1
+			if both == 2:
+				var st := _flip(g, sup, true, w("撑住船体：拨 %s", "PROP THE HULL: %s") % sup, w("维护工具（4）；不撑就先拆一边，船体会扭", "wrench (4); one pod off unpropped and the hull twists"))
+				if not st.is_empty():
+					return st
+	return _units_after(g, {})
+
+
+# ---------------------------------------------------------------- FR-26: the LNG drawn off cold
+
+static func _fr26(g) -> Dictionary:
+	var cr = g.cryo
+	if cr != null and cr.active():
+		for tg in cr.tanks:
+			var e: Dictionary = cr.tanks[tg]
+			var liq := str(e.get("liquid", ""))
+			if g.sys.fluid(liq) <= 0.02:
+				continue
+			for id in g.world.ctrls:
+				var c = g.world.ctrls[id]
+				if c.kind == "port" and str(c.target) == liq and g.world.ctrl_alive(c):
+					return _drain(g, str(id), w("抽走 %s 的 LNG", "DRAW %s's LNG OFF") % tg, w("气液回收（5）；冷机别断电，LNG 抽完再断", "hose (5); keep the chillers powered till it is off"), w("：剩 %d%%", ": %d%% LEFT") % int(round(g.sys.fluid(liq) * 100.0)))
+	return _plain(g)
+
+
+# ---------------------------------------------------------------- MED-47: the biohazards sealed
+
+static func _med47(g) -> Dictionary:
+	var bi = g.bio
+	if bi != null and bi.active():
+		for tg in bi.items:
+			var bp = g.world.tag(str(tg))
+			if bp == null or bp.gone or bi.is_sealed(str(tg)):
+				continue
+			var sid := str(bi.items[tg].get("seal", ""))
+			var r := _reach(g, sid)
+			if not r.is_empty():
+				r.how = str(r.how) + w("；隔离舱的空气会经软管滤网带走污染", "; the hose's filter takes the contamination out with the air")
+				return r
+			return _step(w("封存 %s：拨 %s", "SEAL %s: %s") % [tg, sid], w("维护工具（4）；封存后才能搬去危险品口", "wrench (4); sealed, it goes to the hazard bay"), _ctrl_at(g, sid))
+	return _plain(g)
+
+
+# ---------------------------------------------------------------- DC-84: the drives latched, the tanks drained
+
+static func _dc84(g) -> Dictionary:
+	var im = g.immersion
+	if im != null and im.active():
+		for dr in im.cfg.get("drives", {}):
+			var dp = g.world.tag(str(dr))
+			if dp == null or dp.gone or dp.body != null or im.cased(str(dr)):
+				continue
+			var lk := str(im.cfg.drives[dr])
+			var st := _flip(g, lk, true, w("锁上客户硬盘 %s：拨 %s", "LATCH THE CLIENT DRIVE %s: %s") % [dr, lk], w("维护工具（4）；没锁就取出算违约", "wrench (4); taken unlatched it is a breach"))
+			if not st.is_empty():
+				return st
+		for rk in im.cfg.get("tanks", {}):
+			var rp = g.world.tag(str(rk))
+			if rp == null or rp.gone or rp.body != null or not im.full(str(rk)):
+				continue
+			var vol := str(im.cfg.tanks[rk].get("vol", ""))
+			for id in g.world.ctrls:
+				var c = g.world.ctrls[id]
+				if c.kind == "port" and str(c.target) == vol and g.world.ctrl_alive(c):
+					return _drain(g, str(id), w("抽干 %s 的冷却液罐", "DRAIN %s's TANK") % rk, w("气液回收（5）；带液吊会洒、短路旁边的机柜", "hose (5); lifted wet it spills and shorts the next"))
+	return _plain(g)
+
+
+# ---------------------------------------------------------------- BL-88: the ball pumped down
+
+static func _bl88(g) -> Dictionary:
+	var wb = g.waterball
+	if wb != null and wb.active() and not wb.burst and wb.level() > float(wb.cfg.get("safe", 0.12)):
+		var vol := str(wb.cfg.get("vol", ""))
+		for id in g.world.ctrls:
+			var c = g.world.ctrls[id]
+			if c.kind == "port" and str(c.target) == vol and g.world.ctrl_alive(c):
+				return _drain(g, str(id), w("给水球抽水", "PUMP THE BALL DOWN"), w("气液回收（5）；缩到 12%% 以下才能动网罩和支架", "hose (5); below 12%% before the net or its frame"), w("：剩 %d%%", ": %d%% LEFT") % int(round(wb.level() * 100.0)))
+	return _plain(g)
+
+
+# ---------------------------------------------------------------- NR-95: drums locked, the core cooled
+
+static func _nr95(g) -> Dictionary:
+	var rc = g.reactor
+	if rc != null:
+		for d in rc.cfg.get("drums", {}):
+			var lk := str(rc.cfg.drums[d])
+			var st := _flip(g, lk, true, w("锁住控制鼓：拨 %s", "LOCK THE DRUM: %s") % lk, w("维护工具（4）；在屏蔽板的阴影里过去，别在堆芯正前方停留", "wrench (4); go in the shield's shadow, never sit in front of the core"))
+			if not st.is_empty():
+				return st
+	var fn = g.furnace
+	if fn != null and fn.active() and fn.core_temp() > float(fn.cfg.get("safe", 60.0)):
+		return _step(w("堆芯冷却中：%.0f°C / %.0f°C", "THE CORE IS COOLING: %.0f OF %.0f °C") % [fn.core_temp(), float(fn.cfg.get("safe", 60.0))], w("冷却泵要一直有电；冷下来以前别断电、别动散热片", "keep the coolant pumps powered; no power off, no petals till it is cool"), _tag_at(g, str(fn.cfg.get("core", ""))), true)
+	var st2 := _plain(g)
+	if not st2.is_empty() and str(st2.t).find("CORE") >= 0:
+		st2.how = w("吊车整件吊走，激光绝不碰堆芯（会核爆）", "the crane takes it whole; never let the beam touch it (it detonates)")
+	return st2
+
+
+# ---------------------------------------------------------------- VT-80: the propellant drawn off in order
+
+static func _vt80(g) -> Dictionary:
+	var tn = g.tanknet
+	if tn != null and tn.active():
+		var tanks: Dictionary = tn.cfg.get("tanks", {})
+		# what the pump can still reach: the manifold and the tanks on it (a branch's dregs go at its own drain)
+		var reach: float = g.sys.fluid(str(tn.cfg.get("manifold", "")))
+		for t0 in tanks:
+			if not tanks[t0].get("own", false):
+				reach += g.sys.fluid(str(tanks[t0].get("vol", "")))
+		var pr := str(tn.cfg.get("port", ""))
+		if reach <= 0.02 and g.sys.hoses.has(pr):
+			return _step(w("总管抽空了：拔掉 %s 的软管", "THE MANIFOLD IS DRY: HOSE OFF %s") % pr, w("气液回收（5）再按一下；接着抽，主泵会干转受损", "hose (5) again to take it off; left drawing, the pump runs dry"), _ctrl_at(g, pr))
+		if reach > 0.02:
+			for t in tanks:
+				var e: Dictionary = tanks[t]
+				if e.get("own", false) or g.sys.fluid(str(e.get("vol", ""))) <= 0.02:
+					continue
+				var xv := str(e.get("valve", ""))
+				var st := _flip(g, xv, true, w("打开 %s 的交叉阀：拨 %s", "OPEN %s's CROSS VALVE: %s") % [t, xv], w("维护工具（4）；推进剂流进总管，主泵从 PR 抽", "wrench (4); it runs into the manifold for the pump at PR"))
+				if not st.is_empty():
+					return st
+			if not tn.pumped():
+				var pw := _door_power(g)
+				if not pw.is_empty():
+					pw.t = w("主泵要有电：接船坞辅助供电", "THE PUMP NEEDS POWER: BERTH SUPPLY")
+					return pw
+			return _drain(g, pr, w("主泵抽走 MMH", "PUMP THE MMH OFF"), w("气液回收（5）；增压阀 PV 一直开着，抽空就拔软管，别让泵干转", "hose (5); keep the PV valves open, and take it off once dry"), w("：剩 %.2f", ": %.2f LEFT") % reach)
+		for t in tanks:
+			var e2: Dictionary = tanks[t]
+			if not e2.get("own", false):
+				continue
+			var br := str(e2.get("branch", ""))
+			if g.sys.fluid(str(e2.get("vol", ""))) + g.sys.fluid(br) <= 0.02:
+				continue
+			var xv2 := str(e2.get("valve", ""))
+			var st2 := _flip(g, xv2, true, w("打开 %s 的阀：拨 %s", "OPEN %s's VALVE: %s") % [t, xv2], w("维护工具（4）；N2O4 只进它自己的支管，不进总管", "wrench (4); the N2O4 runs only into its own branch"))
+			if not st2.is_empty():
+				return st2
+			return _drain(g, str(e2.get("drain", "")), w("单独抽走 N2O4", "DRAW THE N2O4 OFF ON ITS OWN"), w("气液回收（5）；和 MMH 分开抽", "hose (5); apart from the MMH"))
+	return _plain(g)
+
+
+# ---------------------------------------------------------------- CL-104: kept cold till the cargo is out
+
+static func _cl104(g) -> Dictionary:
+	var cc = g.coldchain
+	if cc != null and cc.active():
+		var cargo_left := false
+		for r in cc.cfg.get("cargo", {}):
+			for t in cc.cfg.cargo[r]:
+				var p = CoreAsset._unit(g, str(t))
+				if p != null and not p.gone and p.intact:
+					cargo_left = true
+		if cargo_left and not cc.supplied():
+			var sup := str(cc.cfg.get("supply", ""))
+			var r2 := _reach(g, sup)
+			if not r2.is_empty():
+				return r2
+			return _step(w("接船坞临时制冷：%s", "PLUG IN THE BERTH'S COOLING: %s") % sup, w("维护工具（4）插上；之后断电冷舱也不升温", "wrench (4); then the holds stay cold whatever the power"), _ctrl_at(g, sup))
+		if cargo_left:
+			for gr in CoreAsset.spec(g).get("groups", []):
+				for t in gr.tags:
+					var st := _take(g, str(t))
+					if not st.is_empty():
+						return st
+	return _plain(g)
 
 
 # ---------------------------------------------------------------- 111 号: QC-30, the fridge warmed in order

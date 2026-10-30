@@ -80,6 +80,152 @@ const SHIPS := {
 				"risks": ["大刀切开船体，整块往熔炉里送：快、痛快，但设备大多切坏、撞坏，按废料算", "Cut the hull into big sections and feed them to the furnace: quick and satisfying, but most equipment is cut or knocked to scrap"]},
 		],
 	},
+	# 112 号 (user 2026-10-30 "按你说的"): the second ten, by when they turn up (the 88 m berth and the
+	# first four of the 120 m one)
+	"fx70": {
+		"name": ["超导线圈", "THE SUPERCONDUCTING COILS"],
+		"units": ["8 个环向线圈 + 2 个中心螺线管", "8 TOROIDAL COILS + 2 CENTRAL SOLENOIDS"],
+		"groups": [
+			{"name": ["线圈", "COILS"], "tags": ["TF-1", "TF-2", "TF-3", "TF-4", "TF-5", "TF-6", "TF-7", "TF-8", "CS-1", "CS-2"]},
+		],
+		"dv": {"dv_magnet_quench": "quench"},
+		"methods": [
+			{"key": "careful", "name": ["按序泄能", "DUMP IT IN ORDER"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["开泄能开关 DUMP、保持制冷（冷箱要有电、液氦要够），等储能降到 5% 以下再动线圈支架", "Close the dump (DUMP) with the cooling kept on (the cold box powered, helium in it), and touch no coil support till the energy is under 5%"]},
+			{"key": "demolish", "name": ["带场快拆", "WITH THE FIELD UP"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["不泄能就断电或切支架：线圈失超，能量瞬间放出，连锁到旁边的线圈", "Power off or cut a support with the field up: the coil quenches, the energy comes out at once and runs into the coils beside it"]},
+		],
+	},
+	"tw64": {
+		"name": ["引擎舱与绞车", "THE ENGINE PODS AND THE WINCH"],
+		"units": ["上下两台引擎舱 + 拖曳绞车", "TWO ENGINE PODS + THE TOW WINCH"],
+		"groups": [
+			{"name": ["引擎舱", "ENGINE PODS"], "tags": ["ENG-U", "ENG-L"]},
+			{"name": ["绞车", "WINCH"], "tags": ["WINCH"]},
+		],
+		"dv": {"dv_twist": "twist", "dv_preload": "winch_snap"},
+		"methods": [
+			{"key": "careful", "name": ["撑住船体、泄压拔销", "PROP IT, BLEED, UNPIN"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["先拨 SUP 撑住船体（或者两台引擎舱一起拆），蓄能器泄压、拔掉绞车和拖钳的销子再拆；引擎舱 4.2 t 要吊车", "Set the support (SUP) first, or take both pods together; bleed the accumulators and pull the winch and jaw pins; a pod is 4.2 t, crane it"]},
+			{"key": "demolish", "name": ["先拆一边", "ONE SIDE FIRST"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["不撑船体先拆一边：重量全压在剩下那台上，船体扭曲，引擎舱和吊架受损；带压拆绞车会弹出", "One pod off with nothing set: the hull twists under the other, it and its mounts damaged; the winch taken under load springs"]},
+		],
+	},
+	"fr26": {
+		"name": ["LNG 货与罐", "THE LNG AND ITS TANKS"],
+		"units": ["三罐 LNG 货 + 三个低温罐", "THREE TANKS OF LNG + THE TANKS"],
+		"groups": [
+			{"name": ["低温罐", "CRYO TANKS"], "tags": ["T-1", "T-2", "T-3"]},
+		],
+		"fluid": {"f": "lng", "name": ["LNG 货", "LNG"]},
+		"dv": {"dv_rupture": "rupture"},
+		"methods": [
+			{"key": "careful", "name": ["冷着抽走 LNG", "DRAW IT OFF COLD"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["冷机一直开着，从每个罐的 LP 口把 LNG 抽走，最后才断电拆罐；罐 7 t 要吊车", "Keep the chillers running, draw each tank off at its LP port, power off last; a tank is 7 t, crane it"]},
+			{"key": "demolish", "name": ["放空切罐", "VENT AND CUT"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["先断电直接切：LNG 升温沸散，货没了；泄压阀冻住的罐会爆", "Power off and cut: the LNG warms and boils away, and a tank with its relief valve frozen ruptures"]},
+		],
+	},
+	"med47": {
+		"name": ["医疗设备", "THE MEDICAL EQUIPMENT"],
+		"units": ["3 张手术台、3 个冷冻柜、空气再生器、制氧机", "3 OPERATING TABLES, 3 FREEZERS, THE AIR REGENERATOR, THE OXYGEN PLANT"],
+		"groups": [
+			{"name": ["医疗设备", "MEDICAL"], "tags": ["OPT-U2", "OPT-L1", "OPT-L5", "FRZ-U4", "FRZ-L2", "FRZ-L6", "AIR-REGEN", "O2-GEN"]},
+		],
+		"dv": {"dv_bio": "bio"},
+		"methods": [
+			{"key": "careful", "name": ["封存、滤网抽气再开门", "SEAL, FILTER, THEN OPEN"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["隔离舱先用回收软管（带滤网）抽走空气，生物危险品逐个封存再搬，干净舱的门最后才开", "Pump the isolation rooms out through the hose's filter, seal every biohazard before it moves, open the clean rooms last"]},
+			{"key": "demolish", "name": ["直接切开", "CUT STRAIGHT IN"], "minutes": [0, 0], "lo": 0.0, "hi": 0.75,
+				"risks": ["隔离舱带着污染空气就开门或切开：污染扩散到干净舱，里面的设备每件掉 1/4", "Open or cut an isolation room with its air still dirty: it spreads, and every unit in a clean room it reaches loses a quarter"]},
+		],
+	},
+	"dc84": {
+		"name": ["浸没机柜", "THE IMMERSED RACKS"],
+		"units": ["12 个机柜（另有 8 块客户硬盘要托管）", "12 RACKS (AND 8 CLIENT DRIVES IN CUSTODY)"],
+		"groups": [
+			{"name": ["机柜", "RACKS"], "tags": ["RA-1", "RA-2", "RA-3", "RA-4", "RA-5", "RA-6", "RB-1", "RB-2", "RB-3", "RB-4", "RB-5", "RB-6"]},
+		],
+		"dv": {"dv_immersion_spill": "spill", "dv_immersion_short": "short"},
+		"methods": [
+			{"key": "careful", "name": ["抽干再吊、硬盘先上锁", "DRAIN, LATCH, THEN LIFT"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["8 块硬盘先拨 CUST 锁进屏蔽舱；每个机柜先从 PT 口抽干冷却液罐，再拧下吊走", "Latch the 8 drives into custody (CUST) first; drain each rack's tank at its PT port before you unbolt it"]},
+			{"key": "demolish", "name": ["带液直接吊", "LIFT THEM WET"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["罐里还有液就吊：冷却液洒出来，旁边一排机柜短路；没上锁的硬盘取出按违约罚款", "Lift a rack wet: the fluid spills and shorts the racks beside it; a drive taken unlatched is a breach, fined"]},
+		],
+	},
+	"bl88": {
+		"name": ["生态货", "THE LIVING CARGO"],
+		"units": ["鱼缸、鱼苗箱、种子库", "THE FISH TANK, THE FRY TANK, THE SEED VAULT"],
+		"groups": [
+			{"name": ["生态货", "LIVING CARGO"], "tags": ["FISH-T", "FRY", "SEED"]},
+		],
+		"dv": {"dv_fish_lost": "fish", "dv_water_soak": "soak", "dv_water_short": "soak"},
+		"methods": [
+			{"key": "careful", "name": ["抽水缩球、穹顶泄压", "PUMP IT DOWN, VENT THE DOME"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["先从 PW 口抽水，水球缩到 12% 以下才能动网罩和支架；穹顶先泄压，玻璃才不会吹出", "Pump the ball down at PW below 12% before the net or its frame; vent the dome before the glass"]},
+			{"key": "demolish", "name": ["直接切网", "CUT THE NET"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["水球还大就切网：水球炸散，鱼全死，舱里的电气被泡坏", "Cut the net with the ball still up: it bursts, the fish die, the room's electrics are soaked"]},
+		],
+	},
+	"hb86": {
+		"name": ["培养舱", "THE CULTURE HALLS"],
+		"units": ["种子库、6 个培养架、6 块观察玻璃、培养控制台", "THE SEED VAULT, 6 CULTURE RACKS, 6 VIEWING PANES, THE CONSOLE"],
+		"groups": [
+			{"name": ["培养舱", "CULTURE HALLS"], "tags": ["SEED", "CR-1a", "CR-1b", "CR-2a", "CR-2b", "CR-3a", "CR-3b", "GL-1", "GL-2", "GL-3", "GL-4", "GL-5", "GL-6", "CON"]},
+		],
+		"dv": {"dv_fire": "o2_flash", "dv_glass": "glass_craze"},
+		"methods": [
+			{"key": "careful", "name": ["逐舱抽走富氧空气", "THE RICH AIR OUT, HALL BY HALL"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["三间培养舱逐个接 G-U 口抽空，富氧空气走了再动刀；观察玻璃拧螺栓拆", "Pump each culture hall out at its G-U port before any cut; unbolt the panes"]},
+			{"key": "demolish", "name": ["带气快拆", "STRAIGHT IN"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["富氧空气还在就切：闪燃烧遍培养舱，观察玻璃也会龟裂", "Cut with the rich air in: a flash fire through the halls, and the panes craze"]},
+		],
+	},
+	"nr95": {
+		"name": ["核热推进", "THE NUCLEAR DRIVE"],
+		"units": ["堆芯、液氢罐、喷管、屏蔽板", "THE CORE, THE HYDROGEN TANK, THE NOZZLE, THE SHIELD"],
+		"groups": [
+			{"name": ["核热推进", "NUCLEAR DRIVE"], "tags": ["CORE", "LH2-T", "NOZ", "SHIELD"]},
+		],
+		"dv": {"loss_core": "core_crack", "dv_drum_slip": "drum_slip"},
+		"methods": [
+			{"key": "careful", "name": ["躲辐射、锁鼓、冷却", "SHADOW, LOCK, COOL"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["四个控制鼓先拨 DL 锁住，冷却泵有电让堆芯冷到 60°C 以下；先吊起屏蔽板，在它的阴影里干活；激光绝不碰堆芯", "Lock the four drums (DL), keep the coolant pumps powered till the core is under 60 °C; lift the shield and work in its shadow; never let the beam touch the core"]},
+			{"key": "demolish", "name": ["硬干", "IGNORE IT"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["不躲辐射硬干：无人机剂量超限、电子件故障；控制鼓没锁就吊堆芯会滑出；激光切坏堆芯会核爆", "Work in the open: the drone's dose runs over and its electronics fault; lift the core with a drum unlocked and it slips; cut the core and it detonates"]},
+		],
+	},
+	"vt80": {
+		"name": ["推进剂系统", "THE PROPELLANT SYSTEM"],
+		"units": ["三个推进剂罐 + 主泵 + 罐里的推进剂", "THREE PROPELLANT TANKS + THE MAIN PUMP + THE PROPELLANT"],
+		"groups": [
+			{"name": ["推进剂系统", "PROPELLANT SYSTEM"], "tags": ["T-1", "T-2", "T-3", "PUMP-M"]},
+		],
+		"fluid": {"f": "fuel", "name": ["推进剂货", "PROPELLANT"]},
+		"dv": {"dv_buckle": "buckle", "dv_pump_dry": "pump_dry"},
+		"methods": [
+			{"key": "careful", "name": ["按序关阀抽走", "VALVES IN ORDER, PUMP IT OFF"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["主泵有电时打开 MMH 罐的交叉阀，从 PR 口抽走总管；N2O4 罐单独从 LD-2 抽；增压阀 PV 一直开着、TV 和 NP 口别放空，否则罐会抽瘪", "With the pump powered open the MMH tanks' cross valves and draw the manifold at PR; the N2O4 tank on its own at LD-2; keep the pressurisation (PV) open and never vent TV or NP, or a tank buckles"]},
+			{"key": "demolish", "name": ["直接切管", "CUT THE LINES"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["推进剂还在就切管：MMH 和 N2O4 碰上自燃，罐和泵烧坏", "Cut the lines with propellant in them: the MMH and N2O4 meet and ignite, burning the tanks and the pump"]},
+		],
+	},
+	"cl104": {
+		"name": ["疫苗货", "THE VACCINES"],
+		"units": ["三间冷舱的 18 个托盘 + 6 个疫苗箱", "18 PALLETS + 6 VACCINE BOXES IN THREE COLD HOLDS"],
+		"groups": [
+			{"name": ["疫苗货", "VACCINES"], "tags": ["PAL-11", "PAL-12", "PAL-13", "PAL-14", "PAL-15", "PAL-16", "PAL-21", "PAL-22", "PAL-23", "PAL-24", "PAL-25", "PAL-26", "PAL-31", "PAL-32", "PAL-33", "PAL-34", "PAL-35", "PAL-36", "VAX-11", "VAX-12", "VAX-21", "VAX-22", "VAX-31", "VAX-32"]},
+		],
+		"dv_any": ["loss_thaw"],
+		"dv": {"loss_thaw": "thaw"},
+		"methods": [
+			{"key": "careful", "name": ["保冷卸货", "KEEP IT COLD"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["先接船坞临时制冷 COLD-X（或让冷机一直有电），货全部卸完再断电", "Plug in the berth's cooling (COLD-X), or keep the chillers powered, till every pallet is out; power off last"]},
+			{"key": "demolish", "name": ["先断电再卸", "POWER OFF FIRST"], "minutes": [0, 0], "lo": 0.0, "hi": 0.45,
+				"risks": ["先断电：冷舱升到 −5°C 以上，疫苗解冻，只剩 45% 价值", "Power off first: the holds warm past −5 °C and the vaccines thaw, 45% of their worth left"]},
+		],
+	},
 	# 111 号 (user 2026-10-30 "按你推荐": the ten ships a new hand meets first, each with its
 	# core asset and two ways, both measured by the salvage bot)
 	"tug": {
@@ -233,6 +379,21 @@ const CAUSES := {
 	"static": [["静电击穿", "STATIC PINHOLES"], ["没接地就收卷，静电击穿了帆膜", "wound unearthed: static pinholed the film"], ["收卷前先接上左下角的接地线 GND", "Earth it at GND (bottom left) before you wind"]],
 	"holes": [["碎件打孔", "HOLED"], ["飘浮的碎件打穿了帆膜", "loose pieces holed the film"], ["收卷前把帆前面飘着的碎件清走", "Clear the loose pieces off the film before you wind"]],
 	"soot": [["熔渣熏黑", "SOOTED"], ["在帆附近切割，熔渣熏黑了帆膜", "cutting close by blackened the film"], ["先收帆，再切帆附近的结构", "Furl first, then cut the structure near the film"]],
+	# 112 号: the second ten
+	"quench": [["线圈失超", "QUENCHED"], ["线圈带着储能失去冷却或动了支架，失超，能量瞬间放出，连锁到旁边的线圈", "a coil lost its cooling or a support with its energy still in: it quenched, and it ran into the coils beside it"], ["先开 DUMP 泄能、保持制冷，储能降到 5% 以下再断电、动支架", "Close the dump (DUMP) with the cooling kept on; power off and touch the supports only under 5%"]],
+	"twist": [["船体扭曲", "HULL TWISTED"], ["没撑船体就先拆了一边的引擎舱，重量压在另一边，船体扭曲", "one pod off with the support not set: the hull twisted under the other"], ["先拨 SUP 撑住船体，或者两台引擎舱一起拆", "Set the support (SUP) first, or take both pods together"]],
+	"winch_snap": [["绞车弹出", "WINCH SPRANG"], ["绞车和拖钳还带压上着销就拆了，弹出砸坏东西", "the winch and the jaws taken pinned and under pressure: they sprang"], ["先给蓄能器泄压、拔掉 WB 和 JL 销子", "Bleed the accumulators and pull the WB and JL pins first"]],
+	"rupture": [["罐体爆裂", "TANK RUPTURED"], ["低温罐升压到泄压阀放不掉，罐体爆裂", "a cryo tank rose past what its relief valve could let go and burst"], ["冷机一直开着，先把 LNG 抽走再断电", "Keep the chillers running and draw the LNG off before the power"]],
+	"bio": [["生物污染", "CONTAMINATED"], ["隔离舱的污染空气扩散到干净舱，里面的设备要消毒，掉 1/4", "the isolation rooms' air reached a clean room: its equipment needs decontaminating, a quarter off"], ["隔离舱先用带滤网的回收软管抽空，生物危险品先封存，再开门", "Pump the isolation rooms out through the filter and seal the biohazards before any door opens"]],
+	"spill": [["冷却液洒出", "SPILT"], ["机柜带着冷却液被吊出，液体洒了一地", "a rack lifted out with its tank still full: the fluid spilt"], ["吊机柜之前，先从它的 PT 口把罐抽干", "Drain a rack's tank at its PT port before you lift it"]],
+	"short": [["短路", "SHORTED"], ["旁边机柜洒出的冷却液让这一排短路", "fluid spilt from the next rack shorted this one"], ["每个机柜都先抽干再吊", "Drain every rack before you lift any"]],
+	"fish": [["鱼死了", "FISH LOST"], ["水球炸散，鱼缸里的鱼全死了", "the ball burst and the fish died"], ["先从 PW 口抽水，水球缩到 12% 以下再动网罩", "Pump the ball down at PW below 12% before the net"]],
+	"soak": [["泡水", "SOAKED"], ["水球炸散，舱里的电气被泡坏", "the ball burst and soaked the room's electrics"], ["先抽水，再动网罩和支架", "Pump it down before the net or its frame"]],
+	"core_crack": [["堆芯热裂", "CORE CRACKED"], ["堆芯还没冷下来就断了冷却或吊出，热震开裂", "the core lost its cooling or came out still hot: it cracked"], ["冷却泵一直有电，堆芯冷到 60°C 以下再动", "Keep the coolant pumps powered till the core is under 60 °C"]],
+	"drum_slip": [["控制鼓滑出", "DRUM SLIPPED"], ["控制鼓没锁就吊堆芯，控制鼓滑出，一阵辐射", "the core lifted with a drum unlocked: the drum slipped, a burst of dose"], ["吊堆芯之前，四个 DL 锁全部拨上", "Throw all four drum locks (DL) before the core"]],
+	"buckle": [["罐体抽瘪", "TANK BUCKLED"], ["关了增压又放空了气垫，抽液时罐里成了真空，罐体被压瘪", "pressurisation shut and the ullage vented: drawing it pulled a vacuum and it buckled"], ["抽推进剂时增压阀 PV 一直开着，TV 和 NP 口别放空", "Keep the pressurisation (PV) open while drawing; never vent TV or NP"]],
+	"pump_dry": [["泵干转", "PUMP RAN DRY"], ["总管抽空了主泵还在抽，干转受损", "the pump kept drawing a dry manifold and was damaged"], ["总管抽空就拔掉 PR 的软管", "Take the hose off PR once the manifold is dry"]],
+	"thaw": [["疫苗解冻", "THAWED"], ["冷舱断冷升到 −5°C 以上，疫苗解冻，只剩 45% 价值", "a cold hold warmed past −5 °C: the vaccines thawed, 45% of their worth left"], ["先接 COLD-X 临时制冷，或者让冷机一直有电，货卸完再断电", "Plug in COLD-X or keep the chillers powered till the cargo is out"]],
 	# 111 号: the ten small ships
 	"qpu_shock": [["加热过早，芯片裂", "HEATED TOO SOON"], ["混合室还没过 30 K 就开了加热器，量子芯片热震开裂", "the heaters on before the mixing chamber passed 30 K: the chip cracked"], ["停脉管后先等混合室回到 30 K 以上，再开加热器 HEAT", "After the pulse tube stops, wait for the mixing chamber past 30 K before HEAT"]],
 	"qpu_brittle": [["低温时动了冷台", "STACK TOUCHED COLD"], ["混合室还在 250 K 以下就切开或拆下冷台，芯片脆裂", "the stack cut or freed under 250 K: the chip cracked"], ["混合室回到 250 K 以上再拆冷台", "Wait for the mixing chamber past 250 K before the stack"]],
@@ -272,6 +433,33 @@ const CAUSES := {
 }
 
 # GR-7 and the like: the game's own losses on a unit, by what they were
+# 112 号: a loss that is this asset's: on one of its units, or a code the ship books elsewhere (CL-104's
+# thaw against the hold) and counts for its asset all the same
+static func _mine(g, tags: Array, d) -> bool:
+	if _dv(g, str(d[0])) == "":
+		return false
+	return tags.has(str(d[1])) or (spec(g).get("dv_any", []) as Array).has(str(d[0]))
+
+
+# 112 号: a cargo that is a fluid (FR-26's LNG, VT-80's propellant): what it is worth whole, now
+# (what is aboard or came in), and in hand (what the hoses took in, as the books pay it)
+static func _fluid(g) -> Dictionary:
+	var fd: Dictionary = spec(g).get("fluid", {})
+	if fd.is_empty() or g.sys == null:
+		return {}
+	var f := str(fd.f)
+	var val: float = float(g.sys.cfg.get("fluids", {}).get("value", {}).get(f, 0.0))
+	var f0: float = float(g.sys.fluid0.get(f, 0.0))
+	if f0 <= 0.0:
+		return {}
+	var left := 0.0
+	for k in g.sys.fvol:
+		if str(g.sys.fvol[k].fluid) == f:
+			left += float(g.sys.fvol[k].amount)
+	var rec: float = float(g.sys.fluid_rec.get(f, 0.0))
+	return {"name": _t(fd.name), "full": val, "now": val * clampf((left + rec) / f0, 0.0, 1.0), "got": val * clampf(rec / f0, 0.0, 1.0), "left": left / f0, "rec": rec / f0}
+
+
 # 111 号: a ship's own reading of a loss code (H-22's arm springing is not M-14's belt), else the common one
 static func _dv(g, code: String) -> String:
 	return str(spec(g).get("dv", {}).get(code, EQUIP_DV.get(code, "")))
@@ -393,6 +581,14 @@ static func full(g) -> float:
 				if g.optics.cfg.get("segments", {}).has(str(pd.get("tag", ""))):
 					sum += float(pd.get("value", 0.0)) * clampf(float(pd.get("cond", 1.0)), 0.0, 1.0)
 			return sum
+		_:
+			# 112 号: a ship of units (and maybe a fluid cargo)
+			var sum2: float = float(_fluid(g).get("full", 0.0))
+			for t in _units(g):
+				var p = _unit(g, str(t))
+				if p != null:
+					sum2 += float(p.value)
+			return sum2
 	return 0.0
 
 
@@ -422,6 +618,9 @@ static func board(g) -> Dictionary:
 			return _box_board(g)
 		"lc140":
 			return _small_board(g)
+		_:
+			if spec(g).has("groups"):
+				return _equip_board(g)
 	return {}
 
 
@@ -548,6 +747,9 @@ static func review(g) -> Dictionary:
 			return _box_review(g)
 		"lc140":
 			return _small_review(g)
+		_:
+			if spec(g).has("groups"):
+				return _equip_review(g)
 	return {}
 
 
@@ -701,6 +903,12 @@ static func _equip_board(g) -> Dictionary:
 	var warn: Array = []
 	if spec(g).get("ore", false):
 		worth += _ore_board(g, rows, warn)
+	var fl := _fluid(g)
+	if not fl.is_empty():
+		worth += float(fl.now)
+		var lost: float = 1.0 - float(fl.left) - float(fl.rec)
+		rows.append({"name": str(fl.name), "text": w("已抽 %d%% · 船上 %d%%", "%d%% IN · %d%% ABOARD") % [int(round(float(fl.rec) * 100.0)), int(round(float(fl.left) * 100.0))] + (w(" · 损失 %d%%", " · %d%% LOST") % int(round(lost * 100.0)) if lost > 0.02 else ""),
+			"right": Pal.money(float(fl.now)), "grade": float(fl.now) / maxf(float(fl.full), 1.0), "alert": lost > 0.02, "done": float(fl.left) <= 0.01})
 	for gr in spec(g).groups:
 		for t in gr.tags:
 			var p = _unit(g, str(t))
@@ -712,14 +920,22 @@ static func _equip_board(g) -> Dictionary:
 				"grade": v / maxf(float(p.value), 1.0), "alert": not p.intact or p.cond < 0.9, "done": p.gone})
 	var tags := _units(g)
 	var recent: Array = []
-	var mine: Array = g.devalued.filter(func(d): return tags.has(str(d[1])) and _dv(g, str(d[0])) != "")
+	var mine: Array = g.devalued.filter(func(d): return _mine(g, tags, d))
 	for i in range(mine.size() - 1, maxi(-1, mine.size() - 4), -1):
 		recent.append({"text": "%s · %s" % [str(mine[i][1]), cause_short(_dv(g, str(mine[i][0])))], "money": float(mine[i][2])})
 	_ship_warn(g, warn)
 	if _ship_live(g):
-		warn.append(w("船还没安全：先断电、泄压、放空再动刀", "NOT SAFE YET: POWER OFF, VENT, DRAIN BEFORE YOU CUT"))
+		if ship_key(g) in POWER_LAST:
+			warn.append(w("船还没安全：先泄压、放空再动刀；电要留到最后断", "NOT SAFE YET: VENT AND DRAIN BEFORE YOU CUT; THE POWER GOES LAST"))
+		else:
+			warn.append(w("船还没安全：先断电、泄压、放空再动刀", "NOT SAFE YET: POWER OFF, VENT, DRAIN BEFORE YOU CUT"))
 	return {"name": _t(spec(g).name), "worth": worth, "full": full(g), "warn": warn, "rows": rows, "recent": recent}
 
+
+const LIVE_KPA := 5.0
+# 112 号: ships whose power must stay on till their asset is safe (the coils' cooling, the chillers,
+# the cold holds, the propellant pump, the core's coolant pumps)
+const POWER_LAST := ["fx70", "fr26", "cl104", "vt80", "nr95"]
 
 # 111 号: what on each small ship still bites, said with what to do about it (Q3 A)
 static func _ship_warn(g, warn: Array) -> void:
@@ -798,6 +1014,119 @@ static func _ship_warn(g, warn: Array) -> void:
 				warn.append(w("%d 个气囊还鼓着：带气切会塌下砸设备（接 BV 口放气）", "%d BAGS STILL UP: CUT ONE AND IT COMES DOWN ON THE UNITS (LET IT DOWN AT ITS BV)") % up)
 			if tight > 0:
 				warn.append(w("%d 个张紧器还绷着：切绑带会甩（先拨 TN 松开）", "%d TENSIONERS TAUT: A STRAP CUT WHIPS (TN OFF FIRST)") % tight)
+		"fx70":
+			var mg = g.magnets
+			if mg == null or not mg.active():
+				return
+			if mg.any_energised():
+				var hot := false
+				for c in mg.energy:
+					if mg.energised(str(c)) and not mg.cooled(str(c)):
+						hot = true
+				warn.append(w("线圈还储着 %d%% 的能：开 DUMP 泄能、保持制冷，降到 5%% 以下再断电动支架", "THE COILS HOLD %d%% OF THEIR ENERGY: DUMP IT WITH THE COOLING ON, UNDER 5%% BEFORE POWER OR SUPPORTS") % int(round(mg.field())))
+				if hot:
+					warn.append(w("有线圈断了冷却：%.1f K，过 %.0f K 就失超（冷箱要有电、液氦要够）", "A COIL HAS LOST ITS COOLING: %.1f K, IT QUENCHES PAST %.0f K (THE COLD BOX POWERED, HELIUM IN IT)") % [mg.max_temp(), float(mg.cfg.get("Tc", 9.0))])
+		"tw64":
+			var m2 = g.mech
+			if m2 == null:
+				return
+			var sup := str(m2.balance.get("support", ""))
+			if sup != "" and not s.on(sup) and m2.twisted.is_empty():
+				warn.append(w("船体没撑住：先拨 %s，或者两台引擎舱一起拆，否则先拆一边船体会扭", "THE HULL ISN'T PROPPED: SET %s, OR TAKE BOTH PODS TOGETHER, OR IT TWISTS") % sup)
+			for l in m2.loads:
+				if l.alive and not l.fired:
+					warn.append(w("绞车和拖钳还带压上着销：先给蓄能器泄压、拔销再拆", "WINCH AND JAWS PINNED UNDER PRESSURE: BLEED, UNPIN, THEN TAKE"))
+					break
+		"fr26":
+			var cr = g.cryo
+			if cr == null or not cr.active():
+				return
+			var any_ch := false
+			for ch in cr.chillers:
+				var cp = g.world.tag(str(ch))
+				if cp != null and not cp.gone and s.piece_volts(cp) > 1.0:
+					any_ch = true
+			for tg in cr.tanks:
+				var e: Dictionary = cr.tanks[tg]
+				if s.fluid(str(e.get("liquid", ""))) > 0.02:
+					var kpa: float = s.P(str(e.get("vessel", "")))
+					if kpa > float(e.get("psv_kpa", 300.0)) * 0.8:
+						warn.append(w("%s 压力 %.0f kPa：快到泄压线了（先抽 LNG）", "%s AT %.0f kPa: NEAR ITS RELIEF (DRAW THE LNG OFF)") % [tg, kpa])
+			if not any_ch:
+				warn.append(w("冷机没电：LNG 在升温沸散（冷机要一直开到抽完）", "THE CHILLERS ARE DEAD: THE LNG IS WARMING (KEEP THEM RUNNING TILL IT IS OFF)"))
+		"med47":
+			var bi = g.bio
+			if bi == null or not bi.active():
+				return
+			var open_n := 0
+			for tg in bi.items:
+				var bp = g.world.tag(str(tg))
+				if bp != null and not bp.gone and not bi.is_sealed(str(tg)):
+					open_n += 1
+			if open_n > 0:
+				warn.append(w("%d 件生物危险品没封存：动之前先拨它的 SB / SF / SL 封存", "%d BIOHAZARDS UNSEALED: SEAL EACH (SB / SF / SL) BEFORE IT MOVES") % open_n)
+			for r in bi.dirty_from_start:
+				if s.vols.has(r) and s.P(r) > LIVE_KPA:
+					warn.append(w("隔离舱 %s 还有污染空气：开门前用回收软管（带滤网）抽空", "ISOLATION ROOM %s STILL HOLDS ITS AIR: PUMP IT OUT THROUGH THE FILTER BEFORE ANY DOOR") % r)
+		"dc84":
+			var im = g.immersion
+			if im == null or not im.active():
+				return
+			var wet := 0
+			for rk in im.cfg.get("tanks", {}):
+				var rp = g.world.tag(str(rk))
+				if rp != null and not rp.gone and rp.body == null and im.full(str(rk)):
+					wet += 1
+			if wet > 0:
+				warn.append(w("%d 个机柜罐里还有冷却液：带液吊会洒、短路旁边的机柜（先从 PT 口抽干）", "%d RACKS STILL IN FLUID: LIFTED WET THEY SPILL AND SHORT THE NEXT (DRAIN AT PT)") % wet)
+			var loose := 0
+			for dr in im.cfg.get("drives", {}):
+				var dp = g.world.tag(str(dr))
+				if dp != null and not dp.gone and dp.body == null and not im.cased(str(dr)):
+					loose += 1
+			if loose > 0:
+				warn.append(w("%d 块客户硬盘没上锁：先拨 CUST 锁进屏蔽舱，否则按违约罚款", "%d CLIENT DRIVES NOT LATCHED: CUST FIRST, OR IT IS A FINED BREACH") % loose)
+		"bl88":
+			var wb = g.waterball
+			if wb == null or not wb.active() or wb.burst:
+				return
+			if wb.level() > float(wb.cfg.get("safe", 0.12)):
+				warn.append(w("水球还有 %d%%：切网罩或拆支架会炸散（先从 PW 口抽到 12%% 以下）", "THE BALL IS AT %d%%: CUT ITS NET OR FRAME AND IT BURSTS (PUMP IT BELOW 12%% AT PW)") % int(round(wb.level() * 100.0)))
+		"hb86":
+			var a2 = g.atmos
+			if a2 == null:
+				return
+			for r in g.world.rooms:
+				if s.P(r) > 20.0 and s.o2_frac(r) > a2.fire_o2():
+					warn.append(w("%s 富氧 %d%%：附近切割会闪燃（接 G-%s 抽空）", "%s AT %d%% OXYGEN: A CUT CLOSE BY FLASHES OVER (PUMP IT OUT AT G-%s)") % [g.room_name(r), int(round(s.o2_frac(r) * 100.0)), r])
+		"nr95":
+			var rc = g.reactor
+			var fn = g.furnace
+			if rc == null:
+				return
+			var free := 0
+			for d in rc.cfg.get("drums", {}):
+				if not s.on(str(rc.cfg.drums[d])):
+					free += 1
+			if free > 0:
+				warn.append(w("%d 个控制鼓没锁：吊堆芯会滑出（拨 DL 锁上）", "%d DRUMS UNLOCKED: THE CORE LIFTED, ONE SLIPS (THROW THE DL LOCKS)") % free)
+			if fn != null and fn.active() and fn.core_temp() > float(fn.cfg.get("safe", 60.0)):
+				warn.append(w("堆芯 %.0f°C：冷却泵要一直有电，60°C 以下才能动它和散热片", "THE CORE AT %.0f °C: KEEP THE COOLANT PUMPS POWERED, NOTHING MOVES TILL UNDER 60") % fn.core_temp())
+			warn.append(w("无人机剂量 %.0f / %.0f mSv：在屏蔽板的阴影里干活；激光绝不碰堆芯", "DRONE DOSE %.0f / %.0f mSv: WORK IN THE SHIELD'S SHADOW; NEVER LET THE BEAM TOUCH THE CORE") % [rc.dose, float(rc.cfg.get("limit", 150.0))])
+		"vt80":
+			var tn = g.tanknet
+			if tn == null or not tn.active():
+				return
+			if tn.fuel_left() > 0.02:
+				warn.append(w("推进剂还有 %.1f：先抽走（主泵经 PR，N2O4 单独走 LD-2）；切管 MMH 和 N2O4 会自燃", "%.1f OF PROPELLANT ABOARD: DRAW IT OFF (THE PUMP AT PR, THE N2O4 ALONE AT LD-2); CUT A LINE AND THEY IGNITE") % tn.fuel_left())
+				warn.append(w("增压阀 PV 一直开着，TV 和 NP 口别放空：否则罐会抽瘪", "KEEP THE PV VALVES OPEN AND NEVER VENT TV OR NP: A TANK BUCKLES"))
+		"cl104":
+			var cc = g.coldchain
+			if cc == null or not cc.active():
+				return
+			for r in cc.cfg.get("rooms", {}):
+				if not cc.thawed.has(r) and not cc.held(str(r)):
+					warn.append(w("冷舱 %s 在升温：%.0f°C，−5°C 以上就解冻（接 COLD-X，或让冷机有电）", "HOLD %s IS WARMING: %.0f °C, THAWS PAST −5 (COLD-X, OR KEEP THE CHILLERS POWERED)") % [r, cc.room_temp(str(r))])
 		"jd38":
 			var rl = g.rails
 			if rl == null or not rl.active():
@@ -820,6 +1149,12 @@ static func _equip_review(g) -> Dictionary:
 		got += ore_got(g)
 		units.append({"text": w("矿料：收 %s / %s", "ORE: %s OF %s") % [Pal.money(ore_got(g)), Pal.money(ore_full(g))], "value": ow,
 			"sub": w("细矿放出 %.1f t，洒落 %.1f t；矿块运走 %d / %d 块", "%.1f t OF FINES OUT, %.1f t LOST; %d OF %d CHUNKS HAULED") % [g.ore.fines0 - g.ore.fines - g.ore.spilled, g.ore.spilled, oc.x, oc.y]})
+	var fl := _fluid(g)
+	if not fl.is_empty():
+		rolled += float(fl.now)
+		got += float(fl.got)
+		units.append({"text": w("%s：收 %s / %s", "%s: %s OF %s") % [str(fl.name), Pal.money(float(fl.got)), Pal.money(float(fl.full))], "value": float(fl.now),
+			"sub": w("抽进来 %d%%，还在船上 %d%%", "%d%% DRAWN OFF, %d%% STILL ABOARD") % [int(round(float(fl.rec) * 100.0)), int(round(float(fl.left) * 100.0))]})
 	for gr in spec(g).groups:
 		var n := 0
 		var kept := 0
@@ -843,7 +1178,7 @@ static func _equip_review(g) -> Dictionary:
 	var tags := _units(g)
 	var by := {}
 	for d in g.devalued:
-		if not tags.has(str(d[1])) or _dv(g, str(d[0])) == "":
+		if not _mine(g, tags, d):
 			continue
 		var k: String = _dv(g, str(d[0]))
 		if not by.has(k):
@@ -876,6 +1211,48 @@ static func _equip_review(g) -> Dictionary:
 # carrier stripped in 51.5 min of work (99.99 %, no incident); careless cut into its hull at
 # 12.5 min (the premium gone) and fed it all to the furnace: none of it, 47 min, $12,000 in fines
 const BOT_RUNS := {
+	# 112 号, 2026-10-30: the second ten as built, with the heavy crane (the 88 m berth and on), one run
+	# each way; minutes to the last money in
+	"fx70": {
+		"careful": {"lo": 540000.0, "hi": 540000.0, "minutes": [37, 38], "note": ["实测（有吊车）：整船收入 $1,709,284，0 事故；两个线圈机器人没收回", "measured (crane): $1,709,284 in, no incidents; two coils the bot never got in"]},
+		"demolish": {"lo": 15895.0, "hi": 15895.0, "minutes": [29, 30], "note": ["实测：线圈失超连锁，只剩 $15,895；整船收入 $62,339，罚款 $9,000，15 次事故", "measured: the coils quenched one into the next, $15,895 left; $62,339 in, $9,000 in fines, 15 incidents"]},
+	},
+	"tw64": {
+		"careful": {"lo": 56000.0, "hi": 56000.0, "minutes": [25, 26], "note": ["实测（有吊车）：整船收入 $205,560，0 事故", "measured (crane): $205,560 in, no incidents"]},
+		"demolish": {"lo": 13200.0, "hi": 13200.0, "minutes": [21, 22], "note": ["实测：船体扭曲、绞车弹出，只剩 $13,200；整船收入 $64,937，罚款 $33,500，18 次事故", "measured: the hull twisted, the winch sprang, $13,200 left; $64,937 in, $33,500 in fines, 18 incidents"]},
+	},
+	"fr26": {
+		"careful": {"lo": 68986.0, "hi": 68986.0, "minutes": [26, 27], "note": ["实测（有吊车）：整船收入 $257,118，0 事故；LNG 和罐没全收回（机器人搬运）", "measured (crane): $257,118 in, no incidents; not all the LNG and tanks came in (the bot's handling)"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [17, 18], "note": ["实测：LNG 全损，罐也切了；整船收入 $24,410，罚款 $12,000，9 次事故", "measured: the LNG all lost, the tanks cut; $24,410 in, $12,000 in fines, 9 incidents"]},
+	},
+	"med47": {
+		"careful": {"lo": 85000.0, "hi": 85000.0, "minutes": [32, 33], "note": ["实测：整船收入 $265,354，0 事故", "measured: $265,354 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [25, 26], "note": ["实测：污染扩散，设备全毁；整船收入 $33,105，罚款 $103,000，42 次事故", "measured: the contamination spread, every unit lost; $33,105 in, $103,000 in fines, 42 incidents"]},
+	},
+	"dc84": {
+		"careful": {"lo": 540000.0, "hi": 540000.0, "minutes": [46, 47], "note": ["实测：整船收入 $1,340,686，0 事故", "measured: $1,340,686 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [36, 37], "note": ["实测：洒液短路、硬盘违约；整船收入 $47,451，罚款 $166,000，28 次事故", "measured: spills, shorts, drives breached; $47,451 in, $166,000 in fines, 28 incidents"]},
+	},
+	"bl88": {
+		"careful": {"lo": 107000.0, "hi": 107000.0, "minutes": [41, 42], "note": ["实测：整船收入 $590,039，0 事故", "measured: $590,039 in, no incidents"]},
+		"demolish": {"lo": 31583.0, "hi": 31583.0, "minutes": [29, 30], "note": ["实测：水球炸散，只剩 $31,583；整船收入 $65,017，罚款 $12,000，10 次事故", "measured: the ball burst, $31,583 left; $65,017 in, $12,000 in fines, 10 incidents"]},
+	},
+	"hb86": {
+		"careful": {"lo": 60400.0, "hi": 60400.0, "minutes": [30, 31], "note": ["实测：整船收入 $249,243，0 事故；两件机器人没收回", "measured: $249,243 in, no incidents; two pieces the bot never got in"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [32, 33], "note": ["实测：闪燃烧坏培养舱；整船收入 $47,814，罚款 $6,000，11 次事故", "measured: flash fires through the halls; $47,814 in, $6,000 in fines, 11 incidents"]},
+	},
+	"nr95": {
+		"careful": {"lo": 90000.0, "hi": 90000.0, "minutes": [18, 19], "note": ["实测（有吊车）：液氢罐 28 t 超过吊车额定，只能切成废料；整船收入 $258,122，1 次碰撞", "measured (crane): the 28 t hydrogen tank is past the crane, cut to scrap; $258,122 in, 1 knock"]},
+		"demolish": {"lo": 70000.0, "hi": 70000.0, "minutes": [17, 18], "note": ["实测：整船收入 $114,784，罚款 $6,000，8 次事故（机器人没碰堆芯，没有核爆）", "measured: $114,784 in, $6,000 in fines, 8 incidents (the bot never cut the core, no detonation)"]},
+	},
+	"vt80": {
+		"careful": {"lo": 113872.0, "hi": 113872.0, "minutes": [49, 50], "note": ["实测（有吊车）：整船收入 $256,232，0 事故", "measured (crane): $256,232 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [21, 22], "note": ["实测：自燃起火，罐和泵烧坏；整船收入 $31,436，罚款 $39,000，15 次事故", "measured: they ignited, tanks and pump burnt; $31,436 in, $39,000 in fines, 15 incidents"]},
+	},
+	"cl104": {
+		"careful": {"lo": 97900.0, "hi": 97900.0, "minutes": [44, 45], "note": ["实测：整船收入 $280,976，0 事故；部分托盘机器人没收回", "measured: $280,976 in, no incidents; some pallets the bot never got in"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [37, 38], "note": ["实测：疫苗解冻、货全进了熔炉；整船收入 $63,193，罚款 $3,000，10 次事故", "measured: thawed, and all of it to the furnace; $63,193 in, $3,000 in fines, 10 incidents"]},
+	},
 	# 111 号, 2026-10-30: the ten small ships as built, no crane, one run each way (tests/bot_run.gd
 	# paced; careless = straight to cutting, all to the furnace). Minutes: the work until the last money
 	# came in (on the runs the bot never finished, it circled one or two long pieces at the end)
