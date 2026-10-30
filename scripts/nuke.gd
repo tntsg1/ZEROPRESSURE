@@ -43,6 +43,12 @@ var layer: CanvasLayer
 var ui: Control
 var _hidden := false
 var _flash := 0.0
+# 2026-10-30 精细化 (user: "反应堆爆炸的时候动画优化精细一点"): the fireball's churning cells and the
+# plasma filaments at its limb, the debris front as a band of hot streaks (it used to be one ragged
+# line that read as lightning close in)
+var cells: Array = []         # [angle, r (share of the fireball), phase, size, spin]
+var filaments: Array = []     # [dir, length (share), phase]
+var front: Array = []         # [dir, dr (share of the radius), length (share), brightness]
 
 
 func setup(g, at_: Vector2) -> void:
@@ -86,6 +92,12 @@ func setup(g, at_: Vector2) -> void:
 	for i in 420:
 		var v := Vector2.from_angle(randf() * TAU) * randf_range(400.0, 3600.0)
 		sparks.append([at + v * 0.01, v, randf_range(0.8, 2.6)])
+	for i in 22:
+		cells.append([randf() * TAU, sqrt(randf()) * 0.78, randf() * TAU, randf_range(0.16, 0.34), randf_range(-0.25, 0.25)])
+	for i in 170:
+		filaments.append([Vector2.from_angle(TAU * (i + randf() * 0.6) / 170.0), randf_range(0.04, 0.2), randf() * TAU])
+	for i in 1200:
+		front.append([Vector2.from_angle(randf() * TAU), randf_range(-0.07, 0.015), randf_range(0.004, 0.022), randf_range(0.35, 1.0)])
 	# the districts, nearest first; what each costs to put right
 	var dmax := 1.0
 	for z in Port.ZONES:
@@ -167,7 +179,7 @@ func _holes(r: Rect2) -> Array:
 		var n := 14
 		for k in n:
 			pl.append(c + Vector2.from_angle(TAU * k / n) * rr * randf_range(0.55, 1.15) * Vector2(1.4, 1.0))
-		out.append([pl, Geometry2D.triangulate_polygon(pl)])
+		out.append([pl, Geometry2D.triangulate_polygon(pl), c, rr, randf_range(0.0, 0.18)])
 	return out
 
 
@@ -237,10 +249,16 @@ func _hit(zd: Dictionary) -> void:
 	game.fx.sparks(face, out, 40, Pal.heat(1.0, 2.4), 1100.0, 1.0, 1.2)
 	for i in 4:
 		game.fx.puff(c + Vector2(randf_range(-0.4, 0.4), randf_range(-0.4, 0.4)) * r.size, out * 80.0, 3.5, 3.0 * M, 14.0 * M, Pal.ink(0.14))
+	# the district's air blowing out of every hole torn in it: a white jet and its ice glitter
+	for h in zd.holes:
+		var hc: Vector2 = h[2]
+		var jd := ((hc - c).normalized() if hc.distance_to(c) > M else out).rotated(randf_range(-0.3, 0.3))
+		game.fx.puff(hc + jd * 0.6 * M, jd * 6.0 * M, 2.2, 0.5 * M, 3.2 * M, Pal.ink(0.09))
+		game.fx.sparks(hc, jd, 10, Pal.ink(0.85, 1.4), 420.0, 1.4, 0.5)
 	game.sfx.play("crack", Vector2.INF, 1.0, randf_range(0.5, 0.7))
 	game.sfx.play("debris", Vector2.INF, 0.9, 0.6)
 	game.shake(1.0)
-	_flash = 0.35
+	_flash = 0.15
 
 
 # a cut to each district as the shell gets there; the fireball before, the whole port after
@@ -283,8 +301,10 @@ func _draw() -> void:
 	var hp := PackedVector2Array()
 	var hc := PackedColorArray()
 	var hi := PackedInt32Array()
-	var he := PackedVector2Array()
+	var he := PackedVector2Array()      # hot edges and cracks, thin
 	var hec := PackedColorArray()
+	var hw := PackedVector2Array()      # the same, their wide dull glow
+	var hwc := PackedColorArray()
 	for zd in zones:
 		if not zd.hit:
 			continue
@@ -296,72 +316,106 @@ func _draw() -> void:
 			draw_circle(r.get_center(), r.size.x * 0.5, Color(0.0, 0.0, 0.0, minf(0.72, age * 1.8)))
 		else:
 			draw_rect(r, Color(0.0, 0.0, 0.0, minf(0.72, age * 1.8)))
+			# the side facing the blast takes it first: a white-hot glare where it struck, dying away
+			var sear := pow(clampf(1.0 - age / 1.4, 0.0, 1.0), 2.0)
+			if sear > 0.0 and tex != null:
+				var face := Vector2(clampf(at.x, r.position.x, r.end.x), clampf(at.y, r.position.y, r.end.y))
+				var gr := minf(r.size.x, r.size.y) * 0.5
+				draw_texture_rect(tex, Rect2(face - Vector2(gr, gr), Vector2(gr, gr) * 2.0), false, Color(1.8, 1.05, 0.5, 0.55 * sear))
+		# the shell torn open hole by hole, each opening out from where it gave
 		var edge_c := Color(1.6 * hot, 0.5 * hot, 0.15 * hot, 0.95)
+		var glow_c := Color(1.2 * hot, 0.3 * hot, 0.08 * hot, 0.3)
 		for h in zd.holes:
+			var open := Pal.ease_out(clampf((age - float(h[4])) / 0.35, 0.0, 1.0))
+			if open <= 0.0:
+				continue
 			var pl: PackedVector2Array = h[0]
+			var hcen: Vector2 = h[2]
 			var base := hp.size()
-			hp.append_array(pl)
-			for i in pl.size():
+			for q in pl:
+				hp.append(hcen + (q - hcen) * open)
 				hc.append(Color(0.0, 0.0, 0.0, 0.97))
-				he.append(pl[i])
-				he.append(pl[(i + 1) % pl.size()])
-				hec.append(edge_c)
+			var fresh := 1.0 + 1.5 * (1.0 - clampf((age - float(h[4])) / 0.8, 0.0, 1.0))
+			for i in pl.size():
+				var a: Vector2 = hp[base + i]
+				var b: Vector2 = hp[base + (i + 1) % pl.size()]
+				he.append_array([a, b])
+				hec.append(Color(edge_c.r * fresh, edge_c.g * fresh, edge_c.b * fresh, edge_c.a))
+				hw.append_array([a, b])
+				hwc.append(glow_c)
 			for i in (h[1] as PackedInt32Array):
 				hi.append(base + i)
+		# the cracks running out across the plating
 		var crack_c := Color(1.4 * hot, 0.35 * hot, 0.12 * hot, 0.9)
+		var grow := clampf(age / 0.6, 0.0, 1.0)
 		for line in zd.cracks:
-			for i in line.size() - 1:
-				he.append(line[i])
-				he.append(line[i + 1])
+			var nseg: int = line.size() - 1
+			var upto := grow * nseg
+			for i in nseg:
+				if i >= upto:
+					break
+				var b2: Vector2 = line[i + 1] if i + 1 <= upto else (line[i] as Vector2).lerp(line[i + 1], upto - i)
+				he.append_array([line[i], b2])
 				hec.append(crack_c)
+				hw.append_array([line[i], b2])
+				hwc.append(glow_c)
 		if ring:
 			if age < 0.3:
-				draw_circle(r.get_center(), r.size.x * 0.5, Color(1.5, 1.4, 1.3, (0.3 - age) * 2.0))
+				draw_circle(r.get_center(), r.size.x * 0.5, Color(1.5, 1.4, 1.3, (0.3 - age) * 0.45))
+				draw_arc(r.get_center(), r.size.x * 0.5, 0.0, TAU, 96, Color(2.2, 1.7, 1.2, (0.3 - age) * 3.0), 6.0 * px)
 			draw_arc(r.get_center(), r.size.x * 0.5, 0.0, TAU, 96, Pal.heat(0.6 * hot, 1.2), 2.0 * px)
 			continue
 		if age < 0.3:
-			draw_rect(r, Color(1.5, 1.4, 1.3, (0.3 - age) * 2.0))
+			# the instant it is struck: the shell's outline flares white, the plating lit through
+			draw_rect(r, Color(1.5, 1.4, 1.3, (0.3 - age) * 0.45))
+			draw_rect(r, Color(2.2, 1.7, 1.2, (0.3 - age) * 3.0), false, 6.0 * px)
 		draw_rect(r, Pal.heat(0.6 * hot, 1.2), false, 2.0 * px)
 	if not hi.is_empty():
 		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), hi, hp, hc)
+	if not hw.is_empty():
+		draw_multiline_colors(hw, hwc, 6.0 * px)
 	if not he.is_empty():
-		draw_multiline_colors(he, hec, 2.3 * px)
-	# fires still burning in the wreck, over the holes
+		draw_multiline_colors(he, hec, 2.0 * px)
+	# fires still burning in the wreck, and the glow inside every hole, over the holes
 	if tex != null:
 		for zd in zones:
 			if not zd.hit:
 				continue
-			var hot := clampf(1.0 - (t - float(zd.t)) / 6.0, 0.25, 1.0)
+			var age := t - float(zd.t)
+			var hot := clampf(1.0 - age / 6.0, 0.25, 1.0)
+			for h in zd.holes:
+				var open := Pal.ease_out(clampf((age - float(h[4])) / 0.35, 0.0, 1.0))
+				if open > 0.0:
+					var gr := float(h[3]) * 0.6 * open
+					draw_texture_rect(tex, Rect2((h[2] as Vector2) - Vector2(gr, gr), Vector2(gr, gr) * 2.0), false, Color(1.3, 0.32, 0.08, 0.22 * hot * (0.85 + 0.15 * sin(t * 5.0 + gr))))
 			for e in zd.embers:
 				var fk := 0.55 + 0.45 * sin(t * 6.0 + float(e[1])) * sin(t * 2.3 + float(e[1]) * 1.7)
 				var er := 14.0 * px * float(e[2]) * (0.8 + 0.4 * fk)
 				draw_texture_rect(tex, Rect2(e[0] - Vector2(er, er), Vector2(er, er) * 2.0), false, Color(1.8, 0.6, 0.18, (0.35 + 0.5 * hot) * fk))
 	var ba := clampf(t / 0.4, 0.0, 1.0)
 	draw_rect(berth, Color(0.0, 0.0, 0.0, 0.55 * ba))
-	# the fireball: swelling white, going orange, gone
-	var fr := fire_r(t)
-	var fa := clampf(1.0 - (t - T_CLOSE * 0.7) / (T_CLOSE * 0.5), 0.0, 1.0)
-	if fa > 0.0 and fr > 1.0:
-		if tex != null:
-			draw_texture_rect(tex, Rect2(at - Vector2(fr, fr) * 2.4, Vector2(fr, fr) * 4.8), false, Color(1.6, 0.7, 0.3, 0.55 * fa))
-			draw_texture_rect(tex, Rect2(at - Vector2(fr, fr) * 1.3, Vector2(fr, fr) * 2.6), false, Color(2.4, 2.0, 1.6, 0.9 * fa))
-		draw_circle(at, fr * 0.8, Color(2.2, 1.9, 1.6, 0.85 * fa * fa))
-		for i in 4:
-			var rr := fr * (0.85 + 0.12 * i + 0.04 * sin(t * 7.0 + i))
-			draw_arc(at, rr, 0.0, TAU, 96, Color(1.8, 0.9 - 0.15 * i, 0.3, 0.5 * fa), (3.0 - 0.5 * i) * px)
-	# the debris shell: a ragged hot ring running out over the port
+	_fireball(px, tex)
+	# the debris front: a band of hot streaks running out over the port, a soft glow under it
 	var sr := radius(t)
 	if sr > 1.0:
 		var sa := clampf(1.0 - (t - t_card) / 3.0, 0.15, 1.0)
-		var pts := PackedVector2Array()
-		for i in 181:
-			var a := TAU * i / 180.0
-			pts.append(at + Vector2.from_angle(a) * sr * (1.0 + 0.012 * sin(a * 23.0 + t * 3.0) + 0.008 * sin(a * 57.0)))
-		draw_polyline(pts, Color(1.8, 1.1, 0.5, 0.9 * sa), 5.0 * px)
-		draw_polyline(pts, Color(2.4, 2.2, 2.0, 0.6 * sa), 2.0 * px)
-		draw_arc(at, sr * 0.93, 0.0, TAU, 128, Color(1.2, 0.4, 0.15, 0.35 * sa), 10.0 * px)
+		draw_arc(at, sr * 0.97, 0.0, TAU, 256, Color(1.1, 0.32, 0.08, 0.09 * sa), 40.0 * px)
+		draw_arc(at, sr, 0.0, TAU, 256, Color(1.9, 1.2, 0.55, 0.35 * sa), 1.5 * px)
+		var view := _view()
+		var fs := PackedVector2Array()
+		var fc := PackedColorArray()
+		for f in front:
+			var d: Vector2 = f[0]
+			var p0: Vector2 = at + d * sr * (1.0 + float(f[1]))
+			if not view.has_point(p0):
+				continue
+			fs.append_array([p0, p0 - d * sr * float(f[2])])
+			var b: float = f[3]
+			fc.append(Color(1.4 + 0.8 * b, 0.55 + 0.6 * b, 0.2 + 0.3 * b, sa * b))
+		if not fs.is_empty():
+			draw_multiline_colors(fs, fc, 1.8 * px)
 	# the hull in glowing plates, cooling as they fly: one triangle array for the fills (each
-	# plate triangulated once, at the start) and one batch of edges
+	# plate triangulated once, at the start) and one batch of edges, each hot plate trailing light
 	var tp := PackedVector2Array()
 	var tc := PackedColorArray()
 	var ti := PackedInt32Array()
@@ -381,6 +435,9 @@ func _draw() -> void:
 			sc.append(col)
 		for i in (s.idx as PackedInt32Array):
 			ti.append(base + i)
+		if heat > 0.15:
+			sg.append_array([s.p, s.p - (s.v as Vector2) * 0.09 * heat])
+			sc.append(Color(col.r, col.g * 0.75, col.b * 0.5, 0.45 * heat))
 	if not ti.is_empty():
 		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), ti, tp, tc)
 	for sp in sparks:
@@ -394,14 +451,98 @@ func _draw() -> void:
 		draw_multiline_colors(sg, sc, 1.6 * px)
 
 
+# what the camera sees, world px (with a margin)
+func _view() -> Rect2:
+	var vp := get_viewport()
+	var inv := vp.get_canvas_transform().affine_inverse()
+	var vr := vp.get_visible_rect()
+	var a: Vector2 = inv * vr.position
+	var b: Vector2 = inv * vr.end
+	return Rect2(a, b - a).abs().grow(60.0 / maxf(game.cam_zoom(), 0.005))
+
+
+# the fireball's limb, wobbling: three slow waves round it
+func _limb(a: float, ph: float) -> float:
+	return 1.0 + 0.045 * sin(a * 7.0 + t * 1.3 + ph) + 0.03 * sin(a * 13.0 - t * 2.1 + ph * 1.7) + 0.018 * sin(a * 29.0 + t * 3.7)
+
+
+# a disc as a fan of triangles, its colour from the middle out to the limb
+func _fan(r: float, ph: float, c_in: Color, c_out: Color, n: int = 72) -> void:
+	var pts := PackedVector2Array([at])
+	var cols := PackedColorArray([c_in])
+	var idx := PackedInt32Array()
+	for i in n:
+		var a := TAU * i / n
+		pts.append(at + Vector2(cos(a), sin(a)) * r * _limb(a, ph))
+		cols.append(c_out)
+		idx.append_array([0, 1 + i, 1 + (i + 1) % n])
+	RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), idx, pts, cols)
+
+
+# In vacuum: a white-hot ball that swells, goes yellow, orange, red as it cools, its middle thinning
+# out first so it ends as a ragged shell of plasma streaming filaments, then gone. Ahead of it all,
+# the radiation's pulse, one thin white ring racing out.
+func _fireball(px: float, tex: Texture2D) -> void:
+	if t < 0.7:
+		draw_arc(at, r_ship * (0.3 + t * 11.0), 0.0, TAU, 160, Color(2.2, 2.1, 2.0, 0.7 * (1.0 - t / 0.7)), 2.5 * px)
+	var fr := fire_r(t)
+	var fa := clampf(1.0 - (t - T_CLOSE * 0.6) / (T_CLOSE * 0.45), 0.0, 1.0)
+	if fa <= 0.0 or fr <= 1.0:
+		return
+	var k := clampf(t / (T_CLOSE * 0.85), 0.0, 1.0)
+	var heat := 1.0 - k
+	var c_core := Color(1.3, 0.38, 0.09).lerp(Color(2.6, 2.4, 2.2), heat)
+	var c_rim := Color(0.7, 0.13, 0.03).lerp(Color(2.1, 1.25, 0.55), heat)
+	var hollow := clampf((k - 0.35) / 0.5, 0.0, 1.0)
+	if tex != null:
+		draw_texture_rect(tex, Rect2(at - Vector2(fr, fr) * 2.4, Vector2(fr, fr) * 4.8), false, Color(c_rim.r, c_rim.g, c_rim.b, 0.5 * fa))
+	_fan(fr, 0.0, Color(c_core.r, c_core.g, c_core.b, fa * fa * (1.0 - 0.9 * hollow)), Color(c_rim.r, c_rim.g, c_rim.b, 0.78 * fa * (1.0 - 0.45 * hollow)))
+	_fan(fr * 0.62, 2.1, Color(2.6, 2.45, 2.3, heat * fa * (1.0 - hollow)), Color(c_core.r, c_core.g, c_core.b, 0.0))
+	# cells churning in it, darker where the plasma cools
+	if tex != null:
+		for c in cells:
+			var a: float = float(c[0]) + t * float(c[4])
+			var p := at + Vector2(cos(a), sin(a)) * fr * float(c[1])
+			var cr := fr * float(c[3]) * (0.85 + 0.15 * sin(t * 3.0 + float(c[2])))
+			draw_texture_rect(tex, Rect2(p - Vector2(cr, cr), Vector2(cr, cr) * 2.0), false, Color(0.45, 0.1, 0.03, 0.4 * fa * (0.3 + 0.7 * k)))
+	# plasma filaments streaming off the limb, longer as it thins out
+	var fs := PackedVector2Array()
+	var fc := PackedColorArray()
+	for f in filaments:
+		var d: Vector2 = f[0]
+		var r0 := fr * _limb(d.angle(), 0.0) * 0.94
+		var L := fr * float(f[1]) * (0.5 + 1.2 * k) * (0.7 + 0.3 * sin(t * 4.0 + float(f[2])))
+		fs.append_array([at + d * r0, at + d * (r0 + L)])
+		fc.append(Color(c_rim.r * 1.2, c_rim.g * 1.1, c_rim.b, 0.75 * fa))
+	draw_multiline_colors(fs, fc, 1.6 * px)
+	if tex != null:
+		draw_texture_rect(tex, Rect2(at - Vector2(fr, fr) * 0.9, Vector2(fr, fr) * 1.8), false, Color(2.4, 2.1, 1.8, 0.8 * fa * heat))
+
+
 func _draw_ui() -> void:
 	var s: Vector2 = ui.size
 	var font: Font = game.hud.font if game.hud != null else ThemeDB.fallback_font
-	# the flash: everything white, then the eye comes back
-	var fl := 1.0 if t < 0.12 else exp(-(t - 0.12) * 2.2)
-	fl = maxf(fl, _flash)
+	# the flash: everything white, then the eye comes back from the edges in, the heart last
+	var tex: Texture2D = game.fx.glow_tex if game.fx != null else null
+	var sp: Vector2 = game.get_viewport().get_canvas_transform() * at
+	var fl := 1.0 if t < 0.08 else exp(-(t - 0.08) * 3.4)
 	if fl > 0.01:
-		ui.draw_rect(Rect2(Vector2.ZERO, s), Color(1.0, 0.98, 0.95, fl))
+		ui.draw_rect(Rect2(Vector2.ZERO, s), Color(1.0, 0.98, 0.95, fl if t < 0.08 else fl * 0.6))
+		if tex != null and t >= 0.08:
+			var gr := s.x * 0.5
+			ui.draw_texture_rect(tex, Rect2(sp - Vector2(gr, gr), Vector2(gr, gr) * 2.0), false, Color(1.0, 0.97, 0.9, minf(1.0, fl * 1.5)))
+	if _flash > 0.01:
+		ui.draw_rect(Rect2(Vector2.ZERO, s), Color(1.0, 0.98, 0.95, _flash))
+	# the lens's own marks of the flash: a streak across the frame through it, ghosts off to one side
+	var st := pow(clampf(1.0 - t / 1.8, 0.0, 1.0), 1.5)
+	if st > 0.01 and tex != null:
+		ui.draw_texture_rect(tex, Rect2(sp - Vector2(s.x, 14.0), Vector2(s.x * 2.0, 28.0)), false, Color(1.5, 1.15, 0.85, 0.6 * st))
+		ui.draw_line(sp - Vector2(s.x, 0.0), sp + Vector2(s.x, 0.0), Color(2.0, 1.8, 1.5, 0.7 * st), 1.5)
+		for g in [[0.35, 38.0], [0.7, 72.0], [1.1, 24.0]]:
+			var gp: Vector2 = sp + Vector2(0.42, 0.26) * s.x * float(g[0])
+			var gr2: float = g[1]
+			ui.draw_texture_rect(tex, Rect2(gp - Vector2(gr2, gr2), Vector2(gr2, gr2) * 2.0), false, Color(1.0, 0.55, 0.3, 0.16 * st))
+			ui.draw_arc(gp, gr2 * 0.7, 0.0, TAU, 40, Color(1.0, 0.6, 0.35, 0.12 * st), 1.2)
 	# letterbox
 	var bh := s.y * 0.1 * Pal.ease_io(clampf(t / 0.6, 0.0, 1.0))
 	ui.draw_rect(Rect2(0, 0, s.x, bh), Color(0, 0, 0, 1))

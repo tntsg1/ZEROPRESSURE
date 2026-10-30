@@ -21,6 +21,9 @@ const COOK_RATE := 28.0
 const COOK_AT := 120.0
 const COOL_RATE := 6.0
 const CHAIN_R := 3.0
+# 112 号 (user 2026-10-30 "殉爆威力大一点"): a round going off is stronger than any other dangerous
+# goods aboard: its blast reaches, throws and damages this much more (scripts/game.gd _blast)
+const POWER := 1.6
 const KNOCK := 340.0
 
 var game
@@ -160,6 +163,13 @@ func _pending(id: int) -> bool:
 		if e[0] == id:
 			return true
 	return false
+
+
+# how much harder than common dangerous goods a piece blasts: a round aboard a munitions ship
+func power(p) -> float:
+	if not active() or p == null or str(p.hazard) != "explosive":
+		return 1.0
+	return float(cfg.get("power", POWER))
 
 
 # it goes off: the ship's own blast (which sets the live rounds round it going, on_blast)

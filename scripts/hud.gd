@@ -2669,6 +2669,9 @@ func _asset_card(ca: Dictionary, x: float, y: float, w: float, a: float) -> floa
 	for m in ca.methods:
 		var mins: Array = m.minutes
 		var line := Ops.w("%s　%s %s · 约 %d–%d 分钟", "%s　%s %s · ABOUT %d–%d MIN") % [m.name, ca.name, _money_range(m.lo, m.hi), mins[0], mins[1]]
+		# 113 号: a way the bot couldn't run has no measured time
+		if int(mins[1]) <= 0:
+			line = Ops.w("%s　%s %s · 用时待实测", "%s　%s %s · TIME NOT MEASURED") % [m.name, ca.name, _money_range(m.lo, m.hi)]
 		_text(line, Vector2(x, y), 16, Pal.ink(0.94 * a), font_b)
 		y += 22.0
 		if str(m.get("need", "")) != "":

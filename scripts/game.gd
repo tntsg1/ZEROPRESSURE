@@ -4025,22 +4025,24 @@ func _burst(p, pos: Vector2) -> void:
 func _blast(p, pos: Vector2) -> void:
 	incident("blast", p.tag)
 	var c := world.frame(p) * Geom.centroid(p.poly)
-	combustion.spark(c, 4.0)
-	fx.flash(c, 360.0, 0.7, Pal.heat(1.0, 3.0))
-	fx.ring(c, 20.0, 340.0, 0.6, Pal.heat(0.9, 2.2), 3.0)
-	fx.burst_shards(c, 26, 620.0, Pal.heat(0.9, 1.6), 12.0)
-	fx.sparks(c, Vector2.UP, 50, Pal.heat(1.0, 2.4), 560.0, 0.6, PI)
+	# 112 号: a munitions ship's rounds blast harder (scripts/munitions.gd POWER)
+	var k: float = munitions.power(p) if munitions != null else 1.0
+	combustion.spark(c, 4.0 * k)
+	fx.flash(c, 360.0 * k, 0.7, Pal.heat(1.0, 3.0))
+	fx.ring(c, 20.0, 340.0 * k, 0.6, Pal.heat(0.9, 2.2), 3.0)
+	fx.burst_shards(c, int(26 * k), 620.0 * k, Pal.heat(0.9, 1.6), 12.0)
+	fx.sparks(c, Vector2.UP, int(50 * k), Pal.heat(1.0, 2.4), 560.0 * k, 0.6, PI)
 	for b in world.bodies:
 		var d2: Vector2 = b.global_position - c
-		if d2.length() < 5.0 * 48.0:
-			b.apply_central_impulse(d2.normalized() * b.mass * 320.0)
-	if drone.alive and drone.global_position.distance_to(c) < 3.5 * 48.0:
-		hurt_drone(40.0, c, "fire_hit", "blast", 1.0)
-	for q in _equip_near(c, 3.0 * 48.0):
+		if d2.length() < 5.0 * 48.0 * k:
+			b.apply_central_impulse(d2.normalized() * b.mass * 320.0 * k)
+	if drone.alive and drone.global_position.distance_to(c) < 3.5 * 48.0 * k:
+		hurt_drone(40.0 * k, c, "fire_hit", "blast", 1.0)
+	for q in _equip_near(c, 3.0 * 48.0 * k):
 		if q != p:
-			_dent(q, maxf(0.0, q.cond - 0.4 * q.fragile), "dv_blast")
-	shake(0.8)
-	hud.white_flash(0.35)
+			_dent(q, maxf(0.0, q.cond - minf(0.4 * k, 0.9) * q.fragile), "dv_blast")
+	shake(minf(0.8 * k, 1.0))
+	hud.white_flash(minf(0.35 * k, 0.6))
 	hitstop(0.08)
 	sfx.play("boom")
 	lose("loss_blast", 2500.0, c + Vector2(0, -60))

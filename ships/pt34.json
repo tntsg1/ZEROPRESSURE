@@ -46,7 +46,7 @@
 	},
 	"munitions": {
 		"cook": {"at":120.0,"r":1.6,"rate":28.0},
-		"chain": 3.0,
+		"chain": 4.0,
 		"knock": 340.0,
 		"flood": {"FLV":"MAG"}
 	},

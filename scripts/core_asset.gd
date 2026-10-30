@@ -80,6 +80,148 @@ const SHIPS := {
 				"risks": ["大刀切开船体，整块往熔炉里送：快、痛快，但设备大多切坏、撞坏，按废料算", "Cut the hull into big sections and feed them to the furnace: quick and satisfying, but most equipment is cut or knocked to scrap"]},
 		],
 	},
+	# 113 号 (user 2026-10-30 "ok"): the third ten, by when they turn up (the rest of the 120 m berth and
+	# the first six of the 200 m one)
+	"ps12": {
+		"name": ["逃生舱", "THE ESCAPE PODS"],
+		"units": ["4 个逃生舱", "4 ESCAPE PODS"],
+		"groups": [
+			{"name": ["逃生舱", "ESCAPE PODS"], "tags": ["POD-1", "POD-2", "POD-3", "POD-4"]},
+		],
+		"dv": {"dv_pod_fired": "pod_fired"},
+		"methods": [
+			{"key": "careful", "name": ["先断点火再松夹", "DISARM, THEN UNCLAMP"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["每个舱的点火电容先拨 ARM 断开（或拔掉引线），再松发射夹；观察厅先泄压，玻璃才不会吹出", "Each pod's firing circuit off at its ARM switch (or its lead pulled) before its launch clamps; vent the observation hall before its glass"]},
+			{"key": "demolish", "name": ["直接切夹", "CUT THE CLAMPS"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["点火电路还活着就切发射夹：火工螺栓点火，逃生舱被弹射出去摔坏", "Cut a launch clamp with its circuit live: the bolts fire and the pod is thrown off and smashed"]},
+		],
+	},
+	"ch110": {
+		"name": ["居住舱", "THE HABITAT MODULE"],
+		"units": ["夹在两船体之间的预制居住舱里的 19 件设备", "THE 19 UNITS IN THE HABITAT CLAMPED BETWEEN THE HULLS"],
+		"groups": [
+			{"name": ["居住舱设备", "HABITAT"], "tags": ["DESK-C", "ECS-C", "LIFE-C", "AHU-C", "FIRE-C", "DATA-C", "O2-C", "FILT-C", "SPARE-C", "COMMS-C", "GALLEY-C", "MESS-C", "MED-C", "WATER-C", "BAT-C", "PWR-C", "CON-C", "STORES-C", "REC-C"]},
+		],
+		"dv": {"dv_cargo_spring": "cargo_spring", "dv_clamp_spring": "cargo_spring", "dv_cargo_twist": "cargo_twist", "dv_hull_torn": "hull_torn"},
+		"methods": [
+			{"key": "careful", "name": ["泄压、对角交替松夹", "VENT, THEN THE CLAMPS CROSSWISE"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["居住舱先抽到 20 kPa 以下，8 个液压夹按对角顺序交替松（HC-U1、HC-L4、HC-U4、HC-L1……）", "Pump the habitat below 20 kPa, then let the eight clamps go crosswise (HC-U1, HC-L4, HC-U4, HC-L1…)"]},
+			{"key": "demolish", "name": ["一边先全松", "ONE SIDE FIRST"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["有压就松夹舱体会弹出；一边先松光舱体扭转、砸坏舱里的设备，裂了的 2 号梁会断开", "Let go with air in it and it springs; one side first and it twists into its fittings, and the cracked beam 2 tears out"]},
+		],
+	},
+	"es112": {
+		"name": ["金库货", "THE VAULT CARGO"],
+		"units": ["8 个保险箱 + 托管件", "8 SAFE BOXES + THE CUSTODY CASE"],
+		"groups": [
+			{"name": ["金库货", "VAULT CARGO"], "tags": ["SAFE-11", "SAFE-12", "SAFE-13", "SAFE-14", "SAFE-21", "SAFE-22", "SAFE-23", "SAFE-24", "CUSTODY"]},
+		],
+		"methods": [
+			{"key": "careful", "name": ["断锁开金库", "KILL THE LOCKS, OPEN THE VAULTS"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["两路电锁都要断：主电 K-M 和锁的备用电 K-LB；再在维修柜拨机械释放 MR，金库门就能打开，保险箱整件取出", "Both lock circuits dead, the main bus (K-M) and the locks' backup (K-LB); throw the release (MR) in the maintenance cabinet, open the vault, take the boxes whole"]},
+			{"key": "demolish", "name": ["切开金库墙", "CUT THROUGH THE VAULT"], "minutes": [0, 0], "lo": 0.0, "hi": 0.3,
+				"risks": ["不开门直接切金库墙：快，但刀口贴着保险箱，切到或撞到就掉价", "Cut through the vault wall: quick, but the cuts run beside the boxes and a cut or a knock costs"]},
+		],
+	},
+	"fl116": {
+		"name": ["三种介质", "THE THREE MEDIA"],
+		"units": ["酸、乙二醇、溶剂 + 总管 + 三个工艺罐", "ACID, GLYCOL, SOLVENT + THE MANIFOLD + THREE PROCESS TANKS"],
+		"groups": [
+			{"name": ["管路与罐", "PIPES AND TANKS"], "tags": ["MANIFOLD", "TK-1", "TK-2", "TK-3"]},
+		],
+		"fluid": {"f": ["acid", "glycol", "solvent"], "name": ["介质货", "THE MEDIA"]},
+		"methods": [
+			{"key": "careful", "name": ["取样分开抽", "SAMPLE, THEN ONE AT A TIME"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["接口编号对不上介质：先在 SP 点取样认清；抽哪一支就只开它的阀 V，其他支路阀全关", "The port numbers say nothing of the medium: sample at SP first; open only the branch you draw, every other valve shut"]},
+			{"key": "demolish", "name": ["全开一起抽", "ALL AT ONCE"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["几支路阀都开着就抽：介质在总管里混成废液，不值钱还要付处理费；带介质切总管会洒", "Draw with several valves open: they mix in the manifold into waste, worthless and charged for; cut the manifold full and it spills"]},
+		],
+	},
+	"ic120": {
+		"name": ["冰与水泵", "THE ICE AND THE PUMPS"],
+		"units": ["冰（融水按水价）+ 两台水泵", "THE ICE (PAID AS WATER) + TWO PUMPS"],
+		"groups": [
+			{"name": ["水泵", "PUMPS"], "tags": ["MP-1", "MP-2"]},
+		],
+		"fluid": {"f": "water", "ice": true, "name": ["冰（融水）", "THE ICE (WATER)"]},
+		"dv": {"dv_melt_short": "melt_short", "dv_ice_drop": "ice_drop", "dv_crack_run": "crack_run"},
+		"methods": [
+			{"key": "careful", "name": ["加热融冰、及时泵水", "MELT IT, PUMP IT"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["逐区开加热器 HT 融冰，融水积到 3 m³ 就会短路，及时从 PW 泵走；冰化到一半以下才松鞍座 PH", "Heaters (HT) zone by zone; past 3 m³ standing the meltwater shorts things, pump it at PW as it comes; no saddle seat (PH) lets go till half the ice is gone"]},
+			{"key": "demolish", "name": ["直接切冰", "CUT THE ICE"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["直接切冰块：裂缝顺着冰跑，冰块砸坏设备；冰没化就松鞍座，冰整块掉下来", "Cut the ice: the crack runs and the split ice hits the units; a seat let go with the ice still on drops it"]},
+		],
+	},
+	"sv122": {
+		"name": ["测绘仪器", "THE SURVEY INSTRUMENTS"],
+		"units": ["阵列 + 摇篮上的 3 台光学仪", "THE ARRAY + 3 OPTICS ON THE CRADLE"],
+		"groups": [
+			{"name": ["测绘仪器", "INSTRUMENTS"], "tags": ["ARRAY", "OPT-1", "OPT-2", "OPT-3"]},
+		],
+		"dv": {"dv_rail": "rail_cut", "dv_drop": "rail_drop"},
+		"methods": [
+			{"key": "careful", "name": ["先解摇篮锁", "THE CRADLE LOCKS FIRST"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["仪器摇篮挂在主梁上：先拨 DL 解开三台光学仪的摇篮锁，再动吊挂和主梁", "The cradle hangs from the main beam: release the three optics (DL) before the hangers or the beam"]},
+			{"key": "demolish", "name": ["直接切吊挂", "CUT THE HANGERS"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["锁还没解就切吊挂或主梁：整组仪器砸下来", "Cut a hanger or the beam with them still locked on: the whole set comes down"]},
+		],
+	},
+	"mf126": {
+		"name": ["炉芯与钢锭", "THE FURNACE CORE AND THE INGOTS"],
+		"units": ["炉芯 + 两个钢锭架 + 光谱仪", "THE CORE + TWO INGOT RACKS + THE SPECTROMETER"],
+		"groups": [
+			{"name": ["冶炼", "SMELTING"], "tags": ["CORE", "INGOT-1", "INGOT-2", "SPECTRO"]},
+		],
+		"dv": {"loss_core": "furnace_crack", "dv_preload": "feed_snap"},
+		"methods": [
+			{"key": "careful", "name": ["保持换热冷下来", "KEEP IT COOLING"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["换热泵 HX 一直有电，炉芯冷到 150°C 以下再吊；进料臂先给 ACC-F 泄压、拔销；炉芯 9 t 要吊车", "Keep the heat-exchange pumps (HX) powered till the core is under 150 °C; bleed the feed arm (ACC-F) and pull its pins; the core is 9 t, crane it"]},
+			{"key": "demolish", "name": ["先断电", "POWER OFF FIRST"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["350°C 以上断了冷却，炉芯热震开裂；带压拆进料臂会弹出砸坏分选机", "Cooling lost over 350 °C and the core cracks; the feed arm taken under pressure springs into the sorter"]},
+		],
+	},
+	"ro128": {
+		"name": ["滚装货", "THE RO-RO CARGO"],
+		"units": ["4 件大货", "4 CARGO UNITS"],
+		"groups": [
+			{"name": ["大货", "CARGO"], "tags": ["CARGO-1", "CARGO-2", "CARGO-3", "CARGO-4"]},
+		],
+		"dv": {"dv_rail": "rail_cut", "dv_drop": "rail_drop", "dv_preload": "visor_snap"},
+		"methods": [
+			{"key": "careful", "name": ["开首门、解锁滚出", "BOW OPEN, ROLL THEM OUT"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["船首门的蓄能器 ACC-D 先泄压、拔销，再开门罩和首门；然后逐条拨 LR 解轨道锁，货自己滚出来；每件 4.8 t 要吊车", "Bleed the bow door's accumulator (ACC-D) and pull its pins, open the visor and the door; then each rail lock (LR) and the cargo rolls out; 4.8 t each, crane them"]},
+			{"key": "demolish", "name": ["切开甲板直接抓", "CUT IN AND GRAB"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["轨道锁扳手拧不开，只能连轨道切：货被扯伤", "The wrench can't undo a rail lock: cut the rail with the cargo on it and it is wrenched"]},
+		],
+	},
+	"pt34": {
+		"name": ["舰载设备", "THE WARSHIP'S EQUIPMENT"],
+		"units": ["反应堆、炮塔、火控、加密机", "THE REACTOR, THE TURRET, THE FIRE CONTROL, THE CRYPTO"],
+		"groups": [
+			{"name": ["舰载设备", "SHIPBORNE"], "tags": ["REACT", "TURRET", "FCS", "CRYPTO"]},
+		],
+		"dv": {"dv_blast": "cook_off", "dv_actuator": "actuator"},
+		"methods": [
+			{"key": "careful", "name": ["注水湿弹、锁作动器", "FLOOD, LOCK, THEN TAKE"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["先开注水阀 FLV 把弹库全打湿（弹药就不会殉爆，但也不值钱了），拨 LK-T 锁住推力矢量作动器，放掉电容再拆；反应堆 12 t 要吊车", "Open the flood valve (FLV) and wet the magazine (no cook-off, and no value in the rounds), lock the thrust-vector rams (LK-T), drain the capacitors, then take; the reactor is 12 t, crane it"]},
+			{"key": "demolish", "name": ["带弹快拆", "WITH THE ROUNDS LIVE"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["弹药还活着就在附近切：殉爆，一发带一发连锁，设备被炸坏；作动器没锁切线会猛甩", "Cut close with the rounds live: they cook off, one setting off the next, and the units are blown apart; an unlocked ram jerks when its line is cut"]},
+		],
+	},
+	"cv138": {
+		"name": ["无人机", "THE DRONES"],
+		"units": ["6 架舱位无人机 + 回收无人机", "6 BAY DRONES + THE RECOVERY DRONE"],
+		"groups": [
+			{"name": ["无人机", "DRONES"], "tags": ["DR-1", "DR-2", "DR-3", "DR-4", "DR-5", "DR-6", "DR-7"]},
+		],
+		"dv": {"dv_drone_woke": "drone_woke", "dv_preload": "lift_snap"},
+		"methods": [
+			{"key": "careful", "name": ["断电池再拆", "PACKS OFF, THEN TAKE"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["每架无人机先拨 PK 断开电池隔离开关（或先摘电池），升降机给 ACC-G 泄压、拔销，再从托架上拆", "Each drone's pack isolator off (PK), or the pack off first; bleed the lift (ACC-G) and pull its pins; then off the cradles"]},
+			{"key": "demolish", "name": ["带电直接拆", "PACKS LIVE"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["电池还通着就拆托架：无人机醒来，旋翼一转把自己甩出去撞坏", "Free a drone with its pack live: it wakes, spins up and throws itself into whatever is near"]},
+		],
+	},
 	# 112 号 (user 2026-10-30 "按你说的"): the second ten, by when they turn up (the 88 m berth and the
 	# first four of the 120 m one)
 	"fx70": {
@@ -379,6 +521,21 @@ const CAUSES := {
 	"static": [["静电击穿", "STATIC PINHOLES"], ["没接地就收卷，静电击穿了帆膜", "wound unearthed: static pinholed the film"], ["收卷前先接上左下角的接地线 GND", "Earth it at GND (bottom left) before you wind"]],
 	"holes": [["碎件打孔", "HOLED"], ["飘浮的碎件打穿了帆膜", "loose pieces holed the film"], ["收卷前把帆前面飘着的碎件清走", "Clear the loose pieces off the film before you wind"]],
 	"soot": [["熔渣熏黑", "SOOTED"], ["在帆附近切割，熔渣熏黑了帆膜", "cutting close by blackened the film"], ["先收帆，再切帆附近的结构", "Furl first, then cut the structure near the film"]],
+	# 113 号: the third ten
+	"pod_fired": [["逃生舱弹射", "POD FIRED"], ["点火电路还活着就松了发射夹，火工螺栓点火，逃生舱被弹射出去摔坏", "a launch clamp undone with the firing circuit live: the bolts fired and the pod was thrown off"], ["松夹之前先拨 ARM 断开点火电容，或拔掉引线", "Firing circuit off (ARM) or its lead pulled before the clamps"]],
+	"cargo_spring": [["舱体弹出", "MODULE SPRANG"], ["居住舱还有压就松了夹，舱体弹出砸坏里面的设备", "the clamps let go with air still in the habitat: it sprang and knocked its fittings"], ["松夹之前先把居住舱抽到 20 kPa 以下", "Pump the habitat below 20 kPa before the clamps"]],
+	"cargo_twist": [["舱体扭转", "MODULE TWISTED"], ["一边的夹先松多了，居住舱扭转，砸坏里面的设备", "one side's clamps let go first: the habitat twisted into its fittings"], ["按对角顺序交替松夹：HC-U1、HC-L4、HC-U4、HC-L1……", "Crosswise, one each side in turn: HC-U1, HC-L4, HC-U4, HC-L1…"]],
+	"hull_torn": [["梁断船体撕开", "HULL TORN"], ["裂了的 2 号梁旁边的夹还夹着就拆了梁，船体被撕开", "the cracked beam taken with a clamp beside it still holding: it tore the hull"], ["先松 2 号梁旁边的 HC-U1、HC-L1，再拆梁", "HC-U1 and HC-L1 off before the cracked beam"]],
+	"melt_short": [["融水短路", "MELTWATER SHORT"], ["融水积太多，带电的设备泡水短路", "too much meltwater stood about and shorted the live units"], ["融水积到 3 m³ 之前就从 PW 泵走", "Pump it at PW before it stands over 3 m³"]],
+	"ice_drop": [["冰块掉落", "ICE DROPPED"], ["冰还没化到一半就松了鞍座，冰整块掉下来", "a saddle seat let go with most of the ice still on: it dropped"], ["冰化到一半以下再松鞍座 PH", "Melt it below half before any seat (PH) lets go"]],
+	"crack_run": [["冰裂开", "ICE SPLIT"], ["裂缝两侧的鞍座还夹着就动了裂缝上的冰块，冰沿裂缝裂开", "a block on the crack moved with the seats beside it still holding: the crack ran"], ["裂缝上的冰用加热器融，别切", "Melt the blocks on the crack; never cut them"]],
+	"furnace_crack": [["炉芯热裂", "CORE CRACKED"], ["炉芯还在 350°C 以上就断了冷却（或 150°C 以上吊出），热震开裂", "cooling lost over 350 °C (or lifted out over 150 °C): the core cracked"], ["换热泵 HX 一直有电，炉芯冷到 150°C 以下再动", "Keep the heat-exchange pumps (HX) powered till the core is under 150 °C"]],
+	"feed_snap": [["进料臂弹出", "FEED ARM SPRANG"], ["进料臂带压上着销就拆了，弹出砸坏分选机", "the feed arm taken pinned and under pressure: it sprang into the sorter"], ["先给 ACC-F 泄压、拔销", "Bleed ACC-F and pull the pins first"]],
+	"visor_snap": [["门罩弹开", "VISOR SPRANG"], ["船首门罩带压上着销就拆了，弹开砸东西", "the bow visor taken pinned and under pressure: it sprang"], ["先给 ACC-D 泄压、拔销", "Bleed ACC-D and pull the pins first"]],
+	"cook_off": [["殉爆", "COOK-OFF"], ["弹药被激光烤热或撞击引爆，一发带一发连锁，设备被炸坏", "rounds heated by the beam or knocked went off, setting off the rest, and blew the units apart"], ["动刀之前先开 FLV 注水，把弹库全打湿", "Open the flood valve (FLV) and wet the magazine before any cut"]],
+	"actuator": [["作动器猛甩", "RAM JERKED"], ["作动器没锁就切了控制线，猛甩砸坏东西", "a ram's line cut with it unlocked: it jerked and hit what was near"], ["切线之前先拨 LK-T 锁住作动器", "Lock the rams (LK-T) before their lines"]],
+	"drone_woke": [["无人机醒来甩飞", "DRONE WOKE"], ["电池还通着就从托架上拆，无人机醒来把自己甩出去撞坏", "freed with its pack live: it woke, spun up and threw itself into things"], ["拆之前先拨 PK 断开电池隔离开关", "Pack isolator off (PK) before you free it"]],
+	"lift_snap": [["升降机弹出", "LIFT SPRANG"], ["升降机带压上着销就拆了，弹出砸坏回收无人机", "the lift taken pinned and under pressure: it sprang into the recovery drone"], ["先给 ACC-G 泄压、拔销", "Bleed ACC-G and pull the pins first"]],
 	# 112 号: the second ten
 	"quench": [["线圈失超", "QUENCHED"], ["线圈带着储能失去冷却或动了支架，失超，能量瞬间放出，连锁到旁边的线圈", "a coil lost its cooling or a support with its energy still in: it quenched, and it ran into the coils beside it"], ["先开 DUMP 泄能、保持制冷，储能降到 5% 以下再断电、动支架", "Close the dump (DUMP) with the cooling kept on; power off and touch the supports only under 5%"]],
 	"twist": [["船体扭曲", "HULL TWISTED"], ["没撑船体就先拆了一边的引擎舱，重量压在另一边，船体扭曲", "one pod off with the support not set: the hull twisted under the other"], ["先拨 SUP 撑住船体，或者两台引擎舱一起拆", "Set the support (SUP) first, or take both pods together"]],
@@ -447,17 +604,34 @@ static func _fluid(g) -> Dictionary:
 	var fd: Dictionary = spec(g).get("fluid", {})
 	if fd.is_empty() or g.sys == null:
 		return {}
-	var f := str(fd.f)
-	var val: float = float(g.sys.cfg.get("fluids", {}).get("value", {}).get(f, 0.0))
-	var f0: float = float(g.sys.fluid0.get(f, 0.0))
-	if f0 <= 0.0:
+	# 113 号: one kind or several (FL-116's three media), each at its own price
+	var kinds: Array = fd.f if fd.f is Array else [fd.f]
+	var val := 0.0
+	var now := 0.0
+	var got := 0.0
+	var left_v := 0.0
+	var rec_v := 0.0
+	for f in kinds:
+		var fv: float = float(g.sys.cfg.get("fluids", {}).get("value", {}).get(str(f), 0.0))
+		var f0: float = float(g.sys.fluid0.get(str(f), 0.0))
+		if f0 <= 0.0:
+			continue
+		var left := 0.0
+		for k in g.sys.fvol:
+			if str(g.sys.fvol[k].fluid) == str(f):
+				left += float(g.sys.fvol[k].amount)
+		# IC-120: the ice not yet melted is the water still aboard
+		if fd.get("ice", false) and g.get("ice") != null and g.ice.active():
+			left += g.ice.left_fraction() * f0
+		var rec: float = float(g.sys.fluid_rec.get(str(f), 0.0))
+		val += fv
+		now += fv * clampf((left + rec) / f0, 0.0, 1.0)
+		got += fv * clampf(rec / f0, 0.0, 1.0)
+		left_v += fv * clampf(left / f0, 0.0, 1.0)
+		rec_v += fv * clampf(rec / f0, 0.0, 1.0)
+	if val <= 0.0:
 		return {}
-	var left := 0.0
-	for k in g.sys.fvol:
-		if str(g.sys.fvol[k].fluid) == f:
-			left += float(g.sys.fvol[k].amount)
-	var rec: float = float(g.sys.fluid_rec.get(f, 0.0))
-	return {"name": _t(fd.name), "full": val, "now": val * clampf((left + rec) / f0, 0.0, 1.0), "got": val * clampf(rec / f0, 0.0, 1.0), "left": left / f0, "rec": rec / f0}
+	return {"name": _t(fd.name), "full": val, "now": now, "got": got, "left": left_v / val, "rec": rec_v / val}
 
 
 # 111 号: a ship's own reading of a loss code (H-22's arm springing is not M-14's belt), else the common one
@@ -935,7 +1109,7 @@ static func _equip_board(g) -> Dictionary:
 const LIVE_KPA := 5.0
 # 112 号: ships whose power must stay on till their asset is safe (the coils' cooling, the chillers,
 # the cold holds, the propellant pump, the core's coolant pumps)
-const POWER_LAST := ["fx70", "fr26", "cl104", "vt80", "nr95"]
+const POWER_LAST := ["fx70", "fr26", "cl104", "vt80", "nr95", "mf126", "ic120"]
 
 # 111 号: what on each small ship still bites, said with what to do about it (Q3 A)
 static func _ship_warn(g, warn: Array) -> void:
@@ -1127,6 +1301,73 @@ static func _ship_warn(g, warn: Array) -> void:
 			for r in cc.cfg.get("rooms", {}):
 				if not cc.thawed.has(r) and not cc.held(str(r)):
 					warn.append(w("冷舱 %s 在升温：%.0f°C，−5°C 以上就解冻（接 COLD-X，或让冷机有电）", "HOLD %s IS WARMING: %.0f °C, THAWS PAST −5 (COLD-X, OR KEEP THE CHILLERS POWERED)") % [r, cc.room_temp(str(r))])
+		"ps12":
+			var ln = g.liner
+			if ln == null or not ln.active():
+				return
+			var armed := 0
+			for pod in ln.cfg.get("pods", {}):
+				if not ln.fired.has(pod) and ln.armed(str(pod)):
+					armed += 1
+			if armed > 0:
+				warn.append(w("%d 个逃生舱点火电路还活着：松夹前先拨 ARM 断开（或拔引线）", "%d PODS STILL ARMED: ARM OFF (OR THE LEAD PULLED) BEFORE THE CLAMPS") % armed)
+		"ch110":
+			var sw = g.sandwich
+			if sw == null or not sw.active() or sw.sprung:
+				return
+			if sw.cargo_kpa() > float(sw.cfg.get("spring_kpa", 20.0)):
+				warn.append(w("居住舱还有 %.0f kPa：先抽到 20 kPa 以下再松夹，否则会弹出", "THE HABITAT HOLDS %.0f kPa: BELOW 20 BEFORE THE CLAMPS, OR IT SPRINGS") % sw.cargo_kpa())
+			warn.append(w("液压夹按对角顺序交替松：HC-U1 → HC-L4 → HC-U4 → HC-L1 → …", "THE CLAMPS CROSSWISE: HC-U1 → HC-L4 → HC-U4 → HC-L1 → …"))
+		"ic120":
+			var ic = g.ice
+			if ic == null or not ic.active():
+				return
+			var mw: float = s.fluid(str(ic.cfg.get("volume", "")))
+			var lim := float(ic.cfg.get("short", {}).get("limit", 3.0))
+			if mw > lim * 0.6:
+				warn.append(w("融水积了 %.1f m³：到 %.0f m³ 带电就短路（接 PW 泵走）", "%.1f m³ OF MELTWATER STANDING: PAST %.0f m³ IT SHORTS (PUMP IT AT PW)") % [mw, lim])
+			if ic.left_fraction() > float(ic.cfg.get("pads", {}).get("keep", 0.5)):
+				warn.append(w("冰还剩 %d%%：化到一半以下再松鞍座 PH，裂缝上的冰别切", "%d%% OF THE ICE LEFT: NO SEAT (PH) TILL UNDER HALF, NEVER CUT THE BLOCKS ON THE CRACK") % int(round(ic.left_fraction() * 100.0)))
+		"mf126":
+			var fu = g.furnace
+			if fu != null and fu.active() and fu.core_temp() > float(fu.cfg.get("safe", 150.0)):
+				warn.append(w("炉芯 %.0f°C：换热泵要一直有电，150°C 以下才能吊", "THE CORE AT %.0f °C: KEEP THE PUMPS POWERED, NOT OUT TILL UNDER 150") % fu.core_temp())
+			var m3 = g.mech
+			if m3 != null:
+				for l in m3.loads:
+					if l.alive and not l.fired:
+						warn.append(w("进料臂还带压上着销：先给 ACC-F 泄压、拔销", "THE FEED ARM IS PINNED UNDER PRESSURE: BLEED ACC-F, UNPIN"))
+						break
+		"pt34":
+			var mu = g.munitions
+			if mu == null or not mu.active():
+				return
+			var live := 0
+			for id in g.world.order:
+				var q = g.world.pieces[id]
+				if mu.live(q):
+					live += 1
+			if live > 0:
+				warn.append(w("%d 发弹药还活着：激光靠近会烤到殉爆、撞击会爆（开 FLV 注水打湿弹库）", "%d ROUNDS LIVE: THE BEAM COOKS THEM OFF, A KNOCK SETS THEM OFF (OPEN FLV, WET THE MAGAZINE)") % live)
+		"cv138":
+			var dr = g.drones
+			if dr == null or not dr.active():
+				return
+			var hot := 0
+			for t in dr.cfg:
+				var dp = g.world.tag(str(t))
+				if dp != null and not dp.gone and dp.body == null and dr.live_pack(str(t)):
+					hot += 1
+			if hot > 0:
+				warn.append(w("%d 架无人机电池还通着：拆之前先拨 PK 断开，否则会醒来甩飞", "%d DRONES ON LIVE PACKS: PK OFF FIRST, OR THEY WAKE AND THROW THEMSELVES") % hot)
+		"sv122", "ro128":
+			var rl2 = g.rails
+			if rl2 == null or not rl2.active():
+				return
+			for sid in rl2.cfg:
+				if not rl2.released.has(sid):
+					warn.append(w("货还锁在轨道上：先解锁再动吊挂、轨道和甲板", "THE CARGO IS LOCKED ON ITS RAILS: RELEASE IT BEFORE THE HANGERS, RAILS OR DECK"))
+					break
 		"jd38":
 			var rl = g.rails
 			if rl == null or not rl.active():
@@ -1211,6 +1452,48 @@ static func _equip_review(g) -> Dictionary:
 # carrier stripped in 51.5 min of work (99.99 %, no incident); careless cut into its hull at
 # 12.5 min (the premium gone) and fed it all to the furnace: none of it, 47 min, $12,000 in fines
 const BOT_RUNS := {
+	# 113 号, 2026-10-30: the third ten as built, with the heavy crane, one run each way; minutes to the
+	# last money in (on four careful runs it was still coming at the 66-minute limit)
+	"ps12": {
+		"careful": {"lo": 36000.0, "hi": 36000.0, "minutes": [42, 43], "note": ["实测：4 个舱的点火电路都断了，0 事故；两个 3.5 m 宽的逃生舱机器人没塞进回收口，人手可以全拿；整船收入 $329,801", "measured: all four circuits off, no incidents; two 3.5 m pods the bot never fitted into a mouth, a hand gets them all; $329,801 in"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [33, 34], "note": ["实测：逃生舱弹射摔坏；整船收入 $66,886，罚款 $18,000，15 次事故", "measured: the pods fired and smashed; $66,886 in, $18,000 in fines, 15 incidents"]},
+	},
+	"ch110": {
+		"careful": {"lo": 79500.0, "hi": 79500.0, "minutes": [66, 67], "note": ["实测：0 事故，66 分钟时还在收尾；整船收入 $479,269", "measured: no incidents, still finishing at 66 minutes; $479,269 in"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [58, 59], "note": ["实测：舱体扭转、裂梁断开；整船收入 $79,155，罚款 $15,000，19 次事故", "measured: the module twisted, the cracked beam tore; $79,155 in, $15,000 in fines, 19 incidents"]},
+	},
+	"es112": {
+		"careful": {"lo": 87300.0, "hi": 97000.0, "minutes": [0, 0], "note": ["机器人不会开金库门，这条没实测，价钱按满价估", "the bot can't open a vault, so this way wasn't measured; the money is the whole worth, estimated"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [66, 67], "note": ["实测：保险箱一个没拿到；整船收入 $93,753，5 次事故", "measured: not one safe box out; $93,753 in, 5 incidents"]},
+	},
+	"fl116": {
+		"careful": {"lo": 30405.0, "hi": 30405.0, "minutes": [46, 47], "note": ["实测：0 事故，介质没全抽回；整船收入 $304,987", "measured: no incidents, not all the media drawn; $304,987 in"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [38, 39], "note": ["实测：混成废液、罚处理费；整船收入 $62,152，罚款 $20,250，14 次事故", "measured: mixed into waste and charged; $62,152 in, $20,250 in fines, 14 incidents"]},
+	},
+	"ic120": {
+		"careful": {"lo": 94000.0, "hi": 94000.0, "minutes": [17, 18], "note": ["实测：融水积多了短路一次；整船收入 $319,427", "measured: the meltwater stood too long once and shorted; $319,427 in"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [13, 14], "note": ["实测：冰裂开砸坏设备、融水流失；整船收入 $79,488，罚款 $6,000，6 次事故", "measured: the ice split onto the units, the water lost; $79,488 in, $6,000 in fines, 6 incidents"]},
+	},
+	"sv122": {
+		"careful": {"lo": 78000.0, "hi": 78000.0, "minutes": [57, 58], "note": ["实测：整船收入 $459,388，0 事故", "measured: $459,388 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [48, 49], "note": ["实测：仪器整组砸落；整船收入 $76,611，罚款 $12,000，15 次事故", "measured: the instruments came down together; $76,611 in, $12,000 in fines, 15 incidents"]},
+	},
+	"mf126": {
+		"careful": {"lo": 58000.0, "hi": 58000.0, "minutes": [64, 65], "note": ["实测（有吊车）：0 事故，64 分钟时还在收尾；整船收入 $293,585", "measured (crane): no incidents, still finishing at 64 minutes; $293,585 in"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [66, 67], "note": ["实测：炉芯热裂；整船收入 $68,115，罚款 $15,000，8 次事故", "measured: the core cracked; $68,115 in, $15,000 in fines, 8 incidents"]},
+	},
+	"ro128": {
+		"careful": {"lo": 60000.0, "hi": 60000.0, "minutes": [58, 59], "note": ["实测（有吊车）：整船收入 $331,532，0 事故", "measured (crane): $331,532 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [57, 58], "note": ["实测：货被扯伤；整船收入 $87,236，罚款 $12,000，12 次事故", "measured: the cargo wrenched; $87,236 in, $12,000 in fines, 12 incidents"]},
+	},
+	"pt34": {
+		"careful": {"lo": 194000.0, "hi": 194000.0, "minutes": [66, 67], "note": ["实测（有吊车）：0 事故，66 分钟时还在收尾；整船收入 $482,968", "measured (crane): no incidents, still finishing at 66 minutes; $482,968 in"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [66, 67], "note": ["实测：殉爆连锁，设备全毁；整船收入 $118,349，罚款 $176,000，63 次事故", "measured: they cooked off one after another, every unit gone; $118,349 in, $176,000 in fines, 63 incidents"]},
+	},
+	"cv138": {
+		"careful": {"lo": 82000.0, "hi": 82000.0, "minutes": [46, 47], "note": ["实测：整船收入 $339,915，0 事故", "measured: $339,915 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [37, 38], "note": ["实测：无人机醒来甩飞；整船收入 $52,745，罚款 $6,000，8 次事故", "measured: the drones woke and threw themselves; $52,745 in, $6,000 in fines, 8 incidents"]},
+	},
 	# 112 号, 2026-10-30: the second ten as built, with the heavy crane (the 88 m berth and on), one run
 	# each way; minutes to the last money in
 	"fx70": {

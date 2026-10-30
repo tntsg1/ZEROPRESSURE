@@ -73,6 +73,26 @@ static func of(g) -> Dictionary:
 			return _vt80(g)
 		"cl104":
 			return _cl104(g)
+		"ps12":
+			return _ps12(g)
+		"ch110":
+			return _ch110(g)
+		"es112":
+			return _es112(g)
+		"fl116":
+			return _fl116(g)
+		"ic120":
+			return _ic120(g)
+		"sv122":
+			return _sv122(g)
+		"mf126":
+			return _mf126(g)
+		"ro128":
+			return _ro128(g)
+		"pt34":
+			return _pt34(g)
+		"cv138":
+			return _cv138(g)
 	return {}
 
 
@@ -558,6 +578,226 @@ static func _lc140(g) -> Dictionary:
 		if not st3.is_empty():
 			return st3
 	return {}
+
+
+# ---------------------------------------------------------------- 113 号: the third ten
+
+# a rail set released the careful way: its doors open (on the berth's supply if need be), then its lock
+static func _rails_out(g) -> Dictionary:
+	var rl = g.rails
+	if rl == null or not rl.active():
+		return {}
+	for sid in rl.cfg:
+		if rl.released.has(sid):
+			continue
+		var set_cfg: Dictionary = rl.cfg[sid]
+		var any_box := false
+		for b in set_cfg.get("boxes", []):
+			var p = CoreAsset._unit(g, str(b))
+			if p != null and not p.gone and p.intact:
+				any_box = true
+		if not any_box:
+			continue
+		for dc in set_cfg.get("doors", []):
+			var c = _ctrl(g, str(dc))
+			var door = g.world.tag(str(c.target)) if c != null else null
+			if door != null and not door.gone and not door.door_open:
+				var r := _reach(g, str(dc))
+				if not r.is_empty():
+					return r
+				var pw := _door_power(g)
+				if not pw.is_empty():
+					return pw
+				return _step(w("先开门 %s：货要从这里出去", "OPEN %s FIRST: THE CARGO GOES OUT THIS WAY") % dc, w("维护工具（4）；门没开就解锁，货会撞门", "wrench (4); released into a shut door it dents"), _ctrl_at(g, str(dc)))
+		var lk := str(set_cfg.get("lock", ""))
+		var st := _flip(g, lk, false, w("解开轨道锁：拨 %s", "RELEASE THE RAIL: %s") % lk, w("维护工具（4）", "wrench (4)"))
+		if not st.is_empty():
+			return st
+	return {}
+
+
+static func _ps12(g) -> Dictionary:
+	var ln = g.liner
+	if ln != null and ln.active():
+		for pod in ln.cfg.get("pods", {}):
+			if ln.fired.has(pod) or not ln.armed(str(pod)):
+				continue
+			var circ := str(ln.cfg.pods[pod].get("circuit", ""))
+			var sw := str(g.sys.iso.get(circ, {}).get("switch", ""))
+			if sw != "":
+				var st := _flip(g, sw, false, w("断开 %s 的点火电路：拨 %s", "DISARM %s: %s OFF") % [pod, sw], w("维护工具（4）；点火电路活着就松夹，舱会被弹射出去", "wrench (4); unclamped armed, the pod is fired off"))
+				if not st.is_empty():
+					return st
+	return _plain(g)
+
+
+static func _ch110(g) -> Dictionary:
+	var sw = g.sandwich
+	if sw != null and sw.active() and not sw.sprung:
+		if sw.cargo_kpa() > float(sw.cfg.get("spring_kpa", 20.0)):
+			for r in sw.cfg.get("rooms", []):
+				if g.sys.P(str(r)) > float(sw.cfg.get("spring_kpa", 20.0)):
+					var port := _gas_port(g, str(r))
+					if port != "":
+						return _drain(g, port, w("给居住舱泄压", "VENT THE HABITAT"), w("气液回收（5）；抽到 20 kPa 以下再松夹", "hose (5); below 20 kPa before the clamps"), w("：%.0f kPa", ": %.0f kPa") % g.sys.P(str(r)))
+		for hc in sw.cfg.get("order", []):
+			if g.sys.on(str(hc)):
+				var st := _flip(g, str(hc), false, w("松开液压夹 %s（对角顺序）", "LET CLAMP %s GO (CROSSWISE)") % hc, w("维护工具（4）；按 HC-U1、HC-L4、HC-U4、HC-L1……交替松", "wrench (4); in turn: HC-U1, HC-L4, HC-U4, HC-L1…"))
+				if not st.is_empty():
+					return st
+				break
+	return _plain(g)
+
+
+static func _es112(g) -> Dictionary:
+	var vt = g.vault
+	if vt != null:
+		for door in vt.cfg:
+			var d = g.world.tag(str(door))
+			if d == null or d.gone or d.door_open:
+				continue
+			# both lock circuits dead: the main bus, the locks' backup
+			for sw in ["K-LB", "K-M"]:
+				if g.world.ctrls.has(sw) and g.sys.on(sw):
+					var st := _flip(g, sw, false, w("断开金库电锁：拨 %s", "KILL THE VAULT LOCKS: %s OFF") % sw, w("维护工具（4）；主电和锁的备用电两路都要断", "wrench (4); both circuits, the main bus and the locks' backup"))
+					if not st.is_empty():
+						return st
+			var rel := str(vt.cfg[door].get("release", ""))
+			var st2 := _flip(g, rel, true, w("拨机械释放 %s", "THROW THE RELEASE %s") % rel, w("维护工具（4），在维修柜里；电锁没断它拨不动", "wrench (4), in the maintenance cabinet; it won't move against a live lock"))
+			if not st2.is_empty():
+				return st2
+			var r := _reach(g, str(door))
+			if not r.is_empty():
+				return r
+			return _step(w("打开金库门 %s", "OPEN THE VAULT %s") % door, w("维护工具（4）；金库门自己能转开，不要电", "wrench (4); it swings without power"), _ctrl_at(g, str(door)))
+	return _plain(g)
+
+
+static func _fl116(g) -> Dictionary:
+	var md = g.media
+	if md != null:
+		var br: Dictionary = md.branches()
+		for b in br:
+			var e: Dictionary = br[b]
+			if g.sys.fluid(str(e.get("vol", ""))) <= 0.02:
+				continue
+			for o in br:
+				if o == b:
+					continue
+				var ov := str(br[o].get("valve", ""))
+				if g.sys.on(ov):
+					var st := _flip(g, ov, false, w("先关上 %s：一次只抽一支", "SHUT %s: ONE BRANCH AT A TIME") % ov, w("维护工具（4）；别的支路开着，抽出来的就混成废液", "wrench (4); with another branch open what comes out is mixed waste"))
+					if not st.is_empty():
+						return st
+			var v := str(e.get("valve", ""))
+			var st2 := _flip(g, v, true, w("打开 %s 支路阀 %s", "OPEN BRANCH %s: %s") % [b, v], w("维护工具（4）；先在 %s 取样认清是什么介质", "wrench (4); sample at %s first to know what it is") % str(e.get("sample", "")))
+			if not st2.is_empty():
+				return st2
+			return _drain(g, str(e.get("port", "")), w("抽 %s 号支路", "DRAW BRANCH %s") % b, w("气液回收（5）；接口编号对不上支路，看清是 %s", "hose (5); the port number isn't the branch's: it is %s") % str(e.get("port", "")), w("：剩 %.2f", ": %.2f LEFT") % g.sys.fluid(str(e.get("vol", ""))))
+	return _plain(g)
+
+
+static func _ic120(g) -> Dictionary:
+	var ic = g.ice
+	if ic != null and ic.active():
+		var vol := str(ic.cfg.get("volume", ""))
+		var lim := float(ic.cfg.get("short", {}).get("limit", 3.0))
+		var port := ""
+		for id in g.world.ctrls:
+			var c = g.world.ctrls[id]
+			if c.kind == "port" and str(c.target) == vol and g.world.ctrl_alive(c):
+				port = str(id)
+		if port != "" and (g.sys.fluid(vol) > lim * 0.5 or (ic.blocks_left() == 0 and g.sys.fluid(vol) > 0.05)):
+			return _drain(g, port, w("泵走融水", "PUMP THE MELTWATER"), w("气液回收（5）；融水就是这一单的钱，积到 %.0f m³ 带电会短路", "hose (5); the water is the pay, past %.0f m³ it shorts") % lim, w("：%.1f m³", ": %.1f m³") % g.sys.fluid(vol))
+		if ic.blocks_left() > 0:
+			for sw in ic.cfg.get("heaters", {}):
+				var blocks: Array = ic.cfg.heaters[sw].get("blocks", [])
+				var any := false
+				for bl in blocks:
+					if ic._ice_piece(str(bl)) != null:
+						any = true
+				if any and not g.sys.on(str(sw)):
+					var st := _flip(g, str(sw), true, w("开加热器 %s 融冰", "HEATER %s ON" ) % sw, w("维护工具（4）；裂缝上的冰只融不切", "wrench (4); melt the blocks on the crack, never cut them"))
+					if not st.is_empty():
+						return st
+			return _step(w("融冰中：冰还剩 %d%%", "MELTING: %d%% OF THE ICE LEFT") % int(round(ic.left_fraction() * 100.0)), w("融水多了就泵走；冰化到一半以下才能松鞍座", "pump the water as it comes; no seat lets go till half is gone"), Vector2.INF, true)
+	return _plain(g)
+
+
+static func _sv122(g) -> Dictionary:
+	var ro := _rails_out(g)
+	if not ro.is_empty():
+		return ro
+	return _plain(g)
+
+
+static func _mf126(g) -> Dictionary:
+	var fu = g.furnace
+	if fu != null and fu.active() and fu.core_temp() > float(fu.cfg.get("safe", 150.0)):
+		if not fu.cooling():
+			var pw := _door_power(g)
+			if not pw.is_empty():
+				pw.t = w("换热泵没电：接船坞辅助供电", "THE PUMPS ARE DEAD: BERTH SUPPLY")
+				return pw
+		return _step(w("炉芯冷却中：%.0f°C / %.0f°C", "THE CORE IS COOLING: %.0f OF %.0f °C") % [fu.core_temp(), float(fu.cfg.get("safe", 150.0))], w("换热泵别断电，冷却回路别放空", "keep the pumps powered and the loop full"), _tag_at(g, str(fu.cfg.get("core", ""))), true)
+	var pl := _preloads(g)
+	if not pl.is_empty():
+		return pl
+	return _plain(g)
+
+
+static func _ro128(g) -> Dictionary:
+	var pl := _preloads(g)
+	if not pl.is_empty():
+		return pl
+	var ro := _rails_out(g)
+	if not ro.is_empty():
+		return ro
+	return _plain(g)
+
+
+static func _pt34(g) -> Dictionary:
+	var mu = g.munitions
+	if mu != null and mu.active():
+		var live := false
+		for id in g.world.order:
+			if mu.live(g.world.pieces[id]):
+				live = true
+				break
+		if live:
+			for fv in mu.cfg.get("flood", {}):
+				var room := str(mu.cfg.flood[fv])
+				if not mu.flooded.has(room):
+					var r := _reach(g, str(fv))
+					if not r.is_empty():
+						return r
+					return _step(w("开注水阀 %s：打湿弹库", "OPEN THE FLOOD VALVE %s: WET THE MAGAZINE") % fv, w("维护工具（4）；湿了就不会殉爆，弹药也不值钱了", "wrench (4); wet, they can't go off, and they are worth nothing"), _ctrl_at(g, str(fv)))
+	var acts: Dictionary = g.ship.get("actuators", {})
+	for a in acts:
+		var lk := str(acts[a].get("lock", ""))
+		var st := _flip(g, lk, true, w("锁住推力矢量作动器：拨 %s", "LOCK THE RAM: %s") % lk, w("维护工具（4）；没锁就切控制线会猛甩", "wrench (4); its line cut unlocked, it jerks"))
+		if not st.is_empty():
+			return st
+	return _plain(g)
+
+
+static func _cv138(g) -> Dictionary:
+	var dr = g.drones
+	if dr != null and dr.active():
+		for t in dr.cfg:
+			var dp = g.world.tag(str(t))
+			if dp == null or dp.gone or dp.body != null or not dr.live_pack(str(t)):
+				continue
+			var pk := str(dr.cfg[t].get("pack", ""))
+			var sw := str(g.sys.iso.get(pk, {}).get("switch", ""))
+			if sw != "":
+				var st := _flip(g, sw, false, w("断开 %s 的电池：拨 %s", "%s's PACK OFF: %s") % [t, sw], w("维护工具（4）；带电拆托架它会醒来甩飞", "wrench (4); freed live it wakes and throws itself"))
+				if not st.is_empty():
+					return st
+	var pl := _preloads(g)
+	if not pl.is_empty():
+		return pl
+	return _plain(g)
 
 
 # ---------------------------------------------------------------- 112 号: shared

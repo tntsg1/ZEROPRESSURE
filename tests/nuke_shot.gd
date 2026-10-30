@@ -30,6 +30,8 @@ func _until(nk, t: float) -> void:
 		var t0 := Time.get_ticks_usec()
 		await process_frame
 		frames.append((Time.get_ticks_usec() - t0) / 1000.0)
+		if frames[frames.size() - 1] > 25.0 and frames[frames.size() - 1] < 300.0:
+			print("NUKE SPIKE %.1f ms at t %.2f s" % [frames[frames.size() - 1], nk.t])
 		var vp := root.get_viewport_rid()
 		gpu.append([nk.t, RenderingServer.viewport_get_measured_render_time_cpu(vp), RenderingServer.viewport_get_measured_render_time_gpu(vp), Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0])
 		var ph := "close" if nk.t < nk.T_CLOSE else ("zones" if nk.t < nk.t_card - nk.T_WIDE else ("wide" if not nk.card else "card"))
