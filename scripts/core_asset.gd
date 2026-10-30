@@ -80,6 +80,93 @@ const SHIPS := {
 				"risks": ["大刀切开船体，整块往熔炉里送：快、痛快，但设备大多切坏、撞坏，按废料算", "Cut the hull into big sections and feed them to the furnace: quick and satisfying, but most equipment is cut or knocked to scrap"]},
 		],
 	},
+	# 114 号 (user 2026-10-30 "全按推荐"): the last six (the rest of the 200 m berth and ARK-01)
+	"mt140": {
+		"name": ["货罐", "THE CARGO TANKS"],
+		"units": ["燃料罐 T-2、水罐 T-5 + 罐里的燃料和水", "THE FUEL TANK T-2, THE WATER TANK T-5 + WHAT IS IN THEM"],
+		"groups": [
+			{"name": ["货罐", "TANKS"], "tags": ["T-2", "T-5"]},
+		],
+		"fluid": {"f": ["fuel", "water"], "name": ["罐里的货", "WHAT THE TANKS HOLD"]},
+		"dv": {"dv_train_spring": "train_spring"},
+		"methods": [
+			{"key": "careful", "name": ["抽空罐、从尾往前拆", "DRAIN, THEN FROM THE TAIL"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["总线还通着先从 PT-2、PT-5 把罐抽空（泵要有电）；从车尾往前拆，K-4 后面的拆完再动 K-4；罐 9 t 要吊车", "Drain both tanks at PT-2 and PT-5 while the bus is live (the pumps need it); strip from the tail, K-4 last; a tank is 9 t, crane it"]},
+			{"key": "demolish", "name": ["先拆 K-4", "K-4 FIRST"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["K-4 车钩卡死承着整列的弯矩：先拆它，后半列弹开，撕坏两边；先断总线罐就抽不出来了", "K-4 holds the train's bend: undo it first and the aft train springs off, tearing both sides; cut the bus first and the tanks can't be drained"]},
+		],
+	},
+	"dr150": {
+		"name": ["钻探核心设备", "THE DRILLING CORE"],
+		"units": ["防喷器、岩芯盒、底部钻具、顶驱", "THE BOP, THE CORE BOX, THE BHA, THE TOP DRIVE"],
+		"groups": [
+			{"name": ["钻探核心", "DRILLING"], "tags": ["BOP", "CORE", "BHA", "TD"]},
+		],
+		"dv": {"dv_drill_whip": "drill_whip", "dv_mud_fouled": "mud_fouled", "dv_drill_drop": "drill_drop"},
+		"methods": [
+			{"key": "careful", "name": ["泄扭放浆、逐节卸", "BLEED, DRAIN, STAND BY STAND"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["先拨 TQB 泄掉残余扭矩，接 PMUD 放掉泥浆，再从上往下逐节卸钻杆，每卸一节先卡上它下面的卡瓦 SLIP", "Bleed the torque (TQB), let the mud out at PMUD, then break the stands out from the top, each with the slips (SLIP) set under it"]},
+			{"key": "demolish", "name": ["带扭带压直接卸", "AS IT STANDS"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["带着扭矩卸钻杆会甩打砸坏钻台，带着泥浆压力会喷出污染设备，顺序错了上面的钻杆会掉下来", "Broken out with torque it whips and smashes the floor, with the mud in it blows out, out of order the stands above drop"]},
+		],
+	},
+	"md160": {
+		"name": ["飞轮与托架", "THE FLYWHEELS AND THE CRADLE"],
+		"units": ["3 个飞轮 + 发射托架", "3 FLYWHEELS + THE LAUNCH CRADLE"],
+		"groups": [
+			{"name": ["飞轮与托架", "FLYWHEELS"], "tags": ["FW-1", "FW-2", "FW-3", "CRADLE"]},
+		],
+		"dv": {"dv_wheel_loose": "wheel_loose", "dv_rail_lurch": "rail_lurch", "dv_rail_whip": "rail_whip", "dv_brake_burn": "brake_burn"},
+		"methods": [
+			{"key": "careful", "name": ["冷却刹停、尾往头松", "COOLED BRAKES, TAIL FIRST"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["每个飞轮先开刹车冷却 CV 再拨刹车 BR，降到 300 rpm 以下才拆；导轨张紧器从尾往头逐个松；托架 6 t 要吊车", "Each wheel's brake cooling (CV) on, then its brake (BR), under 300 rpm before it comes off; the rail tensioners from the tail to the head; the cradle is 6 t, crane it"]},
+			{"key": "demolish", "name": ["转着就拆", "STILL SPINNING"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["飞轮还在转就拆：甩飞砸坏旁边；干刹会烧坏卡钳；张紧器先松头部，导轨会窜动甩打", "Taken still spinning it is thrown off; braked dry the caliper burns; a head tensioner first and the rail lurches"]},
+		],
+	},
+	"hg170": {
+		"name": ["低温货与制冷机", "THE CRYO CARGO AND COOLERS"],
+		"units": ["4 罐低温货 + 两台制冷机", "4 TANKS OF CRYO CARGO + TWO CRYOCOOLERS"],
+		"groups": [
+			{"name": ["制冷机", "CRYOCOOLERS"], "tags": ["CRY-1", "CRY-2"]},
+		],
+		"fluid": {"f": "coolant", "name": ["低温货", "CRYO CARGO"]},
+		"dv": {"dv_tank_burst": "tank_burst"},
+		"methods": [
+			{"key": "careful", "name": ["冷着逐罐抽走", "COLD, TANK BY TANK"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["制冷机一直开着，先拨 RVH-3 给 TK3 冻住的泄压阀化冻，再逐罐接 PT 口抽走，最后才断电", "Keep the cryocoolers running, thaw TK3's frozen relief valve (RVH-3), draw each tank at its PT port, power off last"]},
+			{"key": "demolish", "name": ["先断电", "POWER OFF FIRST"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["先断电：罐压一路升到泄压阀放空，货没了；TK3 的阀冻着，那一罐会爆", "Power off first: the tanks climb to their reliefs and vent the cargo; TK3's valve is frozen, and that one bursts"]},
+		],
+	},
+	"tb180": {
+		"name": ["吊舱设备", "THE PODS' EQUIPMENT"],
+		"units": ["系绳两端两个吊舱里的设备", "WHAT THE TWO PODS ON THE TETHER CARRY"],
+		"groups": [
+			{"name": ["吊舱设备", "PODS"], "tags": ["CON-A", "AV-A", "LOG-A", "COMMS-A", "TEN-MON", "ECS-A", "GALLEY-A", "BAT-A", "DIST-A", "WATER-A", "O2-A", "TANK-1", "TANK-2", "HE-B", "RCSC-B", "GEN-B", "BAT-B", "RAD-B", "PWR-B", "INV-B", "PUMP-B", "ENG-B"]},
+		],
+		"dv": {"dv_pods_thrown": "pods_thrown", "dv_tether_snap": "tether_snap", "dv_tether_whip": "tether_whip", "dv_brake_slip": "brake_slip"},
+		"methods": [
+			{"key": "careful", "name": ["冷却刹停、松张力再切", "BRAKE, SLACKEN, THEN CUT"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["开船坞刹车的冷却 BRK-C 再拨刹车 BRK，等它停转；拨 TEN 松掉残余张力，再切系绳；干刹打滑了就只能用 B 舱的 RCS 停", "The berth brake's cooling (BRK-C) on, then the brake (BRK), till it stops; let the residual pull off (TEN), then cut the tether; braked dry the rollers slip and only B's RCS can stop it"]},
+			{"key": "demolish", "name": ["转着切绳", "CUT IT TURNING"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["还在转就切系绳：两个吊舱被甩飞，里面的设备撞坏", "Cut the tether still turning: both pods are thrown, and what they carry is smashed"]},
+		],
+	},
+	"ark01": {
+		"name": ["两座反应堆", "THE TWO REACTORS"],
+		"units": ["主反应堆 + 副反应堆", "THE MAIN REACTOR + THE SECONDARY"],
+		"groups": [
+			{"name": ["反应堆", "REACTORS"], "tags": ["CORE-M", "SEC-R"]},
+		],
+		"dv": {"dv_drum_slip": "drum_slip"},
+		"methods": [
+			{"key": "careful", "name": ["锁鼓、冷却、躲辐射", "LOCK, COOL, SHADOW"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["和 NR-95 一样：四个控制鼓先拨 RL 锁住，冷到 60°C 以下，在屏蔽板的阴影里干活，激光绝不碰堆芯；整船只许人工拆", "As on NR-95: the four drum locks (RL) thrown, cooled under 60 °C, worked in the shield's shadow, the beam never on the core; the whole ship by hand only"]},
+			{"key": "demolish", "name": ["硬干", "IGNORE IT"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["不锁鼓不躲辐射：无人机剂量超限、控制鼓滑出；激光切坏堆芯会核爆", "Locks off, no shadow: the drone's dose runs over, a drum slips; cut a core and it detonates"]},
+		],
+	},
 	# 113 号 (user 2026-10-30 "ok"): the third ten, by when they turn up (the rest of the 120 m berth and
 	# the first six of the 200 m one)
 	"ps12": {
@@ -521,6 +608,20 @@ const CAUSES := {
 	"static": [["静电击穿", "STATIC PINHOLES"], ["没接地就收卷，静电击穿了帆膜", "wound unearthed: static pinholed the film"], ["收卷前先接上左下角的接地线 GND", "Earth it at GND (bottom left) before you wind"]],
 	"holes": [["碎件打孔", "HOLED"], ["飘浮的碎件打穿了帆膜", "loose pieces holed the film"], ["收卷前把帆前面飘着的碎件清走", "Clear the loose pieces off the film before you wind"]],
 	"soot": [["熔渣熏黑", "SOOTED"], ["在帆附近切割，熔渣熏黑了帆膜", "cutting close by blackened the film"], ["先收帆，再切帆附近的结构", "Furl first, then cut the structure near the film"]],
+	# 114 号: the last six
+	"train_spring": [["后半列弹开", "TRAIN SPRANG"], ["K-4 车钩卡着弯矩就拆了，后半列弹开撕坏两边", "K-4 undone with the bend on it: the aft train sprang and tore both sides"], ["从车尾往前拆，K-4 后面的拆完再动 K-4", "Strip from the tail; K-4 only once what is aft of it is off"]],
+	"drill_whip": [["钻杆甩打", "STRING WHIPPED"], ["钻杆还带着扭矩就卸，甩打砸坏了钻台", "a stand broken out with torque on: it whipped and smashed the floor"], ["先拨 TQB 把扭矩泄到 5% 以下", "Bleed the torque (TQB) under 5% first"]],
+	"mud_fouled": [["泥浆喷污", "MUD BLOWOUT"], ["泥浆还有压就卸钻杆，泥浆喷出污了设备", "broken out with the mud in: it blew out and fouled the units"], ["先接 PMUD 把泥浆放掉", "Let the mud out at PMUD first"]],
+	"drill_drop": [["钻杆掉落", "STANDS DROPPED"], ["顺序错了或卡瓦没卡，上面的钻杆掉了下来", "out of order or the slips open: the stands above dropped"], ["从上往下逐节卸，每节先卡上它下面的 SLIP", "From the top, each with its slips (SLIP) set under it"]],
+	"wheel_loose": [["飞轮甩飞", "WHEEL THROWN"], ["飞轮还在高速转就拆，甩飞砸坏了旁边", "a wheel taken still spinning: it was thrown into what was near"], ["开冷却刹车，降到 300 rpm 以下再拆", "Cooled brakes till it is under 300 rpm"]],
+	"rail_lurch": [["导轨窜动", "RAIL LURCHED"], ["张紧器没从尾往头松，导轨窜动撞坏东西", "a tensioner let off ahead of one aft of it: the rail lurched"], ["导轨张紧器从尾往头逐个松", "The tensioners from the tail to the head"]],
+	"rail_whip": [["导轨甩打", "RAIL WHIPPED"], ["导轨带着 180 kN 张力被切，甩打砸坏东西", "a rail cut at 180 kN whipped"], ["先松完张紧器再切导轨", "Every tensioner off before the rail"]],
+	"brake_burn": [["卡钳烧坏", "BRAKE BURNT"], ["没开冷却就刹车，卡钳烧坏了", "braked dry: the caliper burnt out"], ["先开 CV 冷却，再拨 BR 刹车", "Cooling (CV) on before the brake (BR)"]],
+	"tank_burst": [["罐体爆裂", "TANK BURST"], ["低温罐压力升到爆裂（泄压阀冻住或没制冷）", "a cryo tank climbed till it burst (its valve frozen, or no cooling)"], ["制冷机一直开着，先给冻阀化冻，再抽货", "Keep the coolers on, thaw the frozen valve, then draw it"]],
+	"pods_thrown": [["吊舱甩飞", "PODS THROWN"], ["还在转就切了系绳，两个吊舱被甩飞", "the tether cut still turning: both pods were thrown"], ["开冷却刹车停转，松掉 TEN 再切", "Cooled brake till it stops, TEN off, then cut"]],
+	"tether_snap": [["系绳崩断", "TETHER SNAPPED"], ["系绳带着张力断开，崩伤了设备", "the tether parted under load and hurt the units"], ["停转并松掉残余张力再切系绳", "Stopped and slackened before you cut it"]],
+	"tether_whip": [["系绳甩打", "TETHER WHIPPED"], ["系绳断头甩打砸坏了旁边", "a parted end whipped into what was near"], ["停转、松 TEN 后再切", "Stop it and TEN off before the cut"]],
+	"brake_slip": [["刹车打滑", "BRAKE SLIPPED"], ["没开冷却就刹车，滚轮过热打滑", "braked dry: the rollers overheated and slipped"], ["先开 BRK-C 冷却再刹车", "BRK-C on before the brake"]],
 	# 113 号: the third ten
 	"pod_fired": [["逃生舱弹射", "POD FIRED"], ["点火电路还活着就松了发射夹，火工螺栓点火，逃生舱被弹射出去摔坏", "a launch clamp undone with the firing circuit live: the bolts fired and the pod was thrown off"], ["松夹之前先拨 ARM 断开点火电容，或拔掉引线", "Firing circuit off (ARM) or its lead pulled before the clamps"]],
 	"cargo_spring": [["舱体弹出", "MODULE SPRANG"], ["居住舱还有压就松了夹，舱体弹出砸坏里面的设备", "the clamps let go with air still in the habitat: it sprang and knocked its fittings"], ["松夹之前先把居住舱抽到 20 kPa 以下", "Pump the habitat below 20 kPa before the clamps"]],
@@ -1109,7 +1210,7 @@ static func _equip_board(g) -> Dictionary:
 const LIVE_KPA := 5.0
 # 112 号: ships whose power must stay on till their asset is safe (the coils' cooling, the chillers,
 # the cold holds, the propellant pump, the core's coolant pumps)
-const POWER_LAST := ["fx70", "fr26", "cl104", "vt80", "nr95", "mf126", "ic120"]
+const POWER_LAST := ["fx70", "fr26", "cl104", "vt80", "nr95", "mf126", "ic120", "mt140", "md160", "hg170", "tb180", "ark01"]
 
 # 111 号: what on each small ship still bites, said with what to do about it (Q3 A)
 static func _ship_warn(g, warn: Array) -> void:
@@ -1273,7 +1374,7 @@ static func _ship_warn(g, warn: Array) -> void:
 			for r in g.world.rooms:
 				if s.P(r) > 20.0 and s.o2_frac(r) > a2.fire_o2():
 					warn.append(w("%s 富氧 %d%%：附近切割会闪燃（接 G-%s 抽空）", "%s AT %d%% OXYGEN: A CUT CLOSE BY FLASHES OVER (PUMP IT OUT AT G-%s)") % [g.room_name(r), int(round(s.o2_frac(r) * 100.0)), r])
-		"nr95":
+		"nr95", "ark01":
 			var rc = g.reactor
 			var fn = g.furnace
 			if rc == null:
@@ -1368,6 +1469,49 @@ static func _ship_warn(g, warn: Array) -> void:
 				if not rl2.released.has(sid):
 					warn.append(w("货还锁在轨道上：先解锁再动吊挂、轨道和甲板", "THE CARGO IS LOCKED ON ITS RAILS: RELEASE IT BEFORE THE HANGERS, RAILS OR DECK"))
 					break
+		"mt140":
+			var tr = g.train
+			if tr == null or not tr.active():
+				return
+			if tr.fluid_left() > 0.02:
+				warn.append(w("两个货罐还有货：总线断开前先从 PT-2、PT-5 抽空（泵要有电）", "CARGO IN THE TANKS: DRAIN AT PT-2 AND PT-5 BEFORE THE BUS GOES (THE PUMPS NEED IT)"))
+			if not tr.sprang and tr.aft_mass() > float(tr.cfg.get("jam", {}).get("keep", 75.0)):
+				warn.append(w("K-4 车钩卡死承着弯：后面 %.0f t 拆完前别动 K-4 和它的销子", "K-4 HOLDS THE BEND: %.0f t AFT OF IT, LEAVE K-4 AND ITS PINS TILL THAT IS OFF") % tr.aft_mass())
+		"dr150":
+			var ds = g.drillstring
+			if ds == null or not ds.active():
+				return
+			if ds.torque_pct() > 5.0:
+				warn.append(w("钻杆还有 %d%% 扭矩：先拨 TQB 泄扭", "%d%% TORQUE IN THE STRING: BLEED IT AT TQB") % int(round(ds.torque_pct())))
+			if ds.mud_level() > float(ds.cfg.get("mud_safe", 0.05)):
+				warn.append(w("泥浆还有 %d%%（%.0f kPa）：接 PMUD 放掉", "MUD AT %d%% (%.0f kPa): LET IT OUT AT PMUD") % [int(round(ds.mud_level() * 100.0)), ds.mud_kpa()])
+		"md160":
+			var fw = g.flywheel
+			if fw == null or not fw.active():
+				return
+			if fw.max_rpm() > float(fw.cfg.get("safe", 300.0)):
+				warn.append(w("飞轮还在转 %.0f rpm：开 CV 冷却再拨 BR 刹车，降到 300 以下再拆", "A WHEEL AT %.0f rpm: COOLING (CV), THEN THE BRAKE (BR), UNDER 300 BEFORE IT COMES OFF") % fw.max_rpm())
+			for r in fw.cfg.get("rails", {}):
+				if fw.rail_pull(str(r)) > 0.0:
+					warn.append(w("导轨还绷着：张紧器从尾往头逐个松", "THE RAILS ARE TENSIONED: LET THE TENSIONERS OFF TAIL FIRST"))
+					break
+		"hg170":
+			var bo = g.boiloff
+			if bo == null or not bo.active():
+				return
+			if not bo.refrigerating():
+				warn.append(w("制冷机没电：罐压在升，升到泄压线就放空掉货", "THE COOLERS ARE DEAD: THE TANKS ARE CLIMBING TO THEIR RELIEFS"))
+			for t in bo.cfg.get("tanks", {}):
+				if bo.frozen(str(t)) and not bo.burst.has(t):
+					warn.append(w("%s 的泄压阀冻住了：拨 %s 化冻，否则会爆罐", "%s's RELIEF IS FROZEN: THAW IT (%s) OR IT BURSTS") % [t, str(bo.cfg.tanks[t].get("heater", ""))])
+		"tb180":
+			var te = g.tether
+			if te == null or not te.active():
+				return
+			if te.spinning():
+				warn.append(w("还在转 %.2f rpm：开 BRK-C 冷却再拨 BRK 刹车，转着切绳吊舱会甩飞", "STILL TURNING AT %.2f rpm: COOLING (BRK-C), THEN THE BRAKE (BRK); CUT TURNING AND THE PODS ARE THROWN") % te.rpm)
+			elif s.on(str(te.cfg.get("release", ""))):
+				warn.append(w("系绳还有残余张力：拨 TEN 松开再切", "THE TETHER STILL PULLS: TEN OFF BEFORE THE CUT"))
 		"jd38":
 			var rl = g.rails
 			if rl == null or not rl.active():
@@ -1452,6 +1596,32 @@ static func _equip_review(g) -> Dictionary:
 # carrier stripped in 51.5 min of work (99.99 %, no incident); careless cut into its hull at
 # 12.5 min (the premium gone) and fed it all to the furnace: none of it, 47 min, $12,000 in fines
 const BOT_RUNS := {
+	# 114 号, 2026-10-30: the last six as built, with the heavy crane, one run each way (ARK-01 is by
+	# hand only: not run)
+	"mt140": {
+		"careful": {"lo": 39081.0, "hi": 39081.0, "minutes": [49, 50], "note": ["实测（有吊车）：整船收入 $331,140，0 事故", "measured (crane): $331,140 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [29, 30], "note": ["实测：后半列弹开、罐没抽；整船收入 $51,791，罚款 $18,000，15 次事故", "measured: the aft train sprang, the tanks never drained; $51,791 in, $18,000 in fines, 15 incidents"]},
+	},
+	"dr150": {
+		"careful": {"lo": 152000.0, "hi": 152000.0, "minutes": [66, 67], "note": ["实测：0 事故，66 分钟时还在收尾（只拿到一半）；整船收入 $1,203,527", "measured: no incidents, still finishing at 66 minutes (half of it in); $1,203,527 in"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [64, 65], "note": ["实测：钻杆甩打、泥浆喷出；整船收入 $67,956，罚款 $12,000，19 次事故", "measured: the string whipped, the mud blew out; $67,956 in, $12,000 in fines, 19 incidents"]},
+	},
+	"md160": {
+		"careful": {"lo": 106000.0, "hi": 106000.0, "minutes": [65, 66], "note": ["实测（有吊车）：整船收入 $430,232，0 事故", "measured (crane): $430,232 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [57, 58], "note": ["实测：飞轮甩飞；整船收入 $125,306，罚款 $3,000，10 次事故", "measured: the wheels were thrown; $125,306 in, $3,000 in fines, 10 incidents"]},
+	},
+	"hg170": {
+		"careful": {"lo": 680000.0, "hi": 680000.0, "minutes": [62, 63], "note": ["实测：整船收入 $1,587,862，0 事故，大半时间在抽低温货", "measured: $1,587,862 in, no incidents, most of it drawing the cargo"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [46, 47], "note": ["实测：低温货放空、罐爆；整船收入 $94,805，罚款 $9,000，11 次事故", "measured: the cargo vented, a tank burst; $94,805 in, $9,000 in fines, 11 incidents"]},
+	},
+	"tb180": {
+		"careful": {"lo": 135700.0, "hi": 135700.0, "minutes": [26, 27], "note": ["实测：整船收入 $238,808，0 事故", "measured: $238,808 in, no incidents"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [16, 17], "note": ["实测：吊舱甩飞；整船收入 $17,088，罚款 $15,000，10 次事故", "measured: the pods were thrown; $17,088 in, $15,000 in fines, 10 incidents"]},
+	},
+	"ark01": {
+		"careful": {"lo": 306000.0, "hi": 340000.0, "minutes": [0, 0], "note": ["ARK-01 只许人工拆，机器人不能跑；价钱按满价估", "ARK-01 is by hand only, the bot can't run it; the money is the whole worth, estimated"]},
+		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [0, 0], "note": ["只许人工拆，没实测", "by hand only, not measured"]},
+	},
 	# 113 号, 2026-10-30: the third ten as built, with the heavy crane, one run each way; minutes to the
 	# last money in (on four careful runs it was still coming at the 66-minute limit)
 	"ps12": {

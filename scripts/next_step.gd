@@ -93,6 +93,18 @@ static func of(g) -> Dictionary:
 			return _pt34(g)
 		"cv138":
 			return _cv138(g)
+		"mt140":
+			return _mt140(g)
+		"dr150":
+			return _dr150(g)
+		"md160":
+			return _md160(g)
+		"hg170":
+			return _hg170(g)
+		"tb180":
+			return _tb180(g)
+		"ark01":
+			return _nr95(g)
 	return {}
 
 
@@ -137,6 +149,15 @@ static func _open_room(g, room: String, depth := 0) -> Dictionary:
 	# a door into it already open: the room is coming into view
 	var opening := _door_into(g, room, true)
 	if opening != "":
+		# 114 号 (ARK-01): a small doorway doesn't bring the room into view by itself — a few seconds
+		# on, the probe is what shows what is inside
+		if not g.has_meta("ns_opening"):
+			g.set_meta("ns_opening", {})
+		var memo: Dictionary = g.get_meta("ns_opening")
+		if not memo.has(room):
+			memo[room] = float(g.sys.time)
+		if float(g.sys.time) - float(memo[room]) > 4.0:
+			return _step(w("看不见 %s 里面：用测量照进去", "%s IS DARK: SHINE THE PROBE IN") % _room(g, room), w("测量（1）对着开着的 %s 往里照", "measure (1) through the open %s") % opening, _ctrl_at(g, opening))
 		return _step(w("%s 舱门打开中", "%s: THE DOOR IS OPENING") % _room(g, room), "", _ctrl_at(g, opening), true)
 	var p: float = g.sys.P(room)
 	if p > LOW:
@@ -578,6 +599,129 @@ static func _lc140(g) -> Dictionary:
 		if not st3.is_empty():
 			return st3
 	return {}
+
+
+# ---------------------------------------------------------------- 114 号: the last six
+
+static func _mt140(g) -> Dictionary:
+	var tr = g.train
+	if tr != null and tr.active():
+		for vk in tr.cfg.get("pumps", {}):
+			if g.sys.fluid(str(vk)) <= 0.02:
+				continue
+			for id in g.world.ctrls:
+				var c = g.world.ctrls[id]
+				if c.kind == "port" and str(c.target) == str(vk) and g.world.ctrl_alive(c):
+					return _drain(g, str(id), w("抽空货罐：%s", "DRAIN THE TANK AT %s") % id, w("气液回收（5）；泵要总线有电，先抽再断电", "hose (5); the pump runs off the bus, drain before the power goes"), w("：剩 %.2f", ": %.2f LEFT") % g.sys.fluid(str(vk)))
+	var st := _plain(g)
+	if not st.is_empty() and (str(st.t).find("T-2") >= 0 or str(st.t).find("T-5") >= 0):
+		st.how = str(st.how) + w("；K-4 车钩最后再动", "; K-4 last")
+	return st
+
+
+static func _dr150(g) -> Dictionary:
+	var ds = g.drillstring
+	if ds != null and ds.active():
+		var bleed := str(ds.cfg.get("bleed", ""))
+		if ds.torque_pct() > 5.0:
+			if not g.sys.on(bleed):
+				var st := _flip(g, bleed, true, w("泄掉钻杆扭矩：拨 %s", "BLEED THE TORQUE: %s") % bleed, w("维护工具（4）；带扭矩卸钻杆会甩打", "wrench (4); broken out with torque it whips"))
+				if not st.is_empty():
+					return st
+			return _step(w("泄扭中：%d%%", "BLEEDING: %d%%") % int(round(ds.torque_pct())), w("降到 5% 以下", "down under 5%"), _ctrl_at(g, bleed), true)
+		if ds.mud_level() > float(ds.cfg.get("mud_safe", 0.05)):
+			var mud := str(ds.cfg.get("mud", ""))
+			for id in g.world.ctrls:
+				var c = g.world.ctrls[id]
+				if c.kind == "port" and str(c.target) == mud and g.world.ctrl_alive(c):
+					return _drain(g, str(id), w("放掉泥浆", "LET THE MUD OUT"), w("气液回收（5）；带压卸钻杆泥浆会喷出", "hose (5); broken out with it in, it blows out"), w("：%d%%", ": %d%%") % int(round(ds.mud_level() * 100.0)))
+		var stands: Array = ds.cfg.get("stands", [])
+		var slips: Array = ds.cfg.get("slips", [])
+		for k in stands.size():
+			var p = g.world.tag(str(stands[k]))
+			if p == null or p.gone or p.body != null:
+				continue
+			if k < slips.size() and not g.sys.on(str(slips[k])):
+				var st2 := _flip(g, str(slips[k]), true, w("卡上卡瓦 %s", "SET THE SLIPS %s") % slips[k], w("维护工具（4）；卡住下面，再卸 %s", "wrench (4); it holds what is below before %s comes out") % stands[k])
+				if not st2.is_empty():
+					return st2
+			if CoreAsset.spec(g).groups[0].tags.has(str(stands[k])):
+				break
+			return _step(w("卸下钻杆 %s", "BREAK OUT %s") % stands[k], w("维护工具（4）拧开接头；从上往下一节一节来", "wrench (4) on its joint; from the top, one at a time"), _tag_at(g, str(stands[k])))
+	return _plain(g)
+
+
+static func _md160(g) -> Dictionary:
+	var fw = g.flywheel
+	if fw != null and fw.active():
+		var wheels: Dictionary = fw.cfg.get("wheels", {})
+		for w0 in wheels:
+			if not fw.spinning(str(w0)) or fw.loose.has(w0):
+				continue
+			var e: Dictionary = wheels[w0]
+			var st := _flip(g, str(e.get("cool", "")), true, w("开 %s 刹车冷却：拨 %s", "%s's BRAKE COOLING: %s ON") % [w0, e.get("cool", "")], w("维护工具（4）；干刹会烧坏卡钳", "wrench (4); braked dry the caliper burns"))
+			if not st.is_empty():
+				return st
+			var st2 := _flip(g, str(e.get("brake", "")), true, w("刹住 %s：拨 %s", "BRAKE %s: %s ON") % [w0, e.get("brake", "")], w("维护工具（4）", "wrench (4)"))
+			if not st2.is_empty():
+				return st2
+		if fw.max_rpm() > float(fw.cfg.get("safe", 300.0)):
+			return _step(w("飞轮减速中：%.0f rpm", "THE WHEELS ARE SLOWING: %.0f rpm") % fw.max_rpm(), w("降到 300 rpm 以下再拆", "under 300 rpm before they come off"), Vector2.INF, true)
+		for r in fw.cfg.get("rails", {}):
+			for tn in fw.cfg.rails[r].get("tensioners", []):
+				if g.sys.on(str(tn)):
+					var st3 := _flip(g, str(tn), false, w("松开导轨张紧器 %s（从尾往头）", "LET %s OFF (TAIL FIRST)") % tn, w("维护工具（4）；先松头部导轨会窜动", "wrench (4); a head one first and the rail lurches"))
+					if not st3.is_empty():
+						return st3
+					break
+	return _plain(g)
+
+
+static func _hg170(g) -> Dictionary:
+	var bo = g.boiloff
+	if bo != null and bo.active():
+		for t in bo.cfg.get("tanks", {}):
+			if bo.frozen(str(t)) and not bo.burst.has(t):
+				var ht := str(bo.cfg.tanks[t].get("heater", ""))
+				if ht != "" and not g.sys.on(ht):
+					var st := _flip(g, ht, true, w("给 %s 的冻阀化冻：拨 %s", "THAW %s's VALVE: %s ON") % [t, ht], w("维护工具（4）；冻着它会爆罐", "wrench (4); left frozen it bursts"))
+					if not st.is_empty():
+						return st
+				return _step(w("%s 冻阀化冻中", "THAWING %s's VALVE") % t, w("制冷机别断电", "keep the coolers on"), Vector2.INF, true)
+		for t in bo.cfg.get("tanks", {}):
+			if bo.cargo(str(t)) <= 0.02 or bo.burst.has(t):
+				continue
+			var vol := str(bo.cfg.tanks[t].get("vol", ""))
+			for id in g.world.ctrls:
+				var c = g.world.ctrls[id]
+				if c.kind == "port" and str(c.target) == vol and g.world.ctrl_alive(c):
+					return _drain(g, str(id), w("抽走 %s 的低温货", "DRAW %s's CARGO") % t, w("气液回收（5）；抽得越多罐压越低，制冷机别断电", "hose (5); the more drawn the lower it sits; keep the coolers on"), w("：%.0f kPa", ": %.0f kPa") % bo.tank_kpa(str(t)))
+	return _plain(g)
+
+
+static func _tb180(g) -> Dictionary:
+	var te = g.tether
+	if te != null and te.active() and not te.snapped:
+		var br: Dictionary = te.cfg.get("brake", {})
+		if te.spinning():
+			if te.slipped:
+				var rcs: Dictionary = te.cfg.get("rcs", {})
+				var st0 := _flip(g, str(rcs.get("switch", "")), true, w("刹车打滑了：开 B 舱 RCS %s", "THE BRAKE SLIPPED: B's RCS (%s) ON") % rcs.get("switch", ""), w("维护工具（4）；只剩它能停下来", "wrench (4); it is the only way left to stop it"))
+				if not st0.is_empty():
+					return st0
+			else:
+				var st := _flip(g, str(br.get("cool", "")), true, w("开刹车冷却：拨 %s", "BRAKE COOLING: %s ON") % br.get("cool", ""), w("维护工具（4）；干刹 6 秒滚轮就打滑", "wrench (4); braked dry the rollers slip in 6 s"))
+				if not st.is_empty():
+					return st
+				var st2 := _flip(g, str(br.get("switch", "")), true, w("刹车：拨 %s", "BRAKE: %s ON") % br.get("switch", ""), w("维护工具（4）", "wrench (4)"))
+				if not st2.is_empty():
+					return st2
+			return _step(w("刹停中：%.2f rpm", "STOPPING: %.2f rpm") % te.rpm, w("停下来再动系绳", "nothing on the tether till it stops"), Vector2.INF, true)
+		var rel := str(te.cfg.get("release", ""))
+		var st3 := _flip(g, rel, false, w("松掉残余张力：拨 %s", "SLACKEN THE TETHER: %s OFF") % rel, w("维护工具（4）；带张力切绳会崩", "wrench (4); cut under load it snaps"))
+		if not st3.is_empty():
+			return st3
+	return _plain(g)
 
 
 # ---------------------------------------------------------------- 113 号: the third ten
