@@ -1242,7 +1242,7 @@ const BOT_RUNS := {
 		"demolish": {"lo": 0.0, "hi": 0.0, "minutes": [32, 33], "note": ["实测：闪燃烧坏培养舱；整船收入 $47,814，罚款 $6,000，11 次事故", "measured: flash fires through the halls; $47,814 in, $6,000 in fines, 11 incidents"]},
 	},
 	"nr95": {
-		"careful": {"lo": 90000.0, "hi": 90000.0, "minutes": [18, 19], "note": ["实测（有吊车）：液氢罐 28 t 超过吊车额定，只能切成废料；整船收入 $258,122，1 次碰撞", "measured (crane): the 28 t hydrogen tank is past the crane, cut to scrap; $258,122 in, 1 knock"]},
+		"careful": {"lo": 90000.0, "hi": 90000.0, "minutes": [18, 19], "note": ["实测（12 t 吊车）：液氢罐当时是 28 t，被切成废料；现在液氢罐 16 t，抽空后用升级的 16 t 吊车可以整件吊走（+$90,000）；整船收入 $258,122，1 次碰撞", "measured (12 t crane): the hydrogen tank, 28 t then, was cut to scrap; it is 16 t now, drained it lifts whole with the upgraded 16 t crane (+$90,000); $258,122 in, 1 knock"]},
 		"demolish": {"lo": 70000.0, "hi": 70000.0, "minutes": [17, 18], "note": ["实测：整船收入 $114,784，罚款 $6,000，8 次事故（机器人没碰堆芯，没有核爆）", "measured: $114,784 in, $6,000 in fines, 8 incidents (the bot never cut the core, no detonation)"]},
 	},
 	"vt80": {
