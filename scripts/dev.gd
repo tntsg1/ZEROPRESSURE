@@ -132,6 +132,9 @@ func _handle_key(ev: InputEvent) -> void:
 		return
 	var key: int = ev.physical_keycode
 	if key == KEY_F12:
+		# the playtest build keeps the bench but hidden: only with --dev
+		if not Demo.dev_allowed():
+			return
 		if not Txt.dev:
 			Txt.dev = true
 			Txt.save_settings(game != null and game.testing)

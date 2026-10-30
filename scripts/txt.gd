@@ -2849,7 +2849,7 @@ static func load_settings(testing: bool) -> void:
 		fullscreen = cf.get_value("video", "fullscreen", false)
 		calm = cf.get_value("video", "calm", false)
 		codex_cards = cf.get_value("ui", "codex_cards", true)
-		playtest = cf.get_value("ui", "playtest", false)
+		playtest = cf.get_value("ui", "playtest", Demo.on())
 		anim = cf.get_value("video", "anim", "full")
 		if not anim in ANIM_LEVELS:
 			anim = "full"

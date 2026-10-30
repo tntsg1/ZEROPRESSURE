@@ -62,7 +62,11 @@ const HERON := [
 ]
 
 func _ready() -> void:
+	# 114 号试玩版: its own saves and settings, then the activation gate over the title
+	Demo.apply()
 	Txt.load_settings(false)
+	if Demo.on():
+		add_child.call_deferred(preload("res://scripts/demo_gate.gd").new())
 	font = Fonts.get_font("Regular")
 	font_l = Fonts.get_font("Light")
 	font_b = Fonts.get_font("Medium")

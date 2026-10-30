@@ -937,6 +937,7 @@ func cam_zoom() -> float:
 func _process(dt: float) -> void:
 	if dev_overlay_open or prelude_on:
 		return
+	Demo.watch(self)
 	var rdt := dt / maxf(Engine.time_scale, 0.01)
 	state_t += rdt
 	if exchange_requested and career() and state == "play" and console_ui == null and not menu_open:

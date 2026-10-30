@@ -1,0 +1,20 @@
+{
+  // 零压试玩版激活服务。独立于主站 stellar-ascension-web，部署它不会动主站。
+  "name": "zp-playtest",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "playtest.stellarascensiongame.com", "custom_domain": true }
+  ],
+  "vars": {
+    // 试玩版到这一天（UTC）结束；游戏里 scripts/demo.gd 的 EXPIRES 要一致
+    "EXPIRES": "2026-11-21"
+  },
+  "d1_databases": [
+    { "binding": "DB", "database_name": "zp-playtest", "database_id": "a97a4b9f-6e7b-4efb-8aea-72a079347bac" }
+  ],
+  "r2_buckets": [
+    { "binding": "REPORTS", "bucket_name": "pixel-observatory-game-assets" }
+  ]
+}
