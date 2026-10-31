@@ -1150,7 +1150,7 @@
 "en_line": 82
 },
 "prologue:_fill:1": {
-"zh": "序章 · 小行星带 · %d / %d",
+"zh": "序章 · 小行星带搜寻行动 · %d / %d",
 "en": "PROLOGUE · THE BELT · %d / %d",
 "file": "prologue.gd",
 "line": 164,
@@ -1158,7 +1158,7 @@
 "en_line": 164
 },
 "prologue:_fill:2": {
-"zh": "跟着箭头飞向漂流船 · 还有 %d m",
+"zh": "已发现漂流船。沿导航箭头接近目标，距离 %d m。",
 "en": "FOLLOW THE ARROW TO THE HULK · %d m TO GO",
 "file": "prologue.gd",
 "line": 171,
@@ -1166,7 +1166,7 @@
 "en_line": 171
 },
 "prologue:_fill:3": {
-"zh": "%s 移动，%s 冲刺。跟着无人机旁的箭头。",
+"zh": "按 %s 操控无人机移动，按 %s 快速冲刺。沿着无人机旁的指引箭头前进。",
 "en": "%s to move, %s to dash. Follow the arrow by the drone.",
 "file": "prologue.gd",
 "line": 172,

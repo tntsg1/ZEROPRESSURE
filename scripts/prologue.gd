@@ -161,15 +161,15 @@ func _show() -> void:
 
 
 func _fill() -> void:
-	count.text = w("序章 · 小行星带 · %d / %d", "PROLOGUE · THE BELT · %d / %d") % [step + 1, STEPS.size()]
+	count.text = w("序章 · 小行星带搜寻行动 · %d / %d", "PROLOGUE · THE BELT · %d / %d") % [step + 1, STEPS.size()]
 	var k := Keys.label
 	match STEPS[step]:
 		"fly":
 			var dm := 0.0
 			if game.drone != null:
 				dm = game.drone.global_position.distance_to(hulk_centre()) / Geom.M
-			title.text = w("跟着箭头飞向漂流船 · 还有 %d m", "FOLLOW THE ARROW TO THE HULK · %d m TO GO") % int(dm)
-			_body(w("%s 移动，%s 冲刺。跟着无人机旁的箭头。", "%s to move, %s to dash. Follow the arrow by the drone.") % [_keys_move(), k.call("dash")], w("%s 移动，%s 冲刺。漂流船在画面外，无人机旁边的箭头指着它，到了它会被亮圈圈住。这一趟只是把它带回港。" % [_keys_move(), k.call("dash")], "%s to move, %s to dash. The hulk is off screen: the arrow by the drone points at it, and a ring marks it when you are there. This trip only brings it home." % [_keys_move(), k.call("dash")]))
+			title.text = w("已发现漂流船。沿导航箭头接近目标，距离 %d m。", "FOLLOW THE ARROW TO THE HULK · %d m TO GO") % int(dm)
+			_body(w("按 %s 操控无人机移动，按 %s 快速冲刺。沿着无人机旁的指引箭头前进。", "%s to move, %s to dash. Follow the arrow by the drone.") % [_keys_move(), k.call("dash")], w("%s 移动，%s 冲刺。漂流船在画面外，无人机旁边的箭头指着它，到了它会被亮圈圈住。这一趟只是把它带回港。" % [_keys_move(), k.call("dash")], "%s to move, %s to dash. The hulk is off screen: the arrow by the drone points at it, and a ring marks it when you are there. This trip only brings it home." % [_keys_move(), k.call("dash")]))
 		"brake":
 			title.text = w("按 %s 刹停" % k.call("brake"), "PRESS %s TO STOP" % k.call("brake"))
 			_body(w("太空里没有摩擦，松手也会一直漂。", "Nothing slows you in space."), w("太空里没有摩擦，松开方向键也会一直漂。%s 开飞行稳定会自动帮你减速。" % k.call("assist"), "Nothing slows you in space. %s turns on flight assist." % k.call("assist")))

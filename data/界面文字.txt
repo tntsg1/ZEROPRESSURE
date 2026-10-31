@@ -791,15 +791,15 @@
 ------------------------------------------------------------
 
 [prologue:_fill:1]
-中：序章 · 小行星带 · %d / %d
+中：序章 · 小行星带搜寻行动 · %d / %d
 英：PROLOGUE · THE BELT · %d / %d
 
 [prologue:_fill:2]
-中：跟着箭头飞向漂流船 · 还有 %d m
+中：已发现漂流船。沿导航箭头接近目标，距离 %d m。
 英：FOLLOW THE ARROW TO THE HULK · %d m TO GO
 
 [prologue:_fill:3]
-中：%s 移动，%s 冲刺。跟着无人机旁的箭头。
+中：按 %s 操控无人机移动，按 %s 快速冲刺。沿着无人机旁的指引箭头前进。
 英：%s to move, %s to dash. Follow the arrow by the drone.
 
 [prologue:_fill:4]
