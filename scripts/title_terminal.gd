@@ -101,6 +101,8 @@ func _detail_scale() -> float:
 
 
 func _ready() -> void:
+	# the playtest build's own slots before the home reads them
+	Demo.apply()
 	_refresh_home()
 	super._ready()
 	font_b = Fonts.get_font("SemiBold")
@@ -205,6 +207,8 @@ func _close_slots() -> void:
 
 
 func _input(ev: InputEvent) -> void:
+	if Demo.gate_open:
+		return
 	if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and not ev.pressed:
 		detail_drag = false
 	if ev is InputEventMouseMotion or ev is InputEventMouseButton:
@@ -300,6 +304,8 @@ func _update_plots() -> void:
 
 
 func _unhandled_input(ev: InputEvent) -> void:
+	if Demo.gate_open:
+		return
 	if not _in_slots() and not settings.is_open and not DevPanel.workbench_open and leaving < 0.0:
 		if ev is InputEventKey and ev.pressed and ev.physical_keycode == KEY_ESCAPE and pinned:
 			pinned = false
@@ -314,6 +320,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 
 
 func _gui_input(ev: InputEvent) -> void:
+	if Demo.gate_open:
+		return
 	if not _in_slots() and not settings.is_open and not DevPanel.workbench_open and leaving < 0.0 and ev is InputEventMouseButton and ev.pressed:
 		var p: Vector2 = (ev.position - _origin_ui()) / maxf(_scale_ui(), 0.001)
 		var zone := _zone_at(p)

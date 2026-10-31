@@ -211,6 +211,8 @@ func _process(dt: float) -> void:
 	slot_hover = -1
 	del_hover = -1
 	var m := get_local_mouse_position() if pointer_override == Vector2.INF else pointer_override
+	if Demo.gate_open:
+		m = Vector2(-10000, -10000)
 	var lvl := Txt.anim_level()
 	ms = ms.lerp(m, 1.0 - exp(-10.0 * dt))
 	var half := size * 0.5
@@ -299,6 +301,8 @@ func _process(dt: float) -> void:
 
 
 func _gui_input(ev: InputEvent) -> void:
+	if Demo.gate_open:
+		return
 	if not (ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT) or leaving >= 0.0:
 		return
 	if t < 2.0:
@@ -323,6 +327,8 @@ func _gui_input(ev: InputEvent) -> void:
 
 
 func _unhandled_input(ev: InputEvent) -> void:
+	if Demo.gate_open:
+		return
 	if DevPanel.workbench_open and Txt.dev:
 		return
 	if not (ev is InputEventKey and ev.pressed and not ev.echo) or leaving >= 0.0:

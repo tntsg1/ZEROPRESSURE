@@ -42,6 +42,9 @@ static var slot := 1
 
 
 static func slot_files(n: int) -> Array:
+	# 115 号: the playtest build never touches the full game's slots
+	if Demo.on():
+		return ["user://playtest_slot%d_career.json" % n, "user://playtest_slot%d_save.json" % n, "user://playtest_slot%d_training.json" % n]
 	if n <= 1:
 		return [PATH, SaveGame.PATH, SaveGame.TRAIN_PATH]
 	return ["user://zp_slot%d_career.json" % n, "user://zp_slot%d_save.json" % n, "user://zp_slot%d_training.json" % n]

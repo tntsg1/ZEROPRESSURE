@@ -21,6 +21,7 @@ const CFG := "user://playtest_activation.cfg"
 
 static var forced := false            # tests turn it on without the export tag
 static var watch_in_tests := false    # tests let the end card come up
+static var gate_open := false         # the gate is up: the title answers nothing behind it
 
 
 static func on() -> bool:
@@ -41,6 +42,8 @@ static func w(zh: String, en: String) -> String:
 static func apply() -> void:
 	if not on():
 		return
+	if SaveGame.path != "user://playtest_save.json":
+		print("ZERO PRESSURE playtest build, until ", EXPIRES)
 	SaveGame.path = "user://playtest_save.json"
 	Career.path = "user://playtest_career.json"
 	Txt.cfg_path = "user://playtest_settings.cfg"

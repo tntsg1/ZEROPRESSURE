@@ -16,6 +16,14 @@ var quit_b: Button
 var http: HTTPRequest
 
 
+func _enter_tree() -> void:
+	Gt.gate_open = true
+
+
+func _exit_tree() -> void:
+	Gt.gate_open = false
+
+
 func _ready() -> void:
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -139,7 +147,7 @@ func _input(ev: InputEvent) -> void:
 
 func _draw() -> void:
 	var s := get_viewport_rect().size
-	draw_rect(Rect2(Vector2.ZERO, s), Color(0.02, 0.022, 0.026, 0.96))
+	draw_rect(Rect2(Vector2.ZERO, s), Color(0.02, 0.022, 0.026, 1.0))
 	var cx := s.x * 0.5
 	var y := s.y * 0.5 - 210.0
 	_t(Gt.w("零压拆船厂 · 试玩版", "ZERO PRESSURE · PLAYTEST"), Vector2(cx, y), 34, Color(1, 1, 1, 0.95), font_b)
