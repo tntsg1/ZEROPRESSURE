@@ -12,12 +12,20 @@ extends RefCounted
 #   Q7 C  three questions at the end, answered in the game, kept with the record
 # A playtest build is the "Windows Playtest" export (feature tag "playtest"); --demo starts the same
 # from the editor or a normal build.
+# Against a crack (user 2026-10-30 "只打包第一小时+水印"): the pack carries only SHIPS, so a cracked
+# build still has only the first hour's ships. The code goes on the window's title bar and nowhere in
+# the picture (user: "激活码水印可以不搞……边框上有的话就行").
 
 const URL := "https://playtest.stellarascensiongame.com"
 const EXPIRES := "2026-11-21"        # last day (UTC), the same as the server's
 const LIMIT_S := 3600.0               # the first hour
 const GRACE_S := 3 * 86400            # offline, a machine that checked in within this still plays
 const CFG := "user://playtest_activation.cfg"
+# every ship file in the pack: what fits the 50 m berth (the 88 m chapter ends the playtest), the
+# training rigs and the berth itself. The export preset lists the same (tests/demo_pack_check.gd).
+const SHIPS := ["tug", "pod", "s09", "gr7", "h22", "jd38", "qc30", "st40",
+	"berth", "belt", "e07a", "e07b", "e07c", "e07d", "ts1",
+	"sp_atmos", "sp_cryo", "sp_energy", "sp_fluid", "sp_isolate", "sp_load", "sp_precise"]
 
 static var forced := false            # tests turn it on without the export tag
 static var watch_in_tests := false    # tests let the end card come up
@@ -104,6 +112,12 @@ static func mark_finished() -> void:
 	var cf := _cfg()
 	cf.set_value("gate", "done", true)
 	cf.save(CFG)
+
+
+# the code on the window's title bar from the moment the gate lets go
+static func mark(tree: SceneTree) -> void:
+	if on() and code() != "":
+		tree.root.title = "%s · %s · %s" % [ProjectSettings.get_setting("application/config/name"), w("试玩版", "PLAYTEST"), code()]
 
 
 # what an error from the server means, in words

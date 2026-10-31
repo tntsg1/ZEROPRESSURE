@@ -3180,7 +3180,7 @@ func _outlook(r: Rect2, a: float) -> void:
 	_text(Txt.t("tm_out_ships"), Vector2(x2, r.position.y + 10), 15, Pal.ink(0.7 * a), font_b)
 	y = r.position.y + 48.0
 	var i2 := 0
-	for e in Market.POOL:
+	for e in Market.pool():
 		var ty: Dictionary = Market.type_of(e[0])
 		if ty.is_empty():
 			continue

@@ -502,7 +502,7 @@ static func ships_with(cls: String) -> Array:
 	if _ships_cache.has(cls):
 		return _ships_cache[cls]
 	var out: Array = []
-	for e in Market.POOL:
+	for e in Market.pool():
 		var d := Ship.load_data(str(e[0]))
 		for pd in d.get("pieces", []):
 			if pd.get("cls", "") != "equip" or pd.get("tag", "") == "" or float(pd.get("value", 0.0)) < PART_MIN_VALUE:

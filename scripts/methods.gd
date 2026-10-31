@@ -230,6 +230,8 @@ static func berth_needed(id: String) -> float:
 	var ships: Array = SPEC[id].get("ships", [])
 	if ships.is_empty():
 		return 0.0
+	if not Ship.available(str(ships[0])):
+		return Dock.EXTENDED          # the playtest pack hasn't its ship: past the first hour anyway
 	return float(Market.type_of(str(ships[0])).get("length", 0.0)) + 6.0
 
 

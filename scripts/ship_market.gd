@@ -107,6 +107,8 @@ static func refresh() -> bool:
 # seller straight about it, a fair price; it stays listed until bought
 static func _showcase(id: String) -> Dictionary:
 	var ship := Methods.showcase_ship(id)
+	if not Ship.available(ship):
+		return {}
 	var spec: Dictionary = Methods.SPEC.get(id, {})
 	var o := Career.fixed_offer(ship, int(spec.get("seed", 990001)) + 7, spec.get("traps", null))
 	if o.is_empty():

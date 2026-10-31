@@ -136,6 +136,7 @@ func _activate() -> void:
 
 
 func _pass() -> void:
+	Gt.mark(get_tree())
 	queue_free()
 
 

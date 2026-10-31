@@ -9,9 +9,18 @@ const CONTENTS = preload("res://scripts/contents.gd")
 static var _cache := {}
 
 
+# a ship type this build carries: the playtest pack has the first hour's only (scripts/demo.gd SHIPS)
+static func available(id: String) -> bool:
+	if _cache.has(id):
+		return true
+	return (not Demo.on() or id in Demo.SHIPS) and FileAccess.file_exists(DIR + id + ".json")
+
+
 static func load_data(id: String) -> Dictionary:
 	if _cache.has(id):
 		return _cache[id]
+	if Demo.on() and not id in Demo.SHIPS:
+		return {}
 	var f := FileAccess.open(DIR + id + ".json", FileAccess.READ)
 	if f == null:
 		push_error("no ship file for %s" % id)

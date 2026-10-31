@@ -409,8 +409,9 @@ func _text(tx: String, pos: Vector2, px: int, alpha: float = 0.8, bold: bool = f
 func _load_sheet() -> void:
 	var data := _home_data()
 	var active: Dictionary = data.get("active", {})
-	var next_id := str(active.get("ship", "ark01"))
-	if not FileAccess.file_exists(Ship.DIR + next_id + ".json"): next_id = "ark01"
+	var usual := "ark01" if Ship.available("ark01") else "gr7"
+	var next_id := str(active.get("ship", usual))
+	if not Ship.available(next_id): next_id = usual
 	if sheet_id == next_id and sheet_mesh != null: return
 	sheet_id = next_id
 	sheet_data = Ship.load_data(sheet_id)

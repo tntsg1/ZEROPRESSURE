@@ -59,7 +59,7 @@ static func _cond(label: String, now: String, frac: float, ok: bool) -> Dictiona
 # the ships in the order a career meets them: the opening first, then by reputation
 static func ships() -> Array:
 	var order: Array = []
-	for e in Market.POOL:
+	for e in Market.pool():
 		var oi := 99
 		for i in Career.OPENING.size():
 			if Career.OPENING[i].ship == e[0]:
