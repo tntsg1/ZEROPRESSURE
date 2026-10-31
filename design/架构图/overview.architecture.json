@@ -1,0 +1,341 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "零压游戏架构总览",
+  "locale": "zh-CN",
+  "quality_profile": "showcase",
+  "viewBox": [
+   1196,
+   680
+  ],
+  "repository": {
+   "url": "https://github.com/tntsg1/ZEROPRESSURE",
+   "revision": "256b6a22d92bf42049122a3961bbc1096cb86754"
+  }
+ },
+ "components": [
+  {
+   "id": "gate",
+   "type": "security",
+   "label": "试玩激活页",
+   "sublabel": "demo_gate.gd",
+   "pos": [
+    50,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/demo_gate.gd"
+    }
+   ]
+  },
+  {
+   "id": "title",
+   "type": "frontend",
+   "label": "标题画面",
+   "sublabel": "title.tscn",
+   "pos": [
+    350,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/title.gd"
+    }
+   ]
+  },
+  {
+   "id": "terminal",
+   "type": "frontend",
+   "label": "终端",
+   "sublabel": "terminal.tscn",
+   "pos": [
+    650,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/terminal.gd"
+    }
+   ]
+  },
+  {
+   "id": "site",
+   "type": "backend",
+   "label": "拆船现场",
+   "sublabel": "main.tscn · game.gd",
+   "pos": [
+    950,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/game.gd"
+    }
+   ],
+   "tag": "核心"
+  },
+  {
+   "id": "worker",
+   "type": "cloud",
+   "label": "激活服务",
+   "sublabel": "Worker zp-playtest",
+   "pos": [
+    50,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "server/playtest/worker.mjs"
+    }
+   ]
+  },
+  {
+   "id": "recorder",
+   "type": "backend",
+   "label": "试玩记录器",
+   "sublabel": "playtest.gd",
+   "pos": [
+    350,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/playtest.gd"
+    }
+   ]
+  },
+  {
+   "id": "career",
+   "type": "backend",
+   "label": "公司进度",
+   "sublabel": "career.gd",
+   "pos": [
+    650,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/career.gd"
+    }
+   ],
+   "tag": "核心"
+  },
+  {
+   "id": "port",
+   "type": "backend",
+   "label": "工业港六区",
+   "sublabel": "port.gd · 同在 main.tscn",
+   "pos": [
+    950,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/port.gd"
+    }
+   ]
+  },
+  {
+   "id": "d1",
+   "type": "database",
+   "label": "码表与记录",
+   "sublabel": "D1 · R2",
+   "pos": [
+    50,
+    400
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "server/playtest/schema.sql"
+    }
+   ]
+  },
+  {
+   "id": "market",
+   "type": "backend",
+   "label": "市场与合同",
+   "sublabel": "market · variant",
+   "pos": [
+    350,
+    400
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/market.gd"
+    },
+    {
+     "path": "scripts/variant.gd"
+    }
+   ]
+  },
+  {
+   "id": "saves",
+   "type": "database",
+   "label": "本地存档",
+   "sublabel": "user:// · save_game",
+   "pos": [
+    650,
+    400
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/save_game.gd"
+    }
+   ]
+  },
+  {
+   "id": "content",
+   "type": "database",
+   "label": "内容数据",
+   "sublabel": "ships/ · data/",
+   "pos": [
+    350,
+    550
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "ships/gr7.json"
+    },
+    {
+     "path": "data/台词.txt"
+    },
+    {
+     "path": "data/materials.json"
+    }
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "from": "gate",
+   "to": "title",
+   "label": "激活放行",
+   "variant": "security"
+  },
+  {
+   "from": "title",
+   "to": "terminal",
+   "label": "读档进入",
+   "variant": "emphasis"
+  },
+  {
+   "from": "terminal",
+   "to": "site",
+   "label": "接单开工",
+   "variant": "emphasis"
+  },
+  {
+   "from": "site",
+   "to": "port",
+   "label": "回收件",
+   "labelDy": 24
+  },
+  {
+   "from": "terminal",
+   "to": "career",
+   "label": "读写进度",
+   "labelDy": 24
+  },
+  {
+   "from": "career",
+   "to": "saves",
+   "label": "存盘",
+   "labelDy": 24
+  },
+  {
+   "from": "gate",
+   "to": "worker",
+   "label": "校验",
+   "variant": "security",
+   "labelDy": 24
+  },
+  {
+   "from": "recorder",
+   "to": "worker",
+   "label": "同意才传",
+   "variant": "dashed"
+  },
+  {
+   "from": "worker",
+   "to": "d1"
+  },
+  {
+   "from": "market",
+   "to": "career",
+   "label": "报价"
+  },
+  {
+   "from": "content",
+   "to": "market",
+   "label": "船型"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "规模",
+   "items": [
+    "249 个脚本，3 个场景",
+    "42 艘正式船，481 个测试脚本"
+   ]
+  },
+  {
+   "dot": "emerald",
+   "title": "结构特点",
+   "items": [
+    "没有自动加载，全局状态放在类的静态变量里",
+    "新船靠 JSON 加专属机制模块"
+   ]
+  }
+ ]
+}

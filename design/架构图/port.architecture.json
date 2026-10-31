@@ -1,0 +1,342 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "工业港经营架构",
+  "locale": "zh-CN",
+  "quality_profile": "showcase",
+  "viewBox": [
+   1196,
+   530
+  ],
+  "repository": {
+   "url": "https://github.com/tntsg1/ZEROPRESSURE",
+   "revision": "256b6a22d92bf42049122a3961bbc1096cb86754"
+  }
+ },
+ "components": [
+  {
+   "id": "scan",
+   "type": "backend",
+   "label": "星图与找船",
+   "sublabel": "star_map · scan",
+   "pos": [
+    50,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/star_map.gd"
+    },
+    {
+     "path": "scripts/scan.gd"
+    }
+   ]
+  },
+  {
+   "id": "tug",
+   "type": "backend",
+   "label": "拖船区",
+   "sublabel": "tug_yard · tug_fleet",
+   "pos": [
+    350,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/tug_yard.gd"
+    },
+    {
+     "path": "scripts/tug_fleet.gd"
+    }
+   ]
+  },
+  {
+   "id": "dock",
+   "type": "backend",
+   "label": "拆船区 船坞",
+   "sublabel": "dock · game",
+   "pos": [
+    650,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/dock.gd"
+    }
+   ]
+  },
+  {
+   "id": "disposal",
+   "type": "backend",
+   "label": "结算后的去向",
+   "sublabel": "disposal · process_queue",
+   "pos": [
+    950,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/disposal.gd"
+    },
+    {
+     "path": "scripts/process_queue.gd"
+    }
+   ]
+  },
+  {
+   "id": "port",
+   "type": "backend",
+   "label": "港区总表",
+   "sublabel": "port · port_structure",
+   "pos": [
+    50,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/port.gd"
+    },
+    {
+     "path": "scripts/port_structure.gd"
+    }
+   ]
+  },
+  {
+   "id": "transit",
+   "type": "frontend",
+   "label": "港内通行",
+   "sublabel": "port_walk · tram · 中央环",
+   "pos": [
+    350,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/port_walk.gd"
+    },
+    {
+     "path": "scripts/tram.gd"
+    },
+    {
+     "path": "scripts/hub_works.gd"
+    }
+   ]
+  },
+  {
+   "id": "grid",
+   "type": "backend",
+   "label": "动力区",
+   "sublabel": "grid · power_works",
+   "pos": [
+    650,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/grid.gd"
+    },
+    {
+     "path": "scripts/power_works.gd"
+    }
+   ]
+  },
+  {
+   "id": "process",
+   "type": "backend",
+   "label": "加工区",
+   "sublabel": "process_plant · rolling_mill",
+   "pos": [
+    950,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/process_plant.gd"
+    },
+    {
+     "path": "scripts/rolling_mill.gd"
+    }
+   ]
+  },
+  {
+   "id": "career",
+   "type": "backend",
+   "label": "公司进度",
+   "sublabel": "career · works",
+   "pos": [
+    50,
+    400
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/career.gd"
+    },
+    {
+     "path": "scripts/works.gd"
+    }
+   ]
+  },
+  {
+   "id": "shipping",
+   "type": "external",
+   "label": "轨道货运",
+   "sublabel": "shipping · orbits",
+   "pos": [
+    350,
+    400
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/shipping.gd"
+    },
+    {
+     "path": "scripts/orbits.gd"
+    }
+   ]
+  },
+  {
+   "id": "trade",
+   "type": "backend",
+   "label": "贸易区",
+   "sublabel": "trade_hall · exchange",
+   "pos": [
+    650,
+    400
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/trade_hall.gd"
+    },
+    {
+     "path": "scripts/industrial_exchange.gd"
+    }
+   ]
+  },
+  {
+   "id": "cargo",
+   "type": "backend",
+   "label": "货运区",
+   "sublabel": "warehouse · freight_pier",
+   "pos": [
+    950,
+    400
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/warehouse.gd"
+    },
+    {
+     "path": "scripts/freight_pier.gd"
+    }
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "from": "scan",
+   "to": "tug",
+   "label": "找到废船",
+   "variant": "emphasis"
+  },
+  {
+   "from": "tug",
+   "to": "dock",
+   "label": "拖船进坞",
+   "variant": "emphasis"
+  },
+  {
+   "from": "dock",
+   "to": "disposal",
+   "label": "结算",
+   "variant": "emphasis"
+  },
+  {
+   "from": "disposal",
+   "to": "process",
+   "label": "留下的钢锭",
+   "variant": "emphasis",
+   "labelDy": 24
+  },
+  {
+   "from": "process",
+   "to": "cargo",
+   "label": "钢坯",
+   "variant": "emphasis",
+   "labelDy": 24
+  },
+  {
+   "from": "cargo",
+   "to": "trade",
+   "label": "出货",
+   "variant": "emphasis"
+  },
+  {
+   "from": "trade",
+   "to": "shipping",
+   "label": "外运"
+  },
+  {
+   "from": "grid",
+   "to": "process",
+   "label": "供电"
+  },
+  {
+   "from": "port",
+   "to": "transit"
+  },
+  {
+   "from": "career",
+   "to": "port",
+   "label": "出钱建设"
+  }
+ ]
+}

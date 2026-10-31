@@ -1,0 +1,316 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "数据与试玩版架构",
+  "locale": "zh-CN",
+  "quality_profile": "showcase",
+  "viewBox": [
+   1196,
+   680
+  ],
+  "repository": {
+   "url": "https://github.com/tntsg1/ZEROPRESSURE",
+   "revision": "256b6a22d92bf42049122a3961bbc1096cb86754"
+  }
+ },
+ "components": [
+  {
+   "id": "authoring",
+   "type": "external",
+   "label": "造船工具",
+   "sublabel": "tools/ship_export.gd",
+   "pos": [
+    50,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "tools/ship_export.gd"
+    }
+   ]
+  },
+  {
+   "id": "ships",
+   "type": "database",
+   "label": "船型数据 65 个",
+   "sublabel": "ships/*.json",
+   "pos": [
+    350,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "ships/gr7.json"
+    }
+   ]
+  },
+  {
+   "id": "shipload",
+   "type": "backend",
+   "label": "加载与校验",
+   "sublabel": "Ship · ship_validator",
+   "pos": [
+    650,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/ship.gd"
+    },
+    {
+     "path": "scripts/ship_validator.gd"
+    }
+   ]
+  },
+  {
+   "id": "market",
+   "type": "backend",
+   "label": "市场与合同",
+   "sublabel": "market · variant",
+   "pos": [
+    950,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/market.gd"
+    },
+    {
+     "path": "scripts/variant.gd"
+    }
+   ]
+  },
+  {
+   "id": "docs",
+   "type": "external",
+   "label": "Google Docs",
+   "sublabel": "用户改台词和界面文字",
+   "pos": [
+    50,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "tools/import_ui_text.py"
+    }
+   ]
+  },
+  {
+   "id": "text",
+   "type": "database",
+   "label": "文字文件",
+   "sublabel": "data/台词.txt · 界面文字.txt",
+   "pos": [
+    350,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "data/台词.txt"
+    },
+    {
+     "path": "data/界面文字.txt"
+    }
+   ]
+  },
+  {
+   "id": "lines",
+   "type": "backend",
+   "label": "文字层",
+   "sublabel": "txt · lines · copy",
+   "pos": [
+    650,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/txt.gd"
+    },
+    {
+     "path": "scripts/lines.gd"
+    },
+    {
+     "path": "scripts/copy.gd"
+    }
+   ]
+  },
+  {
+   "id": "export",
+   "type": "external",
+   "label": "导出预设",
+   "sublabel": "export_presets.cfg",
+   "pos": [
+    950,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "export_presets.cfg"
+    }
+   ]
+  },
+  {
+   "id": "gate",
+   "type": "security",
+   "label": "试玩激活页",
+   "sublabel": "demo · demo_gate",
+   "pos": [
+    50,
+    400
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/demo.gd"
+    },
+    {
+     "path": "scripts/demo_gate.gd"
+    }
+   ]
+  },
+  {
+   "id": "worker",
+   "type": "cloud",
+   "label": "激活服务",
+   "sublabel": "worker.mjs",
+   "pos": [
+    350,
+    400
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "server/playtest/worker.mjs"
+    }
+   ]
+  },
+  {
+   "id": "recorder",
+   "type": "backend",
+   "label": "试玩记录器",
+   "sublabel": "playtest · demo_end",
+   "pos": [
+    650,
+    400
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/playtest.gd"
+    },
+    {
+     "path": "scripts/demo_end.gd"
+    }
+   ]
+  },
+  {
+   "id": "d1",
+   "type": "database",
+   "label": "码表与记录",
+   "sublabel": "D1 zp-playtest · R2",
+   "pos": [
+    350,
+    550
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "server/playtest/schema.sql"
+    }
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "from": "authoring",
+   "to": "ships",
+   "label": "生成"
+  },
+  {
+   "from": "ships",
+   "to": "shipload",
+   "label": "读取"
+  },
+  {
+   "from": "shipload",
+   "to": "market",
+   "label": "船型"
+  },
+  {
+   "from": "docs",
+   "to": "text",
+   "label": "合并"
+  },
+  {
+   "from": "text",
+   "to": "lines",
+   "label": "启动时读"
+  },
+  {
+   "from": "lines",
+   "to": "export",
+   "label": "打进包"
+  },
+  {
+   "from": "gate",
+   "to": "worker",
+   "label": "激活校验",
+   "variant": "security"
+  },
+  {
+   "from": "recorder",
+   "to": "worker",
+   "label": "同意才传",
+   "variant": "dashed"
+  },
+  {
+   "from": "worker",
+   "to": "d1"
+  }
+ ]
+}

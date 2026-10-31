@@ -1,0 +1,1320 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "零压拆船厂 ZERO PRESSURE 游戏架构",
+  "locale": "zh-CN",
+  "quality_profile": "standard",
+  "viewBox": [
+   2000,
+   1130
+  ],
+  "views": [
+   {
+    "id": "flow",
+    "label": "一局怎么走",
+    "focus": [
+     "gate",
+     "title",
+     "terminal",
+     "game",
+     "career",
+     "market",
+     "disposal"
+    ],
+    "note": "标题读档，终端接单，进现场拆船，结算后回终端。"
+   },
+   {
+    "id": "salvage",
+    "label": "拆船现场",
+    "focus": [
+     "tools",
+     "world",
+     "systems",
+     "dock",
+     "hud",
+     "training",
+     "mech",
+     "liquids",
+     "core"
+    ],
+    "note": "工具改变 World，World 改变 Systems，风险和收益都从这里产生。"
+   },
+   {
+    "id": "port",
+    "label": "工业港经营",
+    "focus": [
+     "dock",
+     "port",
+     "transit",
+     "tug",
+     "process",
+     "cargo",
+     "trade",
+     "scan",
+     "grid",
+     "shipping"
+    ],
+    "note": "废船拖进船坞，回收件经加工、仓储，最后卖出或运走。"
+   },
+   {
+    "id": "data",
+    "label": "数据与内容",
+    "focus": [
+     "ships",
+     "shipload",
+     "text",
+     "mat",
+     "saves",
+     "authoring"
+    ],
+    "note": "船是 JSON 数据，台词在一个 TXT 里，存档在 user://。"
+   },
+   {
+    "id": "playtest",
+    "label": "试玩版",
+    "focus": [
+     "gate",
+     "recorder",
+     "worker",
+     "d1",
+     "export"
+    ],
+    "note": "一码一机联网激活，包里只带第一小时的船，记录同意后才上传。"
+   }
+  ],
+  "repository": {
+   "url": "https://github.com/tntsg1/ZEROPRESSURE",
+   "revision": "256b6a22d92bf42049122a3961bbc1096cb86754"
+  }
+ },
+ "components": [
+  {
+   "id": "gate",
+   "type": "security",
+   "label": "试玩激活页",
+   "sublabel": "demo_gate.gd",
+   "pos": [
+    70,
+    86
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/demo_gate.gd"
+    },
+    {
+     "path": "scripts/demo.gd"
+    }
+   ]
+  },
+  {
+   "id": "title",
+   "type": "frontend",
+   "label": "标题 title.tscn",
+   "sublabel": "title · title_terminal",
+   "pos": [
+    350,
+    86
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/title.gd"
+    },
+    {
+     "path": "scripts/title_terminal.gd"
+    }
+   ]
+  },
+  {
+   "id": "terminal",
+   "type": "frontend",
+   "label": "终端 terminal.tscn",
+   "sublabel": "terminal.gd · 各业务面板",
+   "pos": [
+    910,
+    86
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/terminal.gd"
+    }
+   ]
+  },
+  {
+   "id": "game",
+   "type": "backend",
+   "label": "现场 main.tscn",
+   "sublabel": "game.gd · 总调度",
+   "pos": [
+    1470,
+    86
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/game.gd"
+    }
+   ],
+   "tag": "核心"
+  },
+  {
+   "id": "market",
+   "type": "backend",
+   "label": "市场与合同",
+   "sublabel": "market · variant · traps",
+   "pos": [
+    70,
+    262
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/market.gd"
+    },
+    {
+     "path": "scripts/variant.gd"
+    },
+    {
+     "path": "scripts/traps.gd"
+    }
+   ]
+  },
+  {
+   "id": "career",
+   "type": "backend",
+   "label": "公司进度 Career",
+   "sublabel": "钱 · 声望 · 贷款",
+   "pos": [
+    350,
+    262
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/career.gd"
+    }
+   ],
+   "tag": "核心"
+  },
+  {
+   "id": "mainline",
+   "type": "backend",
+   "label": "主线与引导",
+   "sublabel": "mainline · guide · onboard",
+   "pos": [
+    70,
+    392
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/mainline.gd"
+    },
+    {
+     "path": "scripts/guide.gd"
+    },
+    {
+     "path": "scripts/onboard.gd"
+    }
+   ]
+  },
+  {
+   "id": "disposal",
+   "type": "backend",
+   "label": "结算后的去向",
+   "sublabel": "disposal · process_queue",
+   "pos": [
+    350,
+    392
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/disposal.gd"
+    },
+    {
+     "path": "scripts/process_queue.gd"
+    }
+   ]
+  },
+  {
+   "id": "repair",
+   "type": "backend",
+   "label": "船坞修复与施工",
+   "sublabel": "repair · works · crew",
+   "pos": [
+    70,
+    566
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/repair.gd"
+    },
+    {
+     "path": "scripts/works.gd"
+    },
+    {
+     "path": "scripts/crew.gd"
+    }
+   ]
+  },
+  {
+   "id": "methods",
+   "type": "backend",
+   "label": "成长与拆法",
+   "sublabel": "methods · growth · gear",
+   "pos": [
+    350,
+    566
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/methods.gd"
+    },
+    {
+     "path": "scripts/growth.gd"
+    },
+    {
+     "path": "scripts/gear.gd"
+    }
+   ]
+  },
+  {
+   "id": "tools",
+   "type": "frontend",
+   "label": "无人机与五件工具",
+   "sublabel": "drone · tools · multi_grab",
+   "pos": [
+    630,
+    262
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/drone.gd"
+    },
+    {
+     "path": "scripts/tools.gd"
+    },
+    {
+     "path": "scripts/multi_grab.gd"
+    }
+   ]
+  },
+  {
+   "id": "world",
+   "type": "backend",
+   "label": "船体结构 World",
+   "sublabel": "切割 · 连接 · 自由体",
+   "pos": [
+    910,
+    262
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/world.gd"
+    },
+    {
+     "path": "scripts/model.gd"
+    },
+    {
+     "path": "scripts/free_body.gd"
+    }
+   ],
+   "tag": "核心"
+  },
+  {
+   "id": "systems",
+   "type": "backend",
+   "label": "舱内系统 Systems",
+   "sublabel": "气体 · 电 · 管路",
+   "pos": [
+    1190,
+    262
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/systems.gd"
+    }
+   ],
+   "tag": "核心"
+  },
+  {
+   "id": "dock",
+   "type": "backend",
+   "label": "船坞 Dock",
+   "sublabel": "回收口 · 熔炉 · 吊车",
+   "pos": [
+    1470,
+    262
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/dock.gd"
+    },
+    {
+     "path": "scripts/smelter.gd"
+    },
+    {
+     "path": "scripts/crane.gd"
+    }
+   ]
+  },
+  {
+   "id": "hud",
+   "type": "frontend",
+   "label": "现场界面 HUD",
+   "sublabel": "hud · minimap · codex_hud",
+   "pos": [
+    1750,
+    262
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/hud.gd"
+    },
+    {
+     "path": "scripts/minimap.gd"
+    },
+    {
+     "path": "scripts/codex_hud.gd"
+    }
+   ]
+  },
+  {
+   "id": "training",
+   "type": "backend",
+   "label": "教程与考核",
+   "sublabel": "tutorial · exam · prologue",
+   "pos": [
+    630,
+    392
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/tutorial.gd"
+    },
+    {
+     "path": "scripts/exam.gd"
+    },
+    {
+     "path": "scripts/prologue.gd"
+    }
+   ]
+  },
+  {
+   "id": "mech",
+   "type": "backend",
+   "label": "各船专属机制 30+",
+   "sublabel": "reactor · sail · rings…",
+   "pos": [
+    910,
+    392
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/reactor.gd"
+    },
+    {
+     "path": "scripts/sail.gd"
+    },
+    {
+     "path": "scripts/rings.gd"
+    }
+   ]
+  },
+  {
+   "id": "liquids",
+   "type": "backend",
+   "label": "液体与燃烧",
+   "sublabel": "liquids · combustion · nuke",
+   "pos": [
+    1190,
+    392
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/liquids.gd"
+    },
+    {
+     "path": "scripts/combustion.gd"
+    },
+    {
+     "path": "scripts/nuke.gd"
+    }
+   ]
+  },
+  {
+   "id": "core",
+   "type": "backend",
+   "label": "核心资产与下一步",
+   "sublabel": "core_asset · next_step",
+   "pos": [
+    1750,
+    392
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/core_asset.gd"
+    },
+    {
+     "path": "scripts/next_step.gd"
+    }
+   ]
+  },
+  {
+   "id": "port",
+   "type": "backend",
+   "label": "港区总表 Port",
+   "sublabel": "port · port_structure",
+   "pos": [
+    630,
+    566
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/port.gd"
+    },
+    {
+     "path": "scripts/port_structure.gd"
+    }
+   ]
+  },
+  {
+   "id": "transit",
+   "type": "frontend",
+   "label": "港内通行",
+   "sublabel": "port_walk · tram · 中央环",
+   "pos": [
+    910,
+    566
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/port_walk.gd"
+    },
+    {
+     "path": "scripts/tram.gd"
+    },
+    {
+     "path": "scripts/hub_works.gd"
+    }
+   ]
+  },
+  {
+   "id": "scan",
+   "type": "backend",
+   "label": "星图与找船",
+   "sublabel": "star_map · scan · ship_market",
+   "pos": [
+    1190,
+    566
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/star_map.gd"
+    },
+    {
+     "path": "scripts/scan.gd"
+    },
+    {
+     "path": "scripts/ship_market.gd"
+    }
+   ]
+  },
+  {
+   "id": "tug",
+   "type": "backend",
+   "label": "拖船区",
+   "sublabel": "tug_yard · tug_fleet · charter",
+   "pos": [
+    1470,
+    566
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/tug_yard.gd"
+    },
+    {
+     "path": "scripts/tug_fleet.gd"
+    },
+    {
+     "path": "scripts/charter.gd"
+    }
+   ]
+  },
+  {
+   "id": "process",
+   "type": "backend",
+   "label": "加工区",
+   "sublabel": "process_plant · rolling_mill",
+   "pos": [
+    1750,
+    566
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/process_plant.gd"
+    },
+    {
+     "path": "scripts/rolling_mill.gd"
+    },
+    {
+     "path": "scripts/gas_line.gd"
+    }
+   ]
+  },
+  {
+   "id": "grid",
+   "type": "backend",
+   "label": "动力区 Grid",
+   "sublabel": "grid · power_works",
+   "pos": [
+    630,
+    696
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/grid.gd"
+    },
+    {
+     "path": "scripts/power_works.gd"
+    }
+   ]
+  },
+  {
+   "id": "shipping",
+   "type": "external",
+   "label": "轨道货运",
+   "sublabel": "shipping · orbits",
+   "pos": [
+    1190,
+    696
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/shipping.gd"
+    },
+    {
+     "path": "scripts/orbits.gd"
+    }
+   ]
+  },
+  {
+   "id": "trade",
+   "type": "backend",
+   "label": "贸易区",
+   "sublabel": "trade_hall · exchange",
+   "pos": [
+    1470,
+    696
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/trade_hall.gd"
+    },
+    {
+     "path": "scripts/industrial_exchange.gd"
+    },
+    {
+     "path": "scripts/exchange_panel.gd"
+    }
+   ]
+  },
+  {
+   "id": "cargo",
+   "type": "backend",
+   "label": "货运区",
+   "sublabel": "warehouse · freight_pier",
+   "pos": [
+    1750,
+    696
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/warehouse.gd"
+    },
+    {
+     "path": "scripts/freight_pier.gd"
+    },
+    {
+     "path": "scripts/cargo_works.gd"
+    }
+   ]
+  },
+  {
+   "id": "ships",
+   "type": "database",
+   "label": "船型数据 65 个",
+   "sublabel": "ships/*.json",
+   "pos": [
+    70,
+    870
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "ships/gr7.json"
+    }
+   ]
+  },
+  {
+   "id": "shipload",
+   "type": "backend",
+   "label": "船型加载与校验",
+   "sublabel": "Ship · ship_validator",
+   "pos": [
+    350,
+    870
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/ship.gd"
+    },
+    {
+     "path": "scripts/ship_validator.gd"
+    },
+    {
+     "path": "scripts/contract_validator.gd"
+    }
+   ]
+  },
+  {
+   "id": "text",
+   "type": "database",
+   "label": "台词与界面文字",
+   "sublabel": "data/台词.txt · txt.gd",
+   "pos": [
+    630,
+    870
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "data/台词.txt"
+    },
+    {
+     "path": "scripts/txt.gd"
+    },
+    {
+     "path": "scripts/lines.gd"
+    }
+   ]
+  },
+  {
+   "id": "mat",
+   "type": "database",
+   "label": "材料与资源",
+   "sublabel": "materials.json · assets",
+   "pos": [
+    910,
+    870
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "data/materials.json"
+    },
+    {
+     "path": "scripts/mat.gd"
+    }
+   ]
+  },
+  {
+   "id": "saves",
+   "type": "database",
+   "label": "本地存档 user://",
+   "sublabel": "career · save · 设置",
+   "pos": [
+    1190,
+    870
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/save_game.gd"
+    },
+    {
+     "path": "scripts/career.gd"
+    }
+   ]
+  },
+  {
+   "id": "recorder",
+   "type": "backend",
+   "label": "试玩记录器",
+   "sublabel": "playtest.gd · F7 · 截图",
+   "pos": [
+    1470,
+    870
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/playtest.gd"
+    }
+   ]
+  },
+  {
+   "id": "worker",
+   "type": "cloud",
+   "label": "激活服务",
+   "sublabel": "Worker zp-playtest",
+   "pos": [
+    1750,
+    870
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "server/playtest/worker.mjs"
+    }
+   ]
+  },
+  {
+   "id": "d1",
+   "type": "database",
+   "label": "码表与记录",
+   "sublabel": "D1 zp-playtest · R2",
+   "pos": [
+    1750,
+    1010
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "server/playtest/schema.sql"
+    }
+   ]
+  },
+  {
+   "id": "authoring",
+   "type": "external",
+   "label": "造船与文字工具",
+   "sublabel": "ship_export · export_lines",
+   "pos": [
+    70,
+    1010
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "tools/ship_export.gd"
+    },
+    {
+     "path": "tools/export_lines.py"
+    },
+    {
+     "path": "tools/import_ui_text.py"
+    }
+   ]
+  },
+  {
+   "id": "tests",
+   "type": "external",
+   "label": "测试 481 个脚本",
+   "sublabel": "tests/ · salvage_bot",
+   "pos": [
+    350,
+    1010
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "tests/bot_run.gd"
+    },
+    {
+     "path": "tests/salvage_bot.gd"
+    }
+   ]
+  },
+  {
+   "id": "export",
+   "type": "external",
+   "label": "导出预设",
+   "sublabel": "Windows · Windows Playtest",
+   "pos": [
+    630,
+    1010
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "export_presets.cfg"
+    },
+    {
+     "path": "tools/pck_list.py"
+    }
+   ]
+  },
+  {
+   "id": "look",
+   "type": "frontend",
+   "label": "画面与性能",
+   "sublabel": "look · fx · batch · art_*",
+   "pos": [
+    910,
+    1010
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/look.gd"
+    },
+    {
+     "path": "scripts/fx.gd"
+    },
+    {
+     "path": "scripts/batch.gd"
+    }
+   ]
+  },
+  {
+   "id": "ui",
+   "type": "frontend",
+   "label": "界面与声音基础",
+   "sublabel": "ui · motion · pal · sfx",
+   "pos": [
+    1190,
+    1010
+   ],
+   "size": [
+    180,
+    70
+   ],
+   "sources": [
+    {
+     "path": "scripts/ui.gd"
+    },
+    {
+     "path": "scripts/motion.gd"
+    },
+    {
+     "path": "scripts/sfx.gd"
+    }
+   ]
+  }
+ ],
+ "boundaries": [
+  {
+   "kind": "region",
+   "label": "入口与场景切换",
+   "wraps": [
+    "gate",
+    "title",
+    "terminal",
+    "game"
+   ],
+   "pad": 18
+  },
+  {
+   "kind": "region",
+   "label": "经营与成长（静态类，跨场景保留）",
+   "wraps": [
+    "market",
+    "career",
+    "mainline",
+    "disposal",
+    "repair",
+    "methods"
+   ],
+   "pad": 18
+  },
+  {
+   "kind": "region",
+   "label": "拆船现场（game.gd 持有）",
+   "wraps": [
+    "tools",
+    "world",
+    "systems",
+    "dock",
+    "hud",
+    "training",
+    "mech",
+    "liquids",
+    "core"
+   ],
+   "pad": 18
+  },
+  {
+   "kind": "region",
+   "label": "工业港六区（同在 main.tscn）",
+   "wraps": [
+    "port",
+    "transit",
+    "scan",
+    "tug",
+    "process",
+    "grid",
+    "shipping",
+    "trade",
+    "cargo"
+   ],
+   "pad": 18
+  },
+  {
+   "kind": "region",
+   "label": "数据与内容",
+   "wraps": [
+    "ships",
+    "shipload",
+    "text",
+    "mat",
+    "saves"
+   ],
+   "pad": 18
+  },
+  {
+   "kind": "security-group",
+   "label": "试玩版专属",
+   "wraps": [
+    "recorder",
+    "worker",
+    "d1"
+   ],
+   "pad": 18
+  },
+  {
+   "kind": "region",
+   "label": "开发工具（不进游戏包）",
+   "wraps": [
+    "authoring",
+    "tests",
+    "export"
+   ],
+   "pad": 18
+  },
+  {
+   "kind": "region",
+   "label": "通用基础",
+   "wraps": [
+    "look",
+    "ui"
+   ],
+   "pad": 18
+  }
+ ],
+ "connections": [
+  {
+   "from": "gate",
+   "to": "title",
+   "label": "激活放行",
+   "variant": "security"
+  },
+  {
+   "from": "title",
+   "to": "terminal",
+   "label": "读档进入",
+   "variant": "emphasis"
+  },
+  {
+   "from": "terminal",
+   "to": "game",
+   "label": "接单开工",
+   "variant": "emphasis"
+  },
+  {
+   "from": "game",
+   "to": "dock",
+   "label": "持有",
+   "labelAt": [
+    1560,
+    170
+   ]
+  },
+  {
+   "from": "game",
+   "to": "hud"
+  },
+  {
+   "from": "market",
+   "to": "career",
+   "label": "报价"
+  },
+  {
+   "from": "career",
+   "to": "disposal",
+   "label": "结算",
+   "labelAt": [
+    440,
+    346
+   ]
+  },
+  {
+   "from": "mainline",
+   "to": "repair"
+  },
+  {
+   "from": "methods",
+   "to": "tools",
+   "label": "解锁拆法"
+  },
+  {
+   "from": "tools",
+   "to": "world",
+   "label": "切抓拧",
+   "variant": "emphasis"
+  },
+  {
+   "from": "world",
+   "to": "systems",
+   "label": "破口改气压"
+  },
+  {
+   "from": "systems",
+   "to": "dock",
+   "label": "风险回传"
+  },
+  {
+   "from": "world",
+   "to": "mech"
+  },
+  {
+   "from": "systems",
+   "to": "liquids"
+  },
+  {
+   "from": "hud",
+   "to": "core"
+  },
+  {
+   "from": "training",
+   "to": "tools"
+  },
+  {
+   "from": "tug",
+   "to": "dock",
+   "label": "拖船进坞",
+   "variant": "emphasis"
+  },
+  {
+   "from": "dock",
+   "to": "process",
+   "label": "钢锭入加工",
+   "variant": "emphasis"
+  },
+  {
+   "from": "port",
+   "to": "transit"
+  },
+  {
+   "from": "port",
+   "to": "grid"
+  },
+  {
+   "from": "scan",
+   "to": "tug",
+   "label": "找到废船"
+  },
+  {
+   "from": "process",
+   "to": "cargo",
+   "label": "钢坯",
+   "labelAt": [
+    1840,
+    650
+   ]
+  },
+  {
+   "from": "cargo",
+   "to": "trade",
+   "label": "出货"
+  },
+  {
+   "from": "trade",
+   "to": "shipping",
+   "label": "外运"
+  },
+  {
+   "from": "ships",
+   "to": "shipload",
+   "label": "读取"
+  },
+  {
+   "from": "authoring",
+   "to": "ships"
+  },
+  {
+   "from": "recorder",
+   "to": "worker",
+   "label": "同意才传",
+   "variant": "dashed"
+  },
+  {
+   "from": "worker",
+   "to": "d1"
+  }
+ ],
+ "cards": [
+  {
+   "dot": "cyan",
+   "title": "规模",
+   "items": [
+    "249 个脚本，123 个带 class_name",
+    "3 个场景，没有自动加载",
+    "42 艘正式船"
+   ]
+  },
+  {
+   "dot": "amber",
+   "title": "最大的文件",
+   "items": [
+    "game.gd 5489 行",
+    "terminal.gd 3622 行",
+    "world.gd、dock.gd 各约 2300 行"
+   ]
+  },
+  {
+   "dot": "emerald",
+   "title": "结构特点",
+   "items": [
+    "全局状态放在类的静态变量里",
+    "新船靠 JSON 加专属机制模块",
+    "激活页直接连线上激活服务"
+   ]
+  }
+ ]
+}

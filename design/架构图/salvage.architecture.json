@@ -1,0 +1,347 @@
+{
+ "schema_version": 1,
+ "diagram_type": "architecture",
+ "meta": {
+  "title": "拆船现场架构",
+  "locale": "zh-CN",
+  "quality_profile": "showcase",
+  "viewBox": [
+   1196,
+   680
+  ],
+  "repository": {
+   "url": "https://github.com/tntsg1/ZEROPRESSURE",
+   "revision": "256b6a22d92bf42049122a3961bbc1096cb86754"
+  }
+ },
+ "components": [
+  {
+   "id": "save",
+   "type": "database",
+   "label": "现场存档",
+   "sublabel": "save_game.gd",
+   "pos": [
+    50,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/save_game.gd"
+    }
+   ]
+  },
+  {
+   "id": "game",
+   "type": "backend",
+   "label": "现场总调度",
+   "sublabel": "game.gd",
+   "pos": [
+    350,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/game.gd"
+    }
+   ],
+   "tag": "核心"
+  },
+  {
+   "id": "hud",
+   "type": "frontend",
+   "label": "现场界面",
+   "sublabel": "hud · minimap · codex_hud",
+   "pos": [
+    650,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/hud.gd"
+    },
+    {
+     "path": "scripts/minimap.gd"
+    }
+   ]
+  },
+  {
+   "id": "core",
+   "type": "backend",
+   "label": "核心资产与下一步",
+   "sublabel": "core_asset · next_step",
+   "pos": [
+    950,
+    100
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/core_asset.gd"
+    },
+    {
+     "path": "scripts/next_step.gd"
+    }
+   ]
+  },
+  {
+   "id": "tools",
+   "type": "frontend",
+   "label": "无人机与五件工具",
+   "sublabel": "drone · tools",
+   "pos": [
+    50,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/drone.gd"
+    },
+    {
+     "path": "scripts/tools.gd"
+    }
+   ]
+  },
+  {
+   "id": "world",
+   "type": "backend",
+   "label": "船体结构 World",
+   "sublabel": "切割 · 连接 · 自由体",
+   "pos": [
+    350,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/world.gd"
+    },
+    {
+     "path": "scripts/free_body.gd"
+    }
+   ],
+   "tag": "核心"
+  },
+  {
+   "id": "dock",
+   "type": "backend",
+   "label": "船坞 Dock",
+   "sublabel": "回收口 · 吊车",
+   "pos": [
+    650,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/dock.gd"
+    },
+    {
+     "path": "scripts/crane.gd"
+    }
+   ]
+  },
+  {
+   "id": "smelter",
+   "type": "backend",
+   "label": "熔炉与预处理",
+   "sublabel": "smelter · scrapline",
+   "pos": [
+    950,
+    250
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/smelter.gd"
+    },
+    {
+     "path": "scripts/scrapline.gd"
+    }
+   ]
+  },
+  {
+   "id": "training",
+   "type": "backend",
+   "label": "教程与考核",
+   "sublabel": "tutorial · exam · prologue",
+   "pos": [
+    50,
+    400
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/tutorial.gd"
+    },
+    {
+     "path": "scripts/exam.gd"
+    },
+    {
+     "path": "scripts/prologue.gd"
+    }
+   ]
+  },
+  {
+   "id": "systems",
+   "type": "backend",
+   "label": "舱内系统 Systems",
+   "sublabel": "气体 · 电 · 管路",
+   "pos": [
+    350,
+    400
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/systems.gd"
+    }
+   ],
+   "tag": "核心"
+  },
+  {
+   "id": "liquids",
+   "type": "backend",
+   "label": "液体与燃烧",
+   "sublabel": "liquids · combustion · nuke",
+   "pos": [
+    650,
+    400
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/liquids.gd"
+    },
+    {
+     "path": "scripts/combustion.gd"
+    },
+    {
+     "path": "scripts/nuke.gd"
+    }
+   ]
+  },
+  {
+   "id": "mech",
+   "type": "backend",
+   "label": "各船专属机制 30+",
+   "sublabel": "reactor · sail · rings…",
+   "pos": [
+    350,
+    550
+   ],
+   "size": [
+    196,
+    74
+   ],
+   "sources": [
+    {
+     "path": "scripts/reactor.gd"
+    },
+    {
+     "path": "scripts/sail.gd"
+    },
+    {
+     "path": "scripts/rings.gd"
+    }
+   ]
+  }
+ ],
+ "connections": [
+  {
+   "from": "save",
+   "to": "game",
+   "label": "读档恢复"
+  },
+  {
+   "from": "game",
+   "to": "hud"
+  },
+  {
+   "from": "hud",
+   "to": "core",
+   "label": "显示"
+  },
+  {
+   "from": "game",
+   "to": "world",
+   "label": "驱动",
+   "labelDy": 24
+  },
+  {
+   "from": "tools",
+   "to": "world",
+   "label": "切抓拧",
+   "variant": "emphasis"
+  },
+  {
+   "from": "world",
+   "to": "dock",
+   "label": "进回收口",
+   "variant": "emphasis"
+  },
+  {
+   "from": "dock",
+   "to": "smelter",
+   "label": "废料入炉"
+  },
+  {
+   "from": "training",
+   "to": "tools",
+   "label": "逐步解锁"
+  },
+  {
+   "from": "world",
+   "to": "systems",
+   "label": "破口改气压",
+   "labelDy": 24
+  },
+  {
+   "from": "systems",
+   "to": "liquids",
+   "label": "泄漏喷出"
+  },
+  {
+   "from": "systems",
+   "to": "mech",
+   "label": "读写状态",
+   "labelDy": 24
+  }
+ ]
+}
