@@ -110,7 +110,7 @@ func _g():
 
 static func cut(separated: bool) -> void:
 	if I != null and separated:
-		I._first("cut", w("第一次切开一块", "FIRST PIECE CUT FREE"))
+		I._first("cut", w("首次成功切割并分离部件", "FIRST SUCCESSFUL CUT AND PART SEPARATION"))
 		I._progress()
 
 
@@ -137,12 +137,12 @@ static func deny(why: String = "") -> void:
 	I.denies = I.denies.filter(func(x): return t - float(x) <= DENY_S)
 	if I.denies.size() >= DENY_N:
 		I.denies.clear()
-		I.note("deny", w("10 秒内被拒绝 %d 次", "%d REFUSALS IN 10 s") % DENY_N, "")
+		I.note("deny", w("10 秒内操作被系统拒绝 %d 次", "ACTION BLOCKED %d TIMES WITHIN 10 SECONDS") % DENY_N, "")
 
 
 static func help(what: String) -> void:
 	if I != null:
-		I.note("help", w("打开说明：%s", "OPENED HELP: %s") % what, "")
+		I.note("help", w("玩家查看了帮助说明：%s", "PLAYER OPENED HELP SECTION: %s") % what, "")
 
 
 static func hint(text: String) -> void:
@@ -235,21 +235,21 @@ func guess(kind: String) -> Array:
 	var out: Array = []
 	var t := now()
 	if t - last_input > 15.0:
-		out.append(w("超过 15 秒没有任何操作：可能在读字，或者不知道该做什么", "No input for over 15 s: reading, or not sure what to do"))
+		out.append(w("玩家已超过 15 秒没有操作，可能正在阅读说明，或不清楚下一步该做什么。", "NO PLAYER INPUT FOR OVER 15 SECONDS. PLAYER MAY BE READING INSTRUCTIONS OR UNSURE WHAT TO DO NEXT."))
 	if last_deny != "" and not denies.is_empty():
-		out.append(w("刚被拒绝：%s", "Just refused: %s") % last_deny)
+		out.append(w("最近一次被系统拒绝的操作：%s", "MOST RECENT BLOCKED ACTION: %s") % last_deny)
 	elif kind == "deny" and last_deny != "":
-		out.append(w("反复试同一个被拒的操作：%s", "Trying a refused move again: %s") % last_deny)
+		out.append(w("玩家多次尝试同一项无效操作：%s，可能尚未理解操作限制。", "PLAYER REPEATEDLY ATTEMPTED THE SAME BLOCKED ACTION: %s. POSSIBLE CONFUSION ABOUT ACTION RESTRICTIONS.") % last_deny)
 	if page_key != "" and t - page_since > 20.0 and page_clicks == 0:
-		out.append(w("在“%s”页停了 %d 秒没点任何东西：可能看不懂这页", "On %s for %d s without a click: the page may be unclear") % [page_key, int(t - page_since)])
+		out.append(w("玩家在“%s”页面停留了 %d 秒，期间没有点击操作，可能未找到需要的功能或看不懂页面内容。", "On %s for %d s without a click: the page may be unclear") % [page_key, int(t - page_since)])
 	var helps := entries.filter(func(e): return e.kind == "help" and t - float(e.t) < 60.0).size()
 	if helps >= 2:
-		out.append(w("一分钟内查了 %d 次说明", "Help opened %d times in a minute") % helps)
+		out.append(w("玩家在一分钟内打开了 %d 次帮助说明，可能需要更明确的操作引导。", "PLAYER OPENED HELP %d TIMES WITHIN ONE MINUTE. ADDITIONAL GUIDANCE MAY BE NEEDED.") % helps)
 	var g = _g()
 	if g != null and g.get("console_ui") == null and kind == "stuck":
 		var gd = g.get("guide")
 		if gd != null and is_instance_valid(gd) and gd.active():
-			out.append(w("现场引导在等一件事，看箭头指向是否在画面外", "The guide waits on something; check whether its arrow points off screen"))
+			out.append(w("当前引导任务仍未完成，请检查目标是否清晰可见，以及引导箭头是否指向了屏幕外。", "CURRENT TUTORIAL OBJECTIVE REMAINS INCOMPLETE. CHECK WHETHER THE TARGET IS VISIBLE AND IF THE GUIDANCE ARROW POINTS OFF-SCREEN."))
 	return out
 
 
@@ -409,13 +409,13 @@ func _process(dt: float) -> void:
 		var on := t - step_since
 		if on >= STUCK_1 and not step_flags & 1:
 			step_flags |= 1
-			note("stuck", w("卡在“%s”第 %s 步 20 秒", "STUCK 20 s ON %s STEP %s") % [gu[0], gu[1]], "")
+			note("stuck", w("“%s”第 %s 步已经 20 秒没进展", "NO PROGRESS FOR 20 s: %s, STEP %s") % [gu[0], gu[1]], "")
 		if on >= STUCK_2 and not step_flags & 2:
 			step_flags |= 2
-			note("stuck", w("卡在“%s”第 %s 步 40 秒", "STUCK 40 s ON %s STEP %s") % [gu[0], gu[1]], "")
+			note("stuck", w("“%s”第 %s 步已经 40 秒没进展", "NO PROGRESS FOR 40 s: %s, STEP %s") % [gu[0], gu[1]], "")
 		if on >= STEP_EXPECT * 2.0 and not step_flags & 4:
 			step_flags |= 4
-			note("slow", w("“%s”第 %s 步超过预计 2 倍（%d 秒）", "%s STEP %s OVER TWICE ITS TIME (%d s)") % [gu[0], gu[1], int(on)], "")
+			note("slow", w("“%s”第 %s 步耗时超过预估的两倍（%d 秒）", "%s, STEP %s: OVER 2× ESTIMATED TIME (%d s)") % [gu[0], gu[1], int(on)], "")
 	var p := page()
 	if p != page_key:
 		page_key = p
@@ -426,27 +426,27 @@ func _process(dt: float) -> void:
 	# money, repairs, methods, settled jobs: the milestones and the money going under
 	var money := float(Career.data.get("money", 0.0))
 	if money_seen != INF and money > money_seen + 0.5:
-		_first("money", w("第一笔进账 +%s", "FIRST MONEY IN +%s") % Pal.money(money - money_seen))
+		_first("money", w("第一笔收入：+%s", "FIRST EARNINGS: +%s") % Pal.money(money - money_seen))
 		_progress()
 	if money < 0.0 and money_seen >= 0.0 and money_seen != INF:
-		note("accident", w("钱变成负数：%s", "MONEY BELOW ZERO: %s") % Pal.money(money), "")
+		note("accident", w("余额已为负数：%s", "NEGATIVE BALANCE: %s") % Pal.money(money), "")
 	money_seen = money
 	var reps := 0
 	for it in Repair.ITEMS:
 		if Repair.done(str(it[0])):
 			reps += 1
 	if repairs_seen >= 0 and reps > repairs_seen:
-		_first("repair", w("第一项修缮完成", "FIRST REPAIR DONE"))
+		_first("repair", w("第一处设施修好了", "FIRST REPAIR FINISHED"))
 		_progress()
 	repairs_seen = reps
 	var meth: int = Career.data.get("methods", {}).size()
 	if methods_seen >= 0 and meth > methods_seen:
-		_first("method", w("第一次学会新拆法", "FIRST METHOD LEARNED"))
+		_first("method", w("学会了第一种拆法", "LEARNED A NEW WAY TO DISMANTLE"))
 	methods_seen = meth
 	var jobs: int = Career.data.get("history", []).size()
 	if jobs_seen >= 0 and jobs > jobs_seen:
 		var last: Dictionary = Career.data.history[-1] if Career.data.history[-1] is Dictionary else {}
-		_add({"t": t, "kind": "milestone", "title": w("结完第 %d 单 %s", "JOB %d SETTLED %s") % [jobs, str(last.get("ship", ""))], "why": "", "shot": "", "state": {}})
+		_add({"t": t, "kind": "milestone", "title": w("第 %d 单结算完了：%s", "JOB %d SETTLED: %s") % [jobs, str(last.get("ship", ""))], "why": "", "shot": "", "state": {}})
 		_progress()
 	jobs_seen = jobs
 
@@ -469,7 +469,7 @@ func _open_note() -> void:
 	var box := VBoxContainer.new()
 	panel.add_child(box)
 	var lab := Label.new()
-	lab.text = w("这里哪不明白？写一句（可不写），Enter 记下，Esc 取消", "What is unclear here? One line (optional). Enter saves, Esc cancels")
+	lab.text = w("有什么没看懂的？写一句就行，也可以不写。Enter 保存，Esc 取消", "Something confusing here? Leave a note if you want. Enter to save, Esc to cancel.")
 	box.add_child(lab)
 	note_box = LineEdit.new()
 	note_box.custom_minimum_size = Vector2(700, 40)
@@ -490,7 +490,7 @@ func _close_note(keep: bool, text: String) -> void:
 	note_box = null
 	get_tree().paused = note_paused
 	if keep:
-		_add({"t": now(), "kind": "own", "title": w("试玩者标记：这里不懂", "PLAYER: I DON'T GET THIS"), "why": [text] if text.strip_edges() != "" else [], "shot": note_shot, "state": note_state})
+		_add({"t": now(), "kind": "own", "title": w("玩家标记：这里没看懂", "PLAYER NOTE: I DIDN'T GET THIS"), "why": [text] if text.strip_edges() != "" else [], "shot": note_shot, "state": note_state})
 
 
 # ---------------------------------------------------------------- the report

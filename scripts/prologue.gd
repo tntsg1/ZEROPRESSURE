@@ -174,14 +174,14 @@ func _fill() -> void:
 			title.text = w("按 %s 刹停" % k.call("brake"), "PRESS %s TO STOP" % k.call("brake"))
 			_body(w("太空里没有摩擦，松手也会一直漂。", "Nothing slows you in space."), w("太空里没有摩擦，松开方向键也会一直漂。%s 开飞行稳定会自动帮你减速。" % k.call("assist"), "Nothing slows you in space. %s turns on flight assist." % k.call("assist")))
 		"measure":
-			title.text = w("按 1 拿测量仪，左键点残骸", "PRESS 1 FOR THE METER, CLICK THE HULK")
-			body.text = w("先读数再动手：质量、材质、带不带电、有没有压力。", "Read before you touch: mass, material, charge, pressure.")
+			title.text = w("按 1 切换至测量仪，使用鼠标左键扫描目标残骸。", "PRESS 1 TO EQUIP THE SCANNER. LEFT-CLICK THE DERELICT TO INSPECT IT.")
+			body.text = w("拆解前先检查目标状态，确认质量、材料类型、供电情况及内部压力。", "INSPECT THE TARGET BEFORE DISMANTLING. CHECK ITS MASS, MATERIAL TYPE, ELECTRICAL STATUS, AND INTERNAL PRESSURE.")
 		"cut":
-			title.text = w("按 2 激光切割：切断桅杆根部", "PRESS 2: CUT THE MAST AT ITS FOOT")
-			_body(w("按住左键，沿闪烁的根部划过去。", "Hold the button, sweep across its flashing foot."), w("一根撞弯的天线桅杆焊死在船尾框架上，压住了拖缆眼。按住左键沿闪烁的根部划过去。", "A bent antenna mast is welded to the stern frame over the tow eye. Hold the button and sweep across its flashing foot."))
+			title.text = w("按 2 切换至激光切割器，准备切断桅杆底部的连接结构。", "PRESS 2 TO EQUIP THE LASER CUTTER. CUT THROUGH THE MAST'S BASE CONNECTION.")
+			_body(w("按住鼠标左键，沿桅杆底部闪烁的切割线移动，直到连接完全切断。", "HOLD LEFT MOUSE BUTTON AND MOVE ALONG THE FLASHING CUT LINE AT THE BASE OF THE MAST UNTIL THE CONNECTION IS SEVERED."), w("船尾有根撞弯的天线桅杆，底部焊在船体框架上，正好挡住了拖缆眼。按住鼠标左键，沿着闪烁的焊接处切开，把它拆下来。", "A bent antenna mast is welded to the stern frame, blocking the tow eye. HOLD LEFT CLICK and cut along the flashing welds to detach it."))
 		"clear":
-			title.text = w("按 3 磁力抓钩：把桅杆拖开", "PRESS 3: GRAPPLE THE MAST CLEAR")
-			_body(w("抓住，拖开 6 m 以上再松开。", "Grab it, pull it 6 m clear, let go."), w("左键抓住，拖离拖缆眼 6 m 以上再松开；甩一下它会自己飘走。", "Grab it, pull it more than 6 m off the eye and let go; a flick sends it drifting."))
+			title.text = w("按 3 切换到磁力抓钩，把拆下来的桅杆移开。", "PRESS 3 TO EQUIP THE MAGNETIC GRAPPLE. MOVE THE DETACHED MAST OUT OF THE WAY.")
+			_body(w("抓住桅杆，把它拖到距离拖缆眼至少 6 m 的位置，再松开。", "GRAB THE MAST AND PULL IT AT LEAST 6 m AWAY FROM THE TOW EYE BEFORE RELEASING."), w("按住左键抓住桅杆，拖离拖缆眼 6 m 以上。松开前可以顺势甩一下，让它自己飘远。", "HOLD LEFT CLICK TO GRAB THE MAST. PULL IT MORE THAN 6 m CLEAR OF THE TOW EYE. GIVE IT A FLICK BEFORE RELEASING TO SEND IT DRIFTING."))
 		"tow":
 			title.text = w("飞到拖缆眼，按 %s 挂缆" % k.call("use"), "AT THE TOW EYE, PRESS %s" % k.call("use"))
 			_body(w("挂上缆，拖船把它拖回七号坞。", "Hook on; the tug takes it home."), w("挂上缆，拖船把它拖回七号坞。到港以后它就是你的第一笔料。", "Hook it on and the tug takes it home to Berth 07: your first material."))

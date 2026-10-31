@@ -346,9 +346,14 @@ func _go_rect() -> Rect2:
 	return Rect2(s.x * 0.5 - 200, s.y * 0.66, 400, 64)
 
 
+# 2026-10-30 (the author's longer words): each button as wide as its label needs, the pair centred
 func _choice_rect(i: int) -> Rect2:
 	var s := c.size
-	return Rect2(s.x * 0.5 - 330 + i * 340, s.y * 0.5 + 10, 320, 64)
+	var w: Array = []
+	for key in ["tut_exam", "tut_contract"]:
+		w.append(maxf(320.0, font.get_string_size(game.txt(key), HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 72.0))
+	var x := s.x * 0.5 - (float(w[0]) + float(w[1]) + 20.0) * 0.5
+	return Rect2(x + (float(w[0]) + 20.0 if i == 1 else 0.0), s.y * 0.5 + 10, w[i], 64)
 
 
 func _choice(s: Vector2, k: float) -> void:

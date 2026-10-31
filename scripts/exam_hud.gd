@@ -83,8 +83,13 @@ func _brief(ex: Exam) -> void:
 		_text(game.txt("ex_hints") % ex.hints, Vector2(x, y + 106), 13, Pal.heat(0.8, 1.0), font)
 
 
+# 2026-10-30 (the author's longer words): each button as wide as its label needs, the pair centred
 func _button(s: Vector2, i: int) -> Rect2:
-	return Rect2(s.x * 0.5 - 330 + i * 340, s.y - 120, 320, 60)
+	var w: Array = []
+	for key in ["ex_retake", "tut_contract"]:
+		w.append(maxf(320.0, font.get_string_size(game.txt(key), HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 72.0))
+	var x := s.x * 0.5 - (float(w[0]) + float(w[1]) + 20.0) * 0.5
+	return Rect2(x + (float(w[0]) + 20.0 if i == 1 else 0.0), s.y - 120, w[i], 60)
 
 
 func _result(s: Vector2, ex: Exam) -> void:
@@ -126,7 +131,8 @@ func _result(s: Vector2, ex: Exam) -> void:
 				what = what % r.detail
 			_text(stamp, Vector2(cx - 380, yy), 13, Pal.heat(0.8 * re, 1.0), font_b)
 			_text(what, Vector2(cx - 300, yy), 16, Pal.ink(0.92 * re), font_b)
-			_text(game.txt(r.why), Vector2(cx - 300, yy + 24), 13, Pal.ink(0.55 * re), font)
+			# two lines at most, within the row's 62 px (the author's fuller explanations)
+			c.draw_multiline_string(font, Vector2(cx - 300, yy + 22), game.txt(r.why), HORIZONTAL_ALIGNMENT_LEFT, REVIEW_W, 13, 2, Pal.ink(0.55 * re))
 	if e > 1.0:
 		var m := c.get_local_mouse_position()
 		for i in 2:
@@ -136,6 +142,9 @@ func _result(s: Vector2, ex: Exam) -> void:
 			c.draw_rect(b, Pal.ink(0.6 if hot else 0.22), false, 1.2)
 			_text(str(i + 1), b.position + Vector2(18, 39), 22, Pal.heat(0.9, 1.1), font_l)
 			_text(game.txt("ex_retake") if i == 0 else game.txt("tut_contract"), b.position + Vector2(48, 38), 16, Pal.ink(0.9))
+
+
+const REVIEW_W := 880.0      # px: the review's lines, from cx - 300
 
 
 func _clock(sec: float) -> String:

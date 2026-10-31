@@ -4,6 +4,7 @@
 #   python -X utf8 tools/import_ui_text.py                    # show what would change, change nothing
 #   python -X utf8 tools/import_ui_text.py --write            # change the code
 #   python -X utf8 tools/import_ui_text.py a.txt b.txt ...    # read these instead (the cloud docs, downloaded as text)
+#   python -X utf8 tools/import_ui_text.py --skip=hud.gd,x.gd # leave these scripts alone
 # Checks before it writes: the %s / %d / {name} kept, in the same order; the code still says what it
 # said at export (otherwise someone changed it since: that id is listed, not written); every
 # character in the fonts. A short label (short:N) is written to every place it stands for.
@@ -17,6 +18,8 @@ DICT_FILE = {"txt": "txt.gd", "gear": "gear_txt.gd", "codex": "codex_txt.gd"}
 HOLES = re.compile(r'%[-+0-9.]*[sdfx%]|\{[a-z_0-9]+\}|\[%s\]')
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 write = "--write" in sys.argv
+# --skip=hud.gd,core_asset.gd: scripts another session is working in: their entries are listed, never written
+SKIP = [f for a in sys.argv[1:] if a.startswith("--skip=") for f in a[7:].split(",") if f]
 SRCS = args or [os.path.join(ROOT, "data", "界面文字.txt")]
 
 
@@ -61,6 +64,10 @@ for iid, (zh, en) in got.items():
     for m in was.get("same", [iid]):
         want[m] = (z, e)
 
+skipped = sorted(i for i in want if side[i].get("file", DICT_FILE.get(i.partition(":")[0], "")) in SKIP)
+for i in skipped:
+    del want[i]
+
 # ---------------------------------------------------------------- checks
 problems = []
 bad = set()
@@ -86,11 +93,17 @@ for iid, (z, e) in want.items():
             new_chars |= {c for c in new if ord(c) > 0x7e and ord(c) not in fonts_ok}
 
 files = {}
+crlf = set()          # scripts with CRLF line ends: written back with them
 
 
 def src(name):
     if name not in files:
-        files[name] = open(os.path.join(ROOT, "scripts", name), encoding="utf-8").read()
+        raw = open(os.path.join(ROOT, "scripts", name), "rb").read()
+        crlf.add(name) if b"
+" in raw else None
+        files[name] = raw.decode("utf-8").replace("
+", "
+")
     return files[name]
 
 
@@ -172,13 +185,17 @@ for p in problems:
     print("  ✗", p)
 for c in cant:
     print("  ！", c)
+for i in skipped:
+    print("  － 跳过（--skip 的文件）：", i)
 for u in unknown[:30]:
     print("  ？ 不认识的编号（游戏里没有，或者编号被改了）：", u)
 if new_chars:
     print("字体里还没有的字（写回后跑 tools/subset_font.py 会补上）：", "".join(sorted(new_chars)))
 if write and not problems:
     for name, s in files.items():
-        open(os.path.join(ROOT, "scripts", name), "w", encoding="utf-8", newline="").write(s)
+        open(os.path.join(ROOT, "scripts", name), "w", encoding="utf-8", newline="").write(s.replace("
+", "
+") if name in crlf else s)
     if guide is not None:
         open(os.path.join(ROOT, "data", "onboarding_copy.json"), "w", encoding="utf-8").write(json.dumps(guide, ensure_ascii=False, indent=2))
     print("已写回。接着：tools/subset_font.py → tools/export_ui_text.py → tests/text_fit.gd")

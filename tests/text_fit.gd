@@ -238,8 +238,7 @@ func _fit_all() -> void:
 		for s in _both("tier_" + tr):
 			tb.append("1  " + s)
 	_fit("tier button", tb, 15, 228, "Medium")
-	_fit("tier description", _prefixed("tier_desc_"), 11, 228)
-	_fit("contract card", _keys(["tier_rule", "c_title", "c_title_n", "c_log_n", "c_fee_n"]) + _prefixed("c_req"), 15, 804)
+	_fit("contract card", _keys(["c_title", "c_title_n", "c_log_n", "c_fee_n"]) + _prefixed("c_req"), 15, 804)
 	# Liang's radio: two lines of 700 px at most (keep a margin for wrapping)
 	var radio: Array = _prefixed("as_") + _prefixed("rc_") + _prefixed("ex_l") + _keys(["ex_hint_cost", "ex_free", "ex_broken", "ex_a", "ex_bc", "tier_now"])
 	var course: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://ships/ts1_course.json"))
@@ -282,11 +281,13 @@ func _fit_all() -> void:
 	_fit("#002 to be continued", ep.next.tbc, 22, 552, "Medium")
 	_fit("epilogue card", ep.card, 18, 1200, "Medium")
 	# the assessment
-	_fit("exam buttons", _keys(["ex_retake", "tut_contract", "tut_exam"]), 16, 260)
+	# the two buttons take the width their labels need (exam_hud._button, tutorial_hud._choice_rect)
+	_fit("exam buttons", _keys(["ex_retake", "tut_contract", "tut_exam"]), 16, 640)
 	_fit("exam brief", _keys(["ex_goal"]), 18, 620, "Medium")
 	_fit("exam brief", _keys(["ex_known", "ex_q"]), 14, 620)
-	_fit("review what", _prefixed("rv_w_"), 16, 680, "Medium")
-	_fit("review why", _prefixed("rv_y_"), 13, 680)
+	_fit("review what", _prefixed("rv_w_"), 16, 880, "Medium")
+	# two lines of 880 px (exam_hud.REVIEW_W), a margin for where the line breaks
+	_fit("review why", _prefixed("rv_y_"), 13, 1640)
 	_fit("exam grade line", _prefixed("ex_g_"), 15, 900)
 	# settlement rows and the training task list
 	_fit("settlement row", _prefixed("e_"), 17, 380)

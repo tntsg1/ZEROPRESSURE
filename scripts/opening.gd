@@ -106,7 +106,7 @@ static func broken() -> Array:
 
 static func company() -> String:
 	var c := str(Career.data.get("company", "")) if Career.usable() else ""
-	return c if c != "" else ("（未填写）" if Txt.zh else "(NOT GIVEN)")
+	return c if c != "" else ("尚未填写" if Txt.zh else "NOT SPECIFIED")
 
 
 static func permit_day() -> int:
@@ -152,14 +152,16 @@ func _draw() -> void:
 		draw_rect(r, Color(0.02, 0.024, 0.03, 0.82 * k))
 		draw_multiline_string(font, r.position + Vector2(28, 40), cap, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 56, 20, 3, Pal.ink(0.92 * k))
 	# user 2026-10-26: "新手还不知道自己马上要做什么" — the whole of it in one plain line, on every card
-	var goal := w("接下来：先拖回一艘废船，拆下零件换钱，再一点点修复这座船厂。", "WHAT'S NEXT: TOW A WRECK HOME, STRIP IT FOR MONEY, THEN MEND THE YARD BIT BY BIT.")
-	var gw := font.get_string_size(goal, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x + 48.0
-	var gr := Rect2(s.x * 0.5 - gw * 0.5, 34, gw, 50)
+	var goal := w("接下来，你需要从废船回收开始。把找到的船拖回七号坞，拆解并出售回收物资，用赚来的钱修复设备，逐步恢复船厂的运营。", "YOUR FIRST JOB IS TO RECOVER A DERELICT SHIP. TOW IT BACK TO BERTH 07, DISMANTLE IT, AND SELL THE SALVAGED MATERIALS. USE THE EARNINGS TO REPAIR YOUR EQUIPMENT AND GET THE YARD RUNNING AGAIN.")
+	# 2026-10-30 (the author's fuller line): wrapped inside the screen, the box as tall as it comes out
+	var gw := minf(font.get_string_size(goal, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x + 48.0, s.x - 240.0)
+	var gh := font.get_multiline_string_size(goal, HORIZONTAL_ALIGNMENT_LEFT, gw - 48.0, 24).y
+	var gr := Rect2(s.x * 0.5 - gw * 0.5, 34, gw, gh + 18.0)
 	draw_rect(gr, Color(0.02, 0.024, 0.03, 0.88))
 	draw_rect(Rect2(gr.position, Vector2(4, gr.size.y)), UiSkin.ACCENT)
-	draw_string(font, gr.position + Vector2(24, 34), goal, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Pal.ink(0.96))
+	draw_multiline_string(font, gr.position + Vector2(24, 34), goal, HORIZONTAL_ALIGNMENT_LEFT, gw - 48.0, 24, -1, Pal.ink(0.96))
 	# the way on, big enough to see the first time
-	var nav := w("%d / %d · 任意键下一张 · Esc 跳过", "%d / %d · ANY KEY: NEXT · Esc: SKIP") % [card + 1, CARDS.size()]
+	var nav := w("%d / %d · 按任意键继续 · Esc 跳过开场", "%d / %d · ANY KEY TO CONTINUE · ESC TO SKIP INTRO") % [card + 1, CARDS.size()]
 	var nw := font.get_string_size(nav, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
 	draw_string(font, Vector2(s.x - nw - 48, s.y - 34), nav, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Pal.ink(0.85))
 
@@ -172,24 +174,29 @@ func _permit(s: Vector2, k: float) -> void:
 	var faint := Color(0.12, 0.11, 0.1, 0.6 * k)
 	var x := r.position.x + 48
 	var y := r.position.y + 70
-	draw_string(font, Vector2(r.position.x, y), w("零压港港务局", "ZERO PRESSURE PORT AUTHORITY"), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16, faint)
+	draw_string(font, Vector2(r.position.x, y), w("零压港港务管理局", "ZERO PRESSURE PORT AUTHORITY"), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16, faint)
 	y += 44
-	draw_string(font, Vector2(r.position.x, y), w("回收权使用证", "SALVAGE USE PERMIT"), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 34, ink)
+	draw_string(font, Vector2(r.position.x, y), w("船舶回收作业许可证", "SHIP SALVAGE OPERATING PERMIT"), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 34, ink)
 	y += 50
 	var rows := [
 		[w("证号", "NO."), "ZP-SUP-BERTH07-%04d" % (int(Career.data.get("seed", 0)) % 10000 if Career.usable() else 0)],
-		[w("使用范围", "SCOPE"), w("七号坞（BERTH 07）及其附属设施", "BERTH 07 AND ITS FIXTURES")],
+		[w("使用范围", "SCOPE"), w("七号船坞及附属设施", "BERTH 07 AND ASSOCIATED FACILITIES")],
 		[w("持证公司", "HOLDER"), company()],
-		[w("发证日期", "ISSUED"), w("港历第 %d 天", "PORT DAY %d") % permit_day()],
-		[w("取得方式", "BY"), w("回收权申请（荒废泊位，无偿）", "SALVAGE CLAIM (DERELICT BERTH, NO FEE)")],
+		[w("发证日期", "ISSUED"), w("港历第 %d 日", "PORT DAY %d") % permit_day()],
+		[w("取得方式", "BY"), w("废弃泊位经营权申请（免收申请费用）", "DERELICT BERTH OPERATING RIGHTS APPLICATION (NO APPLICATION FEE)")],
 	]
 	for row in rows:
 		draw_string(font, Vector2(x, y), str(row[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, faint)
-		draw_string(font, Vector2(x + 140, y), str(row[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, ink)
+		# 2026-10-30: a long value comes down a size or two rather than run off the paper
+		var vw := r.size.x - 96.0 - 140.0
+		var fs := 17
+		while fs > 11 and font.get_string_size(str(row[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > vw:
+			fs -= 1
+		draw_string(font, Vector2(x + 140, y), str(row[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
 		y += 34
 	y += 10
 	var b := broken()
-	draw_string(font, Vector2(x, y), w("现状清单：%d 处损坏或停用", "AS FOUND: %d ITEMS BROKEN OR SHUT") % b.size(), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, ink)
+	draw_string(font, Vector2(x, y), w("设施现状：共记录 %d 项损坏或停用设施", "FACILITY INSPECTION: %d DAMAGED OR INACTIVE ITEMS RECORDED") % b.size(), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, ink)
 	y += 28
 	var col := 0
 	for i in b.size():
@@ -208,18 +215,24 @@ func _permit(s: Vector2, k: float) -> void:
 	# the signature goes on
 	var sk := clampf((t - 1.5) / 1.6, 0.0, 1.0)
 	var sy := r.end.y - 70
-	draw_string(font, Vector2(x, sy), w("持证人签字", "SIGNED"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, faint)
+	draw_string(font, Vector2(x, sy), w("持证企业代表签署", "AUTHORIZED COMPANY SIGNATURE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, faint)
 	var name := company()
 	var shown := name.substr(0, int(ceil(name.length() * sk)))
-	draw_string(font, Vector2(x + 140, sy), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(0.1, 0.16, 0.42, k))
-	draw_line(Vector2(x + 130, sy + 8), Vector2(x + 520, sy + 8), faint, 1.0)
+	# the signature starts after its label, however long the label reads
+	var nx := x + maxf(140.0, font.get_string_size(w("持证企业代表签署", "AUTHORIZED COMPANY SIGNATURE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 16.0)
+	draw_string(font, Vector2(nx, sy), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(0.1, 0.16, 0.42, k))
+	draw_line(Vector2(nx - 10.0, sy + 8), Vector2(r.end.x - 48.0, sy + 8), faint, 1.0)
 	# the stamp
 	if t > 3.2:
 		var sc := r.end - Vector2(150, 150)
 		var a := clampf((t - 3.2) / 0.3, 0.0, 1.0) * k
 		draw_arc(sc, 62, 0.0, TAU, 48, Color(0.7, 0.14, 0.1, 0.8 * a), 3.0, true)
 		draw_arc(sc, 54, 0.0, TAU, 48, Color(0.7, 0.14, 0.1, 0.8 * a), 1.5, true)
-		draw_string(font, sc + Vector2(-60, 6), w("零压港务局", "ZP AUTHORITY"), HORIZONTAL_ALIGNMENT_CENTER, 120, 15, Color(0.7, 0.14, 0.1, 0.9 * a))
+		# wrapped inside the ring, centred on it
+		var seal := w("零压港港务局", "ZERO PRESSURE PORT AUTHORITY")
+		var sfs := 15 if Txt.zh else 12
+		var sh := font.get_multiline_string_size(seal, HORIZONTAL_ALIGNMENT_CENTER, 120.0, sfs).y
+		draw_multiline_string(font, sc + Vector2(-60, 6.0 - (sh - sfs * 1.3) * 0.5), seal, HORIZONTAL_ALIGNMENT_CENTER, 120.0, sfs, 3, Color(0.7, 0.14, 0.1, 0.9 * a))
 	var cap := caption("L_intro_4")
 	if cap != "":
 		draw_multiline_string(font, Vector2(s.x * 0.5 - 520, s.y - 60), cap, HORIZONTAL_ALIGNMENT_CENTER, 1040, 18, 2, Pal.ink(0.9 * k))

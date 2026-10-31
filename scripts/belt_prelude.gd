@@ -140,10 +140,10 @@ func _draw_scene() -> void:
 	# the captions: where and what, typed in
 	var font := Fonts.get_font("Medium")
 	var lines := [
-		[0.6, Ops.w("小行星带 · 零压港以北 2,400 km", "THE BELT · 2,400 km NORTH OF ZERO PRESSURE PORT")],
-		[3.2, Ops.w("你的拖船巡航时找到一艘漂流船 · 船籍已注销", "YOUR TUG FINDS A DRIFTING HULK · REGISTRY CANCELLED")],
+		[0.6, Ops.w("小行星带巡航区 · 距零压港 2,400 公里，方位：北", "ASTEROID BELT PATROL ZONE · 2,400 KM NORTH OF ZERO PRESSURE PORT")],
+		[3.2, Ops.w("例行巡航途中，拖船发现一艘无人驾驶的漂流船。经查询，该船的船籍登记早已注销。", "DURING A ROUTINE PATROL, YOUR TUG DISCOVERS AN UNCREWED VESSEL DRIFTING THROUGH THE BELT. REGISTRY CHECK CONFIRMS THE SHIP WAS DECOMMISSIONED LONG AGO.")],
 		[6.2, Ops.w("挂缆", "CABLE ON")],
-		[8.4, Ops.w("拖回零压港 · 七号坞", "TOWING IT HOME · BERTH 07")],
+		[8.4, Ops.w("目标船舶已确认，准备拖回零压港。目的地：七号坞。", "VESSEL IDENTIFIED AND READY FOR RECOVERY. DESTINATION: ZERO PRESSURE PORT, BERTH 07.")],
 	]
 	var y := s.y - 150.0
 	for ln in lines:
@@ -152,6 +152,10 @@ func _draw_scene() -> void:
 			continue
 		var txt: String = ln[1]
 		var n := int(clampf((t - start) / 1.2, 0.0, 1.0) * txt.length())
-		ci.draw_string(font, Vector2(80, y), txt.substr(0, n), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Pal.ink(0.9 * a))
+		# 2026-10-30: a long line comes down a size or two rather than run off the screen
+		var fs := 22
+		while fs > 14 and font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > s.x - 160.0:
+			fs -= 1
+		ci.draw_string(font, Vector2(80, y), txt.substr(0, n), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Pal.ink(0.9 * a))
 		y += 34.0
 	ci.draw_string(Fonts.get_font("Regular"), Vector2(s.x - 80, s.y - 40), Ops.w("Esc 跳过", "Esc to skip"), HORIZONTAL_ALIGNMENT_RIGHT, -1, 14, Pal.ink(0.4 * a))

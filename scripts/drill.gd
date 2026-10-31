@@ -66,20 +66,20 @@ static func grant() -> Dictionary:
 	Career.data.drill = {"granted": true, "done": false}
 	if not Career.save():
 		Career.data = before
-		return {"ok": false, "reason": w("保存失败，训练单未发放", "SAVE FAILED, NOTHING HANDED OVER")}
+		return {"ok": false, "reason": w("存档失败，训练任务未能发放，请重试。", "SAVE FAILED. TRAINING ORDER COULD NOT BE ISSUED. PLEASE TRY AGAIN.")}
 	return {"ok": true}
 
 
 # the terminal's pinned decision: what to do next, and where it leads
 static func step() -> Dictionary:
 	if Port.stage("process") < 1:
-		return {"text": w("训练单：先把加工区修到 1 阶，公司炉和分选线在那里", "TRAINING RUN: MEND THE PROCESSING DISTRICT FIRST"), "go": "guide:build:process"}
+		return {"text": w("训练任务：先将加工区修复至 1 级，恢复工业熔炉和材料分选线的运行。", "TRAINING ORDER: RESTORE THE PROCESSING DISTRICT TO LEVEL 1 AND BRING THE INDUSTRIAL FURNACE AND SORTING LINE BACK ONLINE."), "go": "guide:build:process"}
 	if not granted():
-		return {"text": w("训练单：港务局送 1 t 未分选金属，电费、化验费全免", "TRAINING RUN: 1 t OF MIXED METAL ON THE PORT, POWER AND ASSAY FREE"), "go": "drill"}
+		return {"text": w("训练任务：港务局已提供 1 吨混合废金属供你加工。本次训练的电费和材料检测费由港务局承担。", "TRAINING ORDER: THE PORT AUTHORITY HAS PROVIDED 1 TONNE OF MIXED SCRAP METAL FOR PROCESSING. ELECTRICITY AND MATERIAL ASSAY COSTS ARE COVERED FOR THIS TRAINING RUN."), "go": "drill"}
 	var t := Guide.first_for_clients()
-	var txt := {"clients": w("训练单：把钢坯交给工业客户", "TRAINING RUN: SHIP THE BILLETS"), "heat": w("训练单：到炉台炼钢坯", "TRAINING RUN: MELT THE FEED"),
-		"assay": w("训练单：到化验位给炉料定级", "TRAINING RUN: GRADE THE FEED"), "sort": w("训练单：到分选台按『整线加工』", "TRAINING RUN: RUN THE LINE ON THE TONNE"),
-		"buy_feed": w("训练单：到分选台分选那 1 t", "TRAINING RUN: SORT THE TONNE")}
+	var txt := {"clients": w("训练任务：将加工完成的钢坯交付工业客户，完成本次订单。", "TRAINING ORDER: DELIVER THE FINISHED STEEL BILLETS TO THE INDUSTRIAL CLIENT TO COMPLETE THE ORDER."), "heat": w("训练任务：前往工业炉台，将处理好的金属炉料熔炼成钢坯。", "TRAINING ORDER: HEAD TO THE INDUSTRIAL FURNACE AND SMELT THE PREPARED METAL FEED INTO STEEL BILLETS."),
+		"assay": w("训练任务：前往材料化验台，检测炉料成分并确认材料等级。", "TRAINING ORDER: TAKE THE METAL FEED TO THE ASSAY STATION TO ANALYZE ITS COMPOSITION AND DETERMINE ITS GRADE."), "sort": w("训练任务：前往材料分选台，选择「整线加工」，将这批金属送入分选线处理。", "TRAINING ORDER: GO TO THE SORTING STATION AND SELECT \"PROCESS FULL BATCH\" TO RUN THE METAL THROUGH THE SORTING LINE."),
+		"buy_feed": w("训练任务：前往材料分选台，将提供的 1 吨混合废金属完成分选。", "TRAINING ORDER: GO TO THE SORTING STATION AND SORT THE 1 TONNE OF MIXED SCRAP METAL PROVIDED BY THE PORT AUTHORITY.")}
 	return {"text": str(txt.get(t, "")), "go": "guide:" + ("sort" if t == "buy_feed" else t)}
 
 
