@@ -1,0 +1,104 @@
+# 2026-11-02 从 data/界面文字.txt 拿掉的 102 条（玩家看不到）。云端文档「界面文字」里搜编号删掉即可；不删也不会出错，导入时只列为不认识的编号。
+
+[txt:tier_standard]  标准（推荐）
+[txt:tier_desc_guided]  针对已知危险提供具体的检查步骤和操作建议。
+[txt:tier_desc_standard]  仅提示哪些系统存在未处理的问题，具体操作由你自行判断。
+[txt:tier_desc_hardcore]  关闭所有额外提示，仅保留仪表读数和设备实际发出的警报。
+[txt:tier_rule]  所有档位使用相同的模拟规则。提示等级不会影响船舶状态、检测结果、回收价值或事故判定，只决定系统向你提供多少帮助。
+[txt:tier_now]  当前提示等级：%s
+[txt:plan_manual_only]  远航者只能亲手拆：作业方案、回放和自动作业包在这艘船上不能用。吊机、牵引、泵和仪器你自己操作照常可以。
+[txt:plan_title]  作业方案 %d/%d
+[txt:plan_needs_method]  这一刀请手动切：切割机照方案切要先学会拆法「%s」
+[txt:plan_none]  此船型暂无方案：手动操作开关、阀门或软管后结算即可保存；只检测不录入步骤
+[txt:plan_no_actions]  未生成方案：本单没有成功的开关、阀门或软管操作；只检测不录入步骤
+[txt:plan_pending]  已记录 %s 步，结算后保存（从菜单结算也可）
+[txt:plan_pending_prefix]  已记录 %s 步；异常操作后停止续录，结算时保留此前步骤
+[txt:plan_record_blocked]  未生成方案：操作 %s 引发事故，之前没有可保存步骤
+[txt:plan_rejected]  暂无可保存步骤：%s 操作未成功；处理阻碍后重试，再结算
+[txt:plan_career_only]  作业方案仅在正式合同结算时保存
+[txt:plan_saved]  作业方案已保存：%s 步；下次同船型按 P 执行
+[txt:plan_saved_prefix]  作业方案已保存：事故操作之前的 %s 步；异常步骤未录入
+[txt:plan_ready]  待命，按键开始
+[txt:plan_preset_running]  灰鹭预置方案启动：自动检测、断电、泄压与回路处理；P 暂停
+[txt:plan_preset_ready]  灰鹭预置方案已就绪，下次同型船按 P 即可使用
+[txt:plan_preset_title]  灰鹭预置方案 %d/%d
+[txt:plan_preset_idle]  按 P 自动准备 · 无需先录制
+[txt:plan_preset_wait]  自动复测 %s · 等待读数达标
+[txt:plan_preset_blocked]  暂停：%s 受阻，请检查
+[txt:plan_running]  作业方案开始执行
+[txt:plan_stopped]  作业方案已停
+[txt:plan_done]  作业方案已走完
+[txt:plan_skipped]  跳过这一刀：下次的方案里没有它
+[txt:plan_measure]  暂停：先重测 %s
+[txt:plan_differs]  暂停：%s 读数和方案不符
+[txt:plan_hidden]  暂停：%s 还在封闭舱里
+[txt:plan_changed]  停止：船上没有 %s，这艘和方案不一样
+[gear:plan_cut_pressure]  舱室 %s 还带压，机器不切
+[gear:plan_cut_live]  线路 %s 还带电，机器不切
+[gear:plan_cutter_wait]  切割机器人正在接近 %s；请保持工位和射线通畅
+[gear:plan_cut_pipe]  切缝经过管线 %s，先隔离并排净介质
+[gear:plan_cut_incident]  %s 切割发生事故，方案已停止，需检查后重新授权
+[gear:plan_cut_vessel]  %s 还带压或有液体，机器不切
+[gear:plan_haul_nobody]  没有机器能搬 %s 那一段
+[gear:plan_haul_wait]  等待 %s 松脱并实际送达回收口
+[gear:plan_haul_wrong]  %s 进入了不同回收口，请检查交付目标
+[gear:plan_cut_structure]  %s 的局部形状或连接已改变，请检查后调整拆法
+[gear:plan_cut_result]  %s 未达到记录的切离结果，请检查残余连接
+[gear:plan_cut_preserved]  %s 影响保留目标，已留给你处理
+[gear:plan_saved_cuts]  含 %d 刀、%d 次搬运
+[txt:goal_valuable]  贵重设备专项
+[txt:goal_safe_d]  目标 · 安全回收：零事故完工，另付所得的 5%
+[txt:goal_fast_d]  目标 · 快速回收：标准用时短四分之一，时效奖金最高 30%
+[txt:goal_valuable_d]  目标 · 贵重设备专项：指定设备每件完整送达，另付其价值的 25%
+[txt:sc_section_d]  只拆 27 号肋位以后的区段（D、E 舱、发动机和尾部船壳）；区段外的零件能动，但拆走或切坏按违约扣钱
+[txt:sc_rescue_d]  只要 %s 完整送进设备口，每件按件付酬；送齐即收工，其余船体不归你
+[gear:pkg_preparation]  灰鹭 · 基础安全处置
+[gear:pkg_legacy]  旧式操作方案
+[gear:pkg_dependency]  等待前置作业包
+[gear:pkg_progress]  作业包 %d / %d
+[gear:pkg_recorded_controls]  现场记录 · 安全处置
+[gear:pkg_recorded_cut]  验证切口 · %s
+[gear:pkg_recorded_haul]  现场记录 · 松脱件转运
+[hud:_ops_strip:1]  待决策 %d 项
+[hud:_ops_strip:2]  没有待决策
+[txt:rt_tier_2]  技能书第 II 卷
+[txt:rt_tier_3]  技能书第 III 卷
+[txt:tm_facilities]  船坞设施（买一次，永久生效）
+[plan_panel:_ready:1]  作业方案 / 授权预览
+[plan_panel:_ready:2]  选择机器负责的工序，保留你要亲手处理的部分。授权前不会执行。
+[plan_panel:_ready:5]  授权所选作业包
+[plan_panel:_ready:6]  返回现场 [Esc]
+[plan_panel:refresh_detail:1]  已验证局部工序
+[plan_panel:refresh_detail:2]  旧式操作记录：保留原有安全检查，尚未验证整体工程目的。
+[plan_panel:refresh_detail:3]  预置安全处置：检测、阀门与开关；不包含整船切割。
+[plan_panel:refresh_detail:4]  适用船型：
+[plan_panel:refresh_detail:6]  保留对象：
+[plan_panel:refresh_detail:7]  禁止授权：切口与保留对象冲突：
+[plan_panel:refresh_detail:8]  缺失的前置工序
+[plan_panel:refresh_detail:9]  前置作业包：
+[plan_panel:refresh_detail:10]  定位到局部目标
+[plan_panel:refresh_detail:11]  取消保留目标
+[plan_panel:refresh_detail:12]  保留目标，交由我处理
+[plan_panel:refresh_detail:13]  验证后切割
+[plan_panel:refresh_detail:14]  运输并确认实际送达
+[plan_panel:refresh_detail:16]  授权后回到现场；P 停止方案，J 停止机器。缺少检测或结构不符时暂停。
+[plan_panel:refresh_order_sale:1]  当前：出售回收物（不交付工程）· 点击改为预留
+[plan_panel:refresh_order_sale:2]  当前：预留给工程 · 点击改为出售
+[plan_panel:refresh_anchor_mode:1]  新部署牵引锚：锁索支撑 · 点击切换收卷
+[plan_panel:refresh_anchor_mode:2]  新部署牵引锚：收卷到废料槽 · 点击切换锁索
+[plan_panel:locate:1]  当前现场找不到目标：
+[power_works:shore_state:1]  收起 · 没用岸电
+[power_works:shore_state:2]  岸电臂伸出中 %d%%
+[power_works:shore_state:3]  已接上 · 岸电 %.1f MW（$%d/MWh）
+[short:34]  提示档位
+[short:35]  引导
+[short:36]  硬核
+[short:54]  下一步：%s
+[short:55]  切割 %s
+[short:56]  搬运
+[short:369]  差钱
+[short:952]  %s 打开终端
+[short:1143]  %d 个工序
+[short:1144]  查看工序
+[short:1145]  目标：
+[short:1146]  安全处置
