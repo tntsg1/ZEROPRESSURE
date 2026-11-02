@@ -109,42 +109,6 @@
 "file": "txt.gd",
 "line": 0
 },
-"txt:tier_standard": {
-"zh": "标准（推荐）",
-"en": "STANDARD (RECOMMENDED)",
-"file": "txt.gd",
-"line": 0
-},
-"txt:tier_desc_guided": {
-"zh": "针对已知危险提供具体的检查步骤和操作建议。",
-"en": "PROVIDES SPECIFIC INSPECTION STEPS AND GUIDANCE FOR KNOWN HAZARDS.",
-"file": "txt.gd",
-"line": 0
-},
-"txt:tier_desc_standard": {
-"zh": "仅提示哪些系统存在未处理的问题，具体操作由你自行判断。",
-"en": "IDENTIFIES UNRESOLVED SYSTEM ISSUES WITHOUT TELLING YOU HOW TO FIX THEM.",
-"file": "txt.gd",
-"line": 0
-},
-"txt:tier_desc_hardcore": {
-"zh": "关闭所有额外提示，仅保留仪表读数和设备实际发出的警报。",
-"en": "DISABLES ALL EXTRA HINTS. ONLY INSTRUMENT READINGS AND ACTUAL EQUIPMENT ALARMS REMAIN.",
-"file": "txt.gd",
-"line": 0
-},
-"txt:tier_rule": {
-"zh": "所有档位使用相同的模拟规则。提示等级不会影响船舶状态、检测结果、回收价值或事故判定，只决定系统向你提供多少帮助。",
-"en": "ALL DIFFICULTY LEVELS USE THE SAME SIMULATION RULES. HINT SETTINGS ONLY CHANGE HOW MUCH GUIDANCE YOU RECEIVE. SHIP CONDITIONS, READINGS, SALVAGE VALUES, AND INCIDENT OUTCOMES REMAIN UNCHANGED.",
-"file": "txt.gd",
-"line": 0
-},
-"txt:tier_now": {
-"zh": "当前提示等级：%s",
-"en": "CURRENT HINT LEVEL: %s",
-"file": "txt.gd",
-"line": 0
-},
 "txt:save_recovered": {
 "zh": "存档损坏，已从上一次自动存档恢复",
 "en": "SAVE DAMAGED · RESTORED FROM THE PREVIOUS AUTOSAVE",
@@ -3479,246 +3443,6 @@
 "file": "txt.gd",
 "line": 0
 },
-"txt:plan_manual_only": {
-"zh": "远航者只能亲手拆：作业方案、回放和自动作业包在这艘船上不能用。吊机、牵引、泵和仪器你自己操作照常可以。",
-"en": "THE ARK IS STRIPPED BY HAND: NO WORK PLAN, REPLAY OR PACKAGE HERE. YOUR OWN CRANE, TOWING, PUMPS AND INSTRUMENTS STILL WORK.",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_title": {
-"zh": "作业方案 %d/%d",
-"en": "WORK PLAN %d/%d",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_needs_method": {
-"zh": "这一刀请手动切：切割机照方案切要先学会拆法「%s」",
-"en": "MAKE THIS CUT BY HAND: THE CUTTER WORKS A PLAN ONCE YOU LEARN %s",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_none": {
-"zh": "此船型暂无方案：手动操作开关、阀门或软管后结算即可保存；只检测不录入步骤",
-"en": "NO PLAN: WORK CONTROLS OR HOSES, THEN SETTLE. MEASURING ALONE RECORDS NO STEPS",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_no_actions": {
-"zh": "未生成方案：本单没有成功的开关、阀门或软管操作；只检测不录入步骤",
-"en": "NO PLAN SAVED: NO SUCCESSFUL CONTROL OR HOSE OPERATIONS; MEASURING ALONE RECORDS NO STEPS",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_pending": {
-"zh": "已记录 %s 步，结算后保存（从菜单结算也可）",
-"en": "%s STEPS RECORDED; SAVED AT SETTLEMENT, INCLUDING MENU SETTLEMENT",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_pending_prefix": {
-"zh": "已记录 %s 步；异常操作后停止续录，结算时保留此前步骤",
-"en": "%s STEPS RECORDED; RECORDING STOPPED AFTER AN UNSAFE OPERATION; SETTLEMENT KEEPS THE PREFIX",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_record_blocked": {
-"zh": "未生成方案：操作 %s 引发事故，之前没有可保存步骤",
-"en": "NO PLAN SAVED: OPERATION %s CAUSED AN INCIDENT WITH NO EARLIER VALID STEPS",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_rejected": {
-"zh": "暂无可保存步骤：%s 操作未成功；处理阻碍后重试，再结算",
-"en": "NO STEPS TO SAVE: %s DID NOT SUCCEED; CLEAR THE OBSTRUCTION, RETRY, THEN SETTLE",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_career_only": {
-"zh": "作业方案仅在正式合同结算时保存",
-"en": "WORK PLANS ARE SAVED WHEN SETTLING CAREER CONTRACTS",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_saved": {
-"zh": "作业方案已保存：%s 步；下次同船型按 P 执行",
-"en": "WORK PLAN SAVED: %s STEPS; PRESS P ON THE NEXT SHIP OF THIS TYPE",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_saved_prefix": {
-"zh": "作业方案已保存：事故操作之前的 %s 步；异常步骤未录入",
-"en": "WORK PLAN SAVED: %s STEPS BEFORE THE UNSAFE OPERATION; UNSAFE STEP EXCLUDED",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_ready": {
-"zh": "待命，按键开始",
-"en": "READY",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_preset_running": {
-"zh": "灰鹭预置方案启动：自动检测、断电、泄压与回路处理；P 暂停",
-"en": "GREY HERON PRESET RUNNING: CHECKS, ISOLATION, RECOVERY; P TO PAUSE",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_preset_ready": {
-"zh": "灰鹭预置方案已就绪，下次同型船按 P 即可使用",
-"en": "GREY HERON PRESET READY; PRESS P ON THIS SHIP TYPE",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_preset_title": {
-"zh": "灰鹭预置方案 %d/%d",
-"en": "GREY HERON PRESET %d/%d",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_preset_idle": {
-"zh": "按 P 自动准备 · 无需先录制",
-"en": "P: AUTO PREP · NO RECORDING NEEDED",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_preset_wait": {
-"zh": "自动复测 %s · 等待读数达标",
-"en": "RECHECK %s · WAIT FOR SAFE READING",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_preset_blocked": {
-"zh": "暂停：%s 受阻，请检查",
-"en": "PAUSED: %s BLOCKED; CHECK FITTING",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_running": {
-"zh": "作业方案开始执行",
-"en": "WORK PLAN RUNNING",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_stopped": {
-"zh": "作业方案已停",
-"en": "WORK PLAN STOPPED",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_done": {
-"zh": "作业方案已走完",
-"en": "WORK PLAN DONE",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_skipped": {
-"zh": "跳过这一刀：下次的方案里没有它",
-"en": "STEP SKIPPED: THE NEXT PLAN LEAVES IT OUT",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_measure": {
-"zh": "暂停：先重测 %s",
-"en": "PAUSED: MEASURE %s AGAIN",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_differs": {
-"zh": "暂停：%s 读数和方案不符",
-"en": "PAUSED: %s DOES NOT READ AS PLANNED",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_hidden": {
-"zh": "暂停：%s 还在封闭舱里",
-"en": "PAUSED: %s IS STILL SEALED IN",
-"file": "txt.gd",
-"line": 0
-},
-"txt:plan_changed": {
-"zh": "停止：船上没有 %s，这艘和方案不一样",
-"en": "STOPPED: NO %s ON THIS SHIP, IT DIFFERS FROM THE PLAN",
-"file": "txt.gd",
-"line": 0
-},
-"gear:plan_cut_pressure": {
-"zh": "舱室 %s 还带压，机器不切",
-"en": "ROOM %s STILL HOLDS PRESSURE: NO CUT",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:plan_cut_live": {
-"zh": "线路 %s 还带电，机器不切",
-"en": "LINE %s STILL LIVE: NO CUT",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:plan_cutter_wait": {
-"zh": "切割机器人正在接近 %s；请保持工位和射线通畅",
-"en": "CUTTER APPROACHING %s: KEEP THE WORK POSITION AND BEAM PATH CLEAR",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:plan_cut_pipe": {
-"zh": "切缝经过管线 %s，先隔离并排净介质",
-"en": "KERF CROSSES PIPE %s: ISOLATE AND DRAIN FIRST",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:plan_cut_incident": {
-"zh": "%s 切割发生事故，方案已停止，需检查后重新授权",
-"en": "INCIDENT WHILE CUTTING %s: STOPPED; INSPECT AND REAUTHORIZE",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:plan_cut_vessel": {
-"zh": "%s 还带压或有液体，机器不切",
-"en": "%s STILL CHARGED OR WET: NO CUT",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:plan_haul_nobody": {
-"zh": "没有机器能搬 %s 那一段",
-"en": "NO MACHINE ABOARD CAN TAKE %s",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:plan_haul_wait": {
-"zh": "等待 %s 松脱并实际送达回收口",
-"en": "WAITING FOR %s TO DETACH AND ARRIVE",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:plan_haul_wrong": {
-"zh": "%s 进入了不同回收口，请检查交付目标",
-"en": "%s ARRIVED AT THE WRONG BAY",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:plan_cut_structure": {
-"zh": "%s 的局部形状或连接已改变，请检查后调整拆法",
-"en": "%s HAS CHANGED SHAPE OR CONNECTIONS; CHECK THE LOCAL STRUCTURE",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:plan_cut_result": {
-"zh": "%s 未达到记录的切离结果，请检查残余连接",
-"en": "%s DID NOT REACH THE VERIFIED CUT RESULT",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:plan_cut_preserved": {
-"zh": "%s 影响保留目标，已留给你处理",
-"en": "%s WOULD CUT A PRESERVED TARGET; MANUAL WORK REQUIRED",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:plan_saved_cuts": {
-"zh": "含 %d 刀、%d 次搬运",
-"en": "with %d cuts, %d hauls",
-"file": "gear_txt.gd",
-"line": 0
-},
 "txt:net": {
 "zh": "碎屑收集网",
 "en": "DEBRIS NET",
@@ -5957,30 +5681,6 @@
 "file": "txt.gd",
 "line": 0
 },
-"txt:goal_valuable": {
-"zh": "贵重设备专项",
-"en": "VALUABLE EQUIPMENT",
-"file": "txt.gd",
-"line": 0
-},
-"txt:goal_safe_d": {
-"zh": "目标 · 安全回收：零事故完工，另付所得的 5%",
-"en": "GOAL · SAFE: NO INCIDENT AT ALL PAYS 5% OF THE TAKE ON TOP",
-"file": "txt.gd",
-"line": 0
-},
-"txt:goal_fast_d": {
-"zh": "目标 · 快速回收：标准用时短四分之一，时效奖金最高 30%",
-"en": "GOAL · FAST: A QUARTER LESS STANDARD TIME, TIME BONUS UP TO 30%",
-"file": "txt.gd",
-"line": 0
-},
-"txt:goal_valuable_d": {
-"zh": "目标 · 贵重设备专项：指定设备每件完整送达，另付其价值的 25%",
-"en": "GOAL · VALUABLE: EACH NAMED PIECE DELIVERED WHOLE PAYS 25% OF ITS VALUE",
-"file": "txt.gd",
-"line": 0
-},
 "txt:mouth_moving_equip": {
 "zh": "设备口沿导轨移到头顶",
 "en": "EQUIPMENT BAY COMING OVERHEAD",
@@ -6119,21 +5819,9 @@
 "file": "txt.gd",
 "line": 0
 },
-"txt:sc_section_d": {
-"zh": "只拆 27 号肋位以后的区段（D、E 舱、发动机和尾部船壳）；区段外的零件能动，但拆走或切坏按违约扣钱",
-"en": "ONLY THE SECTION AFT OF FRAME 27; PIECES OUTSIDE MAY BE MOVED, BUT TAKING OR CUTTING THEM IS A BREACH",
-"file": "txt.gd",
-"line": 0
-},
 "txt:sc_boundary": {
 "zh": "区段边界 · 27 号肋位",
 "en": "SECTION BOUNDARY · FRAME 27",
-"file": "txt.gd",
-"line": 0
-},
-"txt:sc_rescue_d": {
-"zh": "只要 %s 完整送进设备口，每件按件付酬；送齐即收工，其余船体不归你",
-"en": "ONLY %s, WHOLE, TO THE EQUIPMENT MOUTH, PAID PER PIECE; DONE WHEN ALL ARE IN; THE REST OF THE HULL IS NOT YOURS",
 "file": "txt.gd",
 "line": 0
 },
@@ -6362,48 +6050,6 @@
 "gear:cs_tile": {
 "zh": "工程成果 %d / %d",
 "en": "ACHIEVEMENTS %d / %d",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:pkg_preparation": {
-"zh": "灰鹭 · 基础安全处置",
-"en": "GREY HERON · SAFE PREPARATION",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:pkg_legacy": {
-"zh": "旧式操作方案",
-"en": "LEGACY OPERATION RECORDING",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:pkg_dependency": {
-"zh": "等待前置作业包",
-"en": "WAITING FOR PREREQUISITE",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:pkg_progress": {
-"zh": "作业包 %d / %d",
-"en": "WORK PACKAGES %d / %d",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:pkg_recorded_controls": {
-"zh": "现场记录 · 安全处置",
-"en": "FIELD RECORD · PREPARATION",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:pkg_recorded_cut": {
-"zh": "验证切口 · %s",
-"en": "VERIFIED KERF · %s",
-"file": "gear_txt.gd",
-"line": 0
-},
-"gear:pkg_recorded_haul": {
-"zh": "现场记录 · 松脱件转运",
-"en": "FIELD RECORD · LOOSE LOADS",
 "file": "gear_txt.gd",
 "line": 0
 },
@@ -11867,22 +11513,6 @@
 "func": "_guide",
 "en_line": 1443
 },
-"hud:_ops_strip:1": {
-"zh": "待决策 %d 项",
-"en": "%d WAITING ON YOU",
-"file": "hud.gd",
-"line": 1505,
-"func": "_ops_strip",
-"en_line": 1505
-},
-"hud:_ops_strip:2": {
-"zh": "没有待决策",
-"en": "NOTHING WAITING",
-"file": "hud.gd",
-"line": 1505,
-"func": "_ops_strip",
-"en_line": 1505
-},
 "hud:_toolbar:1": {
 "zh": "教程稍后解锁",
 "en": "LATER IN THE GUIDE",
@@ -11919,63 +11549,63 @@
 "zh": "核心资产 · %s（%s）· 满价 %s",
 "en": "CORE ASSET · %s (%s) · WHOLE %s",
 "file": "hud.gd",
-"line": 2664,
+"line": 2665,
 "func": "_asset_card",
-"en_line": 2664
+"en_line": 2665
 },
 "hud:_asset_card:2": {
 "zh": "%s　%s %s · 约 %d–%d 分钟",
 "en": "%s　%s %s · ABOUT %d–%d MIN",
 "file": "hud.gd",
-"line": 2671,
+"line": 2672,
 "func": "_asset_card",
-"en_line": 2671
+"en_line": 2672
 },
 "hud:_asset_card:3": {
 "zh": "%s　%s %s · 用时待实测",
 "en": "%s　%s %s · TIME NOT MEASURED",
 "file": "hud.gd",
-"line": 2674,
+"line": 2675,
 "func": "_asset_card",
-"en_line": 2674
+"en_line": 2675
 },
 "hud:_asset_board:1": {
 "zh": "核心资产 · %s",
 "en": "CORE ASSET · %s",
 "file": "hud.gd",
-"line": 2707,
+"line": 2708,
 "func": "_asset_board",
-"en_line": 2707
+"en_line": 2708
 },
 "hud:_asset_board:2": {
 "zh": "预估 %s / %s",
 "en": "NOW %s / %s",
 "file": "hud.gd",
-"line": 2708,
+"line": 2709,
 "func": "_asset_board",
-"en_line": 2708
+"en_line": 2709
 },
 "hud:_next_mark:1": {
 "zh": "进行中 · ",
 "en": "UNDER WAY · ",
 "file": "hud.gd",
-"line": 2786,
+"line": 2787,
 "func": "_next_mark",
-"en_line": 2786
+"en_line": 2787
 },
 "hud:_next_mark:2": {
 "zh": "下一步 · ",
 "en": "NEXT · ",
 "file": "hud.gd",
-"line": 2786,
+"line": 2787,
 "func": "_next_mark",
-"en_line": 2786
+"en_line": 2787
 },
 "hud:_asset_review:7": {
 "zh": "−%s  %s（%d 次）",
 "en": "",
 "file": "hud.gd",
-"line": 2856,
+"line": 2857,
 "func": "_asset_review",
 "en_line": 0
 },
@@ -14477,18 +14107,6 @@
 "file": "txt.gd",
 "line": 0
 },
-"txt:rt_tier_2": {
-"zh": "技能书第 II 卷",
-"en": "FIELD MANUAL VOLUME II",
-"file": "txt.gd",
-"line": 0
-},
-"txt:rt_tier_3": {
-"zh": "技能书第 III 卷",
-"en": "FIELD MANUAL VOLUME III",
-"file": "txt.gd",
-"line": 0
-},
 "txt:rt_tier_d": {
 "zh": "每种技能的这一卷都要攒够完成的合同和声望才能买",
 "en": "Every skill's volume needs enough jobs done and reputation first",
@@ -14576,12 +14194,6 @@
 "txt:rt_ship_med47": {
 "zh": "12 个独立医疗舱、多隔离区",
 "en": "Twelve sealed medical bays, several isolation zones",
-"file": "txt.gd",
-"line": 0
-},
-"txt:tm_facilities": {
-"zh": "船坞设施（买一次，永久生效）",
-"en": "BERTH FACILITIES (BOUGHT ONCE, KEPT)",
 "file": "txt.gd",
 "line": 0
 },
@@ -15462,190 +15074,6 @@
 "line": 9,
 "func": "顶层",
 "en_line": 9
-},
-"plan_panel:_ready:1": {
-"zh": "作业方案 / 授权预览",
-"en": "WORK PLANS / AUTHORIZATION PREVIEW",
-"file": "plan_panel.gd",
-"line": 54,
-"func": "_ready",
-"en_line": 54
-},
-"plan_panel:_ready:2": {
-"zh": "选择机器负责的工序，保留你要亲手处理的部分。授权前不会执行。",
-"en": "Choose the work to delegate. Keep critical dismantling in your hands. Previewing never starts a job.",
-"file": "plan_panel.gd",
-"line": 55,
-"func": "_ready",
-"en_line": 55
-},
-"plan_panel:_ready:5": {
-"zh": "授权所选作业包",
-"en": "AUTHORIZE SELECTED WORK",
-"file": "plan_panel.gd",
-"line": 109,
-"func": "_ready",
-"en_line": 109
-},
-"plan_panel:_ready:6": {
-"zh": "返回现场 [Esc]",
-"en": "RETURN [Esc]",
-"file": "plan_panel.gd",
-"line": 112,
-"func": "_ready",
-"en_line": 112
-},
-"plan_panel:refresh_detail:1": {
-"zh": "已验证局部工序",
-"en": "VERIFIED LOCAL PROCESS",
-"file": "plan_panel.gd",
-"line": 125,
-"func": "refresh_detail",
-"en_line": 125
-},
-"plan_panel:refresh_detail:2": {
-"zh": "旧式操作记录：保留原有安全检查，尚未验证整体工程目的。",
-"en": "Legacy recording: original safety checks apply; the overall engineering outcome is unverified.",
-"file": "plan_panel.gd",
-"line": 126,
-"func": "refresh_detail",
-"en_line": 126
-},
-"plan_panel:refresh_detail:3": {
-"zh": "预置安全处置：检测、阀门与开关；不包含整船切割。",
-"en": "Authored preparation: readings, valves and switches; this is not whole-ship automatic dismantling.",
-"file": "plan_panel.gd",
-"line": 127,
-"func": "refresh_detail",
-"en_line": 127
-},
-"plan_panel:refresh_detail:4": {
-"zh": "适用船型：",
-"en": "SHIP: ",
-"file": "plan_panel.gd",
-"line": 131,
-"func": "refresh_detail",
-"en_line": 131
-},
-"plan_panel:refresh_detail:6": {
-"zh": "保留对象：",
-"en": "PRESERVE: ",
-"file": "plan_panel.gd",
-"line": 133,
-"func": "refresh_detail",
-"en_line": 133
-},
-"plan_panel:refresh_detail:7": {
-"zh": "禁止授权：切口与保留对象冲突：",
-"en": "CANNOT AUTHORIZE: CUTS CONFLICT WITH PRESERVED OBJECTS: ",
-"file": "plan_panel.gd",
-"line": 135,
-"func": "refresh_detail",
-"en_line": 135
-},
-"plan_panel:refresh_detail:8": {
-"zh": "缺失的前置工序",
-"en": "MISSING PREREQUISITE",
-"file": "plan_panel.gd",
-"line": 139,
-"func": "refresh_detail",
-"en_line": 139
-},
-"plan_panel:refresh_detail:9": {
-"zh": "前置作业包：",
-"en": "PREREQUISITES: ",
-"file": "plan_panel.gd",
-"line": 143,
-"func": "refresh_detail",
-"en_line": 143
-},
-"plan_panel:refresh_detail:10": {
-"zh": "定位到局部目标",
-"en": "LOCATE LOCAL TARGET",
-"file": "plan_panel.gd",
-"line": 146,
-"func": "refresh_detail",
-"en_line": 146
-},
-"plan_panel:refresh_detail:11": {
-"zh": "取消保留目标",
-"en": "",
-"file": "plan_panel.gd",
-"line": 148,
-"func": "refresh_detail",
-"en_line": 0
-},
-"plan_panel:refresh_detail:12": {
-"zh": "保留目标，交由我处理",
-"en": "",
-"file": "plan_panel.gd",
-"line": 148,
-"func": "refresh_detail",
-"en_line": 0
-},
-"plan_panel:refresh_detail:13": {
-"zh": "验证后切割",
-"en": "VERIFIED CUT",
-"file": "plan_panel.gd",
-"line": 157,
-"func": "refresh_detail",
-"en_line": 157
-},
-"plan_panel:refresh_detail:14": {
-"zh": "运输并确认实际送达",
-"en": "TRANSPORT AND CONFIRM ARRIVAL",
-"file": "plan_panel.gd",
-"line": 157,
-"func": "refresh_detail",
-"en_line": 157
-},
-"plan_panel:refresh_detail:16": {
-"zh": "授权后回到现场；P 停止方案，J 停止机器。缺少检测或结构不符时暂停。",
-"en": "Authorization returns to the ship. P stops the plan; J stops machines. Missing evidence or changed structure pauses the affected job.",
-"file": "plan_panel.gd",
-"line": 167,
-"func": "refresh_detail",
-"en_line": 167
-},
-"plan_panel:refresh_order_sale:1": {
-"zh": "当前：出售回收物（不交付工程）· 点击改为预留",
-"en": "",
-"file": "plan_panel.gd",
-"line": 192,
-"func": "refresh_order_sale",
-"en_line": 0
-},
-"plan_panel:refresh_order_sale:2": {
-"zh": "当前：预留给工程 · 点击改为出售",
-"en": "",
-"file": "plan_panel.gd",
-"line": 192,
-"func": "refresh_order_sale",
-"en_line": 0
-},
-"plan_panel:refresh_anchor_mode:1": {
-"zh": "新部署牵引锚：锁索支撑 · 点击切换收卷",
-"en": "",
-"file": "plan_panel.gd",
-"line": 199,
-"func": "refresh_anchor_mode",
-"en_line": 0
-},
-"plan_panel:refresh_anchor_mode:2": {
-"zh": "新部署牵引锚：收卷到废料槽 · 点击切换锁索",
-"en": "",
-"file": "plan_panel.gd",
-"line": 199,
-"func": "refresh_anchor_mode",
-"en_line": 0
-},
-"plan_panel:locate:1": {
-"zh": "当前现场找不到目标：",
-"en": "TARGET NOT PRESENT: ",
-"file": "plan_panel.gd",
-"line": 215,
-"func": "locate",
-"en_line": 215
 },
 "repair:lack_text:1": {
 "zh": "%.1f 吨%s（拆船时留下整块船壳，或在加工区把钢坯轧成钢板，或去交易行买钢板）",
@@ -21682,30 +21110,6 @@
 "line": 422,
 "func": "rad_state",
 "en_line": 0
-},
-"power_works:shore_state:1": {
-"zh": "收起 · 没用岸电",
-"en": "STOWED · NO SHORE POWER",
-"file": "power_works.gd",
-"line": 441,
-"func": "shore_state",
-"en_line": 441
-},
-"power_works:shore_state:2": {
-"zh": "岸电臂伸出中 %d%%",
-"en": "UMBILICAL SWINGING OUT %d%%",
-"file": "power_works.gd",
-"line": 443,
-"func": "shore_state",
-"en_line": 443
-},
-"power_works:shore_state:3": {
-"zh": "已接上 · 岸电 %.1f MW（$%d/MWh）",
-"en": "PLUGGED IN · %.1f MW SHORE ($%d/MWh)",
-"file": "power_works.gd",
-"line": 444,
-"func": "shore_state",
-"en_line": 444
 },
 "process_art:still:1": {
 "zh": "加热炉 RH-1",
@@ -45254,45 +44658,6 @@
 "file": "txt.gd",
 "line": 0
 },
-"short:34": {
-"zh": "提示档位",
-"en": "HINTS",
-"same": [
-"txt:tier_label"
-]
-},
-"txt:tier_label": {
-"zh": "提示档位",
-"en": "HINTS",
-"file": "txt.gd",
-"line": 0
-},
-"short:35": {
-"zh": "引导",
-"en": "GUIDED",
-"same": [
-"txt:tier_guided"
-]
-},
-"txt:tier_guided": {
-"zh": "引导",
-"en": "GUIDED",
-"file": "txt.gd",
-"line": 0
-},
-"short:36": {
-"zh": "硬核",
-"en": "HARDCORE",
-"same": [
-"txt:tier_hardcore"
-]
-},
-"txt:tier_hardcore": {
-"zh": "硬核",
-"en": "HARDCORE",
-"file": "txt.gd",
-"line": 0
-},
 "short:37": {
 "zh": "笔记",
 "en": "NOTES",
@@ -45621,45 +44986,6 @@
 "gear:tool_6": {
 "zh": "部署",
 "en": "DEPLOY",
-"file": "gear_txt.gd",
-"line": 0
-},
-"short:54": {
-"zh": "下一步：%s",
-"en": "NEXT: %s",
-"same": [
-"txt:plan_step"
-]
-},
-"txt:plan_step": {
-"zh": "下一步：%s",
-"en": "NEXT: %s",
-"file": "txt.gd",
-"line": 0
-},
-"short:55": {
-"zh": "切割 %s",
-"en": "CUT %s",
-"same": [
-"gear:plan_step_cut"
-]
-},
-"gear:plan_step_cut": {
-"zh": "切割 %s",
-"en": "CUT %s",
-"file": "gear_txt.gd",
-"line": 0
-},
-"short:56": {
-"zh": "搬运",
-"en": "HAUL",
-"same": [
-"gear:plan_step_haul"
-]
-},
-"gear:plan_step_haul": {
-"zh": "搬运",
-"en": "HAUL",
 "file": "gear_txt.gd",
 "line": 0
 },
@@ -46111,9 +45437,9 @@
 "zh": "下一步",
 "en": "NEXT",
 "file": "hud.gd",
-"line": 2746,
+"line": 2747,
 "func": "_asset_board",
-"en_line": 2746
+"en_line": 2747
 },
 "terminal:_next_step_card:2": {
 "zh": "下一步",
@@ -50036,17 +49362,10 @@
 "en": "AFFORDABLE",
 "same": [
 "txt:rt_ready_buy",
-"txt:tm_lamp_can",
 "txt:tm_out_can"
 ]
 },
 "txt:rt_ready_buy": {
-"zh": "买得起",
-"en": "AFFORDABLE",
-"file": "txt.gd",
-"line": 0
-},
-"txt:tm_lamp_can": {
 "zh": "买得起",
 "en": "AFFORDABLE",
 "file": "txt.gd",
@@ -50082,6 +49401,32 @@
 "txt:tm_short_n": {
 "zh": "还差 %s",
 "en": "%s SHORT",
+"file": "txt.gd",
+"line": 0
+},
+"short:405": {
+"zh": "船坞全图",
+"en": "BERTH",
+"same": [
+"txt:minimap"
+]
+},
+"txt:minimap": {
+"zh": "船坞全图",
+"en": "BERTH",
+"file": "txt.gd",
+"line": 0
+},
+"short:406": {
+"zh": "取消标记",
+"en": "MARK REMOVED",
+"same": [
+"txt:hauler_unmarked"
+]
+},
+"txt:hauler_unmarked": {
+"zh": "取消标记",
+"en": "MARK REMOVED",
 "file": "txt.gd",
 "line": 0
 },
@@ -50193,39 +49538,6 @@
 "txt:tm_tile_radio": {
 "zh": "%d 条记录",
 "en": "%d LINES",
-"file": "txt.gd",
-"line": 0
-},
-"short:368": {
-"zh": "已安装",
-"en": "FITTED",
-"same": [
-"txt:tm_lamp_have",
-"txt:tm_installed"
-]
-},
-"txt:tm_lamp_have": {
-"zh": "已安装",
-"en": "FITTED",
-"file": "txt.gd",
-"line": 0
-},
-"txt:tm_installed": {
-"zh": "已安装",
-"en": "FITTED",
-"file": "txt.gd",
-"line": 0
-},
-"short:369": {
-"zh": "差钱",
-"en": "SHORT OF FUNDS",
-"same": [
-"txt:tm_lamp_short"
-]
-},
-"txt:tm_lamp_short": {
-"zh": "差钱",
-"en": "SHORT OF FUNDS",
 "file": "txt.gd",
 "line": 0
 },
@@ -50382,6 +49694,19 @@
 "txt:tm_training_btn": {
 "zh": "进入训练",
 "en": "ENTER TRAINING",
+"file": "txt.gd",
+"line": 0
+},
+"short:368": {
+"zh": "已安装",
+"en": "FITTED",
+"same": [
+"txt:tm_installed"
+]
+},
+"txt:tm_installed": {
+"zh": "已安装",
+"en": "FITTED",
 "file": "txt.gd",
 "line": 0
 },
@@ -50682,32 +50007,6 @@
 "zh": "已完成",
 "en": "DONE",
 "file": "gear_txt.gd",
-"line": 0
-},
-"short:405": {
-"zh": "船坞全图",
-"en": "BERTH",
-"same": [
-"txt:minimap"
-]
-},
-"txt:minimap": {
-"zh": "船坞全图",
-"en": "BERTH",
-"file": "txt.gd",
-"line": 0
-},
-"short:406": {
-"zh": "取消标记",
-"en": "MARK REMOVED",
-"same": [
-"txt:hauler_unmarked"
-]
-},
-"txt:hauler_unmarked": {
-"zh": "取消标记",
-"en": "MARK REMOVED",
-"file": "txt.gd",
 "line": 0
 },
 "short:407": {
@@ -59694,21 +58993,6 @@
 "func": "_guide_keys",
 "en_line": 1410
 },
-"short:952": {
-"zh": "%s 打开终端",
-"en": "%s TERMINAL",
-"same": [
-"hud:_ops_strip:3"
-]
-},
-"hud:_ops_strip:3": {
-"zh": "%s 打开终端",
-"en": "%s TERMINAL",
-"file": "hud.gd",
-"line": 1506,
-"func": "_ops_strip",
-"en_line": 1506
-},
 "short:953": {
 "zh": "切割中",
 "en": "CUTTING",
@@ -59852,9 +59136,9 @@
 "zh": "船坞已有",
 "en": "THE BERTH HAS",
 "file": "hud.gd",
-"line": 2678,
+"line": 2679,
 "func": "_asset_card",
-"en_line": 2678
+"en_line": 2679
 },
 "short:961": {
 "zh": "风险：",
@@ -59867,9 +59151,9 @@
 "zh": "风险：",
 "en": "RISK: ",
 "file": "hud.gd",
-"line": 2681,
+"line": 2682,
 "func": "_asset_card",
-"en_line": 2681
+"en_line": 2682
 },
 "short:962": {
 "zh": "进行中",
@@ -59882,9 +59166,9 @@
 "zh": "进行中",
 "en": "UNDER WAY",
 "file": "hud.gd",
-"line": 2746,
+"line": 2747,
 "func": "_asset_board",
-"en_line": 2746
+"en_line": 2747
 },
 "short:963": {
 "zh": "%s复盘",
@@ -59897,9 +59181,9 @@
 "zh": "%s复盘",
 "en": "%s · REVIEW",
 "file": "hud.gd",
-"line": 2837,
+"line": 2838,
 "func": "_asset_review",
-"en_line": 2837
+"en_line": 2838
 },
 "short:964": {
 "zh": "收成 %s",
@@ -59912,9 +59196,9 @@
 "zh": "收成 %s",
 "en": "ROLLED %s",
 "file": "hud.gd",
-"line": 2839,
+"line": 2840,
 "func": "_asset_review",
-"en_line": 2839
+"en_line": 2840
 },
 "short:965": {
 "zh": "保住 %s",
@@ -59927,9 +59211,9 @@
 "zh": "保住 %s",
 "en": "KEPT %s",
 "file": "hud.gd",
-"line": 2839,
+"line": 2840,
 "func": "_asset_review",
-"en_line": 2839
+"en_line": 2840
 },
 "short:966": {
 "zh": "满价 %s",
@@ -59942,9 +59226,9 @@
 "zh": "满价 %s",
 "en": "WHOLE %s",
 "file": "hud.gd",
-"line": 2840,
+"line": 2841,
 "func": "_asset_review",
-"en_line": 2840
+"en_line": 2841
 },
 "short:967": {
 "zh": "已送走 %s",
@@ -59957,9 +59241,9 @@
 "zh": "已送走 %s",
 "en": "SENT %s",
 "file": "hud.gd",
-"line": 2843,
+"line": 2844,
 "func": "_asset_review",
-"en_line": 2843
+"en_line": 2844
 },
 "short:968": {
 "zh": "拆坏的",
@@ -59972,9 +59256,9 @@
 "zh": "拆坏的",
 "en": "LOST",
 "file": "hud.gd",
-"line": 2853,
+"line": 2854,
 "func": "_asset_review",
-"en_line": 2853
+"en_line": 2854
 },
 "short:969": {
 "zh": "为什么",
@@ -59987,9 +59271,9 @@
 "zh": "为什么",
 "en": "WHY",
 "file": "hud.gd",
-"line": 2860,
+"line": 2861,
 "func": "_asset_review",
-"en_line": 2860
+"en_line": 2861
 },
 "short:970": {
 "zh": "下次",
@@ -60002,9 +59286,9 @@
 "zh": "下次",
 "en": "NEXT TIME",
 "file": "hud.gd",
-"line": 2866,
+"line": 2867,
 "func": "_asset_review",
-"en_line": 2866
+"en_line": 2867
 },
 "short:971": {
 "zh": "保存失败",
@@ -62711,66 +61995,6 @@
 "line": 829,
 "func": "_draw_detail",
 "en_line": 829
-},
-"short:1143": {
-"zh": "%d 个工序",
-"en": "%d process steps",
-"same": [
-"plan_panel:_ready:3"
-]
-},
-"plan_panel:_ready:3": {
-"zh": "%d 个工序",
-"en": "%d process steps",
-"file": "plan_panel.gd",
-"line": 96,
-"func": "_ready",
-"en_line": 96
-},
-"short:1144": {
-"zh": "查看工序",
-"en": "INSPECT PROCESS",
-"same": [
-"plan_panel:_ready:4"
-]
-},
-"plan_panel:_ready:4": {
-"zh": "查看工序",
-"en": "INSPECT PROCESS",
-"file": "plan_panel.gd",
-"line": 102,
-"func": "_ready",
-"en_line": 102
-},
-"short:1145": {
-"zh": "目标：",
-"en": "TARGETS: ",
-"same": [
-"plan_panel:refresh_detail:5"
-]
-},
-"plan_panel:refresh_detail:5": {
-"zh": "目标：",
-"en": "TARGETS: ",
-"file": "plan_panel.gd",
-"line": 132,
-"func": "refresh_detail",
-"en_line": 132
-},
-"short:1146": {
-"zh": "安全处置",
-"en": "SAFE PREPARATION",
-"same": [
-"plan_panel:refresh_detail:15"
-]
-},
-"plan_panel:refresh_detail:15": {
-"zh": "安全处置",
-"en": "SAFE PREPARATION",
-"file": "plan_panel.gd",
-"line": 157,
-"func": "refresh_detail",
-"en_line": 157
 },
 "short:1147": {
 "zh": "出事：%s",

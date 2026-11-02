@@ -11,10 +11,10 @@
 #
 # 已停用的功能（梁工、关掉的剧情层、取消的耗材）、开发者面板、只打印到日志的字不在这里。
 #
-# 本文件共 7973 条。
+# 本文件共 7871 条。
 
 ============================================================
-# 一、标题、菜单与设置（120 条）
+# 一、标题、菜单与设置（114 条）
 # 开游戏第一眼看到的：标题终端（继续 / 新生涯 / 训练 / 设置）、暂停菜单、设置页、按键说明、提示档位。
 # 这些字要短，像机器面板上的字。
 ============================================================
@@ -105,35 +105,6 @@
 [txt:st_arm]
 中：专心处理设备，废料交给机器
 英：KEEP YOUR HANDS ON THE EQUIPMENT; THE MACHINE TAKES THE SCRAP
-
-------------------------------------------------------------
-# 【提示档位】
-# 出现在：引导 / 标准 / 硬核的名字和说明。
-------------------------------------------------------------
-
-[txt:tier_standard]
-中：标准（推荐）
-英：STANDARD (RECOMMENDED)
-
-[txt:tier_desc_guided]
-中：针对已知危险提供具体的检查步骤和操作建议。
-英：PROVIDES SPECIFIC INSPECTION STEPS AND GUIDANCE FOR KNOWN HAZARDS.
-
-[txt:tier_desc_standard]
-中：仅提示哪些系统存在未处理的问题，具体操作由你自行判断。
-英：IDENTIFIES UNRESOLVED SYSTEM ISSUES WITHOUT TELLING YOU HOW TO FIX THEM.
-
-[txt:tier_desc_hardcore]
-中：关闭所有额外提示，仅保留仪表读数和设备实际发出的警报。
-英：DISABLES ALL EXTRA HINTS. ONLY INSTRUMENT READINGS AND ACTUAL EQUIPMENT ALARMS REMAIN.
-
-[txt:tier_rule]
-中：所有档位使用相同的模拟规则。提示等级不会影响船舶状态、检测结果、回收价值或事故判定，只决定系统向你提供多少帮助。
-英：ALL DIFFICULTY LEVELS USE THE SAME SIMULATION RULES. HINT SETTINGS ONLY CHANGE HOW MUCH GUIDANCE YOU RECEIVE. SHIP CONDITIONS, READINGS, SALVAGE VALUES, AND INCIDENT OUTCOMES REMAIN UNCHANGED.
-
-[txt:tier_now]
-中：当前提示等级：%s
-英：CURRENT HINT LEVEL: %s
 
 ------------------------------------------------------------
 # 【存档提示】
@@ -1999,7 +1970,7 @@
 英：The berth's repairs are on the terminal's BERTH page
 
 ============================================================
-# 五、拆船现场（船坞里）（1319 条）
+# 五、拆船现场（船坞里）（1264 条）
 # 拆船时屏幕上的一切：左上合同卡、工具栏、操作提示、测量读数、回收口和熔炉的牌子、结算飘字、无人机状态、图纸、小地图、作业艇、各种“现在不能这样做”的提示。
 # 玩家这时手很忙：字要一眼看懂，尽量短。
 ============================================================
@@ -2059,171 +2030,6 @@
 [txt:manual_only]
 中：远航者只能亲手拆：%s 在这艘船上不能用
 英：THE ARK IS STRIPPED BY HAND: NO %s ON THIS SHIP
-
-------------------------------------------------------------
-# 【作业方案】
-# 出现在：录下来的作业方案（目前收起）。
-------------------------------------------------------------
-
-[txt:plan_manual_only]
-中：远航者只能亲手拆：作业方案、回放和自动作业包在这艘船上不能用。吊机、牵引、泵和仪器你自己操作照常可以。
-英：THE ARK IS STRIPPED BY HAND: NO WORK PLAN, REPLAY OR PACKAGE HERE. YOUR OWN CRANE, TOWING, PUMPS AND INSTRUMENTS STILL WORK.
-
-[txt:plan_title]
-中：作业方案 %d/%d
-英：WORK PLAN %d/%d
-
-[txt:plan_needs_method]
-中：这一刀请手动切：切割机照方案切要先学会拆法「%s」
-英：MAKE THIS CUT BY HAND: THE CUTTER WORKS A PLAN ONCE YOU LEARN %s
-
-[txt:plan_none]
-中：此船型暂无方案：手动操作开关、阀门或软管后结算即可保存；只检测不录入步骤
-英：NO PLAN: WORK CONTROLS OR HOSES, THEN SETTLE. MEASURING ALONE RECORDS NO STEPS
-
-[txt:plan_no_actions]
-中：未生成方案：本单没有成功的开关、阀门或软管操作；只检测不录入步骤
-英：NO PLAN SAVED: NO SUCCESSFUL CONTROL OR HOSE OPERATIONS; MEASURING ALONE RECORDS NO STEPS
-
-[txt:plan_pending]
-中：已记录 %s 步，结算后保存（从菜单结算也可）
-英：%s STEPS RECORDED; SAVED AT SETTLEMENT, INCLUDING MENU SETTLEMENT
-
-[txt:plan_pending_prefix]
-中：已记录 %s 步；异常操作后停止续录，结算时保留此前步骤
-英：%s STEPS RECORDED; RECORDING STOPPED AFTER AN UNSAFE OPERATION; SETTLEMENT KEEPS THE PREFIX
-
-[txt:plan_record_blocked]
-中：未生成方案：操作 %s 引发事故，之前没有可保存步骤
-英：NO PLAN SAVED: OPERATION %s CAUSED AN INCIDENT WITH NO EARLIER VALID STEPS
-
-[txt:plan_rejected]
-中：暂无可保存步骤：%s 操作未成功；处理阻碍后重试，再结算
-英：NO STEPS TO SAVE: %s DID NOT SUCCEED; CLEAR THE OBSTRUCTION, RETRY, THEN SETTLE
-
-[txt:plan_career_only]
-中：作业方案仅在正式合同结算时保存
-英：WORK PLANS ARE SAVED WHEN SETTLING CAREER CONTRACTS
-
-[txt:plan_saved]
-中：作业方案已保存：%s 步；下次同船型按 P 执行
-英：WORK PLAN SAVED: %s STEPS; PRESS P ON THE NEXT SHIP OF THIS TYPE
-
-[txt:plan_saved_prefix]
-中：作业方案已保存：事故操作之前的 %s 步；异常步骤未录入
-英：WORK PLAN SAVED: %s STEPS BEFORE THE UNSAFE OPERATION; UNSAFE STEP EXCLUDED
-
-[txt:plan_ready]
-中：待命，按键开始
-英：READY
-
-[txt:plan_preset_running]
-中：灰鹭预置方案启动：自动检测、断电、泄压与回路处理；P 暂停
-英：GREY HERON PRESET RUNNING: CHECKS, ISOLATION, RECOVERY; P TO PAUSE
-
-[txt:plan_preset_ready]
-中：灰鹭预置方案已就绪，下次同型船按 P 即可使用
-英：GREY HERON PRESET READY; PRESS P ON THIS SHIP TYPE
-
-[txt:plan_preset_title]
-中：灰鹭预置方案 %d/%d
-英：GREY HERON PRESET %d/%d
-
-[txt:plan_preset_idle]
-中：按 P 自动准备 · 无需先录制
-英：P: AUTO PREP · NO RECORDING NEEDED
-
-[txt:plan_preset_wait]
-中：自动复测 %s · 等待读数达标
-英：RECHECK %s · WAIT FOR SAFE READING
-
-[txt:plan_preset_blocked]
-中：暂停：%s 受阻，请检查
-英：PAUSED: %s BLOCKED; CHECK FITTING
-
-[txt:plan_running]
-中：作业方案开始执行
-英：WORK PLAN RUNNING
-
-[txt:plan_stopped]
-中：作业方案已停
-英：WORK PLAN STOPPED
-
-[txt:plan_done]
-中：作业方案已走完
-英：WORK PLAN DONE
-
-[txt:plan_skipped]
-中：跳过这一刀：下次的方案里没有它
-英：STEP SKIPPED: THE NEXT PLAN LEAVES IT OUT
-
-[txt:plan_measure]
-中：暂停：先重测 %s
-英：PAUSED: MEASURE %s AGAIN
-
-[txt:plan_differs]
-中：暂停：%s 读数和方案不符
-英：PAUSED: %s DOES NOT READ AS PLANNED
-
-[txt:plan_hidden]
-中：暂停：%s 还在封闭舱里
-英：PAUSED: %s IS STILL SEALED IN
-
-[txt:plan_changed]
-中：停止：船上没有 %s，这艘和方案不一样
-英：STOPPED: NO %s ON THIS SHIP, IT DIFFERS FROM THE PLAN
-
-[gear:plan_cut_pressure]
-中：舱室 %s 还带压，机器不切
-英：ROOM %s STILL HOLDS PRESSURE: NO CUT
-
-[gear:plan_cut_live]
-中：线路 %s 还带电，机器不切
-英：LINE %s STILL LIVE: NO CUT
-
-[gear:plan_cutter_wait]
-中：切割机器人正在接近 %s；请保持工位和射线通畅
-英：CUTTER APPROACHING %s: KEEP THE WORK POSITION AND BEAM PATH CLEAR
-
-[gear:plan_cut_pipe]
-中：切缝经过管线 %s，先隔离并排净介质
-英：KERF CROSSES PIPE %s: ISOLATE AND DRAIN FIRST
-
-[gear:plan_cut_incident]
-中：%s 切割发生事故，方案已停止，需检查后重新授权
-英：INCIDENT WHILE CUTTING %s: STOPPED; INSPECT AND REAUTHORIZE
-
-[gear:plan_cut_vessel]
-中：%s 还带压或有液体，机器不切
-英：%s STILL CHARGED OR WET: NO CUT
-
-[gear:plan_haul_nobody]
-中：没有机器能搬 %s 那一段
-英：NO MACHINE ABOARD CAN TAKE %s
-
-[gear:plan_haul_wait]
-中：等待 %s 松脱并实际送达回收口
-英：WAITING FOR %s TO DETACH AND ARRIVE
-
-[gear:plan_haul_wrong]
-中：%s 进入了不同回收口，请检查交付目标
-英：%s ARRIVED AT THE WRONG BAY
-
-[gear:plan_cut_structure]
-中：%s 的局部形状或连接已改变，请检查后调整拆法
-英：%s HAS CHANGED SHAPE OR CONNECTIONS; CHECK THE LOCAL STRUCTURE
-
-[gear:plan_cut_result]
-中：%s 未达到记录的切离结果，请检查残余连接
-英：%s DID NOT REACH THE VERIFIED CUT RESULT
-
-[gear:plan_cut_preserved]
-中：%s 影响保留目标，已留给你处理
-英：%s WOULD CUT A PRESERVED TARGET; MANUAL WORK REQUIRED
-
-[gear:plan_saved_cuts]
-中：含 %d 刀、%d 次搬运
-英：with %d cuts, %d hauls
 
 ------------------------------------------------------------
 # 【碎屑网】
@@ -4032,27 +3838,6 @@
 英：START   SPACE
 
 ------------------------------------------------------------
-# 【合同目标】
-# 出现在：安全回收 / 快速回收 / 贵重设备专项。
-------------------------------------------------------------
-
-[txt:goal_valuable]
-中：贵重设备专项
-英：VALUABLE EQUIPMENT
-
-[txt:goal_safe_d]
-中：目标 · 安全回收：零事故完工，另付所得的 5%
-英：GOAL · SAFE: NO INCIDENT AT ALL PAYS 5% OF THE TAKE ON TOP
-
-[txt:goal_fast_d]
-中：目标 · 快速回收：标准用时短四分之一，时效奖金最高 30%
-英：GOAL · FAST: A QUARTER LESS STANDARD TIME, TIME BONUS UP TO 30%
-
-[txt:goal_valuable_d]
-中：目标 · 贵重设备专项：指定设备每件完整送达，另付其价值的 25%
-英：GOAL · VALUABLE: EACH NAMED PIECE DELIVERED WHOLE PAYS 25% OF ITS VALUE
-
-------------------------------------------------------------
 # 【可移动回收口】
 # 出现在：回收口沿导轨移动时的字。
 ------------------------------------------------------------
@@ -4201,17 +3986,9 @@
 中：自有船 · 星图找到
 英：OWN HULK · FOUND IN THE BELT
 
-[txt:sc_section_d]
-中：只拆 27 号肋位以后的区段（D、E 舱、发动机和尾部船壳）；区段外的零件能动，但拆走或切坏按违约扣钱
-英：ONLY THE SECTION AFT OF FRAME 27; PIECES OUTSIDE MAY BE MOVED, BUT TAKING OR CUTTING THEM IS A BREACH
-
 [txt:sc_boundary]
 中：区段边界 · 27 号肋位
 英：SECTION BOUNDARY · FRAME 27
-
-[txt:sc_rescue_d]
-中：只要 %s 完整送进设备口，每件按件付酬；送齐即收工，其余船体不归你
-英：ONLY %s, WHOLE, TO THE EQUIPMENT MOUTH, PAID PER PIECE; DONE WHEN ALL ARE IN; THE REST OF THE HULL IS NOT YOURS
 
 [txt:sc_out]
 中：合同范围外 · 不计酬
@@ -4384,39 +4161,6 @@
 [gear:cs_tile]
 中：工程成果 %d / %d
 英：ACHIEVEMENTS %d / %d
-
-------------------------------------------------------------
-# 【作业包】
-# 出现在：作业方案的作业包（目前收起）。
-------------------------------------------------------------
-
-[gear:pkg_preparation]
-中：灰鹭 · 基础安全处置
-英：GREY HERON · SAFE PREPARATION
-
-[gear:pkg_legacy]
-中：旧式操作方案
-英：LEGACY OPERATION RECORDING
-
-[gear:pkg_dependency]
-中：等待前置作业包
-英：WAITING FOR PREREQUISITE
-
-[gear:pkg_progress]
-中：作业包 %d / %d
-英：WORK PACKAGES %d / %d
-
-[gear:pkg_recorded_controls]
-中：现场记录 · 安全处置
-英：FIELD RECORD · PREPARATION
-
-[gear:pkg_recorded_cut]
-中：验证切口 · %s
-英：VERIFIED KERF · %s
-
-[gear:pkg_recorded_haul]
-中：现场记录 · 松脱件转运
-英：FIELD RECORD · LOOSE LOADS
 
 ------------------------------------------------------------
 # 【作业单奖励】
@@ -7235,14 +6979,6 @@
 中：引导 · %s · 第 %d / %d 步
 英：GUIDE · %s · STEP %d / %d
 
-[hud:_ops_strip:1]
-中：待决策 %d 项
-英：%d WAITING ON YOU
-
-[hud:_ops_strip:2]
-中：没有待决策
-英：NOTHING WAITING
-
 [hud:_toolbar:1]
 中：教程稍后解锁
 英：LATER IN THE GUIDE
@@ -8703,7 +8439,7 @@
 英：ANY KEY TO CONTINUE
 
 ============================================================
-# 七、船坞终端（365 条）
+# 七、船坞终端（339 条）
 # 按 B 打开的大终端：首页、找船（合同卡）、装备与设施、修缮、成长与建设、技能书、出勤配装、作业方案、账本。
 # 这是玩家做“经营决定”的地方：字要把钱、条件、后果说清楚。
 ============================================================
@@ -8890,14 +8626,6 @@
 中：做完主线第一单后开放
 英：Opens after the first story job
 
-[txt:rt_tier_2]
-中：技能书第 II 卷
-英：FIELD MANUAL VOLUME II
-
-[txt:rt_tier_3]
-中：技能书第 III 卷
-英：FIELD MANUAL VOLUME III
-
 [txt:rt_tier_d]
 中：每种技能的这一卷都要攒够完成的合同和声望才能买
 英：Every skill's volume needs enough jobs done and reputation first
@@ -8962,10 +8690,6 @@
 # 【终端通用】
 # 出现在：终端里的按钮、标题、提示、条件不够的说明。
 ------------------------------------------------------------
-
-[txt:tm_facilities]
-中：船坞设施（买一次，永久生效）
-英：BERTH FACILITIES (BOUGHT ONCE, KEPT)
 
 [txt:tm_needs]
 中：要先修好：%s
@@ -9577,103 +9301,6 @@
 [market:顶层:1]
 中：灰鹭级货船
 英：HERON-CLASS FREIGHTER
-
-------------------------------------------------------------
-# 【作业方案（plan_panel.gd）】
-# 出现在：录下来的作业方案（目前收起，玩家看不到）。
-------------------------------------------------------------
-
-[plan_panel:_ready:1]
-中：作业方案 / 授权预览
-英：WORK PLANS / AUTHORIZATION PREVIEW
-
-[plan_panel:_ready:2]
-中：选择机器负责的工序，保留你要亲手处理的部分。授权前不会执行。
-英：Choose the work to delegate. Keep critical dismantling in your hands. Previewing never starts a job.
-
-[plan_panel:_ready:5]
-中：授权所选作业包
-英：AUTHORIZE SELECTED WORK
-
-[plan_panel:_ready:6]
-中：返回现场 [Esc]
-英：RETURN [Esc]
-
-[plan_panel:refresh_detail:1]
-中：已验证局部工序
-英：VERIFIED LOCAL PROCESS
-
-[plan_panel:refresh_detail:2]
-中：旧式操作记录：保留原有安全检查，尚未验证整体工程目的。
-英：Legacy recording: original safety checks apply; the overall engineering outcome is unverified.
-
-[plan_panel:refresh_detail:3]
-中：预置安全处置：检测、阀门与开关；不包含整船切割。
-英：Authored preparation: readings, valves and switches; this is not whole-ship automatic dismantling.
-
-[plan_panel:refresh_detail:4]
-中：适用船型：
-英：SHIP: 
-
-[plan_panel:refresh_detail:6]
-中：保留对象：
-英：PRESERVE: 
-
-[plan_panel:refresh_detail:7]
-中：禁止授权：切口与保留对象冲突：
-英：CANNOT AUTHORIZE: CUTS CONFLICT WITH PRESERVED OBJECTS: 
-
-[plan_panel:refresh_detail:8]
-中：缺失的前置工序
-英：MISSING PREREQUISITE
-
-[plan_panel:refresh_detail:9]
-中：前置作业包：
-英：PREREQUISITES: 
-
-[plan_panel:refresh_detail:10]
-中：定位到局部目标
-英：LOCATE LOCAL TARGET
-
-[plan_panel:refresh_detail:11]
-中：取消保留目标
-英：
-
-[plan_panel:refresh_detail:12]
-中：保留目标，交由我处理
-英：
-
-[plan_panel:refresh_detail:13]
-中：验证后切割
-英：VERIFIED CUT
-
-[plan_panel:refresh_detail:14]
-中：运输并确认实际送达
-英：TRANSPORT AND CONFIRM ARRIVAL
-
-[plan_panel:refresh_detail:16]
-中：授权后回到现场；P 停止方案，J 停止机器。缺少检测或结构不符时暂停。
-英：Authorization returns to the ship. P stops the plan; J stops machines. Missing evidence or changed structure pauses the affected job.
-
-[plan_panel:refresh_order_sale:1]
-中：当前：出售回收物（不交付工程）· 点击改为预留
-英：
-
-[plan_panel:refresh_order_sale:2]
-中：当前：预留给工程 · 点击改为出售
-英：
-
-[plan_panel:refresh_anchor_mode:1]
-中：新部署牵引锚：锁索支撑 · 点击切换收卷
-英：
-
-[plan_panel:refresh_anchor_mode:2]
-中：新部署牵引锚：收卷到废料槽 · 点击切换锁索
-英：
-
-[plan_panel:locate:1]
-中：当前现场找不到目标：
-英：TARGET NOT PRESENT: 
 
 ------------------------------------------------------------
 # 【修缮的条件（repair.gd）】
@@ -11025,7 +10652,7 @@
 英：YARD %d / %d
 
 ============================================================
-# 九、港区：各区现场与面板（592 条）
+# 九、港区：各区现场与面板（589 条）
 # 船坞空着时飞出去的港区：中央环、动力区、拖船站、货运区、贸易港、加工区。
 # 每区有业务终端（按 E）、区里的机器（轧机、货架、收货台、柜台）、接驳车。
 # 字要说明：这个区为公司做什么、现在能做什么、修好以后会怎样。
@@ -12939,18 +12566,6 @@
 [power_works:rad_state:1]
 中：运行 %s · 散热板 %.0f °C · 排热 %.0f MW
 英：
-
-[power_works:shore_state:1]
-中：收起 · 没用岸电
-英：STOWED · NO SHORE POWER
-
-[power_works:shore_state:2]
-中：岸电臂伸出中 %d%%
-英：UMBILICAL SWINGING OUT %d%%
-
-[power_works:shore_state:3]
-中：已接上 · 岸电 %.1f MW（$%d/MWh）
-英：PLUGGED IN · %.1f MW SHORE ($%d/MWh)
 
 ------------------------------------------------------------
 # 【加工区现场（process_art.gd）】
@@ -27291,7 +26906,7 @@
 英：wrench (4); a strap cut taut whips
 
 ============================================================
-# 十五、短标签（四个字以内的按钮、栏目名、单位）（1473 条）
+# 十五、短标签（四个字以内的按钮、栏目名、单位）（1461 条）
 # 同样的字在很多界面出现时只列一次，「# 在」写了出现在哪些界面、共几处；改这里一条，所有这些地方一起改。
 # 这些字要短：按钮和栏目的宽度是按现在的字数排的，多一两个字可能放不下（合并后会跑超框检查）。
 ============================================================
@@ -27461,21 +27076,6 @@
 中：最值钱
 英：MOST VALUABLE
 
-[short:34]
-# 在：提示档位（1 处）
-中：提示档位
-英：HINTS
-
-[short:35]
-# 在：提示档位（1 处）
-中：引导
-英：GUIDED
-
-[short:36]
-# 在：提示档位（1 处）
-中：硬核
-英：HARDCORE
-
 [short:37]
 # 在：工程笔记（1 处）
 中：笔记
@@ -27560,21 +27160,6 @@
 # 在：工具名与工具锁（1 处）
 中：部署
 英：DEPLOY
-
-[short:54]
-# 在：作业方案（1 处）
-中：下一步：%s
-英：NEXT: %s
-
-[short:55]
-# 在：作业方案（1 处）
-中：切割 %s
-英：CUT %s
-
-[short:56]
-# 在：作业方案（1 处）
-中：搬运
-英：HAUL
 
 [short:57]
 # 在：回收口的牌子（1 处）
@@ -29082,7 +28667,7 @@
 英：REACHED
 
 [short:358]
-# 在：成长与建设的条件、终端通用（3 处）
+# 在：成长与建设的条件、终端通用（2 处）
 中：买得起
 英：AFFORDABLE
 
@@ -29090,6 +28675,16 @@
 # 在：成长与建设的条件、终端通用（3 处）
 中：还差 %s
 英：%s SHORT
+
+[short:405]
+# 在：小地图（1 处）
+中：船坞全图
+英：BERTH
+
+[short:406]
+# 在：搬运无人机（1 处）
+中：取消标记
+英：MARK REMOVED
 
 [short:360]
 # 在：终端通用（1 处）
@@ -29130,16 +28725,6 @@
 # 在：终端通用（1 处）
 中：%d 条记录
 英：%d LINES
-
-[short:368]
-# 在：终端通用（2 处）
-中：已安装
-英：FITTED
-
-[short:369]
-# 在：终端通用（1 处）
-中：差钱
-英：SHORT OF FUNDS
 
 [short:370]
 # 在：终端通用（1 处）
@@ -29200,6 +28785,11 @@
 # 在：终端通用（1 处）
 中：进入训练
 英：ENTER TRAINING
+
+[short:368]
+# 在：终端通用（1 处）
+中：已安装
+英：FITTED
 
 [short:382]
 # 在：终端通用（1 处）
@@ -29315,16 +28905,6 @@
 # 在：终端通用（1 处）
 中：已完成
 英：DONE
-
-[short:405]
-# 在：小地图（1 处）
-中：船坞全图
-英：BERTH
-
-[short:406]
-# 在：搬运无人机（1 处）
-中：取消标记
-英：MARK REMOVED
 
 [short:407]
 # 在：终端首页入口（1 处）
@@ -32051,11 +31631,6 @@
 中：去做
 英：GO
 
-[short:952]
-# 在：拆船时的屏幕（1 处）
-中：%s 打开终端
-英：%s TERMINAL
-
 [short:953]
 # 在：拆船时的屏幕（1 处）
 中：切割中
@@ -33005,26 +32580,6 @@
 # 在：零件架（1 处）
 中：能用在
 英：GOES INTO
-
-[short:1143]
-# 在：作业方案（1 处）
-中：%d 个工序
-英：%d process steps
-
-[short:1144]
-# 在：作业方案（1 处）
-中：查看工序
-英：INSPECT PROCESS
-
-[short:1145]
-# 在：作业方案（1 处）
-中：目标：
-英：TARGETS: 
-
-[short:1146]
-# 在：作业方案（1 处）
-中：安全处置
-英：SAFE PREPARATION
 
 [short:1147]
 # 在：试玩记录（1 处）

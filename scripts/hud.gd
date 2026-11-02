@@ -2434,7 +2434,8 @@ func _settlement(s: Vector2) -> void:
 		if g.standard_time() > 0.0:
 			tl += "  /  " + g.txt("e_standard") + "  " + _clock(g.standard_time())
 		_text(tl, Vector2(cx - 260, ny + 46), 14, Pal.ink(0.5), font)
-		if g.plan != null and g.plan.result_key != "":
+		# 61 号: the plans are out of sight (P does nothing), so the settlement doesn't say one was saved
+		if g.plan != null and g.plan.result_key != "" and Game.G4_OPEN:
 			c.draw_multiline_string(font,Vector2(cx - 260,ny + 66),g.plan.result_text(),HORIZONTAL_ALIGNMENT_LEFT,520,12,2,Pal.ink(0.75))
 		var crows := career_rows()
 		for i in crows.size():

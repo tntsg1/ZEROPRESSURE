@@ -99,11 +99,8 @@ crlf = set()          # scripts with CRLF line ends: written back with them
 def src(name):
     if name not in files:
         raw = open(os.path.join(ROOT, "scripts", name), "rb").read()
-        crlf.add(name) if b"
-" in raw else None
-        files[name] = raw.decode("utf-8").replace("
-", "
-")
+        crlf.add(name) if b"\r\n" in raw else None
+        files[name] = raw.decode("utf-8").replace("\r\n", "\n")
     return files[name]
 
 
@@ -193,9 +190,7 @@ if new_chars:
     print("字体里还没有的字（写回后跑 tools/subset_font.py 会补上）：", "".join(sorted(new_chars)))
 if write and not problems:
     for name, s in files.items():
-        open(os.path.join(ROOT, "scripts", name), "w", encoding="utf-8", newline="").write(s.replace("
-", "
-") if name in crlf else s)
+        open(os.path.join(ROOT, "scripts", name), "w", encoding="utf-8", newline="").write(s.replace("\n", "\r\n") if name in crlf else s)
     if guide is not None:
         open(os.path.join(ROOT, "data", "onboarding_copy.json"), "w", encoding="utf-8").write(json.dumps(guide, ensure_ascii=False, indent=2))
     print("已写回。接着：tools/subset_font.py → tools/export_ui_text.py → tests/text_fit.gd")

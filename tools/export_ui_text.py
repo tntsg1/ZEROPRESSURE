@@ -4,6 +4,7 @@
 #   python -X utf8 tools/export_ui_text.py               # the file + data/界面文字_原文.json
 #   python -X utf8 tools/export_ui_text.py --docs DIR    # also the four parts for the cloud docs
 #   python -X utf8 tools/export_ui_text.py --retired     # also list what was left out, and why
+#   python -X utf8 tools/export_ui_text.py --dry         # only the report, the files stay as they are
 #
 # 2026-10-29 (user: "那些 UI 的介绍之类的文字你也要给我，我到时候也处理一下呀"):
 #   - only what the game shows now: the developer panel, debug prints, the features switched off
@@ -55,11 +56,26 @@ def flag(path, pat):
 CONSUM = flag("scripts/consum.gd", r"const ENABLED := (true|false)")
 STORY = flag("scripts/story.gd", r"static var ON := (true|false)")
 CHAR = flag("scripts/radio.gd", r"static var CHARACTERS := (true|false)")
+PLANS = flag("scripts/game.gd", r"static var G4_OPEN := (true|false)")
+FINDS_ONLY = flag("scripts/market.gd", r"const FINDS_ONLY := (true|false)")
 OFF_FILES = {}
 if not CONSUM:
     OFF_FILES["consum.gd"] = "耗材已取消（Consum.ENABLED = false）"
 if not STORY:
     OFF_FILES["story.gd"] = "剧情层关闭（Story.ON = false）"
+# 2026-11-02 (user: "ok" to taking out what the player can't reach): the work plans are kept out of
+# play until the second berth (61 号, Game.G4_OPEN), the market has no client contracts (62 号)
+PLANS_OFF = "作业方案收起（Game.G4_OPEN = false）"
+if not PLANS:
+    for f in ("plan.gd", "plan_panel.gd", "plan_packages.gd", "grey_heron_plan.gd"):
+        OFF_FILES[f] = PLANS_OFF
+OFF_KEYS = {}
+if FINDS_ONLY:
+    for k in ("goal_safe_d", "goal_fast_d", "goal_valuable", "goal_valuable_d", "sc_section_d", "sc_rescue_d"):
+        OFF_KEYS[k] = "客户合同已取消（Market.FINDS_ONLY = true）"
+# the hint tiers' explanations: no screen shows them (the tier is picked by name in the settings)
+for k in ("tier_desc_guided", "tier_desc_standard", "tier_desc_hardcore", "tier_rule"):
+    OFF_KEYS[k] = "提示等级说明（没有界面显示）"
 DEV_FILES = set(SECTIONS["dev"]["files"])
 
 # ---------------------------------------------------------------- what is in the file now
@@ -89,8 +105,36 @@ for folder in ("ships", "data", "scenes"):
         if f.endswith((".json", ".tscn")) and "界面文字" not in f:
             data_txt += open(f, encoding="utf-8").read()
 
+# functions nothing calls: the name is written once in all the scripts and scenes (its own func line)
+ENGINE = {"_ready", "_process", "_physics_process", "_input", "_unhandled_input", "_gui_input", "_draw", "_init",
+          "_enter_tree", "_exit_tree", "_notification", "_initialize", "_finalize", "_unhandled_key_input",
+          "_get_minimum_size", "_make_custom_tooltip", "_can_drop_data", "_drop_data", "_get_drag_data", "_has_point",
+          "_to_string", "_shortcut_input"}
+every = "\n".join(srcs.values()) + "\n".join(open(f, encoding="utf-8").read() for f in glob.glob(os.path.join(ROOT, "scenes", "*.tscn")))
+WORD = collections.Counter(re.findall(r"[A-Za-z_][A-Za-z0-9_]*", every))
+dead = set()            # (file, func)
+func_starts = {}        # file -> [(position, func)]
+for fname, s in srcs.items():
+    starts = [(0, "顶层")]
+    for m in re.finditer(r"^(?:static\s+)?func\s+([A-Za-z0-9_]+)", s, re.M):
+        starts.append((m.start(), m.group(1)))
+        if m.group(1) not in ENGINE and WORD[m.group(1)] <= 1:
+            dead.add((fname, m.group(1)))
+    func_starts[fname] = starts
+
+
+def func_of(fname, pos):
+    out = "顶层"
+    for p, fn in func_starts[fname]:
+        if p > pos:
+            break
+        out = fn
+    return out
+
+
 # where each literal key-like string is named: file -> set of literals
 named = collections.defaultdict(set)
+named_at = collections.defaultdict(set)    # the same, as (file, func)
 built = []   # (regex, file) for keys put together in code: "tool_%d", "p_" + id
 KEYISH = re.compile(r'^[A-Za-z0-9_%]+$')
 TABLE_KEY = re.compile(r'\s*:\s*\[')
@@ -103,6 +147,7 @@ for fname, s in srcs.items():
         if fname in DICT_FILES and TABLE_KEY.match(s, m.end()):
             continue
         named[v].add(fname)
+        named_at[v].add((fname, func_of(fname, m.start())))
         after = s[m.end():m.end() + 3]
         before = s[max(0, m.start() - 3):m.start()]
         joined = "+" in after or "+" in before
@@ -113,7 +158,7 @@ for fname, s in srcs.items():
             if "+" in before:
                 rx = ".*" + rx
             if len(v.replace("%s", "").replace("%d", "")) >= 2:
-                built.append((re.compile("^" + rx + "$"), fname))
+                built.append((re.compile("^" + rx + "$"), fname, func_of(fname, m.start())))
 for m in LIT.finditer(data_txt):
     v = m.group(1)
     if v and KEYISH.match(v):
@@ -123,10 +168,16 @@ for m in LIT.finditer(data_txt):
 def users_of(key):
     out = set(named.get(key, set()))
     if not out:
-        for rx, f in built:
+        for rx, f, _ in built:
             if rx.match(key):
                 out.add(f)
     return out
+
+
+def only_dead(key):
+    # every place naming the key, written out or put together, is in a function nothing calls
+    at = set(named_at.get(key, set())) | {(f, fn) for rx, f, fn in built if rx.match(key)}
+    return bool(at) and "(数据)" not in named.get(key, set()) and all(fa in dead for fa in at)
 
 
 # ---------------------------------------------------------------- collect
@@ -182,6 +233,16 @@ for fname, tag in DICT_FILES.items():
         p = key.split("_")[0] if "_" in key else key
         if p == "dev" or section_of_prefix(p) == "dev":
             left_out.append(("开发者面板", iid, zh))
+            continue
+        if key in OFF_KEYS:
+            left_out.append((OFF_KEYS[key], iid, zh))
+            continue
+        if not PLANS and p in ("plan", "pkg"):
+            left_out.append((PLANS_OFF, iid, zh))
+            continue
+        # named only in functions nothing calls (and not built anywhere)
+        if only_dead(key):
+            left_out.append(("只在没人调用的函数里", iid, zh))
             continue
         w = why_off(zh, users)
         if w:
@@ -247,6 +308,9 @@ for fname, s in srcs.items():
         w = why_off(zh, {fname})
         if w:
             left_out.append((w, iid, zh))
+            continue
+        if (fname, fnc) in dead:
+            left_out.append(("只在没人调用的函数里", iid, zh))
             continue
         desc = FILE_DESC.get(fname, ["", ""])
         put(sid, "%s（%s）" % (desc[0] or fname, fname), desc[1], {"id": iid, "zh": zh, "en": en, "file": fname,
@@ -327,8 +391,15 @@ for sid in order:
 
 short_body = []
 n_short = 0
-for i, ((zh, en), its) in enumerate(shorts.items(), 1):
-    sid_ = "short:%d" % i
+# a short label keeps the number it had (the author's copy in the cloud docs goes by it); a new one
+# takes the next free number, one gone leaves its number unused
+had_short = {(v["zh"], v["en"]): k for k, v in old_side.items() if k.startswith("short:")}
+next_short = max([int(k[6:]) for k in had_short.values()] + [0]) + 1
+for (zh, en), its in shorts.items():
+    sid_ = had_short.get((zh, en))
+    if sid_ is None:
+        sid_ = "short:%d" % next_short
+        next_short += 1
     screens = []
     for it in its:
         if it["screen"] not in screens:
@@ -389,10 +460,11 @@ def render(chs, head, start=1):
     return out
 
 
-open(OUT, "w", encoding="utf-8", newline="\n").write("\n".join(render(chapters, HEAD)))
-open(SIDE, "w", encoding="utf-8", newline="\n").write(json.dumps(
-    {"_note": "tools/export_ui_text.py 写的：每个编号在代码里的位置和导出时的原文。tools/import_ui_text.py 靠它写回，不要手改。",
-     "entries": side}, ensure_ascii=False, indent=0))
+if "--dry" not in args:
+    open(OUT, "w", encoding="utf-8", newline="\n").write("\n".join(render(chapters, HEAD)))
+    open(SIDE, "w", encoding="utf-8", newline="\n").write(json.dumps(
+        {"_note": "tools/export_ui_text.py 写的：每个编号在代码里的位置和导出时的原文。tools/import_ui_text.py 靠它写回，不要手改。",
+         "entries": side}, ensure_ascii=False, indent=0))
 
 # ---------------------------------------------------------------- the report
 n_all = sum(c[3] for c in chapters)
