@@ -7,6 +7,8 @@ extends Node2D
 signal piece_freed(body)
 # a piece moved into a new frame (t: old frame -> new): whoever keeps points in its frame follows
 signal piece_reframed(p, t)
+# a tether (a cable or pipe between two loose things) pulled taut tore out at p's end
+signal tether_snapped(l, p, at)
 
 const KERF := 3.4
 const BOLT_RING := [Vector2(1, 0), Vector2(0.7071, 0.7071), Vector2(0, 1), Vector2(-0.7071, 0.7071), Vector2(-1, 0), Vector2(-0.7071, -0.7071), Vector2(0, -1), Vector2(0.7071, -0.7071)]
@@ -97,6 +99,7 @@ func _init() -> void:
 	back_layer = _layer(0, false, _draw_back)
 	light_layer = _layer(0, true, _draw_light)
 	line_layer = _layer(1, false, _draw_lines)
+	tether_layer = _layer(1, false, _draw_tethers)
 	piece_layer = _layer(1, false, _draw_pieces)
 	cover_layer = _layer(2, false, _draw_cover)
 	bodies_node = Node2D.new()
@@ -195,6 +198,8 @@ func add_joint(a, b, type: String, pos: Vector2):
 	j.type = type
 	j.pos = pos
 	joints.append(j)
+	if _gap_ready:
+		_gap_eval(j)
 	return j
 
 
@@ -247,6 +252,7 @@ func finalize(metal_value: float = 12000.0) -> void:
 	var shells := _room_shells()
 	for n in rooms:
 		rooms[n].shell0 = shells[n]
+	_gap_ready = false
 	relink()
 	redraw_all(true)
 
@@ -286,6 +292,7 @@ func displace(p, xf: Transform2D) -> void:
 		if c.piece == p.id:
 			c.pos = xf * c.pos
 	rebuild_cols(p)
+	_gap_touch({p.id: true})
 	redraw_near([p])
 
 
@@ -636,10 +643,7 @@ func line_path_world(l) -> PackedVector2Array:
 	var pb = pieces.get(l.b)
 	if pa != null and pb != null and pa.body == null and pb.body == null:
 		return l.path
-	var a := line_end_world(l, 0)
-	var b := line_end_world(l, 1)
-	var mid := (a + b) * 0.5 + Vector2(0, a.distance_to(b) * 0.08)
-	return PackedVector2Array([a, mid, b])
+	return tether_path(l)
 
 
 func ctrl_world(c) -> Vector2:
@@ -702,6 +706,8 @@ func relink() -> void:
 
 func _relink() -> void:
 	dirty_links = false
+	if not _gap_ready:
+		gap_rescan()
 	# union-find over array slots (ids are sparse): by size, with path halving. As a
 	# dictionary walked through lambdas it took a 2,000-piece ship 40 ms a change.
 	var ids: Array = []
@@ -727,6 +733,19 @@ func _relink() -> void:
 				j.alive = false
 				continue
 			_uf_unite(par, sz, a, b)
+	# 2026-11-04 (user: "明明看起来是分开的，但实际上结构上是连起来的"): a cable or pipe is
+	# not structure. It used to tie parts together like a weld: a beam cut free all round hung
+	# in mid-berth on a cable, and loose parts with gaps between them moved as one body. Now a
+	# part a line alone holds stays on only while it still sits in place, against structure that
+	# is held (bolts out, still plugged in: the grapple's pull tears the plug, on_tear); one with
+	# a gap all round floats off, and the line between them is a slack tether that tears when
+	# pulled taut (_check_tethers). Loose bodies are grouped by their fixings alone.
+	var held_lines: Array = []
+	if legacy_lines:
+		for id in lines:
+			var l0 = lines[id]
+			if l0.alive and ix.has(l0.a) and ix.has(l0.b):
+				_uf_unite(par, sz, ix[l0.a], ix[l0.b])
 	for id in lines:
 		var l = lines[id]
 		if l.alive:
@@ -735,7 +754,12 @@ func _relink() -> void:
 			if a2 < 0 or b2 < 0:
 				l.alive = false
 				continue
-			_uf_unite(par, sz, a2, b2)
+			if pieces[l.a].body == null and pieces[l.b].body == null:
+				held_lines.append([a2, b2])
+	if not held_lines.is_empty():
+		var th := Time.get_ticks_usec()
+		_hold_by_lines(par, sz, ids, ix, ai, held_lines)
+		_ps("hold_lines", th)
 	var anchor_root := _uf_find(par, ai)
 	var comps := {}
 	for i in ai:
@@ -769,6 +793,199 @@ func _relink() -> void:
 		for k in range(1, keys.size()):
 			make_body(groups[keys[k]], b)
 		b.refresh()
+	var tg := Time.get_ticks_usec()
+	_gather_tethers()
+	_ps("tethers", tg)
+
+
+# part of _relink: the groups (by their fixings) that a line alone ties to the held ship join it
+# when they still touch held structure; repeated, so a chain of plugged-in parts in place holds
+const SIT_GAP := 2.0          # px: closer than this to held structure, a part still sits in place
+# tests only (before/after shots): the old rules, a line held like a weld and no brackets drawn
+static var legacy_lines := false
+
+func _hold_by_lines(par: Array, sz: Array, ids: Array, ix: Dictionary, ai: int, held_lines: Array) -> void:
+	var members := {}              # the groups by their roots, gathered the first time one is asked about
+	var changed := true
+	while changed:
+		changed = false
+		var ar := _uf_find(par, ai)
+		for e in held_lines:
+			var ra := _uf_find(par, e[0])
+			var rb := _uf_find(par, e[1])
+			if ra == rb or (ra != ar and rb != ar):
+				continue
+			var loose := rb if ra == ar else ra
+			if members.is_empty():
+				for i in ai:
+					var r := _uf_find(par, i)
+					if not members.has(r):
+						members[r] = []
+					members[r].append(i)
+			if _sits_in_place(members.get(loose, []), par, ids, ix, ar):
+				_uf_unite(par, sz, loose, ar)
+				changed = true
+
+
+# 60 FPS: the neighbours come from the picking grid (attached pieces by 4 m cell); against every
+# piece in turn ARK-01 took ~30 ms a relink
+func _sits_in_place(group: Array, par: Array, ids: Array, ix: Dictionary, ar: int) -> bool:
+	if not _pick_ready:
+		_pick_ready = true
+		for id in order:
+			pick_touch(pieces[id])
+	for i in group:
+		var p = pieces[ids[i]]
+		var pp := _drawn_poly(p)
+		var bb: Rect2 = Geom.bbox(pp).grow(SIT_GAP)
+		var c0 := Vector2i((bb.position / PICK_CELL).floor())
+		var c1 := Vector2i((bb.end / PICK_CELL).floor())
+		var seen := {p.id: true}
+		for x in range(c0.x, c1.x + 1):
+			for y in range(c0.y, c1.y + 1):
+				for id in _pick.get(Vector2i(x, y), {}):
+					if seen.has(id):
+						continue
+					seen[id] = true
+					var q = pieces.get(id)
+					if q == null or q.gone or q.body != null or not ix.has(id):
+						continue
+					if not (q.door or _bounds(q).intersects(bb)) or _uf_find(par, ix[id]) != ar:
+						continue
+					if _polys_touch(pp, _drawn_poly(q), SIT_GAP):
+						return true
+	return false
+
+
+func _drawn_poly(p) -> PackedVector2Array:
+	var off := door_offset(p)
+	return p.poly if off == Vector2.ZERO else Transform2D(0.0, off) * p.poly
+
+
+static func _polys_touch(a: PackedVector2Array, b: PackedVector2Array, gap: float) -> bool:
+	if not Geometry2D.intersect_polygons(a, b).is_empty():
+		return true
+	for v in a:
+		if Geom.dist_to_boundary(v, b) < gap:
+			return true
+	for v in b:
+		if Geom.dist_to_boundary(v, a) < gap:
+			return true
+	return false
+
+
+# ---------------------------------------------------------------- tethers
+# A live cable or pipe whose two ends are on different rigid things (two loose bodies, or a
+# loose body and the ship): drawn as a hanging line between its plugs, tight as it nears its
+# length; pulled past that it tears out (the plug end comes off: game.on_tear).
+var tethers: Array = []
+var _tether_drawn := false
+var tether_layer: Node2D
+const TETHER_GIVE := 0.4 * 48.0   # px past its length before a plug lets go
+
+
+func _gather_tethers() -> void:
+	tethers.clear()
+	for id in lines:
+		var l = lines[id]
+		if not l.alive:
+			continue
+		var pa = pieces.get(l.a)
+		var pb = pieces.get(l.b)
+		if pa == null or pb == null or pa.gone or pb.gone:
+			continue
+		if pa.body == pb.body and (pa.body == null or is_instance_valid(pa.body)):
+			continue
+		if not l.has_meta("rest"):
+			l.set_meta("rest", maxf(_path_len(l.path), line_end_world(l, 0).distance_to(line_end_world(l, 1))))
+		tethers.append(l)
+
+
+static func _path_len(path: PackedVector2Array) -> float:
+	var s := 0.0
+	for i in range(1, path.size()):
+		s += path[i - 1].distance_to(path[i])
+	return s
+
+
+# the route a tether hangs on: straight when taut, sagging by what it has spare
+func tether_path(l) -> PackedVector2Array:
+	var a := line_end_world(l, 0)
+	var b := line_end_world(l, 1)
+	var d := a.distance_to(b)
+	var rest: float = l.get_meta("rest", d * 1.1)
+	var sag := minf(0.5 * sqrt(maxf(0.0, rest * rest - d * d)), 0.3 * d + 24.0)
+	var out := PackedVector2Array()
+	for k in 9:
+		var t := k / 8.0
+		out.append(a.lerp(b, t) + Vector2(0.0, sag * 4.0 * t * (1.0 - t)))
+	return out
+
+
+func _check_tethers() -> void:
+	if tethers.is_empty():
+		return
+	for l in tethers.duplicate():
+		if not l.alive:
+			tethers.erase(l)
+			continue
+		var pa = pieces.get(l.a)
+		var pb = pieces.get(l.b)
+		if pa == null or pb == null or pa.gone or pb.gone:
+			tethers.erase(l)
+			continue
+		var ea := line_end_world(l, 0)
+		var eb := line_end_world(l, 1)
+		var d := ea.distance_to(eb)
+		var rest: float = l.get_meta("rest", d)
+		if d <= rest:
+			continue
+		if d <= rest + TETHER_GIVE:
+			# taut: like a rope it stops the ends moving further apart (a drift or the kick a cut
+			# gives doesn't tear it); only a steady pull (the grapple) stretches it to the plug
+			_tether_hold(pa.body, ea, eb)
+			_tether_hold(pb.body, eb, ea)
+			continue
+		tethers.erase(l)
+		# the end that tears: the device's plug if one end is intact equipment, else the end
+		# on the lighter loose body
+		var p = pa
+		if pb.cls == "equip" and pb.intact and not (pa.cls == "equip" and pa.intact):
+			p = pb
+		elif not (pa.cls == "equip" and pa.intact):
+			var ma: float = pa.body.total_mass() if pa.body != null else INF
+			var mb: float = pb.body.total_mass() if pb.body != null else INF
+			p = pa if ma <= mb else pb
+		var at := line_end_world(l, 0 if l.a == p.id else 1)
+		if game != null and game.has_method("on_tear"):
+			game.on_tear(p, [], [l], at)
+		else:
+			kill_line(l, at)
+		tether_snapped.emit(l, p, at)
+
+
+# one end of a taut tether, on a loose body: no more speed away from the other end at that point
+func _tether_hold(b, at: Vector2, other: Vector2) -> void:
+	if b == null or not is_instance_valid(b) or b.freeze:
+		return
+	var n := (other - at).normalized()
+	var r: Vector2 = at - b.global_position
+	var v: Vector2 = b.linear_velocity + Vector2(-r.y, r.x) * b.angular_velocity
+	var away := -v.dot(n)
+	if away > 0.0:
+		b.linear_velocity += n * away
+		b.sleeping = false
+
+
+func _draw_tethers() -> void:
+	for l in tethers:
+		if not l.alive:
+			continue
+		var path := tether_path(l)
+		_draw_line_path(tether_layer, l, path, 1.0)
+		# the plugs at its ends: what still holds it, seen
+		for q in [path[0], path[path.size() - 1]]:
+			tether_layer.draw_rect(Rect2(q - Vector2(2.4, 2.4), Vector2(4.8, 4.8)), Pal.ink(0.75))
 
 
 static func _uf_find(par: Array, x: int) -> int:
@@ -1080,9 +1297,13 @@ func _physics_process(_dt: float) -> void:
 		_p("cols", t0)
 	if dirty_links:
 		relink()
+	_check_tethers()
 
 
 func _process(dt: float) -> void:
+	if not tethers.is_empty() or _tether_drawn:
+		_tether_drawn = not tethers.is_empty()
+		tether_layer.queue_redraw()
 	if _pass_roots.has("art") and game != null:
 		var art: Node2D = _pass_roots["art"]
 		var k := clampf((game.cam_zoom() - ART_FADE.x) / (ART_FADE.y - ART_FADE.x), 0.0, 1.0)
@@ -1397,9 +1618,12 @@ func _commit_cut(p, pl: PackedVector2Array, r: float = KERF, source: Dictionary 
 		if q.kerf_dt > 0.0:
 			_warm[q.id] = true
 	# hand each fixing, line end and control to whichever part now holds it
+	var handed: Array = []
 	for j in joints:
 		if not j.alive:
 			continue
+		if j.a == p.id or j.b == p.id:
+			handed.append(j)
 		if j.a == p.id:
 			var to = _part_for(all_parts, j.pos)
 			if to == null:
@@ -1440,6 +1664,9 @@ func _commit_cut(p, pl: PackedVector2Array, r: float = KERF, source: Dictionary 
 			c.piece = to.id if to != null else 0
 	for q in all_parts:
 		dirty_cols[q.id] = true
+	if _gap_ready:
+		for j in handed:
+			_gap_eval(j)
 	if p.body != null:
 		p.body.refresh()
 	dirty_links = true
@@ -1963,6 +2190,7 @@ func draw_joints_of(ci: CanvasItem, list: Array, js = null) -> void:
 	var welds := PackedVector2Array()
 	var seams := PackedVector2Array()
 	var cracks := PackedVector2Array()
+	var straps := PackedVector2Array()
 	for j in (joints if js == null else js):
 		if not j.alive or not ids.has(j.a):
 			continue
@@ -1972,6 +2200,12 @@ func draw_joints_of(ci: CanvasItem, list: Array, js = null) -> void:
 			continue
 		if pa.body == null and j.type == "bolt" and joint_covered(j):
 			continue
+		# 2026-11-04: a fixing across a gap between its two parts (the ship files put many a
+		# device 0.1-0.2 m off the wall it is bolted to, a few up to 2 m) is a bracket, drawn
+		if _gap.has(j.id) and not legacy_lines:
+			var pb = ids.get(j.b, pieces.get(j.b))
+			if pb != null and not pb.gone and pb.body == pa.body:
+				_bridge(straps, pa, pb, pos)
 		match j.type:
 			"bolt":
 				dots.append(pos)
@@ -1991,6 +2225,9 @@ func draw_joints_of(ci: CanvasItem, list: Array, js = null) -> void:
 				for k in zz.size() - 1:
 					cracks.append(pos + zz[k])
 					cracks.append(pos + zz[k + 1])
+	if not straps.is_empty():
+		ci.draw_multiline(straps, Pal.ink(0.7), 5.2)
+		ci.draw_multiline(straps, Pal.PLATE, 2.8)
 	if not welds.is_empty():
 		ci.draw_multiline(welds, Pal.ink(0.25), 1.0)
 	# the marked lines a heavy piece is meant to come apart along
@@ -2037,6 +2274,79 @@ func draw_joints_of(ci: CanvasItem, list: Array, js = null) -> void:
 	for pos in rects:
 		ci.draw_rect(Rect2(pos - Vector2(3.2, 2.4), Vector2(6.4, 4.8)), Pal.ink(0.8), false, 1.2)
 		ci.draw_rect(Rect2(pos - Vector2(1.2, 1.0), Vector2(2.4, 2.0)), Pal.ink(0.8))
+
+
+const BRIDGE_GAP := 3.0       # px: a fixing spanning more than this between its parts gets a bracket
+
+# 60 FPS: working a bracket out for every one of ARK-01's 3,700 fixings at each redraw cost
+# ~15 ms; the fixings across a gap are found once (gap_rescan, at the first relink) and the
+# ones a cut, a sag or a new fixing touches again, and only those are worked out when drawn
+var _gap := {}                 # joint id -> true: drawn with a bracket (door fixings always)
+var _gap_ready := false
+
+
+func gap_rescan() -> void:
+	_gap.clear()
+	for j in joints:
+		_gap_eval(j)
+	_gap_ready = true
+
+
+func _gap_eval(j) -> void:
+	_gap.erase(j.id)
+	if not j.alive or j.b == Model.ANCHOR or j.type == "crack":
+		return
+	var pa = pieces.get(j.a)
+	var pb = pieces.get(j.b)
+	if pa == null or pb == null or pa.gone or pb.gone or pa.body != pb.body:
+		return
+	if pa.door or pb.door:
+		_gap[j.id] = true
+		return
+	var o := PackedVector2Array()
+	_bridge(o, pa, pb, j.pos)
+	if not o.is_empty():
+		_gap[j.id] = true
+
+
+func _gap_touch(ids: Dictionary) -> void:
+	if not _gap_ready:
+		return
+	for j in joints:
+		if ids.has(j.a) or ids.has(j.b):
+			_gap_eval(j)
+
+
+# the bracket a fixing at pos makes between pa and pb (both in the same frame): from the
+# nearest edge of one, through the fixing, to the nearest edge of the other
+func _bridge(out: PackedVector2Array, pa, pb, pos: Vector2) -> void:
+	var a := _drawn_poly(pa)
+	var b := _drawn_poly(pb)
+	var bb := Rect2(pos, Vector2.ZERO).grow(BRIDGE_GAP)
+	var ina: bool = Geom.bbox(a).intersects(bb) and (Geometry2D.is_point_in_polygon(pos, a) or Geom.dist_to_boundary(pos, a) < BRIDGE_GAP)
+	var inb: bool = Geom.bbox(b).intersects(bb) and (Geometry2D.is_point_in_polygon(pos, b) or Geom.dist_to_boundary(pos, b) < BRIDGE_GAP)
+	if ina and inb:
+		return
+	var ca := pos if ina else _nearest_on(a, pos)
+	var cb := pos if inb else _nearest_on(b, pos)
+	if ca.distance_to(pos) > 0.5:
+		out.append(ca)
+		out.append(pos)
+	if cb.distance_to(pos) > 0.5:
+		out.append(pos)
+		out.append(cb)
+
+
+static func _nearest_on(poly: PackedVector2Array, p: Vector2) -> Vector2:
+	var best := p
+	var bd := INF
+	for i in poly.size():
+		var c := Geometry2D.get_closest_point_to_segment(p, poly[i], poly[(i + 1) % poly.size()])
+		var d := c.distance_squared_to(p)
+		if d < bd:
+			bd = d
+			best = c
+	return best
 
 
 func _draw_pieces() -> void:
