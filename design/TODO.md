@@ -654,3 +654,13 @@
 - [x] 序章 prologue:_fill:1/2/3 用文档靠后的版本（用户 2026-10-30：“用靠后的版本”）；第 1 条保留步骤进度 %d / %d，否则运行时格式化出错
 - [x] 用 archify 画游戏架构，要详细（用户 2026-10-30）：design/架构图/ 下总览加三张分图，另有一张全图要放大看
 - [x] 2026-11-02 用户问“谷歌文档里那个，所有的词都是玩家能玩到的吗”，答“ok”拿掉看不到的 → tools/export_ui_text.py 新规则：作业方案收起（Game.G4_OPEN = false，plan/plan_panel/plan_packages/grey_heron_plan 和 plan_/pkg_ 词条）、客户合同已取消（Market.FINDS_ONLY）的 goal_*_d / sc_*_d、提示等级说明、只在没人调用的函数里的字（自动查：名字在全部脚本和场景里只出现一次）；短标签保留原编号（云端文档按编号对得上），新的接在最大号后面；加 --dry。data/界面文字.txt 7973 → 7871 条（去掉 102 条，其余一字未变）。顺手修：作业方案关着时结算页还写“作业方案已保存：N 步；下次同船型按 P 执行”而按 P 没反应（hud.gd 加 G4_OPEN 判断）；tools/import_ui_text.py 上次提交里三处 "\r\n" 被写成真换行、整个脚本跑不起来 → 已修，导入当前文件 0 处改动。plan_settlement、g4_settlement_atomic、demo_pack_check、first_ship_check（--fixed-fps 60；不加会因无头帧时间不稳失败 2 条）通过。用户自建文档「界面文字」里这 102 条还在，要手动删（导入时它们只会列为不认识的编号，不会写错）
+
+## 2026-11-03 画面信息清理（117 号）
+用户问“画面可以再怎么优化”→ 给出四个方向（信息清理 / 层次纵深 / 动作手感 / 场景过渡）→ 用户：“先做信息清理”。
+- [x] 现状截图：tests/clutter_shot.gd（10 艘船 × 维护工具/激光两张，tests/out/clutter_before_*.png）
+- [x] 问答 7 题，用户“全按推荐”（全 A）：下一步现场只留短名；无人机状态合成一块、速度看 HS 带；危险警告整句只在状态牌、物体旁短标签、现场整句只说一次；字后暗晕不加底；世界牌子/标签避开 HUD 禁区，推不开淡出；收益合一块；先只做拆船现场；必收件并进核心资产清单
+- [x] 同一信息只出现一处：hud._next_mark 用 Hud.short_step（冒号后/控件编号）；_drone_status 现场不画 m/s，look.gd UNIT 行只写推力；LEDGER 名去掉、每分钟收益贴在大数字下；reactor.gd 核堆警告整句只说一次、之后物体旁“激光切到即核爆”闪亮；game.on_laser_near_equipment 对核堆不再说“切进去就成了废料”；必收件在资产清单里的那行带 ◇（hud._title_items / _must_dia）
+- [x] 字后暗晕：hud 文字的暗晕画在单独的 canvas item（halo_rid，在全部 HUD 文字之下，避免宽暗晕盖住上一行）；draw_set_transform 统一走 _xform 同步；look.gd 面板名用 _ot_halo；描边数值实测外扩约 1/4，所以用 34/18
+- [x] 世界牌子/标签避开 HUD：hud.keep_out()/clear_of()；dock.gd 回收口牌子拆成单独 sign_nodes，平滑让位、推不开淡出、引线连回口；现场读数标签、现场提示也让位；同一处的两条现场提示上下排开
+- [ ] HUD 主次三级（亮度层级）——本轮未单独做：现有标签 0.5 / 数值 0.95 / 警告主题色已经分层，看用户反馈再定
+- [x] 新旧对比 tests/out/clutter_compare.png（作业艇、斑鸠、雨燕、灶王）；帧时 tests/halo_perf.gd 背靠背：暗晕开/关帧时都是 p50 16.66 / p99 ≈17.2 ms（垂直同步 60），渲染 CPU +0.1 ms；回归 nuke、next_step、ten_ships、batch2/3/4（无头）、hint_tiers、codex、op_cards、first_ship、g4_settlement_atomic、mainline、guide、opening、exam_bot、text_fit 全过；未真人试玩

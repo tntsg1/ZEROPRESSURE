@@ -549,7 +549,7 @@ func _draw_osd() -> void:
 	_draw_flight(c, vs, fb, fr)
 	# ---- round the panels: what part of the drone's picture each one is, and more under the pointer
 	var rects: Dictionary = _feed_rects()
-	var names := {"task": ["TASK", "任务"], "ledger": ["LEDGER", "收益"], "unit": ["UNIT R-02", "机体遥测"], "payload": ["PAYLOAD", "载荷"], "nav": ["NAV", "导航"]}
+	var names := {"task": ["TASK", "任务"], "ledger": ["LEDGER", "收益"], "unit": ["UNIT", "机体遥测"], "payload": ["PAYLOAD", "载荷"], "nav": ["NAV", "导航"]}
 	for key in rects:
 		var r: Rect2 = rects[key]
 		var over := r.grow(4.0).has_point(m)
@@ -560,11 +560,17 @@ func _draw_osd() -> void:
 		var label: String = names[key][0] + "  ·  " + names[key][1]
 		var above: bool = r.position.y > vs.y * 0.5
 		var lp := Vector2(r.position.x + 4.0, r.position.y - 12.0) if above else Vector2(r.position.x + 4.0, r.end.y + 22.0)
-		_ot(c, fb, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(col.r, col.g, col.b, 0.6 + 0.4 * k))
 		var extra := _region_line(key)
+		# 117 号 (Q6): the ledger is the contract's money already — under it only the rate, set
+		# under the figure, no second name
+		if key == "ledger":
+			var ew := fr.get_string_size(extra, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+			_ot_halo(c, fr, Vector2(r.end.x - 18.0 - ew, r.end.y - 2.0), extra, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 1, 1, 0.5 + 0.45 * k))
+			continue
+		_ot_halo(c, fb, lp, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(col.r, col.g, col.b, 0.6 + 0.4 * k))
 		if extra != "":
 			var ep := Vector2(lp.x + fb.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 16.0, lp.y)
-			_ot(c, fr, ep, extra, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 1, 1, 0.45 + 0.5 * k))
+			_ot_halo(c, fr, ep, extra, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 1, 1, 0.45 + 0.5 * k))
 		if key == "unit":
 			_unit_dial(c, Vector2(r.end.x + 46.0, r.get_center().y), 30.0 + 4.0 * k, k)
 		elif key == "nav":
@@ -605,7 +611,8 @@ func _region_line(key: String) -> String:
 			return Ops.w("每分钟 %s", "%s / MIN") % Pal.money(per)
 		"unit":
 			var thr := clampf(_dv.length() / 900.0, 0.0, 1.0)
-			return Ops.w("推力 %d%%  ·  完好 %d%%", "THRUST %d%%  ·  HULL %d%%") % [int(thr * 100.0), int(d.integrity)]
+			# 117 号 (Q2 A): the hull is the bar in the panel; here only what the bar doesn't say
+			return Ops.w("推力 %d%%", "THRUST %d%%") % int(thr * 100.0)
 		"payload":
 			var tl = game.tools
 			if tl.cutting:
@@ -660,6 +667,16 @@ func _nav_sweep(c: CanvasItem, r: Rect2, k: float) -> void:
 			FastDraw.polyline(c, seg, Color(UiSkin.DATA, al), 2.0)
 
 # OSD text: burned into the picture, outlined in black like a drone's on-screen display
+# 117 号 (Q4 A): a panel's name, set over whatever the hull runs behind it — a wide soft halo first,
+# like the HUD's own text (only for these lone lines: next to the tapes' ticks it would eat them)
+static func _ot_halo(c: CanvasItem, f: Font, pos: Vector2, s: String, al: int, w: float, size: int, col: Color) -> void:
+	if col.a <= 0.01:
+		return
+	c.draw_string_outline(f, pos, s, al, w, size, 34, Color(0, 0, 0, 0.6 * minf(col.a * 2.0, 1.0)))
+	c.draw_string_outline(f, pos, s, al, w, size, 18, Color(0, 0, 0, 0.95 * minf(col.a * 2.0, 1.0)))
+	_ot(c, f, pos, s, al, w, size, col)
+
+
 static func _ot(c: CanvasItem, f: Font, pos: Vector2, s: String, al: int, w: float, size: int, col: Color) -> void:
 	if col.a <= 0.01:
 		return

@@ -3877,6 +3877,9 @@ func lens_burst(at: Vector2, under: Array) -> void:
 
 
 func on_laser_near_equipment(p, pos: Vector2) -> void:
+	# 117 号 (Q3 A): a fission core has its own warning (scripts/reactor.gd) — not "it's scrap" on top
+	if reactor != null and p in reactor.cores:
+		return
 	say("laser_near", pos, p.tag if p.tag != "" else Txt.piece_name(p))
 	sfx.play("warn")
 	hint("equip_cut")

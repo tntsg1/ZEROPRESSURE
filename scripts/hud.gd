@@ -84,6 +84,10 @@ func _ready() -> void:
 	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	c.draw.connect(_draw_hud)
 	add_child(c)
+	# 117 号: the text halos, under everything c draws
+	halo_rid = RenderingServer.canvas_item_create()
+	RenderingServer.canvas_item_set_parent(halo_rid, c.get_canvas_item())
+	RenderingServer.canvas_item_set_draw_behind_parent(halo_rid, true)
 	fadd = Control.new()
 	fadd.set_anchors_preset(Control.PRESET_FULL_RECT)
 	fadd.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -119,6 +123,12 @@ func _ready() -> void:
 	for i in 6:
 		slot_y.append(Motion.Spring.new(0.0, 300.0, 0.6))
 		slot_glow.append(0.0)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and halo_rid.is_valid():
+		RenderingServer.free_rid(halo_rid)
+		halo_rid = RID()
 
 
 func size() -> Vector2:
@@ -185,6 +195,65 @@ func feed_rects() -> Dictionary:
 	if minimap != null and minimap.visible:
 		out["nav"] = Rect2(minimap.position, minimap.map_size)
 	return out
+
+
+# 117 号 (Q5 A): where the HUD stands this frame — the panels with their OSD names, the link bar
+# and the asset board. Signs and tags out in the world step out of these.
+var _ko: Array = []
+var _ko_frame := -1
+func keep_out() -> Array:
+	var f := Engine.get_process_frames()
+	if f == _ko_frame:
+		return _ko
+	_ko_frame = f
+	_ko = []
+	var fr := feed_rects()
+	if fr.is_empty():
+		return _ko
+	for k in fr:
+		_ko.append((fr[k] as Rect2).grow_individual(10.0, 34.0, 10.0, 34.0))
+	if asset_rect.has_area():
+		_ko.append(asset_rect.grow(10.0))
+	if Look.on and game.look != null:
+		_ko.append(Rect2(size().x * 0.5 - 340.0, 8.0, 680.0, 86.0))
+	return _ko
+
+
+# the shortest step that takes a screen rect clear of the HUD, and how much of it may still show:
+# [offset, alpha]. Pushed no further than MAX_PUSH; what can't get clear fades.
+const MAX_PUSH := 360.0
+func clear_of(r: Rect2) -> Array:
+	var zones := keep_out()
+	var off := Vector2.ZERO
+	if zones.is_empty():
+		return [off, 1.0]
+	var s := size()
+	for it in 4:
+		var moved := false
+		for z in zones:
+			var rr := Rect2(r.position + off, r.size)
+			if not rr.intersects(z):
+				continue
+			var best := Vector2.INF
+			for cand in [Vector2(z.end.x - rr.position.x, 0.0), Vector2(z.position.x - rr.end.x, 0.0),
+					Vector2(0.0, z.end.y - rr.position.y), Vector2(0.0, z.position.y - rr.end.y)]:
+				var to := Rect2(rr.position + cand, rr.size)
+				# never pushed off the screen
+				if to.position.x < 0.0 or to.position.y < 0.0 or to.end.x > s.x or to.end.y > s.y:
+					continue
+				if cand.length() < best.length():
+					best = cand
+			if best.is_finite() and (off + best).length() <= MAX_PUSH:
+				off += best
+				moved = true
+		if not moved:
+			break
+	var fin := Rect2(r.position + off, r.size)
+	var hit := 0.0
+	for z in zones:
+		if fin.intersects(z):
+			hit = maxf(hit, fin.intersection(z).get_area() / maxf(fin.get_area(), 1.0))
+	return [off, 1.0 - clampf(hit * 1.6, 0.0, 0.9)]
 
 
 func menu_changed() -> void:
@@ -665,7 +734,7 @@ func _boot(i: int) -> float:
 func _contract_rect() -> Rect2:
 	var g = game
 	var y := 46.0
-	var items0: Array = g.mandatory_items()
+	var items0: Array = _title_items()
 	var by0 := maxf(y + 120, y + 56 + items0.size() * 24 + 18)
 	var lrow := 0.0 if g.training or g.exam != null else 24.0
 	var ph := by0 - y + 80.0 + lrow + (56.0 if g.scope() != "full" else 0.0)
@@ -683,9 +752,36 @@ func _text(s: String, pos: Vector2, size_px: int, col: Color, f: Font = null, al
 		x -= fo.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x
 	# 91 号: on site the text is burned into the camera picture, the way a drone's OSD is — a
 	# black outline round every letter keeps it legible over anything
+	# 117 号 (Q4 A): and a soft dark halo hugging the letters, so a hull line behind never cuts
+	# through a word — no plate, the panels stay bare. The halo goes on its own canvas item under
+	# all the HUD's text: drawn in line with it, a wide halo would black out the line above.
 	if UiSkin.field and col.a > 0.05:
+		for h in (HALO if halo_on else []):
+			fo.draw_string_outline(halo_rid, Vector2(x, pos.y), s, HORIZONTAL_ALIGNMENT_LEFT, width, size_px, h[0], Color(0, 0, 0, h[1] * minf(col.a * 2.0, 1.0)))
 		c.draw_string_outline(fo, Vector2(x, pos.y), s, HORIZONTAL_ALIGNMENT_LEFT, width, size_px, 4, Color(0, 0, 0, 0.85 * col.a))
 	c.draw_string(fo, Vector2(x, pos.y), s, HORIZONTAL_ALIGNMENT_LEFT, width, size_px, col)
+
+
+# the hull's lines are HDR-bright: one faint layer barely dims them, so two, the denser nearer
+const HALO := [[34, 0.6], [18, 0.95]]
+var halo_rid: RID
+static var halo_on := true    # tests: the old look side by side
+
+
+# c's transform, and the halo's with it
+func _xform(pos: Vector2, rot := 0.0, sc := Vector2.ONE) -> void:
+	c.draw_set_transform(pos, rot, sc)
+	RenderingServer.canvas_item_add_set_transform(halo_rid, Transform2D(rot, sc, 0.0, pos))
+
+
+# the same for a wrapped paragraph
+func _mtext(s: String, pos: Vector2, width: float, size_px: int, lines: int, col: Color, f: Font = null) -> void:
+	var fo := f if f != null else font
+	if UiSkin.field and col.a > 0.05:
+		for h in (HALO if halo_on else []):
+			fo.draw_multiline_string_outline(halo_rid, pos, s, HORIZONTAL_ALIGNMENT_LEFT, width, size_px, lines, h[0], Color(0, 0, 0, h[1] * minf(col.a * 2.0, 1.0)))
+		c.draw_multiline_string_outline(fo, pos, s, HORIZONTAL_ALIGNMENT_LEFT, width, size_px, lines, 4, Color(0, 0, 0, 0.85 * col.a))
+	c.draw_multiline_string(fo, pos, s, HORIZONTAL_ALIGNMENT_LEFT, width, size_px, lines, col)
 
 
 func _tw(s: String, size_px: int, f: Font = null) -> float:
@@ -699,6 +795,7 @@ func _panel(r: Rect2, a: float = 0.82) -> void:
 # ---------------------------------------------------------------- main draw
 
 func _draw_hud() -> void:
+	RenderingServer.canvas_item_clear(halo_rid)
 	if game == null:
 		return
 	# 91 号 遥控 Q6 C: on site the panels are the camera feed's overlay, not glass cards
@@ -732,7 +829,7 @@ func _draw_hud_body() -> void:
 		_cursor_label()
 		if not g.training and g.exam == null and not g.in_berth():
 			var bpk: float = g.blueprint.k if g.blueprint != null else 0.0
-			c.draw_set_transform(Vector2(-(1.0 - _in(0) * (1.0 - Pal.ease_io(bpk))) * 420.0, 0.0))
+			_xform(Vector2(-(1.0 - _in(0) * (1.0 - Pal.ease_io(bpk))) * 420.0, 0.0))
 			# booting: the edge and plate first, the content only once it is uncovered
 			if _boot(0) < 0.45:
 				UI.panel(c, _contract_rect(), 0.82, 0.0, Pal.HEAT, _boot(0))
@@ -740,7 +837,7 @@ func _draw_hud_body() -> void:
 				_contract_panel()
 				UI.boot_cover(c, _contract_rect(), _boot(0))
 				_asset_board(_contract_rect())
-			c.draw_set_transform(Vector2.ZERO)
+			_xform(Vector2.ZERO)
 		_overweight()
 		_tearing()
 		_left_markers(s)
@@ -750,7 +847,7 @@ func _draw_hud_body() -> void:
 			_next_mark(s)
 		if g.warp:
 			_warp(s)
-		c.draw_set_transform(Vector2((1.0 - _in(1)) * 380.0, 0.0))
+		_xform(Vector2((1.0 - _in(1)) * 380.0, 0.0))
 		if g.in_berth():
 			pass   # 61 号 (60 号 Q8): no status strip in the empty berth; the main-line card guides
 		elif _boot(1) < 0.45:
@@ -760,15 +857,15 @@ func _draw_hud_body() -> void:
 			UI.boot_cover(c, Rect2(s.x - 290.0, 22, 268, 86), _boot(1))
 		_machines(s)
 		_work_order(s)
-		c.draw_set_transform(Vector2.ZERO)
+		_xform(Vector2.ZERO)
 		_toolbar(s)
-		c.draw_set_transform(Vector2(0.0, (1.0 - _in(2)) * 140.0))
+		_xform(Vector2(0.0, (1.0 - _in(2)) * 140.0))
 		if _boot(2) < 0.45:
 			UI.panel(c, Rect2(22.0, s.y - 106.0, 420, 70), 0.82, 0.0, Pal.HEAT, _boot(2))
 		else:
 			_drone_status(s)
 			UI.boot_cover(c, Rect2(22.0, s.y - 106.0, 420, 70), _boot(2))
-		c.draw_set_transform(Vector2.ZERO)
+		_xform(Vector2.ZERO)
 		_hint(s)
 		_guide(s)
 		_op_card(s)
@@ -1135,13 +1232,13 @@ func _build_overlay(s: Vector2) -> void:
 		var txt: String = g.txt("bb_done") % b.x_b
 		var w := font_l.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x
 		var cr := Rect2(Vector2(s.x * 0.5 + 120.0 - w * 0.5 - 30.0, s.y * 0.5 - 40.0), Vector2(w + 60.0, 80.0))
-		c.draw_set_transform(cr.get_center(), 0.0, Vector2.ONE * lerpf(1.4, 1.0, e))
+		_xform(cr.get_center(), 0.0, Vector2.ONE * lerpf(1.4, 1.0, e))
 		var lr := Rect2(-cr.size * 0.5, cr.size)
 		c.draw_style_box(UiSkin.box("tag", 0.85 * k_in), lr)
 		c.draw_rect(lr, Pal.tint(Pal.FLUID, 0.9 * k_in, 1.3), false, 2.0)
 		c.draw_rect(lr.grow(-6.0), Pal.tint(Pal.FLUID, 0.4 * k_in, 1.1), false, 1.0)
 		_text(txt, Vector2(0, 12), 34, Pal.tint(Pal.FLUID, k_in, 1.2), font_l, 0)
-		c.draw_set_transform(Vector2.ZERO)
+		_xform(Vector2.ZERO)
 	_text(g.txt("sv_skip"), Vector2(s.x - 70, s.y - bar - 30.0), 13, Pal.ink(0.5 * k_in), font, 1)
 	c.draw_rect(Rect2(0, 0, s.x, bar), Color(0, 0, 0, 1))
 	c.draw_rect(Rect2(0, s.y - bar, s.x, bar), Color(0, 0, 0, 1))
@@ -1196,7 +1293,7 @@ func _contract_panel() -> void:
 	var g = game
 	var x := 40.0
 	var y := 46.0
-	var items0: Array = g.mandatory_items()
+	var items0: Array = _title_items()
 	var by0 := maxf(y + 120, y + 56 + items0.size() * 24 + 18)
 	var lrow := 0.0 if g.training or g.exam != null else 24.0     # the "pieces left" row
 	var ph := by0 - y + 80.0 + lrow + (56.0 if g.scope() != "full" else 0.0)
@@ -1210,10 +1307,14 @@ func _contract_panel() -> void:
 	if not kinds.is_empty():
 		_text(" · ".join(kinds), Vector2(x + 300, y), 13, Pal.heat(0.95, 1.2), font_b, 1)
 	_text(g.ship_title(), Vector2(x, y + 24), 20, Pal.ink(0.95), font_b)
-	# mandatory items
+	# mandatory items (117 号 Q7: one the asset board lists carries its diamond there instead)
 	var items: Array = g.mandatory_items()
+	var row := -1
 	for i in items.size():
-		var yy := y + 56 + i * 24
+		if not items0.has(items[i]):
+			continue
+		row += 1
+		var yy := y + 56 + row * 24
 		var k: float = must_k[i] if i < must_k.size() else 0.0
 		var dc := Vector2(x + 7, yy - 5)
 		var dia := PackedVector2Array([dc + Vector2(0, -6), dc + Vector2(6, 0), dc + Vector2(0, 6), dc + Vector2(-6, 0)])
@@ -1236,7 +1337,7 @@ func _contract_panel() -> void:
 			Pal.band(c, Rect2(x + 18, yy - 17, 300.0 * e, 22), 0.12 * (1.0 - e))
 		_text(items[i][1] + "  " + items[i][0], Vector2(x + 22, yy), 14, Pal.ink(0.55 + 0.4 * k), font)
 	# recovery bar (below however many items the contract asks for)
-	var by := maxf(y + 120, y + 56 + items.size() * 24 + 18)
+	var by := maxf(y + 120, y + 56 + items0.size() * 24 + 18)
 	_text(g.txt("rate"), Vector2(x, by), 13, Pal.ink(0.5), font)
 	var pct: float = rate_roll.shown
 	_text("%.1f%%" % pct, Vector2(x + 300, by + 2), 22, Pal.ink(0.95), font_l, 1)
@@ -1281,7 +1382,7 @@ func _contract_panel() -> void:
 	var ry := by + 70 + lrow
 	if g.scope() != "full":
 		c.draw_rect(Rect2(x - 8, by + 50 + lrow, 2, 44), Pal.heat(0.9, 1.1))
-		c.draw_multiline_string(font, Vector2(x, by + 66 + lrow), Market.scope_text(g.job), HORIZONTAL_ALIGNMENT_LEFT, 300, 13, 2, Pal.ink(0.85))
+		_mtext(Market.scope_text(g.job), Vector2(x, by + 66 + lrow), 300, 13, 2, Pal.ink(0.85))
 		ry += 36
 	_recall(x, ry)
 
@@ -1541,9 +1642,9 @@ func _toolbar(s: Vector2) -> void:
 		var pop := 1.0
 		if on > 0.5 and tool_pulse < 0.35:
 			pop = 1.0 + 0.35 * sin(clampf(tool_pulse / 0.35, 0.0, 1.0) * PI)
-		c.draw_set_transform(rect.position + Vector2(rect.size.x - 30, 26), 0.0, Vector2.ONE * pop)
+		_xform(rect.position + Vector2(rect.size.x - 30, 26), 0.0, Vector2.ONE * pop)
 		_tool_icon(i + 1, Vector2.ZERO, on)
-		c.draw_set_transform(Vector2.ZERO)
+		_xform(Vector2.ZERO)
 		_text(g.txt("tool_%d" % (i + 1)), rect.position + Vector2(10, 56), 15, Pal.ink(0.5 + 0.45 * on), font)
 		# the consumable part in the meter, the laser and the grapple: its grade and what it has left
 		if Consum.ENABLED and i < 3 and g.career() and not g.job.is_empty():
@@ -1659,7 +1760,9 @@ func _drone_status(s: Vector2) -> void:
 	c.draw_rect(sw, Pal.ink(0.35 + 0.4 * d.assist_k), false, 1.0)
 	c.draw_rect(Rect2(sw.position + Vector2(2 + 18 * d.assist_k, 2), Vector2(12, 10)), Pal.ink(0.5 + 0.45 * d.assist_k) if d.assist else Pal.ink(0.35))
 	_text("F " + game.txt("assist"), Vector2(sw.end.x + 8, y - 2), 13, Pal.ink(0.5 + 0.4 * d.assist_k), font)
-	_text("%.1f m/s" % spd_roll.shown, Vector2(x + 60 + bw, y + 16), 13, Pal.ink(0.55), font, 1)
+	# 117 号 (Q2 A): on site the speed is the HS tape's; the name, the hull and the thrust stay here
+	if not UiSkin.field:
+		_text("%.1f m/s" % spd_roll.shown, Vector2(x + 60 + bw, y + 16), 13, Pal.ink(0.55), font, 1)
 	if not d.alive:
 		_text("R-02 …", Vector2(x, y - 30), 14, Pal.heat(0.9, 1.2), font)
 	_items()
@@ -1839,9 +1942,13 @@ func _world_tags() -> void:
 			if not hit:
 				break
 		var rect := Rect2(pos - Vector2(0, 16), Vector2(tw, 22))
+		# 117 号 (Q5 A): out of the HUD's way, the leader stretching back to the reading
+		var cl := clear_of(rect)
+		pos += cl[0]
+		rect.position += cl[0]
 		rects.append(rect)
 		var pop := Pal.back(clampf(age / 0.25, 0.0, 1.0), 2.0)
-		var a := 1.0 if not stale else 0.5
+		var a: float = (1.0 if not stale else 0.5) * cl[1]
 		c.draw_line(sp, pos + Vector2(0, 6), Pal.ink(0.3 * a), 1.0, true)
 		FastDraw.circle(c, sp, 2.5, Pal.ink(0.8 * a))
 		if live:
@@ -1908,6 +2015,7 @@ func _kind_col(kind: String, a: float) -> Color:
 
 
 func _messages() -> void:
+	var placed: Array = []
 	for m in game.messages:
 		var age: float = m[2]
 		var sp := to_screen(m[1])
@@ -1915,8 +2023,23 @@ func _messages() -> void:
 		var y := sp.y - 30.0 - Pal.ease_out(age / 2.6) * 26.0
 		var txt: String = m[3]
 		var w := _tw(txt, 15)
-		c.draw_style_box(UiSkin.box("tag", 0.7 * a), Rect2(sp.x - w * 0.5 - 8, y - 17, w + 16, 24))
-		_text(txt, Vector2(sp.x, y), 15, Pal.ink(0.95 * a), font, 0)
+		var box := Rect2(sp.x - w * 0.5 - 8, y - 17, w + 16, 24)
+		# 117 号: two said at the same spot (the beam's front) stack instead of printing over each other
+		for tries in 6:
+			var hit := false
+			for prev in placed:
+				if prev.grow(2.0).intersects(box):
+					box.position.y = prev.position.y - box.size.y - 4.0
+					hit = true
+			if not hit:
+				break
+		# 117 号 (Q5 A): clear of the HUD
+		var cl := clear_of(box)
+		box.position += cl[0]
+		a *= cl[1]
+		placed.append(box)
+		c.draw_style_box(UiSkin.box("tag", 0.7 * a), box)
+		_text(txt, Vector2(box.get_center().x, box.position.y + 17), 15, Pal.ink(0.95 * a), font, 0)
 
 
 # 91 号 (用户 2026-10-27：“HUD 与机械动效”): the work in hand read at the pointer, where the eye
@@ -2622,13 +2745,13 @@ func _stamp(p: Vector2, e: float) -> void:
 	var a := clampf(e / 0.12, 0.0, 1.0)
 	var col := Pal.heat(a, 1.2) if gr == 0 else Pal.ink(a)
 	var r := 74.0 * sc
-	c.draw_set_transform(p, -0.18, Vector2.ONE)
+	_xform(p, -0.18, Vector2.ONE)
 	FastDraw.arc(c, Vector2.ZERO, r, 0.0, TAU, 48, col, 3.0, true)
 	FastDraw.arc(c, Vector2.ZERO, r - 8, 0.0, TAU, 48, Color(col.r, col.g, col.b, col.a * 0.5), 1.0, true)
 	var txt := game.txt("grade_%d" % gr)
 	var w := _tw(txt, int(28 * sc), font_b)
 	c.draw_string(font_b, Vector2(-w * 0.5, 10 * sc), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, int(28 * sc), col)
-	c.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	_xform(Vector2.ZERO, 0.0, Vector2.ONE)
 	if e < 0.3 and k > 0.0:
 		game.shake(0.02)
 
@@ -2696,6 +2819,40 @@ func _grade_col(g: float, a: float) -> Color:
 	return Pal.heat(0.95 * a, 1.3)
 
 
+# 117 号 (Q7): the required pieces still named under the contract's title — those the asset board
+# doesn't list (it marks its own with the same diamond)
+var _board_names := {}
+var _board_frame := -1
+func _title_items() -> Array:
+	var f := Engine.get_process_frames()
+	if f != _board_frame:
+		_board_frame = f
+		_board_names.clear()
+		if not game.training and game.exam == null and not game.in_berth():
+			for row in CoreAsset.board(game).get("rows", []):
+				_board_names[str(row.name)] = true
+	var out: Array = []
+	for it in game.mandatory_items():
+		if not _board_names.has(str(it[0])):
+			out.append(it)
+	return out
+
+
+# a required piece's diamond on the asset board: filled once it is safe, crossed in heat if lost
+func _must_dia(dc: Vector2, i: int, r: float) -> void:
+	var k: float = must_k[i] if i < must_k.size() and must_k[i] != null else 0.0
+	var dia := PackedVector2Array([dc + Vector2(0, -r), dc + Vector2(r, 0), dc + Vector2(0, r), dc + Vector2(-r, 0)])
+	if k > 0.02:
+		FastDraw.poly(c, dia, Pal.ink(0.95 * k))
+	var cl := dia.duplicate()
+	cl.append(dia[0])
+	var lost: bool = game.mandatory_lost.has(game.mandatory_items()[i][0])
+	FastDraw.polyline(c, cl, Pal.heat(0.95, 1.3) if lost else Pal.ink(0.7), 1.2, true)
+	if lost:
+		c.draw_line(dc + Vector2(-r, -r), dc + Vector2(r, r), Pal.heat(1.0, 1.4), 2.0)
+		c.draw_line(dc + Vector2(r, -r), dc + Vector2(-r, r), Pal.heat(1.0, 1.4), 2.0)
+
+
 # on the job, under the contract panel: each corner's pull, progress and grade, and the last losses
 func _asset_board(cr: Rect2) -> void:
 	var b: Dictionary = CoreAsset.board(game)
@@ -2749,16 +2906,22 @@ func _asset_board(cr: Rect2) -> void:
 		_text(str(nx.t), Vector2(x, y), 15, Pal.ink(0.97), font_b)
 		y += 6.0
 		if nx_how > 0:
-			c.draw_multiline_string(font, Vector2(x, y + 12.0), str(nx.how), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 40.0, 12, nx_how, Pal.ink(0.62))
+			_mtext(str(nx.how), Vector2(x, y + 12.0), r.size.x - 40.0, 12, nx_how, Pal.ink(0.62))
 			y += nx_how * 17.0
 		y += 22.0
 	for wl in warn:
 		var wn := clampi(ceili(_tw(str(wl), 12) / maxf(warn_w, 1.0)), 1, 3)
-		c.draw_multiline_string(font, Vector2(x, y - 6.0), str(wl), HORIZONTAL_ALIGNMENT_LEFT, warn_w, 12, wn, Pal.heat(0.9, 1.2))
+		_mtext(str(wl), Vector2(x, y - 6.0), warn_w, 12, wn, Pal.heat(0.9, 1.2))
 		y += 17.0 * wn
+	var must: Array = game.mandatory_items()
 	for row in rows:
 		_text(str(row.name), Vector2(x, y), 14, Pal.ink(0.85), font_b)
-		_text(str(row.text), Vector2(x + maxf(44.0, font_b.get_string_size(str(row.name), HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 8.0), y), 12, Pal.heat(0.8, 1.1) if row.get("alert", false) else Pal.ink(0.6), font)
+		var nw := font_b.get_string_size(str(row.name), HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+		for i in must.size():
+			if str(must[i][0]) == str(row.name):
+				_must_dia(Vector2(x + nw + 10.0, y - 5.0), i, 4.5)
+				nw += 16.0
+		_text(str(row.text), Vector2(x + maxf(44.0, nw + 8.0), y), 12, Pal.heat(0.8, 1.1) if row.get("alert", false) else Pal.ink(0.6), font)
 		_text(str(row.right), Vector2(r.end.x - 16.0, y), 14, _grade_col(float(row.grade), 1.0), font_b, 1)
 		y += 24.0
 		if NextStep.on(game) and row.get("alert", false) and str(row.get("fix", "")) != "":
@@ -2769,6 +2932,22 @@ func _asset_board(cr: Rect2) -> void:
 		for ev in recent:
 			_text("−%s  %s" % [Pal.money(ev.money).trim_prefix("$"), ev.text], Vector2(x, y), 12, Pal.heat(0.9, 1.25), font)
 			y += 20.0
+
+
+# 117 号 (Q1 A): on site the mark carries only the short name (what comes after the colon, or the
+# control's code); the whole sentence is the asset board's
+static var _code_rx: RegEx
+static func short_step(s: String) -> String:
+	for sep in ["：", ": "]:
+		var i := s.rfind(sep)
+		if i >= 0:
+			return s.substr(i + sep.length()).strip_edges()
+	if s.length() <= 12:
+		return s
+	if _code_rx == null:
+		_code_rx = RegEx.create_from_string("[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+")
+	var all := _code_rx.search_all(s)
+	return all[all.size() - 1].get_string() if not all.is_empty() else s
 
 
 # 110 号 (Q2 C): the next step on site — a ring on the control or piece it means, a leader and the
@@ -2784,7 +2963,7 @@ func _next_mark(s: Vector2) -> void:
 	var acc: Color = UiSkin.ACCENT
 	var wait: bool = nx.get("wait", false)
 	var ph := Time.get_ticks_msec() / 1000.0
-	var label: String = (Ops.w("进行中 · ", "UNDER WAY · ") if wait else Ops.w("下一步 · ", "NEXT · ")) + str(nx.t)
+	var label: String = (Ops.w("进行中 · ", "UNDER WAY · ") if wait else Ops.w("下一步 · ", "NEXT · ")) + short_step(str(nx.t))
 	# clear of the contract column on the left, the toolbar and the map along the bottom
 	var inset := Rect2(Vector2(380.0, 110.0), s - Vector2(380.0 + 90.0, 110.0 + 230.0))
 	if inset.has_point(p):

@@ -255,6 +255,9 @@ var _clamp_js: Array = []
 var _was_busy := true
 var mouth_nodes := {}
 var _mouth_drawn := {}
+var sign_nodes := {}
+var _sign_drawn := {}
+var sign_off := {}           # 117 号: how far each sign has stepped out of the HUD's way (world)
 var overlay_node: Node2D
 var t := 0.0
 var suck_glow := 0.0        # lit while the suction draws something down
@@ -413,6 +416,20 @@ func set_ship(ship: Dictionary) -> void:
 			mouth_nodes[id] = node
 		mouth_nodes[id].queue_redraw()
 	_mouth_drawn.clear()
+	# 117 号: the signs over all the mouths
+	for id in sign_nodes.keys():
+		if not ZONES.has(id):
+			sign_nodes[id].queue_free()
+			sign_nodes.erase(id)
+	for id in ZONES:
+		if not sign_nodes.has(id):
+			var node := Node2D.new()
+			node.draw.connect(_sign_batched.bind(id, node))
+			add_child(node)
+			move_child(node, overlay_node.get_index())
+			sign_nodes[id] = node
+		sign_nodes[id].queue_redraw()
+	_sign_drawn.clear()
 	metal_x = metal_home
 	mouth_target = metal_home
 	_equip_home()
@@ -741,9 +758,12 @@ func _process_inner(dt: float) -> void:
 		var st: Dictionary = zone_state[id]
 		var want := _wanted(id)
 		var signature := [zpos(id), st.glow, st.reject, st.eat, st.busy, want, Txt.zh, int(game.cam_zoom() * 8.0)]
-		if st.glow > 0.0 or st.reject > 0.0 or st.eat > 0.0 or st.busy > 0.0 or want or signature != _mouth_drawn.get(id, []):
+		var live: bool = st.glow > 0.0 or st.reject > 0.0 or st.eat > 0.0 or st.busy > 0.0 or want
+		if live or signature != _mouth_drawn.get(id, []):
 			mouth_nodes[id].queue_redraw()
 			_mouth_drawn[id] = signature
+		if sign_nodes.has(id):
+			_step_sign(id, live, signature, dt)
 	# the belt, buffer, hoses and lamps: every frame up close, every third far out when calm
 	_was_busy = busy
 	if draw_now:
@@ -1645,20 +1665,71 @@ func _mouth(id: String, ci) -> void:
 				var dw: float = lip * (1.0 - open) * 0.95
 				var d0: Vector2 = c - f * 16.0 + side * s * lip
 				ci.draw_line(d0, d0 - side * s * dw, Pal.tint(Pal.FLUID, 0.75, 1.0), 4.0)
-	_sign(id, c, f, side, lip, st, ci)
 
 
-# the sign beside a mouth: an icon, the name, what goes in, and a status lamp
-func _sign(id: String, c: Vector2, f: Vector2, side: Vector2, lip: float, st: Dictionary, ci) -> void:
-	# 80 号: while the first-ship guide works inside the hull, the big mouth signs keep out of the view
-	if game != null and game.coach_on() and not game.coach.mouth_signs():
+# 117 号 (Q5 A): the sign on a layer of its own over the mouths, so it can step out of the HUD's way
+# (and fade where it can't) without the mouth redrawing
+func _sign_batched(id: String, node: Node2D) -> void:
+	if not ZONES.has(id) or not zone_state.has(id):
 		return
+	var cb = CanvasBatch.new(node)
+	var c: Vector2 = zpos(id)
+	var f: Vector2 = ZONES[id].face
+	var lip: float = ZONES[id].w * 0.5 * Geom.M + 26.0
+	_sign(id, c, f, Vector2(-f.y, f.x), lip, zone_state[id], cb)
+	cb.flush()
+
+
+func _sign_shown() -> bool:
+	# 80 号: while the first-ship guide works inside the hull, the big mouth signs keep out of the view
+	return not (game != null and game.coach_on() and not game.coach.mouth_signs())
+
+
+# each frame: where the HUD leaves the sign room, eased so it glides rather than jumps; it redraws
+# only when it moved, the mouth's state changed, or the mouth is live (its lamp blinks)
+func _step_sign(id: String, live: bool, signature: Array, dt: float) -> void:
+	var node: Node2D = sign_nodes[id]
+	var target := Vector2.ZERO
+	var alpha := 1.0
+	if game.hud != null and game.hud.has_method("clear_of") and _sign_shown():
+		var c: Vector2 = zpos(id)
+		var f: Vector2 = ZONES[id].face
+		var r := _sign_rect(id, c, f, ZONES[id].w * 0.5 * Geom.M + 26.0)
+		var ct: Transform2D = get_viewport().get_canvas_transform()
+		var p0: Vector2 = ct * r.position
+		var cl: Array = game.hud.clear_of(Rect2(p0, (ct * r.end) - p0))
+		target = ct.affine_inverse().basis_xform(cl[0])
+		alpha = cl[1]
+	var cur: Vector2 = sign_off.get(id, Vector2.ZERO)
+	var nxt := cur.lerp(target, 1.0 - exp(-12.0 * dt))
+	if nxt.distance_to(target) < 0.5:
+		nxt = target
+	sign_off[id] = nxt
+	node.modulate.a = Pal.damp(node.modulate.a, alpha, 10.0, dt)
+	var key := signature + [nxt.round(), _sign_shown()]
+	if live or key != _sign_drawn.get(id, []):
+		node.queue_redraw()
+		_sign_drawn[id] = key
+
+
+# where the sign stands before it steps aside (world)
+func _sign_rect(id: String, c: Vector2, f: Vector2, lip: float) -> Rect2:
 	var sz := Vector2(350 if id == "equip_bulk" else 262, 66)
 	# beside the mouth, on the side with room (the hazard bay is at the berth's end)
 	# the hazard bay sits at the berth's end: its sign goes straight above it
 	var above := id in ["hazard", "equip_bulk"]
 	var at: Vector2 = (c + Vector2(-sz.x * 0.5, -2.3 * Geom.M - sz.y)) if above else (c + Vector2(lip + 40.0, -sz.y * 0.5) + f * 1.2 * Geom.M)
-	var r := Rect2(at, sz)
+	return Rect2(at, sz)
+
+
+# the sign beside a mouth: an icon, the name, what goes in, and a status lamp
+func _sign(id: String, c: Vector2, f: Vector2, side: Vector2, lip: float, st: Dictionary, ci) -> void:
+	if not _sign_shown():
+		return
+	var above := id in ["hazard", "equip_bulk"]
+	var r := _sign_rect(id, c, f, lip)
+	r.position += sign_off.get(id, Vector2.ZERO)
+	var sz := r.size
 	ci.draw_rect(r, Color(0.035, 0.037, 0.042, 0.94))
 	ci.draw_rect(Rect2(r.position, Vector2(4, r.size.y)), zone_col(id, 0.95, 1.1))
 	ci.draw_rect(r, zone_col(id, 0.35), false, 1.0)

@@ -39,6 +39,8 @@ var _petals_hot := {}
 var nuked := false
 var cores: Array = []          # every fission core aboard
 var _near_t := -99.0
+var _told := false          # 117 号 (Q3 A): the beam's warning said once; after that the mark flashes
+var _warn_k := 0.0
 var mark: Node2D
 var glow: Node2D              # the breathing glow under the mark: the only part redrawn every frame
 var _mt := 0.0
@@ -78,7 +80,8 @@ func _process(dt: float) -> void:
 		glow.queue_redraw()
 		# 60 FPS (2026-10-27): the trefoil and its two lines of text again only when the zoom or a
 		# core moved (all of it every frame was 0.3 ms)
-		var key: Array = [snappedf(game.cam_zoom(), 0.0001), nuked]
+		_warn_k = maxf(0.0, _warn_k - dt / 1.6)
+		var key: Array = [snappedf(game.cam_zoom(), 0.0001), nuked, snappedf(_warn_k, 0.05)]
 		for c in cores:
 			key.append(Vector2.INF if c.gone else world.frame(c) * Geom.centroid(c.poly))
 		if key != _mark_key:
@@ -134,7 +137,11 @@ func _draw_mark() -> void:
 		var w := maxf(font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x, font.get_string_size(warn, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x)
 		mark.draw_rect(Rect2(Vector2(-6, -16), Vector2(w + 12, 42)), Color(0.03, 0.032, 0.036, 0.85))
 		mark.draw_string(font, Vector2.ZERO, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Pal.ink(0.92))
-		mark.draw_string(font, Vector2(0, 20), warn, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1.6, 0.3, 0.22, 0.95))
+		# the beam close: the warning line flares instead of a second sentence over the picture
+		if _warn_k > 0.0:
+			var ww := font.get_string_size(warn, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+			mark.draw_rect(Rect2(Vector2(-3, 6), Vector2(ww + 6, 19)), Color(1.6, 0.3, 0.22, 0.35 * _warn_k))
+		mark.draw_string(font, Vector2(0, 20), warn, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1.6, 0.3, 0.22, 0.95).lerp(Color(2.4, 2.2, 2.0, 1.0), 0.6 * _warn_k))
 		mark.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
@@ -153,7 +160,10 @@ func _watch_beam() -> void:
 		var lp: Vector2 = world.frame(q).affine_inverse() * f
 		if Geometry2D.is_point_in_polygon(lp, q.poly) or Geom.dist_to_boundary(lp, q.poly) < NEAR * Geom.M:
 			_near_t = now
-			game.say("core_near", f)
+			_warn_k = 1.0
+			if not _told:
+				_told = true
+				game.say("core_near", f)
 			game.sfx.play("warn")
 			return
 
