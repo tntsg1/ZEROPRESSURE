@@ -369,10 +369,14 @@ func _manual_step(dt: float) -> void:
 				ingots.append([line_goal,T-60.0,INGOT])
 				line_goal += PITCH
 			if m_l <= 0.000001:
-				if cast_t > 0.0:
+				# the part mould at the end; a rounding crumb (3 t poured as 3.0000001) goes into the
+				# last billet, not a mould of its own (121 号: a sliver of a fourth billet on the line)
+				if cast_t > 0.02 or (cast_t > 0.0 and ingots.is_empty()):
 					ingots.append([line_goal,T-60.0,cast_t])
 					line_goal += PITCH
-					cast_t = 0.0
+				elif cast_t > 0.0:
+					ingots.back()[2] = float(ingots.back()[2])+cast_t
+				cast_t = 0.0
 				_go("back")
 		"back":
 			gate = maxf(0.0,gate-dt*2.0)
@@ -384,7 +388,10 @@ func _manual_step(dt: float) -> void:
 	# to push a small batch off the end of the existing casting machine.
 	var goal := line_goal
 	if phase in ["back","hold"] and m_l <= 0.000001 and bunker <= 0.000001 and not ingots.is_empty():
-		goal = maxf(goal,float(ingots.back()[0])+LINE_X1-FILL_X)
+		# the oldest billet to the end, the rest behind it on the line (user 2026-11-04 "为什么只到一个
+		# 钢坯": indexing the newest to the end pushed the others past it, out of sight); as each
+		# cools and goes, the next steps up
+		goal = maxf(line_off,maxf(goal,float(ingots.front()[0])+LINE_X1-FILL_X))
 	line_off = move_toward(line_off,goal,0.5*dt)
 	var retained: Array = []
 	for ingot in ingots:

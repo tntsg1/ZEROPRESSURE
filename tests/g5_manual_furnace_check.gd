@@ -85,7 +85,20 @@ func run() -> void:
 	step(f,10.0)
 	check(f.phase == "pour" and f.tilt > 0.0 and f.m_l < 3.0 and f.m_l > 0.0,"existing trunnion and slide gate pour the actual liquid gradually")
 	check(not f.manual_command("feed",1.0).ok and not f.manual_command("sample").ok,"moving hot body rejects feeding and probe insertion")
-	step(f,180.0)
+	# 121 号 (user "为什么只到一个钢坯"): once the pour is over every billet of the heat stays in sight
+	# on the line (the oldest at its end), none pushed past it out of the picture
+	var seen_most := 0
+	var out_of_sight := 0
+	for second in 180:
+		step(f,1.0)
+		if f.phase in ["back","hold"] and f.m_l <= 0.000001:
+			var vis := 0
+			for ig in f.ingots:
+				var ix: float = Furnace.FILL_X+f.line_off-float(ig[0])
+				if ix >= Furnace.LINE_X0 and ix <= Furnace.LINE_X1+0.001: vis += 1
+				else: out_of_sight += 1
+			seen_most = maxi(seen_most,vis)
+	check(seen_most == 3 and out_of_sight == 0,"after the pour all three billets are on the line in sight (most %d, out of sight %d)" % [seen_most,out_of_sight])
 	check(f.phase == "hold" and f.tilt == 0.0 and f.hood == 0.0 and is_equal_approx(f.shipped_t,3.0) and f.ingots.is_empty(),"all original metal cools and passes through the actual casting line including the final partial mould")
 	check(worst_mass < 0.000001,"material conserved across bunker, bath, moulds and discharged billets")
 	check(worst_energy < 1.0,"sensible heat, latent fusion, lining, losses and tapped enthalpy conserve energy to under one joule")

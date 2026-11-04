@@ -82,6 +82,36 @@ func _run() -> void:
 			resale = true
 	check(resale and _cards(ui).size() == 1, "my ships: its card, with resale")
 	Cap.save(root, "res://tests/out/ship_market_mine_zh.png")
+	# 121 号: a hulk too long for the berth says so on its button, and a press says why, buys nothing
+	ui._cat("all")
+	await _frames(3)
+	var big: Dictionary = {}
+	for l in ShipMarket.data().listings:
+		if not ShipMarket.fits(l):
+			big = l
+			break
+	if big.is_empty():
+		var l2: Dictionary = ShipMarket.data().listings[0]
+		l2.offer.ship = "ark01" if Market.type_of("ark01").size() > 0 else str(l2.offer.ship)
+		big = l2
+	check(not ShipMarket.fits(big), "a listing too long for the berth (%s)" % str(big.offer.ship))
+	ui.chosen = str(big.id)
+	ui._detail()
+	await _frames(4)
+	var said := false
+	for b in ui.detail_win.find_children("*", "Button", true, false):
+		if str(b.text) == "空间不够大，无法购买":
+			check(not b.disabled, "the button says it, and can be pressed")
+			b.pressed.emit()
+			said = true
+			break
+	await _frames(3)
+	var note_ok := false
+	for lb in ui.detail_win.find_children("*", "Label", true, false):
+		if lb.visible and str(lb.text).contains("船坞最长只放得下"):
+			note_ok = true
+	check(said and note_ok and ShipMarket.asset(str(big.id)).is_empty() and ui.detail_win.visible, "pressed: why under the button, nothing bought, the window stays")
+	Cap.save(root, "res://tests/out/ship_market_noroom_zh.png")
 	ui.close()
 	g.queue_free()
 	await _frames(4)

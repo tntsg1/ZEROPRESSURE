@@ -5856,25 +5856,25 @@
 "line": 0
 },
 "gear:gear_anchor_d": {
-"zh": "打在船体件上，线连到熔炉槽的绞盘。这一段被切离后，绞盘把整段慢慢拉进熔炉槽，不论多重。段进炉后锚会留在绞盘处，记得捡回。",
+"zh": "打在船体结构上，锚索会连接到船坞的绞盘。\\n切断连接处后，绞盘会把整段结构拖进投料槽，不受重量限制。\\n回收完成后，牵引锚会留在绞盘附近，记得捡回来。",
 "en": "Shot onto a hull piece; its line runs to a winch on the scrap trough. Once the section is cut free the winch hauls the whole of it down into the trough, whatever it weighs. The anchor is left at the winch post afterwards: fetch it.",
 "file": "gear_txt.gd",
 "line": 0
 },
 "gear:gear_pump_d": {
-"zh": "贴在带压舱室的任何壁板、储罐或储瓶上，自己抽，不需要接口。接口被阀门封死或找不到时照样能抽。零件进回收口时泵没拆下就一起没了。",
+"zh": "可以安装在带压舱室的壁板、储罐或储箱上，直接抽出内部物质，不需要连接现有接口。\\n即使接口被阀门封死，或者找不到接口，也能正常抽取。\\n回收零件前记得拆下泵，否则会跟着零件一起被回收。",
 "en": "Stuck on any wall of a pressurised room, or on a tank or bottle: it draws through its own tap, no port needed, even where the port is shut off or nowhere to be found. Left on a piece that goes down a mouth, it goes with it.",
 "file": "gear_txt.gd",
 "line": 0
 },
 "gear:gear_prop_d": {
-"zh": "立在船坞地面上，顶住货柜墙某一列的下弦杆：这一列和它外侧各列的重量都由它传到地面，里侧的列就能先卸。额定 60 t（约两列满箱），超载会弯，撑不住就折断。",
+"zh": "安装在船坞地面，支撑货柜墙指定一列的底部横梁。\\n安装后，这一列及外侧各列的重量会通过撑杆传到地面，方便你先拆除内侧的货柜。\\n最大承重 60 t，约等于两列满载货柜。超载后撑杆会弯曲，受力过大时可能折断。",
 "en": "Stood on the berth floor under a bay's bottom chord of a container wall: that bay and every bay outboard of it bear on it instead of the bays inboard, which can then be emptied first. Rated 60 t (about two full bays): past that it bows, then buckles.",
 "file": "gear_txt.gd",
 "line": 0
 },
 "gear:gear_probe_d": {
-"zh": "留在测点、接口或零件上，读数持续更新、永不过期；数值明显变化时在无线电里报一句。零件进回收口时探头没拆下就没了。",
+"zh": "安装在测量点、接口或零件上，持续监测数据。\\n读数会自动更新。出现明显变化时，会通过无线电通知你。\\n回收零件前记得取下探头，否则会一起丢失。",
 "en": "Left on a test point, a port or a piece: its reading stays live and never goes stale, and a real change is called out on the radio. Left on a piece that goes down a mouth, it is gone.",
 "file": "gear_txt.gd",
 "line": 0
@@ -5969,26 +5969,44 @@
 "file": "gear_txt.gd",
 "line": 0
 },
+"gear:ld_locked_method": {
+"zh": "先学会「%s」拆法。",
+"en": "LEARN THE %s METHOD FIRST.",
+"file": "gear_txt.gd",
+"line": 0
+},
+"gear:ld_fitted_cash": {
+"zh": "使用现金购买。",
+"en": "BOUGHT WITH CASH.",
+"file": "gear_txt.gd",
+"line": 0
+},
+"gear:ld_deploy": {
+"zh": "已装备工具",
+"en": "DEPLOYABLE TOOLS",
+"file": "gear_txt.gd",
+"line": 0
+},
 "gear:ld_value": {
-"zh": "本次携带价值",
+"zh": "本次携带装备价值",
 "en": "CARRIED VALUE",
 "file": "gear_txt.gd",
 "line": 0
 },
 "gear:ld_risk": {
-"zh": "最坏可能损失",
+"zh": "最大可能损失",
 "en": "WORST CASE LOSS",
 "file": "gear_txt.gd",
 "line": 0
 },
 "gear:ld_note": {
-"zh": "成功带回的装备不重复扣费；留在船上或掉落未捡的按采购价计入遗失。",
+"zh": "带回的装备可以重复使用，不用重新购买。留在船上或掉落后没捡回的装备，按购买价格计算损失。",
 "en": "Gear brought back is not charged again; anything left on the ship or dropped and not fetched is lost at its purchase price.",
 "file": "gear_txt.gd",
 "line": 0
 },
 "gear:ld_keys": {
-"zh": "点击槽位切换 · Enter 开工 · Esc 返回",
+"zh": "点击装备槽切换装备。按 Enter 开工，按 Esc 返回。",
 "en": "Click a slot to change it · Enter starts · Esc goes back",
 "file": "gear_txt.gd",
 "line": 0
@@ -11059,297 +11077,305 @@
 "zh": "卖掉：%s  +%s",
 "en": "SOLD: %s  +%s",
 "file": "disposal_panel.gd",
-"line": 146,
+"line": 163,
 "func": "move",
-"en_line": 146
+"en_line": 163
 },
 "disposal_panel:move:2": {
 "zh": "放回待整理：%s",
 "en": "BACK TO SORT: %s",
 "file": "disposal_panel.gd",
-"line": 148,
+"line": 165,
 "func": "move",
-"en_line": 148
+"en_line": 165
 },
 "disposal_panel:move_all:1": {
 "zh": "左边已经没有待整理的东西。",
 "en": "NOTHING LEFT TO SORT.",
 "file": "disposal_panel.gd",
-"line": 169,
+"line": 186,
 "func": "move_all",
-"en_line": 169
+"en_line": 186
 },
 "disposal_panel:move_all:2": {
 "zh": "%d 样全部入库。",
 "en": "%d PUT AWAY.",
 "file": "disposal_panel.gd",
-"line": 171,
+"line": 188,
 "func": "move_all",
-"en_line": 171
+"en_line": 188
 },
 "disposal_panel:move_all:3": {
 "zh": "%d 样全部卖出：现在到账 %s。",
 "en": "%d SOLD: %s NOW.",
 "file": "disposal_panel.gd",
-"line": 173,
+"line": 190,
 "func": "move_all",
-"en_line": 173
+"en_line": 190
 },
 "disposal_panel:undo:1": {
 "zh": "没有可以撤销的操作。",
 "en": "NOTHING TO UNDO.",
 "file": "disposal_panel.gd",
-"line": 178,
+"line": 195,
 "func": "undo",
-"en_line": 178
+"en_line": 195
 },
 "disposal_panel:undo:2": {
 "zh": "撤销：%s 回到%s",
 "en": "UNDONE: %s",
 "file": "disposal_panel.gd",
-"line": 186,
+"line": 203,
 "func": "undo",
-"en_line": 186
+"en_line": 203
 },
 "disposal_panel:confirm:1": {
 "zh": "保存失败，什么都没卖：再按一次确认。",
 "en": "Save failed, nothing sold: confirm again.",
 "file": "disposal_panel.gd",
-"line": 226,
+"line": 243,
 "func": "confirm",
-"en_line": 226
+"en_line": 243
 },
 "disposal_panel:confirm:2": {
 "zh": "剩下的 %d 样已自动入库。",
 "en": "THE %d LEFT WERE PUT AWAY.",
 "file": "disposal_panel.gd",
-"line": 229,
+"line": 246,
 "func": "confirm",
-"en_line": 229
+"en_line": 246
 },
 "disposal_panel:_name:1": {
 "zh": "钢锭 %.1f t",
 "en": "INGOTS %.1f t",
 "file": "disposal_panel.gd",
-"line": 243,
+"line": 260,
 "func": "_name",
-"en_line": 243
+"en_line": 260
 },
 "disposal_panel:_name:2": {
 "zh": "气体与流体",
 "en": "GAS AND FLUIDS",
 "file": "disposal_panel.gd",
-"line": 249,
+"line": 266,
 "func": "_name",
-"en_line": 249
+"en_line": 266
 },
 "disposal_panel:_kept_line:1": {
 "zh": "之后送加工区炼成约 %.1f t 钢坯",
 "en": "then to processing: about %.1f t of billet",
 "file": "disposal_panel.gd",
-"line": 270,
+"line": 287,
 "func": "_kept_line",
-"en_line": 270
+"en_line": 287
 },
 "disposal_panel:_kept_line:2": {
 "zh": "加工区修好后自动加工",
 "en": "processed once the district is mended",
 "file": "disposal_panel.gd",
-"line": 272,
+"line": 289,
 "func": "_kept_line",
-"en_line": 272
+"en_line": 289
 },
 "disposal_panel:_kept_line:3": {
 "zh": "入库：钢锭 %.1f t → %s %s · %s",
 "en": "KEPT: INGOTS %.1f t → %s %s · %s",
 "file": "disposal_panel.gd",
-"line": 273,
+"line": 290,
 "func": "_kept_line",
-"en_line": 273
+"en_line": 290
 },
 "disposal_panel:_kept_line:4": {
 "zh": "入库：%s → 零件架",
 "en": "KEPT: %s → THE PARTS RACK",
 "file": "disposal_panel.gd",
-"line": 274,
+"line": 291,
 "func": "_kept_line",
-"en_line": 274
+"en_line": 291
 },
 "disposal_panel:_hint:1": {
 "zh": "入库加工：钢坯约 %s（电费约 %s）",
 "en": "KEEP: BILLET ABOUT %s (POWER %s)",
 "file": "disposal_panel.gd",
-"line": 282,
+"line": 299,
 "func": "_hint",
-"en_line": 282
+"en_line": 299
 },
 "disposal_panel:_hint:2": {
 "zh": "已按合同交付，钱已到账",
 "en": "DELIVERED WITH THE CONTRACT, PAID",
 "file": "disposal_panel.gd",
-"line": 286,
+"line": 303,
 "func": "_hint",
-"en_line": 286
+"en_line": 303
 },
 "disposal_panel:_draw_head:3": {
 "zh": "入库 %d 样",
 "en": "%d KEPT",
 "file": "disposal_panel.gd",
-"line": 549,
+"line": 669,
 "func": "_draw_head",
-"en_line": 549
+"en_line": 669
 },
 "disposal_panel:_draw_head:4": {
 "zh": "待整理 %d 样（确认时自动入库）",
 "en": "%d TO SORT (KEPT ON CONFIRM)",
 "file": "disposal_panel.gd",
-"line": 551,
+"line": 671,
 "func": "_draw_head",
-"en_line": 551
+"en_line": 671
 },
 "disposal_panel:_draw_drone:3": {
 "zh": "这一单没有带出可部署工具",
 "en": "NO DEPLOYABLE GEAR TAKEN OUT",
 "file": "disposal_panel.gd",
-"line": 585,
+"line": 705,
 "func": "_draw_drone",
-"en_line": 585
+"en_line": 705
 },
 "disposal_panel:_draw_left_cards:1": {
 "zh": "本单回收物",
 "en": "THIS CONTRACT'S GOODS",
 "file": "disposal_panel.gd",
-"line": 627,
+"line": 747,
 "func": "_draw_left_cards",
-"en_line": 627
+"en_line": 747
 },
 "disposal_panel:_draw_left_cards:2": {
 "zh": "点卡片或拖到右边入库 · 卡片上的“卖”或拖到下面直接卖",
 "en": "CLICK OR DRAG RIGHT TO KEEP · \\\"SELL\\\" OR DRAG BELOW TO SELL",
 "file": "disposal_panel.gd",
-"line": 628,
+"line": 748,
 "func": "_draw_left_cards",
-"en_line": 628
+"en_line": 748
 },
 "disposal_panel:_draw_left_cards:3": {
+"zh": "↓ 还有 %d 样 · 滚轮翻看",
+"en": "↓ %d MORE · SCROLL",
+"file": "disposal_panel.gd",
+"line": 764,
+"func": "_draw_left_cards",
+"en_line": 764
+},
+"disposal_panel:_draw_left_cards:4": {
 "zh": "都整理好了。按 Enter 确认，离开船坞。",
 "en": "ALL SORTED. ENTER TO CONFIRM AND LEAVE.",
 "file": "disposal_panel.gd",
-"line": 635,
+"line": 766,
 "func": "_draw_left_cards",
-"en_line": 635
+"en_line": 766
 },
 "disposal_panel:_card:1": {
 "zh": "熔炉铸的一批 · 整批处理",
 "en": "ONE BATCH FROM THE FURNACE",
 "file": "disposal_panel.gd",
-"line": 685,
+"line": 818,
 "func": "_card",
-"en_line": 685
+"en_line": 818
 },
 "disposal_panel:_card:2": {
 "zh": "已交付 · +%s",
 "en": "DELIVERED · +%s",
 "file": "disposal_panel.gd",
-"line": 689,
+"line": 822,
 "func": "_card",
-"en_line": 689
+"en_line": 822
 },
 "disposal_panel:_draw_warehouse:2": {
 "zh": "货运区货架 A1–B4",
 "en": "CARGO DISTRICT RACKS A1–B4",
 "file": "disposal_panel.gd",
-"line": 716,
+"line": 848,
 "func": "_draw_warehouse",
-"en_line": 716
+"en_line": 848
 },
 "disposal_panel:_draw_warehouse:3": {
 "zh": "零件架 · 完好设备",
 "en": "PARTS RACK · WHOLE EQUIPMENT",
 "file": "disposal_panel.gd",
-"line": 716,
+"line": 848,
 "func": "_draw_warehouse",
-"en_line": 716
+"en_line": 848
 },
 "disposal_panel:_draw_warehouse:4": {
 "zh": "装备架 · 可部署工具",
 "en": "GEAR SHELF · DEPLOYABLES",
 "file": "disposal_panel.gd",
-"line": 716,
+"line": 848,
 "func": "_draw_warehouse",
-"en_line": 716
+"en_line": 848
 },
 "disposal_panel:_draw_rack:2": {
 "zh": "新增  钢锭 %.1f t · 送加工",
 "en": "NEW  INGOTS %.1f t · TO PROCESS",
 "file": "disposal_panel.gd",
-"line": 797,
+"line": 929,
 "func": "_draw_rack",
-"en_line": 797
+"en_line": 929
 },
 "disposal_panel:_draw_parts:1": {
 "zh": "零件架上另有 %d 件",
 "en": "%d MORE ON THE RACK",
 "file": "disposal_panel.gd",
-"line": 821,
+"line": 953,
 "func": "_draw_parts",
-"en_line": 821
+"en_line": 953
 },
 "disposal_panel:_draw_parts:2": {
 "zh": "零件架上还没有东西",
 "en": "THE PARTS RACK IS EMPTY",
 "file": "disposal_panel.gd",
-"line": 823,
+"line": 955,
 "func": "_draw_parts",
-"en_line": 823
+"en_line": 955
 },
 "disposal_panel:_draw_gear_shelf:1": {
 "zh": "架上 %d 个",
 "en": "%d ON THE SHELF",
 "file": "disposal_panel.gd",
-"line": 851,
+"line": 983,
 "func": "_draw_gear_shelf",
-"en_line": 851
+"en_line": 983
 },
 "disposal_panel:_draw_sale:2": {
 "zh": "拖到这里卖 · 点已卖的东西放回",
 "en": "DROP HERE TO SELL · CLICK ONE TO TAKE IT BACK",
 "file": "disposal_panel.gd",
-"line": 871,
+"line": 1003,
 "func": "_draw_sale",
-"en_line": 871
+"en_line": 1003
 },
 "disposal_panel:_draw_buttons:1": {
 "zh": "确认，离开船坞 [Enter]",
 "en": "CONFIRM AND LEAVE [Enter]",
 "file": "disposal_panel.gd",
-"line": 883,
+"line": 1015,
 "func": "_draw_buttons",
-"en_line": 883
+"en_line": 1015
 },
 "disposal_panel:_draw_buttons:2": {
 "zh": "回结算单 [Esc]",
 "en": "BACK [Esc]",
 "file": "disposal_panel.gd",
-"line": 883,
+"line": 1015,
 "func": "_draw_buttons",
-"en_line": 883
+"en_line": 1015
 },
 "disposal_panel:_draw_buttons:3": {
 "zh": "转移全部 [T]",
 "en": "MOVE ALL [T]",
 "file": "disposal_panel.gd",
-"line": 884,
+"line": 1016,
 "func": "_draw_buttons",
-"en_line": 884
+"en_line": 1016
 },
 "disposal_panel:_draw_buttons:4": {
 "zh": "全部卖出 [X]",
 "en": "SELL ALL [X]",
 "file": "disposal_panel.gd",
-"line": 884,
+"line": 1016,
 "func": "_draw_buttons",
-"en_line": 884
+"en_line": 1016
 },
 "fault_callout:_draw:1": {
 "zh": "发现故障：%s · 已记进报修",
@@ -11627,175 +11653,175 @@
 "zh": "贸易港 · 客人",
 "en": "TRADE PORT · CALLER",
 "file": "hud.gd",
-"line": 955,
+"line": 956,
 "func": "_radio_box",
-"en_line": 955
+"en_line": 956
 },
 "hud:crane_note:1": {
 "zh": "超过吊车额定 %.0f t：先切小",
 "en": "OVER THE CRANE'S %.0f t: CUT IT SMALLER",
 "file": "hud.gd",
-"line": 1087,
+"line": 1088,
 "func": "crane_note",
-"en_line": 1087
+"en_line": 1088
 },
 "hud:crane_note:2": {
 "zh": "这艘只许人工：按 %s 交给吊车",
 "en": "MANUAL-ONLY SHIP: %s TO GIVE IT TO THE CRANE",
 "file": "hud.gd",
-"line": 1089,
+"line": 1090,
 "func": "crane_note",
-"en_line": 1089
+"en_line": 1090
 },
 "hud:crane_note:3": {
 "zh": "松手：吊车会来整件吊走",
 "en": "LET GO: THE CRANE WILL LIFT IT WHOLE",
 "file": "hud.gd",
-"line": 1090,
+"line": 1091,
 "func": "crane_note",
-"en_line": 1090
+"en_line": 1091
 },
 "hud:crane_note:4": {
 "zh": "门式吊车坏了：修好就能整件吊走（%.0f t 以内）",
 "en": "THE CRANE IS DOWN: MENDED, IT LIFTS THIS WHOLE (UP TO %.0f t)",
 "file": "hud.gd",
-"line": 1092,
+"line": 1093,
 "func": "crane_note",
-"en_line": 1092
+"en_line": 1093
 },
 "hud:_guide_keys:5": {
 "zh": "打开交易行",
 "en": "EXCHANGE",
 "file": "hud.gd",
-"line": 1510,
+"line": 1511,
 "func": "_guide_keys",
-"en_line": 1510
+"en_line": 1511
 },
 "hud:_guide_keys:6": {
 "zh": "打开交易行",
 "en": "EXCHANGE",
 "file": "hud.gd",
-"line": 1511,
+"line": 1512,
 "func": "_guide_keys",
-"en_line": 1511
+"en_line": 1512
 },
 "hud:_guide_keys:8": {
 "zh": "打开船坞修缮",
 "en": "REPAIRS",
 "file": "hud.gd",
-"line": 1511,
+"line": 1512,
 "func": "_guide_keys",
-"en_line": 1511
+"en_line": 1512
 },
 "hud:_main_line:1": {
 "zh": "主线 · 第 %d 章｜%s",
 "en": "MAIN LINE · CHAPTER %d | %s",
 "file": "hud.gd",
-"line": 1524,
+"line": 1525,
 "func": "_main_line",
-"en_line": 1524
+"en_line": 1525
 },
 "hud:_guide:1": {
 "zh": "引导 · %s · 第 %d / %d 步",
 "en": "GUIDE · %s · STEP %d / %d",
 "file": "hud.gd",
-"line": 1544,
+"line": 1545,
 "func": "_guide",
-"en_line": 1544
+"en_line": 1545
 },
 "hud:_toolbar:1": {
 "zh": "教程稍后解锁",
 "en": "LATER IN THE GUIDE",
 "file": "hud.gd",
-"line": 1686,
+"line": 1687,
 "func": "_toolbar",
-"en_line": 1686
+"en_line": 1687
 },
 "hud:_toolbar:2": {
 "zh": "现在只需要飞，工具在用到时一件件解锁",
 "en": "JUST FLY FOR NOW: EACH TOOL UNLOCKS WHEN IT IS NEEDED",
 "file": "hud.gd",
-"line": 1691,
+"line": 1692,
 "func": "_toolbar",
-"en_line": 1691
+"en_line": 1692
 },
 "hud:_gauge:3": {
 "zh": "超重，拉不动",
 "en": "TOO HEAVY",
 "file": "hud.gd",
-"line": 2077,
+"line": 2078,
 "func": "_gauge",
-"en_line": 2077
+"en_line": 2078
 },
 "hud:_keys_page:2": {
 "zh": "按键可以在 设置 → 按键 里改，这里跟着变。点任意处或按 Esc 返回。",
 "en": "Keys are changed under Settings; this page follows. Click anywhere or press Esc to go back.",
 "file": "hud.gd",
-"line": 2473,
+"line": 2474,
 "func": "_keys_page",
-"en_line": 2473
+"en_line": 2474
 },
 "hud:_asset_card:1": {
 "zh": "核心资产 · %s（%s）· 满价 %s",
 "en": "CORE ASSET · %s (%s) · WHOLE %s",
 "file": "hud.gd",
-"line": 2791,
+"line": 2792,
 "func": "_asset_card",
-"en_line": 2791
+"en_line": 2792
 },
 "hud:_asset_card:2": {
 "zh": "%s　%s %s · 约 %d–%d 分钟",
 "en": "%s　%s %s · ABOUT %d–%d MIN",
 "file": "hud.gd",
-"line": 2798,
+"line": 2799,
 "func": "_asset_card",
-"en_line": 2798
+"en_line": 2799
 },
 "hud:_asset_card:3": {
 "zh": "%s　%s %s · 用时待实测",
 "en": "%s　%s %s · TIME NOT MEASURED",
 "file": "hud.gd",
-"line": 2801,
+"line": 2802,
 "func": "_asset_card",
-"en_line": 2801
+"en_line": 2802
 },
 "hud:_asset_board:1": {
 "zh": "核心资产 · %s",
 "en": "CORE ASSET · %s",
 "file": "hud.gd",
-"line": 2868,
+"line": 2869,
 "func": "_asset_board",
-"en_line": 2868
+"en_line": 2869
 },
 "hud:_asset_board:2": {
 "zh": "预估 %s / %s",
 "en": "NOW %s / %s",
 "file": "hud.gd",
-"line": 2869,
+"line": 2870,
 "func": "_asset_board",
-"en_line": 2869
+"en_line": 2870
 },
 "hud:_next_mark:1": {
 "zh": "进行中 · ",
 "en": "UNDER WAY · ",
 "file": "hud.gd",
-"line": 2969,
+"line": 2970,
 "func": "_next_mark",
-"en_line": 2969
+"en_line": 2970
 },
 "hud:_next_mark:2": {
 "zh": "下一步 · ",
 "en": "NEXT · ",
 "file": "hud.gd",
-"line": 2969,
+"line": 2970,
 "func": "_next_mark",
-"en_line": 2969
+"en_line": 2970
 },
 "hud:_asset_review:7": {
 "zh": "−%s  %s（%d 次）",
 "en": "",
 "file": "hud.gd",
-"line": 3039,
+"line": 3040,
 "func": "_asset_review",
 "en_line": 0
 },
@@ -12747,33 +12773,33 @@
 "zh": "投料 %.2f t · 已冷却出料 %.2f t",
 "en": "Charged %.2f t · Cooled output %.2f t",
 "file": "smelter.gd",
-"line": 1095,
+"line": 1102,
 "func": "_panel",
-"en_line": 1095
+"en_line": 1102
 },
 "smelter:_panel:2": {
 "zh": "测温：尚未取样",
 "en": "Temperature sample: not yet taken",
 "file": "smelter.gd",
-"line": 1096,
+"line": 1103,
 "func": "_panel",
-"en_line": 1096
+"en_line": 1103
 },
 "smelter:_panel:3": {
 "zh": "测温 %d °C · %d s 前",
 "en": "Sample %d C · %d s ago",
 "file": "smelter.gd",
-"line": 1096,
+"line": 1103,
 "func": "_panel",
-"en_line": 1096
+"en_line": 1103
 },
 "smelter:_panel:4": {
 "zh": "手动控制 · 可用供电 %.1f MW",
 "en": "Manual control · Available supply %.1f MW",
 "file": "smelter.gd",
-"line": 1097,
+"line": 1104,
 "func": "_panel",
-"en_line": 1097
+"en_line": 1104
 },
 "txt:loss_drone": {
 "zh": "R-02 损毁",
@@ -15124,7 +15150,7 @@
 "line": 0
 },
 "gear:rp_fitted": {
-"zh": "无人机改装件（现金购买）",
+"zh": "无人机改装件",
 "en": "DRONE FITTINGS (BOUGHT)",
 "file": "gear_txt.gd",
 "line": 0
@@ -15202,52 +15228,52 @@
 "line": 0
 },
 "loadout_panel:refresh:3": {
-"zh": "基础工具持续可用，无需装配耗材。",
+"zh": "基础工具始终可用，不占用装备槽，也不会消耗库存。",
 "en": "Basic tools remain available; no consumable fitting required.",
-"file": "loadout_panel.gd",
-"line": 212,
-"func": "refresh",
-"en_line": 212
-},
-"loadout_panel:refresh:4": {
-"zh": "旧工具配件残值已返还：",
-"en": "Legacy tool parts refunded: ",
 "file": "loadout_panel.gd",
 "line": 215,
 "func": "refresh",
 "en_line": 215
 },
-"loadout_panel:refresh:5": {
-"zh": "废金属去向",
-"en": "SCRAP METAL",
+"loadout_panel:refresh:4": {
+"zh": "旧工具配件残值已返还：",
+"en": "Legacy tool parts refunded: ",
 "file": "loadout_panel.gd",
 "line": 218,
 "func": "refresh",
 "en_line": 218
 },
+"loadout_panel:refresh:5": {
+"zh": "废金属去向",
+"en": "SCRAP METAL",
+"file": "loadout_panel.gd",
+"line": 221,
+"func": "refresh",
+"en_line": 221
+},
 "loadout_panel:refresh:6": {
 "zh": "废金属留作原料（本单整单生效）",
 "en": "KEEP THE SCRAP AS RAW MATERIAL (WHOLE JOB)",
 "file": "loadout_panel.gd",
-"line": 222,
+"line": 225,
 "func": "refresh",
-"en_line": 222
+"en_line": 225
 },
 "loadout_panel:refresh:7": {
 "zh": "进金属熔炉的结构钢不折现，按实收吨数记成公司未评级原料：去分选台分选、化验位定级，就能自己炼钢坯交给工业客户。代价：这部分回收价不付现金，也不计入修缮用的结构吨数。设备、危险品、污染件照常。",
 "en": "Structural metal into the furnace mouth is not paid out: its tonnes become the company's unrated raw material, to sort, assay and melt into billets for industrial clients yourself. The cost: no cash for it, and it does not count as structure tonnes for repairs. Equipment, hazards and contaminated pieces go as usual.",
 "file": "loadout_panel.gd",
-"line": 230,
+"line": 233,
 "func": "refresh",
-"en_line": 231
+"en_line": 234
 },
 "loadout_panel:refresh:8": {
 "zh": "本单：废金属留作原料，不折现。",
 "en": "THIS JOB: SCRAP KEPT, NOT PAID OUT.",
 "file": "loadout_panel.gd",
-"line": 234,
+"line": 237,
 "func": "refresh",
-"en_line": 234
+"en_line": 237
 },
 "market:顶层:1": {
 "zh": "灰鹭级货船",
@@ -16617,565 +16643,621 @@
 "func": "inspect",
 "en_line": 346
 },
+"ship_market:buy_block:1": {
+"zh": "空间不够大，无法购买",
+"en": "NO ROOM: CANNOT BUY",
+"file": "ship_market.gd",
+"line": 369,
+"func": "buy_block",
+"en_line": 369
+},
+"ship_market:buy_block:2": {
+"zh": "这艘船长 %.0f m，船坞最长只放得下 %.0f m：先扩建船坞。",
+"en": "THIS HULK IS %.0f m; THE BERTH TAKES UP TO %.0f m: EXTEND THE BERTH FIRST.",
+"file": "ship_market.gd",
+"line": 369,
+"func": "buy_block",
+"en_line": 369
+},
+"ship_market:buy_block:3": {
+"zh": "空间不够大，无法购买",
+"en": "NO ROOM: CANNOT BUY",
+"file": "ship_market.gd",
+"line": 372,
+"func": "buy_block",
+"en_line": 372
+},
+"ship_market:buy_block:4": {
+"zh": "拖不动，无法购买",
+"en": "TOO BIG TO TOW: CANNOT BUY",
+"file": "ship_market.gd",
+"line": 372,
+"func": "buy_block",
+"en_line": 372
+},
+"ship_market:buy_block:5": {
+"zh": "资金不足，无法购买",
+"en": "NOT ENOUGH CASH",
+"file": "ship_market.gd",
+"line": 374,
+"func": "buy_block",
+"en_line": 374
+},
+"ship_market:buy_block:6": {
+"zh": "船款加拖运 %s，还差 %s。",
+"en": "PRICE AND TOW %s: %s SHORT.",
+"file": "ship_market.gd",
+"line": 374,
+"func": "buy_block",
+"en_line": 374
+},
 "ship_market:buy:2": {
 "zh": "船坞放不下这艘船",
 "en": "THE BERTH CANNOT TAKE IT",
 "file": "ship_market.gd",
-"line": 371,
+"line": 385,
 "func": "buy",
-"en_line": 371
+"en_line": 385
 },
 "ship_market:buy:3": {
 "zh": "船款加拖运 %s，资金不足",
 "en": "PRICE AND TOW %s: NOT ENOUGH CASH",
 "file": "ship_market.gd",
-"line": 383,
+"line": 397,
 "func": "buy",
-"en_line": 383
+"en_line": 397
 },
 "ship_market:buy:4": {
 "zh": "保存失败，未扣款",
 "en": "SAVE FAILED",
 "file": "ship_market.gd",
-"line": 393,
+"line": 407,
 "func": "buy",
-"en_line": 393
+"en_line": 407
 },
 "ship_market:haggle:2": {
 "zh": "卖家已经拒绝过，不再谈",
 "en": "THE SELLER HAS SAID NO",
 "file": "ship_market.gd",
-"line": 403,
+"line": 417,
 "func": "haggle",
-"en_line": 403
+"en_line": 417
 },
 "ship_market:haggle:3": {
 "zh": "还价不能低于标价的 %d%%",
 "en": "NO LOWER THAN %d%% OF THE ASK",
 "file": "ship_market.gd",
-"line": 405,
+"line": 419,
 "func": "haggle",
-"en_line": 405
+"en_line": 419
 },
 "ship_market:hold:1": {
 "zh": "已经保留了",
 "en": "ALREADY HELD",
 "file": "ship_market.gd",
-"line": 426,
+"line": 440,
 "func": "hold",
-"en_line": 426
+"en_line": 440
 },
 "ship_market:hold:2": {
 "zh": "定金 %s，资金不足",
 "en": "DEPOSIT %s: NOT ENOUGH CASH",
 "file": "ship_market.gd",
-"line": 429,
+"line": 443,
 "func": "hold",
-"en_line": 429
+"en_line": 443
 },
 "ship_market:hold:3": {
 "zh": "保存失败，未扣款",
 "en": "SAVE FAILED",
 "file": "ship_market.gd",
-"line": 438,
+"line": 452,
 "func": "hold",
-"en_line": 438
+"en_line": 452
 },
 "ship_market:resell:1": {
 "zh": "这艘船现在不能挂牌",
 "en": "IT CANNOT BE LISTED NOW",
 "file": "ship_market.gd",
-"line": 477,
+"line": 491,
 "func": "resell",
-"en_line": 477
+"en_line": 491
 },
 "ship_market:public_text:1": {
 "zh": "公开记录：还没有公开的拆解结果",
 "en": "PUBLIC RECORD: NO RESULTS PUBLISHED YET",
 "file": "ship_market.gd",
-"line": 563,
+"line": 577,
 "func": "public_text",
-"en_line": 563
+"en_line": 577
 },
 "ship_market:public_text:2": {
 "zh": "公开记录：近 %d 份拆解结果，评高了 %d 份",
 "en": "PUBLIC RECORD: %d RESULTS, %d RATED HIGH",
 "file": "ship_market.gd",
-"line": 564,
+"line": 578,
 "func": "public_text",
-"en_line": 564
+"en_line": 578
 },
 "ship_market:public_text:3": {
 "zh": "（平均高 %.1f 分）",
 "en": " (BY %.1f ON AVERAGE)",
 "file": "ship_market.gd",
-"line": 566,
+"line": 580,
 "func": "public_text",
-"en_line": 566
+"en_line": 580
 },
 "ship_market:public_text:4": {
 "zh": " · 证实买来的评级 %d 份",
 "en": " · %d PAID RATINGS PROVED",
 "file": "ship_market.gd",
-"line": 568,
+"line": 582,
 "func": "public_text",
-"en_line": 568
+"en_line": 582
 },
 "ship_market:own_lines:1": {
 "zh": "%s 评 %d/10 · 实际 %d 项隐患",
 "en": "%s RATED %d/10 · %d HAZARDS FOUND",
 "file": "ship_market.gd",
-"line": 578,
+"line": 592,
 "func": "own_lines",
-"en_line": 578
+"en_line": 592
 },
 "ship_market:record_text:1": {
 "zh": "你拆过它评的船 %d 艘 · 举报证实失实 %d 份",
 "en": "%d OF ITS HULKS STRIPPED · %d PROVED FALSE",
 "file": "ship_market.gd",
-"line": 609,
+"line": 623,
 "func": "record_text",
-"en_line": 609
+"en_line": 623
 },
 "ship_market:record_text:2": {
 "zh": " · 利益关联已证实 %d 次",
 "en": " · PAID RATINGS PROVED %d",
 "file": "ship_market.gd",
-"line": 611,
+"line": 625,
 "func": "record_text",
-"en_line": 611
+"en_line": 625
 },
 "ship_market:report:1": {
 "zh": "没有可举报的失实评级",
 "en": "NOTHING TO REPORT",
 "file": "ship_market.gd",
-"line": 618,
+"line": 632,
 "func": "report",
-"en_line": 618
+"en_line": 632
 },
 "ship_market:title_name:1": {
 "zh": "船坞欠款扣押",
 "en": "YARD LIEN",
 "file": "ship_market.gd",
-"line": 731,
+"line": 745,
 "func": "title_name",
-"en_line": 731
+"en_line": 745
 },
 "ship_market:title_name:2": {
 "zh": "危险废物处置责任",
 "en": "WASTE LIABILITY",
 "file": "ship_market.gd",
-"line": 732,
+"line": 746,
 "func": "title_name",
-"en_line": 732
+"en_line": 746
 },
 "ship_market:title_text:1": {
 "zh": "产权：%s %s，已在要价里让过。",
 "en": "TITLE: %s %s, ALLOWED FOR IN THE ASK.",
 "file": "ship_market.gd",
-"line": 740,
+"line": 754,
 "func": "title_text",
-"en_line": 740
+"en_line": 754
 },
 "ship_market:title_text:2": {
 "zh": "产权：（卖家未提）",
 "en": "TITLE: (NOT MENTIONED)",
 "file": "ship_market.gd",
-"line": 741,
+"line": 755,
 "func": "title_text",
-"en_line": 741
+"en_line": 755
 },
 "ship_market:held_text:1": {
 "zh": "被前船坞扣押 · 欠款 %s，付清才放船",
 "en": "HELD BY A YARD'S LIEN · %s TO RELEASE",
 "file": "ship_market.gd",
-"line": 748,
+"line": 762,
 "func": "held_text",
-"en_line": 748
+"en_line": 762
 },
 "ship_market:held_text:2": {
 "zh": "港务局开出危废处置费 %s，付清才能开工",
 "en": "WASTE DISPOSAL BILLED %s · PAY TO START",
 "file": "ship_market.gd",
-"line": 749,
+"line": 763,
 "func": "held_text",
-"en_line": 749
+"en_line": 763
 },
 "ship_market:pay_title:1": {
 "zh": "这艘船没有被扣着",
 "en": "NOTHING HOLDS IT",
 "file": "ship_market.gd",
-"line": 756,
+"line": 770,
 "func": "pay_title",
-"en_line": 756
+"en_line": 770
 },
 "ship_market:pay_title:2": {
 "zh": "要付 %s，资金不足",
 "en": "%s DUE: NOT ENOUGH CASH",
 "file": "ship_market.gd",
-"line": 759,
+"line": 773,
 "func": "pay_title",
-"en_line": 759
+"en_line": 773
 },
 "ship_market:pay_title:3": {
 "zh": "保存失败，未扣款",
 "en": "SAVE FAILED",
 "file": "ship_market.gd",
-"line": 770,
+"line": 784,
 "func": "pay_title",
-"en_line": 770
+"en_line": 784
 },
 "ship_market:claim_title:1": {
 "zh": "没有可索赔的未披露产权问题",
 "en": "NOTHING TO CLAIM",
 "file": "ship_market.gd",
-"line": 788,
+"line": 802,
 "func": "claim_title",
-"en_line": 788
+"en_line": 802
 },
 "ship_market:claim:1": {
 "zh": "没有可索赔的明确虚假声明",
 "en": "NOTHING TO CLAIM",
 "file": "ship_market.gd",
-"line": 805,
+"line": 819,
 "func": "claim",
-"en_line": 805
+"en_line": 819
 },
 "ship_market_panel:_ready:1": {
 "zh": "零压港 · 船市",
 "en": "ZERO PRESSURE PORT · HULK MARKET",
 "file": "ship_market_panel.gd",
-"line": 74,
+"line": 85,
 "func": "_ready",
-"en_line": 74
+"en_line": 85
 },
 "ship_market_panel:_ready:4": {
 "zh": "关闭 [Esc]",
 "en": "CLOSE [Esc]",
 "file": "ship_market_panel.gd",
-"line": 82,
+"line": 93,
 "func": "_ready",
-"en_line": 82
+"en_line": 93
 },
 "ship_market_panel:_ready:6": {
 "zh": "小型（≤ 40 m）",
 "en": "SMALL (≤ 40 m)",
 "file": "ship_market_panel.gd",
-"line": 91,
+"line": 102,
 "func": "_ready",
-"en_line": 91
+"en_line": 102
 },
 "ship_market_panel:_ready:7": {
 "zh": "中型（40–70 m）",
 "en": "MID (40–70 m)",
 "file": "ship_market_panel.gd",
-"line": 91,
+"line": 102,
 "func": "_ready",
-"en_line": 91
+"en_line": 102
 },
 "ship_market_panel:_ready:8": {
 "zh": "大型（≥ 70 m）",
 "en": "LARGE (≥ 70 m)",
 "file": "ship_market_panel.gd",
-"line": 91,
+"line": 102,
 "func": "_ready",
-"en_line": 91
+"en_line": 102
 },
 "ship_market_panel:_fill:1": {
 "zh": "点一艘船看详情。卖家照例往好里说，评级各有盲区；结构、系统检验各看一类，产权核查查扣押和危废责任。",
 "en": "PICK A SHIP. SELLERS TALK THEM UP; RATINGS HAVE BLIND SPOTS; EACH INSPECTION READS ONE SIDE; THE TITLE SEARCH FINDS LIENS AND WASTE LIABILITY.",
 "file": "ship_market_panel.gd",
-"line": 188,
+"line": 199,
 "func": "_fill",
-"en_line": 188
+"en_line": 199
 },
 "ship_market_panel:_fill:2": {
 "zh": "这一类现在没有挂牌。",
 "en": "NO LISTINGS HERE NOW.",
 "file": "ship_market_panel.gd",
-"line": 199,
+"line": 210,
 "func": "_fill",
-"en_line": 199
+"en_line": 210
 },
-"ship_market_panel:_listing_card:3": {
+"ship_market_panel:_listing_card:2": {
+"zh": "拖船站满了",
+"en": "YARD FULL",
+"file": "ship_market_panel.gd",
+"line": 237,
+"func": "_listing_card",
+"en_line": 237
+},
+"ship_market_panel:_listing_card:4": {
 "zh": "试试新拆法 · %s",
 "en": "TRY THE NEW METHOD · %s",
 "file": "ship_market_panel.gd",
-"line": 233,
+"line": 247,
 "func": "_listing_card",
-"en_line": 233
+"en_line": 247
 },
-"ship_market_panel:_listing_card:4": {
+"ship_market_panel:_listing_card:5": {
 "zh": "%s · 拖回约 %d 秒 · 评级 %d/10",
 "en": "%s · TOW ~%d s · RATED %d/10",
 "file": "ship_market_panel.gd",
-"line": 241,
+"line": 255,
 "func": "_listing_card",
-"en_line": 241
+"en_line": 255
 },
 "ship_market_panel:_detail:5": {
 "zh": "查出 %d 项",
 "en": "%d FOUND",
 "file": "ship_market_panel.gd",
-"line": 289,
+"line": 303,
 "func": "_detail",
-"en_line": 289
+"en_line": 303
 },
 "ship_market_panel:_detail:6": {
 "zh": "这一类没问题",
 "en": "CLEAN",
 "file": "ship_market_panel.gd",
-"line": 289,
+"line": 303,
 "func": "_detail",
-"en_line": 289
+"en_line": 303
 },
 "ship_market_panel:_detail:11": {
 "zh": "评级 %d/10 · %s",
 "en": "RATED %d/10 · %s",
 "file": "ship_market_panel.gd",
-"line": 317,
+"line": 331,
 "func": "_detail",
-"en_line": 317
+"en_line": 331
 },
 "ship_market_panel:_detail:12": {
 "zh": "买下并拖回 · 合计 %s",
 "en": "BUY AND TOW · %s",
 "file": "ship_market_panel.gd",
-"line": 321,
+"line": 341,
 "func": "_detail",
-"en_line": 321
+"en_line": 341
 },
 "ship_market_panel:_detail:13": {
 "zh": "已成交，拖船出发。到港后在合同页开工，或在“我的船”里转售。",
 "en": "BOUGHT; THE TUG IS ON ITS WAY. START IT ON THE CONTRACTS PAGE OR RESELL IT UNDER MY SHIPS.",
 "file": "ship_market_panel.gd",
-"line": 326,
+"line": 362,
 "func": "_detail",
-"en_line": 326
+"en_line": 362
 },
 "ship_market_panel:_detail:14": {
 "zh": "更多 ▾（还价 · 保留报价 · 拖运 · 机构记录）",
 "en": "MORE ▾ (OFFER · HOLD · TOW · AGENCY)",
 "file": "ship_market_panel.gd",
-"line": 331,
+"line": 370,
 "func": "_detail",
-"en_line": 331
+"en_line": 370
 },
 "ship_market_panel:_more:1": {
 "zh": "自有拖船 %s · ",
 "en": "OWN TUG %s · ",
 "file": "ship_market_panel.gd",
-"line": 354,
+"line": 393,
 "func": "_more",
-"en_line": 354
+"en_line": 393
 },
 "ship_market_panel:_more:2": {
 "zh": "外包拖船 · ",
 "en": "CONTRACT TUG · ",
 "file": "ship_market_panel.gd",
-"line": 354,
+"line": 393,
 "func": "_more",
-"en_line": 354
+"en_line": 393
 },
 "ship_market_panel:_more:3": {
 "zh": "%d 天（约 %d 秒）· Δv %.1f + %.1f km/s · %s",
 "en": "%d DAYS (~%d s) · Δv %.1f + %.1f km/s · %s",
 "file": "ship_market_panel.gd",
-"line": 354,
+"line": 393,
 "func": "_more",
-"en_line": 354
+"en_line": 393
 },
 "ship_market_panel:_more:4": {
 "zh": "你的记录：",
 "en": "YOUR RECORD: ",
 "file": "ship_market_panel.gd",
-"line": 356,
+"line": 395,
 "func": "_more",
-"en_line": 356
+"en_line": 395
 },
 "ship_market_panel:_more:5": {
 "zh": "已付定金 %s 保留，还剩约 %d 秒；买下时抵扣，过期归卖家。",
 "en": "HELD FOR %s, ~%d s LEFT; COUNTS TOWARD THE PRICE.",
 "file": "ship_market_panel.gd",
-"line": 360,
+"line": 399,
 "func": "_more",
-"en_line": 360
+"en_line": 399
 },
 "ship_market_panel:_more:6": {
 "zh": "付 %s 定金保留报价（约 5 分钟）",
 "en": "HOLD THE QUOTE FOR %s (~5 MIN)",
 "file": "ship_market_panel.gd",
-"line": 363,
+"line": 402,
 "func": "_more",
-"en_line": 363
+"en_line": 402
 },
 "ship_market_panel:_more:7": {
 "zh": "卖家已拒绝过你的还价，只能按标价买。",
 "en": "THE SELLER TURNED YOUR OFFER DOWN.",
 "file": "ship_market_panel.gd",
-"line": 370,
+"line": 409,
 "func": "_more",
-"en_line": 370
+"en_line": 409
 },
 "ship_market_panel:_more:8": {
 "zh": "还价（只有一次）",
 "en": "OFFER (ONCE)",
 "file": "ship_market_panel.gd",
-"line": 383,
+"line": 422,
 "func": "_more",
-"en_line": 383
+"en_line": 422
 },
 "ship_market_panel:_more:9": {
 "zh": "卖家同意了，已成交，拖船出发。",
 "en": "ACCEPTED: BOUGHT, THE TUG IS ON ITS WAY.",
 "file": "ship_market_panel.gd",
-"line": 389,
+"line": 428,
 "func": "_more",
-"en_line": 389
+"en_line": 428
 },
 "ship_market_panel:_more:10": {
 "zh": "卖家拒绝了，不再谈。",
 "en": "THE SELLER SAYS NO.",
 "file": "ship_market_panel.gd",
-"line": 392,
+"line": 431,
 "func": "_more",
-"en_line": 392
+"en_line": 431
 },
 "ship_market_panel:_mine:1": {
 "zh": "还没有自己的船。",
 "en": "NO SHIPS OF YOUR OWN YET.",
 "file": "ship_market_panel.gd",
-"line": 400,
+"line": 439,
 "func": "_mine",
-"en_line": 400
+"en_line": 439
 },
 "ship_market_panel:_mine_card:1": {
 "zh": "拖运中 · 还有 %d 天",
 "en": "UNDER TOW · %d DAYS",
 "file": "ship_market_panel.gd",
-"line": 427,
+"line": 466,
 "func": "_mine_card",
-"en_line": 427
+"en_line": 466
 },
 "ship_market_panel:_mine_card:2": {
 "zh": " · 自有拖船 %s",
 "en": " · OWN TUG %s",
 "file": "ship_market_panel.gd",
-"line": 427,
+"line": 466,
 "func": "_mine_card",
-"en_line": 427
+"en_line": 466
 },
 "ship_market_panel:_mine_card:3": {
 "zh": " · 外包拖船",
 "en": " · CONTRACT TUG",
 "file": "ship_market_panel.gd",
-"line": 427,
+"line": 466,
 "func": "_mine_card",
-"en_line": 427
+"en_line": 466
 },
 "ship_market_panel:_mine_card:4": {
 "zh": "已到港 · 合同页里开工",
 "en": "IN PORT · START IT ON THE CONTRACTS PAGE",
 "file": "ship_market_panel.gd",
-"line": 428,
+"line": 467,
 "func": "_mine_card",
-"en_line": 428
+"en_line": 467
 },
 "ship_market_panel:_mine_card:7": {
 "zh": " · 已索赔 %s",
 "en": " · CLAIMED %s",
 "file": "ship_market_panel.gd",
-"line": 431,
+"line": 470,
 "func": "_mine_card",
-"en_line": 431
+"en_line": 470
 },
 "ship_market_panel:_mine_card:8": {
 "zh": "已转售 %s（佣金 %s）",
 "en": "RESOLD %s (FEE %s)",
 "file": "ship_market_panel.gd",
-"line": 432,
+"line": 471,
 "func": "_mine_card",
-"en_line": 432
+"en_line": 471
 },
 "ship_market_panel:_mine_card:9": {
 "zh": " · 挂牌转售 %s，等买家",
 "en": " · LISTED AT %s",
 "file": "ship_market_panel.gd",
-"line": 434,
+"line": 473,
 "func": "_mine_card",
-"en_line": 434
+"en_line": 473
 },
 "ship_market_panel:_mine_card:11": {
 "zh": "已付清 %s，船已放行，合同页里开工",
 "en": "PAID %s; RELEASED — START IT ON THE CONTRACTS PAGE",
 "file": "ship_market_panel.gd",
-"line": 441,
+"line": 480,
 "func": "_mine_card",
-"en_line": 441
+"en_line": 480
 },
 "ship_market_panel:_mine_card:12": {
 "zh": "卖家没提这项产权问题：索赔 %s",
 "en": "UNSAID TITLE DEFECT: CLAIM %s",
 "file": "ship_market_panel.gd",
-"line": 447,
+"line": 486,
 "func": "_mine_card",
-"en_line": 447
+"en_line": 486
 },
 "ship_market_panel:_mine_card:14": {
 "zh": "凭证据索赔 %s",
 "en": "CLAIM %s",
 "file": "ship_market_panel.gd",
-"line": 453,
+"line": 492,
 "func": "_mine_card",
-"en_line": 453
+"en_line": 492
 },
 "ship_market_panel:_mine_card:16": {
 "zh": "评级失实：向船检监管举报",
 "en": "REPORT THE FALSE RATING",
 "file": "ship_market_panel.gd",
-"line": 458,
+"line": 497,
 "func": "_mine_card",
-"en_line": 458
+"en_line": 497
 },
 "ship_market_panel:_mine_card:17": {
 "zh": "已记入该机构的公开记录",
 "en": "ON THE AGENCY'S RECORD",
 "file": "ship_market_panel.gd",
-"line": 460,
+"line": 499,
 "func": "_mine_card",
-"en_line": 460
+"en_line": 499
 },
 "ship_market_panel:_mine_card:18": {
 "zh": "；这份评级是卖家花钱买的，利益关联已证实",
 "en": "; A PAID RATING, PROVED",
 "file": "ship_market_panel.gd",
-"line": 460,
+"line": 499,
 "func": "_mine_card",
-"en_line": 460
+"en_line": 499
 },
 "ship_market_panel:_mine_card:19": {
 "zh": "撤下转售挂牌",
 "en": "TAKE IT OFF THE MARKET",
 "file": "ship_market_panel.gd",
-"line": 464,
+"line": 503,
 "func": "_mine_card",
-"en_line": 464
+"en_line": 503
 },
 "ship_market_panel:_mine_card:20": {
 "zh": "买家意向约 %s–%s",
 "en": "BUYERS: ABOUT %s–%s",
 "file": "ship_market_panel.gd",
-"line": 470,
+"line": 509,
 "func": "_mine_card",
-"en_line": 470
+"en_line": 509
 },
 "ship_market_panel:_mine_card:22": {
 "zh": "挂出去了。价格合适的话一两分钟内有人买，钱当场到账（扣 3% 佣金）。",
 "en": "LISTED. AT A FAIR PRICE A BUYER COMES IN A MINUTE OR TWO.",
 "file": "ship_market_panel.gd",
-"line": 484,
+"line": 523,
 "func": "_mine_card",
-"en_line": 484
+"en_line": 523
 },
 "shipping:eta_text:1": {
 "zh": "还有 %d 天（约 %d:%02d）",
@@ -44542,9 +44624,9 @@
 "zh": "返回",
 "en": "BACK",
 "file": "hud.gd",
-"line": 2422,
+"line": 2423,
 "func": "_menu_items",
-"en_line": 2422
+"en_line": 2423
 },
 "short:12": {
 "zh": "情境工具",
@@ -45281,8 +45363,7 @@
 "txt:e_funds",
 "txt:t_slot_funds",
 "txt:tm_fin_funds",
-"txt:tm_money",
-"loadout_panel:refresh:10"
+"txt:tm_money"
 ]
 },
 "txt:e_funds": {
@@ -45308,14 +45389,6 @@
 "en": "FUNDS",
 "file": "txt.gd",
 "line": 0
-},
-"loadout_panel:refresh:10": {
-"zh": "资金",
-"en": "FUNDS",
-"file": "loadout_panel.gd",
-"line": 291,
-"func": "refresh",
-"en_line": 291
 },
 "short:66": {
 "zh": "时效奖金",
@@ -45611,9 +45684,9 @@
 "zh": "下一步",
 "en": "NEXT",
 "file": "hud.gd",
-"line": 2907,
+"line": 2908,
 "func": "_asset_board",
-"en_line": 2907
+"en_line": 2908
 },
 "terminal:_next_step_card:2": {
 "zh": "下一步",
@@ -50598,6 +50671,19 @@
 "file": "gear_txt.gd",
 "line": 0
 },
+"short:1514": {
+"zh": "当前资金",
+"en": "FUNDS",
+"same": [
+"gear:ld_funds"
+]
+},
+"gear:ld_funds": {
+"zh": "当前资金",
+"en": "FUNDS",
+"file": "gear_txt.gd",
+"line": 0
+},
 "short:441": {
 "zh": "机载模块",
 "en": "DRONE MODULES",
@@ -50608,19 +50694,6 @@
 "gear:ld_mods": {
 "zh": "机载模块",
 "en": "DRONE MODULES",
-"file": "gear_txt.gd",
-"line": 0
-},
-"short:442": {
-"zh": "部署工具",
-"en": "DEPLOYABLE TOOLS",
-"same": [
-"gear:ld_deploy"
-]
-},
-"gear:ld_deploy": {
-"zh": "部署工具",
-"en": "DEPLOYABLE TOOLS",
 "file": "gear_txt.gd",
 "line": 0
 },
@@ -50689,15 +50762,15 @@
 "file": "gear_txt.gd",
 "line": 0
 },
-"short:448": {
-"zh": "未开放",
+"short:1515": {
+"zh": "尚未解锁",
 "en": "NOT OPEN",
 "same": [
 "gear:ld_locked"
 ]
 },
 "gear:ld_locked": {
-"zh": "未开放",
+"zh": "尚未解锁",
 "en": "NOT OPEN",
 "file": "gear_txt.gd",
 "line": 0
@@ -55077,9 +55150,9 @@
 "zh": "待整理",
 "en": "TO SORT",
 "file": "disposal_panel.gd",
-"line": 263,
+"line": 280,
 "func": "_place_name",
-"en_line": 263
+"en_line": 280
 },
 "short:1475": {
 "zh": "仓库",
@@ -55092,9 +55165,9 @@
 "zh": "仓库",
 "en": "THE WAREHOUSE",
 "file": "disposal_panel.gd",
-"line": 263,
+"line": 280,
 "func": "_place_name",
-"en_line": 263
+"en_line": 280
 },
 "short:1476": {
 "zh": "卖出",
@@ -55107,9 +55180,9 @@
 "zh": "卖出",
 "en": "THE SALE",
 "file": "disposal_panel.gd",
-"line": 263,
+"line": 280,
 "func": "_place_name",
-"en_line": 263
+"en_line": 280
 },
 "short:1477": {
 "zh": "回收整理",
@@ -55122,9 +55195,9 @@
 "zh": "回收整理",
 "en": "SORT THE HAUL",
 "file": "disposal_panel.gd",
-"line": 540,
+"line": 660,
 "func": "_draw_head",
-"en_line": 540
+"en_line": 660
 },
 "short:725": {
 "zh": "现在到账 %s",
@@ -55137,9 +55210,9 @@
 "zh": "现在到账 %s",
 "en": "CASH NOW %s",
 "file": "disposal_panel.gd",
-"line": 544,
+"line": 664,
 "func": "_draw_head",
-"en_line": 544
+"en_line": 664
 },
 "short:1478": {
 "zh": "资金 %s",
@@ -55152,9 +55225,9 @@
 "zh": "资金 %s",
 "en": "FUNDS %s",
 "file": "disposal_panel.gd",
-"line": 554,
+"line": 674,
 "func": "_draw_head",
-"en_line": 554
+"en_line": 674
 },
 "short:1479": {
 "zh": "当前设备",
@@ -55167,9 +55240,9 @@
 "zh": "当前设备",
 "en": "WHAT CAME HOME",
 "file": "disposal_panel.gd",
-"line": 560,
+"line": 680,
 "func": "_draw_drone",
-"en_line": 560
+"en_line": 680
 },
 "short:1480": {
 "zh": "完好度 %d%%",
@@ -55182,9 +55255,9 @@
 "zh": "完好度 %d%%",
 "en": "INTEGRITY %d%%",
 "file": "disposal_panel.gd",
-"line": 573,
+"line": 693,
 "func": "_draw_drone",
-"en_line": 573
+"en_line": 693
 },
 "short:1481": {
 "zh": "已收回",
@@ -55197,9 +55270,9 @@
 "zh": "已收回",
 "en": "HOME",
 "file": "disposal_panel.gd",
-"line": 596,
+"line": 716,
 "func": "_draw_drone",
-"en_line": 596
+"en_line": 716
 },
 "short:1482": {
 "zh": "遗失",
@@ -55212,9 +55285,9 @@
 "zh": "遗失",
 "en": "LOST",
 "file": "disposal_panel.gd",
-"line": 598,
+"line": 718,
 "func": "_draw_drone",
-"en_line": 598
+"en_line": 718
 },
 "short:1483": {
 "zh": "新增",
@@ -55227,9 +55300,9 @@
 "zh": "新增",
 "en": "NEW",
 "file": "disposal_panel.gd",
-"line": 697,
+"line": 830,
 "func": "_card",
-"en_line": 697
+"en_line": 830
 },
 "short:1484": {
 "zh": "已结算",
@@ -55242,9 +55315,9 @@
 "zh": "已结算",
 "en": "SETTLED",
 "file": "disposal_panel.gd",
-"line": 699,
+"line": 832,
 "func": "_card",
-"en_line": 699
+"en_line": 832
 },
 "short:1485": {
 "zh": "值 %s",
@@ -55257,9 +55330,9 @@
 "zh": "值 %s",
 "en": "WORTH %s",
 "file": "disposal_panel.gd",
-"line": 703,
+"line": 836,
 "func": "_card",
-"en_line": 703
+"en_line": 836
 },
 "short:1486": {
 "zh": "卖%s",
@@ -55272,9 +55345,9 @@
 "zh": "卖%s",
 "en": "SELL%s",
 "file": "disposal_panel.gd",
-"line": 710,
+"line": 842,
 "func": "_card",
-"en_line": 710
+"en_line": 842
 },
 "short:1487": {
 "zh": "我的仓库",
@@ -55287,9 +55360,9 @@
 "zh": "我的仓库",
 "en": "THE WAREHOUSE",
 "file": "disposal_panel.gd",
-"line": 715,
+"line": 847,
 "func": "_draw_warehouse",
-"en_line": 715
+"en_line": 847
 },
 "short:746": {
 "zh": "货架",
@@ -55303,9 +55376,9 @@
 "zh": "货架",
 "en": "RACKS",
 "file": "disposal_panel.gd",
-"line": 727,
+"line": 859,
 "func": "_draw_warehouse",
-"en_line": 727
+"en_line": 859
 },
 "district_panel:_ready:10": {
 "zh": "货架",
@@ -55326,9 +55399,9 @@
 "zh": "零件架",
 "en": "PARTS",
 "file": "disposal_panel.gd",
-"line": 727,
+"line": 859,
 "func": "_draw_warehouse",
-"en_line": 727
+"en_line": 859
 },
 "short:1489": {
 "zh": "装备架",
@@ -55341,9 +55414,9 @@
 "zh": "装备架",
 "en": "GEAR",
 "file": "disposal_panel.gd",
-"line": 727,
+"line": 859,
 "func": "_draw_warehouse",
-"en_line": 727
+"en_line": 859
 },
 "short:1306": {
 "zh": "空着",
@@ -55357,9 +55430,9 @@
 "zh": "空着",
 "en": "EMPTY",
 "file": "disposal_panel.gd",
-"line": 785,
+"line": 917,
 "func": "_draw_rack",
-"en_line": 785
+"en_line": 917
 },
 "shelf_panel:_fill:4": {
 "zh": "空着",
@@ -55380,9 +55453,9 @@
 "zh": "+%d 收回",
 "en": "+%d HOME",
 "file": "disposal_panel.gd",
-"line": 853,
+"line": 985,
 "func": "_draw_gear_shelf",
-"en_line": 853
+"en_line": 985
 },
 "short:1491": {
 "zh": "-%d 遗失",
@@ -55395,9 +55468,9 @@
 "zh": "-%d 遗失",
 "en": "-%d LOST",
 "file": "disposal_panel.gd",
-"line": 855,
+"line": 987,
 "func": "_draw_gear_shelf",
-"en_line": 855
+"en_line": 987
 },
 "short:1492": {
 "zh": "直接卖出",
@@ -55410,9 +55483,9 @@
 "zh": "直接卖出",
 "en": "SELL NOW",
 "file": "disposal_panel.gd",
-"line": 870,
+"line": 1002,
 "func": "_draw_sale",
-"en_line": 870
+"en_line": 1002
 },
 "short:726": {
 "zh": "主冷却泵",
@@ -56829,9 +56902,9 @@
 "zh": "可用资金 ",
 "en": "FUNDS ",
 "file": "ship_market_panel.gd",
-"line": 77,
+"line": 88,
 "func": "_ready",
-"en_line": 77
+"en_line": 88
 },
 "short:797": {
 "zh": "暂停经营",
@@ -56901,9 +56974,9 @@
 "zh": "关闭",
 "en": "CLOSE",
 "file": "ship_market_panel.gd",
-"line": 264,
+"line": 278,
 "func": "_detail",
-"en_line": 264
+"en_line": 278
 },
 "short:800": {
 "zh": "上架",
@@ -57879,49 +57952,49 @@
 "zh": "保存失败",
 "en": "SAVE FAILED",
 "file": "ship_market.gd",
-"line": 418,
+"line": 432,
 "func": "haggle",
-"en_line": 418
+"en_line": 432
 },
 "ship_market:resell:3": {
 "zh": "保存失败",
 "en": "SAVE FAILED",
 "file": "ship_market.gd",
-"line": 488,
+"line": 502,
 "func": "resell",
-"en_line": 488
+"en_line": 502
 },
 "ship_market:unlist:2": {
 "zh": "保存失败",
 "en": "SAVE FAILED",
 "file": "ship_market.gd",
-"line": 501,
+"line": 515,
 "func": "unlist",
-"en_line": 501
+"en_line": 515
 },
 "ship_market:report:2": {
 "zh": "保存失败",
 "en": "SAVE FAILED",
 "file": "ship_market.gd",
-"line": 625,
+"line": 639,
 "func": "report",
-"en_line": 625
+"en_line": 639
 },
 "ship_market:claim_title:2": {
 "zh": "保存失败",
 "en": "SAVE FAILED",
 "file": "ship_market.gd",
-"line": 797,
+"line": 811,
 "func": "claim_title",
-"en_line": 797
+"en_line": 811
 },
 "ship_market:claim:2": {
 "zh": "保存失败",
 "en": "SAVE FAILED",
 "file": "ship_market.gd",
-"line": 814,
+"line": 828,
 "func": "claim",
-"en_line": 814
+"en_line": 828
 },
 "warehouse:set_row:2": {
 "zh": "保存失败",
@@ -59341,9 +59414,9 @@
 "zh": "带我去",
 "en": "TAKE ME",
 "file": "hud.gd",
-"line": 1495,
+"line": 1496,
 "func": "_guide_keys",
-"en_line": 1495
+"en_line": 1496
 },
 "terminal:_next_step_card:4": {
 "zh": "带我去",
@@ -59364,9 +59437,9 @@
 "zh": "退出引导",
 "en": "END GUIDE",
 "file": "hud.gd",
-"line": 1505,
+"line": 1506,
 "func": "_guide_keys",
-"en_line": 1505
+"en_line": 1506
 },
 "short:948": {
 "zh": "打开星图",
@@ -59379,9 +59452,9 @@
 "zh": "打开星图",
 "en": "STAR MAP",
 "file": "hud.gd",
-"line": 1510,
+"line": 1511,
 "func": "_guide_keys",
-"en_line": 1510
+"en_line": 1511
 },
 "short:949": {
 "zh": "打开客户",
@@ -59394,9 +59467,9 @@
 "zh": "打开客户",
 "en": "CLIENTS",
 "file": "hud.gd",
-"line": 1510,
+"line": 1511,
 "func": "_guide_keys",
-"en_line": 1510
+"en_line": 1511
 },
 "short:950": {
 "zh": "打开合同",
@@ -59409,9 +59482,9 @@
 "zh": "打开合同",
 "en": "CONTRACTS",
 "file": "hud.gd",
-"line": 1511,
+"line": 1512,
 "func": "_guide_keys",
-"en_line": 1511
+"en_line": 1512
 },
 "short:1496": {
 "zh": "前往建设",
@@ -59424,9 +59497,9 @@
 "zh": "前往建设",
 "en": "BUILD",
 "file": "hud.gd",
-"line": 1511,
+"line": 1512,
 "func": "_guide_keys",
-"en_line": 1511
+"en_line": 1512
 },
 "short:951": {
 "zh": "去做",
@@ -59439,9 +59512,9 @@
 "zh": "去做",
 "en": "GO",
 "file": "hud.gd",
-"line": 1511,
+"line": 1512,
 "func": "_guide_keys",
-"en_line": 1511
+"en_line": 1512
 },
 "short:953": {
 "zh": "切割中",
@@ -59454,9 +59527,9 @@
 "zh": "切割中",
 "en": "CUTTING",
 "file": "hud.gd",
-"line": 2067,
+"line": 2068,
 "func": "_gauge",
-"en_line": 2067
+"en_line": 2068
 },
 "short:954": {
 "zh": "空切",
@@ -59469,9 +59542,9 @@
 "zh": "空切",
 "en": "IN THE OPEN",
 "file": "hud.gd",
-"line": 2067,
+"line": 2068,
 "func": "_gauge",
-"en_line": 2067
+"en_line": 2068
 },
 "short:955": {
 "zh": "拉紧",
@@ -59485,9 +59558,9 @@
 "zh": "拉紧",
 "en": "TAUT",
 "file": "hud.gd",
-"line": 2077,
+"line": 2078,
 "func": "_gauge",
-"en_line": 2077
+"en_line": 2078
 },
 "look:_region_line:6": {
 "zh": "拉紧",
@@ -59509,9 +59582,9 @@
 "zh": "松",
 "en": "SLACK",
 "file": "hud.gd",
-"line": 2077,
+"line": 2078,
 "func": "_gauge",
-"en_line": 2077
+"en_line": 2078
 },
 "look:_region_line:7": {
 "zh": "松",
@@ -59532,9 +59605,9 @@
 "zh": "测量中",
 "en": "MEASURING",
 "file": "hud.gd",
-"line": 2082,
+"line": 2083,
 "func": "_gauge",
-"en_line": 2082
+"en_line": 2083
 },
 "short:958": {
 "zh": "作业中",
@@ -59548,9 +59621,9 @@
 "zh": "作业中",
 "en": "WORKING",
 "file": "hud.gd",
-"line": 2082,
+"line": 2083,
 "func": "_gauge",
-"en_line": 2082
+"en_line": 2083
 },
 "look:_region_line:9": {
 "zh": "作业中",
@@ -59571,9 +59644,9 @@
 "zh": "操作说明",
 "en": "CONTROLS",
 "file": "hud.gd",
-"line": 2472,
+"line": 2473,
 "func": "_keys_page",
-"en_line": 2472
+"en_line": 2473
 },
 "short:960": {
 "zh": "船坞已有",
@@ -59586,9 +59659,9 @@
 "zh": "船坞已有",
 "en": "THE BERTH HAS",
 "file": "hud.gd",
-"line": 2805,
+"line": 2806,
 "func": "_asset_card",
-"en_line": 2805
+"en_line": 2806
 },
 "short:961": {
 "zh": "风险：",
@@ -59601,9 +59674,9 @@
 "zh": "风险：",
 "en": "RISK: ",
 "file": "hud.gd",
-"line": 2808,
+"line": 2809,
 "func": "_asset_card",
-"en_line": 2808
+"en_line": 2809
 },
 "short:962": {
 "zh": "进行中",
@@ -59616,9 +59689,9 @@
 "zh": "进行中",
 "en": "UNDER WAY",
 "file": "hud.gd",
-"line": 2907,
+"line": 2908,
 "func": "_asset_board",
-"en_line": 2907
+"en_line": 2908
 },
 "short:963": {
 "zh": "%s复盘",
@@ -59631,9 +59704,9 @@
 "zh": "%s复盘",
 "en": "%s · REVIEW",
 "file": "hud.gd",
-"line": 3020,
+"line": 3021,
 "func": "_asset_review",
-"en_line": 3020
+"en_line": 3021
 },
 "short:964": {
 "zh": "收成 %s",
@@ -59646,9 +59719,9 @@
 "zh": "收成 %s",
 "en": "ROLLED %s",
 "file": "hud.gd",
-"line": 3022,
+"line": 3023,
 "func": "_asset_review",
-"en_line": 3022
+"en_line": 3023
 },
 "short:965": {
 "zh": "保住 %s",
@@ -59661,9 +59734,9 @@
 "zh": "保住 %s",
 "en": "KEPT %s",
 "file": "hud.gd",
-"line": 3022,
+"line": 3023,
 "func": "_asset_review",
-"en_line": 3022
+"en_line": 3023
 },
 "short:966": {
 "zh": "满价 %s",
@@ -59676,9 +59749,9 @@
 "zh": "满价 %s",
 "en": "WHOLE %s",
 "file": "hud.gd",
-"line": 3023,
+"line": 3024,
 "func": "_asset_review",
-"en_line": 3023
+"en_line": 3024
 },
 "short:967": {
 "zh": "已送走 %s",
@@ -59691,9 +59764,9 @@
 "zh": "已送走 %s",
 "en": "SENT %s",
 "file": "hud.gd",
-"line": 3026,
+"line": 3027,
 "func": "_asset_review",
-"en_line": 3026
+"en_line": 3027
 },
 "short:968": {
 "zh": "拆坏的",
@@ -59706,9 +59779,9 @@
 "zh": "拆坏的",
 "en": "LOST",
 "file": "hud.gd",
-"line": 3036,
+"line": 3037,
 "func": "_asset_review",
-"en_line": 3036
+"en_line": 3037
 },
 "short:969": {
 "zh": "为什么",
@@ -59721,9 +59794,9 @@
 "zh": "为什么",
 "en": "WHY",
 "file": "hud.gd",
-"line": 3043,
+"line": 3044,
 "func": "_asset_review",
-"en_line": 3043
+"en_line": 3044
 },
 "short:970": {
 "zh": "下次",
@@ -59736,9 +59809,9 @@
 "zh": "下次",
 "en": "NEXT TIME",
 "file": "hud.gd",
-"line": 3049,
+"line": 3050,
 "func": "_asset_review",
-"en_line": 3049
+"en_line": 3050
 },
 "short:971": {
 "zh": "保存失败",
@@ -60064,17 +60137,17 @@
 "zh": "卸下",
 "en": "TAKE OFF",
 "file": "loadout_panel.gd",
-"line": 197,
+"line": 200,
 "func": "refresh",
-"en_line": 197
+"en_line": 200
 },
 "loadout_panel:refresh:2": {
 "zh": "卸下",
 "en": "TAKE OFF",
 "file": "loadout_panel.gd",
-"line": 208,
+"line": 211,
 "func": "refresh",
-"en_line": 208
+"en_line": 211
 },
 "short:991": {
 "zh": "装上",
@@ -60087,9 +60160,9 @@
 "zh": "装上",
 "en": "FIT",
 "file": "loadout_panel.gd",
-"line": 259,
+"line": 262,
 "func": "refresh",
-"en_line": 259
+"en_line": 262
 },
 "short:992": {
 "zh": "信号弱",
@@ -65062,17 +65135,17 @@
 "zh": "挂牌已撤",
 "en": "LISTING GONE",
 "file": "ship_market.gd",
-"line": 369,
+"line": 383,
 "func": "buy",
-"en_line": 369
+"en_line": 383
 },
 "ship_market:haggle:1": {
 "zh": "挂牌已撤",
 "en": "LISTING GONE",
 "file": "ship_market.gd",
-"line": 401,
+"line": 415,
 "func": "haggle",
-"en_line": 401
+"en_line": 415
 },
 "short:1313": {
 "zh": "价格不对",
@@ -65085,9 +65158,9 @@
 "zh": "价格不对",
 "en": "BAD PRICE",
 "file": "ship_market.gd",
-"line": 479,
+"line": 493,
 "func": "resell",
-"en_line": 479
+"en_line": 493
 },
 "short:1314": {
 "zh": "没有挂牌",
@@ -65100,9 +65173,9 @@
 "zh": "没有挂牌",
 "en": "NOT LISTED",
 "file": "ship_market.gd",
-"line": 495,
+"line": 509,
 "func": "unlist",
-"en_line": 495
+"en_line": 509
 },
 "short:1315": {
 "zh": "产权清楚",
@@ -65115,9 +65188,9 @@
 "zh": "产权清楚",
 "en": "CLEAR TITLE",
 "file": "ship_market.gd",
-"line": 733,
+"line": 747,
 "func": "title_name",
-"en_line": 733
+"en_line": 747
 },
 "short:1316": {
 "zh": "回交易行",
@@ -65130,9 +65203,9 @@
 "zh": "回交易行",
 "en": "TO THE EXCHANGE",
 "file": "ship_market_panel.gd",
-"line": 81,
+"line": 92,
 "func": "_ready",
-"en_line": 81
+"en_line": 92
 },
 "short:1317": {
 "zh": "全部挂牌",
@@ -65145,9 +65218,9 @@
 "zh": "全部挂牌",
 "en": "ALL LISTINGS",
 "file": "ship_market_panel.gd",
-"line": 91,
+"line": 102,
 "func": "_ready",
-"en_line": 91
+"en_line": 102
 },
 "short:1318": {
 "zh": "我的船",
@@ -65160,9 +65233,9 @@
 "zh": "我的船",
 "en": "MY SHIPS",
 "file": "ship_market_panel.gd",
-"line": 91,
+"line": 102,
 "func": "_ready",
-"en_line": 91
+"en_line": 102
 },
 "short:1319": {
 "zh": "坞长不够",
@@ -65175,24 +65248,24 @@
 "zh": "坞长不够",
 "en": "TOO LONG",
 "file": "ship_market_panel.gd",
-"line": 224,
+"line": 235,
 "func": "_listing_card",
-"en_line": 224
+"en_line": 235
 },
 "short:1320": {
 "zh": "已保留",
 "en": "HELD",
 "same": [
-"ship_market_panel:_listing_card:2"
+"ship_market_panel:_listing_card:3"
 ]
 },
-"ship_market_panel:_listing_card:2": {
+"ship_market_panel:_listing_card:3": {
 "zh": "已保留",
 "en": "HELD",
 "file": "ship_market_panel.gd",
-"line": 226,
+"line": 239,
 "func": "_listing_card",
-"en_line": 226
+"en_line": 239
 },
 "short:1321": {
 "zh": "结构检验",
@@ -65205,9 +65278,9 @@
 "zh": "结构检验",
 "en": "STRUCTURE CHECK",
 "file": "ship_market_panel.gd",
-"line": 285,
+"line": 299,
 "func": "_detail",
-"en_line": 285
+"en_line": 299
 },
 "short:1322": {
 "zh": "系统检验",
@@ -65220,9 +65293,9 @@
 "zh": "系统检验",
 "en": "SYSTEMS CHECK",
 "file": "ship_market_panel.gd",
-"line": 285,
+"line": 299,
 "func": "_detail",
-"en_line": 285
+"en_line": 299
 },
 "short:1323": {
 "zh": "产权核查",
@@ -65235,9 +65308,9 @@
 "zh": "产权核查",
 "en": "TITLE SEARCH",
 "file": "ship_market_panel.gd",
-"line": 285,
+"line": 299,
 "func": "_detail",
-"en_line": 285
+"en_line": 299
 },
 "short:1324": {
 "zh": "产权清楚",
@@ -65250,9 +65323,9 @@
 "zh": "产权清楚",
 "en": "CLEAR",
 "file": "ship_market_panel.gd",
-"line": 291,
+"line": 305,
 "func": "_detail",
-"en_line": 291
+"en_line": 305
 },
 "short:1325": {
 "zh": "要价",
@@ -65265,9 +65338,9 @@
 "zh": "要价",
 "en": "ASKING",
 "file": "ship_market_panel.gd",
-"line": 309,
+"line": 323,
 "func": "_detail",
-"en_line": 309
+"en_line": 323
 },
 "short:1326": {
 "zh": "经纪估值",
@@ -65280,9 +65353,9 @@
 "zh": "经纪估值",
 "en": "BROKER'S VALUE",
 "file": "ship_market_panel.gd",
-"line": 310,
+"line": 324,
 "func": "_detail",
-"en_line": 310
+"en_line": 324
 },
 "short:1327": {
 "zh": "卖家说：",
@@ -65295,9 +65368,9 @@
 "zh": "卖家说：",
 "en": "SELLER: ",
 "file": "ship_market_panel.gd",
-"line": 315,
+"line": 329,
 "func": "_detail",
-"en_line": 315
+"en_line": 329
 },
 "short:1328": {
 "zh": "正在拆",
@@ -65310,9 +65383,9 @@
 "zh": "正在拆",
 "en": "BEING STRIPPED",
 "file": "ship_market_panel.gd",
-"line": 430,
+"line": 469,
 "func": "_mine_card",
-"en_line": 430
+"en_line": 469
 },
 "short:1329": {
 "zh": "已拆完",
@@ -65325,9 +65398,9 @@
 "zh": "已拆完",
 "en": "STRIPPED",
 "file": "ship_market_panel.gd",
-"line": 431,
+"line": 470,
 "func": "_mine_card",
-"en_line": 431
+"en_line": 470
 },
 "short:1330": {
 "zh": "付清 %s",
@@ -65340,9 +65413,9 @@
 "zh": "付清 %s",
 "en": "PAY %s",
 "file": "ship_market_panel.gd",
-"line": 439,
+"line": 478,
 "func": "_mine_card",
-"en_line": 439
+"en_line": 478
 },
 "short:1331": {
 "zh": "索赔到账 %s",
@@ -65356,17 +65429,17 @@
 "zh": "索赔到账 %s",
 "en": "CLAIM PAID %s",
 "file": "ship_market_panel.gd",
-"line": 449,
+"line": 488,
 "func": "_mine_card",
-"en_line": 449
+"en_line": 488
 },
 "ship_market_panel:_mine_card:15": {
 "zh": "索赔到账 %s",
 "en": "CLAIM PAID %s",
 "file": "ship_market_panel.gd",
-"line": 455,
+"line": 494,
 "func": "_mine_card",
-"en_line": 455
+"en_line": 494
 },
 "short:1332": {
 "zh": "挂牌转售",
@@ -65379,9 +65452,9 @@
 "zh": "挂牌转售",
 "en": "LIST FOR RESALE",
 "file": "ship_market_panel.gd",
-"line": 482,
+"line": 521,
 "func": "_mine_card",
-"en_line": 482
+"en_line": 521
 },
 "short:1333": {
 "zh": "购后资金 %s",
@@ -65424,7 +65497,7 @@
 "zh": "待机",
 "en": "",
 "file": "smelter.gd",
-"line": 1040,
+"line": 1047,
 "func": "_draw_lance",
 "en_line": 0
 },
@@ -65439,7 +65512,7 @@
 "zh": "下降",
 "en": "",
 "file": "smelter.gd",
-"line": 1040,
+"line": 1047,
 "func": "_draw_lance",
 "en_line": 0
 },
@@ -65454,7 +65527,7 @@
 "zh": "浸测",
 "en": "",
 "file": "smelter.gd",
-"line": 1040,
+"line": 1047,
 "func": "_draw_lance",
 "en_line": 0
 },
@@ -65469,7 +65542,7 @@
 "zh": "回升",
 "en": "",
 "file": "smelter.gd",
-"line": 1040,
+"line": 1047,
 "func": "_draw_lance",
 "en_line": 0
 },

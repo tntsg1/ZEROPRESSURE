@@ -46,6 +46,17 @@ func _btn(s: String, cb: Callable, h := 42.0) -> Button:
 	return b
 
 
+func _sfx(id: String) -> void:
+	if game != null and game.get("sfx") != null:
+		game.sfx.play(id)
+
+
+# a line that just changed blinks up once, so a press is seen to have done something
+func _flash(c: CanvasItem) -> void:
+	c.modulate = Color(1.6, 1.6, 1.6)
+	create_tween().tween_property(c, "modulate", Color.WHITE, 0.45)
+
+
 func _box(bg: Color, edge: Color, pad := 10.0) -> StyleBoxFlat:
 	var b := StyleBoxFlat.new()
 	b.bg_color = bg
@@ -222,10 +233,13 @@ func _listing_card(l: Dictionary) -> Button:
 	var tag := ""
 	if not ShipMarket.fits(l):
 		tag = w("坞长不够", "TOO LONG")
+	elif TugYard.full():
+		tag = w("拖船站满了", "YARD FULL")
 	elif l.has("hold"):
 		tag = w("已保留", "HELD")
 	if tag != "":
 		var tg := _label(tag, 13)
+		tg.autowrap_mode = TextServer.AUTOWRAP_OFF
 		tg.add_theme_color_override("font_color", Color("ffb35c"))
 		head.add_child(tg)
 	# 108 号: a showcase says which method it is laid out for, on a line of its own
@@ -318,16 +332,41 @@ func _detail() -> void:
 	var q := ShipMarket.tow_quote(l)
 	var deposit := float(l.hold.deposit) if l.has("hold") else 0.0
 	var total := float(l.price) + float(q.fee) - deposit
-	var buy := _btn(w("买下并拖回 · 合计 %s", "BUY AND TOW · %s") % Pal.money(total), func():
+	# 121 号: a hulk that cannot be bought says so on the button, and a press says why (never a
+	# dead button, never a silent press)
+	var block := ShipMarket.buy_block(l, total)
+	var note := _label(str(block.get("why", "")), 15)
+	note.add_theme_color_override("font_color", Hmi.warn_col())
+	note.visible = not block.is_empty()
+	var buy := _btn(str(block.btn) if not block.is_empty() else w("买下并拖回 · 合计 %s", "BUY AND TOW · %s") % Pal.money(total), func():
+		var b2 := ShipMarket.buy_block(l, total)
+		if not b2.is_empty():
+			note.text = str(b2.why)
+			note.visible = true
+			msg.text = str(b2.btn) + "：" + str(b2.why)
+			msg.add_theme_color_override("font_color", Hmi.warn_col())
+			_flash(note)
+			_sfx("deny")
+			return
 		var r := ShipMarket.buy(str(l.id))
+		if not r.ok:
+			note.text = str(r.reason)
+			note.visible = true
+			_flash(note)
+			_sfx("deny")
+			return
 		chosen = ""
 		detail_win.visible = false
 		_fill()
-		msg.text = w("已成交，拖船出发。到港后在合同页开工，或在“我的船”里转售。", "BOUGHT; THE TUG IS ON ITS WAY. START IT ON THE CONTRACTS PAGE OR RESELL IT UNDER MY SHIPS.") if r.ok else str(r.reason), 64.0)
+		_sfx("stamp")
+		msg.text = w("已成交，拖船出发。到港后在合同页开工，或在“我的船”里转售。", "BOUGHT; THE TUG IS ON ITS WAY. START IT ON THE CONTRACTS PAGE OR RESELL IT UNDER MY SHIPS.")
+		msg.add_theme_color_override("font_color", UiSkin.ACCENT)
+		_flash(msg), 64.0)
 	buy.add_theme_font_size_override("font_size", 22)
-	UiSkin.accent_button(buy)
-	buy.disabled = not ShipMarket.fits(l) or float(Career.data.money) < total
+	if block.is_empty():
+		UiSkin.accent_button(buy)
 	right.add_child(buy)
+	right.add_child(note)
 	var more_key := _btn(w("更多 ▾（还价 · 保留报价 · 拖运 · 机构记录）", "MORE ▾ (OFFER · HOLD · TOW · AGENCY)"), func(): more_box.visible = not more_box.visible)
 	right.add_child(more_key)
 	more_box = VBoxContainer.new()

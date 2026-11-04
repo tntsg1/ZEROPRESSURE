@@ -361,6 +361,20 @@ static func fits(l: Dictionary) -> bool:
 	return Market.fits(str(l.offer.ship), Career.data)
 
 
+# 121 号 (user 2026-11-04: "空间不够大的话，你要提示我…而不是我按了之后什么都没反应"): why a listing
+# cannot be bought now, said on the buy button itself ({} when it can): {btn, why}
+static func buy_block(l: Dictionary, total: float) -> Dictionary:
+	var ship := str(l.offer.ship)
+	if not fits(l):
+		return {"btn": w("空间不够大，无法购买", "NO ROOM: CANNOT BUY"), "why": w("这艘船长 %.0f m，船坞最长只放得下 %.0f m：先扩建船坞。", "THIS HULK IS %.0f m; THE BERTH TAKES UP TO %.0f m: EXTEND THE BERTH FIRST.") % [float(Market.type_of(ship).get("length", 0.0)), Dock.owned(Career.data.get("upgrades", {})) - 6.0]}
+	var yb := TugYard.block(ship)
+	if yb != "":
+		return {"btn": w("空间不够大，无法购买", "NO ROOM: CANNOT BUY") if TugYard.full() else w("拖不动，无法购买", "TOO BIG TO TOW: CANNOT BUY"), "why": yb}
+	if float(Career.data.money) < total:
+		return {"btn": w("资金不足，无法购买", "NOT ENOUGH CASH"), "why": w("船款加拖运 %s，还差 %s。", "PRICE AND TOW %s: %s SHORT.") % [Pal.money(total), Pal.money(total - float(Career.data.money))]}
+	return {}
+
+
 # bought: the price and the tow paid together, the listing closed, the tow under way
 # (at the asking price, or at an accepted counter-offer; a held quote's deposit counts toward it)
 static func buy(id: String, at_price := -1.0) -> Dictionary:

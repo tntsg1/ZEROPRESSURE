@@ -88,8 +88,11 @@ func _ready() -> void:
 	head.add_theme_font_override("font", Fonts.get_font("SemiBold"))
 	column.add_child(head)
 	var a: Dictionary = Career.active()
-	var sub := Txt.t("ld_note") if a.is_empty() else "%s  ·  %s" % [str(a.get("id", "")), Txt.t("ld_note")]
-	column.add_child(label(sub, 15, Color(1, 1, 1, 0.55)))
+	if not a.is_empty():
+		var idl := label(str(a.get("id", "")), 17)
+		idl.add_theme_font_override("font", Fonts.get_font("SemiBold"))
+		column.add_child(idl)
+	column.add_child(label(Txt.t("ld_note"), 15, Color(1, 1, 1, 0.55)))
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 30)
@@ -209,7 +212,7 @@ func refresh() -> void:
 			filled += 1
 	for i in maxi(0, ds - filled):
 		slots_box.add_child(key("◇  " + Txt.t("ld_empty"), func(): pass, false))
-	slots_box.add_child(label(words("基础工具持续可用，无需装配耗材。", "Basic tools remain available; no consumable fitting required."), 15))
+	slots_box.add_child(label(words("基础工具始终可用，不占用装备槽，也不会消耗库存。", "Basic tools remain available; no consumable fitting required."), 15))
 	var parts_refund := float(Career.data.get("tool_parts_retirement",{}).get("refund",0.0))
 	if parts_refund > 0.0:
 		slots_box.add_child(label(words("旧工具配件残值已返还：", "Legacy tool parts refunded: ")+Pal.money(parts_refund),15))
@@ -263,12 +266,13 @@ func refresh() -> void:
 			bb.tooltip_text = why
 		row.add_child(bb)
 		if Gear.locked_by(type) != "":
-			col.add_child(label(Txt.t("ld_locked") + "：" + why, 13, Pal.heat(0.8, 1.0)))
+			col.add_child(label(Txt.t("ld_locked") + "：" + Txt.t("ld_locked_method") % Methods.name_of(Gear.locked_by(type)), 13, Pal.heat(0.8, 1.0)))
 	# 86 号 Q5: the drone's fitted upgrades, bought with money (were on the berth page)
 	if terminal != null and "SHOP" in terminal:
 		var h4 := label(Txt.t("rp_fitted"), 18)
 		h4.add_theme_font_override("font", Fonts.get_font("SemiBold"))
 		shelf_box.add_child(h4)
+		shelf_box.add_child(label(Txt.t("ld_fitted_cash"), 13, Color(1, 1, 1, 0.55)))
 		for it in terminal.SHOP.slice(0, terminal.FITTED):
 			# 104 号: the inspection kit, the 5 t grapple and the second pump went into the
 			# dismantling methods' tiers (precision inspection, field grapple, pumping)
@@ -288,7 +292,7 @@ func refresh() -> void:
 		val += Gear.price(m)
 	for t in deploy:
 		val += Gear.price(t) * int(deploy[t])
-	foot.text = "%s  %s      %s  %s      %s  %s" % [Txt.t("ld_value"), Pal.money(val), Txt.t("ld_risk"), Pal.money(val), Txt.t("tm_funds") if Txt.has("tm_funds") else words("资金", "FUNDS"), Pal.money(float(Career.data.get("money", 0.0)))]
+	foot.text = "%s：%s      %s：%s      %s：%s" % [Txt.t("ld_value"), Pal.money(val), Txt.t("ld_risk"), Pal.money(val), Txt.t("ld_funds"), Pal.money(float(Career.data.get("money", 0.0)))]
 	if status_text != "":
 		status.text = status_text
 

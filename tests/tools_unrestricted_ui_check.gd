@@ -26,7 +26,7 @@ func run() -> void:
 		var buttons: Array = panel.find_children("*","Button",true,false)
 		check(not buttons.any(func(button):return button.text.contains("先锋型") or button.text.contains("工业型") or button.text.contains("精工型")),"loadout no longer presents recurring tool-part tier purchase/fitting buttons at "+str(size))
 		var labels: Array = panel.find_children("*","Label",true,false)
-		check(labels.any(func(label):return label.text.contains("基础工具持续可用")),"loadout clearly explains tools require no fitted consumables")
+		check(labels.any(func(label):return label.text.contains("基础工具始终可用")),"loadout clearly explains tools require no fitted consumables")
 		await capture("tools_unrestricted_loadout_%dx%d" % [size.x,size.y])
 		panel.queue_free()
 		await frames(3)

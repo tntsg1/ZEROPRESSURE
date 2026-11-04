@@ -11,7 +11,7 @@
 #
 # 已停用的功能（梁工、关掉的剧情层、取消的耗材）、开发者面板、只打印到日志的字不在这里。
 #
-# 本文件共 7927 条。
+# 本文件共 7938 条。
 
 ============================================================
 # 一、标题、菜单与设置（114 条）
@@ -1970,7 +1970,7 @@
 英：The berth's repairs are on the terminal's BERTH page
 
 ============================================================
-# 五、拆船现场（船坞里）（1290 条）
+# 五、拆船现场（船坞里）（1294 条）
 # 拆船时屏幕上的一切：左上合同卡、工具栏、操作提示、测量读数、回收口和熔炉的牌子、结算飘字、无人机状态、图纸、小地图、作业艇、各种“现在不能这样做”的提示。
 # 玩家这时手很忙：字要一眼看懂，尽量短。
 ============================================================
@@ -4021,19 +4021,19 @@
 ------------------------------------------------------------
 
 [gear:gear_anchor_d]
-中：打在船体件上，线连到熔炉槽的绞盘。这一段被切离后，绞盘把整段慢慢拉进熔炉槽，不论多重。段进炉后锚会留在绞盘处，记得捡回。
+中：打在船体结构上，锚索会连接到船坞的绞盘。\n切断连接处后，绞盘会把整段结构拖进投料槽，不受重量限制。\n回收完成后，牵引锚会留在绞盘附近，记得捡回来。
 英：Shot onto a hull piece; its line runs to a winch on the scrap trough. Once the section is cut free the winch hauls the whole of it down into the trough, whatever it weighs. The anchor is left at the winch post afterwards: fetch it.
 
 [gear:gear_pump_d]
-中：贴在带压舱室的任何壁板、储罐或储瓶上，自己抽，不需要接口。接口被阀门封死或找不到时照样能抽。零件进回收口时泵没拆下就一起没了。
+中：可以安装在带压舱室的壁板、储罐或储箱上，直接抽出内部物质，不需要连接现有接口。\n即使接口被阀门封死，或者找不到接口，也能正常抽取。\n回收零件前记得拆下泵，否则会跟着零件一起被回收。
 英：Stuck on any wall of a pressurised room, or on a tank or bottle: it draws through its own tap, no port needed, even where the port is shut off or nowhere to be found. Left on a piece that goes down a mouth, it goes with it.
 
 [gear:gear_prop_d]
-中：立在船坞地面上，顶住货柜墙某一列的下弦杆：这一列和它外侧各列的重量都由它传到地面，里侧的列就能先卸。额定 60 t（约两列满箱），超载会弯，撑不住就折断。
+中：安装在船坞地面，支撑货柜墙指定一列的底部横梁。\n安装后，这一列及外侧各列的重量会通过撑杆传到地面，方便你先拆除内侧的货柜。\n最大承重 60 t，约等于两列满载货柜。超载后撑杆会弯曲，受力过大时可能折断。
 英：Stood on the berth floor under a bay's bottom chord of a container wall: that bay and every bay outboard of it bear on it instead of the bays inboard, which can then be emptied first. Rated 60 t (about two full bays): past that it bows, then buckles.
 
 [gear:gear_probe_d]
-中：留在测点、接口或零件上，读数持续更新、永不过期；数值明显变化时在无线电里报一句。零件进回收口时探头没拆下就没了。
+中：安装在测量点、接口或零件上，持续监测数据。\n读数会自动更新。出现明显变化时，会通过无线电通知你。\n回收零件前记得取下探头，否则会一起丢失。
 英：Left on a test point, a port or a piece: its reading stays live and never goes stale, and a real change is called out on the radio. Left on a piece that goes down a mouth, it is gone.
 
 [gear:gear_mod_bumper]
@@ -4101,20 +4101,32 @@
 # 出现在：出勤配装页。
 ------------------------------------------------------------
 
+[gear:ld_locked_method]
+中：先学会「%s」拆法。
+英：LEARN THE %s METHOD FIRST.
+
+[gear:ld_fitted_cash]
+中：使用现金购买。
+英：BOUGHT WITH CASH.
+
+[gear:ld_deploy]
+中：已装备工具
+英：DEPLOYABLE TOOLS
+
 [gear:ld_value]
-中：本次携带价值
+中：本次携带装备价值
 英：CARRIED VALUE
 
 [gear:ld_risk]
-中：最坏可能损失
+中：最大可能损失
 英：WORST CASE LOSS
 
 [gear:ld_note]
-中：成功带回的装备不重复扣费；留在船上或掉落未捡的按采购价计入遗失。
+中：带回的装备可以重复使用，不用重新购买。留在船上或掉落后没捡回的装备，按购买价格计算损失。
 英：Gear brought back is not charged again; anything left on the ship or dropped and not fetched is lost at its purchase price.
 
 [gear:ld_keys]
-中：点击槽位切换 · Enter 开工 · Esc 返回
+中：点击装备槽切换装备。按 Enter 开工，按 Esc 返回。
 英：Click a slot to change it · Enter starts · Esc goes back
 
 ------------------------------------------------------------
@@ -6820,6 +6832,10 @@
 英：CLICK OR DRAG RIGHT TO KEEP · \"SELL\" OR DRAG BELOW TO SELL
 
 [disposal_panel:_draw_left_cards:3]
+中：↓ 还有 %d 样 · 滚轮翻看
+英：↓ %d MORE · SCROLL
+
+[disposal_panel:_draw_left_cards:4]
 中：都整理好了。按 Enter 确认，离开船坞。
 英：ALL SORTED. ENTER TO CONFIRM AND LEAVE.
 
@@ -9301,7 +9317,7 @@
 英：Parts below %d%% condition cannot go into a repair; they can be sold.
 
 [gear:rp_fitted]
-中：无人机改装件（现金购买）
+中：无人机改装件
 英：DRONE FITTINGS (BOUGHT)
 
 [gear:rp_tile]
@@ -9358,7 +9374,7 @@
 ------------------------------------------------------------
 
 [loadout_panel:refresh:3]
-中：基础工具持续可用，无需装配耗材。
+中：基础工具始终可用，不占用装备槽，也不会消耗库存。
 英：Basic tools remain available; no consumable fitting required.
 
 [loadout_panel:refresh:4]
@@ -9974,7 +9990,7 @@
 英：
 
 ============================================================
-# 八、找船：星图、扫描与拖船（180 条）
+# 八、找船：星图、扫描与拖船（187 条）
 # 星图（扫描扇区、分析信号、派拖船）、二手船市、拖船拖回港的过场和到港卡片。
 # 玩家在这里决定下一艘拆什么：字要说清是不是船、多大、值多少、拖回来多久多少钱。
 ============================================================
@@ -10126,6 +10142,30 @@
 中：保存失败，未扣款
 英：SAVE FAILED
 
+[ship_market:buy_block:1]
+中：空间不够大，无法购买
+英：NO ROOM: CANNOT BUY
+
+[ship_market:buy_block:2]
+中：这艘船长 %.0f m，船坞最长只放得下 %.0f m：先扩建船坞。
+英：THIS HULK IS %.0f m; THE BERTH TAKES UP TO %.0f m: EXTEND THE BERTH FIRST.
+
+[ship_market:buy_block:3]
+中：空间不够大，无法购买
+英：NO ROOM: CANNOT BUY
+
+[ship_market:buy_block:4]
+中：拖不动，无法购买
+英：TOO BIG TO TOW: CANNOT BUY
+
+[ship_market:buy_block:5]
+中：资金不足，无法购买
+英：NOT ENOUGH CASH
+
+[ship_market:buy_block:6]
+中：船款加拖运 %s，还差 %s。
+英：PRICE AND TOW %s: %s SHORT.
+
 [ship_market:buy:2]
 中：船坞放不下这艘船
 英：THE BERTH CANNOT TAKE IT
@@ -10271,11 +10311,15 @@
 中：这一类现在没有挂牌。
 英：NO LISTINGS HERE NOW.
 
-[ship_market_panel:_listing_card:3]
+[ship_market_panel:_listing_card:2]
+中：拖船站满了
+英：YARD FULL
+
+[ship_market_panel:_listing_card:4]
 中：试试新拆法 · %s
 英：TRY THE NEW METHOD · %s
 
-[ship_market_panel:_listing_card:4]
+[ship_market_panel:_listing_card:5]
 中：%s · 拖回约 %d 秒 · 评级 %d/10
 英：%s · TOW ~%d s · RATED %d/10
 
@@ -27286,7 +27330,7 @@
 英：LOAN OUTSTANDING
 
 [short:65]
-# 在：结算与收尾、标题、终端通用、出勤配装（5 处）
+# 在：结算与收尾、标题、终端通用（4 处）
 中：资金
 英：FUNDS
 
@@ -29155,15 +29199,15 @@
 中：出勤配装
 英：LOADOUT
 
+[short:1514]
+# 在：出勤配装（1 处）
+中：当前资金
+英：FUNDS
+
 [short:441]
 # 在：出勤配装（1 处）
 中：机载模块
 英：DRONE MODULES
-
-[short:442]
-# 在：出勤配装（1 处）
-中：部署工具
-英：DEPLOYABLE TOOLS
 
 [short:443]
 # 在：出勤配装（1 处）
@@ -29190,9 +29234,9 @@
 中：购买 %s
 英：BUY %s
 
-[short:448]
+[short:1515]
 # 在：出勤配装（1 处）
-中：未开放
+中：尚未解锁
 英：NOT OPEN
 
 [short:449]
