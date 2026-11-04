@@ -2381,7 +2381,7 @@ const S := {
 	"tm_st_5": ["就绪", "READY"],
 	"tm_fee_story": ["合同费（结算时扣）", "FEE (TAKEN AT SETTLEMENT)"],
 	"tm_no_limit": ["不限时", "NO LIMIT"],
-	"tm_next_side": ["开工前按 4 打开「技能书」，选一项攒钱目标。设备商店备消耗品，船坞管理添设施；作业中也能在左侧两台电脑打开。", "Press 4 for the field manual and set a savings goal. Stock up at the shop and fit facilities in berth management. Both computers on the left also open these pages on site."],
+	"tm_next_side": ["开工前可以按 2 打开「船坞」修设施，按 3 打开「拆法与建设」学新拆法、修港区；带哪些部署工具，在开工时的出勤配装里选。", "Before you start: 2 opens BERTH to mend facilities, 3 opens METHODS & BUILD to learn methods and build the port; the tools you take are picked on the loadout page as the job starts."],
 	"tm_next_go": ["开始下一单", "START THE NEXT JOB"],
 	"tm_keys_onsite": ["1–3 应用 · ←→↑↓ 选择 · Enter 确认 · Esc 回首页 / 回到作业", "1–3 APPS · ARROWS CHOOSE · Enter CONFIRM · Esc HOME / BACK TO WORK"],
 	"tear_warn": ["还有 %s 个锁扣 / 线缆连着 · 硬扯会扯断", "%s LOCKS / LINES STILL ATTACHED · PULLING TEARS THEM"],

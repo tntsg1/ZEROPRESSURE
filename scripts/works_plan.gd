@@ -103,13 +103,15 @@ const FAMILY := {
 		["connect", 3.0, "敷设高压电缆，接头熔接", "High-voltage cable laid, the joints made", "cable"],
 		["test", 1.0, "送电：变压器嗡嗡作响", "Energised: the transformer hums", "tester"]]},
 	"rail": {"part": ["brake", Vector2(2.4, 0.5)], "extra": ["junction", Vector2(0.9, 0.7)], "units": 4, "steps": [
-		["isolate", 1.0, "牵引电断开，轨道封锁", "Traction power off, the track blocked", "bot"],
-		["remove", 2.0, "切掉坏轨段", "The dead track cut out", "cutter"],
-		["bring", 2.0, "施工艇运来轨段", "The work boat brings track lengths", "boat"],
-		["lift", 2.0, "吊车放轨段", "The crane lays the lengths", "crane"],
-		["fasten", 2.0, "扣件一个个上紧", "The clips fastened one by one", "torque"],
-		["connect", 2.0, "架接触线", "The contact wire strung", "cable"],
-		["test", 1.0, "接驳车试跑一圈", "The shuttle makes a test run", "tester"]]},
+		# 123 号: the ring is the carousel of 109 号 (its drives, pins and slip ring), not track — and no
+		# contact wire anywhere (97 号 Q4)
+		["isolate", 1.0, "转盘断电，锁销全部插死", "The carousel's power off, every lock pin driven home", "bot"],
+		["remove", 2.0, "拆下坏掉的驱动", "The dead drives taken off", "cutter"],
+		["bring", 2.0, "施工艇运来驱动和锁销", "The work boat brings drives and pins", "boat"],
+		["lift", 2.0, "吊车把驱动放回底座", "The crane sets the drives on their mounts", "crane"],
+		["fasten", 2.0, "驱动底座和锁销座螺栓拧紧", "The drive mounts and pin housings bolted down", "torque"],
+		["connect", 2.0, "接上滑环电缆和冷却管", "The slip ring's cables and the coolant lines on", "cable"],
+		["test", 1.0, "转盘试转一格，锁销进出正常", "The carousel indexes one pitch; the pins go in and out", "tester"]]},
 	"dockyard": {"part": ["container", Vector2(2.2, 1.1)], "extra": ["crate", Vector2(1.0, 0.7)], "units": 3, "steps": [
 		["isolate", 1.0, "作业区封闭", "The work area closed", "bot"],
 		["remove", 1.0, "拆走损坏的设施", "The damaged fittings taken away", "cutter"],

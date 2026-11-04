@@ -172,8 +172,7 @@ static func _shipping() -> Dictionary:
 	var held: Dictionary = d.get("held", {})
 	if not held.is_empty():
 		lines.append(w("排队大船 %s · 下次开市可接", "QUEUED SHIP %s · NEXT MARKET") % str(held.get("reg", held.get("ship", ""))))
-	var fee := Port.tow_fee()
-	lines.append(w("拖运费 %s/单", "TOWING %s / JOB") % Pal.money(fee) if fee > 0.0 else w("拖运费已免", "TOWING WAIVED"))
+	lines.append(w("拖运费：派拖船时付，自家拖船待命时半价", "TOWING: PAID WHEN THE TUG GOES, HALF WITH YOUR OWN TUG"))
 	lines.append(w("作业艇停在 %s", "WORK BOAT AT %s") % WorkBoat.pad_name(str(d.get("boat_pad", "berth"))))
 	var value := w("%d 批在途", "%d IN TRANSIT") % (tr[0] + tr[1]) if tr[0] + tr[1] > 0 else w("无在途", "NONE MOVING")
 	if tr[0] + tr[1] > 0:

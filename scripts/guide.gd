@@ -164,7 +164,7 @@ func _at(service, path: String, name: String, purpose: String, n: int, of: int, 
 		s.button = ""
 	else:
 		s.title = w("飞到%s", "FLY TO THE %s") % name
-		s.text = w("跟着屏幕边上的箭头：上到中央枢纽，左边走廊进加工区（站台按 %s 可坐接驳车）。", "Follow the arrow at the screen's edge: up to the hub, left down the corridor into the processing district (%s at a stop calls the shuttle).") % Keys.label("use")
+		s.text = w("出船坞闸口就是拆船区站，按 %s 坐接驳车到加工区；也可以跟着屏幕边上的箭头飞过去。", "Out of the berth's gate is the salvage stop: %s calls the shuttle to the processing district; or follow the arrow at the screen's edge.") % Keys.label("use")
 		s.button = ""
 	return s
 
@@ -406,7 +406,10 @@ func _transit() -> Dictionary:
 	if bool(start.get("rode", false)):
 		return {"done": w("坐过一次接驳车了：任何站台按 E 都能叫车", "YOU HAVE RIDDEN IT: E AT ANY STOP CALLS IT"), "end": true}
 	var here: String = tram.near_station()
-	var st := {"n": 1, "of": 3, "target": Tram.station_at("ring"), "name": w("中央环站台", "HUB STOP"), "purpose": w("接驳车沿走廊轨道连通六区，比飞快", "The shuttle runs the corridors to every district"), "button": "", "action": ""}
+	# 123 号 (user 2026-11-04: "现在要求到中央转运环才能坐车，但我现在已经有拆船站的车了"): the
+	# nearest stop, which from the berth is the salvage district's stop right over its gate (97 号)
+	var to := nearest_stop(game)
+	var st := {"n": 1, "of": 3, "target": Tram.station_at(to), "name": _stop_name(to), "purpose": w("接驳车沿走廊轨道连通六区，比飞快", "The shuttle runs the corridors to every district"), "button": "", "action": ""}
 	if game.console_ui != null and is_instance_valid(game.console_ui) and game.console_ui.get("mode") == "tram":
 		st.n = 2
 		st.title = w("点一个要去的区", "PICK A DISTRICT")
@@ -417,9 +420,29 @@ func _transit() -> Dictionary:
 		st.title = w("按 %s 叫接驳车", "PRESS %s TO CALL THE SHUTTLE") % Keys.label("use")
 		st.text = st.purpose
 		return st
-	st.title = w("飞到中央环站台", "FLY TO THE HUB STOP")
-	st.text = w("从船坞顶上的闸口出去，沿青色航道往上。", "Out through the gate above the berth, up the cyan lane.")
+	st.title = w("飞到%s", "FLY TO THE %s") % st.name
+	st.text = w("从船坞顶上的闸口出去，站台就在闸口正上方。", "Out through the gate above the berth: the stop is right over it.") if to == "salvage" else w("跟着屏幕边上的箭头。", "Follow the arrow at the screen's edge.")
 	return st
+
+
+# the stop nearest the drone among those it can use (the berth's and the hub's from the start)
+static func nearest_stop(g) -> String:
+	var best := "salvage"
+	if g == null or g.get("drone") == null:
+		return best
+	var bd := INF
+	for z in Tram.found():
+		var dd: float = (g.drone.global_position as Vector2).distance_to(Tram.station_at(str(z)))
+		if dd < bd:
+			bd = dd
+			best = str(z)
+	return best
+
+
+func _stop_name(z: String) -> String:
+	if z == "ring":
+		return w("中央环站台", "HUB STOP")
+	return w("%s站", "%s STOP") % Port.name_of(z)
 
 
 # buying on the exchange: one seller's listing, a quantity, confirm

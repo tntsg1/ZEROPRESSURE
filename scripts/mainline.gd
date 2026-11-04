@@ -6,14 +6,16 @@ class_name Mainline
 # contracts, "wait" only shows progress. Chapter names and step lines are interface text;
 # Liang's words at a chapter's start and end are the author's (L_main_<id>_start / _done).
 
-const CHAPTERS := ["opening", "lights", "furnace", "trade", "steel", "industry", "berth88", "power_tug", "ring", "ark"]
+# 123 号 (user 2026-11-04 "先修拖船站"): the tug station before the 88 m berth — the rented tug tows
+# 44 m at most (72 号), so a bigger berth before it would wait for ships it cannot get
+const CHAPTERS := ["opening", "lights", "furnace", "trade", "steel", "industry", "power_tug", "berth88", "ring", "ark"]
 const NAMES := {
 	"opening": ["把开局那三艘漂流船拆掉", "STRIP THE THREE DRIFTING HULKS YOU STARTED WITH"],
 	"lights": ["修好船坞的照明", "GET THE BERTH'S LIGHTS WORKING"],
 	"furnace": ["修好熔炉和接碎料的网", "MEND THE FURNACE AND THE DEBRIS NET"],
 	"trade": ["修复贸易区，恢复交易", "REOPEN THE TRADE DISTRICT AND START SELLING"],
 	"steel": ["第一次卖出钢坯", "SELL STEEL BILLETS FOR THE FIRST TIME"],
-	"industry": ["修好加工区和货运区", "MEND THE PROCESSING AND CARGO DISTRICTS"],
+	"industry": ["修好货运区", "MEND THE CARGO DISTRICT"],
 	"berth88": ["把船坞扩到 88 米，能拆更大的船", "EXTEND THE BERTH TO 88 m FOR BIGGER SHIPS"],
 	"power_tug": ["修好动力区和拖船站", "MEND THE POWER DISTRICT AND THE TUG STATION"],
 	"ring": ["让中央转运环重新转起来", "GET THE TRANSFER RING TURNING AGAIN"],

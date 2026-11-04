@@ -47,9 +47,11 @@ func _run() -> void:
 	Career.data.exchange.trades.append({"id": "T-FIX", "buyer": "merchant_01", "seller": "company", "state": "delivered", "item": "steel_billet", "grade": 1, "quantity": 1.0, "price": 1000.0})
 	check(Mainline.chapter() == "industry" and Mainline.step().go == "guide:build:cargo", "billets sold: the cargo district next")
 	Career.data.port = {"salvage": 1, "trade": 1, "process": 1, "cargo": 1}
+	# 123 号 (user "先修拖船站"): power and the tug station before the 88 m berth
+	check(Mainline.chapter() == "power_tug", "then power and the tug station")
+	Career.data.port = {"salvage": 1, "trade": 1, "process": 1, "cargo": 1, "power": 1, "tug": 1}
 	check(Mainline.chapter() == "berth88" and Mainline.step().go == "guide:repair:berth88", "then the berth to 88 m")
 	Career.data.upgrades["berth88"] = true
-	check(Mainline.chapter() == "power_tug", "then power and the tug station")
 	Career.data.port = {"salvage": 1, "trade": 1, "process": 1, "cargo": 1, "power": 1, "tug": 1, "ring": 2}
 	check(Mainline.chapter() == "ark" and Mainline.step().go == "wait", "the ring restarted: the Ark waits for a later version")
 	g.queue_free()

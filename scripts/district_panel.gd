@@ -498,7 +498,6 @@ func _fill() -> void:
 			for a in TugYard.taken():
 				lines.append("%s  %s" % [str(a.id), {"towing": words("在路上", "ON THE WAY"), "arrived": words("泊位 %d" % (int(a.get("yard", 0)) + 1), "BERTH %d" % (int(a.get("yard", 0)) + 1)), "held": words("扣在港口", "HELD")}.get(str(a.state), str(a.state))])
 		"process":
-			lines.append("%s  ×%.2f" % [words("废料系数", "SCRAP FACTOR"), Port.scrap_k()])
 			for key in [["industrial_sort", words("分选批次", "SORTING BATCH")], ["industrial_heat", words("炉次", "HEAT")]]:
 				var b: Dictionary = d.get(key[0], {})
 				lines.append("%s  %s" % [key[1], _batch_state(b)])

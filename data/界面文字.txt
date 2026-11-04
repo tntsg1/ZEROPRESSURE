@@ -1970,7 +1970,7 @@
 英：The berth's repairs are on the terminal's BERTH page
 
 ============================================================
-# 五、拆船现场（船坞里）（1294 条）
+# 五、拆船现场（船坞里）（1295 条）
 # 拆船时屏幕上的一切：左上合同卡、工具栏、操作提示、测量读数、回收口和熔炉的牌子、结算飘字、无人机状态、图纸、小地图、作业艇、各种“现在不能这样做”的提示。
 # 玩家这时手很忙：字要一眼看懂，尽量短。
 ============================================================
@@ -4057,8 +4057,8 @@
 英：DEPLOYMENT RACK
 
 [gear:gear_mod_rack_d]
-中：多带一件部署工具（2 → 3）。
-英：Carries one more deployable tool (2 → 3).
+中：多带一件部署工具。
+英：Carries one more deployable tool.
 
 [gear:gear_needs_feat]
 中：需要工程成果「%s」
@@ -6876,6 +6876,10 @@
 英：%d ON THE SHELF
 
 [disposal_panel:_draw_sale:2]
+中：已卖 %d 样 · +%s
+英：%d SOLD · +%s
+
+[disposal_panel:_draw_sale:3]
 中：拖到这里卖 · 点已卖的东西放回
 英：DROP HERE TO SELL · CLICK ONE TO TAKE IT BACK
 
@@ -8916,8 +8920,8 @@
 英：FEE (TAKEN AT SETTLEMENT)
 
 [txt:tm_next_side]
-中：开工前按 4 打开「技能书」，选一项攒钱目标。设备商店备消耗品，船坞管理添设施；作业中也能在左侧两台电脑打开。
-英：Press 4 for the field manual and set a savings goal. Stock up at the shop and fit facilities in berth management. Both computers on the left also open these pages on site.
+中：开工前可以按 2 打开「船坞」修设施，按 3 打开「拆法与建设」学新拆法、修港区；带哪些部署工具，在开工时的出勤配装里选。
+英：Before you start: 2 opens BERTH to mend facilities, 3 opens METHODS & BUILD to learn methods and build the port; the tools you take are picked on the loadout page as the job starts.
 
 [txt:tm_next_go]
 中：开始下一单
@@ -10848,28 +10852,28 @@
 英：The whole grid: the district fully lit, base power for the ring.
 
 [gear:pt_salvage_1]
-中：修复拆船区的码头结构：船流回来一点。
-英：The salvage district's quays repaired: ships begin to come and go.
+中：修复拆船区的码头结构：贸易区可以开工了。
+英：The salvage district's quays repaired: the trade district can be built.
 
 [gear:pt_salvage_2]
 中：拆船区重开第二泊位的基座（第二泊位在终局版本启用）。
 英：The footing of a second berth (the berth itself comes with the final version).
 
 [gear:pt_process_1]
-中：加工区的粗炼线复工：废金属多卖 5%。
-英：The processing district's rough line restarts: scrap pays 5 % more.
+中：加工区复工：电弧炉、分选台和轧机可以用了。
+英：The processing district back at work: the arc furnace, the sorting line and the mill.
 
 [gear:pt_process_2]
-中：精炼线复工：废金属多卖 10%。
-英：The refining line restarts: scrap pays 10 % more.
+中：精炼线复工。
+英：The refining line restarts.
 
 [gear:pt_tug_1]
-中：拖船站修好一艘拖船：每单不再扣拖运费。
-英：One tug repaired: no more towing fee on a contract.
+中：自家拖船 TG-1 修好：泊位 2 个，能拖 88 m 的船；TG-1 待命时拖运费半价。
+英：Your own tug TG-1: two berths, ships up to 88 m; half the tow while TG-1 stands by.
 
 [gear:pt_tug_2]
-中：拖船站两艘拖船：大船进坞不再排队。
-英：Two tugs: big ships no longer queue.
+中：第二艘自家拖船 TG-2：泊位 4 个，船长不限。
+英：A second tug, TG-2: four berths, any length.
 
 [gear:pt_trade_1]
 中：贸易港重开一条航线：完整设备多卖 10%。
@@ -10880,12 +10884,12 @@
 英：The trade port open: equipment sells 20 % better, more three-star contracts.
 
 [gear:pt_ring_1]
-中：转运环前半圈点亮。
-英：The first half of the ring lit.
+中：中央转运环通电：剩下的两台驱动带着转盘慢慢转，各区之间开始转运货物。
+英：The ring powered: the two drives left turn the carousel slowly, and goods start moving between the districts.
 
 [gear:pt_ring_2]
-中：转运环重启：大型星舰可以进港（终局在下一版本）。
-英：The ring restarted: great ships may come in (the ending comes with the next version).
+中：装回四台驱动和冷却，转盘全速转：大型星舰可以进港（终局在下一版本）。
+英：All four drives and the coolers back: the carousel at full speed, and great ships may come in (the ending comes with the next version).
 
 [gear:pt_effect_power]
 中：动力区是高耗能设施的前提。
@@ -11757,35 +11761,35 @@
 中：等动力区 1 阶
 英：WAITS FOR STAGE 1
 
-[district_panel:_fill:19]
+[district_panel:_fill:18]
 中：设备售价系数
 英：EQUIPMENT PRICE FACTOR
 
-[district_panel:_fill:20]
+[district_panel:_fill:19]
 中：市场合同：%d 张
 英：MARKET OFFERS: %d
 
-[district_panel:_fill:21]
+[district_panel:_fill:20]
 中：我的挂单：%d 张 · 托管现金 %s
 英：MY ORDERS: %d · CASH %s
 
-[district_panel:_fill:22]
+[district_panel:_fill:21]
 中：仓库空着。
 英：THE WAREHOUSE IS EMPTY.
 
-[district_panel:_fill:23]
+[district_panel:_fill:22]
 中：未评级原料批次：%d
 英：UNGRADED BATCHES: %d
 
-[district_panel:_fill:24]
+[district_panel:_fill:23]
 中：出场部署槽：%d
 英：DEPLOY SLOTS: %d
 
-[district_panel:_fill:25]
+[district_panel:_fill:24]
 中：叉车 %d 台 · 搬运中 %d 趟
 英：FORKLIFTS %d · %d MOVES
 
-[district_panel:_fill:31]
+[district_panel:_fill:30]
 中：在手合同：
 英：CONTRACT IN HAND: 
 
@@ -14442,8 +14446,8 @@
 英：PRESS %s FOR THE %s
 
 [guide:_at:3]
-中：跟着屏幕边上的箭头：上到中央枢纽，左边走廊进加工区（站台按 %s 可坐接驳车）。
-英：Follow the arrow at the screen's edge: up to the hub, left down the corridor into the processing district (%s at a stop calls the shuttle).
+中：出船坞闸口就是拆船区站，按 %s 坐接驳车到加工区；也可以跟着屏幕边上的箭头飞过去。
+英：Out of the berth's gate is the salvage stop: %s calls the shuttle to the processing district; or follow the arrow at the screen's edge.
 
 [guide:_sort:2]
 中：整线加工：分选 → 线上化验 → 黑色料直接进电弧炉；有色料回仓库
@@ -14778,32 +14782,32 @@
 英：YOU HAVE RIDDEN IT: E AT ANY STOP CALLS IT
 
 [guide:_transit:5]
-中：中央环站台
-英：HUB STOP
-
-[guide:_transit:6]
 中：接驳车沿走廊轨道连通六区，比飞快
 英：The shuttle runs the corridors to every district
 
-[guide:_transit:7]
+[guide:_transit:6]
 中：点一个要去的区
 英：PICK A DISTRICT
 
-[guide:_transit:8]
+[guide:_transit:7]
 中：车会先开到你这一站接你。
 英：The car comes to your stop first.
 
-[guide:_transit:9]
+[guide:_transit:8]
 中：按 %s 叫接驳车
 英：PRESS %s TO CALL THE SHUTTLE
 
 [guide:_transit:10]
-中：飞到中央环站台
-英：FLY TO THE HUB STOP
+中：从船坞顶上的闸口出去，站台就在闸口正上方。
+英：Out through the gate above the berth: the stop is right over it.
 
 [guide:_transit:11]
-中：从船坞顶上的闸口出去，沿青色航道往上。
-英：Out through the gate above the berth, up the cyan lane.
+中：跟着屏幕边上的箭头。
+英：Follow the arrow at the screen's edge.
+
+[guide:_stop_name:1]
+中：中央环站台
+英：HUB STOP
 
 [guide:_trade:1]
 中：成交了：货会实际运进仓库，到了才能用
@@ -14971,8 +14975,8 @@
 英：SELL STEEL BILLETS FOR THE FIRST TIME
 
 [mainline:顶层:6]
-中：修好加工区和货运区
-英：MEND THE PROCESSING AND CARGO DISTRICTS
+中：修好货运区
+英：MEND THE CARGO DISTRICT
 
 [mainline:顶层:7]
 中：把船坞扩到 88 米，能拆更大的船
@@ -15100,18 +15104,14 @@
 英：QUEUED SHIP %s · NEXT MARKET
 
 [ops:_shipping:2]
-中：拖运费 %s/单
-英：TOWING %s / JOB
+中：拖运费：派拖船时付，自家拖船待命时半价
+英：TOWING: PAID WHEN THE TUG GOES, HALF WITH YOUR OWN TUG
 
 [ops:_shipping:3]
-中：拖运费已免
-英：TOWING WAIVED
-
-[ops:_shipping:4]
 中：作业艇停在 %s
 英：WORK BOAT AT %s
 
-[ops:_shipping:7]
+[ops:_shipping:6]
 中：进港 %d · 出港 %d
 英：INBOUND %d · OUTBOUND %d
 
@@ -15602,27 +15602,31 @@
 英：
 
 [works_plan:顶层:78]
-中：牵引电断开，轨道封锁
+中：转盘断电，锁销全部插死
 英：
 
 [works_plan:顶层:79]
-中：切掉坏轨段
+中：拆下坏掉的驱动
 英：
 
 [works_plan:顶层:80]
-中：施工艇运来轨段
+中：施工艇运来驱动和锁销
 英：
 
 [works_plan:顶层:81]
-中：吊车放轨段
+中：吊车把驱动放回底座
 英：
 
 [works_plan:顶层:82]
-中：扣件一个个上紧
+中：驱动底座和锁销座螺栓拧紧
+英：
+
+[works_plan:顶层:83]
+中：接上滑环电缆和冷却管
 英：
 
 [works_plan:顶层:84]
-中：接驳车试跑一圈
+中：转盘试转一格，锁销进出正常
 英：
 
 [works_plan:顶层:85]
@@ -27034,7 +27038,7 @@
 英：wrench (4); a strap cut taut whips
 
 ============================================================
-# 十五、短标签（四个字以内的按钮、栏目名、单位）（1496 条）
+# 十五、短标签（四个字以内的按钮、栏目名、单位）（1495 条）
 # 同样的字在很多界面出现时只列一次，「# 在」写了出现在哪些界面、共几处；改这里一条，所有这些地方一起改。
 # 这些字要短：按钮和栏目的宽度是按现在的字数排的，多一两个字可能放不下（合并后会跑超框检查）。
 ============================================================
@@ -30954,11 +30958,6 @@
 中：扣在港口
 英：HELD
 
-[short:774]
-# 在：各区业务终端（1 处）
-中：废料系数
-英：SCRAP FACTOR
-
 [short:775]
 # 在：各区业务终端（1 处）
 中：分选批次
@@ -31560,7 +31559,7 @@
 英：Need %s more
 
 [short:895]
-# 在：引导卡（1 处）
+# 在：引导卡（2 处）
 中：飞到%s
 英：FLY TO THE %s
 
@@ -31608,6 +31607,11 @@
 # 在：引导卡（1 处）
 中：去拆：%s
 英：Strip: %s
+
+[short:1516]
+# 在：引导卡（1 处）
+中：%s站
+英：%s STOP
 
 [short:905]
 # 在：引导卡（1 处）
@@ -34512,9 +34516,4 @@
 [short:1472]
 # 在：施工计划（1 处）
 中：开合十次
-英：
-
-[short:1473]
-# 在：施工计划（1 处）
-中：架接触线
 英：

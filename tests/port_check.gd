@@ -49,13 +49,13 @@ func _run() -> void:
 	Career.data = {}
 	Career.start_new()
 	var d := Career.data
-	check(Port.total_stages() == 0 and Port.tow_fee() == Port.TOW_FEE and Port.trade_k() == 1.0, "every district dark: towing fee due, no trade bonus")
+	check(Port.total_stages() == 0 and Port.tow_fee() == 0.0 and Port.trade_k() == 1.0, "every district dark: no trade bonus, and no towing fee at the settlement (123 号: paid when the tug goes)")
 	d.market = true
 	d.done = 3
 	d.money = 100000.0
 	d.active = {"id": "T-1", "ship": "gr7", "scope": "full", "fee": 0.0, "fee_paid": true, "kit": {}, "items": {}}
 	var res := Career.settle({"earned": 50000.0, "losses": 0.0, "rate": 0.9, "grade": 2, "time": 100.0, "fee": 0.0, "bonus": 0.0, "used": {}, "ops": {}})
-	check(float(res.tow) == Port.TOW_FEE and float(res.trade_bonus) == 0.0 and absf(float(Career.data.money) - (100000.0 + 50000.0 - Port.TOW_FEE)) < 1.0, "the towing fee came off the settlement (%d)" % int(Career.data.money))
+	check(float(res.tow) == 0.0 and float(res.trade_bonus) == 0.0 and absf(float(Career.data.money) - (100000.0 + 50000.0)) < 1.0, "123 号: no second towing fee off the settlement (%d)" % int(Career.data.money))
 	# ---- 2: stages
 	d = Career.data
 	d.parts = [

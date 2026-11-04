@@ -127,8 +127,10 @@ static func trade_k() -> float:
 	return 1.0 + 0.1 * stage("trade")
 
 
+# 123 号: the processing district's 5 / 10 % was never paid since scrap became ingots (64 号);
+# its stages open the furnace, the sorting line and the mill instead (pt_process_1)
 static func scrap_k() -> float:
-	return 1.0 + 0.05 * stage("process")
+	return 1.0
 
 
 static func power_ok(item: String) -> bool:
@@ -150,8 +152,10 @@ static func queues_big(career: Dictionary, length: float) -> bool:
 	return length > Dock.STANDARD and int(career.get("port", {}).get("tug", 0)) < 2
 
 
+# 123 号 (user 2026-11-04, 72 号's rule): the tow is paid once, when the tug is sent (TugYard /
+# ShipMarket.tow_terms, the company's own tug at half price); no second fee at the settlement
 static func tow_fee() -> float:
-	return 0.0 if stage("tug") >= 1 else TOW_FEE
+	return 0.0
 
 
 # the zones lit, for the backdrop: zone -> 0..2
