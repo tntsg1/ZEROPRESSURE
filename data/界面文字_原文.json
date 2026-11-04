@@ -3498,13 +3498,13 @@
 "line": 0
 },
 "txt:zone_equip_d": {
-"zh": "完整设备 · 从下方送入",
+"zh": "从下方接近，保持设备完整",
 "en": "WHOLE EQUIPMENT · FROM BELOW",
 "file": "txt.gd",
 "line": 0
 },
 "txt:zone_metal_d": {
-"zh": "废金属 · 甩进来或推进长槽",
+"zh": "将废金属送入投料槽",
 "en": "SCRAP · THROW IT OR USE THE TROUGH",
 "file": "txt.gd",
 "line": 0
@@ -4758,7 +4758,7 @@
 "line": 0
 },
 "txt:tb_manual": {
-"zh": "手动工具 · 按 1 / 3 / 4 回到自动",
+"zh": "手动工具 · 按 1、3、4 切换工具",
 "en": "MANUAL TOOL · 1 / 3 / 4 FOR AUTO",
 "file": "txt.gd",
 "line": 0
@@ -5796,14 +5796,14 @@
 "line": 0
 },
 "txt:auto_on_short": {
-"zh": "船坞机器：运行",
-"en": "MACHINES: RUNNING",
+"zh": "船坞机器 · 按 %s 停止",
+"en": "MACHINES: RUNNING  [%s]",
 "file": "txt.gd",
 "line": 0
 },
 "txt:auto_off": {
-"zh": "船坞机器：已停",
-"en": "MACHINES: STOPPED",
+"zh": "船坞机器 · 按 %s 启动",
+"en": "MACHINES: STOPPED  [%s]",
 "file": "txt.gd",
 "line": 0
 },
@@ -11688,8 +11688,8 @@
 "en_line": 1511
 },
 "hud:_main_line:1": {
-"zh": "主线 · 第 %d 章 · %s",
-"en": "MAIN LINE · CHAPTER %d · %s",
+"zh": "主线 · 第 %d 章｜%s",
+"en": "MAIN LINE · CHAPTER %d | %s",
 "file": "hud.gd",
 "line": 1524,
 "func": "_main_line",
@@ -11807,35 +11807,59 @@
 "func": "_draw_osd",
 "en_line": 511
 },
+"look:_draw_osd:12": {
+"zh": "机体状态 · UNIT",
+"en": "",
+"file": "look.gd",
+"line": 563,
+"func": "_draw_osd",
+"en_line": 0
+},
+"look:_draw_osd:13": {
+"zh": "工具与载荷",
+"en": "",
+"file": "look.gd",
+"line": 563,
+"func": "_draw_osd",
+"en_line": 0
+},
+"look:_draw_osd:14": {
+"zh": "导航扫描中",
+"en": "",
+"file": "look.gd",
+"line": 563,
+"func": "_draw_osd",
+"en_line": 0
+},
 "look:_region_line:3": {
 "zh": "激光 · 出光",
 "en": "LASER · FIRING",
 "file": "look.gd",
-"line": 622,
+"line": 625,
 "func": "_region_line",
-"en_line": 622
+"en_line": 625
 },
 "look:_region_line:4": {
 "zh": "激光 · 空切",
 "en": "LASER · OPEN AIR",
 "file": "look.gd",
-"line": 622,
+"line": 625,
 "func": "_region_line",
-"en_line": 622
+"en_line": 625
 },
 "look:_region_line:8": {
 "zh": "抓钩 · %.2f / %.1f t · %s",
 "en": "GRAPPLE · %.2f / %.1f t · %s",
 "file": "look.gd",
-"line": 626,
+"line": 629,
 "func": "_region_line",
-"en_line": 626
+"en_line": 629
 },
 "look:_unhandled_key_input:1": {
 "zh": "画面：新（91 号）",
 "en": "",
 "file": "look.gd",
-"line": 846,
+"line": 849,
 "func": "_unhandled_key_input",
 "en_line": 0
 },
@@ -11843,7 +11867,7 @@
 "zh": "画面：旧（对比用）",
 "en": "",
 "file": "look.gd",
-"line": 846,
+"line": 849,
 "func": "_unhandled_key_input",
 "en_line": 0
 },
@@ -17794,7 +17818,7 @@
 "en_line": 185
 },
 "gear:pt_access_gate": {
-"zh": "港区航道 ↑ 中央转运环",
+"zh": "港区航道 ↑ 通往中央转运环",
 "en": "PORT ACCESS ↑ CENTRAL HUB",
 "file": "gear_txt.gd",
 "line": 0
@@ -25102,15 +25126,15 @@
 "en_line": 393
 },
 "guide:_build:4": {
-"zh": "修%s %d 阶：可以开工",
-"en": "%s STAGE %d: READY",
+"zh": "开始建设%s（%s期）",
+"en": "BUILD %s, PART %s",
 "file": "guide.gd",
 "line": 394,
 "func": "_build",
 "en_line": 394
 },
 "guide:_build:5": {
-"zh": "点卡片上的按钮打开零压港建设页。",
+"zh": "点击任务卡上的按钮，打开港区建设菜单。",
 "en": "Open the port works with the button on this card.",
 "file": "guide.gd",
 "line": 394,
@@ -25526,7 +25550,7 @@
 "en_line": 13
 },
 "mainline:顶层:4": {
-"zh": "修好贸易区，开始卖东西",
+"zh": "修复贸易区，恢复交易",
 "en": "REOPEN THE TRADE DISTRICT AND START SELLING",
 "file": "mainline.gd",
 "line": 14,
@@ -25654,16 +25678,16 @@
 "en_line": 117
 },
 "mainline:step:2": {
-"zh": "施工队在修「%s」：%s·%s，还要约 %d 秒。",
-"en": "The crew is on %s: %s · %s, about %d s more.",
+"zh": "%s施工中 · %s · 剩余 %d 秒",
+"en": "%s UNDER WORKS · %s · %d s LEFT",
 "file": "mainline.gd",
 "line": 120,
 "func": "step",
 "en_line": 120
 },
 "mainline:step:3": {
-"zh": "施工队在修「%s」，还要约 %d 秒。",
-"en": "The crew is building %s: about %d s more.",
+"zh": "%s施工中 · 剩余 %d 秒",
+"en": "%s UNDER WORKS · %d s LEFT",
 "file": "mainline.gd",
 "line": 121,
 "func": "step",
@@ -26261,21 +26285,13 @@
 "func": "next_step",
 "en_line": 378
 },
-"works:name_of:1": {
-"zh": "%s（第 %d 期）",
-"en": "%s (part %d)",
-"file": "works.gd",
-"line": 39,
-"func": "name_of",
-"en_line": 39
-},
 "works:busy_text:1": {
 "zh": "施工队正在修「%s」%s，修完才能接下一项（还要约 %d 秒）。",
 "en": "The crew is on %s%s; one job at a time (about %d s left).",
 "file": "works.gd",
-"line": 46,
+"line": 52,
 "func": "busy_text",
-"en_line": 46
+"en_line": 52
 },
 "works_plan:顶层:6": {
 "zh": "接线 / 接管",
@@ -26446,7 +26462,7 @@
 "en_line": 0
 },
 "works_plan:顶层:28": {
-"zh": "拉起警戒线，船坞这一段停用",
+"zh": "切断供电，完成区域隔离。",
 "en": "",
 "file": "works_plan.gd",
 "line": 52,
@@ -26454,7 +26470,7 @@
 "en_line": 0
 },
 "works_plan:顶层:29": {
-"zh": "切掉锈穿的旧甲板，拖走",
+"zh": "切下损坏的旧甲板并运走。",
 "en": "",
 "file": "works_plan.gd",
 "line": 53,
@@ -26462,7 +26478,7 @@
 "en_line": 0
 },
 "works_plan:顶层:30": {
-"zh": "驳船运来整垛钢板",
+"zh": "铺设新的运输支撑结构。",
 "en": "",
 "file": "works_plan.gd",
 "line": 54,
@@ -26470,7 +26486,7 @@
 "en_line": 0
 },
 "works_plan:顶层:31": {
-"zh": "履带吊一块块吊上钢板、对位",
+"zh": "将设备模块吊装到指定位置。",
 "en": "",
 "file": "works_plan.gd",
 "line": 55,
@@ -26478,7 +26494,7 @@
 "en_line": 0
 },
 "works_plan:顶层:32": {
-"zh": "焊接机器人沿缝焊满",
+"zh": "完成机器人焊接作业。",
 "en": "",
 "file": "works_plan.gd",
 "line": 56,
@@ -26486,416 +26502,416 @@
 "en_line": 0
 },
 "works_plan:顶层:33": {
-"zh": "压上试重，看下挠",
+"zh": "施加载荷，检查结构下挠情况。",
 "en": "",
 "file": "works_plan.gd",
 "line": 57,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:34": {
+"works_plan:顶层:39": {
 "zh": "划出吊装禁区，旧吊机断电挂牌",
-"en": "",
-"file": "works_plan.gd",
-"line": 59,
-"func": "顶层",
-"en_line": 0
-},
-"works_plan:顶层:35": {
-"zh": "放下烂掉的旧吊臂段",
-"en": "",
-"file": "works_plan.gd",
-"line": 60,
-"func": "顶层",
-"en_line": 0
-},
-"works_plan:顶层:36": {
-"zh": "驳船运来新吊臂段和配重",
 "en": "",
 "file": "works_plan.gd",
 "line": 61,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:37": {
-"zh": "辅助吊车一节节立起吊臂",
+"works_plan:顶层:40": {
+"zh": "放下烂掉的旧吊臂段",
 "en": "",
 "file": "works_plan.gd",
 "line": 62,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:38": {
-"zh": "销轴装上，液压扳手拉紧螺栓",
+"works_plan:顶层:41": {
+"zh": "驳船运来新吊臂段和配重",
 "en": "",
 "file": "works_plan.gd",
 "line": 63,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:39": {
-"zh": "穿钢丝绳，接起升电缆",
+"works_plan:顶层:42": {
+"zh": "辅助吊车一节节立起吊臂",
 "en": "",
 "file": "works_plan.gd",
 "line": 64,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:40": {
-"zh": "吊 125% 试重",
+"works_plan:顶层:43": {
+"zh": "销轴装上，液压扳手拉紧螺栓",
 "en": "",
 "file": "works_plan.gd",
 "line": 65,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:41": {
-"zh": "伺服电源断开挂牌",
+"works_plan:顶层:44": {
+"zh": "穿钢丝绳，接起升电缆",
+"en": "",
+"file": "works_plan.gd",
+"line": 66,
+"func": "顶层",
+"en_line": 0
+},
+"works_plan:顶层:45": {
+"zh": "吊 125% 试重",
 "en": "",
 "file": "works_plan.gd",
 "line": 67,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:42": {
-"zh": "施工艇运来机械臂段",
-"en": "",
-"file": "works_plan.gd",
-"line": 68,
-"func": "顶层",
-"en_line": 0
-},
-"works_plan:顶层:43": {
-"zh": "吊车把臂段放上导轨",
+"works_plan:顶层:46": {
+"zh": "伺服电源断开挂牌",
 "en": "",
 "file": "works_plan.gd",
 "line": 69,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:44": {
-"zh": "导轨夹紧器拧到力矩",
+"works_plan:顶层:47": {
+"zh": "施工艇运来机械臂段",
 "en": "",
 "file": "works_plan.gd",
 "line": 70,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:45": {
-"zh": "接伺服电缆和编码器线",
+"works_plan:顶层:48": {
+"zh": "吊车把臂段放上导轨",
 "en": "",
 "file": "works_plan.gd",
 "line": 71,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:46": {
-"zh": "激光对中，空载走一遍",
+"works_plan:顶层:49": {
+"zh": "导轨夹紧器拧到力矩",
 "en": "",
 "file": "works_plan.gd",
 "line": 72,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:47": {
-"zh": "充电位断电挂牌",
+"works_plan:顶层:50": {
+"zh": "接伺服电缆和编码器线",
+"en": "",
+"file": "works_plan.gd",
+"line": 73,
+"func": "顶层",
+"en_line": 0
+},
+"works_plan:顶层:51": {
+"zh": "激光对中，空载走一遍",
 "en": "",
 "file": "works_plan.gd",
 "line": 74,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:48": {
-"zh": "施工艇运来装箱的搬运无人机",
-"en": "",
-"file": "works_plan.gd",
-"line": 75,
-"func": "顶层",
-"en_line": 0
-},
-"works_plan:顶层:49": {
-"zh": "托架放到停机位",
+"works_plan:顶层:52": {
+"zh": "充电位断电挂牌",
 "en": "",
 "file": "works_plan.gd",
 "line": 76,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:50": {
-"zh": "托架螺栓拧紧",
+"works_plan:顶层:53": {
+"zh": "施工艇运来装箱的搬运无人机",
 "en": "",
 "file": "works_plan.gd",
 "line": 77,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:51": {
-"zh": "接充电电缆",
+"works_plan:顶层:54": {
+"zh": "托架放到停机位",
 "en": "",
 "file": "works_plan.gd",
 "line": 78,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:53": {
-"zh": "回收口停机，闸门锁死",
-"en": "",
-"file": "works_plan.gd",
-"line": 81,
-"func": "顶层",
-"en_line": 0
-},
-"works_plan:顶层:54": {
-"zh": "切开卡死的旧闸门",
-"en": "",
-"file": "works_plan.gd",
-"line": 82,
-"func": "顶层",
-"en_line": 0
-},
 "works_plan:顶层:55": {
-"zh": "施工艇运来闸门框和液压站",
+"zh": "托架螺栓拧紧",
+"en": "",
+"file": "works_plan.gd",
+"line": 79,
+"func": "顶层",
+"en_line": 0
+},
+"works_plan:顶层:56": {
+"zh": "接充电电缆",
+"en": "",
+"file": "works_plan.gd",
+"line": 80,
+"func": "顶层",
+"en_line": 0
+},
+"works_plan:顶层:58": {
+"zh": "回收口停机，闸门锁死",
 "en": "",
 "file": "works_plan.gd",
 "line": 83,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:56": {
-"zh": "吊车把门框放进开口",
+"works_plan:顶层:59": {
+"zh": "切开卡死的旧闸门",
 "en": "",
 "file": "works_plan.gd",
 "line": 84,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:57": {
-"zh": "门框四周焊死",
+"works_plan:顶层:60": {
+"zh": "施工艇运来闸门框和液压站",
 "en": "",
 "file": "works_plan.gd",
 "line": 85,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:60": {
-"zh": "氮气吹扫，管线放空",
-"en": "",
-"file": "works_plan.gd",
-"line": 89,
-"func": "顶层",
-"en_line": 0
-},
 "works_plan:顶层:61": {
-"zh": "施工艇运来管段和阀组",
+"zh": "吊车把门框放进开口",
 "en": "",
 "file": "works_plan.gd",
-"line": 90,
+"line": 86,
 "func": "顶层",
 "en_line": 0
 },
 "works_plan:顶层:62": {
-"zh": "吊车把管段放上管架",
+"zh": "门框四周焊死",
+"en": "",
+"file": "works_plan.gd",
+"line": 87,
+"func": "顶层",
+"en_line": 0
+},
+"works_plan:顶层:65": {
+"zh": "氮气吹扫，管线放空",
 "en": "",
 "file": "works_plan.gd",
 "line": 91,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:63": {
-"zh": "法兰螺栓按力矩拧紧",
+"works_plan:顶层:66": {
+"zh": "施工艇运来管段和阀组",
 "en": "",
 "file": "works_plan.gd",
 "line": 92,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:64": {
-"zh": "轨道焊机焊接接头",
+"works_plan:顶层:67": {
+"zh": "吊车把管段放上管架",
 "en": "",
 "file": "works_plan.gd",
 "line": 93,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:65": {
-"zh": "打压试验，查漏",
+"works_plan:顶层:68": {
+"zh": "法兰螺栓按力矩拧紧",
 "en": "",
 "file": "works_plan.gd",
 "line": 94,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:66": {
-"zh": "高压侧断开、接地挂牌",
+"works_plan:顶层:69": {
+"zh": "轨道焊机焊接接头",
+"en": "",
+"file": "works_plan.gd",
+"line": 95,
+"func": "顶层",
+"en_line": 0
+},
+"works_plan:顶层:70": {
+"zh": "打压试验，查漏",
 "en": "",
 "file": "works_plan.gd",
 "line": 96,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:67": {
-"zh": "拆出烧毁的开关柜",
-"en": "",
-"file": "works_plan.gd",
-"line": 97,
-"func": "顶层",
-"en_line": 0
-},
-"works_plan:顶层:68": {
-"zh": "驳船运来变压器",
+"works_plan:顶层:71": {
+"zh": "高压侧断开、接地挂牌",
 "en": "",
 "file": "works_plan.gd",
 "line": 98,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:69": {
-"zh": "重型吊车把变压器放上基座",
+"works_plan:顶层:72": {
+"zh": "拆出烧毁的开关柜",
 "en": "",
 "file": "works_plan.gd",
 "line": 99,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:70": {
-"zh": "地脚螺栓拧紧",
+"works_plan:顶层:73": {
+"zh": "驳船运来变压器",
 "en": "",
 "file": "works_plan.gd",
 "line": 100,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:71": {
-"zh": "敷设高压电缆，接头熔接",
+"works_plan:顶层:74": {
+"zh": "重型吊车把变压器放上基座",
 "en": "",
 "file": "works_plan.gd",
 "line": 101,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:72": {
-"zh": "送电：变压器嗡嗡作响",
+"works_plan:顶层:75": {
+"zh": "地脚螺栓拧紧",
 "en": "",
 "file": "works_plan.gd",
 "line": 102,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:73": {
-"zh": "牵引电断开，轨道封锁",
+"works_plan:顶层:76": {
+"zh": "敷设高压电缆，接头熔接",
+"en": "",
+"file": "works_plan.gd",
+"line": 103,
+"func": "顶层",
+"en_line": 0
+},
+"works_plan:顶层:77": {
+"zh": "送电：变压器嗡嗡作响",
 "en": "",
 "file": "works_plan.gd",
 "line": 104,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:74": {
-"zh": "切掉坏轨段",
-"en": "",
-"file": "works_plan.gd",
-"line": 105,
-"func": "顶层",
-"en_line": 0
-},
-"works_plan:顶层:75": {
-"zh": "施工艇运来轨段",
+"works_plan:顶层:78": {
+"zh": "牵引电断开，轨道封锁",
 "en": "",
 "file": "works_plan.gd",
 "line": 106,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:76": {
-"zh": "吊车放轨段",
+"works_plan:顶层:79": {
+"zh": "切掉坏轨段",
 "en": "",
 "file": "works_plan.gd",
 "line": 107,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:77": {
-"zh": "扣件一个个上紧",
+"works_plan:顶层:80": {
+"zh": "施工艇运来轨段",
 "en": "",
 "file": "works_plan.gd",
 "line": 108,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:79": {
-"zh": "接驳车试跑一圈",
+"works_plan:顶层:81": {
+"zh": "吊车放轨段",
+"en": "",
+"file": "works_plan.gd",
+"line": 109,
+"func": "顶层",
+"en_line": 0
+},
+"works_plan:顶层:82": {
+"zh": "扣件一个个上紧",
 "en": "",
 "file": "works_plan.gd",
 "line": 110,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:80": {
-"zh": "作业区封闭",
+"works_plan:顶层:84": {
+"zh": "接驳车试跑一圈",
 "en": "",
 "file": "works_plan.gd",
 "line": 112,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:81": {
-"zh": "拆走损坏的设施",
-"en": "",
-"file": "works_plan.gd",
-"line": 113,
-"func": "顶层",
-"en_line": 0
-},
-"works_plan:顶层:82": {
-"zh": "驳船运来模块",
+"works_plan:顶层:85": {
+"zh": "作业区封闭",
 "en": "",
 "file": "works_plan.gd",
 "line": 114,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:83": {
-"zh": "吊车逐个吊装模块",
+"works_plan:顶层:86": {
+"zh": "拆走损坏的设施",
 "en": "",
 "file": "works_plan.gd",
 "line": 115,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:84": {
-"zh": "模块焊上基座",
+"works_plan:顶层:87": {
+"zh": "驳船运来模块",
 "en": "",
 "file": "works_plan.gd",
 "line": 116,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:85": {
-"zh": "接电和数据线",
+"works_plan:顶层:88": {
+"zh": "吊车逐个吊装模块",
 "en": "",
 "file": "works_plan.gd",
 "line": 117,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:顶层:86": {
-"zh": "整套试运行",
+"works_plan:顶层:89": {
+"zh": "模块焊上基座",
 "en": "",
 "file": "works_plan.gd",
 "line": 118,
 "func": "顶层",
 "en_line": 0
 },
-"works_plan:line:1": {
-"zh": "第 %d / %d 道：%s",
-"en": "STEP %d OF %d: %s",
+"works_plan:顶层:90": {
+"zh": "接电和数据线",
+"en": "",
 "file": "works_plan.gd",
-"line": 251,
+"line": 119,
+"func": "顶层",
+"en_line": 0
+},
+"works_plan:顶层:91": {
+"zh": "整套试运行",
+"en": "",
+"file": "works_plan.gd",
+"line": 120,
+"func": "顶层",
+"en_line": 0
+},
+"works_plan:line:1": {
+"zh": "第 %s 步：%s",
+"en": "STEP %s: %s",
+"file": "works_plan.gd",
+"line": 257,
 "func": "line",
-"en_line": 251
+"en_line": 257
 },
 "works_site:_draw:1": {
-"zh": "施工中 · %s · 还剩 %d 秒",
-"en": "BUILDING · %s · %d s LEFT",
+"zh": "%s｜施工中 · 剩余 %d 秒",
+"en": "%s | BUILDING · %d s LEFT",
 "file": "works_site.gd",
 "line": 100,
 "func": "_draw",
@@ -26910,15 +26926,15 @@
 "en_line": 216
 },
 "works_site:_draw_sign:1": {
-"zh": "施工中 · %s · %s · 还剩 %d 秒",
-"en": "BUILDING · %s · %s · %d s LEFT",
+"zh": "%s｜施工中 · %s · %s · 剩余 %d 秒",
+"en": "%s | BUILDING · %s · %s · %d s LEFT",
 "file": "works_site.gd",
 "line": 318,
 "func": "_draw_sign",
 "en_line": 318
 },
 "works_site:_draw_sign:2": {
-"zh": " · 设备 %.2f MW",
+"zh": " · 设备功率 %.2f MW",
 "en": " · %.2f MW",
 "file": "works_site.gd",
 "line": 320,
@@ -45056,9 +45072,9 @@
 "zh": "测量",
 "en": "MEASURE",
 "file": "look.gd",
-"line": 754,
+"line": 757,
 "func": "_job_bar",
-"en_line": 754
+"en_line": 757
 },
 "short:49": {
 "zh": "激光切割",
@@ -49586,15 +49602,15 @@
 "file": "txt.gd",
 "line": 0
 },
-"short:405": {
-"zh": "船坞全图",
+"short:1494": {
+"zh": "船坞地图",
 "en": "BERTH",
 "same": [
 "txt:minimap"
 ]
 },
 "txt:minimap": {
-"zh": "船坞全图",
+"zh": "船坞地图",
 "en": "BERTH",
 "file": "txt.gd",
 "line": 0
@@ -59388,15 +59404,15 @@
 "func": "_next_step_card",
 "en_line": 1655
 },
-"short:947": {
-"zh": "结束引导",
+"short:1495": {
+"zh": "退出引导",
 "en": "END GUIDE",
 "same": [
 "hud:_guide_keys:2"
 ]
 },
 "hud:_guide_keys:2": {
-"zh": "结束引导",
+"zh": "退出引导",
 "en": "END GUIDE",
 "file": "hud.gd",
 "line": 1505,
@@ -59448,14 +59464,29 @@
 "func": "_guide_keys",
 "en_line": 1511
 },
-"short:951": {
-"zh": "去做",
-"en": "GO",
+"short:1496": {
+"zh": "前往建设",
+"en": "BUILD",
 "same": [
 "hud:_guide_keys:9"
 ]
 },
 "hud:_guide_keys:9": {
+"zh": "前往建设",
+"en": "BUILD",
+"file": "hud.gd",
+"line": 1511,
+"func": "_guide_keys",
+"en_line": 1511
+},
+"short:951": {
+"zh": "去做",
+"en": "GO",
+"same": [
+"hud:_guide_keys:10"
+]
+},
+"hud:_guide_keys:10": {
 "zh": "去做",
 "en": "GO",
 "file": "hud.gd",
@@ -59513,9 +59544,9 @@
 "zh": "拉紧",
 "en": "TAUT",
 "file": "look.gd",
-"line": 625,
+"line": 628,
 "func": "_region_line",
-"en_line": 625
+"en_line": 628
 },
 "short:956": {
 "zh": "松",
@@ -59537,9 +59568,9 @@
 "zh": "松",
 "en": "SLACK",
 "file": "look.gd",
-"line": 625,
+"line": 628,
 "func": "_region_line",
-"en_line": 625
+"en_line": 628
 },
 "short:957": {
 "zh": "测量中",
@@ -59576,9 +59607,9 @@
 "zh": "作业中",
 "en": "WORKING",
 "file": "look.gd",
-"line": 628,
+"line": 631,
 "func": "_region_line",
-"en_line": 628
+"en_line": 631
 },
 "short:959": {
 "zh": "操作说明",
@@ -60272,9 +60303,9 @@
 "zh": "每分钟 %s",
 "en": "%s / MIN",
 "file": "look.gd",
-"line": 611,
+"line": 614,
 "func": "_region_line",
-"en_line": 611
+"en_line": 614
 },
 "short:1493": {
 "zh": "推力 %d%%",
@@ -60287,9 +60318,9 @@
 "zh": "推力 %d%%",
 "en": "THRUST %d%%",
 "file": "look.gd",
-"line": 615,
+"line": 618,
 "func": "_region_line",
-"en_line": 615
+"en_line": 618
 },
 "short:1003": {
 "zh": "超重",
@@ -60302,9 +60333,9 @@
 "zh": "超重",
 "en": "TOO HEAVY",
 "file": "look.gd",
-"line": 625,
+"line": 628,
 "func": "_region_line",
-"en_line": 625
+"en_line": 628
 },
 "short:1004": {
 "zh": "待命",
@@ -60317,33 +60348,9 @@
 "zh": "待命",
 "en": "READY",
 "file": "look.gd",
-"line": 629,
+"line": 632,
 "func": "_region_line",
-"en_line": 629
-},
-"short:1005": {
-"zh": "扫描中",
-"en": "SCANNING",
-"same": [
-"look:_region_line:11",
-"title_terminal:_draw:2"
-]
-},
-"look:_region_line:11": {
-"zh": "扫描中",
-"en": "SCANNING",
-"file": "look.gd",
-"line": 631,
-"func": "_region_line",
-"en_line": 631
-},
-"title_terminal:_draw:2": {
-"zh": "扫描中",
-"en": "SCANNING",
-"file": "title_terminal.gd",
-"line": 777,
-"func": "_draw",
-"en_line": 777
+"en_line": 632
 },
 "short:1006": {
 "zh": "作业",
@@ -60356,9 +60363,9 @@
 "zh": "作业",
 "en": "WORK",
 "file": "look.gd",
-"line": 754,
+"line": 757,
 "func": "_job_bar",
-"en_line": 754
+"en_line": 757
 },
 "short:1007": {
 "zh": "远航者",
@@ -66363,6 +66370,21 @@
 "func": "_draw",
 "en_line": 777
 },
+"short:1005": {
+"zh": "扫描中",
+"en": "SCANNING",
+"same": [
+"title_terminal:_draw:2"
+]
+},
+"title_terminal:_draw:2": {
+"zh": "扫描中",
+"en": "SCANNING",
+"file": "title_terminal.gd",
+"line": 777,
+"func": "_draw",
+"en_line": 777
+},
 "short:1393": {
 "zh": "只抓钢",
 "en": "STEEL ONLY",
@@ -67473,6 +67495,186 @@
 "func": "reason",
 "en_line": 54
 },
+"short:1497": {
+"zh": "%s（%s期）",
+"en": "%s (part %s)",
+"same": [
+"works:name_of:1"
+]
+},
+"works:name_of:1": {
+"zh": "%s（%s期）",
+"en": "%s (part %s)",
+"file": "works.gd",
+"line": 39,
+"func": "name_of",
+"en_line": 39
+},
+"short:1498": {
+"zh": "零",
+"en": "一",
+"same": [
+"works:cn_num:1"
+]
+},
+"works:cn_num:1": {
+"zh": "零",
+"en": "一",
+"file": "works.gd",
+"line": 45,
+"func": "cn_num",
+"en_line": 45
+},
+"short:1499": {
+"zh": "一",
+"en": "",
+"same": [
+"works:cn_num:2"
+]
+},
+"works:cn_num:2": {
+"zh": "一",
+"en": "",
+"file": "works.gd",
+"line": 45,
+"func": "cn_num",
+"en_line": 0
+},
+"short:1500": {
+"zh": "二",
+"en": "",
+"same": [
+"works:cn_num:3"
+]
+},
+"works:cn_num:3": {
+"zh": "二",
+"en": "",
+"file": "works.gd",
+"line": 45,
+"func": "cn_num",
+"en_line": 0
+},
+"short:1501": {
+"zh": "三",
+"en": "",
+"same": [
+"works:cn_num:4"
+]
+},
+"works:cn_num:4": {
+"zh": "三",
+"en": "",
+"file": "works.gd",
+"line": 45,
+"func": "cn_num",
+"en_line": 0
+},
+"short:1502": {
+"zh": "四",
+"en": "",
+"same": [
+"works:cn_num:5"
+]
+},
+"works:cn_num:5": {
+"zh": "四",
+"en": "",
+"file": "works.gd",
+"line": 45,
+"func": "cn_num",
+"en_line": 0
+},
+"short:1503": {
+"zh": "五",
+"en": "",
+"same": [
+"works:cn_num:6"
+]
+},
+"works:cn_num:6": {
+"zh": "五",
+"en": "",
+"file": "works.gd",
+"line": 45,
+"func": "cn_num",
+"en_line": 0
+},
+"short:1504": {
+"zh": "六",
+"en": "",
+"same": [
+"works:cn_num:7"
+]
+},
+"works:cn_num:7": {
+"zh": "六",
+"en": "",
+"file": "works.gd",
+"line": 45,
+"func": "cn_num",
+"en_line": 0
+},
+"short:1505": {
+"zh": "七",
+"en": "",
+"same": [
+"works:cn_num:8"
+]
+},
+"works:cn_num:8": {
+"zh": "七",
+"en": "",
+"file": "works.gd",
+"line": 45,
+"func": "cn_num",
+"en_line": 0
+},
+"short:1506": {
+"zh": "八",
+"en": "",
+"same": [
+"works:cn_num:9"
+]
+},
+"works:cn_num:9": {
+"zh": "八",
+"en": "",
+"file": "works.gd",
+"line": 45,
+"func": "cn_num",
+"en_line": 0
+},
+"short:1507": {
+"zh": "九",
+"en": "",
+"same": [
+"works:cn_num:10"
+]
+},
+"works:cn_num:10": {
+"zh": "九",
+"en": "",
+"file": "works.gd",
+"line": 45,
+"func": "cn_num",
+"en_line": 0
+},
+"short:1508": {
+"zh": "十",
+"en": "",
+"same": [
+"works:cn_num:11"
+]
+},
+"works:cn_num:11": {
+"zh": "十",
+"en": "",
+"file": "works.gd",
+"line": 45,
+"func": "cn_num",
+"en_line": 0
+},
 "short:1464": {
 "zh": "隔离",
 "en": "ISOLATE",
@@ -67563,18 +67765,93 @@
 "func": "顶层",
 "en_line": 12
 },
+"short:1509": {
+"zh": "拆除",
+"en": "",
+"same": [
+"works_plan:顶层:34"
+]
+},
+"works_plan:顶层:34": {
+"zh": "拆除",
+"en": "",
+"file": "works_plan.gd",
+"line": 59,
+"func": "顶层",
+"en_line": 0
+},
+"short:1510": {
+"zh": "安装",
+"en": "",
+"same": [
+"works_plan:顶层:35"
+]
+},
+"works_plan:顶层:35": {
+"zh": "安装",
+"en": "",
+"file": "works_plan.gd",
+"line": 59,
+"func": "顶层",
+"en_line": 0
+},
+"short:1511": {
+"zh": "吊装",
+"en": "",
+"same": [
+"works_plan:顶层:36"
+]
+},
+"works_plan:顶层:36": {
+"zh": "吊装",
+"en": "",
+"file": "works_plan.gd",
+"line": 59,
+"func": "顶层",
+"en_line": 0
+},
+"short:1512": {
+"zh": "焊接",
+"en": "",
+"same": [
+"works_plan:顶层:37"
+]
+},
+"works_plan:顶层:37": {
+"zh": "焊接",
+"en": "",
+"file": "works_plan.gd",
+"line": 59,
+"func": "顶层",
+"en_line": 0
+},
+"short:1513": {
+"zh": "压载测试",
+"en": "",
+"same": [
+"works_plan:顶层:38"
+]
+},
+"works_plan:顶层:38": {
+"zh": "压载测试",
+"en": "",
+"file": "works_plan.gd",
+"line": 59,
+"func": "顶层",
+"en_line": 0
+},
 "short:1470": {
 "zh": "试飞一圈",
 "en": "",
 "same": [
-"works_plan:顶层:52"
+"works_plan:顶层:57"
 ]
 },
-"works_plan:顶层:52": {
+"works_plan:顶层:57": {
 "zh": "试飞一圈",
 "en": "",
 "file": "works_plan.gd",
-"line": 79,
+"line": 81,
 "func": "顶层",
 "en_line": 0
 },
@@ -67582,14 +67859,14 @@
 "zh": "接液压管",
 "en": "",
 "same": [
-"works_plan:顶层:58"
+"works_plan:顶层:63"
 ]
 },
-"works_plan:顶层:58": {
+"works_plan:顶层:63": {
 "zh": "接液压管",
 "en": "",
 "file": "works_plan.gd",
-"line": 86,
+"line": 88,
 "func": "顶层",
 "en_line": 0
 },
@@ -67597,14 +67874,14 @@
 "zh": "开合十次",
 "en": "",
 "same": [
-"works_plan:顶层:59"
+"works_plan:顶层:64"
 ]
 },
-"works_plan:顶层:59": {
+"works_plan:顶层:64": {
 "zh": "开合十次",
 "en": "",
 "file": "works_plan.gd",
-"line": 87,
+"line": 89,
 "func": "顶层",
 "en_line": 0
 },
@@ -67612,14 +67889,14 @@
 "zh": "架接触线",
 "en": "",
 "same": [
-"works_plan:顶层:78"
+"works_plan:顶层:83"
 ]
 },
-"works_plan:顶层:78": {
+"works_plan:顶层:83": {
 "zh": "架接触线",
 "en": "",
 "file": "works_plan.gd",
-"line": 109,
+"line": 111,
 "func": "顶层",
 "en_line": 0
 }

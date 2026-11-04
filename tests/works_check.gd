@@ -34,7 +34,7 @@ func _run() -> void:
 	check(why == "" and Works.busy() and not Repair.done("lights") and absf(cash - float(Career.data.money) - Repair.price("lights", false)) < 0.01, "ordered: the whole price taken, the lights not usable yet (%s)" % why)
 	check(Works.order_repair("net_fix", false) != "" and not Repair.done("net_fix"), "one job at a time: a second order is refused")
 	# 82 号: the lights are built step by step — the card says which step
-	check(str(Mainline.step().get("text", "")).find("施工队在修") >= 0 and str(Mainline.step().get("text", "")).find("道") >= 0, "the main line says the crew is building, and at which step")
+	check(str(Mainline.step().get("text", "")).find("施工中") >= 0 and str(Mainline.step().get("text", "")).find("步：") >= 0, "the main line says the crew is building, and at which step")
 	# ---- survives a save
 	Career.load_or_new()
 	check(Works.busy() and str(Works.current().id) == "lights", "the job is still there after loading")

@@ -1502,13 +1502,13 @@ func _guide_keys() -> void:
 	if not on:
 		return
 	var r := _guide_rect(size())
-	guide_end.text = Ops.w("结束引导", "END GUIDE")
+	guide_end.text = Ops.w("退出引导", "END GUIDE")
 	# in the card's head row, clear of the title and its text (user 2026-10-26: they sat on the title)
 	guide_end.size = Vector2(104, 28)
 	guide_end.position = Vector2(r.end.x - 114, r.position.y + 6)
 	# user 2026-10-26: it said "打开交易行" whatever it opened — named by what it does
 	guide_act.text = {"starmap": Ops.w("打开星图", "STAR MAP"), "clients": Ops.w("打开客户", "CLIENTS"), "feed": Ops.w("打开交易行", "EXCHANGE"),
-		"exchange": Ops.w("打开交易行", "EXCHANGE"), "contracts": Ops.w("打开合同", "CONTRACTS"), "repair": Ops.w("打开船坞修缮", "REPAIRS")}.get(str(st.get("action", "")), Ops.w("去做", "GO"))
+		"exchange": Ops.w("打开交易行", "EXCHANGE"), "contracts": Ops.w("打开合同", "CONTRACTS"), "repair": Ops.w("打开船坞修缮", "REPAIRS")}.get(str(st.get("action", "")), Ops.w("前往建设", "BUILD") if str(st.get("action", "")).begins_with("build") else Ops.w("去做", "GO"))
 	guide_act.reset_size()
 	guide_act.position = Vector2(r.end.x - 124 - guide_act.size.x, r.position.y + 6)
 
@@ -1521,7 +1521,7 @@ func _main_line(s: Vector2) -> void:
 	var r := _main_rect()
 	UI.panel(c, r, 0.9)
 	c.draw_rect(Rect2(r.position + Vector2(8, 10), Vector2(3, r.size.y - 20)), UiSkin.ACCENT)
-	_text(Ops.w("主线 · 第 %d 章 · %s", "MAIN LINE · CHAPTER %d · %s") % [Mainline.index(id), Mainline.name_of(id)], r.position + Vector2(16, 24), 14, Pal.heat(0.95, 1.3), font_b, -1)
+	_text(Ops.w("主线 · 第 %d 章｜%s", "MAIN LINE · CHAPTER %d | %s") % [Mainline.index(id), Mainline.name_of(id)], r.position + Vector2(16, 24), 14, Pal.heat(0.95, 1.3), font_b, -1)
 	c.draw_multiline_string(font, r.position + Vector2(16, 50), str(_main().step.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 130.0, 15, 2, Pal.ink(0.9))
 
 
@@ -1617,7 +1617,7 @@ func _machines(s: Vector2) -> void:
 	var h := 40.0 + (44.0 if not ps.is_empty() else 0.0)
 	UI.panel(c, Rect2(x - 250, y - 26, 268, h), 0.82)
 	var col := Pal.heat(0.9, 1.2) if g.auto_paused else Pal.ink(0.7)
-	_text(g.txt("auto_off" if g.auto_paused else "auto_on_short") + "  [%s]" % Keys.label("auto"), Vector2(x, y), 13, col, font, 1)
+	_text(g.txt("auto_off" if g.auto_paused else "auto_on_short") % Keys.label("auto"), Vector2(x, y), 13, col, font, 1)
 	if not ps.is_empty():
 		_text(ps[0] + "  [%s]" % Keys.label("plan"), Vector2(x, y + 22), 13, Pal.ink(0.5), font, 1)
 		var wait: bool = g.plan.running and g.plan.wait != ""

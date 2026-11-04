@@ -56,7 +56,7 @@ func _run() -> void:
 	var j := Works.current()
 	check(why == "" and str(j.get("id", "")) == "lights" and is_equal_approx(float(j.total), 50.0), "lights ordered: the job takes its 50 s, not the price band's %d s (%s)" % [int(Works.duration(Repair.price("lights", false))), why])
 	check(not g.has_upgrade("lights"), "not the berth's until it is built")
-	check(WorksPlan.line(j).contains("第 1 / 7 道") and WorksPlan.line(j).contains("隔离"), "it starts at step 1: %s" % WorksPlan.line(j))
+	check(WorksPlan.line(j).contains("第 1/7 步") and WorksPlan.line(j).contains("隔离"), "it starts at step 1: %s" % WorksPlan.line(j))
 	check(Mainline.step().text.contains("还要约") and Mainline.step().text.contains("开终端时停"), "the main-line card says the step, the time left and what stops it: %s" % Mainline.step().text)
 	# ---- the steps in order, the old part gone once it is off
 	await _shot("lights", "isolate", 0.5, "works_lights_1_isolate_zh")
@@ -83,7 +83,7 @@ func _run() -> void:
 	await _shot("lights", "fasten", 0.7, "works_lights_5_fasten_zh")
 	await _shot("lights", "connect", 0.7, "works_lights_6_connect_zh")
 	await _shot("lights", "test", 0.8, "works_lights_7_test_zh")
-	check(WorksPlan.line(Works.current()).contains("7 / 7"), "the last step is the test run")
+	check(WorksPlan.line(Works.current()).contains("7/7"), "the last step is the test run")
 	# ---- a save and load mid-job picks up at the step
 	var saved: Dictionary = Career.data.duplicate(true)
 	Career.data = saved.duplicate(true)

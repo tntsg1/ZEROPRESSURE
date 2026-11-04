@@ -36,8 +36,14 @@ static func busy() -> bool:
 
 static func name_of(job: Dictionary) -> String:
 	if str(job.get("kind", "")) == "port":
-		return w("%s（第 %d 期）", "%s (part %d)") % [Port.name_of(str(job.zone)), int(job.stage)]
+		return w("%s（%s期）", "%s (part %s)") % [Port.name_of(str(job.zone)), cn_num(int(job.stage)) if Txt.zh else str(int(job.stage))]
 	return Repair.name_of(str(job.get("id", "")))
+
+
+# 1 -> 一 (user 2026-11-04: "拆船区（一期）")
+static func cn_num(n: int) -> String:
+	var d := ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
+	return d[n] if n >= 0 and n <= 10 else str(n)
 
 
 static func busy_text() -> String:

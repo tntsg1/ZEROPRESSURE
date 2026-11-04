@@ -97,7 +97,7 @@ func _draw() -> void:
 	# the sign: what is being built, the time left, a bar
 	var left := float(job.get("left", 0.0))
 	var total := maxf(1.0, float(job.get("total", 1.0)))
-	var txt := Ops.w("施工中 · %s · 还剩 %d 秒", "BUILDING · %s · %d s LEFT") % [Works.name_of(job), int(ceil(left))]
+	var txt := Ops.w("%s｜施工中 · 剩余 %d 秒", "%s | BUILDING · %d s LEFT") % [Works.name_of(job), int(ceil(left))]
 	var tw := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 28.0
 	var r := Rect2(at + Vector2(-tw * 0.5, -4.2 * M - 40.0), Vector2(tw, 40.0))
 	draw_style_box(UiSkin.box("panel", 1.0), r)
@@ -315,9 +315,9 @@ func _draw_sign(job: Dictionary, st: Vector2) -> void:
 	var M := Geom.M
 	var list := WorksPlan.steps(str(job.id))
 	var a := WorksPlan.at(job)
-	var head := Ops.w("施工中 · %s · %s · 还剩 %d 秒", "BUILDING · %s · %s · %d s LEFT") % [Works.name_of(job), WorksPlan.line(job), int(ceil(float(job.get("left", 0.0))))]
+	var head := Ops.w("%s｜施工中 · %s · %s · 剩余 %d 秒", "%s | BUILDING · %s · %s · %d s LEFT") % [Works.name_of(job), WorksPlan.count(job), WorksPlan.short(str(job.id), str(a[1])), int(ceil(float(job.get("left", 0.0))))]
 	if not WorksPlan.PLANS.has(str(job.id)):
-		head += Ops.w(" · 设备 %.2f MW", " · %.2f MW") % WorksPlan.power(job)
+		head += Ops.w(" · 设备功率 %.2f MW", " · %.2f MW") % WorksPlan.power(job)
 	var wdt := maxf(font.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 28.0, 300.0)
 	var hgt := 44.0 + 19.0 * list.size()
 	# right of the job and above it: the work boat comes in from the left
@@ -329,7 +329,7 @@ func _draw_sign(job: Dictionary, st: Vector2) -> void:
 		var done_k := k < int(a[0])
 		var now := k == int(a[0])
 		var col := UiSkin.ACCENT if now else (Pal.ink(0.75) if done_k else Pal.ink(0.4))
-		draw_string(font, Vector2(r.position.x + 14, y), ("✓ " if done_k else ("▶ " if now else "· ")) + WorksPlan.step_name(str(list[k][0])) + "  " + str(list[k][2] if Txt.zh else list[k][3]), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 24, 12, col)
+		draw_string(font, Vector2(r.position.x + 14, y), ("✓ " if done_k else ("▶ " if now else "· ")) + WorksPlan.step_name(str(list[k][0]), str(job.id)) + "  " + str(list[k][2] if Txt.zh else list[k][3]), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 24, 12, col)
 	var bar := Rect2(r.position + Vector2(14, 29), Vector2(r.size.x - 28, 4))
 	draw_style_box(UiSkin.box("sunk", 1.0), bar)
 	var left := float(job.get("left", 0.0))

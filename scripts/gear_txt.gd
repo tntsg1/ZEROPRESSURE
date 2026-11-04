@@ -251,7 +251,7 @@ const S := {
 	"plan_step_haul": ["搬运", "HAUL"],
 	# Zero Pressure Port (scripts/port.gd)
 	"pt_power": ["动力区", "POWER DISTRICT"],
-	"pt_access_gate": ["港区航道 ↑ 中央转运环", "PORT ACCESS ↑ CENTRAL HUB"],
+	"pt_access_gate": ["港区航道 ↑ 通往中央转运环", "PORT ACCESS ↑ CENTRAL HUB"],
 	"pt_access_terminal": ["工程台", "ENGINEERING"],
 	"pt_console_business": ["业务终端", "BUSINESS CONSOLE"],
 	"boat_board": ["[%s] 进入挂架 · 驾驶作业艇", "[%s] INTO THE RACK · PILOT THE BOAT"],

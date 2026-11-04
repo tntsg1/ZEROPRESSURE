@@ -49,12 +49,14 @@ const PLANS := {
 const MACHINE_MW := {"bot": 0.05, "cutter": 0.3, "boat": 0.2, "crane": 0.6, "welder": 0.4, "torque": 0.1, "cable": 0.2, "survey": 0.02, "tester": 0.3, "purge": 0.08}
 const FAMILY := {
 	"structure": {"part": ["crate", Vector2(2.4, 0.6)], "extra": ["container", Vector2(2.0, 1.0)], "units": 5, "steps": [
-		["isolate", 1.0, "拉起警戒线，船坞这一段停用", "The bay cordoned off and taken out of use", "bot"],
-		["remove", 2.0, "切掉锈穿的旧甲板，拖走", "The rusted-through deck cut out and towed off", "cutter"],
-		["bring", 2.0, "驳船运来整垛钢板", "The barge brings a stack of plate", "boat"],
-		["lift", 3.0, "履带吊一块块吊上钢板、对位", "The crawler crane sets the plates one by one", "crane"],
-		["fasten", 3.0, "焊接机器人沿缝焊满", "The welding robots run the seams", "welder"],
-		["test", 1.0, "压上试重，看下挠", "A test load on; the deflection read", "tester"]]},
+		["isolate", 1.0, "切断供电，完成区域隔离。", "The bay cordoned off and taken out of use", "bot"],
+		["remove", 2.0, "切下损坏的旧甲板并运走。", "The rusted-through deck cut out and towed off", "cutter"],
+		["bring", 2.0, "铺设新的运输支撑结构。", "The barge brings a stack of plate", "boat"],
+		["lift", 3.0, "将设备模块吊装到指定位置。", "The crawler crane sets the plates one by one", "crane"],
+		["fasten", 3.0, "完成机器人焊接作业。", "The welding robots run the seams", "welder"],
+		["test", 1.0, "施加载荷，检查结构下挠情况。", "A test load on; the deflection read", "tester"]],
+		# user 2026-11-04: this family's own step names, and the short word the progress lines use
+		"names": {"remove": "拆除", "bring": "安装", "lift": "吊装", "fasten": "焊接"}, "short": {"test": "压载测试"}},
 	"crane": {"part": ["hook", Vector2(1.0, 1.2)], "extra": ["drum", Vector2(1.4, 1.0)], "units": 4, "steps": [
 		["isolate", 1.0, "划出吊装禁区，旧吊机断电挂牌", "The lift zone marked off; the old crane locked out", "bot"],
 		["remove", 2.0, "放下烂掉的旧吊臂段", "The rotten jib sections let down", "cutter"],
@@ -191,7 +193,11 @@ static func total(id: String) -> float:
 	return s
 
 
-static func step_name(key: String) -> String:
+static func step_name(key: String, id := "") -> String:
+	if Txt.zh and id != "":
+		var n: Dictionary = spec(id).get("names", {})
+		if n.has(key):
+			return str(n[key])
 	return NAMES.get(key, [key, key])[0 if Txt.zh else 1]
 
 
@@ -243,12 +249,27 @@ static func off(id: String) -> bool:
 	return false
 
 
-# "第 3 / 7 道：运来新件"
+# "第 3/7 步：运来新件" (user 2026-11-04: 步, and a family's short word for the step if it has one)
 static func line(job: Dictionary) -> String:
 	var a := at(job)
 	if int(a[0]) < 0:
 		return ""
-	return w("第 %d / %d 道：%s", "STEP %d OF %d: %s") % [int(a[0]) + 1, steps(str(job.id)).size(), step_name(str(a[1]))]
+	return w("第 %s 步：%s", "STEP %s: %s") % [count(job), short(str(job.id), str(a[1]))]
+
+
+# "6/6"
+static func count(job: Dictionary) -> String:
+	var a := at(job)
+	return "%d/%d" % [int(a[0]) + 1, steps(str(job.id)).size()] if int(a[0]) >= 0 else ""
+
+
+# the step as the progress lines say it: the family's short word, else the step's name
+static func short(id: String, key: String) -> String:
+	if Txt.zh:
+		var s: Dictionary = spec(id).get("short", {})
+		if s.has(key):
+			return str(s[key])
+	return step_name(key, id)
 
 
 static func doing(job: Dictionary) -> String:

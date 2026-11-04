@@ -5343,7 +5343,7 @@ func toggle_auto() -> void:
 			h.halt()
 		if crane != null:
 			crane.halt()
-	say("auto_off" if auto_paused else "auto_on", drone.global_position + Vector2(0, -44))
+	say("auto_off" if auto_paused else "auto_on", drone.global_position + Vector2(0, -44), Keys.label("auto"))
 	sfx.play("switch")
 
 

@@ -11,7 +11,7 @@ const NAMES := {
 	"opening": ["把开局那三艘漂流船拆掉", "STRIP THE THREE DRIFTING HULKS YOU STARTED WITH"],
 	"lights": ["修好船坞的照明", "GET THE BERTH'S LIGHTS WORKING"],
 	"furnace": ["修好熔炉和接碎料的网", "MEND THE FURNACE AND THE DEBRIS NET"],
-	"trade": ["修好贸易区，开始卖东西", "REOPEN THE TRADE DISTRICT AND START SELLING"],
+	"trade": ["修复贸易区，恢复交易", "REOPEN THE TRADE DISTRICT AND START SELLING"],
 	"steel": ["第一次卖出钢坯", "SELL STEEL BILLETS FOR THE FIRST TIME"],
 	"industry": ["修好加工区和货运区", "MEND THE PROCESSING AND CARGO DISTRICTS"],
 	"berth88": ["把船坞扩到 88 米，能拆更大的船", "EXTEND THE BERTH TO 88 m FOR BIGGER SHIPS"],
@@ -117,8 +117,8 @@ static func step(id: String = "") -> Dictionary:
 			return {"text": w("施工暂停：无人机在吊装区（%d m 内）。飞远些就接着干（还要约 %d 秒）。", "WORK STOPPED: THE DRONE IS IN THE LIFT ZONE (%d m). MOVE AWAY (~%d s LEFT).") % [int(Works.LOCKOUT_M), int(ceil(float(wj.get("left", 0.0))))], "go": "wait"}
 		if WorksPlan.at(wj)[0] >= 0:
 			# 82 号: which step the crew is on, and that it can be watched
-			return {"text": w("施工队在修「%s」：%s·%s，还要约 %d 秒。", "The crew is on %s: %s · %s, about %d s more.") % [Works.name_of(wj), WorksPlan.line(wj), WorksPlan.doing(wj), int(ceil(float(wj.get("left", 0.0))))], "go": "wait"}
-		return {"text": w("施工队在修「%s」，还要约 %d 秒。", "The crew is building %s: about %d s more.") % [Works.name_of(Works.current()), int(ceil(float(Works.current().get("left", 0.0))))], "go": "wait"}
+			return {"text": w("%s施工中 · %s · 剩余 %d 秒", "%s UNDER WORKS · %s · %d s LEFT") % [Works.name_of(wj), WorksPlan.line(wj), int(ceil(float(wj.get("left", 0.0))))], "go": "wait"}
+		return {"text": w("%s施工中 · 剩余 %d 秒", "%s UNDER WORKS · %d s LEFT") % [Works.name_of(Works.current()), int(ceil(float(Works.current().get("left", 0.0))))], "go": "wait"}
 	# 80 号: a new career's first half hour says its own next step
 	Onboard.finish_if_done()
 	var ob := Onboard.step()

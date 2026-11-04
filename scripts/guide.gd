@@ -391,7 +391,7 @@ func _build() -> Dictionary:
 	if node.get("ready", false):
 		if _term(5):
 			return _card(2, 2, w("按『%s』或『%s』修%s", "PRESS %s OR %s FOR THE %s") % [Txt.t("rp_fix_parts"), Txt.t("rp_fix_cash"), Port.name_of(best)], Port.desc_of(best, Port.stage(best) + 1), "", Txt.t("rp_fix_parts"))
-		return _card(1, 2, w("修%s %d 阶：可以开工", "%s STAGE %d: READY") % [Port.name_of(best), Port.stage(best) + 1], w("点卡片上的按钮打开零压港建设页。", "Open the port works with the button on this card."), "build:" + best)
+		return _card(1, 2, w("开始建设%s（%s期）", "BUILD %s, PART %s") % [Port.name_of(best), Works.cn_num(Port.stage(best) + 1) if Txt.zh else str(Port.stage(best) + 1)], w("点击任务卡上的按钮，打开港区建设菜单。", "Open the port works with the button on this card."), "build:" + best)
 	return _card(1, 2, w("修%s %d 阶还缺：%s", "%s STAGE %d NEEDS: %s") % [Port.name_of(best), Port.stage(best) + 1, why], w("接合同攒零件、结构吨和钱。", "Take jobs for parts, structure and money."), "contracts")
 
 

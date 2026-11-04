@@ -558,6 +558,9 @@ func _draw_osd() -> void:
 		var col := Color(1, 1, 1, 0.3 + 0.5 * k).lerp(Color(hot.r, hot.g, hot.b, 0.95), k * 0.6)
 		_brackets(c, r.grow(1.0 + 4.0 * k), 12.0 + 6.0 * k, col, 1.2 + 0.6 * k)
 		var label: String = names[key][0] + "  ·  " + names[key][1]
+		# user 2026-11-04: these three in the player's words (the English stays as it was)
+		if Txt.zh and key in ["unit", "payload", "nav"]:
+			label = {"unit": "机体状态 · UNIT", "payload": "工具与载荷", "nav": "导航扫描中"}[key]
 		var above: bool = r.position.y > vs.y * 0.5
 		var lp := Vector2(r.position.x + 4.0, r.position.y - 12.0) if above else Vector2(r.position.x + 4.0, r.end.y + 22.0)
 		var extra := _region_line(key)
@@ -628,7 +631,7 @@ func _region_line(key: String) -> String:
 				return Ops.w("作业中", "WORKING")
 			return Ops.w("待命", "READY")
 		"nav":
-			return Ops.w("扫描中", "SCANNING")
+			return "" if Txt.zh else "SCANNING"
 	return ""
 
 
