@@ -548,7 +548,8 @@ func ending_key(k: int) -> void:
 
 
 func _input(ev: InputEvent) -> void:
-	if game == null:
+	# the settlement's second page (disposal_panel.gd) sits over the ending screen: its clicks are its own
+	if game == null or game.get("disposal_ui") != null:
 		return
 	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
 		if game.contract_open and card_t > 0.35:

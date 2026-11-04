@@ -30,7 +30,7 @@ func _ready() -> void:
 
 
 func _input(ev: InputEvent) -> void:
-	if game == null or game.story == null:
+	if game == null or game.story == null or game.get("disposal_ui") != null:
 		return
 	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
 		if game.state == "ending" and game.story.phase in ["recording", "closing", "chapter", "next"]:
