@@ -712,4 +712,4 @@
 ## 2026-11-04 回收整理页点什么都没反应
 - [x] 用户：“左边点卖也卖不了，放到右边全部转移或全部卖出也弄不了”。原因：结算单（hud.ending）还在回收整理页后面，hud.gd 的 _input 在结算时把每一下左键都吞掉（set_input_as_handled），页面的 _gui_input 一次都收不到；disposal_check 直接调函数，所以没测出来
 - [x] 修：回收整理页开着时 hud.gd / story_hud.gd 的 _input 不再处理点击；新测试 tests/disposal_click_check.gd 用 Viewport.push_input 走真实点击（卡片“卖”、点卡入库、转移全部、Ctrl+Z、全部卖出）8 项全过，修前 5 项失败；截图 tests/out/disposal_click.png
-- [ ] 回收物超过 9 张时第 4 行卡片压到“直接卖出”条上（GR-7 一单 12 张）：缩卡 / 滚动 / 分页待用户定（Jev 选滚动 0.61，置信度 0.48 不够）
+- [x] 回收物超过 9 张时第 4 行卡片压到“直接卖出”条上（GR-7 一单 12 张）：用户定“上下滚动”。卡片区单独裁剪、滚轮/拖滚动条/PageUp/PageDown 翻，边缘渐隐，下方“↓ 还有 N 样”；看不全的卡不接“卖”按钮；全部卖出时卖出条上的小块变窄不出界，旁边写“已卖 N 样 · +$”；测试 14 项全过，截图 tests/out/disposal_scroll.png、disposal_sold_all.png

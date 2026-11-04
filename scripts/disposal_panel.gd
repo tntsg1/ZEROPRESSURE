@@ -55,6 +55,13 @@ var _gear_back: Array = []           # types that came home
 var _gear_lost: Array = []           # [type, why key]
 var _integrity := 100.0
 var _fluid := 0.0
+# 2026-11-04 (user: "上下滚动"): the cards still to sort scroll when they outgrow their column
+# (a GR-7 job brings twelve), instead of running into the sale strip
+var scroll := 0.0
+var _bar_drag := -1.0                # the scrollbar's thumb held: where on it it was grabbed
+var _clip: Control                   # the cards still to sort, drawn clipped to their view
+var _over: Control                   # the card being dragged, over everything
+const WHEEL := 95.0
 
 
 func w(zh: String, en: String) -> String:
@@ -68,6 +75,16 @@ func _ready() -> void:
 	font = Fonts.get_font("Regular")
 	font_b = Fonts.get_font("Medium")
 	font_s = Fonts.get_font("SemiBold")
+	_clip = Control.new()
+	_clip.clip_contents = true
+	_clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_clip.draw.connect(_draw_clipped)
+	add_child(_clip)
+	_over = Control.new()
+	_over.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_over.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_over.draw.connect(_draw_over)
+	add_child(_over)
 	d = Disposal.pending()
 	want = Disposal.wanted()
 	metal = "keep"
@@ -314,24 +331,65 @@ func _card_w() -> float:
 	return floorf((_left_rect().size.x - GAP * 2.0) / 3.0)
 
 
+# where the cards still to sort are seen: between their heading and the line under them
+func _view_rect() -> Rect2:
+	var lr := _left_rect()
+	var top := _cards_top() - 6.0
+	return Rect2(lr.position.x - 4.0, top, lr.size.x + 8.0, lr.end.y - 26.0 - top)
+
+
+func _grid_h() -> float:
+	var k := 0
+	for it in items:
+		if str(it.place) in ["left", "fixed"]:
+			k += 1
+	return maxf(0.0, ceilf(k / 3.0) * (CARD_H + GAP) - GAP)
+
+
+func _scroll_max() -> float:
+	return maxf(0.0, _grid_h() + 12.0 - _view_rect().size.y)
+
+
+func _bar_track() -> Rect2:
+	var v := _view_rect()
+	return Rect2(v.end.x + 6.0, v.position.y + 6.0, 5.0, v.size.y - 12.0)
+
+
+func _bar_thumb() -> Rect2:
+	var tr := _bar_track()
+	var mx := _scroll_max()
+	var h := maxf(40.0, tr.size.y * _view_rect().size.y / (_grid_h() + 12.0))
+	return Rect2(tr.position.x, tr.position.y + (tr.size.y - h) * (scroll / mx if mx > 0.0 else 0.0), tr.size.x, h)
+
+
+func scroll_by(dy: float) -> void:
+	scroll = clampf(scroll + dy, 0.0, _scroll_max())
+
+
 func _layout() -> void:
 	_rects.clear()
 	_btns.clear()
 	_wh_hits.clear()
 	var lr := _left_rect()
 	var cw := _card_w()
-	# the cards still to sort, in a grid
+	scroll = clampf(scroll, 0.0, _scroll_max())
+	# the cards still to sort, in a grid that scrolls
 	var k := 0
 	for it in items:
 		if str(it.place) in ["left", "fixed"]:
-			_rects[it.id] = Rect2(lr.position.x + (k % 3) * (cw + GAP), _cards_top() + floorf(k / 3.0) * (CARD_H + GAP), cw, CARD_H)
+			_rects[it.id] = Rect2(lr.position.x + (k % 3) * (cw + GAP), _cards_top() - scroll + floorf(k / 3.0) * (CARD_H + GAP), cw, CARD_H)
 			k += 1
-	# the sale strip: one chip a thing sold
+	# the sale strip: one chip a thing sold, narrower as more are sold so all stay on the strip
 	var sr := _sale_rect()
+	var n_sold := 0
+	for it in items:
+		if str(it.place) == "sold":
+			n_sold += 1
+	var chip := clampf((sr.size.x - 24.0 - (n_sold - 1) * 10.0) / maxf(1.0, n_sold), 24.0, 168.0)
 	var j := 0
 	for it in items:
 		if str(it.place) == "sold":
-			_rects[it.id] = Rect2(sr.position.x + 12.0 + j * 178.0, sr.position.y + 30.0, 168.0, 32.0)
+			_rects[it.id] = Rect2(sr.position.x + 12.0 + j * (chip + 10.0), sr.position.y + 30.0, chip, 32.0)
 			j += 1
 	# the warehouse side: new things on their shelf, the others flying to their tab
 	var rr := _right_rect()
@@ -362,11 +420,14 @@ func _layout() -> void:
 	for b in [["confirm", 300.0], ["back", 170.0], ["sell_all", 150.0], ["move_all", 150.0]]:
 		bx -= float(b[1])
 		_btns[b[0]] = Rect2(bx, by, float(b[1]) - 10.0, 52.0)
-	# the ingots' own two choices on their card (1 / 2), a part's sale
+	# the ingots' own two choices on their card (1 / 2), a part's sale: only where it is seen whole
+	var view := _view_rect()
 	for it in items:
 		if movable(it) and str(it.place) == "left":
 			var r: Rect2 = _rects[it.id]
-			_btns["sell:" + str(it.id)] = Rect2(r.end.x - 108.0, r.end.y - 40.0, 96.0, 30.0)
+			var sb := Rect2(r.end.x - 108.0, r.end.y - 40.0, 96.0, 30.0)
+			if view.encloses(sb):
+				_btns["sell:" + str(it.id)] = sb
 
 
 func _tab_rects() -> Array:
@@ -414,12 +475,19 @@ func _process(dt: float) -> void:
 		var it := _item(dragging)
 		var mp := get_local_mouse_position()
 		it.vr = Rect2(mp - _drag_off, Vector2(_card_w(), CARD_H))
+	var view := _view_rect()
+	_clip.position = view.position
+	_clip.size = view.size
+	_clip.queue_redraw()
+	_over.queue_redraw()
 	queue_redraw()
 
 
 func _at(p: Vector2) -> String:
 	for it in items:
 		if movable(it) and str(it.place) in ["left", "sold"] and (_rects.get(it.id, Rect2()) as Rect2).has_point(p):
+			if str(it.place) == "left" and not _view_rect().has_point(p):
+				continue
 			return str(it.id)
 	for id in _wh_hits:
 		if (_wh_hits[id] as Rect2).has_point(p):
@@ -435,7 +503,14 @@ func _btn_at(p: Vector2) -> String:
 
 
 func _gui_input(ev: InputEvent) -> void:
-	if ev is InputEventMouseMotion:
+	if ev is InputEventMouseMotion and _bar_drag >= 0.0:
+		var tr := _bar_track()
+		var th := _bar_thumb()
+		var span := tr.size.y - th.size.y
+		if span > 0.0:
+			scroll = clampf((ev.position.y - _bar_drag - tr.position.y) / span, 0.0, 1.0) * _scroll_max()
+		accept_event()
+	elif ev is InputEventMouseMotion:
 		var p: Vector2 = ev.position
 		hover_btn = _btn_at(p)
 		hover_id = "" if hover_btn.begins_with("sell:") else _at(p)
@@ -445,8 +520,26 @@ func _gui_input(ev: InputEvent) -> void:
 				dragging = _press_id
 				_drag_off = Vector2(_card_w(), CARD_H) * 0.5
 		accept_event()
+	elif ev is InputEventMouseButton and ev.pressed and ev.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		if _left_rect().has_point(ev.position) or _bar_track().grow(10.0).has_point(ev.position):
+			scroll_by(WHEEL * (1.0 if ev.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1.0))
+		accept_event()
+	elif ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT and not ev.pressed and _bar_drag >= 0.0:
+		_bar_drag = -1.0
+		accept_event()
 	elif ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT:
 		var p: Vector2 = ev.position
+		if ev.pressed and _scroll_max() > 0.0 and _bar_track().grow_individual(8.0, 0.0, 8.0, 0.0).has_point(p):
+			# the scrollbar: held by the thumb, or the thumb jumps to the click
+			var th := _bar_thumb()
+			if th.grow_individual(8.0, 0.0, 8.0, 0.0).has_point(p):
+				_bar_drag = p.y - th.position.y
+			else:
+				_bar_drag = th.size.y * 0.5
+				var tr := _bar_track()
+				scroll = clampf((p.y - _bar_drag - tr.position.y) / maxf(1.0, tr.size.y - th.size.y), 0.0, 1.0) * _scroll_max()
+			accept_event()
+			return
 		if ev.pressed:
 			var b := _btn_at(p)
 			if b != "":
@@ -507,6 +600,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 			move_all("sold")
 		KEY_TAB:
 			tab = TABS[(TABS.find(tab) + 1) % TABS.size()]
+		KEY_PAGEDOWN:
+			scroll_by(_view_rect().size.y - CARD_H * 0.5)
+		KEY_PAGEUP:
+			scroll_by(-(_view_rect().size.y - CARD_H * 0.5))
 		_:
 			return
 	get_viewport().set_input_as_handled()
@@ -516,6 +613,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 
 func _text(s: String, p: Vector2, px: int, col: Color, f: Font = null, wmax := -1.0, al := HORIZONTAL_ALIGNMENT_LEFT) -> void:
 	draw_string(f if f != null else font, p, s, al, wmax, px, col)
+
+
+func _tx(cv: CanvasItem, s: String, p: Vector2, px: int, col: Color, f: Font = null, wmax := -1.0, al := HORIZONTAL_ALIGNMENT_LEFT) -> void:
+	cv.draw_string(f if f != null else font, p, s, al, wmax, px, col)
 
 
 func _draw() -> void:
@@ -528,10 +629,29 @@ func _draw() -> void:
 	_draw_warehouse()
 	_draw_sale()
 	_draw_buttons()
-	# the card being dragged, over everything
+
+
+# the cards still to sort, in their view (a child that clips), with a fade where more run on
+func _draw_clipped() -> void:
+	_clip.draw_set_transform(-_clip.position)
+	for it in items:
+		if str(it.place) in ["left", "fixed"] and str(it.id) != dragging:
+			_card(it, it.vr, str(it.id) == hover_id, _clip)
+	_clip.draw_set_transform(Vector2.ZERO)
+	var v := _clip.size
+	var bg := Color(0.018, 0.021, 0.026)
+	var clear := Color(bg, 0.0)
+	if scroll > 0.5:
+		_clip.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(v.x, 0), Vector2(v.x, 28), Vector2(0, 28)]), PackedColorArray([bg, bg, clear, clear]))
+	if scroll < _scroll_max() - 0.5:
+		_clip.draw_polygon(PackedVector2Array([Vector2(0, v.y - 40), Vector2(v.x, v.y - 40), Vector2(v.x, v.y), Vector2(0, v.y)]), PackedColorArray([clear, clear, bg, bg]))
+
+
+# the card being dragged, over everything
+func _draw_over() -> void:
 	if dragging != "":
 		var it := _item(dragging)
-		_card(it, it.vr, true)
+		_card(it, it.vr, true, _over)
 
 
 func _draw_head() -> void:
@@ -627,10 +747,21 @@ func _draw_left_cards() -> void:
 	_text(w("本单回收物", "THIS CONTRACT'S GOODS"), Vector2(lr.position.x, y), 18, Pal.ink(0.92), font_s)
 	_text(w("点卡片或拖到右边入库 · 卡片上的“卖”或拖到下面直接卖", "CLICK OR DRAG RIGHT TO KEEP · \"SELL\" OR DRAG BELOW TO SELL"), Vector2(lr.position.x, y), 13, Pal.ink(0.45), font_b, lr.size.x, HORIZONTAL_ALIGNMENT_RIGHT)
 	var any := false
+	var below := 0
+	var view := _view_rect()
 	for it in items:
 		if str(it.place) in ["left", "fixed"] and str(it.id) != dragging:
-			_card(it, it.vr, str(it.id) == hover_id)
 			any = true
+			if (_rects.get(it.id, Rect2()) as Rect2).position.y + CARD_H * 0.5 > view.end.y:
+				below += 1
+	if _scroll_max() > 0.0:
+		var tr := _bar_track()
+		var th := _bar_thumb()
+		var held := _bar_drag >= 0.0 or (th.grow(8.0).has_point(get_local_mouse_position()) and dragging == "")
+		draw_rect(tr, Pal.ink(0.08))
+		draw_rect(th, Pal.ink(0.6 if held else 0.35))
+		if below > 0:
+			_text(w("↓ 还有 %d 样 · 滚轮翻看", "↓ %d MORE · SCROLL") % below, Vector2(view.position.x, view.end.y + 2.0), 12, Pal.ink(0.5), font_b, view.size.x - 4.0, HORIZONTAL_ALIGNMENT_RIGHT)
 	if not any and dragging == "":
 		_text(w("都整理好了。按 Enter 确认，离开船坞。", "ALL SORTED. ENTER TO CONFIRM AND LEAVE."), Vector2(lr.position.x, _cards_top() + 40.0), 16, Pal.ink(0.5), font_b)
 	# the line under the cards: what the pointer is on, or what just happened
@@ -642,43 +773,45 @@ func _draw_left_cards() -> void:
 
 
 # a card: its picture, its name, how much, what it is worth; new on the warehouse side
-func _card(it: Dictionary, r: Rect2, hov: bool) -> void:
+func _card(it: Dictionary, r: Rect2, hov: bool, cv: CanvasItem = null) -> void:
+	if cv == null:
+		cv = self
 	if r.size.x < 40.0:
 		# flying into a tab: a small chip
-		draw_rect(r, Color(UiSkin.DATA, 0.5))
+		cv.draw_rect(r, Color(UiSkin.DATA, 0.5))
 		return
 	var kind := str(it.kind)
 	var place := str(it.place)
 	var fixed := place == "fixed"
 	if hov and not fixed:
 		r.position.y -= 3.0
-	draw_rect(Rect2(r.position + Vector2(3, r.size.y - 2), Vector2(r.size.x - 3, 5)), Color(0, 0, 0, 0.45))
-	draw_rect(r, Color(0.07, 0.075, 0.085) if not hov else Color(0.095, 0.1, 0.112))
+	cv.draw_rect(Rect2(r.position + Vector2(3, r.size.y - 2), Vector2(r.size.x - 3, 5)), Color(0, 0, 0, 0.45))
+	cv.draw_rect(r, Color(0.07, 0.075, 0.085) if not hov else Color(0.095, 0.1, 0.112))
 	var edge := Pal.ink(0.22)
 	if place == "wh":
 		edge = Color(UiSkin.DATA, 0.85)
 	elif hov:
 		edge = Color(UiSkin.ACCENT, 0.9)
-	draw_rect(r, edge, false, 1.2)
+	cv.draw_rect(r, edge, false, 1.2)
 	# the picture
 	var pic := Rect2(r.position + Vector2(12, 10), Vector2(r.size.x - 24, 76))
-	draw_rect(pic, Color(0, 0, 0, 0.35))
+	cv.draw_rect(pic, Color(0, 0, 0, 0.35))
 	match kind:
 		"ingot":
-			GoodsArt.draw(self, pic.grow(-4.0), "ferrous_scrap", 1)
+			GoodsArt.draw(cv, pic.grow(-4.0), "ferrous_scrap", 1)
 		"part":
 			var cls := str(it.part.get("cls", ""))
-			PartsRack._glyph(self, cls, pic.get_center(), 22.0, PartsRack._class_col(cls))
+			PartsRack._glyph(cv, cls, pic.get_center(), 22.0, PartsRack._class_col(cls))
 		"fluid":
 			var c := pic.get_center()
 			for k in 3:
 				var bx := c.x - 30.0 + k * 30.0
-				draw_rect(Rect2(bx - 9, c.y - 18, 18, 40), Color(0.12, 0.13, 0.15))
-				draw_rect(Rect2(bx - 9, c.y - 18, 18, 40), Pal.tint(Pal.AIR, 0.8, 1.1), false, 1.2)
-				draw_rect(Rect2(bx - 4, c.y - 26, 8, 8), Pal.tint(Pal.AIR, 0.8, 1.1))
+				cv.draw_rect(Rect2(bx - 9, c.y - 18, 18, 40), Color(0.12, 0.13, 0.15))
+				cv.draw_rect(Rect2(bx - 9, c.y - 18, 18, 40), Pal.tint(Pal.AIR, 0.8, 1.1), false, 1.2)
+				cv.draw_rect(Rect2(bx - 4, c.y - 26, 8, 8), Pal.tint(Pal.AIR, 0.8, 1.1))
 	# name and amount
 	var nm := _name(it)
-	_text(nm, r.position + Vector2(12, 106), 15, Pal.ink(0.95), font_s, r.size.x - 24.0)
+	_tx(cv, nm, r.position + Vector2(12, 106), 15, Pal.ink(0.95), font_s, r.size.x - 24.0)
 	var sub := ""
 	match kind:
 		"ingot":
@@ -687,27 +820,26 @@ func _card(it: Dictionary, r: Rect2, hov: bool) -> void:
 			sub = "%s · %d%%" % [PartsRack.short_class(str(it.part.get("cls", ""))), int(round(float(it.part.get("cond", 0.0)) * 100.0))]
 		"fluid":
 			sub = w("已交付 · +%s", "DELIVERED · +%s") % Pal.money(float(it.value))
-	_text(sub, r.position + Vector2(12, 126), 12, Pal.ink(0.55), font_b, r.size.x - 24.0)
+	_tx(cv, sub, r.position + Vector2(12, 126), 12, Pal.ink(0.55), font_b, r.size.x - 24.0)
 	if kind == "part":
 		var cb := Rect2(r.position + Vector2(12, 134), Vector2(r.size.x - 24, 3))
 		var cond := clampf(float(it.part.get("cond", 0.0)), 0.0, 1.0)
-		draw_rect(cb, Color(0, 0, 0, 0.6))
-		draw_rect(Rect2(cb.position, Vector2(cb.size.x * cond, 3)), Color(UiSkin.DATA) if cond >= Repair.COND_MIN else Pal.heat(0.9, 1.1))
+		cv.draw_rect(cb, Color(0, 0, 0, 0.6))
+		cv.draw_rect(Rect2(cb.position, Vector2(cb.size.x * cond, 3)), Color(UiSkin.DATA) if cond >= Repair.COND_MIN else Pal.heat(0.9, 1.1))
 	if place == "wh":
-		_text(w("新增", "NEW"), r.position + Vector2(0, 26), 12, Color(UiSkin.DATA), font_s, r.size.x - 14.0, HORIZONTAL_ALIGNMENT_RIGHT)
+		_tx(cv, w("新增", "NEW"), r.position + Vector2(0, 26), 12, Color(UiSkin.DATA), font_s, r.size.x - 14.0, HORIZONTAL_ALIGNMENT_RIGHT)
 	if fixed:
-		_text(w("已结算", "SETTLED"), r.position + Vector2(12, r.size.y - 16), 12, Pal.ink(0.4), font_b)
+		_tx(cv, w("已结算", "SETTLED"), r.position + Vector2(12, r.size.y - 16), 12, Pal.ink(0.4), font_b)
 		return
 	if place == "left":
 		# its worth, and the sale button
-		_text(w("值 %s", "WORTH %s") % Pal.money(_price(it)), r.position + Vector2(12, r.size.y - 18), 13, Pal.ink(0.8), font_b)
-		var sb: Rect2 = _btns.get("sell:" + str(it.id), Rect2())
-		if sb.size.x > 0.0 and r.size.y >= CARD_H - 1.0:
-			sb.position.y = r.end.y - 40.0
+		_tx(cv, w("值 %s", "WORTH %s") % Pal.money(_price(it)), r.position + Vector2(12, r.size.y - 18), 13, Pal.ink(0.8), font_b)
+		var sb := Rect2(r.end.x - 108.0, r.end.y - 40.0, 96.0, 30.0)
+		if r.size.y >= CARD_H - 1.0:
 			var on := hover_btn == "sell:" + str(it.id)
-			draw_rect(sb, Color(UiSkin.ACCENT, 0.22 if on else 0.08))
-			draw_rect(sb, Color(UiSkin.ACCENT, 0.9 if on else 0.5), false, 1.0)
-			_text(w("卖%s", "SELL%s") % (" [1]" if kind == "ingot" else ""), sb.position + Vector2(0, 21), 14, Pal.ink(0.95), font_s, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+			cv.draw_rect(sb, Color(UiSkin.ACCENT, 0.22 if on else 0.08))
+			cv.draw_rect(sb, Color(UiSkin.ACCENT, 0.9 if on else 0.5), false, 1.0)
+			_tx(cv, w("卖%s", "SELL%s") % (" [1]" if kind == "ingot" else ""), sb.position + Vector2(0, 21), 14, Pal.ink(0.95), font_s, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func _draw_warehouse() -> void:
@@ -868,6 +1000,13 @@ func _draw_sale() -> void:
 		draw_line(Vector2(x, sr.end.y), Vector2(minf(x + 8.0, sr.end.x), sr.end.y), col, 1.0)
 		x += 14.0
 	_text(w("直接卖出", "SELL NOW"), sr.position + Vector2(12, 20), 13, Pal.ink(0.75), font_s)
+	var n_sold := 0
+	for it in items:
+		if str(it.place) == "sold":
+			n_sold += 1
+	if n_sold > 0:
+		# the chips narrow as more are sold: the count and the sum stay readable here
+		_text(w("已卖 %d 样 · +%s", "%d SOLD · +%s") % [n_sold, Pal.money(cash_now())], sr.position + Vector2(84, 20), 13, Color(UiSkin.ACCENT, 0.95), font_s)
 	_text(w("拖到这里卖 · 点已卖的东西放回", "DROP HERE TO SELL · CLICK ONE TO TAKE IT BACK"), sr.position + Vector2(0, 20), 12, Pal.ink(0.4), font_b, sr.size.x - 12.0, HORIZONTAL_ALIGNMENT_RIGHT)
 	for it in items:
 		if str(it.place) == "sold" and str(it.id) != dragging:

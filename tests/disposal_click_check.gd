@@ -35,6 +35,17 @@ func _click(p: Vector2) -> void:
 		await _frames(2)
 
 
+func _wheel(p: Vector2, b: MouseButton, n: int) -> void:
+	for i in n:
+		var ev := InputEventMouseButton.new()
+		ev.button_index = b
+		ev.pressed = true
+		ev.position = p
+		ev.global_position = p
+		root.push_input(ev)
+		await _frames(1)
+
+
 func _key(k: Key, ctrl := false) -> void:
 	var ev := InputEventKey.new()
 	ev.keycode = k
@@ -67,6 +78,35 @@ func _run() -> void:
 	var p = g.disposal_ui
 	var n0: int = p.left_n()
 	check(n0 == 11, "eleven things to sort (%d)" % n0)
+	# 2026-11-04 (user: "上下滚动"): four rows do not fit; the grid scrolls inside its view
+	var view: Rect2 = p._view_rect()
+	check(view.end.y <= p._sale_rect().position.y - 8.0, "the cards' view ends above the sale strip (%.0f / %.0f)" % [view.end.y, p._sale_rect().position.y])
+	check(p._scroll_max() > 0.0 and not p._btns.has("sell:dcl_9"), "the last row is below the view, its sale button not live (scroll max %.0f)" % p._scroll_max())
+	await _wheel(view.get_center(), MOUSE_BUTTON_WHEEL_DOWN, 3)
+	await _frames(30)
+	check(p.scroll > 0.0 and p._btns.has("sell:dcl_9"), "the wheel scrolls the last row into view (%.0f)" % p.scroll)
+	await _click((p._btns["sell:dcl_9"] as Rect2).get_center())
+	check(str(p._item("dcl_9").place) == "sold", "and its \"sell\" works there")
+	await _key(KEY_Z, true)
+	var img0 := root.get_texture().get_image()
+	if img0 != null and img0.get_width() > 100:
+		img0.save_png("res://tests/out/disposal_scroll.png")
+	# the scrollbar's thumb dragged back to the top
+	var th: Rect2 = p._bar_thumb()
+	var m := InputEventMouseButton.new()
+	m.button_index = MOUSE_BUTTON_LEFT
+	m.pressed = true
+	m.position = th.get_center()
+	root.push_input(m)
+	var mv := InputEventMouseMotion.new()
+	mv.position = th.get_center() - Vector2(0, 400)
+	root.push_input(mv)
+	var up := InputEventMouseButton.new()
+	up.button_index = MOUSE_BUTTON_LEFT
+	up.position = mv.position
+	root.push_input(up)
+	await _frames(30)
+	check(p.scroll < 0.5 and p.left_n() == 11, "the scrollbar dragged up: back at the top, nothing moved (%.0f, %d)" % [p.scroll, p.left_n()])
 	# a card's own sale button
 	var sb: Rect2 = p._btns.get("sell:dcl_1", Rect2())
 	await _click(sb.get_center())
@@ -85,6 +125,16 @@ func _run() -> void:
 	check(p.left_n() == 9, "Ctrl+Z puts the nine back (%d)" % p.left_n())
 	await _click((p._btns["sell_all"] as Rect2).get_center())
 	check(p.left_n() == 0 and p.cash_now() > 1000.0, "\"sell all\" sells the rest (%s now)" % Pal.money(p.cash_now()))
+	await _frames(30)
+	var sr: Rect2 = p._sale_rect()
+	var on_strip := true
+	for it in p.items:
+		if str(it.place) == "sold" and not sr.encloses(p._rects[it.id]):
+			on_strip = false
+	check(on_strip, "all the sold things stay on the sale strip")
+	var img1 := root.get_texture().get_image()
+	if img1 != null and img1.get_width() > 100:
+		img1.save_png("res://tests/out/disposal_sold_all.png")
 	# nothing on the ending screen behind reacted to the clicks
 	check(g.disposal_ui == p, "the page is still open")
 	for i in 9:
