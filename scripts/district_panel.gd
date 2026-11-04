@@ -184,7 +184,7 @@ func _order(with_parts: bool) -> void:
 	if why != "":
 		message.text = why
 		return
-	message.text = Txt.t("pt_built") % [Port.name_of(zone), Port.stage(zone)]
+	message.text = Txt.t("pt_built") % [Port.name_of(zone), Works.cn_num(Port.stage(zone)) if Txt.zh else str(Port.stage(zone))]
 	if game != null and game.get("sfx") != null:
 		game.sfx.play("stamp", Vector2.INF, 0.9)
 	_repair_sig = ""

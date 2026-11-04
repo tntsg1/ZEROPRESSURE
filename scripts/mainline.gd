@@ -85,8 +85,8 @@ static func _build_step(zone: String) -> Dictionary:
 			return _build_step(str(dep[0]))
 	var node := Route.port_node(zone)
 	if node.get("ready", false):
-		return {"text": w("去修%s（第 %d 期）：都够了。", "Mend the %s (part %d): all there.") % [Port.name_of(zone), Port.stage(zone) + 1], "go": "guide:build:" + zone}
-	return {"text": w("修%s（第 %d 期）还需要：%s。", "To mend the %s (part %d) you still need: %s.") % [Port.name_of(zone), Port.stage(zone) + 1, Route.missing(node)], "go": "guide:build:" + zone}
+		return {"text": w("去修%s（%s期）：都够了。", "Mend the %s (part %s): all there.") % [Port.name_of(zone), Works.cn_num(Port.stage(zone) + 1) if Txt.zh else str(Port.stage(zone) + 1)], "go": "guide:build:" + zone}
+	return {"text": w("修%s（%s期）还需要：%s。", "To mend the %s (part %s) you still need: %s.") % [Port.name_of(zone), Works.cn_num(Port.stage(zone) + 1) if Txt.zh else str(Port.stage(zone) + 1), Route.missing(node)], "go": "guide:build:" + zone}
 
 
 # 68 号: "strip another ship" — start the one at the berth, or the tug on its way, or sweep the belt

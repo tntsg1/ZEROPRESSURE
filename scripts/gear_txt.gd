@@ -292,7 +292,7 @@ const S := {
 	"pt_stage": ["阶段", "STAGE"],
 	"rp_todo": ["待修", "TO REPAIR"],
 	"pt_done": ["两阶段都已建成", "BOTH STAGES COMPLETE"],
-	"pt_built": ["施工队开工了：%s 第 %d 期。修好之前还不能用。", "THE CREW HAS STARTED ON THE %s, PART %d. NOT USABLE UNTIL IT IS DONE."],
+	"pt_built": ["施工队开工了：%s（%s期）。修好之前还不能用。", "THE CREW HAS STARTED ON THE %s, PART %s. NOT USABLE UNTIL IT IS DONE."],
 	"pt_power_1": ["接通主电网的第一回路：动力区点亮一半，高耗能设施有了电源。", "The first loop of the main grid: half the district lit, power for the heavy facilities."],
 	"pt_power_2": ["全网供电：动力区全亮，转运环有了底电。", "The whole grid: the district fully lit, base power for the ring."],
 	"pt_salvage_1": ["修复拆船区的码头结构：船流回来一点。", "The salvage district's quays repaired: ships begin to come and go."],

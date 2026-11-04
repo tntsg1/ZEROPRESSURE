@@ -543,7 +543,7 @@ func _port_fix(z: String, with_parts: bool) -> void:
 		status.text = why
 		terminal._refuse(why)
 		return
-	terminal.say(Txt.t("pt_built") % [Port.name_of(z), Port.stage(z) + 1])
+	terminal.say(Txt.t("pt_built") % [Port.name_of(z), Works.cn_num(Port.stage(z) + 1) if Txt.zh else str(Port.stage(z) + 1)])
 	terminal.sfx.play("stamp", Vector2.INF, 0.9)
 	terminal._route_frame = -1
 	refresh()

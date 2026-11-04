@@ -3145,57 +3145,8 @@ func _next_card(s: Vector2, a: float) -> void:
 	var hx := _item_rect(1).position.x
 	var hw := _item_rect(2).end.x - hx
 	_wrap(Txt.t("tm_next_side"), Vector2(hx, r.position.y + 30), hw, 15, Pal.ink(0.55 * a), 2)
-	_outlook(Rect2(hx, r.position.y + 80, hw, r.size.y - 80), a)
+	# user 2026-11-04: "赚了钱能买的" and "以后能接的船" taken off this page ("画饼的…没意义")
 
-
-# What there is to work for: the next things the money buys (cheapest first,
-# with what is still missing), and the ship types that open up later (the
-# reputation they need, and the berth extension for the long ones)
-func _outlook(r: Rect2, a: float) -> void:
-	var d := Career.data
-	var money := float(d.money)
-	var x := r.position.x
-	var colw := (r.size.x - 40.0) * 0.5
-	_text(Txt.t("tm_out_buy"), Vector2(x, r.position.y + 10), 15, Pal.ink(0.7 * a), font_b)
-	var buy: Array = []
-	for it in SHOP + BERTH:
-		if it[1] in ["upgrade", "facility"] and not d.upgrades.has(it[0]):
-			buy.append(it)
-	var goal: String = str(d.get("growth_goal", ""))
-	buy.sort_custom(func(p, q):
-		if p[0] == goal or q[0] == goal:
-			return p[0] == goal and q[0] != goal
-		return float(p[2]) < float(q[2]))
-	var y := r.position.y + 48.0
-	for i in mini(buy.size(), 9):
-		var it: Array = buy[i]
-		var k := Pal.ease_out(clampf((deal_t - 0.2 - i * 0.04) / 0.3, 0.0, 1.0)) * a
-		var can: bool = money >= float(it[2]) and (it[1] != "skill" or Growth.reason(it[0]) == "")
-		var need := Growth.reason(it[0]) if it[1] == "skill" else ""
-		_text(("★ " if it[0] == goal else "") + Txt.t(it[3]), Vector2(x, y), 15, Pal.ink(0.9 * k), font)
-		_text(Pal.money(float(it[2])), Vector2(x + colw - 120, y), 15, Pal.ink((0.95 if can else 0.6) * k), font_b, 1)
-		_text(Txt.t("tm_out_can") if can else (need if need != "" else Txt.t("tm_out_short") % Pal.money(float(it[2]) - money)), Vector2(x + colw, y), 13, Pal.tint(Pal.FLUID, 0.85 * k, 1.1) if can else Pal.ink(0.45 * k), font, 1)
-		y += 34.0
-	var x2 := x + colw + 40.0
-	_text(Txt.t("tm_out_ships"), Vector2(x2, r.position.y + 10), 15, Pal.ink(0.7 * a), font_b)
-	y = r.position.y + 48.0
-	var i2 := 0
-	for e in Market.pool():
-		var ty: Dictionary = Market.type_of(e[0])
-		if ty.is_empty():
-			continue
-		var k2 := Pal.ease_out(clampf((deal_t - 0.25 - i2 * 0.04) / 0.3, 0.0, 1.0)) * a
-		var open: bool = int(d.get("rep", 0)) >= int(e[2]) and Market.fits(e[0], d) and d.get("market", false)
-		_text("%s  %s · %d m" % [ty.get("class", ""), ty.name[0] if Txt.zh else ty.name[1], int(float(ty.get("length", 0.0)))], Vector2(x2, y), 15, Pal.ink((0.9 if open else 0.6) * k2), font)
-		var need: Array = []
-		if int(e[2]) > int(d.get("rep", 0)):
-			need.append(Txt.t("tm_out_rep") % int(e[2]))
-		if not Market.fits(e[0], d):
-			need.append(Txt.t("fa_berth"))
-		var note: String = (Txt.t("tm_out_now") if d.get("market", false) else Txt.t("tm_out_open")) if need.is_empty() else "、".join(need)
-		_text(note, Vector2(x2, y + 18), 12, Pal.tint(Pal.FLUID, 0.8 * k2, 1.1) if need.is_empty() else Pal.ink(0.45 * k2), font)
-		y += 42.0
-		i2 += 1
 
 
 # the loan paid off: the berth's name stamped across the terminal

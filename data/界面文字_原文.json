@@ -14577,30 +14577,6 @@
 "file": "txt.gd",
 "line": 0
 },
-"txt:tm_out_buy": {
-"zh": "赚了钱能买的",
-"en": "WHAT THE MONEY BUYS",
-"file": "txt.gd",
-"line": 0
-},
-"txt:tm_out_ships": {
-"zh": "以后能接的船",
-"en": "SHIPS TO COME",
-"file": "txt.gd",
-"line": 0
-},
-"txt:tm_out_open": {
-"zh": "市场开放后可接",
-"en": "ON THE MARKET ONCE IT OPENS",
-"file": "txt.gd",
-"line": 0
-},
-"txt:tm_out_now": {
-"zh": "市场上已经会出现",
-"en": "ALREADY ON THE MARKET",
-"file": "txt.gd",
-"line": 0
-},
 "txt:tm_minutes": {
 "zh": "标准用时 %d 分钟",
 "en": "STANDARD TIME %d MIN",
@@ -17878,8 +17854,8 @@
 "line": 0
 },
 "gear:pt_built": {
-"zh": "施工队开工了：%s 第 %d 期。修好之前还不能用。",
-"en": "THE CREW HAS STARTED ON THE %s, PART %d. NOT USABLE UNTIL IT IS DONE.",
+"zh": "施工队开工了：%s（%s期）。修好之前还不能用。",
+"en": "THE CREW HAS STARTED ON THE %s, PART %s. NOT USABLE UNTIL IT IS DONE.",
 "file": "gear_txt.gd",
 "line": 0
 },
@@ -25622,16 +25598,16 @@
 "en_line": 78
 },
 "mainline:_build_step:1": {
-"zh": "去修%s（第 %d 期）：都够了。",
-"en": "Mend the %s (part %d): all there.",
+"zh": "去修%s（%s期）：都够了。",
+"en": "Mend the %s (part %s): all there.",
 "file": "mainline.gd",
 "line": 88,
 "func": "_build_step",
 "en_line": 88
 },
 "mainline:_build_step:2": {
-"zh": "修%s（第 %d 期）还需要：%s。",
-"en": "To mend the %s (part %d) you still need: %s.",
+"zh": "修%s（%s期）还需要：%s。",
+"en": "To mend the %s (part %s) you still need: %s.",
 "file": "mainline.gd",
 "line": 89,
 "func": "_build_step",
@@ -49559,17 +49535,10 @@
 "zh": "买得起",
 "en": "AFFORDABLE",
 "same": [
-"txt:rt_ready_buy",
-"txt:tm_out_can"
+"txt:rt_ready_buy"
 ]
 },
 "txt:rt_ready_buy": {
-"zh": "买得起",
-"en": "AFFORDABLE",
-"file": "txt.gd",
-"line": 0
-},
-"txt:tm_out_can": {
 "zh": "买得起",
 "en": "AFFORDABLE",
 "file": "txt.gd",
@@ -49580,17 +49549,10 @@
 "en": "%s SHORT",
 "same": [
 "txt:rt_short_money",
-"txt:tm_out_short",
 "txt:tm_short_n"
 ]
 },
 "txt:rt_short_money": {
-"zh": "还差 %s",
-"en": "%s SHORT",
-"file": "txt.gd",
-"line": 0
-},
-"txt:tm_out_short": {
 "zh": "还差 %s",
 "en": "%s SHORT",
 "file": "txt.gd",
@@ -49762,19 +49724,6 @@
 "txt:tm_no_limit": {
 "zh": "不限时",
 "en": "NO LIMIT",
-"file": "txt.gd",
-"line": 0
-},
-"short:372": {
-"zh": "声望 %d",
-"en": "REPUTATION %d",
-"same": [
-"txt:tm_out_rep"
-]
-},
-"txt:tm_out_rep": {
-"zh": "声望 %d",
-"en": "REPUTATION %d",
 "file": "txt.gd",
 "line": 0
 },
@@ -66018,9 +65967,9 @@
 "zh": "出问题了",
 "en": "SOMETHING IS WRONG",
 "file": "terminal.gd",
-"line": 3270,
+"line": 3221,
 "func": "_home",
-"en_line": 3270
+"en_line": 3221
 },
 "short:1371": {
 "zh": "%d 项",
@@ -66033,9 +65982,9 @@
 "zh": "%d 项",
 "en": "%d",
 "file": "terminal.gd",
-"line": 3274,
+"line": 3225,
 "func": "_home",
-"en_line": 3274
+"en_line": 3225
 },
 "short:1372": {
 "zh": "信号 %d",
@@ -66048,9 +65997,9 @@
 "zh": "信号 %d",
 "en": "SIGNALS %d",
 "file": "terminal.gd",
-"line": 3388,
+"line": 3339,
 "func": "_tile_live",
-"en_line": 3388
+"en_line": 3339
 },
 "short:1373": {
 "zh": "是船 %d",
@@ -66063,9 +66012,9 @@
 "zh": "是船 %d",
 "en": "HULKS %d",
 "file": "terminal.gd",
-"line": 3389,
+"line": 3340,
 "func": "_tile_live",
-"en_line": 3389
+"en_line": 3340
 },
 "short:1374": {
 "zh": "拖运途中 %d",
@@ -66078,9 +66027,9 @@
 "zh": "拖运途中 %d",
 "en": "UNDER TOW %d",
 "file": "terminal.gd",
-"line": 3391,
+"line": 3342,
 "func": "_tile_live",
-"en_line": 3391
+"en_line": 3342
 },
 "short:1375": {
 "zh": "继续作业",
