@@ -133,7 +133,7 @@ func _run() -> void:
 	# a fixture heat: the meter already paid up, so the fixture bills nothing
 	Career.data.industrial_heat = {"id": "HEAT-FIX", "state": "processing", "quantity": 1.0, "electric_paid_j": 1.0e30, "energy_cost": 0.0, "energy_debt": 0.0, "transport": {}, "source_lots": []}
 	var f = g.plant.smelter
-	var keep := {"manual_power": f.manual_power, "bunker": f.bunker, "manual_feed": f.manual_feed, "m_s": f.m_s, "T": f.T, "sample_count": f.sample_count, "tc_age": f.tc_age, "dip": f.dip, "lance_phase": f.lance_phase, "phase": f.phase}
+	var keep := {"manual_power": f.manual_power, "bunker": f.bunker, "manual_feed": f.manual_feed, "m_s": f.m_s, "m_l": f.m_l, "T": f.T, "sample_count": f.sample_count, "tc_age": f.tc_age, "dip": f.dip, "lance_phase": f.lance_phase, "phase": f.phase}
 	f.phase = "melt"
 	f.manual_power = 0.0
 	f.bunker = 1.0
@@ -152,6 +152,7 @@ func _run() -> void:
 	await _frames(12)
 	check(_title().find("加热熔化中") >= 0 and str(g.guide.step.text).find("1710") >= 0, "melting: the temperature and the limit (%s)" % _title())
 	f.m_s = 0.0
+	f.m_l = 0.4                # 125 号: melted is a bath in the furnace (an empty one is cooling billets)
 	f.T = 1660.0
 	f.sample_count = 0
 	await _frames(12)

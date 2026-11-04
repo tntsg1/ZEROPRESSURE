@@ -342,7 +342,17 @@ static func furnace_state(game) -> Array:
 		"heat": return [w("升温 %d °C" % int(f.T), "heating %d °C" % int(f.T)), "work"]
 	if float(f.power) > 0.5:
 		return [w("通电熔化 %.0f MW" % float(f.power), "melting %.0f MW" % float(f.power)), "work"]
-	return [w("保温 %d °C" % int(f.T), "holding %d °C" % int(f.T)) if float(f.m_l) > 0.05 else w("空炉", "empty"), "ok"]
+	# 125 号 (user: "画面显示空炉时，引导不能让我以为炉里有料"): the label says what is in it
+	if float(f.m_s) + float(f.bunker) > 0.001:
+		if float(f.manual_power) < 0.5:
+			return [w("有料 · 等按『通电熔化』", "CHARGED · PRESS STRIKE THE ARCS"), "warn"]
+		return [w("有料未加热 %d °C · 没分到电", "CHARGED, NOT HEATING %d °C · NO POWER") % int(f.T), "warn"]
+	if float(f.m_l) > 0.05:
+		return [w("保温 %d °C", "holding %d °C") % int(f.T), "ok"]
+	for ig in f.ingots:
+		if float(ig[1]) > 200.0:
+			return [w("空炉 · 钢坯冷却中", "EMPTY · BILLETS COOLING"), "ok"]
+	return [w("空炉", "empty"), "ok"]
 
 
 static func mill_state() -> Array:

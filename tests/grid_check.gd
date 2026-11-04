@@ -45,7 +45,10 @@ func _run() -> void:
 	await _frames(20)
 	check(Grid.capacity() == 6.0, "a ruined power district makes 6 MW")
 	check(is_equal_approx(Grid.headroom(g), 4.0), "the base takes 2 MW first: 4 MW to spare (%.1f)" % Grid.headroom(g))
-	# a heat with its feed in, at stage 0: no queue, it runs on what there is
+	# a heat with its feed in, at stage 0: no queue, it runs on what there is (125 号: really in —
+	# an empty furnace is not short of power, it says it is empty or cooling)
+	g.plant.smelter.begin_manual()
+	g.plant.smelter.manual_charge(1.0)
 	_heat("processing")
 	await _frames(10)
 	var h: Dictionary = Career.data.industrial_heat

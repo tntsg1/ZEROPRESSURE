@@ -25,7 +25,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var accent := Pal.tint(Pal.AIR, 1.0, 1.2)
 	var column := OpsSkin.pane(self, accent, 520.0)
-	column.add_child(OpsSkin.Plate.new("RACK-" + side, w("%s货架 · %s", "%s RACKS · %s") % [w("左边", "LEFT") if side == "A" else w("右边", "RIGHT"), "%s1–%s4" % [side, side]], w("货运区 · 只管这一边的四排", "CARGO · THIS SIDE'S FOUR ROWS ONLY"), accent))
+	column.add_child(OpsSkin.Plate.new("RACK-" + side, w("%s货架 · %s", "%s RACKS · %s") % [w("左边", "LEFT") if side == "A" else w("右边", "RIGHT"), "%s1–%s4" % [side, side]], w("货运区 · 只管这一边的四排 · 全部东西按 F3 看公司仓库", "CARGO · THIS SIDE'S FOUR ROWS ONLY · F3: EVERYTHING"), accent))
 	rows_box = VBoxContainer.new()
 	rows_box.add_theme_constant_override("separation", 8)
 	column.add_child(rows_box)

@@ -1509,7 +1509,7 @@ func _guide_keys() -> void:
 	guide_end.position = Vector2(r.end.x - 114, r.position.y + 6)
 	# user 2026-10-26: it said "打开交易行" whatever it opened — named by what it does
 	guide_act.text = {"starmap": Ops.w("打开星图", "STAR MAP"), "clients": Ops.w("打开客户", "CLIENTS"), "feed": Ops.w("打开交易行", "EXCHANGE"),
-		"exchange": Ops.w("打开交易行", "EXCHANGE"), "contracts": Ops.w("打开合同", "CONTRACTS"), "repair": Ops.w("打开船坞修缮", "REPAIRS")}.get(str(st.get("action", "")), Ops.w("前往建设", "BUILD") if str(st.get("action", "")).begins_with("build") else Ops.w("去做", "GO"))
+		"exchange": Ops.w("打开交易行", "EXCHANGE"), "contracts": Ops.w("打开合同", "CONTRACTS"), "repair": Ops.w("打开船坞修缮", "REPAIRS"), "heat_send": Ops.w("送料到炉口", "SEND THE FEED")}.get(str(st.get("action", "")), Ops.w("前往建设", "BUILD") if str(st.get("action", "")).begins_with("build") else Ops.w("去做", "GO"))
 	guide_act.reset_size()
 	guide_act.position = Vector2(r.end.x - 124 - guide_act.size.x, r.position.y + 6)
 

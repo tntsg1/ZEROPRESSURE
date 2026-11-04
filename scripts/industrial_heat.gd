@@ -32,7 +32,8 @@ func _set_furnace(s) -> void:
 # 34 号: the port's own sets at fuel cost, the shore line dear (scripts/grid.gd)
 func _power_price() -> float: return Grid.price(heat())
 # the overhead rail runs a trolley twice the floor courier's pace (30 号)
-func _speed() -> float: return SPEED*2.0 if plant() != null else SPEED
+# 124 号 (user "太慢了"): the overhead rail at 30 m/s (was 12) — about 8 s along its 236 m
+func _speed() -> float: return 30.0*Geom.M if plant() != null else SPEED
 # 36 号: one press melts — charging on, the arcs struck, and the power runs itself from then on
 # (full until the charge is liquid and hot enough, then holding just above tapping heat)
 func start_melt() -> Dictionary:
@@ -72,9 +73,9 @@ func _auto_power() -> void:
 func ask_shore() -> Dictionary:
 	var batch := heat()
 	if batch.is_empty() or str(batch.get("state","")) != "processing" or batch.get("shore_asked",false) or batch.get("grid",{}).get("free",false):
-		return {"ok":false,"reason":"现在不用接岸电"}
+		return {"ok":false,"reason":"现在不用买外购电"}
 	if str(Grid.ctl().line) == "own_only":
-		return {"ok":false,"reason":"动力区控制屏把供电线路设为“仅自发电”，不能接岸电"}
+		return {"ok":false,"reason":"动力控制屏设成了“只用自家发的电”，不能买外购电"}
 	batch.shore_asked = true
 	if not checkpoint(): return {"ok":false,"reason":"保存失败"}
 	return {"ok":true}
@@ -86,6 +87,139 @@ func _furnace_x() -> float:
 	return game.dock.furnace_x if is_finite(game.dock.furnace_x) else Dock.metal_home
 const ConsoleArt = preload("res://scripts/console_art.gd")
 func site() -> Vector2: return Vector2(_furnace_x()-4.0,_floor()+2.8)*Geom.M
+
+
+# 125/126 号 (user 2026-11-04: "引导文字和机器画面应当说的是同一件事"): where the heat really is, in
+# one place — the guide, the furnace desk, the furnace's own label and the power screens all read
+# this. {key, n (of 8), title, text, press ("" = nothing to press: wait), eta (s, -1 unknown)}
+#   key: idle | pick | courier | power_wait | deferred | debt | start | melting | starved | probe |
+#        sample | tap | tapping | cooling | returning | done | fault
+func info() -> Dictionary:
+	var h := heat()
+	var st := str(h.get("state",""))
+	var f = furnace()
+	if fault != "":
+		return {"key":"fault","n":0,"title":fault,"text":"","press":"","eta":-1.0}
+	match st:
+		"raw_transport":
+			if _wh_wait:
+				return {"key":"pick","n":2,"title":_w("叉车正在从货架取钢锭","THE FORKLIFT IS FETCHING THE INGOTS"),"text":waiting,"press":"","eta":-1.0}
+			var left := _route_left()
+			return {"key":"courier","n":2,"title":_w("吊轨车正把钢锭送到炉口","THE TROLLEY IS BRINGING THE INGOTS"),"text":_w("还有约 %d 秒到炉口，不用按什么。","About %d s to the furnace; nothing to press.") % int(ceil(left)),"press":"","eta":left}
+		"raw_return":
+			return {"key":"returning","n":2,"title":_w("钢锭正在退回仓库","THE INGOTS ARE GOING BACK"),"text":"","press":"","eta":-1.0}
+		"product_transport":
+			var left2 := _route_left()
+			return {"key":"returning","n":8,"title":_w("钢坯正运回仓库","THE BILLETS ARE GOING TO THE WAREHOUSE"),"text":_w("%.2f t 钢坯，还有约 %d 秒入库。","%.2f t of billet, about %d s to the warehouse.") % [float(h.get("quantity",0.0)),int(ceil(left2))],"press":"","eta":left2}
+		"processing":
+			pass
+		_:
+			return {"key":"idle","n":1,"title":_w("填好吨数，按『把仓库炉料送到炉口』","SET THE TONNES AND SEND THE FEED"),"text":"","press":"send","eta":-1.0}
+	var charge := float(f.m_s)+float(f.m_l)+float(f.bunker)
+	if str(f.phase) in ["tilt","pour","back"]:
+		return {"key":"tapping","n":7,"title":_w("倾炉出钢中","TAPPING"),"text":_w("钢水浇进锭模，铸成钢坯。","The melt runs into the moulds and casts billets."),"press":"","eta":-1.0}
+	if charge <= 0.000001:
+		# the melt is out: the billets cool on the casting line, then the trolley takes them home
+		var eta := _cool_left()
+		return {"key":"cooling","n":7,"title":_w("钢坯在铸造线上冷却","THE BILLETS ARE COOLING ON THE LINE"),"text":_w("炉里已经空了，所以不通电。钢坯凉到 200 °C 以下自动运回仓库，还要约 %d 秒。","The furnace is empty, so it draws no power. Below 200 °C the billets go to the warehouse by themselves: about %d s.") % int(ceil(eta)),"press":"","eta":eta}
+	if float(h.get("energy_debt",0.0)) > 0.000001:
+		return {"key":"debt","n":3,"title":_w("电费没付清，已停止供电","POWER BILL UNPAID: SUPPLY STOPPED"),"text":_w("资金补上后自动恢复。","It comes back once there is cash."),"press":"","eta":-1.0}
+	if h.get("grid",{}).is_empty():
+		var why := Grid.wait_text(game)
+		return {"key":"deferred" if Grid.ctl().defer else "power_wait","n":3,"title":_w("新炉次已延后","NEW HEATS DEFERRED") if Grid.ctl().defer else _w("等电网分电","WAITING FOR A SHARE OF THE GRID"),"text":why,"press":"","eta":-1.0}
+	if not h.get("auto",false) and (float(f.manual_power) < 0.5 or (float(f.bunker) > 0.0001 and not bool(f.manual_feed))):
+		return {"key":"start","n":3,"title":_w("按『通电熔化』","PRESS 'STRIKE THE ARCS'"),"text":_w("料已在炉口。一按就装炉、起弧，温度自己控。","The feed is at the furnace: one press charges it, strikes the arcs and holds the temperature."),"press":"melt","eta":-1.0}
+	var given := float(f.manual_supply_mw)
+	var used := float(f.power)
+	var melting: bool = float(f.m_s) > 0.000001 or float(f.bunker) > 0.000001 or float(f.T) < SmelterModel.T_TAP
+	if melting:
+		if used <= 0.05:
+			var why2 := Grid.wait_text(game)
+			if why2 == "":
+				why2 = _w("电网现在没分给电弧炉电。","The grid gives the furnace nothing now.")
+			return {"key":"starved","n":5,"title":_w("没在加热：电弧炉没分到电","NOT HEATING: NO POWER FOR THE FURNACE"),"text":_w("%d °C，温度在降。%s","%d °C and falling. %s") % [int(f.T),why2],"press":"shore" if _shore_ok() else "","eta":-1.0}
+		var eta2 := _melt_left()
+		var line := _w("实际在用 %.1f MW（分到 %.1f / %.0f MW）· 未熔 %.2f t · 出钢要 %d °C 以上，别超过 1710 °C","DRAWING %.1f MW (GIVEN %.1f / %.0f MW) · %.2f t UNMELTED · TAP AT %d °C+, NOT OVER 1710 °C") % [used,given,Grid.furnace_cap(),float(f.m_s)+float(f.bunker),int(SmelterModel.T_TAP)]
+		if eta2 > 0.0:
+			line += _w(" · 约 %s 后能出钢"," · ready to tap in about %s") % _span(eta2)
+		var short := Grid.wait_text(game)
+		if short != "":
+			line += "
+" + short
+		return {"key":"melting","n":5,"title":_w("加热熔化中：%d °C","MELTING: %d °C") % int(f.T),"text":line,"press":"shore" if short != "" and _shore_ok() else "","eta":eta2}
+	if float(f.dip) > 0.0001 or str(f.lance_phase) != "idle":
+		return {"key":"probe","n":6,"title":_w("等测温探头收回","WAITING FOR THE PROBE"),"text":_w("探头收回才能倾炉出钢。","The furnace tilts only once the probe is up."),"press":"","eta":-1.0}
+	if (HeatAuto.on() or str(h.get("queue","")) != "") and plant() != null:
+		return {"key":"probe","n":6,"title":_w("自动装置在测温、出钢","THE AUTO UNIT IS SAMPLING AND TAPPING"),"text":"","press":"","eta":-1.0}
+	if int(f.sample_count) == 0 or float(f.tc_age) > 60.0:
+		return {"key":"sample","n":6,"title":_w("全熔了：按『测温取样』","ALL MELTED: PRESS 'TAKE A SAMPLE'"),"text":_w("%d °C，钢水 %.2f t。","%d °C, %.2f t of melt.") % [int(f.T),float(f.m_l)],"press":"sample","eta":-1.0}
+	return {"key":"tap","n":7,"title":_w("可以出钢：按『倾炉出钢』","READY: PRESS 'TILT AND TAP'"),"text":_w("%d °C，钢水 %.2f t。","%d °C, %.2f t of melt.") % [int(f.T),float(f.m_l)],"press":"tap","eta":-1.0}
+
+
+func _w(zh: String, en: String) -> String: return zh if Txt.zh else en
+
+
+# 126 号 (user: "本次加工完成：获得 X 吨钢坯，已放入仓库。【查看仓库】"): what the heat came to, and where it
+# is — and if the mill takes it on at once (rolling on, or a kept batch's plate), said so
+func _result_card(t: float, grade: int, queued: bool) -> void:
+	if game == null or game.get("hud") == null or game.get("testing") and not Game.cine_in_tests:
+		return
+	var key := Exchange.lot_key("steel_billet",grade)
+	var row := Warehouse.row_for(key)
+	var body := _w("获得 %.2f 吨钢坯（等级 %d），已放进货运区仓库 %s 排。", "%.2f t of billet (grade %d), in the cargo warehouse, row %s.") % [t,grade,Warehouse.ROWS[row]]
+	if bool(Mill.cfg().get("loop",false)):
+		body += _w("
+轧机开着“连续轧”：它会接着把这批钢坯轧成%s。要留着卖钢坯，去轧机操作台关掉连续轧。", "
+The mill is rolling on: it will roll this billet into %s next. To keep billet, switch rolling on off at the mill.") % Mill.product_name(str(Mill.cfg().get("product","plate")))
+	elif queued:
+		body += _w("
+这批是结算时留着加工的钢锭：轧机会接着把它轧成钢板。", "
+This was a batch kept at settlement: the mill rolls it into plate next.")
+	var g = game
+	ResultCard.pop(game.hud, _w("本次加工完成", "THE HEAT IS DONE"), body, _w("查看仓库  [F3]", "SEE THE STORES  [F3]"), func(): g.open_store("product", "m:" + key))
+
+
+func _shore_ok() -> bool:
+	var h := heat()
+	return not h.get("shore_asked",false) and str(Grid.ctl().line) != "own_only" and not h.get("grid",{}).get("free",false)
+
+
+func _span(s: float) -> String:
+	if s < 90.0: return _w("%d 秒","%d s") % int(ceil(s))
+	return _w("%d 分钟","%d min") % int(ceil(s/60.0))
+
+
+# s still to run along the courier's route (its waypoints from the one it is making for)
+func _route_left() -> float:
+	if not is_instance_valid(body): return -1.0
+	var path := _path()
+	var i := int(heat().get("transport",{}).get("waypoint",0))
+	var d := 0.0
+	var at: Vector2 = body.global_position
+	for k in range(i,path.size()):
+		d += at.distance_to(path[k])
+		at = path[k]
+	return d/maxf(1.0,_speed())
+
+
+# s until the last billet on the casting line is below 200 °C (they cool as T-25 ~ e^(-t/70))
+func _cool_left() -> float:
+	var hot := 0.0
+	for ig in furnace().ingots:
+		hot = maxf(hot,float(ig[1]))
+	if hot <= 200.0: return 2.0
+	return 70.0*log((hot-25.0)/175.0)+2.0
+
+
+# s to all-liquid at tapping heat at the power drawn now (the heat balance the furnace runs on)
+func _melt_left() -> float:
+	var f = furnace()
+	var mass: float = (float(f.m_s)+float(f.m_l)+float(f.bunker))*1000.0
+	var need: float = SmelterModel.LINING_C*(SmelterModel.T_TAP-20.0)+mass*(SmelterModel.C_S*(SmelterModel.T_LIQ-20.0)+SmelterModel.L_FUS+SmelterModel.C_L*(SmelterModel.T_TAP-SmelterModel.T_LIQ))
+	var have: float = f.manual_enthalpy()
+	var net: float = float(f.power)*SmelterModel.ETA-maxf(0.0,f.q_wall())-maxf(0.0,f.q_rad())
+	if net <= 0.01: return -1.0
+	return maxf(0.0,need-have)/(net*1e6)
 func near() -> bool: return game.in_berth() and game.drone.global_position.distance_to(site()) < 6.0*Geom.M
 func field_state() -> Dictionary: return {"version":1,"issued":_issued.duplicate()}
 func restore_field(state: Dictionary) -> void:
@@ -150,7 +284,7 @@ func begin_queued(quantity: float, queued: Dictionary) -> Dictionary:
 	var r := begin(quantity)
 	_queued = {}
 	return r
-func begin(quantity: float) -> Dictionary:
+func begin(quantity: float, remote := false) -> Dictionary:
 	var queued := _queued
 	if fault != "": return {"ok":false,"reason":fault}
 	var old_debt := historical_debt()
@@ -158,7 +292,8 @@ func begin(quantity: float) -> Dictionary:
 	if float(old_debt.total) > 0.000001: return {"ok":false,"reason":"请先结清历史炉次待缴电费，不能用新炉次覆盖欠款"}
 	if float(heat().get("energy_debt",0.0)) > 0.000001: return {"ok":false,"reason":"请先结清上一炉待缴电费，不能用新炉次覆盖欠款"}
 	# 30 号: the district's own furnace does not wait on a contract taken (Q24)
-	if (queued.is_empty() and not near()) or (plant() == null and not Career.active().is_empty()) or Career.production_busy(): return {"ok":false,"reason":"请先结束当前作业，等设备空闲后，到炉台开炉。"}
+	# 124 号: sent from the guide's card it need not be at the desk (remote)
+	if (queued.is_empty() and not near() and not remote) or (plant() == null and not Career.active().is_empty()) or Career.production_busy(): return {"ok":false,"reason":"请先结束当前作业，等设备空闲后，到炉台开炉。"}
 	if Port.stage("process") < 1: return {"ok":false,"reason":"请先修复加工区基础设施"}
 	if not is_finite(quantity) or quantity < 0.25 or quantity > 2.0: return {"ok":false,"reason":"首期单炉范围 0.25–2 t"}
 	var line = plant().scrapline if plant() != null else game.dock.scrapline
@@ -543,6 +678,7 @@ func _receive() -> bool:
 			actor.lots[identity].ship = str(batch.get("ship",""))
 		# 39 号: the arc furnace's tapped heats, toward its first automation
 		if plant() != null: Career.data.heat_count = int(Career.data.get("heat_count",0))+1
+		_result_card(float(batch.quantity),output_grade,str(batch.get("queue","")) != "")
 	batch.furnace = furnace().manual_snapshot()
 	batch.receipt = {"key":str(body.pieces[0].key),"mass_t":body.total_mass(),"receiver":str(receiver.name)}
 	batch.transport = {}
@@ -682,7 +818,9 @@ func _process(dt: float) -> void:
 	furnace().manual_supply_mw = supply if float(batch.energy_debt) <= 0.000001 else 0.0
 	if float(batch.energy_debt) > 0.000001: waiting = "电费余额不足，已停止新增供电"
 	elif batch.state == "processing" and batch.get("grid",{}).is_empty(): waiting = "等电：" + Grid.wait_text(game)
-	elif batch.state == "processing" and Grid.wait_text(game) != "": waiting = Grid.wait_text(game)
+	# 125 号: short of power only while there is a charge to heat (not while the billets cool)
+	elif batch.state == "processing" and Grid.wait_text(game) != "" and float(furnace().m_s)+float(furnace().m_l)+float(furnace().bunker) > 0.000001: waiting = Grid.wait_text(game)
+	elif batch.state == "processing" and float(furnace().m_s)+float(furnace().m_l)+float(furnace().bunker) <= 0.000001 and (waiting.begins_with("电不够") or waiting.begins_with("SHORT")): waiting = ""
 	elif waiting == "电费余额不足，已停止新增供电" or waiting.begins_with("等电：") or waiting.begins_with("电不够"): waiting = ""
 	if batch.state == "processing":
 		if furnace().manual_shipped_t >= float(batch.quantity)-0.000001 and furnace().phase == "hold":

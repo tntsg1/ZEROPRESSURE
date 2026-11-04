@@ -1808,6 +1808,31 @@ func open_queue_panel() -> void:
 	sfx.play("menu")
 
 
+# 126 号: the company's stores, everything on one page (scripts/company_store.gd)
+func open_store(kind := "all", pick := "") -> void:
+	if console_ui != null or menu_open or state != "play":
+		return
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	var panel = preload("res://scripts/company_store.gd").new()
+	panel.game = self
+	_cover_world(true)
+	panel.on_close = func():
+		_cover_world(false)
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+	console_ui = panel
+	layer.add_child(panel)
+	panel.open_kind(kind)
+	if pick != "":
+		panel.select(pick)
+	sfx.play("menu")
+
+
 # 85 号: one side of the cargo district's racks (scripts/shelf_panel.gd)
 func open_shelf(side: String) -> void:
 	if console_ui != null or menu_open or state != "play":

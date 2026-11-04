@@ -7,8 +7,9 @@ class_name RemoteOps
 # career that walked the whole old round has walked them all. Working the machines (the furnace,
 # the mill, carrying goods) stays on site.
 
-const KINDS := ["rack", "grid", "queue"]
-const KEYS := {"rack": KEY_F4, "grid": KEY_F5, "queue": KEY_F6}
+# 126 号: the company's stores (everything on one page) with F3, from the start
+const KINDS := ["store", "rack", "grid", "queue"]
+const KEYS := {"store": KEY_F3, "rack": KEY_F4, "grid": KEY_F5, "queue": KEY_F6}
 
 
 static func w(zh: String, en: String) -> String:
@@ -17,6 +18,7 @@ static func w(zh: String, en: String) -> String:
 
 static func name_of(kind: String) -> String:
 	match kind:
+		"store": return w("仓库", "STORES")
 		"rack": return w("零件架", "PARTS RACK")
 		"grid": return w("电网调度", "GRID DISPATCH")
 		"queue": return w("加工排队", "PROCESSING QUEUE")
@@ -39,6 +41,7 @@ static func ok(kind: String) -> bool:
 	if Career.data.is_empty() or not Career.usable():
 		return false
 	match kind:
+		"store": return true
 		"rack": return Career.data.get("seen", {}).has("rack_used")
 		"grid": return _walked("power")
 		"queue": return _walked("process")
@@ -66,6 +69,7 @@ static func open(game, kind: String) -> bool:
 		game.sfx.play("deny")
 		return false
 	match kind:
+		"store": game.open_store()
 		"rack": game.open_parts_rack(true)
 		"grid": game.open_power_screen()
 		"queue": game.open_queue_panel()

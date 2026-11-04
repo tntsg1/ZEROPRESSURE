@@ -54,8 +54,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var column := OpsSkin.pane(self, Pal.heat(1.0, 1.4), 420.0)
 	plate = OpsSkin.Plate.new("EAF-3", words("电弧炉 · 炉台","ARC FURNACE · DESK"), words("现场操作 · 功率自动
-电价随电网：自发 $%.0f · 岸电 $%.0f /MWh" % [Grid.OWN_PRICE, Grid.SHORE_PRICE],"ON SITE · AUTOMATIC POWER
-Power: own $%.0f · shore $%.0f /MWh" % [Grid.OWN_PRICE, Grid.SHORE_PRICE]), Pal.heat(1.0, 1.4))
+用自家发的电；不够时可买外购电（贵 %d 倍）" % int(Grid.bought_x()),"ON SITE · AUTOMATIC POWER\nOur own power; bought power when short (%dx dearer)" % int(Grid.bought_x())), Pal.heat(1.0, 1.4))
 	column.add_child(plate)
 	readout = OpsSkin.as_screen(label("", 17))
 	readout.custom_minimum_size.y = 120
@@ -149,6 +148,12 @@ func _next() -> Array:
 		"product_transport":
 			return [words("钢坯冷却、运回仓库中…","BILLETS GOING BACK…"), Callable()]
 		"processing":
+			# 125 号: what the furnace is really doing (cooling, starved, melting) before any old guess
+			var inf: Dictionary = service.info()
+			if str(inf.key) in ["cooling", "debt", "starved", "melting", "tapping", "probe", "deferred", "power_wait"]:
+				if str(inf.press) == "shore":
+					return [words("电不够：买外购电补上（贵 %d 倍）" % int(Grid.bought_x()),"SHORT: BUY POWER (%dx DEARER)" % int(Grid.bought_x())), func(): show_result(service.ask_shore())]
+				return [str(inf.title), Callable()]
 			if heat.get("grid",{}).is_empty():
 				return [words("新炉次已在动力区控制屏延后","NEW HEATS ARE DEFERRED AT THE POWER SCREEN"), Callable()]
 			if str(f.phase) in ["tilt","pour","back"]:
@@ -157,7 +162,7 @@ func _next() -> Array:
 				return [GuideCopy.text("heat.melt"), func(): show_result(service.start_melt())]
 			# 70 号: short of power, it melts slowly — the shore line can make up the rest
 			if Grid.wait_text(service.game) != "" and not heat.get("shore_asked",false) and str(Grid.ctl().line) != "own_only":
-				return [words("电不够：接岸电补足（最多 %.0f MW · $%.0f/MWh）" % [Grid.SHORE_MAX, Grid.SHORE_PRICE],"SHORT: TOP UP FROM SHORE (UP TO %.0f MW)" % Grid.SHORE_MAX), func(): show_result(service.ask_shore())]
+				return [words("电不够：买外购电补上（贵 %d 倍）" % int(Grid.bought_x()),"SHORT: BUY POWER (%dx DEARER)" % int(Grid.bought_x())), func(): show_result(service.ask_shore())]
 			if float(f.m_s) > 0.000001 or float(f.bunker) > 0.000001 or float(f.T) < SmelterModel.T_TAP:
 				return [words("熔化中 · %d °C" % int(f.T),"MELTING · %d °C" % int(f.T)), Callable()]
 			if float(f.dip) > 0.0001 or str(f.lance_phase) != "idle":
@@ -208,7 +213,10 @@ func _process(dt: float) -> void:
 		"processing": instruction = "heat.processing"
 		"product_transport": instruction = "heat.returning"
 		"complete": instruction = "heat.complete"
-	next_step.text = GuideCopy.text(instruction) if service.waiting == "" else service.waiting
+	# 125 号: the same words as the guide and the machine
+	var inf2: Dictionary = service.info()
+	next_step.text = (str(inf2.title) + ("
+" + str(inf2.text) if str(inf2.text) != "" else "")) if str(heat.get("state","")) in ["raw_transport","processing","product_transport"] else (GuideCopy.text(instruction) if service.waiting == "" else service.waiting)
 	power_b.visible = str(service.waiting).begins_with("等电") or str(service.waiting).begins_with("电不够") or str(service.waiting).begins_with("SHORT")
 	var ql: Array = []
 	for e in ProcessQueue.entries():
@@ -224,8 +232,8 @@ func _process(dt: float) -> void:
 	var melted := clampf(float(f.m_l) / total, 0.0, 1.0) if str(heat.get("state","")) == "processing" else 0.0
 	var available: float = Career.data.get("exchange",{}).get("actors",{}).get("company",{}).get("stock",{}).get("ferrous_scrap:1",0.0)
 	readout.text = "%d °C · %s %d%%
-%.1f MW · %s $%.2f%s
-%s %.2f t" % [int(f.T), words("已熔","MELTED"), int(melted * 100.0), f.power, words("本炉电费","POWER"), float(heat.get("energy_cost",0.0)), (words(" · 待缴 $%.2f" % due, " · DUE $%.2f" % due) if due > 0.005 else ""), words("仓库合格炉料","GRADE 1 FEED IN STOCK"), available]
+%s · %s $%.2f%s
+%s %.2f t" % [int(f.T), words("已熔","MELTED"), int(melted * 100.0), words("实际 %.1f MW · 分到 %.1f MW","DRAWING %.1f MW · GIVEN %.1f MW") % [f.power, f.manual_supply_mw], words("本炉电费","POWER"), float(heat.get("energy_cost",0.0)), (words(" · 待缴 $%.2f" % due, " · DUE $%.2f" % due) if due > 0.005 else ""), words("仓库合格炉料","GRADE 1 FEED IN STOCK"), available]
 
 
 func close() -> void:

@@ -13,8 +13,8 @@ const ROW_AT := [Vector2(6, 12), Vector2(6, 15), Vector2(6, 18), Vector2(6, 21),
 const HATCH := Vector2(30.0, 26.0)
 const DEFAULT := ["ingot", "ingot", "scrap", "nonferrous", "billet", "stock", "parts", "misc"]
 const USES := ["ingot", "scrap", "nonferrous", "billet", "stock", "parts", "client", "hazard", "misc"]
-const SPEED := 2.0                       # m/s, a forklift at full power, stage 0
-const HANDLE := 4.0                      # s to pick or set down
+const SPEED := 5.0                       # m/s, a forklift at full power, stage 0 (124 号: was 2)
+const HANDLE := 2.0                      # s to pick or set down (124 号: was 4)
 const MW := 0.4                          # a forklift's draw while it drives
 const FLOOR := 0.1                       # what their own batteries keep up
 

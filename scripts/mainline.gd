@@ -14,7 +14,7 @@ const NAMES := {
 	"lights": ["修好船坞的照明", "GET THE BERTH'S LIGHTS WORKING"],
 	"furnace": ["修好熔炉和接碎料的网", "MEND THE FURNACE AND THE DEBRIS NET"],
 	"trade": ["修复贸易区，恢复交易", "REOPEN THE TRADE DISTRICT AND START SELLING"],
-	"steel": ["第一次卖出钢坯", "SELL STEEL BILLETS FOR THE FIRST TIME"],
+	"steel": ["第一次炼出钢坯", "MAKE STEEL BILLETS FOR THE FIRST TIME"],
 	"industry": ["修好货运区", "MEND THE CARGO DISTRICT"],
 	"berth88": ["把船坞扩到 88 米，能拆更大的船", "EXTEND THE BERTH TO 88 m FOR BIGGER SHIPS"],
 	"power_tug": ["修好动力区和拖船站", "MEND THE POWER DISTRICT AND THE TUG STATION"],
@@ -33,6 +33,16 @@ static func name_of(id: String) -> String:
 	return NAMES.get(id, [id, id])[0 if Txt.zh else 1]
 
 
+# 126 号 (user 2026-11-04 "炼出钢坯就算"): a heat's billets received into the warehouse — the
+# rolling mill may take them on to plate at once ("连续轧", the processing queue), so selling them
+# could never be counted on; a billet sold before still counts
+static func _billet_made() -> bool:
+	for m in Career.data.get("material_batches", []):
+		if str(m.get("material", "")) == "steel_billet" and str(m.get("state", "")) == "product_received":
+			return true
+	return _billet_sold()
+
+
 static func _billet_sold() -> bool:
 	for trade in Career.data.get("exchange", {}).get("trades", []):
 		# sold is sold: paid on the sale (37 号), or an older delivered sale
@@ -49,7 +59,7 @@ static func done(id: String) -> bool:
 		"lights": return up.has("lights")
 		"furnace": return up.has("furnace_main") and up.has("net_fix")
 		"trade": return Port.stage("trade") >= 1
-		"steel": return _billet_sold()
+		"steel": return _billet_made()
 		"industry": return Port.stage("process") >= 1 and Port.stage("cargo") >= 1
 		"berth88": return up.has("berth88")
 		"power_tug": return Port.stage("power") >= 1 and Port.stage("tug") >= 1

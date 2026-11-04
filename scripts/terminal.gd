@@ -295,7 +295,7 @@ func _ready() -> void:
 	# foot is the pages' own (the contracts page's start button)
 	remote_box.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	remote_box.offset_right = (end_button.offset_left if end_button.visible else exchange_button.offset_left if exchange_button.visible else -40.0) - 20.0
-	remote_box.offset_left = remote_box.offset_right - 620.0
+	remote_box.offset_left = remote_box.offset_right - 830.0
 	remote_box.offset_top = -64
 	remote_box.offset_bottom = -12
 	remote_box.visible = overlay and game_ref != null

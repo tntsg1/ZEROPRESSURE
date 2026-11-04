@@ -483,7 +483,7 @@ func _draw() -> void:
 	var where := w("船坞 · 终端下面", "BERTH · UNDER THE TERMINAL") if Port.stage("cargo") < 1 else w("货运区 · 左边货架", "CARGO · LEFT RACKS")
 	draw_rect(Rect2(PAD, 34, 4, 30), UiSkin.ACCENT * Color(1, 1, 1, a))
 	_text(w("零件架", "PARTS RACK"), Vector2(PAD + 16, 60), 30, Pal.ink(0.97 * a), font_s)
-	_text(where, Vector2(PAD + 16, 84), 14, Pal.ink(0.5 * a), font_b)
+	_text(where + w(" · 材料、成品、工具一起看：F3 公司仓库", " · MATERIALS, PRODUCTS, TOOLS TOO: F3 STORES"), Vector2(PAD + 16, 84), 14, Pal.ink(0.5 * a), font_b)
 	var n := _count()
 	var stats := [[w("零件", "PARTS"), "%d" % n], [w("估值", "WORTH"), Pal.money(_total())],
 		[short_class("structure"), "%.1f t" % _plate_t()], [short_class("section"), "%.1f t" % _section_t()]]

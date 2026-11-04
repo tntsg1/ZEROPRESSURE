@@ -845,7 +845,8 @@ func _card(it: Dictionary, r: Rect2, hov: bool, cv: CanvasItem = null) -> void:
 func _draw_warehouse() -> void:
 	var rr := _right_rect()
 	_text(w("我的仓库", "THE WAREHOUSE"), rr.position + Vector2(0, 22), 18, Pal.ink(0.92), font_s)
-	var sub := {"rack": w("货运区货架 A1–B4", "CARGO DISTRICT RACKS A1–B4"), "parts": w("零件架 · 完好设备", "PARTS RACK · WHOLE EQUIPMENT"), "gear": w("装备架 · 可部署工具", "GEAR SHELF · DEPLOYABLES")}
+	# 126 号: where it all is afterwards, said here once
+	var sub := {"rack": w("货运区货架 A1–B4 · 之后按 F3 看全部", "CARGO RACKS A1–B4 · F3 SHOWS IT ALL"), "parts": w("零件架 · 之后按 F3 在“完整设备”里看", "PARTS RACK · LATER: F3, EQUIPMENT"), "gear": w("装备架 · 可部署工具", "GEAR SHELF · DEPLOYABLES")}
 	_text(str(sub[tab]), rr.position + Vector2(0, 22), 14, Pal.ink(0.5), font_b, rr.size.x, HORIZONTAL_ALIGNMENT_RIGHT)
 	var dropping := dragging != "" and get_local_mouse_position().x > rr.position.x - 20.0
 	if dropping:

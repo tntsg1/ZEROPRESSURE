@@ -226,34 +226,23 @@ func _heat() -> Dictionary:
 	var purpose := w("把钢锭重新熔成钢水、浇成钢坯，卖给工业客户", "Melts grade 1 feed and casts billets for industrial clients")
 	var path := "res://scripts/heat_panel.gd"
 	var h: Dictionary = Career.data.get("industrial_heat", {})
-	var f = game.industrial_heat.furnace()
-	match str(h.get("state", "")):
-		"raw_transport":
-			return _wait(srv, name, purpose, 2, 8, w("等钢锭送到炉口", "WAIT FOR THE FEED"), w("搬运车正从仓库送料。", "The courier is bringing the feed."))
-		"raw_return":
-			return _wait(srv, name, purpose, 2, 8, w("等钢锭退回仓库", "FEED GOING BACK"), "")
-		"processing":
-			# 34 号: no share of the grid yet — the shore line, or mend the power district
-			if h.get("grid", {}).is_empty():
-				return _wait(srv, name, purpose, 3, 8, w("新炉次已延后", "NEW HEATS DEFERRED"), w("在动力区控制屏取消“新炉次延后”。", "Turn off the deferral at the power control screen."))
-			if str(f.phase) in ["tilt", "pour", "back"]:
-				return _wait(srv, name, purpose, 7, 8, w("倾炉出钢中", "TAPPING"), w("钢水浇进模子，冷却后自动运回仓库。", "The melt goes into the moulds; billets go back once cool."))
-			# 36 号: one press — charging, the arcs, and the power runs itself
-			if not h.get("auto", false) and (float(f.manual_power) < 0.5 or (float(f.bunker) > 0.0001 and not bool(f.manual_feed))):
-				return _at(srv, path, name, purpose, 3, 8, w("按『通电熔化』", "STRIKE THE ARCS"), GuideCopy.text("heat.melt"))
-			if float(f.m_s) > 0.000001 or float(f.bunker) > 0.000001 or float(f.T) < Smelter.T_TAP:
-				return _wait(srv, name, purpose, 5, 8, w("加热熔化中：%d °C", "MELTING: %d °C") % int(f.T), w("出钢要 %d °C 以上、全部熔化；别超过 1710 °C，否则降级。未熔 %.2f t", "Tap at %d °C or more, all melted; over 1710 °C downgrades. %.2f t unmelted") % [int(Smelter.T_TAP), float(f.m_s) + float(f.bunker)])
-			if int(f.sample_count) == 0 or float(f.tc_age) > 60.0:
-				return _at(srv, path, name, purpose, 6, 8, w("按『测温取样』", "TAKE A SAMPLE"), "测温取样")
-			if float(f.dip) > 0.0001 or str(f.lance_phase) != "idle":
-				return _wait(srv, name, purpose, 6, 8, w("等探头收回", "PROBE COMING UP"), w("取样完要等探头完全收回才能出钢。", "Tapping waits for the probe."))
-			return _at(srv, path, name, purpose, 7, 8, w("按『倾炉出钢』", "TILT AND TAP"), "倾炉出钢")
-		"product_transport":
-			return _wait(srv, name, purpose, 8, 8, w("等钢坯冷却运回仓库", "BILLETS GOING TO THE WAREHOUSE"), "")
+	# 125/126 号: the furnace's own state, the same words the desk and the machine say
+	var inf: Dictionary = srv.info()
+	if str(inf.key) not in ["idle", "fault"] and str(h.get("state", "")) not in ["complete", "cancelled", "written_off"]:
+		var press: String = str({"melt": GuideCopy.text("heat.melt"), "sample": "测温取样", "tap": "倾炉出钢"}.get(str(inf.press), ""))
+		if press != "":
+			return _at(srv, path, name, purpose, int(inf.n), 8, str(inf.title), press)
+		return _wait(srv, name, purpose, int(inf.n), 8, str(inf.title), str(inf.text))
 	if str(h.get("id", "")) != str(start.get("heat", "")) and str(h.get("state", "")) == "complete":
 		return {"done": w("出钢完成：钢坯已入库", "TAPPED: billets in the warehouse")}
 	if _stock(Exchange.lot_key("ferrous_scrap", 1)) >= 0.25:
-		return _at(srv, path, name, purpose, 1, 8, w("填炉料吨数，按『把仓库炉料送到炉口』", "SEND THE FEED"), GuideCopy.text("heat.send_feed"))
+		var s1 := _at(srv, path, name, purpose, 1, 8, w("填炉料吨数，按『把仓库炉料送到炉口』", "SEND THE FEED"), GuideCopy.text("heat.send_feed"))
+		# 124 号 (user "提速＋在路上就能送"): sent from right here, it travels while you fly over
+		if not _panel(path):
+			s1.action = "heat_send"
+			s1.title = w("送 %.2f t 钢锭去炉口（在哪都能按）", "SEND %.2f t OF INGOT TO THE FURNACE (FROM ANYWHERE)") % minf(2.0, _stock(Exchange.lot_key("ferrous_scrap", 1)))
+			s1.text = w("按卡片上的按钮就开始送，你飞过去的路上料也在走；到了炉台再按『通电熔化』。", "The card's button starts it; the feed travels while you fly over. At the desk, strike the arcs.")
+		return s1
 	return {"done": w("仓库里没有钢锭", "NO GRADE 1 FEED"), "end": true}
 
 
@@ -639,6 +628,17 @@ func act() -> void:
 			game.open_exchange("feed")
 		"exchange":
 			game.open_exchange()
+		"heat_send":
+			var q := minf(2.0, floorf(_stock(Exchange.lot_key("ferrous_scrap", 1)) * 100.0) / 100.0)
+			var r: Dictionary = game.industrial_heat.begin(q, true)
+			if r.get("ok", false):
+				game.hud.show_hint(w("钢锭出库了：%.2f t 正送往炉口", "THE INGOTS ARE ON THEIR WAY: %.2f t") % q)
+				if game.get("sfx") != null:
+					game.sfx.play("menu")
+			else:
+				game.hud.show_hint(str(r.get("reason", "")))
+				if game.get("sfx") != null:
+					game.sfx.play("deny")
 		"contracts":
 			game.open_console("terminal")
 			if game.console_ui != null:
