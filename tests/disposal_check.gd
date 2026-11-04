@@ -58,8 +58,19 @@ func _run() -> void:
 	g.open_disposal()
 	await _frames(5)
 	var p = g.disposal_ui
-	check(p != null and p.metal == "keep" and p.sell.get("dsp_b", false) and not p.sell.get("dsp_a", true), "the page opens on the defaults")
-	check(absf(p.cash_now() - Repair.part_worth(worn)) < 1.0, "cash now: the worn part only (%s)" % Pal.money(p.cash_now()))
+	# 119 号: everything opens on the left, waiting to be sorted; nothing sold, the hints say why
+	check(p != null and p.metal == "keep" and p.sold_uids().is_empty() and p.left_n() == 2 + 1, "the page opens with all three things to sort (%d)" % (p.left_n() if p != null else -1))
+	check(absf(p.cash_now()) < 1.0, "cash now: nothing yet (%s)" % Pal.money(p.cash_now()))
+	check(p._hint(p._item("dsp_b")).find("成色") >= 0, "the worn part's card says why it is no use: %s" % p._hint(p._item("dsp_b")))
+	# move all, sell all, undo
+	p.move_all("wh")
+	check(p.left_n() == 0 and p.sold_uids().is_empty() and p.metal == "keep", "move all: everything kept")
+	p.undo()
+	p.undo()
+	p.undo()
+	check(p.left_n() == 3, "undone three times: all back to sort")
+	p.move("dsp_b", "sold")
+	check(absf(p.cash_now() - Repair.part_worth(worn)) < 1.0, "the worn part on the sale strip: its price (%s)" % Pal.money(p.cash_now()))
 	var ev := InputEventKey.new()
 	ev.keycode = KEY_1
 	ev.pressed = true

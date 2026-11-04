@@ -295,89 +295,89 @@
 "zh": "接下来，你需要从废船回收开始。把找到的船拖回七号坞，拆解并出售回收物资，用赚来的钱修复设备，逐步恢复船厂的运营。",
 "en": "YOUR FIRST JOB IS TO RECOVER A DERELICT SHIP. TOW IT BACK TO BERTH 07, DISMANTLE IT, AND SELL THE SALVAGED MATERIALS. USE THE EARNINGS TO REPAIR YOUR EQUIPMENT AND GET THE YARD RUNNING AGAIN.",
 "file": "opening.gd",
-"line": 155,
+"line": 157,
 "func": "_draw",
-"en_line": 155
+"en_line": 157
 },
 "opening:_draw:2": {
 "zh": "%d / %d · 按任意键继续 · Esc 跳过开场",
 "en": "%d / %d · ANY KEY TO CONTINUE · ESC TO SKIP INTRO",
 "file": "opening.gd",
-"line": 164,
+"line": 166,
 "func": "_draw",
-"en_line": 164
+"en_line": 166
 },
 "opening:_permit:1": {
 "zh": "零压港港务管理局",
 "en": "ZERO PRESSURE PORT AUTHORITY",
 "file": "opening.gd",
-"line": 177,
+"line": 179,
 "func": "_permit",
-"en_line": 177
+"en_line": 179
 },
 "opening:_permit:2": {
 "zh": "船舶回收作业许可证",
 "en": "SHIP SALVAGE OPERATING PERMIT",
 "file": "opening.gd",
-"line": 179,
+"line": 181,
 "func": "_permit",
-"en_line": 179
+"en_line": 181
 },
 "opening:_permit:5": {
 "zh": "七号船坞及附属设施",
 "en": "BERTH 07 AND ASSOCIATED FACILITIES",
 "file": "opening.gd",
-"line": 183,
+"line": 185,
 "func": "_permit",
-"en_line": 183
+"en_line": 185
 },
 "opening:_permit:8": {
 "zh": "港历第 %d 日",
 "en": "PORT DAY %d",
 "file": "opening.gd",
-"line": 185,
+"line": 187,
 "func": "_permit",
-"en_line": 185
+"en_line": 187
 },
 "opening:_permit:10": {
 "zh": "废弃泊位经营权申请（免收申请费用）",
 "en": "DERELICT BERTH OPERATING RIGHTS APPLICATION (NO APPLICATION FEE)",
 "file": "opening.gd",
-"line": 186,
+"line": 188,
 "func": "_permit",
-"en_line": 186
+"en_line": 188
 },
 "opening:_permit:11": {
 "zh": "设施现状：共记录 %d 项损坏或停用设施",
 "en": "FACILITY INSPECTION: %d DAMAGED OR INACTIVE ITEMS RECORDED",
 "file": "opening.gd",
-"line": 199,
+"line": 201,
 "func": "_permit",
-"en_line": 199
+"en_line": 201
 },
 "opening:_permit:13": {
 "zh": "持证企业代表签署",
 "en": "AUTHORIZED COMPANY SIGNATURE",
 "file": "opening.gd",
-"line": 218,
+"line": 220,
 "func": "_permit",
-"en_line": 218
+"en_line": 220
 },
 "opening:_permit:14": {
 "zh": "持证企业代表签署",
 "en": "AUTHORIZED COMPANY SIGNATURE",
 "file": "opening.gd",
-"line": 222,
+"line": 224,
 "func": "_permit",
-"en_line": 222
+"en_line": 224
 },
 "opening:_permit:15": {
 "zh": "零压港港务局",
 "en": "ZERO PRESSURE PORT AUTHORITY",
 "file": "opening.gd",
-"line": 232,
+"line": 234,
 "func": "_permit",
-"en_line": 232
+"en_line": 234
 },
 "playtest:cut:1": {
 "zh": "首次成功切割并分离部件",
@@ -3614,6 +3614,12 @@
 "txt:e_to_terminal": {
 "zh": "任意键返回船坞终端",
 "en": "ANY KEY: BERTH TERMINAL",
+"file": "txt.gd",
+"line": 0
+},
+"txt:e_to_goods": {
+"zh": "任意键：下一步 · 整理回收物",
+"en": "ANY KEY: NEXT · SORT THE HAUL",
 "file": "txt.gd",
 "line": 0
 },
@@ -11049,117 +11055,301 @@
 "func": "part_note",
 "en_line": 131
 },
-"disposal_panel:_ready:1": {
-"zh": "回收物去向",
-"en": "WHERE THE GOODS GO",
+"disposal_panel:move:1": {
+"zh": "卖掉：%s  +%s",
+"en": "SOLD: %s  +%s",
 "file": "disposal_panel.gd",
-"line": 40,
-"func": "_ready",
-"en_line": 40
+"line": 146,
+"func": "move",
+"en_line": 146
 },
-"disposal_panel:_ready:2": {
-"zh": "钢锭  %.1f t",
-"en": "INGOTS  %.1f t",
+"disposal_panel:move:2": {
+"zh": "放回待整理：%s",
+"en": "BACK TO SORT: %s",
 "file": "disposal_panel.gd",
-"line": 45,
-"func": "_ready",
-"en_line": 45
+"line": 148,
+"func": "move",
+"en_line": 148
 },
-"disposal_panel:_ready:3": {
-"zh": "[1] 直卖  +%s 现在到账",
-"en": "[1] SELL  +%s NOW",
+"disposal_panel:move_all:1": {
+"zh": "左边已经没有待整理的东西。",
+"en": "NOTHING LEFT TO SORT.",
 "file": "disposal_panel.gd",
-"line": 50,
-"func": "_ready",
-"en_line": 50
+"line": 169,
+"func": "move_all",
+"en_line": 169
 },
-"disposal_panel:_ready:4": {
-"zh": "熔炉铸的钢锭整批直接卖掉，钱现在到账。",
-"en": "The furnace's ingots sold as one batch: the money now.",
+"disposal_panel:move_all:2": {
+"zh": "%d 样全部入库。",
+"en": "%d PUT AWAY.",
 "file": "disposal_panel.gd",
-"line": 52,
-"func": "_ready",
-"en_line": 52
+"line": 171,
+"func": "move_all",
+"en_line": 171
 },
-"disposal_panel:_ready:5": {
-"zh": "[2] 留着加工  钢坯约 %s",
-"en": "[2] PROCESS  BILLET ABOUT %s",
+"disposal_panel:move_all:3": {
+"zh": "%d 样全部卖出：现在到账 %s。",
+"en": "%d SOLD: %s NOW.",
 "file": "disposal_panel.gd",
-"line": 54,
-"func": "_ready",
-"en_line": 54
+"line": 173,
+"func": "move_all",
+"en_line": 173
 },
-"disposal_panel:_ready:6": {
-"zh": "留着加工：运到加工区，电弧炉炼成约 %.1f t 钢坯（电费约 %s），再轧成钢板——钢板可抵修缮用的船体结构，钢坯和钢板也能在交易行卖。",
-"en": "Processing: carried to the processing district, melted into about %.1f t of billet (power about %s), then rolled into plate — plate counts as hull structure for repairs; both sell on the exchange.",
+"disposal_panel:undo:1": {
+"zh": "没有可以撤销的操作。",
+"en": "NOTHING TO UNDO.",
 "file": "disposal_panel.gd",
-"line": 57,
-"func": "_ready",
-"en_line": 58
+"line": 178,
+"func": "undo",
+"en_line": 178
 },
-"disposal_panel:_ready:7": {
-"zh": "留着加工：炼成钢坯、轧成钢板，修船坞或卖。",
-"en": "Processing: billet, then plate — for repairs or to sell.",
+"disposal_panel:undo:2": {
+"zh": "撤销：%s 回到%s",
+"en": "UNDONE: %s",
 "file": "disposal_panel.gd",
-"line": 59,
-"func": "_ready",
-"en_line": 59
-},
-"disposal_panel:_ready:8": {
-"zh": "加工区还没修好：钢锭先放仓库，修好后自动加工。",
-"en": "The processing district is not mended: the ingots wait in the warehouse.",
-"file": "disposal_panel.gd",
-"line": 61,
-"func": "_ready",
-"en_line": 61
-},
-"disposal_panel:_ready:9": {
-"zh": "完好设备  %d 件",
-"en": "WHOLE EQUIPMENT  %d",
-"file": "disposal_panel.gd",
-"line": 65,
-"func": "_ready",
-"en_line": 65
-},
-"disposal_panel:_ready:12": {
-"zh": "确认，离开船坞 [Enter]",
-"en": "CONFIRM AND LEAVE [Enter]",
-"file": "disposal_panel.gd",
-"line": 98,
-"func": "_ready",
-"en_line": 98
-},
-"disposal_panel:_ready:13": {
-"zh": "回结算单 [Esc]",
-"en": "BACK [Esc]",
-"file": "disposal_panel.gd",
-"line": 104,
-"func": "_ready",
-"en_line": 104
-},
-"disposal_panel:_refresh:2": {
-"zh": "留下设备 %d 件",
-"en": "%d PIECES KEPT",
-"file": "disposal_panel.gd",
-"line": 162,
-"func": "_refresh",
-"en_line": 162
-},
-"disposal_panel:_refresh:3": {
-"zh": "%.1f t 钢锭送去加工",
-"en": "%.1f t OF INGOTS TO PROCESS",
-"file": "disposal_panel.gd",
-"line": 164,
-"func": "_refresh",
-"en_line": 164
+"line": 186,
+"func": "undo",
+"en_line": 186
 },
 "disposal_panel:confirm:1": {
 "zh": "保存失败，什么都没卖：再按一次确认。",
 "en": "Save failed, nothing sold: confirm again.",
 "file": "disposal_panel.gd",
-"line": 171,
+"line": 226,
 "func": "confirm",
-"en_line": 171
+"en_line": 226
+},
+"disposal_panel:confirm:2": {
+"zh": "剩下的 %d 样已自动入库。",
+"en": "THE %d LEFT WERE PUT AWAY.",
+"file": "disposal_panel.gd",
+"line": 229,
+"func": "confirm",
+"en_line": 229
+},
+"disposal_panel:_name:1": {
+"zh": "钢锭 %.1f t",
+"en": "INGOTS %.1f t",
+"file": "disposal_panel.gd",
+"line": 243,
+"func": "_name",
+"en_line": 243
+},
+"disposal_panel:_name:2": {
+"zh": "气体与流体",
+"en": "GAS AND FLUIDS",
+"file": "disposal_panel.gd",
+"line": 249,
+"func": "_name",
+"en_line": 249
+},
+"disposal_panel:_kept_line:1": {
+"zh": "之后送加工区炼成约 %.1f t 钢坯",
+"en": "then to processing: about %.1f t of billet",
+"file": "disposal_panel.gd",
+"line": 270,
+"func": "_kept_line",
+"en_line": 270
+},
+"disposal_panel:_kept_line:2": {
+"zh": "加工区修好后自动加工",
+"en": "processed once the district is mended",
+"file": "disposal_panel.gd",
+"line": 272,
+"func": "_kept_line",
+"en_line": 272
+},
+"disposal_panel:_kept_line:3": {
+"zh": "入库：钢锭 %.1f t → %s %s · %s",
+"en": "KEPT: INGOTS %.1f t → %s %s · %s",
+"file": "disposal_panel.gd",
+"line": 273,
+"func": "_kept_line",
+"en_line": 273
+},
+"disposal_panel:_kept_line:4": {
+"zh": "入库：%s → 零件架",
+"en": "KEPT: %s → THE PARTS RACK",
+"file": "disposal_panel.gd",
+"line": 274,
+"func": "_kept_line",
+"en_line": 274
+},
+"disposal_panel:_hint:1": {
+"zh": "入库加工：钢坯约 %s（电费约 %s）",
+"en": "KEEP: BILLET ABOUT %s (POWER %s)",
+"file": "disposal_panel.gd",
+"line": 282,
+"func": "_hint",
+"en_line": 282
+},
+"disposal_panel:_hint:2": {
+"zh": "已按合同交付，钱已到账",
+"en": "DELIVERED WITH THE CONTRACT, PAID",
+"file": "disposal_panel.gd",
+"line": 286,
+"func": "_hint",
+"en_line": 286
+},
+"disposal_panel:_draw_head:3": {
+"zh": "入库 %d 样",
+"en": "%d KEPT",
+"file": "disposal_panel.gd",
+"line": 549,
+"func": "_draw_head",
+"en_line": 549
+},
+"disposal_panel:_draw_head:4": {
+"zh": "待整理 %d 样（确认时自动入库）",
+"en": "%d TO SORT (KEPT ON CONFIRM)",
+"file": "disposal_panel.gd",
+"line": 551,
+"func": "_draw_head",
+"en_line": 551
+},
+"disposal_panel:_draw_drone:3": {
+"zh": "这一单没有带出可部署工具",
+"en": "NO DEPLOYABLE GEAR TAKEN OUT",
+"file": "disposal_panel.gd",
+"line": 585,
+"func": "_draw_drone",
+"en_line": 585
+},
+"disposal_panel:_draw_left_cards:1": {
+"zh": "本单回收物",
+"en": "THIS CONTRACT'S GOODS",
+"file": "disposal_panel.gd",
+"line": 627,
+"func": "_draw_left_cards",
+"en_line": 627
+},
+"disposal_panel:_draw_left_cards:2": {
+"zh": "点卡片或拖到右边入库 · 卡片上的“卖”或拖到下面直接卖",
+"en": "CLICK OR DRAG RIGHT TO KEEP · \\\"SELL\\\" OR DRAG BELOW TO SELL",
+"file": "disposal_panel.gd",
+"line": 628,
+"func": "_draw_left_cards",
+"en_line": 628
+},
+"disposal_panel:_draw_left_cards:3": {
+"zh": "都整理好了。按 Enter 确认，离开船坞。",
+"en": "ALL SORTED. ENTER TO CONFIRM AND LEAVE.",
+"file": "disposal_panel.gd",
+"line": 635,
+"func": "_draw_left_cards",
+"en_line": 635
+},
+"disposal_panel:_card:1": {
+"zh": "熔炉铸的一批 · 整批处理",
+"en": "ONE BATCH FROM THE FURNACE",
+"file": "disposal_panel.gd",
+"line": 685,
+"func": "_card",
+"en_line": 685
+},
+"disposal_panel:_card:2": {
+"zh": "已交付 · +%s",
+"en": "DELIVERED · +%s",
+"file": "disposal_panel.gd",
+"line": 689,
+"func": "_card",
+"en_line": 689
+},
+"disposal_panel:_draw_warehouse:2": {
+"zh": "货运区货架 A1–B4",
+"en": "CARGO DISTRICT RACKS A1–B4",
+"file": "disposal_panel.gd",
+"line": 716,
+"func": "_draw_warehouse",
+"en_line": 716
+},
+"disposal_panel:_draw_warehouse:3": {
+"zh": "零件架 · 完好设备",
+"en": "PARTS RACK · WHOLE EQUIPMENT",
+"file": "disposal_panel.gd",
+"line": 716,
+"func": "_draw_warehouse",
+"en_line": 716
+},
+"disposal_panel:_draw_warehouse:4": {
+"zh": "装备架 · 可部署工具",
+"en": "GEAR SHELF · DEPLOYABLES",
+"file": "disposal_panel.gd",
+"line": 716,
+"func": "_draw_warehouse",
+"en_line": 716
+},
+"disposal_panel:_draw_rack:2": {
+"zh": "新增  钢锭 %.1f t · 送加工",
+"en": "NEW  INGOTS %.1f t · TO PROCESS",
+"file": "disposal_panel.gd",
+"line": 797,
+"func": "_draw_rack",
+"en_line": 797
+},
+"disposal_panel:_draw_parts:1": {
+"zh": "零件架上另有 %d 件",
+"en": "%d MORE ON THE RACK",
+"file": "disposal_panel.gd",
+"line": 821,
+"func": "_draw_parts",
+"en_line": 821
+},
+"disposal_panel:_draw_parts:2": {
+"zh": "零件架上还没有东西",
+"en": "THE PARTS RACK IS EMPTY",
+"file": "disposal_panel.gd",
+"line": 823,
+"func": "_draw_parts",
+"en_line": 823
+},
+"disposal_panel:_draw_gear_shelf:1": {
+"zh": "架上 %d 个",
+"en": "%d ON THE SHELF",
+"file": "disposal_panel.gd",
+"line": 851,
+"func": "_draw_gear_shelf",
+"en_line": 851
+},
+"disposal_panel:_draw_sale:2": {
+"zh": "拖到这里卖 · 点已卖的东西放回",
+"en": "DROP HERE TO SELL · CLICK ONE TO TAKE IT BACK",
+"file": "disposal_panel.gd",
+"line": 871,
+"func": "_draw_sale",
+"en_line": 871
+},
+"disposal_panel:_draw_buttons:1": {
+"zh": "确认，离开船坞 [Enter]",
+"en": "CONFIRM AND LEAVE [Enter]",
+"file": "disposal_panel.gd",
+"line": 883,
+"func": "_draw_buttons",
+"en_line": 883
+},
+"disposal_panel:_draw_buttons:2": {
+"zh": "回结算单 [Esc]",
+"en": "BACK [Esc]",
+"file": "disposal_panel.gd",
+"line": 883,
+"func": "_draw_buttons",
+"en_line": 883
+},
+"disposal_panel:_draw_buttons:3": {
+"zh": "转移全部 [T]",
+"en": "MOVE ALL [T]",
+"file": "disposal_panel.gd",
+"line": 884,
+"func": "_draw_buttons",
+"en_line": 884
+},
+"disposal_panel:_draw_buttons:4": {
+"zh": "全部卖出 [X]",
+"en": "SELL ALL [X]",
+"file": "disposal_panel.gd",
+"line": 884,
+"func": "_draw_buttons",
+"en_line": 884
 },
 "fault_callout:_draw:1": {
 "zh": "发现故障：%s · 已记进报修",
@@ -11397,215 +11587,215 @@
 "zh": "%s 拖到港了 · 停在拖船站泊位 %d",
 "en": "%s IS HOME · TUG YARD BERTH %d",
 "file": "hud.gd",
-"line": 239,
+"line": 308,
 "func": "_arrival_card",
-"en_line": 239
+"en_line": 308
 },
 "hud:_arrival_card:2": {
 "zh": "按 %s（或点这里）打开终端，它的卡已经选好：点“开工拆”就进船坞开拆。",
 "en": "Press %s (or click here): the terminal opens on its card — start stripping to bring it into the berth.",
 "file": "hud.gd",
-"line": 241,
+"line": 310,
 "func": "_arrival_card",
-"en_line": 241
+"en_line": 310
 },
 "hud:_arrival_card:3": {
 "zh": "它被扣在港口（欠费或留置）。按 %s（或点这里）打开终端看原因，处理完才能开拆。",
 "en": "It is held at the port (a lien or a bill). Press %s (or click here) to see why.",
 "file": "hud.gd",
-"line": 243,
+"line": 312,
 "func": "_arrival_card",
-"en_line": 243
+"en_line": 312
 },
 "hud:_salvage_power:1": {
 "zh": "电不够：船坞只分到 %.1f / %.1f MW（激光 %d%%、传送带 %d%%、熔炉 %d%%）。修动力区，或在动力区控制屏把拆船区往前调。",
 "en": "SHORT OF POWER: THE BERTH GETS %.1f / %.1f MW (LASER %d%%, BELT %d%%, FURNACE %d%%).",
 "file": "hud.gd",
-"line": 277,
+"line": 346,
 "func": "_salvage_power",
-"en_line": 277
+"en_line": 346
 },
 "hud:career_rows:1": {
 "zh": "%.1f 吨，下一页定：直卖或留着加工",
 "en": "%.1f t: sell or process, on the next page",
 "file": "hud.gd",
-"line": 359,
+"line": 428,
 "func": "career_rows",
-"en_line": 359
+"en_line": 428
 },
 "hud:_radio_box:1": {
 "zh": "贸易港 · 客人",
 "en": "TRADE PORT · CALLER",
 "file": "hud.gd",
-"line": 858,
+"line": 955,
 "func": "_radio_box",
-"en_line": 858
+"en_line": 955
 },
 "hud:crane_note:1": {
 "zh": "超过吊车额定 %.0f t：先切小",
 "en": "OVER THE CRANE'S %.0f t: CUT IT SMALLER",
 "file": "hud.gd",
-"line": 990,
+"line": 1087,
 "func": "crane_note",
-"en_line": 990
+"en_line": 1087
 },
 "hud:crane_note:2": {
 "zh": "这艘只许人工：按 %s 交给吊车",
 "en": "MANUAL-ONLY SHIP: %s TO GIVE IT TO THE CRANE",
 "file": "hud.gd",
-"line": 992,
+"line": 1089,
 "func": "crane_note",
-"en_line": 992
+"en_line": 1089
 },
 "hud:crane_note:3": {
 "zh": "松手：吊车会来整件吊走",
 "en": "LET GO: THE CRANE WILL LIFT IT WHOLE",
 "file": "hud.gd",
-"line": 993,
+"line": 1090,
 "func": "crane_note",
-"en_line": 993
+"en_line": 1090
 },
 "hud:crane_note:4": {
 "zh": "门式吊车坏了：修好就能整件吊走（%.0f t 以内）",
 "en": "THE CRANE IS DOWN: MENDED, IT LIFTS THIS WHOLE (UP TO %.0f t)",
 "file": "hud.gd",
-"line": 995,
+"line": 1092,
 "func": "crane_note",
-"en_line": 995
+"en_line": 1092
 },
 "hud:_guide_keys:5": {
 "zh": "打开交易行",
 "en": "EXCHANGE",
 "file": "hud.gd",
-"line": 1409,
+"line": 1510,
 "func": "_guide_keys",
-"en_line": 1409
+"en_line": 1510
 },
 "hud:_guide_keys:6": {
 "zh": "打开交易行",
 "en": "EXCHANGE",
 "file": "hud.gd",
-"line": 1410,
+"line": 1511,
 "func": "_guide_keys",
-"en_line": 1410
+"en_line": 1511
 },
 "hud:_guide_keys:8": {
 "zh": "打开船坞修缮",
 "en": "REPAIRS",
 "file": "hud.gd",
-"line": 1410,
+"line": 1511,
 "func": "_guide_keys",
-"en_line": 1410
+"en_line": 1511
 },
 "hud:_main_line:1": {
 "zh": "主线 · 第 %d 章 · %s",
 "en": "MAIN LINE · CHAPTER %d · %s",
 "file": "hud.gd",
-"line": 1423,
+"line": 1524,
 "func": "_main_line",
-"en_line": 1423
+"en_line": 1524
 },
 "hud:_guide:1": {
 "zh": "引导 · %s · 第 %d / %d 步",
 "en": "GUIDE · %s · STEP %d / %d",
 "file": "hud.gd",
-"line": 1443,
+"line": 1544,
 "func": "_guide",
-"en_line": 1443
+"en_line": 1544
 },
 "hud:_toolbar:1": {
 "zh": "教程稍后解锁",
 "en": "LATER IN THE GUIDE",
 "file": "hud.gd",
-"line": 1585,
+"line": 1686,
 "func": "_toolbar",
-"en_line": 1585
+"en_line": 1686
 },
 "hud:_toolbar:2": {
 "zh": "现在只需要飞，工具在用到时一件件解锁",
 "en": "JUST FLY FOR NOW: EACH TOOL UNLOCKS WHEN IT IS NEEDED",
 "file": "hud.gd",
-"line": 1590,
+"line": 1691,
 "func": "_toolbar",
-"en_line": 1590
+"en_line": 1691
 },
 "hud:_gauge:3": {
 "zh": "超重，拉不动",
 "en": "TOO HEAVY",
 "file": "hud.gd",
-"line": 1954,
+"line": 2077,
 "func": "_gauge",
-"en_line": 1954
+"en_line": 2077
 },
 "hud:_keys_page:2": {
 "zh": "按键可以在 设置 → 按键 里改，这里跟着变。点任意处或按 Esc 返回。",
 "en": "Keys are changed under Settings; this page follows. Click anywhere or press Esc to go back.",
 "file": "hud.gd",
-"line": 2350,
+"line": 2473,
 "func": "_keys_page",
-"en_line": 2350
+"en_line": 2473
 },
 "hud:_asset_card:1": {
 "zh": "核心资产 · %s（%s）· 满价 %s",
 "en": "CORE ASSET · %s (%s) · WHOLE %s",
 "file": "hud.gd",
-"line": 2665,
+"line": 2791,
 "func": "_asset_card",
-"en_line": 2665
+"en_line": 2791
 },
 "hud:_asset_card:2": {
 "zh": "%s　%s %s · 约 %d–%d 分钟",
 "en": "%s　%s %s · ABOUT %d–%d MIN",
 "file": "hud.gd",
-"line": 2672,
+"line": 2798,
 "func": "_asset_card",
-"en_line": 2672
+"en_line": 2798
 },
 "hud:_asset_card:3": {
 "zh": "%s　%s %s · 用时待实测",
 "en": "%s　%s %s · TIME NOT MEASURED",
 "file": "hud.gd",
-"line": 2675,
+"line": 2801,
 "func": "_asset_card",
-"en_line": 2675
+"en_line": 2801
 },
 "hud:_asset_board:1": {
 "zh": "核心资产 · %s",
 "en": "CORE ASSET · %s",
 "file": "hud.gd",
-"line": 2708,
+"line": 2868,
 "func": "_asset_board",
-"en_line": 2708
+"en_line": 2868
 },
 "hud:_asset_board:2": {
 "zh": "预估 %s / %s",
 "en": "NOW %s / %s",
 "file": "hud.gd",
-"line": 2709,
+"line": 2869,
 "func": "_asset_board",
-"en_line": 2709
+"en_line": 2869
 },
 "hud:_next_mark:1": {
 "zh": "进行中 · ",
 "en": "UNDER WAY · ",
 "file": "hud.gd",
-"line": 2787,
+"line": 2969,
 "func": "_next_mark",
-"en_line": 2787
+"en_line": 2969
 },
 "hud:_next_mark:2": {
 "zh": "下一步 · ",
 "en": "NEXT · ",
 "file": "hud.gd",
-"line": 2787,
+"line": 2969,
 "func": "_next_mark",
-"en_line": 2787
+"en_line": 2969
 },
 "hud:_asset_review:7": {
 "zh": "−%s  %s（%d 次）",
 "en": "",
 "file": "hud.gd",
-"line": 2857,
+"line": 3039,
 "func": "_asset_review",
 "en_line": 0
 },
@@ -11617,43 +11807,35 @@
 "func": "_draw_osd",
 "en_line": 511
 },
-"look:_region_line:2": {
-"zh": "推力 %d%%  ·  完好 %d%%",
-"en": "THRUST %d%%  ·  HULL %d%%",
-"file": "look.gd",
-"line": 608,
-"func": "_region_line",
-"en_line": 608
-},
 "look:_region_line:3": {
 "zh": "激光 · 出光",
 "en": "LASER · FIRING",
 "file": "look.gd",
-"line": 615,
+"line": 622,
 "func": "_region_line",
-"en_line": 615
+"en_line": 622
 },
 "look:_region_line:4": {
 "zh": "激光 · 空切",
 "en": "LASER · OPEN AIR",
 "file": "look.gd",
-"line": 615,
+"line": 622,
 "func": "_region_line",
-"en_line": 615
+"en_line": 622
 },
 "look:_region_line:8": {
 "zh": "抓钩 · %.2f / %.1f t · %s",
 "en": "GRAPPLE · %.2f / %.1f t · %s",
 "file": "look.gd",
-"line": 619,
+"line": 626,
 "func": "_region_line",
-"en_line": 619
+"en_line": 626
 },
 "look:_unhandled_key_input:1": {
 "zh": "画面：新（91 号）",
 "en": "",
 "file": "look.gd",
-"line": 829,
+"line": 846,
 "func": "_unhandled_key_input",
 "en_line": 0
 },
@@ -11661,7 +11843,7 @@
 "zh": "画面：旧（对比用）",
 "en": "",
 "file": "look.gd",
-"line": 829,
+"line": 846,
 "func": "_unhandled_key_input",
 "en_line": 0
 },
@@ -12421,25 +12603,25 @@
 "zh": "反应堆 CORE · %.0f mSv/h（1 m 处）",
 "en": "REACTOR CORE · %.0f mSv/h AT 1 m",
 "file": "reactor.gd",
-"line": 131,
+"line": 134,
 "func": "_draw_mark",
-"en_line": 131
+"en_line": 134
 },
 "reactor:_draw_mark:2": {
 "zh": "反应堆 REACTOR",
 "en": "REACTOR",
 "file": "reactor.gd",
-"line": 131,
+"line": 134,
 "func": "_draw_mark",
-"en_line": 131
+"en_line": 134
 },
 "reactor:_draw_mark:3": {
 "zh": "激光切到即核爆",
 "en": "THE BEAM DETONATES IT",
 "file": "reactor.gd",
-"line": 132,
+"line": 135,
 "func": "_draw_mark",
-"en_line": 132
+"en_line": 135
 },
 "sail:_finish:1": {
 "zh": "整帆收回：四卷 %s，约 %s",
@@ -44368,9 +44550,9 @@
 "zh": "返回",
 "en": "BACK",
 "file": "hud.gd",
-"line": 2299,
+"line": 2422,
 "func": "_menu_items",
-"en_line": 2299
+"en_line": 2422
 },
 "short:12": {
 "zh": "情境工具",
@@ -44874,9 +45056,9 @@
 "zh": "测量",
 "en": "MEASURE",
 "file": "look.gd",
-"line": 737,
+"line": 754,
 "func": "_job_bar",
-"en_line": 737
+"en_line": 754
 },
 "short:49": {
 "zh": "激光切割",
@@ -45437,9 +45619,9 @@
 "zh": "下一步",
 "en": "NEXT",
 "file": "hud.gd",
-"line": 2747,
+"line": 2907,
 "func": "_asset_board",
-"en_line": 2747
+"en_line": 2907
 },
 "terminal:_next_step_card:2": {
 "zh": "下一步",
@@ -54919,50 +55101,353 @@
 "func": "_ready",
 "en_line": 52
 },
-"short:723": {
-"zh": "卖 %s",
-"en": "SELL %s",
+"short:1474": {
+"zh": "待整理",
+"en": "TO SORT",
 "same": [
-"disposal_panel:_ready:10"
+"disposal_panel:_place_name:1"
 ]
 },
-"disposal_panel:_ready:10": {
-"zh": "卖 %s",
-"en": "SELL %s",
+"disposal_panel:_place_name:1": {
+"zh": "待整理",
+"en": "TO SORT",
 "file": "disposal_panel.gd",
-"line": 78,
-"func": "_ready",
-"en_line": 78
+"line": 263,
+"func": "_place_name",
+"en_line": 263
 },
-"short:724": {
-"zh": "留",
-"en": "KEEP",
+"short:1475": {
+"zh": "仓库",
+"en": "THE WAREHOUSE",
 "same": [
-"disposal_panel:_ready:11"
+"disposal_panel:_place_name:2"
 ]
 },
-"disposal_panel:_ready:11": {
-"zh": "留",
-"en": "KEEP",
+"disposal_panel:_place_name:2": {
+"zh": "仓库",
+"en": "THE WAREHOUSE",
 "file": "disposal_panel.gd",
-"line": 83,
-"func": "_ready",
-"en_line": 83
+"line": 263,
+"func": "_place_name",
+"en_line": 263
+},
+"short:1476": {
+"zh": "卖出",
+"en": "THE SALE",
+"same": [
+"disposal_panel:_place_name:3"
+]
+},
+"disposal_panel:_place_name:3": {
+"zh": "卖出",
+"en": "THE SALE",
+"file": "disposal_panel.gd",
+"line": 263,
+"func": "_place_name",
+"en_line": 263
+},
+"short:1477": {
+"zh": "回收整理",
+"en": "SORT THE HAUL",
+"same": [
+"disposal_panel:_draw_head:1"
+]
+},
+"disposal_panel:_draw_head:1": {
+"zh": "回收整理",
+"en": "SORT THE HAUL",
+"file": "disposal_panel.gd",
+"line": 540,
+"func": "_draw_head",
+"en_line": 540
 },
 "short:725": {
 "zh": "现在到账 %s",
 "en": "CASH NOW %s",
 "same": [
-"disposal_panel:_refresh:1"
+"disposal_panel:_draw_head:2"
 ]
 },
-"disposal_panel:_refresh:1": {
+"disposal_panel:_draw_head:2": {
 "zh": "现在到账 %s",
 "en": "CASH NOW %s",
 "file": "disposal_panel.gd",
-"line": 160,
-"func": "_refresh",
-"en_line": 160
+"line": 544,
+"func": "_draw_head",
+"en_line": 544
+},
+"short:1478": {
+"zh": "资金 %s",
+"en": "FUNDS %s",
+"same": [
+"disposal_panel:_draw_head:5"
+]
+},
+"disposal_panel:_draw_head:5": {
+"zh": "资金 %s",
+"en": "FUNDS %s",
+"file": "disposal_panel.gd",
+"line": 554,
+"func": "_draw_head",
+"en_line": 554
+},
+"short:1479": {
+"zh": "当前设备",
+"en": "WHAT CAME HOME",
+"same": [
+"disposal_panel:_draw_drone:1"
+]
+},
+"disposal_panel:_draw_drone:1": {
+"zh": "当前设备",
+"en": "WHAT CAME HOME",
+"file": "disposal_panel.gd",
+"line": 560,
+"func": "_draw_drone",
+"en_line": 560
+},
+"short:1480": {
+"zh": "完好度 %d%%",
+"en": "INTEGRITY %d%%",
+"same": [
+"disposal_panel:_draw_drone:2"
+]
+},
+"disposal_panel:_draw_drone:2": {
+"zh": "完好度 %d%%",
+"en": "INTEGRITY %d%%",
+"file": "disposal_panel.gd",
+"line": 573,
+"func": "_draw_drone",
+"en_line": 573
+},
+"short:1481": {
+"zh": "已收回",
+"en": "HOME",
+"same": [
+"disposal_panel:_draw_drone:4"
+]
+},
+"disposal_panel:_draw_drone:4": {
+"zh": "已收回",
+"en": "HOME",
+"file": "disposal_panel.gd",
+"line": 596,
+"func": "_draw_drone",
+"en_line": 596
+},
+"short:1482": {
+"zh": "遗失",
+"en": "LOST",
+"same": [
+"disposal_panel:_draw_drone:5"
+]
+},
+"disposal_panel:_draw_drone:5": {
+"zh": "遗失",
+"en": "LOST",
+"file": "disposal_panel.gd",
+"line": 598,
+"func": "_draw_drone",
+"en_line": 598
+},
+"short:1483": {
+"zh": "新增",
+"en": "NEW",
+"same": [
+"disposal_panel:_card:3"
+]
+},
+"disposal_panel:_card:3": {
+"zh": "新增",
+"en": "NEW",
+"file": "disposal_panel.gd",
+"line": 697,
+"func": "_card",
+"en_line": 697
+},
+"short:1484": {
+"zh": "已结算",
+"en": "SETTLED",
+"same": [
+"disposal_panel:_card:4"
+]
+},
+"disposal_panel:_card:4": {
+"zh": "已结算",
+"en": "SETTLED",
+"file": "disposal_panel.gd",
+"line": 699,
+"func": "_card",
+"en_line": 699
+},
+"short:1485": {
+"zh": "值 %s",
+"en": "WORTH %s",
+"same": [
+"disposal_panel:_card:5"
+]
+},
+"disposal_panel:_card:5": {
+"zh": "值 %s",
+"en": "WORTH %s",
+"file": "disposal_panel.gd",
+"line": 703,
+"func": "_card",
+"en_line": 703
+},
+"short:1486": {
+"zh": "卖%s",
+"en": "SELL%s",
+"same": [
+"disposal_panel:_card:6"
+]
+},
+"disposal_panel:_card:6": {
+"zh": "卖%s",
+"en": "SELL%s",
+"file": "disposal_panel.gd",
+"line": 710,
+"func": "_card",
+"en_line": 710
+},
+"short:1487": {
+"zh": "我的仓库",
+"en": "THE WAREHOUSE",
+"same": [
+"disposal_panel:_draw_warehouse:1"
+]
+},
+"disposal_panel:_draw_warehouse:1": {
+"zh": "我的仓库",
+"en": "THE WAREHOUSE",
+"file": "disposal_panel.gd",
+"line": 715,
+"func": "_draw_warehouse",
+"en_line": 715
+},
+"short:746": {
+"zh": "货架",
+"en": "RACKS",
+"same": [
+"disposal_panel:_draw_warehouse:5",
+"district_panel:_ready:10"
+]
+},
+"disposal_panel:_draw_warehouse:5": {
+"zh": "货架",
+"en": "RACKS",
+"file": "disposal_panel.gd",
+"line": 727,
+"func": "_draw_warehouse",
+"en_line": 727
+},
+"district_panel:_ready:10": {
+"zh": "货架",
+"en": "RACKS",
+"file": "district_panel.gd",
+"line": 94,
+"func": "_ready",
+"en_line": 94
+},
+"short:1488": {
+"zh": "零件架",
+"en": "PARTS",
+"same": [
+"disposal_panel:_draw_warehouse:6"
+]
+},
+"disposal_panel:_draw_warehouse:6": {
+"zh": "零件架",
+"en": "PARTS",
+"file": "disposal_panel.gd",
+"line": 727,
+"func": "_draw_warehouse",
+"en_line": 727
+},
+"short:1489": {
+"zh": "装备架",
+"en": "GEAR",
+"same": [
+"disposal_panel:_draw_warehouse:7"
+]
+},
+"disposal_panel:_draw_warehouse:7": {
+"zh": "装备架",
+"en": "GEAR",
+"file": "disposal_panel.gd",
+"line": 727,
+"func": "_draw_warehouse",
+"en_line": 727
+},
+"short:1306": {
+"zh": "空着",
+"en": "EMPTY",
+"same": [
+"disposal_panel:_draw_rack:1",
+"shelf_panel:_fill:4"
+]
+},
+"disposal_panel:_draw_rack:1": {
+"zh": "空着",
+"en": "EMPTY",
+"file": "disposal_panel.gd",
+"line": 785,
+"func": "_draw_rack",
+"en_line": 785
+},
+"shelf_panel:_fill:4": {
+"zh": "空着",
+"en": "EMPTY",
+"file": "shelf_panel.gd",
+"line": 104,
+"func": "_fill",
+"en_line": 104
+},
+"short:1490": {
+"zh": "+%d 收回",
+"en": "+%d HOME",
+"same": [
+"disposal_panel:_draw_gear_shelf:2"
+]
+},
+"disposal_panel:_draw_gear_shelf:2": {
+"zh": "+%d 收回",
+"en": "+%d HOME",
+"file": "disposal_panel.gd",
+"line": 853,
+"func": "_draw_gear_shelf",
+"en_line": 853
+},
+"short:1491": {
+"zh": "-%d 遗失",
+"en": "-%d LOST",
+"same": [
+"disposal_panel:_draw_gear_shelf:3"
+]
+},
+"disposal_panel:_draw_gear_shelf:3": {
+"zh": "-%d 遗失",
+"en": "-%d LOST",
+"file": "disposal_panel.gd",
+"line": 855,
+"func": "_draw_gear_shelf",
+"en_line": 855
+},
+"short:1492": {
+"zh": "直接卖出",
+"en": "SELL NOW",
+"same": [
+"disposal_panel:_draw_sale:1"
+]
+},
+"disposal_panel:_draw_sale:1": {
+"zh": "直接卖出",
+"en": "SELL NOW",
+"file": "disposal_panel.gd",
+"line": 870,
+"func": "_draw_sale",
+"en_line": 870
 },
 "short:726": {
 "zh": "主冷却泵",
@@ -55434,21 +55919,6 @@
 "line": 522,
 "func": "_callouts",
 "en_line": 522
-},
-"short:746": {
-"zh": "货架",
-"en": "RACKS",
-"same": [
-"district_panel:_ready:10"
-]
-},
-"district_panel:_ready:10": {
-"zh": "货架",
-"en": "RACKS",
-"file": "district_panel.gd",
-"line": 94,
-"func": "_ready",
-"en_line": 94
 },
 "short:747": {
 "zh": "还需要",
@@ -58890,9 +59360,9 @@
 "zh": "移动",
 "en": "MOVE",
 "file": "hud.gd",
-"line": 257,
+"line": 326,
 "func": "_op_card",
-"en_line": 257
+"en_line": 326
 },
 "short:946": {
 "zh": "带我去",
@@ -58906,9 +59376,9 @@
 "zh": "带我去",
 "en": "TAKE ME",
 "file": "hud.gd",
-"line": 1394,
+"line": 1495,
 "func": "_guide_keys",
-"en_line": 1394
+"en_line": 1495
 },
 "terminal:_next_step_card:4": {
 "zh": "带我去",
@@ -58929,9 +59399,9 @@
 "zh": "结束引导",
 "en": "END GUIDE",
 "file": "hud.gd",
-"line": 1404,
+"line": 1505,
 "func": "_guide_keys",
-"en_line": 1404
+"en_line": 1505
 },
 "short:948": {
 "zh": "打开星图",
@@ -58944,9 +59414,9 @@
 "zh": "打开星图",
 "en": "STAR MAP",
 "file": "hud.gd",
-"line": 1409,
+"line": 1510,
 "func": "_guide_keys",
-"en_line": 1409
+"en_line": 1510
 },
 "short:949": {
 "zh": "打开客户",
@@ -58959,9 +59429,9 @@
 "zh": "打开客户",
 "en": "CLIENTS",
 "file": "hud.gd",
-"line": 1409,
+"line": 1510,
 "func": "_guide_keys",
-"en_line": 1409
+"en_line": 1510
 },
 "short:950": {
 "zh": "打开合同",
@@ -58974,9 +59444,9 @@
 "zh": "打开合同",
 "en": "CONTRACTS",
 "file": "hud.gd",
-"line": 1410,
+"line": 1511,
 "func": "_guide_keys",
-"en_line": 1410
+"en_line": 1511
 },
 "short:951": {
 "zh": "去做",
@@ -58989,9 +59459,9 @@
 "zh": "去做",
 "en": "GO",
 "file": "hud.gd",
-"line": 1410,
+"line": 1511,
 "func": "_guide_keys",
-"en_line": 1410
+"en_line": 1511
 },
 "short:953": {
 "zh": "切割中",
@@ -59004,9 +59474,9 @@
 "zh": "切割中",
 "en": "CUTTING",
 "file": "hud.gd",
-"line": 1944,
+"line": 2067,
 "func": "_gauge",
-"en_line": 1944
+"en_line": 2067
 },
 "short:954": {
 "zh": "空切",
@@ -59019,9 +59489,9 @@
 "zh": "空切",
 "en": "IN THE OPEN",
 "file": "hud.gd",
-"line": 1944,
+"line": 2067,
 "func": "_gauge",
-"en_line": 1944
+"en_line": 2067
 },
 "short:955": {
 "zh": "拉紧",
@@ -59035,17 +59505,17 @@
 "zh": "拉紧",
 "en": "TAUT",
 "file": "hud.gd",
-"line": 1954,
+"line": 2077,
 "func": "_gauge",
-"en_line": 1954
+"en_line": 2077
 },
 "look:_region_line:6": {
 "zh": "拉紧",
 "en": "TAUT",
 "file": "look.gd",
-"line": 618,
+"line": 625,
 "func": "_region_line",
-"en_line": 618
+"en_line": 625
 },
 "short:956": {
 "zh": "松",
@@ -59059,17 +59529,17 @@
 "zh": "松",
 "en": "SLACK",
 "file": "hud.gd",
-"line": 1954,
+"line": 2077,
 "func": "_gauge",
-"en_line": 1954
+"en_line": 2077
 },
 "look:_region_line:7": {
 "zh": "松",
 "en": "SLACK",
 "file": "look.gd",
-"line": 618,
+"line": 625,
 "func": "_region_line",
-"en_line": 618
+"en_line": 625
 },
 "short:957": {
 "zh": "测量中",
@@ -59082,9 +59552,9 @@
 "zh": "测量中",
 "en": "MEASURING",
 "file": "hud.gd",
-"line": 1959,
+"line": 2082,
 "func": "_gauge",
-"en_line": 1959
+"en_line": 2082
 },
 "short:958": {
 "zh": "作业中",
@@ -59098,17 +59568,17 @@
 "zh": "作业中",
 "en": "WORKING",
 "file": "hud.gd",
-"line": 1959,
+"line": 2082,
 "func": "_gauge",
-"en_line": 1959
+"en_line": 2082
 },
 "look:_region_line:9": {
 "zh": "作业中",
 "en": "WORKING",
 "file": "look.gd",
-"line": 621,
+"line": 628,
 "func": "_region_line",
-"en_line": 621
+"en_line": 628
 },
 "short:959": {
 "zh": "操作说明",
@@ -59121,9 +59591,9 @@
 "zh": "操作说明",
 "en": "CONTROLS",
 "file": "hud.gd",
-"line": 2349,
+"line": 2472,
 "func": "_keys_page",
-"en_line": 2349
+"en_line": 2472
 },
 "short:960": {
 "zh": "船坞已有",
@@ -59136,9 +59606,9 @@
 "zh": "船坞已有",
 "en": "THE BERTH HAS",
 "file": "hud.gd",
-"line": 2679,
+"line": 2805,
 "func": "_asset_card",
-"en_line": 2679
+"en_line": 2805
 },
 "short:961": {
 "zh": "风险：",
@@ -59151,9 +59621,9 @@
 "zh": "风险：",
 "en": "RISK: ",
 "file": "hud.gd",
-"line": 2682,
+"line": 2808,
 "func": "_asset_card",
-"en_line": 2682
+"en_line": 2808
 },
 "short:962": {
 "zh": "进行中",
@@ -59166,9 +59636,9 @@
 "zh": "进行中",
 "en": "UNDER WAY",
 "file": "hud.gd",
-"line": 2747,
+"line": 2907,
 "func": "_asset_board",
-"en_line": 2747
+"en_line": 2907
 },
 "short:963": {
 "zh": "%s复盘",
@@ -59181,9 +59651,9 @@
 "zh": "%s复盘",
 "en": "%s · REVIEW",
 "file": "hud.gd",
-"line": 2838,
+"line": 3020,
 "func": "_asset_review",
-"en_line": 2838
+"en_line": 3020
 },
 "short:964": {
 "zh": "收成 %s",
@@ -59196,9 +59666,9 @@
 "zh": "收成 %s",
 "en": "ROLLED %s",
 "file": "hud.gd",
-"line": 2840,
+"line": 3022,
 "func": "_asset_review",
-"en_line": 2840
+"en_line": 3022
 },
 "short:965": {
 "zh": "保住 %s",
@@ -59211,9 +59681,9 @@
 "zh": "保住 %s",
 "en": "KEPT %s",
 "file": "hud.gd",
-"line": 2840,
+"line": 3022,
 "func": "_asset_review",
-"en_line": 2840
+"en_line": 3022
 },
 "short:966": {
 "zh": "满价 %s",
@@ -59226,9 +59696,9 @@
 "zh": "满价 %s",
 "en": "WHOLE %s",
 "file": "hud.gd",
-"line": 2841,
+"line": 3023,
 "func": "_asset_review",
-"en_line": 2841
+"en_line": 3023
 },
 "short:967": {
 "zh": "已送走 %s",
@@ -59241,9 +59711,9 @@
 "zh": "已送走 %s",
 "en": "SENT %s",
 "file": "hud.gd",
-"line": 2844,
+"line": 3026,
 "func": "_asset_review",
-"en_line": 2844
+"en_line": 3026
 },
 "short:968": {
 "zh": "拆坏的",
@@ -59256,9 +59726,9 @@
 "zh": "拆坏的",
 "en": "LOST",
 "file": "hud.gd",
-"line": 2854,
+"line": 3036,
 "func": "_asset_review",
-"en_line": 2854
+"en_line": 3036
 },
 "short:969": {
 "zh": "为什么",
@@ -59271,9 +59741,9 @@
 "zh": "为什么",
 "en": "WHY",
 "file": "hud.gd",
-"line": 2861,
+"line": 3043,
 "func": "_asset_review",
-"en_line": 2861
+"en_line": 3043
 },
 "short:970": {
 "zh": "下次",
@@ -59286,9 +59756,9 @@
 "zh": "下次",
 "en": "NEXT TIME",
 "file": "hud.gd",
-"line": 2867,
+"line": 3049,
 "func": "_asset_review",
-"en_line": 2867
+"en_line": 3049
 },
 "short:971": {
 "zh": "保存失败",
@@ -59802,9 +60272,24 @@
 "zh": "每分钟 %s",
 "en": "%s / MIN",
 "file": "look.gd",
-"line": 605,
+"line": 611,
 "func": "_region_line",
-"en_line": 605
+"en_line": 611
+},
+"short:1493": {
+"zh": "推力 %d%%",
+"en": "THRUST %d%%",
+"same": [
+"look:_region_line:2"
+]
+},
+"look:_region_line:2": {
+"zh": "推力 %d%%",
+"en": "THRUST %d%%",
+"file": "look.gd",
+"line": 615,
+"func": "_region_line",
+"en_line": 615
 },
 "short:1003": {
 "zh": "超重",
@@ -59817,9 +60302,9 @@
 "zh": "超重",
 "en": "TOO HEAVY",
 "file": "look.gd",
-"line": 618,
+"line": 625,
 "func": "_region_line",
-"en_line": 618
+"en_line": 625
 },
 "short:1004": {
 "zh": "待命",
@@ -59832,9 +60317,9 @@
 "zh": "待命",
 "en": "READY",
 "file": "look.gd",
-"line": 622,
+"line": 629,
 "func": "_region_line",
-"en_line": 622
+"en_line": 629
 },
 "short:1005": {
 "zh": "扫描中",
@@ -59848,9 +60333,9 @@
 "zh": "扫描中",
 "en": "SCANNING",
 "file": "look.gd",
-"line": 624,
+"line": 631,
 "func": "_region_line",
-"en_line": 624
+"en_line": 631
 },
 "title_terminal:_draw:2": {
 "zh": "扫描中",
@@ -59871,9 +60356,9 @@
 "zh": "作业",
 "en": "WORK",
 "file": "look.gd",
-"line": 737,
+"line": 754,
 "func": "_job_bar",
-"en_line": 737
+"en_line": 754
 },
 "short:1007": {
 "zh": "远航者",
@@ -60930,9 +61415,9 @@
 "zh": "证号",
 "en": "NO.",
 "file": "opening.gd",
-"line": 182,
+"line": 184,
 "func": "_permit",
-"en_line": 182
+"en_line": 184
 },
 "short:1074": {
 "zh": "使用范围",
@@ -60945,9 +61430,9 @@
 "zh": "使用范围",
 "en": "SCOPE",
 "file": "opening.gd",
-"line": 183,
+"line": 185,
 "func": "_permit",
-"en_line": 183
+"en_line": 185
 },
 "short:1075": {
 "zh": "持证公司",
@@ -60960,9 +61445,9 @@
 "zh": "持证公司",
 "en": "HOLDER",
 "file": "opening.gd",
-"line": 184,
+"line": 186,
 "func": "_permit",
-"en_line": 184
+"en_line": 186
 },
 "short:1076": {
 "zh": "发证日期",
@@ -60975,9 +61460,9 @@
 "zh": "发证日期",
 "en": "ISSUED",
 "file": "opening.gd",
-"line": 185,
+"line": 187,
 "func": "_permit",
-"en_line": 185
+"en_line": 187
 },
 "short:1077": {
 "zh": "取得方式",
@@ -60990,9 +61475,9 @@
 "zh": "取得方式",
 "en": "BY",
 "file": "opening.gd",
-"line": 186,
+"line": 188,
 "func": "_permit",
-"en_line": 186
+"en_line": 188
 },
 "short:1078": {
 "zh": "使用条件",
@@ -61005,9 +61490,9 @@
 "zh": "使用条件",
 "en": "TERMS",
 "file": "opening.gd",
-"line": 207,
+"line": 209,
 "func": "_permit",
-"en_line": 207
+"en_line": 209
 },
 "short:1079": {
 "zh": "黑色炉料",
@@ -64529,21 +65014,6 @@
 "shelf_panel:_fill:3": {
 "zh": "上面：",
 "en": "ON IT: ",
-"file": "shelf_panel.gd",
-"line": 104,
-"func": "_fill",
-"en_line": 104
-},
-"short:1306": {
-"zh": "空着",
-"en": "EMPTY",
-"same": [
-"shelf_panel:_fill:4"
-]
-},
-"shelf_panel:_fill:4": {
-"zh": "空着",
-"en": "EMPTY",
 "file": "shelf_panel.gd",
 "line": 104,
 "func": "_fill",

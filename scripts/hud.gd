@@ -2587,6 +2587,9 @@ func _settlement(s: Vector2) -> void:
 		_stamp(Vector2(cx + 330, y + 100), ge)
 		var pulse := 0.5 + 0.4 * sin(t * 3.0)
 		var go: String = g.txt("st_go_on") if g.story != null and g.story.wants_epilogue() else g.txt("e_to_terminal" if g.career() else ("e_again_dev" if g.dev_job() else "e_again"))
+		# 119 号: the haul's own page comes next while anything is left to sort
+		if g.career() and (g.story == null or not g.story.wants_epilogue()) and not Disposal.pending().is_empty():
+			go = g.txt("e_to_goods")
 		_text(go, Vector2(cx, s.y - 80), 16, Pal.ink(pulse), font_b, 0)
 	# 93 号: the core asset's review, over the sheet, at its right (where the trap rows would be:
 	# a sample ship has none)

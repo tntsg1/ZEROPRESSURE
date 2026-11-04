@@ -582,7 +582,7 @@ func _beam(r: Rect2, a: float) -> void:
 	draw_rect(Rect2(r.position.x, r.end.y, r.size.x, 6.0), Color(0, 0, 0, 0.22 * a))
 
 
-func _class_col(cls: String) -> Color:
+static func _class_col(cls: String) -> Color:
 	match cls:
 		"sail": return Color(UiSkin.DATA)
 		"power": return Pal.heat(1.0, 1.15)
@@ -694,7 +694,7 @@ func _crate(ci: Control, r: Rect2, part: Dictionary, a: float, on: bool, hov: bo
 
 
 # a class's pictogram in thin line: a furled sail roll, a cell, cooling fins, a gear
-func _glyph(ci: CanvasItem, cls: String, c: Vector2, s: float, col: Color) -> void:
+static func _glyph(ci: CanvasItem, cls: String, c: Vector2, s: float, col: Color) -> void:
 	match cls:
 		"sail":
 			ci.draw_line(c + Vector2(-s * 1.4, -s * 0.45), c + Vector2(s * 1.2, -s * 0.45), col, 1.5, true)

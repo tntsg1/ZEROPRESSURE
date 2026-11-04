@@ -2180,6 +2180,7 @@ const S := {
 	"e_again": ["R  重新拆一艘   ·   M  返回标题", "R  ANOTHER HERON   ·   M  TITLE"],
 	"e_again_dev": ["R  这一单再来   ·   M  返回", "R  THIS CONTRACT AGAIN   ·   M  BACK"],
 	"e_to_terminal": ["任意键返回船坞终端", "ANY KEY: BERTH TERMINAL"],
+	"e_to_goods": ["任意键：下一步 · 整理回收物", "ANY KEY: NEXT · SORT THE HAUL"],
 	"e_fee_paid": ["合同费（接单时已预付）", "CONTRACT FEE (PAID UP FRONT)"],
 	"e_inst": ["贷款分期", "LOAN INSTALLMENT"],
 	"e_interest": ["利息（未还本金 2%）", "INTEREST (2% OF PRINCIPAL)"],

@@ -11,7 +11,7 @@
 #
 # 已停用的功能（梁工、关掉的剧情层、取消的耗材）、开发者面板、只打印到日志的字不在这里。
 #
-# 本文件共 7871 条。
+# 本文件共 7912 条。
 
 ============================================================
 # 一、标题、菜单与设置（114 条）
@@ -1970,7 +1970,7 @@
 英：The berth's repairs are on the terminal's BERTH page
 
 ============================================================
-# 五、拆船现场（船坞里）（1264 条）
+# 五、拆船现场（船坞里）（1287 条）
 # 拆船时屏幕上的一切：左上合同卡、工具栏、操作提示、测量读数、回收口和熔炉的牌子、结算飘字、无人机状态、图纸、小地图、作业艇、各种“现在不能这样做”的提示。
 # 玩家这时手很忙：字要一眼看懂，尽量短。
 ============================================================
@@ -2166,6 +2166,10 @@
 [txt:e_to_terminal]
 中：任意键返回船坞终端
 英：ANY KEY: BERTH TERMINAL
+
+[txt:e_to_goods]
+中：任意键：下一步 · 整理回收物
+英：ANY KEY: NEXT · SORT THE HAUL
 
 [txt:e_fee_paid]
 中：合同费（接单时已预付）
@@ -6727,61 +6731,153 @@
 # 出现在：拆完一艘船后决定每样东西的去向：钢锭直卖还是留着加工，零件上架还是留着修。
 ------------------------------------------------------------
 
-[disposal_panel:_ready:1]
-中：回收物去向
-英：WHERE THE GOODS GO
+[disposal_panel:move:1]
+中：卖掉：%s  +%s
+英：SOLD: %s  +%s
 
-[disposal_panel:_ready:2]
-中：钢锭  %.1f t
-英：INGOTS  %.1f t
+[disposal_panel:move:2]
+中：放回待整理：%s
+英：BACK TO SORT: %s
 
-[disposal_panel:_ready:3]
-中：[1] 直卖  +%s 现在到账
-英：[1] SELL  +%s NOW
+[disposal_panel:move_all:1]
+中：左边已经没有待整理的东西。
+英：NOTHING LEFT TO SORT.
 
-[disposal_panel:_ready:4]
-中：熔炉铸的钢锭整批直接卖掉，钱现在到账。
-英：The furnace's ingots sold as one batch: the money now.
+[disposal_panel:move_all:2]
+中：%d 样全部入库。
+英：%d PUT AWAY.
 
-[disposal_panel:_ready:5]
-中：[2] 留着加工  钢坯约 %s
-英：[2] PROCESS  BILLET ABOUT %s
+[disposal_panel:move_all:3]
+中：%d 样全部卖出：现在到账 %s。
+英：%d SOLD: %s NOW.
 
-[disposal_panel:_ready:6]
-中：留着加工：运到加工区，电弧炉炼成约 %.1f t 钢坯（电费约 %s），再轧成钢板——钢板可抵修缮用的船体结构，钢坯和钢板也能在交易行卖。
-英：Processing: carried to the processing district, melted into about %.1f t of billet (power about %s), then rolled into plate — plate counts as hull structure for repairs; both sell on the exchange.
+[disposal_panel:undo:1]
+中：没有可以撤销的操作。
+英：NOTHING TO UNDO.
 
-[disposal_panel:_ready:7]
-中：留着加工：炼成钢坯、轧成钢板，修船坞或卖。
-英：Processing: billet, then plate — for repairs or to sell.
-
-[disposal_panel:_ready:8]
-中：加工区还没修好：钢锭先放仓库，修好后自动加工。
-英：The processing district is not mended: the ingots wait in the warehouse.
-
-[disposal_panel:_ready:9]
-中：完好设备  %d 件
-英：WHOLE EQUIPMENT  %d
-
-[disposal_panel:_ready:12]
-中：确认，离开船坞 [Enter]
-英：CONFIRM AND LEAVE [Enter]
-
-[disposal_panel:_ready:13]
-中：回结算单 [Esc]
-英：BACK [Esc]
-
-[disposal_panel:_refresh:2]
-中：留下设备 %d 件
-英：%d PIECES KEPT
-
-[disposal_panel:_refresh:3]
-中：%.1f t 钢锭送去加工
-英：%.1f t OF INGOTS TO PROCESS
+[disposal_panel:undo:2]
+中：撤销：%s 回到%s
+英：UNDONE: %s
 
 [disposal_panel:confirm:1]
 中：保存失败，什么都没卖：再按一次确认。
 英：Save failed, nothing sold: confirm again.
+
+[disposal_panel:confirm:2]
+中：剩下的 %d 样已自动入库。
+英：THE %d LEFT WERE PUT AWAY.
+
+[disposal_panel:_name:1]
+中：钢锭 %.1f t
+英：INGOTS %.1f t
+
+[disposal_panel:_name:2]
+中：气体与流体
+英：GAS AND FLUIDS
+
+[disposal_panel:_kept_line:1]
+中：之后送加工区炼成约 %.1f t 钢坯
+英：then to processing: about %.1f t of billet
+
+[disposal_panel:_kept_line:2]
+中：加工区修好后自动加工
+英：processed once the district is mended
+
+[disposal_panel:_kept_line:3]
+中：入库：钢锭 %.1f t → %s %s · %s
+英：KEPT: INGOTS %.1f t → %s %s · %s
+
+[disposal_panel:_kept_line:4]
+中：入库：%s → 零件架
+英：KEPT: %s → THE PARTS RACK
+
+[disposal_panel:_hint:1]
+中：入库加工：钢坯约 %s（电费约 %s）
+英：KEEP: BILLET ABOUT %s (POWER %s)
+
+[disposal_panel:_hint:2]
+中：已按合同交付，钱已到账
+英：DELIVERED WITH THE CONTRACT, PAID
+
+[disposal_panel:_draw_head:3]
+中：入库 %d 样
+英：%d KEPT
+
+[disposal_panel:_draw_head:4]
+中：待整理 %d 样（确认时自动入库）
+英：%d TO SORT (KEPT ON CONFIRM)
+
+[disposal_panel:_draw_drone:3]
+中：这一单没有带出可部署工具
+英：NO DEPLOYABLE GEAR TAKEN OUT
+
+[disposal_panel:_draw_left_cards:1]
+中：本单回收物
+英：THIS CONTRACT'S GOODS
+
+[disposal_panel:_draw_left_cards:2]
+中：点卡片或拖到右边入库 · 卡片上的“卖”或拖到下面直接卖
+英：CLICK OR DRAG RIGHT TO KEEP · \"SELL\" OR DRAG BELOW TO SELL
+
+[disposal_panel:_draw_left_cards:3]
+中：都整理好了。按 Enter 确认，离开船坞。
+英：ALL SORTED. ENTER TO CONFIRM AND LEAVE.
+
+[disposal_panel:_card:1]
+中：熔炉铸的一批 · 整批处理
+英：ONE BATCH FROM THE FURNACE
+
+[disposal_panel:_card:2]
+中：已交付 · +%s
+英：DELIVERED · +%s
+
+[disposal_panel:_draw_warehouse:2]
+中：货运区货架 A1–B4
+英：CARGO DISTRICT RACKS A1–B4
+
+[disposal_panel:_draw_warehouse:3]
+中：零件架 · 完好设备
+英：PARTS RACK · WHOLE EQUIPMENT
+
+[disposal_panel:_draw_warehouse:4]
+中：装备架 · 可部署工具
+英：GEAR SHELF · DEPLOYABLES
+
+[disposal_panel:_draw_rack:2]
+中：新增  钢锭 %.1f t · 送加工
+英：NEW  INGOTS %.1f t · TO PROCESS
+
+[disposal_panel:_draw_parts:1]
+中：零件架上另有 %d 件
+英：%d MORE ON THE RACK
+
+[disposal_panel:_draw_parts:2]
+中：零件架上还没有东西
+英：THE PARTS RACK IS EMPTY
+
+[disposal_panel:_draw_gear_shelf:1]
+中：架上 %d 个
+英：%d ON THE SHELF
+
+[disposal_panel:_draw_sale:2]
+中：拖到这里卖 · 点已卖的东西放回
+英：DROP HERE TO SELL · CLICK ONE TO TAKE IT BACK
+
+[disposal_panel:_draw_buttons:1]
+中：确认，离开船坞 [Enter]
+英：CONFIRM AND LEAVE [Enter]
+
+[disposal_panel:_draw_buttons:2]
+中：回结算单 [Esc]
+英：BACK [Esc]
+
+[disposal_panel:_draw_buttons:3]
+中：转移全部 [T]
+英：MOVE ALL [T]
+
+[disposal_panel:_draw_buttons:4]
+中：全部卖出 [X]
+英：SELL ALL [X]
 
 ------------------------------------------------------------
 # 【现场发现故障（fault_callout.gd）】
@@ -7035,10 +7131,6 @@
 [look:_draw_osd:2]
 中：信号 · 近 12 秒
 英：LINK · LAST 12 s
-
-[look:_region_line:2]
-中：推力 %d%%  ·  完好 %d%%
-英：THRUST %d%%  ·  HULL %d%%
 
 [look:_region_line:3]
 中：激光 · 出光
@@ -26906,7 +26998,7 @@
 英：wrench (4); a strap cut taut whips
 
 ============================================================
-# 十五、短标签（四个字以内的按钮、栏目名、单位）（1461 条）
+# 十五、短标签（四个字以内的按钮、栏目名、单位）（1479 条）
 # 同样的字在很多界面出现时只列一次，「# 在」写了出现在哪些界面、共几处；改这里一条，所有这些地方一起改。
 # 这些字要短：按钮和栏目的宽度是按现在的字数排的，多一两个字可能放不下（合并后会跑超框检查）。
 ============================================================
@@ -30486,20 +30578,115 @@
 中：激活
 英：ACTIVATE
 
-[short:723]
+[short:1474]
 # 在：回收物去向（结算第二页）（1 处）
-中：卖 %s
-英：SELL %s
+中：待整理
+英：TO SORT
 
-[short:724]
+[short:1475]
 # 在：回收物去向（结算第二页）（1 处）
-中：留
-英：KEEP
+中：仓库
+英：THE WAREHOUSE
+
+[short:1476]
+# 在：回收物去向（结算第二页）（1 处）
+中：卖出
+英：THE SALE
+
+[short:1477]
+# 在：回收物去向（结算第二页）（1 处）
+中：回收整理
+英：SORT THE HAUL
 
 [short:725]
 # 在：回收物去向（结算第二页）（1 处）
 中：现在到账 %s
 英：CASH NOW %s
+
+[short:1478]
+# 在：回收物去向（结算第二页）（1 处）
+中：资金 %s
+英：FUNDS %s
+
+[short:1479]
+# 在：回收物去向（结算第二页）（1 处）
+中：当前设备
+英：WHAT CAME HOME
+
+[short:1480]
+# 在：回收物去向（结算第二页）（1 处）
+中：完好度 %d%%
+英：INTEGRITY %d%%
+
+[short:1481]
+# 在：回收物去向（结算第二页）（1 处）
+中：已收回
+英：HOME
+
+[short:1482]
+# 在：回收物去向（结算第二页）（1 处）
+中：遗失
+英：LOST
+
+[short:1483]
+# 在：回收物去向（结算第二页）（1 处）
+中：新增
+英：NEW
+
+[short:1484]
+# 在：回收物去向（结算第二页）（1 处）
+中：已结算
+英：SETTLED
+
+[short:1485]
+# 在：回收物去向（结算第二页）（1 处）
+中：值 %s
+英：WORTH %s
+
+[short:1486]
+# 在：回收物去向（结算第二页）（1 处）
+中：卖%s
+英：SELL%s
+
+[short:1487]
+# 在：回收物去向（结算第二页）（1 处）
+中：我的仓库
+英：THE WAREHOUSE
+
+[short:746]
+# 在：回收物去向（结算第二页）、各区业务终端（2 处）
+中：货架
+英：RACKS
+
+[short:1488]
+# 在：回收物去向（结算第二页）（1 处）
+中：零件架
+英：PARTS
+
+[short:1489]
+# 在：回收物去向（结算第二页）（1 处）
+中：装备架
+英：GEAR
+
+[short:1306]
+# 在：回收物去向（结算第二页）、货架面板（2 处）
+中：空着
+英：EMPTY
+
+[short:1490]
+# 在：回收物去向（结算第二页）（1 处）
+中：+%d 收回
+英：+%d HOME
+
+[short:1491]
+# 在：回收物去向（结算第二页）（1 处）
+中：-%d 遗失
+英：-%d LOST
+
+[short:1492]
+# 在：回收物去向（结算第二页）（1 处）
+中：直接卖出
+英：SELL NOW
 
 [short:726]
 # 在：各区里的机器（1 处）
@@ -30600,11 +30787,6 @@
 # 在：各区业务终端、港区现场导览（2 处）
 中：拖船外运
 英：TUG CHARTERS
-
-[short:746]
-# 在：各区业务终端（1 处）
-中：货架
-英：RACKS
 
 [short:747]
 # 在：各区业务终端（1 处）
@@ -31880,6 +32062,11 @@
 # 在：无人机回传画面的读数（1 处）
 中：每分钟 %s
 英：%s / MIN
+
+[short:1493]
+# 在：无人机回传画面的读数（1 处）
+中：推力 %d%%
+英：THRUST %d%%
 
 [short:1003]
 # 在：无人机回传画面的读数（1 处）
@@ -33375,11 +33562,6 @@
 # 在：货架面板（1 处）
 中：上面：
 英：ON IT: 
-
-[short:1306]
-# 在：货架面板（1 处）
-中：空着
-英：EMPTY
 
 [short:1307]
 # 在：找到的船 / 船市的船（1 处）
