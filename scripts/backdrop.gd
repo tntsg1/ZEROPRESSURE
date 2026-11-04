@@ -60,6 +60,8 @@ func _ready() -> void:
 	add_child(dyn)
 	star_layer = Node2D.new()
 	star_layer.name = "Stars"
+	# 118 号: the stars lie behind everything, the planet and the far yards in front of them
+	star_layer.show_behind_parent = true
 	star_layer.draw.connect(_draw_stars)
 	add_child(star_layer)
 
@@ -202,6 +204,11 @@ func _draw() -> void:
 	draw_circle(pc, pr, Color(0.047, 0.05, 0.058))
 	draw_arc(pc, pr, PI * 1.02, PI * 1.62, 120, Pal.tint(Pal.AIR, 0.1), 2.0 / z, true)
 	draw_arc(pc, pr + 6.0 / z, PI * 1.05, PI * 1.55, 120, Pal.tint(Pal.AIR, 0.04), 6.0 / z, true)
+	# 118 号 Q2 A: the far yards, their ships and lights, behind the belt
+	var bc := Dock.centre() * Geom.M
+	var vpx := view * z
+	FarVista.draw(self, Transform2D(0.0, Vector2.ONE / z, 0.0, cam - view * 0.5), -(cam.x - bc.x) * FarVista.PAR * z + vpx.x * 0.5 - 2900.0,
+		vpx.y * 0.4 - (cam.y - bc.y) * FarVista.PAR * z, vpx.x, _time())
 	# 91 号 Q8: the belt beyond the berth, rock in three slow layers
 	Look.draw_far(self, cam, z, view)
 	# 外部画面定案 Q1: the station as solid blocks under its lines (108 号: the StationBlocks layer)

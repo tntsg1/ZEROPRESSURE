@@ -122,6 +122,8 @@ func _lit_full() -> Dictionary:
 func _draw() -> void:
 	var s := size
 	draw_rect(Rect2(Vector2.ZERO, s), Color(0.012, 0.014, 0.018))
+	# 118 号 Q4 A: the far yards behind the port, the berth's own band, drifting slowly
+	FarVista.draw(self, Transform2D.IDENTITY, s.x * 0.5 - 3300.0 - all_t * 5.0, s.y * 0.44, s.x, all_t)
 	var k := clampf(t / 0.8, 0.0, 1.0)
 	var c := s * 0.5 + Vector2(0, -40)
 	var m := minf(s.x / 420.0, s.y / 260.0)

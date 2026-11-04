@@ -21,6 +21,7 @@ var _tc := PackedColorArray()
 var _lp := PackedVector2Array()     # hairline segments
 var _lc := PackedColorArray()
 var _lb := Rect2()                  # where the hairlines waiting in _lp lie
+var width_k := 1.0                  # 118 号: every line this much finer (the berth as the middle ground)
 var pad := 2.0                      # how near a fill may come to them and still go before them
                                     # (a pixel or two: callers far out set it in their units)
 
@@ -67,6 +68,8 @@ func get_canvas_item() -> RID:
 func _seg(a: Vector2, b: Vector2, col: Color, w: float) -> void:
 	if no_shapes:
 		return
+	if w > 0.0:
+		w *= width_k
 	if w <= THIN:
 		var r := Rect2(a, Vector2.ZERO).expand(b)
 		_lb = r if _lp.is_empty() else _lb.merge(r)

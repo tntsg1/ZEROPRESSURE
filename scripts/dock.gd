@@ -246,6 +246,7 @@ var font: Font
 var font_b: Font
 var add_node: Node2D
 var static_node: Node2D
+var depth_fx: Depth
 var clamp_node: Node2D
 var _zh := Txt.zh
 var _clamp_drawn: Array = []
@@ -321,6 +322,10 @@ func _init() -> void:
 	static_node.show_behind_parent = true
 	static_node.draw.connect(_draw_static)
 	add_child(static_node)
+	# 118 号 层次纵深: the berth's lit wall and the ship's shadow on it, right over the wall
+	depth_fx = Depth.new()
+	depth_fx.dock = self
+	add_child(depth_fx)
 	clamp_node = Node2D.new()
 	clamp_node.show_behind_parent = true
 	clamp_node.draw.connect(_draw_clamps)
@@ -1119,6 +1124,7 @@ func _note(ci, f: Font, pos: Vector2, text: String, align: int = HORIZONTAL_ALIG
 
 func _draw_static() -> void:
 	var ci = CanvasBatch.new(static_node)
+	ci.width_k = depth_fx.mid_width() if depth_fx != null else 1.0
 	_sb = ci
 	_draw_static_body(ci)
 	ci.flush()
