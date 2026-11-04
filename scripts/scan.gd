@@ -213,7 +213,7 @@ static func _sweep(i: int) -> Array:
 static func _what(kind: String, rng: RandomNumberGenerator) -> String:
 	if kind == "rock":
 		var m := rng.randi_range(8, 60)
-		return w("一块约 %d 米的镍铁小行星，不是船", "A NICKEL-IRON ROCK ABOUT %d m ACROSS, NOT A SHIP") % m if rng.randf() < 0.5 else w("一块约 %d 米的碳质小行星，不是船", "A CARBON ROCK ABOUT %d m ACROSS, NOT A SHIP") % m
+		return w("镍铁小行星 · 约 %d m · 非船只", "NICKEL-IRON ASTEROID · ~%d m · NOT A SHIP") % m if rng.randf() < 0.5 else w("碳质小行星 · 约 %d m · 非船只", "CARBONACEOUS ASTEROID · ~%d m · NOT A SHIP") % m
 	var bits := [w("一片旧太阳能板碎片", "A SHRED OF OLD SOLAR PANEL"), w("一截断掉的天线桁架", "A BROKEN ANTENNA TRUSS"), w("一个空推进剂罐，太小拖不回来", "AN EMPTY PROPELLANT TANK, TOO SMALL TO TOW")]
 	return bits[rng.randi_range(0, bits.size() - 1)]
 
@@ -241,10 +241,30 @@ static func verdict(s: Dictionary) -> String:
 	if not s.get("known", false):
 		return w("未知信号 · 强度 %d%%", "UNKNOWN SIGNAL · STRENGTH %d%%") % int(float(s.strength) * 100.0)
 	if str(s.kind) != "ship":
-		return str(s.get("what", ""))
+		return what_text(s)
 	var o: Dictionary = s.offer
 	var ty := Market.type_of(str(o.ship))
-	return w("是船：%s · %.0f m · 漂了 %d 年", "A HULK: %s · %.0f m · ADRIFT %d YEARS") % [type_name(str(o.ship)), float(ty.get("length", 0.0)), int(o.get("drift_years", 0))]
+	# 127 号 (user copy, 2026-11-04)
+	return w("%s · 船长 %.0f m · 已漂流 %d 年", "%s · %.0f m LONG · ADRIFT %d YEARS") % [type_name(str(o.ship)), float(ty.get("length", 0.0)), int(o.get("drift_years", 0))]
+
+
+# a rock's line; signals analysed in an older save still carry the old wording, said the new way
+static func what_text(s: Dictionary) -> String:
+	var t := str(s.get("what", ""))
+	var re := RegEx.create_from_string("^一块约 (\\d+) 米的(\\S+?)小行星，不是船$")
+	var m := re.search(t)
+	if m != null:
+		return "%s小行星 · 约 %s m · 非船只" % [m.get_string(2), m.get_string(1)]
+	return t
+
+
+# the short name on the radar beside the signal's number
+static func short_name(s: Dictionary) -> String:
+	if not s.get("known", false):
+		return ""
+	if str(s.kind) == "ship":
+		return type_name(str(s.offer.ship))
+	return what_text(s).split(" · ")[0].split("，")[0]
 
 
 static func type_name(ship: String) -> String:

@@ -182,7 +182,7 @@ static func advance(game, dt: float) -> bool:
 
 # the line for the tug station and the star map: the yard and the tugs
 static func status() -> String:
-	var parts: Array = [w("拖船站泊位 %d / %d", "YARD %d / %d") % [taken().size(), slots()], w("最长能拖 %s", "TOWS UP TO %s") % ("%.0f m" % max_len() if max_len() < 1000.0 else w("任何长度", "ANY LENGTH"))]
+	var parts: Array = [w("拖船泊位 %d/%d", "YARD %d/%d") % [taken().size(), slots()], w("最大拖带船长 %s", "TOWS UP TO %s") % ("%.0f m" % max_len() if max_len() < 1000.0 else w("不限", "ANY LENGTH"))]
 	for i in TugFleet.count():
 		var n: String = TugFleet.NAMES[i]
 		if not TugFleet.home(i):

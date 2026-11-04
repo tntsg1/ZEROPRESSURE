@@ -68,12 +68,12 @@ func _run() -> void:
 	check(found.size() == 1, "the hulk is on the found list")
 	var o: Dictionary = Career.data.offers[found[0]] if found.size() == 1 else {}
 	check(o.get("find", false) and float(o.get("fee", 0.0)) > 0.0 and float(o.get("tow_days", 0.0)) > 0.0 and int(o.get("station", -1)) == near, "with its tow quoted (%s) from its station" % Pal.money(float(o.get("fee", 0.0))))
-	check("是船" in Scan.verdict(Scan.sig_of(ship_sig)), "the signal reads as a hulk: %s" % Scan.verdict(Scan.sig_of(ship_sig)))
+	check("已漂流" in Scan.verdict(Scan.sig_of(ship_sig)), "the signal reads as a hulk: %s" % Scan.verdict(Scan.sig_of(ship_sig)))
 	# ---- analysis: rock or debris
 	if other_sig != "":
 		Scan.analyze(other_sig)
 		Scan.finish()
-		check(Scan.found().size() == 1 and not "是船：" in Scan.verdict(Scan.sig_of(other_sig)), "rock is only rock: %s" % Scan.verdict(Scan.sig_of(other_sig)))
+		check(Scan.found().size() == 1 and not "已漂流" in Scan.verdict(Scan.sig_of(other_sig)), "rock is only rock: %s" % Scan.verdict(Scan.sig_of(other_sig)))
 	# ---- saved and read back
 	Career.save()
 	var keep := JSON.stringify(JSON.parse_string(JSON.stringify(Career.data.scan)))

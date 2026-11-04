@@ -326,7 +326,7 @@ func _stock(r: Rect2, m: float, lw: float, font: Font, z: float) -> void:
 		var poly := PackedVector2Array([Vector2(cx - half, base), Vector2(cx - half * 0.3, base - h * 0.92), Vector2(cx, base - h), Vector2(cx + half * 0.35, base - h * 0.88), Vector2(cx + half, base)])
 		draw_colored_polygon(poly, heaps[i][1])
 		draw_polyline(poly, Pal.ink(0.55), lw)
-		if z >= 0.2:
+		if z >= 0.2 and Pal.labels:
 			draw_set_transform(Vector2(cx - half, base - h - 0.4 * m), 0, Vector2.ONE / z)
 			draw_string(font, Vector2.ZERO, "%s %.2f t" % [Ops.item_name(heaps[i][0]), t], HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Pal.ink(0.75))
 			draw_set_transform(Vector2.ZERO)
@@ -343,7 +343,7 @@ func _stock(r: Rect2, m: float, lw: float, font: Font, z: float) -> void:
 			var br := Rect2(bay_b.position.x + 0.5 * m + col * (bw + 0.15 * m), bay_b.end.y - (row + 1) * (bh + 0.12 * m), bw, bh)
 			draw_rect(br, Color(0.3, 0.31, 0.34))
 			draw_rect(br, Pal.ink(0.6), false, lw)
-		if z >= 0.2:
+		if z >= 0.2 and Pal.labels:
 			draw_set_transform(Vector2(bay_b.position.x, bay_b.end.y - (int((mini(n, 60) - 1) / 5) + 1) * (bh + 0.12 * m) - 0.4 * m), 0, Vector2.ONE / z)
 			draw_string(font, Vector2.ZERO, "%s %.2f t" % [Ops.item_name("steel_billet:1"), billets], HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Pal.ink(0.75))
 			draw_set_transform(Vector2.ZERO)
@@ -389,7 +389,7 @@ func _interior(zone: String, r: Rect2, m: float, lw: float, font: Font, z: float
 			x += 1.5 * m
 		# a status lamp: lit once the district has its first stage
 		draw_circle(mr.position + Vector2(0.5, 0.5) * m, 0.2 * m, Pal.heat(0.9, 1.5) if n >= 1 else Pal.ink(0.15))
-		if z >= 0.2:
+		if z >= 0.2 and Pal.labels:
 			draw_set_transform(mr.position + Vector2(0, -0.3 * m), 0, Vector2.ONE / z)
 			var name: Array = NAMES.get(mc[0], [mc[0], mc[0]])
 			draw_string(font, Vector2.ZERO, name[0] if Txt.zh else name[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.6))

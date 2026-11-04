@@ -901,6 +901,8 @@ func plates(ci: CanvasItem, t: float) -> void:
 		var side := -W.side_of(z) if z != "power" else 1.0
 		var a := g + side * (PortStructure.HALF + 2.6) / 23.5
 		var at := Vector2.from_angle(a) * 23.5 + Vector2(-1.0, -0.15)
+		if not Pal.labels:
+			continue
 		_text(ci, at, codes.get(z, ""), 0.46, hi if Port.stage(z) >= 1 else dim)
 		_text(ci, at + Vector2(0, 0.56), Port.name_of(z), 0.4, dim)
 	# the drives' plates

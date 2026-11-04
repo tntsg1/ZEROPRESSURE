@@ -83,7 +83,7 @@ static func order() -> Array:
 
 
 static func group_name(g: String) -> String:
-	return Port.name_of(g) if g != "base" else w("基础负荷", "BASE")
+	return Port.name_of(g) if g != "base" else w("基础用电", "BASE")
 
 
 # one group a place up (-1) or down (+1) in the order
@@ -176,7 +176,7 @@ static func _plant(game):
 # what each load asks for now: [{id, name, group, rated, demand, mw_now (its own meter, or -1),
 # free (the subsidised line), state}]. state: "base" | "run" | "idle"
 static func demands(game) -> Array:
-	var out: Array = [{"id": "base", "name": w("基础负荷", "BASE LOAD"), "group": "base", "rated": BASE_MW, "demand": BASE_MW, "mw_now": -1.0, "state": "base"}]
+	var out: Array = [{"id": "base", "name": w("基础用电", "BASE LOAD"), "group": "base", "rated": BASE_MW, "demand": BASE_MW, "mw_now": -1.0, "state": "base"}]
 	var heat: Dictionary = Career.data.get("industrial_heat", {}) if not Career.data.is_empty() else {}
 	var plant = _plant(game)
 	if not heat.is_empty() and str(heat.get("state", "")) not in ["complete", "cancelled", "written_off"]:
@@ -448,9 +448,34 @@ static func short_text(game, id: String, group: String = "process") -> String:
 	return why
 
 
+# 127 号 (user 2026-11-04: "岸电、自发这些术语应该关掉"): the power page says in plain words
+# whether there is enough and what it costs the work; the figures go under "details"
+static func verdict(game) -> Dictionary:
+	var short: Array = []
+	for l in loads(game):
+		# by district, the way the player sees the port (not by machine)
+		if str(l.state) == "short":
+			var gname := group_name(str(l.group))
+			if not short.any(func(s): return s[0] == gname):
+				short.append([gname, int(float(l.k) * 100.0)])
+	if not short.is_empty():
+		var who := PackedStringArray()
+		for s in short:
+			who.append(w("%s只拿到 %d%%", "%s gets %d%%") % s)
+		return {"ok": false, "t": w("电不够：", "SHORT OF POWER: ") + "、".join(who) + w("，干活变慢", ", working slower"), "how": short_fix()}
+	if headroom(game) < 1.0:
+		return {"ok": true, "t": w("电刚好够用：再开大设备就不够了", "JUST ENOUGH: ONE MORE BIG MACHINE AND IT RUNS SHORT"), "how": ""}
+	return {"ok": true, "t": w("电够用：在用 %.1f，自家能发 %.0f 兆瓦", "ENOUGH POWER: %.1f IN USE OF %.0f MW") % [reserved(game) + shore_mw(game), capacity()], "how": ""}
+
+
+# how much dearer bought power is than our own
+static func bought_x() -> float:
+	return SHORE_PRICE / maxf(1.0, OWN_PRICE)
+
+
 # what can be done about it, in a line (the control screen's own three ways)
 static func short_fix() -> String:
-	return w("修动力区，或在动力控制屏把加工区往前调、接岸电", "Mend the power district, or move processing up / take shore power at the power control screen")
+	return w("修动力区，或在动力控制屏把加工区往前调、买外购电", "Mend the power district, or move processing up / take shore power at the power control screen")
 
 
 static func wait_text(game) -> String:
@@ -475,5 +500,5 @@ static func wait_text(game) -> String:
 	var why := w("电不够：电弧炉只分到 %.1f / %.0f MW", "SHORT OF POWER: THE FURNACE GETS %.1f / %.0f MW") % [given, furnace_cap()]
 	if not ahead.is_empty():
 		why += w("，排在%s之后", ", AFTER %s") % "、".join(ahead)
-	why += w("。修动力区、在控制屏把加工区往前调，或接岸电。", ". MEND THE POWER DISTRICT, MOVE PROCESSING UP, OR TAKE SHORE POWER.")
+	why += w("。修动力区、在控制屏把加工区往前调，或买外购电。", ". MEND THE POWER DISTRICT, MOVE PROCESSING UP, OR TAKE SHORE POWER.")
 	return why

@@ -67,8 +67,11 @@ static func lamp_col(state: String, t: float) -> Color:
 
 func plate(ci: CanvasItem, at: Vector2, width: float, name: String, st: Array, t: float) -> void:
 	var rr := Rect2(_p(at), Vector2(width, 0.9) * m)
-	ci.draw_rect(rr, Color(0.02, 0.022, 0.026, 0.9))
 	var lc := lamp_col(str(st[1]), t)
+	if not Pal.labels:
+		FastDraw.circle(ci, _p(at + Vector2(0.42, 0.45)), 0.15 * m, lc)
+		return
+	ci.draw_rect(rr, Color(0.02, 0.022, 0.026, 0.9))
 	ci.draw_rect(Rect2(rr.position, Vector2(0.12 * m, rr.size.y)), lc)
 	FastDraw.circle(ci, _p(at + Vector2(0.42, 0.45)), 0.15 * m, lc)
 	_text(ci, at + Vector2(0.75, 0.64), name, 0.44, _ink(0.92))
@@ -496,7 +499,8 @@ func _outside(ci: CanvasItem, t: float, names: Dictionary) -> void:
 		for i in TW.hold:
 			_put(ci, _mesh("crate", _crate), at + Vector2(3.0 + (i % 4) * 1.75, 0.0 - (i / 4) * TW.CRATE.y))
 		var nm := str(names.get(TW.lighter_for, {}).get("name", ""))
-		_text(ci, at + Vector2(11.0, -4.4), nm, 0.5, Pal.ink(0.8), true)
+		if Pal.labels:
+			_text(ci, at + Vector2(11.0, -4.4), nm, 0.5, Pal.ink(0.8), true)
 
 
 # ================================================================== the board and the counters' words (slow layer)

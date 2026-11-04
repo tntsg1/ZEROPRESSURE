@@ -79,7 +79,7 @@ func _draw() -> void:
 	if running:
 		var k := fmod(_t * 0.8, 1.0)
 		draw_rect(Rect2(_p(Vector2(2.4, 22.0 - k * 17.0)), Vector2(3.2, 0.5) * M), Pal.tint(Pal.AIR, 0.7, 1.2))
-	draw_string(font, _p(Vector2(1.5, 3.2)), Ops.w("净化分离塔", "PURIFIER / COLUMN"), HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.9 * M), Pal.ink(0.7))
+	if Pal.labels: draw_string(font, _p(Vector2(1.5, 3.2)), Ops.w("净化分离塔", "PURIFIER / COLUMN"), HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.9 * M), Pal.ink(0.7))
 	# the compressor
 	var cp := _p(Vector2(10, 20))
 	draw_rect(Rect2(cp, Vector2(6, 4) * M), fill)
@@ -87,14 +87,14 @@ func _draw() -> void:
 	draw_arc(cp + Vector2(3, 2) * M, 1.4 * M, 0.0, TAU, 18, ink, lw)
 	var ang := _t * 6.0 if running or liq_on else 0.0
 	draw_line(cp + Vector2(3, 2) * M, cp + Vector2(3, 2) * M + Vector2.from_angle(ang) * 1.2 * M, ink, lw)
-	draw_string(font, cp + Vector2(0, -0.6) * M, Ops.w("压缩机", "COMPRESSOR"), HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.8 * M), Pal.ink(0.6))
+	if Pal.labels: draw_string(font, cp + Vector2(0, -0.6) * M, Ops.w("压缩机", "COMPRESSOR"), HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.8 * M), Pal.ink(0.6))
 	# the cold box
 	var cb := Rect2(_p(Vector2(19, 9)), Vector2(6, 15) * M)
 	draw_rect(cb, fill)
 	draw_rect(cb, Pal.tint(Pal.AIR, 0.5, 1.0) if liq_on else ink, false, lw)
 	for i in 5:
 		draw_line(_p(Vector2(19.6, 11.0 + i * 2.5)), _p(Vector2(24.4, 12.0 + i * 2.5)), Pal.ink(0.3), lw * 0.6)
-	draw_string(font, _p(Vector2(18.5, 8.2)), Ops.w("液化冷箱", "COLD BOX"), HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.8 * M), Pal.ink(0.6))
+	if Pal.labels: draw_string(font, _p(Vector2(18.5, 8.2)), Ops.w("液化冷箱", "COLD BOX"), HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.8 * M), Pal.ink(0.6))
 	# pipes column → compressor → cold box → tank
 	for seg in [[Vector2(6, 21), Vector2(10, 21)], [Vector2(16, 21), Vector2(19, 21)], [Vector2(25, 12), Vector2(29, 12)]]:
 		draw_line(_p(seg[0]), _p(seg[1]), Pal.ink(0.5), lw * 1.6)
@@ -119,7 +119,7 @@ func _draw() -> void:
 	var bt := berth_at()
 	for i in 3:
 		draw_rect(Rect2(bt + Vector2(-6.0 + i * 8.0, 2.4) * M, Vector2(1.2, 1.2) * M), ink)
-	draw_string(font, bt + Vector2(-6, 5.2) * M, Ops.w("补给泊位", "SUPPLY BERTH"), HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.8 * M), Pal.ink(0.6))
+	if Pal.labels: draw_string(font, bt + Vector2(-6, 5.2) * M, Ops.w("补给泊位", "SUPPLY BERTH"), HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.8 * M), Pal.ink(0.6))
 	for c in d.callers:
 		if str(c.state) != "docked":
 			continue

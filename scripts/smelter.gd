@@ -1049,6 +1049,8 @@ func _draw_lance(ci, F: float, font: Font, zoom: float, txt: Callable) -> void:
 
 
 func _label(ci, font: Font, at: Vector2, s: String, zoom: float, right: bool = false) -> void:
+	if not Pal.labels:
+		return
 	var a := clampf((zoom - 0.8) / 0.3, 0.0, 1.0)
 	if a <= 0.01 or ci.no_text:
 		return
@@ -1059,6 +1061,8 @@ func _label(ci, font: Font, at: Vector2, s: String, zoom: float, right: bool = f
 
 
 func _callout(ci, font: Font, from: Vector2, to: Vector2, s: String, zoom: float, left: bool = false) -> void:
+	if not Pal.labels:
+		return
 	var a := clampf((zoom - 0.8) / 0.3, 0.0, 1.0)
 	if a <= 0.01:
 		return
@@ -1073,7 +1077,7 @@ func _callout(ci, font: Font, from: Vector2, to: Vector2, s: String, zoom: float
 # the plate beside the bunker: what the furnace is doing, in numbers
 func _panel(ci, F: float, font: Font, font_b: Font, txt: Callable) -> void:
 	# an on-site guide is running: the read-out plate steps back (27 号)
-	if Guide.quiet:
+	if Guide.quiet or not Pal.labels:
 		return
 	var r := Rect2(Vector2(X + 10.5, F + 0.85) * M, Vector2(6.9 * M, 3.3 * M))
 	ci.draw_rect(r, Color(0.035, 0.037, 0.042, 0.96))
@@ -1260,8 +1264,8 @@ func _hx(ci, F: float, font: Font, zoom: float, txt: Callable) -> void:
 	if a2 > 0.01:
 		ci.draw_string(font, Vector2(X + x0 - 0.2, F + y0 - 0.55) * M, "%d °C" % int(round(w_out)), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Pal.heat(0.85 * a2, 1.2))
 		ci.draw_string(font, Vector2(X + x0 - 0.2, F + y1 + 0.62) * M, "%d °C" % int(T_IN), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Pal.tint(Pal.AIR, 0.85 * a2, 1.2))
-		ci.draw_string(font, Vector2(X - 9.6, F + y1 + 0.68) * M, txt.call("fu_loop_in"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Pal.ink(0.55 * a2))
-		ci.draw_string(font, Vector2(X - 9.6, F + y0 - 0.97) * M, txt.call("fu_loop_out"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Pal.ink(0.55 * a2))
+		if Pal.labels: ci.draw_string(font, Vector2(X - 9.6, F + y1 + 0.68) * M, txt.call("fu_loop_in"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Pal.ink(0.55 * a2))
+		if Pal.labels: ci.draw_string(font, Vector2(X - 9.6, F + y0 - 0.97) * M, txt.call("fu_loop_out"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Pal.ink(0.55 * a2))
 	# the coil-loop pump: a volute with its impeller turning, the motor behind it
 	var pc := Vector2(X - 3.8, F + 5.9) * M
 	var pr := 0.34 * M

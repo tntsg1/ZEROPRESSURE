@@ -76,8 +76,11 @@ static func lamp_col(state: String, t: float) -> Color:
 # a plate: a lamp, the machine's name, what it is doing (one line)
 func plate(ci: CanvasItem, at: Vector2, width: float, name: String, st: Array, t: float) -> void:
 	var rr := Rect2(_p(at), Vector2(width, 0.9) * m)
-	ci.draw_rect(rr, Color(0.02, 0.022, 0.026, 0.9))
 	var lc := lamp_col(str(st[1]), t)
+	if not Pal.labels:
+		FastDraw.circle(ci, _p(at + Vector2(0.42, 0.45)), 0.15 * m, lc)
+		return
+	ci.draw_rect(rr, Color(0.02, 0.022, 0.026, 0.9))
 	ci.draw_rect(Rect2(rr.position, Vector2(0.12 * m, rr.size.y)), lc)
 	FastDraw.circle(ci, _p(at + Vector2(0.42, 0.45)), 0.15 * m, lc)
 	_text(ci, at + Vector2(0.75, 0.64), name, 0.44, _ink(0.92))
@@ -99,7 +102,7 @@ func still(ci: CanvasItem, on: bool, lod: int, stage: int) -> void:
 	# the world's origin; a transparent frame round the station keeps the layer in view (tram 97 号)
 	ci.draw_rect(r, Color(0, 0, 0, 0), false, 1.0)
 	_put(ci, _mesh("still/%s/%d/%d" % [on, lod, stage], func(p): _still(p, on, lod, stage)), Vector2.ZERO)
-	if lod >= 1:
+	if lod >= 1 and Pal.labels:
 		_text(ci, Vector2(9.4, 1.32), "SWL 40 t", 0.5, Pal.heat(0.75, 1.0))
 		_text(ci, Vector2(14.0, 1.32), "MOUTH GANTRY", 0.34, _ink(0.45))
 		_text(ci, Vector2(0.9, 4.75), w("拖船门", "TUG GATE"), 0.4, _ink(0.6))
@@ -683,7 +686,8 @@ func _mouth(ci: CanvasItem, t: float, on: bool) -> void:
 	# the port draws the rest), lit along its top by the hall
 	if not W.hulk.is_empty() and bool(W.hulk.inside):
 		_put(ci, _hulk_mesh(str(W.hulk.ship), W.stern_x()), Vector2.ZERO)
-		_text(ci, Vector2(1.6, W.hull_top() + 1.1), str(W.hulk.id), 0.6, _ink(0.55))
+		if Pal.labels:
+			_text(ci, Vector2(1.6, W.hull_top() + 1.1), str(W.hulk.id), 0.6, _ink(0.55))
 	# the beacon on the pier: amber while the doors move or a hulk is worked
 	var busy := absf(W.mouth_door - (1.0 if not W.hulk.is_empty() and bool(W.hulk.inside) else 0.0)) > 0.01 or not W.prep_steps.is_empty()
 	FastDraw.circle(ci, _p(Vector2(1.05, W.GATE.y + 0.95)), 0.22 * m, Pal.heat(0.35 + 0.65 * absf(sin(t * 6.0)), 1.6) if busy else (Pal.tint(Pal.FLUID, 0.85, 1.3) if on else _ink(0.2)))
@@ -835,7 +839,8 @@ func _deck_moving(ci: CanvasItem, t: float, on: bool) -> void:
 		if bool(W.tug_pod[i]):
 			_pod_at(ci, Vector2(tp.x - W.AFT, W.POD_ON_TUG + off.y + hover), "spare", mod.a, mod)
 		# its name, its nav lights (red port aft, green bow), the cockpit's glow
-		_text(ci, tp + Vector2(-1.8, -2.15), TugFleet.NAMES[i], 0.62, Pal.ink(0.85 * mod.a))
+		if Pal.labels:
+			_text(ci, tp + Vector2(-1.8, -2.15), TugFleet.NAMES[i], 0.62, Pal.ink(0.85 * mod.a))
 		var blink := 0.5 + 0.5 * sin(t * 3.0 + i * 1.7)
 		FastDraw.circle(ci, _p(tp + Vector2(-5.5, -4.0)), 0.13 * m, Color(1.0, 0.25, 0.2, blink * mod.a))
 		FastDraw.circle(ci, _p(tp + Vector2(5.6, -3.4)), 0.13 * m, Color(0.3, 1.0, 0.45, blink * mod.a))

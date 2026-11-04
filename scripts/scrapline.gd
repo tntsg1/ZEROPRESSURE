@@ -840,6 +840,8 @@ func _draw_shredder(ci, F: float, font: Font, zoom: float, txt: Callable, steel:
 
 func _label(ci, font: Font, at: Vector2, s: String, zoom: float) -> void:
 	# the processing district's line names its parts only when you are close (36 号)
+	if not Pal.labels:
+		return
 	if quiet and zoom < 1.6:
 		return
 	var a := clampf((zoom - 0.8) / 0.3, 0.0, 1.0)
@@ -850,7 +852,7 @@ func _label(ci, font: Font, at: Vector2, s: String, zoom: float) -> void:
 # the plate: what the line is doing, in numbers
 func _panel(ci, F: float, font: Font, font_b: Font, txt: Callable, zoom: float) -> void:
 	var r := Rect2(_p(10.5, 0.95, F), Vector2(6.9, 2.4) * M)
-	if zoom < 0.3 or Guide.quiet or quiet:
+	if zoom < 0.3 or Guide.quiet or not Pal.labels or quiet:
 		return
 	ci.draw_rect(r, Color(0.035, 0.037, 0.042, 0.96))
 	ci.draw_rect(Rect2(r.position, Vector2(4, r.size.y)), Pal.ink(0.8))

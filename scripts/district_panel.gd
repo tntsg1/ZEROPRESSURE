@@ -62,6 +62,15 @@ func _ready() -> void:
 	body = label("", 15)
 	body.visible = false
 	column.add_child(body)
+	# 127 号: the power district's raw figures, folded
+	if zone == "power":
+		detail_key = button(words("详细 ▾", "DETAILS ▾"), func():
+			detail_box.visible = not detail_box.visible
+			detail_key.text = words("详细 ▴", "DETAILS ▴") if detail_box.visible else words("详细 ▾", "DETAILS ▾"))
+		column.add_child(detail_key)
+		detail_box = OpsSkin.Readout.new()
+		detail_box.visible = false
+		column.add_child(detail_box)
 	column.add_child(OpsSkin.Section.new(words("操作", "CONTROLS")))
 	for b in _actions():
 		column.add_child(button(b[0], b[1]))
@@ -131,6 +140,19 @@ func _actions() -> Array:
 
 var repair_box: VBoxContainer
 var _repair_sig := ""
+var detail_key: Button
+var detail_box: OpsSkin.Readout
+
+
+func _details(rows: Array) -> void:
+	if detail_box == null:
+		return
+	var out: Array = []
+	for r in rows:
+		var t := str(r[0])
+		var cut := t.find("  ")
+		out.append([t.substr(0, cut), t.substr(cut).strip_edges()] if cut >= 0 else [t, ""])
+	detail_box.set_rows(out)
 
 
 # what the next stage takes, ticked off; the two ways to pay, each greyed with its reason
@@ -476,18 +498,24 @@ func _fill() -> void:
 	var lines: Array = [_stage_line(), ""]
 	match zone:
 		"power":
-			# 34 号: the bus — generation, every load at its rating and as it draws now, the shore line
-			lines.append("%s  %.0f MW" % [words("自有发电", "OWN GENERATION"), Grid.capacity()])
-			lines.append("%s  %.1f MW" % [words("已占", "SPOKEN FOR"), Grid.reserved(game)])
-			lines.append("%s  %.1f MW" % [words("余量", "SPARE"), Grid.headroom(game)])
-			lines.append("%s  %.1f/%.0f MW · $%.0f/MWh" % [words("岸电", "SHORE LINE"), Grid.shore_mw(game), Grid.SHORE_MAX, Grid.SHORE_PRICE])
+			# 127 号: the verdict and its fix in plain words; the figures under "details"
+			var v := Grid.verdict(game)
+			lines.append(str(v.t))
+			if str(v.how) != "":
+				lines.append(words("怎么办：", "WHAT TO DO: ") + str(v.how))
+			var det: Array = []
+			det.append(["%s  %.0f %s" % [words("自家能发", "WE CAN MAKE"), Grid.capacity(), words("兆瓦", "MW")]])
+			det.append(["%s  %.1f %s" % [words("已经分出去", "GIVEN OUT"), Grid.reserved(game), words("兆瓦", "MW")]])
+			det.append(["%s  %.1f %s" % [words("还空着", "STILL FREE"), Grid.headroom(game), words("兆瓦", "MW")]])
+			det.append(["%s  %.1f / %.0f %s" % [words("外购电（比自家发贵 %d 倍）" % int(Grid.bought_x()), "BOUGHT POWER (%dx DEARER)" % int(Grid.bought_x())), Grid.shore_mw(game), Grid.SHORE_MAX, words("兆瓦", "MW")]])
 			for l in Grid.loads(game):
-				var st: String = {"base": words("优先", "FIRST"), "run": words("运行", "ON"), "short": words("电不够 %d%%" % int(float(l.k) * 100.0), "SHORT %d%%" % int(float(l.k) * 100.0)), "idle": words("待机", "IDLE")}.get(str(l.state), "")
+				var st: String = {"base": words("一直先供", "ALWAYS FIRST"), "run": words("在用", "ON"), "short": words("电不够 %d%%" % int(float(l.k) * 100.0), "SHORT %d%%" % int(float(l.k) * 100.0)), "idle": words("没在用", "IDLE")}.get(str(l.state), "")
 				if l.get("free", false):
-					st = words("补贴线路", "SUBSIDISED")
-				lines.append("%s  %s · %.1f/%.0f MW" % [str(l.name), st, float(l.own) + float(l.shore) if not l.get("free", false) else float(l.mw), float(l.rated)])
+					st = words("免费供电", "FREE SUPPLY")
+				det.append(["%s  %s · %.1f / %.0f" % [str(l.name), st, float(l.own) + float(l.shore) if not l.get("free", false) else float(l.mw), float(l.rated)]])
 			if Grid.wait_text(game) != "":
 				lines.append(Grid.wait_text(game))
+			_details(det)
 			for id in Port.POWER_ITEMS:
 				var owned: bool = d.get("upgrades", {}).has(id)
 				lines.append("%s  %s" % [Repair.name_of(id), words("已建成", "BUILT") if owned else (words("可修（有港电）", "CAN REPAIR (GRID UP)") if Port.power_ok(id) else words("等动力区 1 阶", "WAITS FOR STAGE 1"))])

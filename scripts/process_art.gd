@@ -87,6 +87,8 @@ func still(ci: CanvasItem, on: bool, lod: int) -> void:
 	# stencils on the walls
 	var dim := _ink(0.16)
 	_text(ci, Vector2(39.0, 25.9), "PRC", 1.6, Color(dim, 0.2))
+	if not Pal.labels:
+		return
 	_text(ci, Vector2(TRAFO.position.x + 0.7, 23.95), "EAF-T 36 MVA", 0.34, _ink(0.5))
 	_text(ci, Vector2(REHEAT.position.x + 0.25, REHEAT.position.y + 0.55), w("加热炉 RH-1", "REHEAT RH-1"), 0.32, _ink(0.55))
 
@@ -745,8 +747,11 @@ const PLATES := {
 
 func plate(ci: CanvasItem, at: Vector2, width: float, name: String, st: Array, t: float) -> void:
 	var rr := Rect2(_p(at), Vector2(width, 0.9) * m)
-	ci.draw_rect(rr, Color(0.02, 0.022, 0.026, 0.9))
 	var lc := lamp_col(str(st[1]), t)
+	if not Pal.labels:
+		FastDraw.circle(ci, _p(at + Vector2(0.42, 0.45)), 0.15 * m, lc)
+		return
+	ci.draw_rect(rr, Color(0.02, 0.022, 0.026, 0.9))
 	ci.draw_rect(Rect2(rr.position, Vector2(0.12 * m, rr.size.y)), lc)
 	FastDraw.circle(ci, _p(at + Vector2(0.42, 0.45)), 0.15 * m, lc)
 	_text(ci, at + Vector2(0.75, 0.64), name, 0.44, _ink(0.92))

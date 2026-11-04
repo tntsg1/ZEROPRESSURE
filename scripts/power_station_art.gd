@@ -106,6 +106,8 @@ static func lamp_col(state: String, t: float) -> Color:
 
 # a plate: its board and words (the slow layer), its lamp (every frame, it may blink)
 func plate(ci: CanvasItem, at: Vector2, width: float, name: String, st: Array, _t: float) -> void:
+	if not Pal.labels:
+		return
 	var rr := Rect2(_p(at), Vector2(width, 0.9) * m)
 	ci.draw_rect(rr, Color(0.02, 0.022, 0.026, 0.9))
 	_text(ci, at + Vector2(0.75, 0.64), name, 0.44, _ink(0.92))
@@ -129,7 +131,7 @@ func _plates(stage: int) -> Array:
 	out.append([PLATES.fc[0], PLATES.fc[1], w("燃料电池", "FUEL CELLS"), W.fc_state()])
 	out.append([PLATES.feed[0], PLATES.feed[1], w("给水泵", "FEED PUMPS"), W.feed_state()])
 	out.append([PLATES.rad[0], PLATES.rad[1], w("散热泵", "RAD PUMPS"), W.rad_state()])
-	out.append([PLATES.switch[0], PLATES.switch[1], w("配电柜", "SWITCHGEAR"), [w("母线 %.1f MW · 自发 %.1f · 岸电 %.1f", "BUS %.1f MW · OWN %.1f · SHORE %.1f") % [W.own + W.shore, W.own, W.shore], "ok"]])
+	out.append([PLATES.switch[0], PLATES.switch[1], w("配电柜", "SWITCHGEAR"), [w("全港在用 %.1f · 自家发 %.1f · 外购 %.1f", "IN USE %.1f · OURS %.1f · BOUGHT %.1f") % [W.own + W.shore, W.own, W.shore], "ok"]])
 	# a changeover being shown: a plate by the machine, amber, put right by the automatics
 	if not W.fault.is_empty():
 		var fa := W.fault_at()
@@ -174,6 +176,8 @@ func still(ci: CanvasItem, stage: int, lod: int) -> void:
 	# the layer's bounds (a canvas item culls a draw_mesh by its untransformed box; tram 97 号)
 	ci.draw_rect(r, Color(0, 0, 0, 0), false, 1.0)
 	_put(ci, _mesh("still/%d/%d" % [stage, lod], func(p): _still(p, stage, lod)), Vector2.ZERO)
+	if not Pal.labels:
+		return
 	var n := W.unit_count(stage)
 	for i in 3:
 		var bx: float = BAY_X[i]
@@ -879,10 +883,10 @@ func hover_items(stage: int) -> Array:
 		w("推动散热回路：把冷凝器的热送到两侧吊臂上的散热板。太空里没有空气和水，热只能辐射出去。", "Drive the radiator loop: the condenser's heat out to the radiators on the booms. In vacuum heat can only be radiated away."),
 		W.rad_state(), w("不用操作。站外看散热板越红，排的热越多。", "Nothing to do. Outside, the redder the radiators, the more heat goes out."))
 	add.call([Rect2(PLATES.switch[0], Vector2(PLATES.switch[1], 0.9)), Rect2(SG_X, SG_Y.x, CUB * W.FEEDERS.size(), SG_Y.y - SG_Y.x)], w("配电柜", "SWITCHGEAR"),
-		w("全港的电从这里分出去：机组进线、岸电进线，再每区一条馈线。哪个区开始用电，它的断路器就合闸（I），电流表指着它现在用的电。", "Where the port's power is shared out: the units' incomer, the shore incomer, then a feeder for each district. A district starting to draw closes its breaker (I); its ammeter shows what it draws."),
-		[w("母线 %.1f MW · 自发 %.1f · 岸电 %.1f" % [W.own + W.shore, W.own, W.shore], "BUS %.1f MW · OWN %.1f · SHORE %.1f" % [W.own + W.shore, W.own, W.shore]), "ok"],
-		w("电不够时谁先用：业务终端 → 动力控制屏里调顺序，或改供电线路（只用自发电 / 不够时接岸电）。", "Who comes first when short: the business console's power control screen, where the supply line is chosen too."))
+		w("全港的电从这里分出去：自家发的电和外购电进来，再每区一条线送出去。哪个区开始用电，它的开关就合上（I），表针指着它现在用的电。", "Where the port's power is shared out: the units' incomer, the shore incomer, then a feeder for each district. A district starting to draw closes its breaker (I); its ammeter shows what it draws."),
+		[w("全港在用 %.1f · 自家发 %.1f · 外购 %.1f 兆瓦" % [W.own + W.shore, W.own, W.shore], "BUS %.1f MW · OWN %.1f · SHORE %.1f" % [W.own + W.shore, W.own, W.shore]), "ok"],
+		w("电不够时谁先用：业务终端 → 动力控制屏里调顺序，或设成不够时自动买外购电。", "Who comes first when short: the business console's power control screen, where the supply line is chosen too."))
 	add.call([Rect2(SCREEN.position - Vector2(0.25, 0.25), SCREEN.size + Vector2(0.5, 0.5))], w("主控屏", "MAIN CONTROL SCREEN"),
-		w("整座电站的读数：输出 / 容量、频率、堆热功率、蒸汽、冷凝器、散热板、岸电，以及最近几次自动切换。", "The plant in figures: out against capacity, frequency, reactor heat, steam, condenser, radiators, shore power, and the last automatic changeovers."),
+		w("整座电站的读数：输出 / 容量、频率、堆热功率、蒸汽、冷凝器、散热板、外购电，以及最近几次自动切换。", "The plant in figures: out against capacity, frequency, reactor heat, steam, condenser, radiators, shore power, and the last automatic changeovers."),
 		[w("%.1f / %.0f MW" % [W.own, W.cap], "%.1f / %.0f MW" % [W.own, W.cap]), "ok" if stage >= 1 else "warn"], w("详细控制在下面的业务终端（按 B 附近打开）。", "The controls are at the business console below."))
 	return out

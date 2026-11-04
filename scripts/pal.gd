@@ -4,6 +4,10 @@ class_name Pal
 # fluid) only show while something is being measured or going wrong.
 # Values above 1.0 feed the HDR additive passes.
 
+# 127 号 (user 2026-11-04: "设备上那一堆字完全没有必要，只要看它很酷就行"): the words drawn on the
+# machines (part names, explanations, name plates) are off; screens and the [E] prompts stay
+static var labels := false
+
 const BG := Color(0.035, 0.037, 0.042)
 const DEEP := Color(0.055, 0.058, 0.066)
 const PLATE := Color(0.082, 0.086, 0.096)

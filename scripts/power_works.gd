@@ -438,7 +438,7 @@ static func rejected() -> float:
 
 static func shore_state() -> Array:
 	if umb <= 0.0 and shore <= 0.05:
-		return [w("收起 · 没用岸电", "STOWED · NO SHORE POWER"), "off"]
+		return [w("收起 · 没买外购电", "STOWED · NO BOUGHT POWER"), "off"]
 	if umb < 1.0:
-		return [w("岸电臂伸出中 %d%%" % int(umb * 100.0), "UMBILICAL SWINGING OUT %d%%" % int(umb * 100.0)), "work"]
-	return [w("已接上 · 岸电 %.1f MW（$%d/MWh）" % [shore, int(Grid.SHORE_PRICE)], "PLUGGED IN · %.1f MW SHORE ($%d/MWh)" % [shore, int(Grid.SHORE_PRICE)]), "work" if shore > 0.05 else "ok"]
+		return [w("外购电接头伸出中 %d%%" % int(umb * 100.0), "UMBILICAL SWINGING OUT %d%%" % int(umb * 100.0)), "work"]
+	return [w("已接上 · 外购电 %.1f 兆瓦" % shore, "PLUGGED IN · %.1f MW SHORE ($%d/MWh)" % [shore, int(Grid.SHORE_PRICE)]), "work" if shore > 0.05 else "ok"]

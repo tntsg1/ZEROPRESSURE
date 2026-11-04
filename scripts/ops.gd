@@ -151,11 +151,11 @@ static func _grid(game) -> Dictionary:
 	var due := energy_due()
 	var waits := Grid.wait_text(game)
 	var lines: Array = [
-		w("发电 %.0f MW · 已占 %.1f MW · 余量 %.1f MW", "MAKING %.0f MW · SPOKEN FOR %.1f · SPARE %.1f") % [Grid.capacity(), Grid.reserved(game), Grid.headroom(game)],
-		w("动力区 %d / 2 阶 · 重载设施 %d / %d 可接电", "POWER DISTRICT %d / 2 · HEAVY KIT %d / %d ON GRID") % [stage, powered, Port.POWER_ITEMS.size()],
+		w("自家能发 %.0f · 已分出去 %.1f · 还空着 %.1f 兆瓦", "WE MAKE %.0f · GIVEN OUT %.1f · FREE %.1f MW") % [Grid.capacity(), Grid.reserved(game), Grid.headroom(game)],
+		w("动力区 %d / 2 期 · 大设备 %d / %d 有电", "POWER DISTRICT %d / 2 · BIG MACHINES %d / %d POWERED") % [stage, powered, Port.POWER_ITEMS.size()],
 	]
 	if Grid.shore_mw(game) > 0.0:
-		lines.insert(1, w("岸电 %.1f MW", "SHORE %.1f MW") % Grid.shore_mw(game))
+		lines.insert(1, w("外购电 %.1f 兆瓦", "BOUGHT %.1f MW") % Grid.shore_mw(game))
 	if waits != "":
 		lines.push_front(w("电弧炉电不够，熔得慢", "THE FURNACE IS SHORT OF POWER"))
 	if due > 0.005:

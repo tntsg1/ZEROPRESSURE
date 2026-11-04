@@ -719,7 +719,7 @@ func _fill_find() -> void:
 		grid.columns = 2
 		for k in mini(Scan.reach(), ord.size()):
 			var i: int = ord[k]
-			var tag := w(" · 已扫", " · SWEPT") if not Scan.sector(i).is_empty() else ""
+			var tag := w(" · 已扫描", " · SWEPT") if not Scan.sector(i).is_empty() else ""
 			var b := _btn(Orbits.name_of(Orbits.station(i)) + tag, true, func(): sel_sector = i; sel_sig = ""; _sectors_open = false; _sig_key = ""; _fill(), 32)
 			b.custom_minimum_size.x = 200
 			if i == sel_sector:
@@ -730,8 +730,8 @@ func _fill_find() -> void:
 			find_box.add_child(OpsSkin.label(w("还有 %d 片扇区太远：修好拖船站、贸易区能扫得更远。", "%d MORE SECTORS OUT OF REACH.") % (ord.size() - Scan.reach()), 13, 0.6))
 	else:
 		# the picked sector on one line; its own button opens the list again
-		var tag := w(" · 已扫", " · SWEPT") if not Scan.sector(sel_sector).is_empty() else w(" · 未扫", " · UNSWEPT")
-		var row := _btn(w("扇区：%s%s　　换一片 ▾", "SECTOR: %s%s    CHANGE ▾") % [Orbits.name_of(Orbits.station(sel_sector)), tag], true, func(): _sectors_open = true; _sig_key = ""; _fill(), 36)
+		var tag := w(" · 已扫描", " · SWEPT") if not Scan.sector(sel_sector).is_empty() else w(" · 未扫描", " · UNSWEPT")
+		var row := _btn(w("当前扇区：%s%s　　切换扇区 ▾", "SECTOR: %s%s    CHANGE ▾") % [Orbits.name_of(Orbits.station(sel_sector)), tag], true, func(): _sectors_open = true; _sig_key = ""; _fill(), 36)
 		row.name = "SectorPicked"
 		_tour_parts.sectors = row
 		find_box.add_child(row)
@@ -746,7 +746,7 @@ func _fill_find() -> void:
 			# busy with the other job: the button still names its own action, then why it waits
 			if Scan.busy():
 				why = w("扫描%s附近 · 等“%s”完成", "SWEEP NEAR %s · AFTER %s") % [Orbits.name_of(Orbits.station(sel_sector)), Scan.job_text()]
-			var sb := _action(_btn(w("扫描%s附近（约 %d 秒）", "SWEEP NEAR %s (~%d s)") % [Orbits.name_of(Orbits.station(sel_sector)), int(Scan.SWEEP_S)] if why == "" else why, why == "", func(): Scan.sweep(sel_sector); _sig_key = ""; _fill(), 42))
+			var sb := _action(_btn((w("重新扫描 · %s（约 %d 秒）", "SWEEP AGAIN · %s (~%d s)") if not Scan.sector(sel_sector).is_empty() else w("扫描 · %s（约 %d 秒）", "SWEEP · %s (~%d s)")) % [Orbits.name_of(Orbits.station(sel_sector)), int(Scan.SWEEP_S)] if why == "" else why, why == "", func(): Scan.sweep(sel_sector); _sig_key = ""; _fill(), 42))
 			find_box.add_child(sb)
 			_tour_parts.sweep = sb
 		# the signals of that sector, each saying where it stands; a hulk found is its own tug button
@@ -979,7 +979,7 @@ func next_line() -> String:
 		if not Scan.sector(sel_sector).is_empty():
 			var cd := Scan.cooldown(sel_sector)
 			if cd <= 0.0:
-				return w("有新东西漂进这片扇区了：点“扫描”再扫一次。", "NEW DRIFT IN THIS SECTOR: SWEEP IT AGAIN.")
+				return w("检测到新目标进入扇区，请重新扫描。", "NEW TARGETS IN THE SECTOR: SWEEP AGAIN.")
 			return w("这片没有船。约 %d 秒后有新东西漂进来，或换一片扫。", "NO HULK HERE. NEW DRIFT IN ~%d s, OR SWEEP ANOTHER.") % ceili(cd)
 	return w("下一步：选一片扇区（最近的已选好），点“扫描”。", "NEXT: PICK A SECTOR (THE NEAREST IS PICKED), SWEEP IT.")
 
@@ -1305,7 +1305,7 @@ func _draw_inset(day: float) -> void:
 	var t := Time.get_ticks_msec() / 1000.0
 	map.draw_rect(r, Color(0.02, 0.026, 0.032, 0.98))
 	map.draw_rect(r, Color(UiSkin.DATA, 0.35), false, 1.0)
-	map.draw_string(font, r.position + Vector2(16, 26), w("%s附近 · 雷达放大", "NEAR %s · RADAR") % Orbits.name_of(Orbits.station(sel_sector)), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.ink(0.8))
+	map.draw_string(font, r.position + Vector2(16, 26), w("%s · 局部雷达", "%s · LOCAL RADAR") % Orbits.name_of(Orbits.station(sel_sector)), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.ink(0.8))
 	var c := Vector2(r.get_center().x, r.get_center().y + 14.0)
 	var R := 136.0
 	# the scope: range rings, a cross, ticks round the rim
@@ -1339,7 +1339,7 @@ func _draw_inset(day: float) -> void:
 			var p := c + Vector2(cos(a3), sin(a3)) * R * (1.05 - 0.45 * kk)
 			map.draw_circle(p, 2.5, Color(UiSkin.DATA, 0.7 * (1.0 - kk)))
 			map.draw_line(p, p + Vector2(cos(a3), sin(a3)) * 14.0, Color(UiSkin.DATA, 0.3 * (1.0 - kk)), 1.0)
-		map.draw_string(font, r.position + Vector2(16, r.size.y - 14), w("有新东西漂进来了 · 可以再扫一次", "NEW DRIFT COMING IN · SWEEP AGAIN"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, UiSkin.DATA)
+		map.draw_string(font, r.position + Vector2(16, r.size.y - 14), w("检测到新目标 · 建议重新扫描", "NEW TARGETS · SWEEP AGAIN"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, UiSkin.DATA)
 	for sg in Scan.signals(sel_sector):
 		var at := _inset_at(sg)
 		var on := str(sg.id) == sel_sig
@@ -1357,7 +1357,6 @@ func _draw_inset(day: float) -> void:
 			var tri := PackedVector2Array([at + Vector2(0, -8), at + Vector2(7, 7), at + Vector2(-7, 7)])
 			map.draw_texture_rect(UiSkin.glow_tex(), Rect2(at - Vector2(16, 16), Vector2(32, 32)), false, Color(UiSkin.ACCENT, 0.5))
 			map.draw_colored_polygon(tri, UiSkin.ACCENT)
-			map.draw_string(font, at + Vector2(10, 16), Scan.type_name(str(sg.offer.ship)), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, UiSkin.ACCENT)
 		else:
 			map.draw_circle(at, 3.5, Pal.ink(0.35 + 0.2 * lit))
 		if not j.is_empty() and str(j.kind) == "analyze" and str(j.sig) == str(sg.id):
@@ -1368,7 +1367,9 @@ func _draw_inset(day: float) -> void:
 				var a4 := q * PI * 0.5 + PI * 0.25
 				var e := at + Vector2(cos(a4), sin(a4)) * 14.0
 				map.draw_line(e, e + Vector2(cos(a4), sin(a4)) * 6.0, UiSkin.ACCENT, 2.0)
-		map.draw_string(font, at + Vector2(10, -6), str(sg.id), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Pal.ink(0.75))
+		# 127 号: "S-002 · 磐石级维修拖船" once analysed
+		var nm := Scan.short_name(sg)
+		map.draw_string(font, at + Vector2(10, -6), str(sg.id) + (" · " + nm if nm != "" else ""), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, UiSkin.ACCENT if str(sg.kind) == "ship" and sg.get("known", false) else Pal.ink(0.75))
 
 
 func _find_click(p: Vector2) -> void:
