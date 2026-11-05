@@ -212,6 +212,9 @@ static func load_or_new() -> Dictionary:
 		Consum.migrate()
 		Growth.refund_all()
 		Port.migrate()
+		# 128 号: an old exchange's listings in a save whose trade port is not mended: withdrawn (backed up first)
+		if usable() and not d.is_empty():
+			StoreBook.free_old_orders()
 		_open_market_early()
 		sync_story()
 		# a save from before the special courses: the families of ship it has already
@@ -862,7 +865,11 @@ static func settle(r: Dictionary) -> Dictionary:
 	var ingot_t := float(r.get("ingot_t", 0.0)) if INGOTS else 0.0
 	# 108 号: the first machine bought on the spot is in the account already
 	var spot_paid := float(r.get("spot_paid", 0.0))
-	var money_in := gross - parts_value - ingot_value - spot_paid - (0.0 if prepaid else fee)
+	# 128 号: the machines no repair takes, the gases and liquids, hazardous goods — into the
+	# warehouse with everything else, not cash (scripts/store_book.gd)
+	var stores := StoreBook.ON
+	var goods_value := float(r.get("goods_value", 0.0)) if stores else 0.0
+	var money_in := gross - parts_value - ingot_value - spot_paid - goods_value - (0.0 if prepaid else fee)
 	data.roll_from = {"money": float(data.money), "loan": float(data.loan)}
 	var cash: float = float(data.money) + money_in
 	# the loan: a fixed installment and interest on what is still owed (a short job's share of them)
@@ -894,7 +901,7 @@ static func settle(r: Dictionary) -> Dictionary:
 	# 108 号: the pump's second tier brought single-gas tanks home in their own bottles
 	for v in r.get("gas_tanks", {}):
 		GasLine.receive(r.gas_tanks[v], "%s · %s" % [job_id, v])
-	if ingot_t > 0.0005:
+	if ingot_t > 0.0005 and not stores:
 		var ib: Array = data.get("ingot_batches", [])
 		ib.append({"id": "ingot:" + job_id, "job_id": job_id, "ship": str(a.get("ship", "")), "mass_t": snappedf(ingot_t, 0.001), "value": ingot_value})
 		data.ingot_batches = ib
@@ -920,9 +927,15 @@ static func settle(r: Dictionary) -> Dictionary:
 		seen.gear_lost = true
 		data.seen = seen
 	# the parts for the berth (scripts/repair.gd): onto the shelf, the structure by the tonne
-	var parts_res := _settle_parts(r)
+	var parts_res := _settle_parts(r, not stores)
 	# 106 号: what is still to be decided on the settlement's second page (sold or kept)
-	Disposal.open_for(job_id, str(a.get("ship", "")), ingot_t, ingot_value, r.get("parts", []))
+	# 128 号: no deciding any more — the whole haul waits in the inbox for the settlement's button
+	var haul := {}
+	if stores:
+		data.erase("disposal")
+		haul = StoreBook.receive(job_id, str(a.get("ship", "")), ingot_t, r.get("parts", []), r.get("goods", []))
+	else:
+		Disposal.open_for(job_id, str(a.get("ship", "")), ingot_t, ingot_value, r.get("parts", []))
 	var order_result: Dictionary = load("res://scripts/work_orders.gd").apply_report(a,r.get("work_order",{}))
 	# 104 号: a borrow job done, or an achievement, teaches a dismantling method
 	var learned: Array = Methods.settle(a, r, grade, gear_res.get("feats", []), order_result)
@@ -969,7 +982,7 @@ static func settle(r: Dictionary) -> Dictionary:
 		"short": short, "money": float(data.money), "loan": data.loan, "level_up": level() != rep_before, "level": level(), "paid_off": paid_off, "used": used, "granted": granted,"materials":material_result,"work_order":order_result,
 		"gear": gear_res, "gear_first_lost":first_gear_loss, "parts": parts_res, "suggest": Repair.suggestion(), "trade_bonus": trade_bonus, "tow": tow, "tow_owed": tow_owed, "spot_paid": spot_paid, "showcase": showcase, "restock": restocked,
 		"retained_value": preload("res://scripts/material_batches.gd").recovery_value(r.get("material_receipts", [])),
-		"ingot_t": ingot_t, "ingot_value": ingot_value, "learned": learned}
+		"ingot_t": ingot_t, "ingot_value": ingot_value, "learned": learned, "haul": haul, "goods_value": goods_value}
 	if job_id != "":
 		var completed: Dictionary = data.get("settled_jobs", {})
 		completed[job_id] = result.duplicate(true)
@@ -980,11 +993,12 @@ static func settle(r: Dictionary) -> Dictionary:
 	return result
 
 
-static func _settle_parts(r: Dictionary) -> Dictionary:
+static func _settle_parts(r: Dictionary, shelve := true) -> Dictionary:
 	var shelf: Array = data.get("parts", [])
 	var tags: Array = []
 	for part in r.get("parts", []):
-		shelf.append(part)
+		if shelve:
+			shelf.append(part)
 		tags.append(str(part.tag))
 	data.parts = shelf
 	var tons := float(r.get("structure_t", 0.0))

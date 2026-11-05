@@ -17,6 +17,9 @@ const SPEED := 5.0                       # m/s, a forklift at full power, stage 
 const HANDLE := 2.0                      # s to pick or set down (124 号: was 4)
 const MW := 0.4                          # a forklift's draw while it drives
 const FLOOR := 0.1                       # what their own batteries keep up
+# 128 号 §十: nobody waits more than WAIT_MAX s on a forklift — a pick someone is waiting for is
+# handed over by then (the forklift still drives its trip on screen, only shown from then on)
+static var WAIT_MAX := 5.0                # legacy tests set it high
 
 
 static func w(zh: String, en: String) -> String:
@@ -166,11 +169,14 @@ static func wait_text(id: String) -> String:
 	var j := job(id)
 	if j.is_empty():
 		return ""
+	var left := maxf(0.0, WAIT_MAX - float(j.get("waited", 0.0)))
 	var picks: Array = data().jobs.filter(func(x): return str(x.dir) == "out")
 	var ahead: int = picks.find(j)
 	if ahead >= forklifts():
+		if left < 1.0e6:
+			return w("等仓库出库：前面还有 %d 趟搬运（最多再等 %d 秒）", "WAITING ON THE WAREHOUSE: %d MOVES AHEAD (%d s AT MOST)") % [ahead - forklifts() + 1, ceili(left)]
 		return w("等仓库出库：前面还有 %d 趟搬运", "WAITING ON THE WAREHOUSE: %d MOVES AHEAD") % (ahead - forklifts() + 1)
-	return w("等仓库出库：叉车正在从 %s 取%s（还剩约 %d 秒）", "WAITING ON THE WAREHOUSE: A FORKLIFT AT %s (%d s)") % ([ROWS[int(j.row)], Ops.item_name(str(j.key)), ceili(float(j.left))] if Txt.zh else [ROWS[int(j.row)], ceili(float(j.left))])
+	return w("等仓库出库：叉车正在从 %s 取%s（还剩约 %d 秒）", "WAITING ON THE WAREHOUSE: A FORKLIFT AT %s (%d s)") % ([ROWS[int(j.row)], Ops.item_name(str(j.key)), ceili(minf(left, float(j.left)))] if Txt.zh else [ROWS[int(j.row)], ceili(minf(left, float(j.left)))])
 
 
 # the jobs move on: the first one per forklift, at what the grid gives the forklifts
@@ -184,6 +190,13 @@ static func advance(game, dt: float) -> bool:
 	# a pick someone waits for goes before what is only put away or shown
 	var order: Array = d.jobs.filter(func(x): return str(x.dir) == "out") + d.jobs.filter(func(x): return str(x.dir) != "out")
 	d.jobs = order
+	for j in d.jobs:
+		if str(j.dir) == "out":
+			j.waited = float(j.get("waited", 0.0)) + dt
+			if float(j.waited) >= WAIT_MAX and not str(j.id) in d.done:
+				d.done.append(str(j.id))
+				j.dir = "pick"
+				changed = true
 	for i in mini(forklifts(), d.jobs.size()):
 		var j: Dictionary = d.jobs[i]
 		j.left = float(j.left) - dt * kk
@@ -196,7 +209,7 @@ static func advance(game, dt: float) -> bool:
 	for j in d.jobs.duplicate():
 		if float(j.left) <= 0.0:
 			d.jobs.erase(j)
-			if str(j.dir) == "out":
+			if str(j.dir) == "out" and not str(j.id) in d.done:
 				d.done.append(str(j.id))
 			changed = true
 	# stock that went up: put away on camera

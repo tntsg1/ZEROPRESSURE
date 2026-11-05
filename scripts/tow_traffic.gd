@@ -132,6 +132,9 @@ func _process(dt: float) -> void:
 		# 84 号: the port on foot comes first, once, in the empty berth (83 号's cards stay in the menu)
 		if game.walk_on():
 			return
+		# 128 号: the warehouse's first visit comes first (one voice at a time)
+		if game.store_guide_on():
+			return
 		# 108 号 Q13: the core walk after the first ship, then each district's when it is first of use
 		if game.state == "play" and game.in_berth() and game.console_ui == null and not game.menu_open and not game.port_view and arrival.is_empty() and not game.testing:
 			var part: String = preload("res://scripts/port_walk.gd").due_part(game)

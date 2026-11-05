@@ -84,7 +84,7 @@ func _ready() -> void:
 		column.add_child(gas_box)
 		_fill_gas()
 	# 77 号: the services that pay without a ship to strip — tug charters, third-party storage
-	if zone in ["tug", "cargo"]:
+	if zone == "tug" or (zone == "cargo" and Depot.on()):
 		column.add_child(OpsSkin.Section.new(words("拖船外运", "TUG CHARTERS") if zone == "tug" else words("第三方仓储", "THIRD-PARTY STORAGE")))
 		biz_box = VBoxContainer.new()
 		column.add_child(biz_box)
@@ -99,7 +99,11 @@ func _ready() -> void:
 		column.add_child(org_box)
 		_fill_people()
 	# 85 号 (user 2026-10-26: "左边的这个柜台就显示左边柜台的东西"): each rack is set at the rack itself
-	if zone == "cargo":
+	if zone == "cargo" and StoreBook.live():
+		# 128 号 (user 2026-11-04): one stores page — the racks put things away by themselves
+		column.add_child(OpsSkin.Section.new(words("仓库", "STORES")))
+		column.add_child(label(words("在柜台或货架口按 %s，或在哪都按 F3，打开的都是同一个仓库。货物自动上架。", "%s at the counter or a rack, or F3 anywhere: the same stores page. Goods are put away by themselves.") % Keys.label("use"), 15))
+	elif zone == "cargo":
 		column.add_child(OpsSkin.Section.new(words("货架", "RACKS")))
 		var rk := label(words("货架口按 %s 开（左边货架 A1–A4，右边 B1–B4）", "Racks A1–A4 left, B1–B4 right: %s at a rack's mouth") % Keys.label("use"), 15)
 		rk.tooltip_text = words("飞到货架下面的货架口按 %s，只开那一边。客户的货箱在舱口左边的收货台。", "%s at a rack's mouth opens that side only. Clients' crates come to the counter left of the hatch.") % Keys.label("use")
@@ -222,6 +226,8 @@ func _biz_do(r: Dictionary, ok_text: String) -> void:
 
 
 func _fill_biz() -> void:
+	if biz_box == null:
+		return
 	var tug := zone == "tug"
 	var d: Dictionary = Charter.data() if tug else Depot.data()
 	var sig := str(d.offers.map(func(o): return o.id)) + str((d.jobs if tug else d.lots).map(func(j): return [j.id, int(float(j.get("left", 0)))])) + str(d.auto) + (TugYard.status() if tug else str(Depot.free_t()))
@@ -544,6 +550,10 @@ func _fill() -> void:
 		"cargo":
 			var ex: Dictionary = d.get("exchange", {})
 			var stock: Dictionary = ex.get("actors", {}).get("company", {}).get("stock", {})
+			# 128 号: the company's own stores, in cells (the same count as the stores page, F3)
+			if StoreBook.live():
+				stock = StoreBook.raw_stock()
+				lines.append(StoreBook.summary_line())
 			if stock.is_empty():
 				lines.append(words("仓库空着。", "THE WAREHOUSE IS EMPTY."))
 			for key in stock:

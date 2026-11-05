@@ -220,6 +220,11 @@ func operations() -> void:
 		if row[1] == "dev_builder":
 			continue
 		action_card(grid, dev._row_label(row), descriptions.get(row[1], ""), func(): dev.run(index + 1), row[1], row[2] == true, row[0])
+	var hub_w = preload("res://scripts/hub_works.gd")
+	action_card(grid, words("转运环演示货流", "HUB DEMO FLOW"), words("中央转运环的五条走廊都送来演示货箱，机械臂一直装卸。要先修好转运环；只是看的，不动仓库和钱。", "Every spoke of the central ring gets demo crates and its arm keeps loading. Needs the ring repaired; for show only, the warehouse and money are untouched."), func():
+		hub_w.demo = not hub_w.demo
+		hub_w._flow_scan = 0.0
+		refresh(), "dev_hub_demo", hub_w.demo)
 	if dev.game != null:
 		action_card(grid, words("恢复无人机", "RESTORE DRONE"), words("满耐久、停止漂移，不消耗物资。", "Full integrity and zero drift, without consuming stock."), func(): dev.restore_drone(), "restore")
 		action_card(grid, words("返回机库", "RETURN TO BAY"), words("将无人机安全放回左侧机库并修复。", "Move the drone to the left bay and repair it."), func(): dev.restore_drone(true), "home")

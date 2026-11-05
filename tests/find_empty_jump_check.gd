@@ -49,6 +49,27 @@ func _run() -> void:
 	if g.console_ui != null:
 		g.console_ui.close()
 		await _frames(12)
+	# 2026-11-04 (user: "二手船市里没找到船，怎么还是跳到这个二手船市里呢"): the hulk market open,
+	# still no hulk found and none on the way — the sweep all the same, with a key to the hulk market
+	Career.data.port = Career.data.get("port", {}).duplicate()
+	Career.data.port.trade = 1
+	Career.save()
+	check(ShipMarket.open() and ShipMarket.on_the_way().is_empty(), "the hulk market is open, nothing on the way")
+	term = await _term()
+	term.set_tab(0)
+	await _frames(12)
+	var sm = g.console_ui
+	check(sm != null and sm.has_method("_fill_find") and sm.mode == "find", "market open, no hulk: Find ships still opens the star map's sweep")
+	var key_ok := false
+	if sm != null:
+		for b in sm.find_children("*", "Button", true, false):
+			if str(b.text).contains("二手船市"):
+				key_ok = b.visible and not b.disabled
+	check(key_ok, "the star map's find page has the key to the hulk market")
+	if sm != null:
+		Cap.save(root, "res://tests/out/find_empty_market_open.png")
+		sm.close()
+		await _frames(12)
 	# a hulk found: its card is there, the page stays
 	Scan.ON = false
 	Career.data.offers = Market.make(4242, Career.data).slice(0, 1)

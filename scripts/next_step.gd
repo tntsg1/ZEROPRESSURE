@@ -24,7 +24,7 @@ static func on(_g) -> bool:
 
 
 static func of(g) -> Dictionary:
-	if g == null or g.world == null or g.sys == null or not on(g) or not CoreAsset.has(g):
+	if g == null or g.world == null or g.sys == null or not on(g) or not CoreAsset.has(g) or g.store_guide_on():
 		return {}
 	match CoreAsset.ship_key(g):
 		"ob90":

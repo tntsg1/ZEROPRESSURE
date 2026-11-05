@@ -40,10 +40,10 @@ func _run() -> void:
 	var ui = g.console_ui
 	var by := {}
 	for it in ui.items:
-		by[str(it.kind)] = int(by.get(str(it.kind), 0)) + 1
+		by[str(it.cat)] = int(by.get(str(it.cat), 0)) + 1
 	print("STORE: %s" % JSON.stringify(by))
 	for it in ui.items:
-		print("  %s · %s · %s · %s" % [it.kind, it.name, it.qty, it.sub])
+		print("  %s · %s · %s · %d×%d" % [it.cat, it.name, it.qty, int(it.w), int(it.h)])
 	await _shot("all")
 	ui.open_kind("equip")
 	await _shot("equip")

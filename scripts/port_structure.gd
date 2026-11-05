@@ -19,6 +19,7 @@ var hub                          # 109 号: the central transfer ring's machines
 const ConsoleArt = preload("res://scripts/console_art.gd")
 const DOOR := 6.0                # m: a district's door
 const HALF := 3.0                # m: half a corridor's width (PortArt's truss)
+const RING_CONSOLE := Vector2(112.0, 17.0)   # 129 号: the hub's business console, ° and m from the centre
 const REACH := 4.0               # m: how close to a console counts
 const HATCH := 4.0               # m: the cargo district's floor hatch over the yard
 # per zone: the machines inside, as rects in the box's local metres (origin: box top-left)
@@ -71,10 +72,11 @@ static func consoles(zone: String) -> Array:
 	var m := M()
 	if zone == "ring":
 		var c := centre()
-		# 109 号: on the service deck outside the carousel's pit, clear of the transfer arms (was 7, 13:
-		# over the turning cradles) — between the salvage and cargo spokes, and the desk between the
-		# salvage and processing ones
-		return [c + Vector2.from_angle(deg_to_rad(76.0)) * 18.6 * m, c + Vector2.from_angle(deg_to_rad(125.0)) * 18.6 * m]
+		# 109 号: on the service deck outside the carousel's pit (was 7, 13: over the turning cradles).
+		# 129 号: moved to the berth spoke's far side (it was at 76°, R 18.6: a metre from the berth arm's
+		# turret, the arm's links over it all the time and its stand over the shuttle's loop) — the deck
+		# between the salvage and processing spokes is clear; the desk beside it
+		return [c + Vector2.from_angle(deg_to_rad(RING_CONSOLE.x)) * RING_CONSOLE.y * m, c + Vector2.from_angle(deg_to_rad(125.0)) * 18.6 * m]
 	var d := door(zone)
 	var p: Vector2 = d[0]
 	var n: Vector2 = d[1]

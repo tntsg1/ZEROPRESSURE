@@ -8,6 +8,8 @@ const CF = preload("res://scripts/cargo_floor.gd")
 
 
 func _initialize() -> void:
+	# 128 号: clients' crates and one-side racks are the legacy path now (StoreBook off)
+	StoreBook.ON = false
 	Career.path = "user://zp_test_cargo_floor_career.json"
 	SaveGame.path = "user://zp_test_cargo_floor_save.json"
 	SaveGame.allow_test = true

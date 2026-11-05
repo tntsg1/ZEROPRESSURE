@@ -12,6 +12,11 @@ const KINDS := ["store", "rack", "grid", "queue"]
 const KEYS := {"store": KEY_F3, "rack": KEY_F4, "grid": KEY_F5, "queue": KEY_F6}
 
 
+# 128 号: the parts rack is in the stores page now (its equipment and parts filters): F4 opens the stores
+static func kinds() -> Array:
+	return KINDS.filter(func(k): return k != "rack") if StoreBook.ON else KINDS
+
+
 static func w(zh: String, en: String) -> String:
 	return zh if Txt.zh else en
 
@@ -41,8 +46,8 @@ static func ok(kind: String) -> bool:
 	if Career.data.is_empty() or not Career.usable():
 		return false
 	match kind:
-		"store": return true
-		"rack": return Career.data.get("seen", {}).has("rack_used")
+		"store": return StoreBook.counter_seen()
+		"rack": return StoreBook.counter_seen() if StoreBook.live() else Career.data.get("seen", {}).has("rack_used")
 		"grid": return _walked("power")
 		"queue": return _walked("process")
 	return false
@@ -53,6 +58,7 @@ static func why(kind: String) -> String:
 	if ok(kind):
 		return ""
 	match kind:
+		"store": return w("第一次先飞到船坞的仓库柜台按 E，之后在哪都能按 F3", "FLY TO THE STORES COUNTER IN THE BERTH AND PRESS E ONCE; THEN F3 WORKS ANYWHERE")
 		"rack": return w("先到船坞的零件架前用一次（E）", "USE THE RACK IN THE BERTH ONCE FIRST (E)")
 		"grid": return w("动力区导览走过以后才能远程调度", "WALK THE POWER DISTRICT FIRST")
 		"queue": return w("加工区导览走过以后才能远程排队", "WALK THE PROCESSING DISTRICT FIRST")
@@ -70,7 +76,7 @@ static func open(game, kind: String) -> bool:
 		return false
 	match kind:
 		"store": game.open_store()
-		"rack": game.open_parts_rack(true)
+		"rack": game.open_store("equip") if StoreBook.live() else game.open_parts_rack(true)
 		"grid": game.open_power_screen()
 		"queue": game.open_queue_panel()
 	return true

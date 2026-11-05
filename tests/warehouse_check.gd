@@ -9,6 +9,9 @@ extends "res://tests/guide_check.gd"
 
 
 func _initialize() -> void:
+	# 128 号: the racks open the stores page and picks are handed over after 5 s — the legacy rules here
+	StoreBook.ON = false
+	Warehouse.WAIT_MAX = 1.0e9
 	Career.path = "user://zp_test_warehouse_career.json"
 	SaveGame.path = "user://zp_test_warehouse_save.json"
 	SaveGame.allow_test = true

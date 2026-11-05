@@ -270,7 +270,7 @@ static func snapshot(g) -> Dictionary:
 			"drone": {"p": _v2(g.drone.global_position), "v": _v2(g.drone.linear_velocity), "hp": g.drone.integrity, "alive": g.drone.alive},
 			"tool": g.tools.tool, "hose_mode": g.tools.hose_mode, "reveals": g.reveal_count, "respawn": g.drone_respawn, "used": g.used, "verified": g.verified, "ops": g.ops,
 			"debris": debris, "must_value": g.must_value, "changed": g.changed, "time_by": g.time_by,
-			"receiver_commits":g.receiver_commits, "material_receipts":g.material_receipts, "parts_in": g.parts_in, "parts_value": g.parts_value, "spot_paid": g.spot_paid, "structure_t": g.structure_t},
+			"receiver_commits":g.receiver_commits, "material_receipts":g.material_receipts, "parts_in": g.parts_in, "parts_value": g.parts_value, "spot_paid": g.spot_paid, "structure_t": g.structure_t, "goods_in": g.goods_in, "goods_value": g.goods_value},
 	}
 	if not g.job.is_empty():
 		d.job = g.job
@@ -597,6 +597,8 @@ static func apply_late(g, d: Dictionary) -> void:
 	g.parts_in = gd.get("parts_in", [])
 	g.parts_value = float(gd.get("parts_value", 0.0))
 	g.spot_paid = float(gd.get("spot_paid", 0.0))
+	g.goods_in = gd.get("goods_in", [])
+	g.goods_value = float(gd.get("goods_value", 0.0))
 	g.structure_t = float(gd.get("structure_t", 0.0))
 	g.incidents = gd.get("incidents", [])
 	g.playtime = gd.time

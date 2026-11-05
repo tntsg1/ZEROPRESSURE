@@ -9,6 +9,8 @@ const Ex = preload("res://scripts/industrial_exchange.gd")
 
 
 func _initialize() -> void:
+	# 128 号: the piece-by-piece page is the legacy path now (StoreBook off)
+	StoreBook.ON = false
 	Career.path = "user://zp_test_disposal_career.json"
 	SaveGame.path = "user://zp_test_disposal_save.json"
 	SaveGame.allow_test = true

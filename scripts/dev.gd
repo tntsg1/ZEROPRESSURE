@@ -203,6 +203,7 @@ func disable() -> void:
 	set_open(false)
 	Txt.dev = false
 	god = false
+	preload("res://scripts/hub_works.gd").demo = false
 	xray = false
 	inspect = false
 	time_k = 1.0

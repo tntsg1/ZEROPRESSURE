@@ -299,7 +299,7 @@ func _ready() -> void:
 	remote_box.offset_top = -64
 	remote_box.offset_bottom = -12
 	remote_box.visible = overlay and game_ref != null
-	for kind in RemoteOps.KINDS:
+	for kind in RemoteOps.kinds():
 		var rb := Button.new()
 		rb.name = "Remote_" + kind
 		rb.text = "%s [%s]" % [RemoteOps.name_of(kind), RemoteOps.key_label(kind)]
@@ -505,6 +505,10 @@ func open_remote(kind: String) -> void:
 
 func open_exchange(page: String = "") -> void:
 	if not Career.data.get("market",false): return
+	# 128 号 返工: the old exchange page is shut till 第 2 段 builds the new one (the stores sell to recycling)
+	if not StoreBook.exchange_usable():
+		say(StoreBook.exchange_closed_text())
+		return
 	if game_ref != null:
 		var current_game = game_ref
 		if on_close.is_valid(): on_close.call()
@@ -1245,6 +1249,10 @@ func take_borrow(id: String) -> void:
 
 func take(i: int) -> void:
 	if i < 0 or i >= offers().size():
+		return
+	# 128 号: a haul still waiting to be stored holds the next job back (a tug sent for a find is no job)
+	if StoreBook.blocks_next_job() and not offers()[i].get("find", false) and not offers()[i].get("queued", false):
+		_refuse(StoreBook.blocked_text())
 		return
 	leave_from = _item_rect(i)
 	leave_offer = offers()[i].duplicate(true)
@@ -2216,9 +2224,11 @@ func _shipmkt_rect() -> Rect2:
 	return Rect2(306, 186, 230, 42) if Scan.ON else Rect2(60, 186, 230, 42)
 
 
-# the find-ships page would only say "sweep the belt": no card, no next job, no hulk market open
+# the find-ships page would only say "sweep the belt": no card, no next job, nothing on the way
+# (user 2026-11-04: "没找到船的话，应该直接跳到星图扫描的界面" — the hulk market open or not; the star
+# map's find page has its own key to the hulk market)
 func _find_empty() -> bool:
-	return Scan.ON and next_job.is_empty() and not show_trials and offers().is_empty() and not ShipMarket.open()
+	return Scan.ON and next_job.is_empty() and not show_trials and offers().is_empty() and ShipMarket.on_the_way().is_empty()
 
 
 # 68 号: the star map's sweep, the way to new hulks

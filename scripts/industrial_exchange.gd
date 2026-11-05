@@ -609,6 +609,8 @@ static func command(action: String, args: Dictionary = {}) -> Dictionary:
 	if not Career.usable(): return {"ok":false,"reason":"career_unavailable"}
 	if not Career.data.get("market",false): return {"ok":false,"reason":"market_not_open"}
 	if action != "view" and Port.stage("trade") < 1: return {"ok":false,"reason":"trade_repair_required"}
+	# 128 号 返工: no new listing of any kind while the exchange is shut (withdrawing stays open)
+	if action not in ["view", "cancel"] and not StoreBook.exchange_usable(): return {"ok":false,"reason":"exchange_closed"}
 	var before := Career.data
 	Career.data = before.duplicate(true)
 	var state: Dictionary = Career.data.get("exchange",{})
@@ -620,7 +622,7 @@ static func command(action: String, args: Dictionary = {}) -> Dictionary:
 	seed_book(state)
 	state.actors[PLAYER].cash = float(Career.data.money)
 	# 37 号: the industrial clients' budgets stand on the book on their own, buying the company's listings
-	if Port.stage("trade") >= 1:
+	if Port.stage("trade") >= 1 and StoreBook.exchange_usable():
 		for identity in CUSTOMER_OFFERS:
 			if customer_status(state,identity).get("state","") == "available":
 				customer_command(state,"customer_accept",identity)

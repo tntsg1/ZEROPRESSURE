@@ -142,6 +142,8 @@ var gear: Gear                  # field gear out on this job: deployable tools, 
 var parts_in: Array = []        # whole equipment shelved for the berth's repairs this job (scripts/repair.gd)
 var parts_value := 0.0          # what it was worth (counted in the recovery, not paid in cash)
 var spot_paid := 0.0            # 108 号: cash already paid on the spot this job (the career's first machine)
+var goods_in: Array = []        # 128 号: what used to be cash at settlement, for the warehouse (scripts/store_book.gd)
+var goods_value := 0.0
 var material_receipts: Array = [] # actual G5 raw intake, pending atomic career settlement
 var receiver_commits: Dictionary = {} # every piece of a G5 mixed receipt, including sold goods
 var material_recovery_value := 0.0 # retained value counts as recovery, never cash
@@ -695,6 +697,8 @@ func _ready() -> void:
 		_belt_prelude.call_deferred()
 	# 80 号 Q5: a TUG-001 job loaded part-way gets its guide back, at the step it is at
 	_first_ship_coach.call_deferred()
+	_store_guide.call_deferred()
+	_recycle_crane.call_deferred()
 	if belt:
 		_end_intro.call_deferred()
 		# the berth's machinery (field, mouths, suction) is not out here
@@ -1307,7 +1311,11 @@ func _unhandled_input(ev: InputEvent) -> void:
 				elif port_access != null and state == "play" and port_access.near() != "":
 					open_console("port:" + port_access.near())
 				elif consoles != null and state == "play" and consoles.near() == "rack":
-					open_parts_rack()
+					# 128 号: the warehouse counter — the stores page, and F3 from then on
+					if StoreBook.live():
+						open_counter()
+					else:
+						open_parts_rack()
 				elif consoles != null and state == "play" and consoles.near() != "":
 					open_console(consoles.near())
 			"terminal":
@@ -1510,6 +1518,28 @@ func open_disposal() -> bool:
 	return true
 
 
+# 128 号: the settlement's "去仓库腾位置" — the warehouse over the settlement, what did not fit waiting on
+# its right; closed, the job is left (the inbox stays, and blocks the next job till it is clear)
+func open_store_settle() -> void:
+	if disposal_ui != null:
+		return
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	var panel = preload("res://scripts/company_store.gd").new()
+	panel.game = self
+	panel.settle = true
+	panel.on_close = func():
+		disposal_ui = null
+		layer.queue_free()
+		leave()
+	disposal_ui = panel
+	layer.add_child(panel)
+	panel.open_kind("raw")
+	sfx.play("menu")
+
+
 func open_heat() -> void:
 	if console_ui != null or menu_open or industrial_heat == null or not industrial_heat.near(): return
 	tools.release_grab(false)
@@ -1613,6 +1643,63 @@ func show_opening(first: bool) -> void:
 		opening.first = true
 		opening.card = clampi(Career.guide_at("intro"), 0, opening.CARDS.size() - 1)
 	layer.add_child(opening)
+
+
+# 128 号: the stores counter in the berth (the old parts rack's place): the stores page, and F3 from now on
+func open_counter() -> void:
+	StoreBook.mark("store_counter")
+	StoreBook.mark("rack_used")
+	open_store()
+
+
+# 128 号 第 1 段: the warehouse's first visit after TUG-001 (scripts/store_guide.gd), once per career
+var store_guide = null
+func _store_guide() -> void:
+	if not career() or not Career.usable() or not StoreBook.live() or not in_berth() or ((bot != null or testing) and not coach_in_tests):
+		return
+	var seen: Dictionary = Career.data.get("seen", {})
+	if seen.has("store_guide_done") or Career.data.get("history", []).size() != 1:
+		return
+	store_guide = preload("res://scripts/store_guide.gd").new()
+	store_guide.game = self
+	add_child(store_guide)
+
+
+# 128 号 返工: while the first visit's guide points at the stores counter, the view never lets the
+# counter (and its name plate, and the mark round it) sink under the toolbar at the screen's foot;
+# the drone stays in view.
+func _guide_lift(target: Vector2, dp: Vector2) -> Vector2:
+	if store_guide == null or not is_instance_valid(store_guide) or store_guide.target() == Vector2.INF:
+		return target
+	var z := maxf(zoom_now, 0.02)
+	var h := get_viewport().get_visible_rect().size.y
+	var gt: Vector2 = store_guide.target()
+	var bottom: float = gt.y + 1.35 * Geom.M
+	var need: float = bottom - (h * 0.5 - 150.0) / z
+	var most: float = dp.y + (h * 0.5 - 170.0) / z
+	if target.y < need:
+		target.y = minf(need, maxf(target.y, most))
+	return target
+
+
+func store_guide_on() -> bool:
+	return store_guide != null and is_instance_valid(store_guide) and not store_guide.done
+
+
+# 128 号: a sale to the recycling station, seen: the dock crane lifts it away (scripts/recycle_crane.gd)
+var recycle_crane = null
+func _recycle_crane() -> void:
+	if not career() or not in_berth() or not StoreBook.live() or (recycle_crane != null and is_instance_valid(recycle_crane)):
+		return
+	recycle_crane = preload("res://scripts/recycle_crane.gd").new()
+	recycle_crane.game = self
+	add_child(recycle_crane)
+
+
+func recycle_show(cat: String, cells: int) -> void:
+	_recycle_crane()
+	if recycle_crane != null and is_instance_valid(recycle_crane):
+		recycle_crane.add(cat, cells)
 
 
 # 68 号 §3: TUG-001 at the berth, step by step (scripts/first_ship.gd), once per career
@@ -1893,6 +1980,12 @@ func open_district(zone: String) -> void:
 
 func open_exchange(page: String = "") -> void:
 	if console_ui != null or menu_open or state != "play": return
+	# 128 号 返工: shut (F8, the trade hall's counters, the trade console, the guides) until 第 2 段
+	if not StoreBook.exchange_usable():
+		exchange_requested = false
+		say_text(StoreBook.exchange_closed_text(), Vector2.ZERO)
+		if sfx != null: sfx.play("deny")
+		return
 	var result: Dictionary = preload("res://scripts/industrial_exchange.gd").command("view")
 	if not result.ok: return
 	tools.release_grab(false)
@@ -2374,6 +2467,7 @@ func _camera(dt: float) -> void:
 		if tools.held_piece != null and not tools.held_piece.gone:
 			target = target.lerp(tools.grab_point(), 0.18)
 		target += cam_pan
+		target = _guide_lift(target, dp)
 		local_focus = target
 		following = true
 		# Only hand over to whole-ship framing when it is almost visible already.
@@ -2862,6 +2956,27 @@ func finish_contract(early: bool, reviewed: bool = false) -> void:
 			Copy.say(radio, "L_gear_lost")
 
 
+# 128 号: the haul's goods for the warehouse — the machines and hazardous goods taken, and the ship's
+# gases and liquids (sold by the contract before, now kept as special goods)
+func _goods_report() -> Array:
+	var out: Array = goods_in.duplicate(true)
+	if StoreBook.ON and career() and scope() == "full":
+		var gv: float = sys.gas_value()
+		if gv > 0.5:
+			out.append({"cat": "special", "tag": "GAS", "nk": "", "name": "回收气体" if Txt.zh else "RECOVERED GAS", "value": snappedf(gv, 1.0), "fluid": "gas"})
+		var fv: float = sys.fluid_value()
+		if fv > 0.5:
+			out.append({"cat": "special", "tag": "FLUID", "nk": "", "name": "回收液体" if Txt.zh else "RECOVERED LIQUIDS", "value": snappedf(fv, 1.0), "fluid": "liquid"})
+	return out
+
+
+func _goods_report_value() -> float:
+	var v := 0.0
+	for gd in _goods_report():
+		v += float(gd.value)
+	return v
+
+
 # what the career needs to know about how this contract went
 func settle_report() -> Dictionary:
 	var tb := {}
@@ -2869,7 +2984,7 @@ func settle_report() -> Dictionary:
 		tb[k] = snappedf(float(time_by[k]), 0.1)
 	return {"job_id":str(job.get("id","")),"earned": earned(), "losses": losses, "rate": recovery_rate(), "grade": hud.grade(), "time": playtime, "fee": fee, "bonus": bonus(), "used": used, "ops": ops,
 		"bonuses": bonuses(), "incidents": incidents.duplicate(true), "time_by": tb, "gear": gear.settlement_report() if gear != null else {},
-		"material_receipts":material_receipts.duplicate(true), "parts": parts_in.duplicate(true), "parts_value": parts_value, "spot_paid": spot_paid, "uses": method_uses(),
+		"material_receipts":material_receipts.duplicate(true), "parts": parts_in.duplicate(true), "parts_value": parts_value, "spot_paid": spot_paid, "goods": _goods_report(), "goods_value": _goods_report_value(), "uses": method_uses(),
 		# 64 号: the furnace's scrap, cast into ingots (tonnes from its value at this ship's metal rate)
 		"ingot_value": income_metal, "ore_value": income_ore, "ingot_t": maxf(0.0, income_metal - income_ore) / maxf(1.0, world.metal_price), "nuke": nuked, "structure_t": snappedf(structure_t, 0.01), "gas_take": sys.gas_take.duplicate() if GasLine.keeping() else {}, "gas_tanks": sys.gas_tanks.duplicate(true) if GasLine.keeping() else {},"work_order":work_order.report() if work_order != null and work_order.active() else {}}
 
@@ -3298,6 +3413,18 @@ func _dent(p, new_cond: float, reason: String) -> void:
 # 108 号 Q3 (user 2026-10-29 "b"): the career's first whole machine delivered is bought by the
 # recovery station on the spot — cash in the account now, not on the rack — with its own receipt,
 # once; the settlement takes off what was paid here
+# 128 号: a whole machine no repair takes, or a hazardous good, goes into the warehouse at settlement
+# (what it was paid stays in the job's figures; Career.settle keeps it out of the cash)
+func _good_in(p, zone: String, cat: String) -> void:
+	if not StoreBook.ON or scope() == "rescue":
+		return
+	var v := piece_value(p, zone)
+	if v <= 0.5:
+		return
+	goods_in.append({"cat": cat, "tag": str(p.tag), "nk": str(p.name_key), "cond": snappedf(clampf(float(p.cond), 0.0, 1.0), 0.01), "value": snappedf(v, 1.0), "mass": snappedf(float(p.mass), 0.01)})
+	goods_value += snappedf(v, 1.0)
+
+
 func _first_receipt(b, zone: String) -> void:
 	if not career() or not Career.usable() or Career.data.get("seen", {}).has("first_receipt"):
 		return
@@ -3316,6 +3443,11 @@ func _first_receipt(b, zone: String) -> void:
 		if str(parts_in[i].tag) == str(best.tag):
 			parts_in.remove_at(i)
 			parts_value = maxf(0.0, parts_value - pay)
+			break
+	for i in range(goods_in.size() - 1, -1, -1):
+		if str(goods_in[i].tag) == str(best.tag):
+			goods_value = maxf(0.0, goods_value - float(goods_in[i].value))
+			goods_in.remove_at(i)
 			break
 	Career.data.money = float(Career.data.get("money", 0.0)) + pay
 	spot_paid += pay
@@ -3510,6 +3642,8 @@ func on_swallowed(b, mouth: String) -> void:
 			for p in b.pieces:
 				if work_order != null and work_order.owns(p): continue
 				var cls := Repair.class_of(p, sys)
+				if cls == "" and p.scope and p.cls == "equip" and p.intact:
+					_good_in(p, zone, "equip")
 				if cls != "" and p.scope:
 					parts_in.append(Repair.part_of(p, cls, ship_id, str(job.get("id", ""))))
 					parts_value += piece_value(p, zone)
@@ -3527,6 +3661,11 @@ func on_swallowed(b, mouth: String) -> void:
 			for p in b.pieces:
 				if p.scope and not retained_keys.has(p.key) and (p.cls != "equip" or not p.intact):
 					structure_t += p.mass
+		elif zone == "hazard":
+			for p in b.pieces:
+				if work_order != null and work_order.owns(p): continue
+				if p.scope and not retained_keys.has(p.key):
+					_good_in(p, zone, "special")
 	ledger.append([label, zone, v])
 	# Correlated notification from the actual receiver commit. Keep the legacy
 	# ledger format and all income/stock/settlement behavior unchanged.

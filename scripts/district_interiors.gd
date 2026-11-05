@@ -604,8 +604,12 @@ func _desk_items(zone: String) -> Array:
 				Pal.money(float(Career.data.get("money", 0.0))) if not Career.data.is_empty() else "", w("飞到它前面按 %s 打开。", "In front of it press %s.") % use_key, "ok")
 			if Consoles.rack_on() and game.career():
 				var n: int = Career.data.get("parts", []).size()
-				add.call(Consoles.rack_centre() + Vector2(0.2, 0.0) * m, "rack", w("零件架", "PARTS RACK"), w("拆下来留着的零件放在这里，一格一件。货运区修好后零件改放仓库货架。", "The parts kept from the ships, one to a cubby. Once the cargo district is mended they live on its racks."),
-					w("%d 件" % n, "%d PARTS" % n), w("飞到架前按 %s 打开零件架。", "At the rack press %s.") % use_key, "ok" if n > 0 else "off")
+				if StoreBook.live():
+					add.call(Consoles.rack_centre() + Vector2(0.2, 0.0) * m, "rack", w("仓库柜台", "STORES COUNTER"), w("拆回来的东西都在公司仓库里。在这里可以卖给回收站，或者留着。", "Everything off the ships is in the company stores: sell it to the recycling station here, or keep it."),
+						w("已用 %d/%d 格", "%d/%d CELLS") % [StoreBook.used(), StoreBook.cap()], w("飞到柜台前按 %s 打开仓库。之后在哪都能按 F3。", "At the counter press %s. Then F3 anywhere.") % use_key, "ok")
+				else:
+					add.call(Consoles.rack_centre() + Vector2(0.2, 0.0) * m, "rack", w("零件架", "PARTS RACK"), w("拆下来留着的零件放在这里，一格一件。货运区修好后零件改放仓库货架。", "The parts kept from the ships, one to a cubby. Once the cargo district is mended they live on its racks."),
+						w("%d 件" % n, "%d PARTS" % n), w("飞到架前按 %s 打开零件架。", "At the rack press %s.") % use_key, "ok" if n > 0 else "off")
 	return out
 
 

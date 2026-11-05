@@ -39,6 +39,7 @@ var trail: Array = []          # where the front car has been, newest first (the
 const DWELL := 1.3            # s at the boarding stop: doors open, the drone in, doors shut
 const ALIGHT := 0.76           # s at the far stop before the drone is free (the doors shut after)
 const REACH := 4.5             # m: the drone calls the car from this close
+const RING_SIGN := 5.8          # m along the hub stop from its middle to its sign's post (129 号; 1.6 elsewhere)
 const STATION_IN := 2.5        # m inside the door
 const BERTH_STOP := 3.6        # m above the berth's gate rail: where the head car stands (97 号)
 # 97 号: a ride's legs (the train stops and changes ends between them) and the switches
@@ -828,7 +829,9 @@ func _build() -> void:
 		var n := platform_side(zone)
 		var sd := station_dir(zone)
 		var sp := station_at(zone)
-		var post := sp + n * 2.25 * M + sd * 1.6 * M
+		# 129 号: the hub stop's sign stands past the berth arm's turret (over the platform's middle it
+		# stood under the arm's hatch, the arm and its crates over it)
+		var post := sp + n * 2.25 * M + sd * (RING_SIGN if zone == "ring" else 1.6) * M
 		var sign := Rect2(post + n * 0.5 * M - Vector2(0.55, 0.28) * M, Vector2(1.1, 0.56) * M)
 		_stops.append({"z": zone, "p": sp - c, "n": n, "d": sd, "sign": Rect2(sign.position - c, sign.size)})
 		stops.append({"at": sp - c, "d": sd, "n": n, "end": zone != "ring", "post": post - c, "sign": Rect2(sign.position - c, sign.size)})

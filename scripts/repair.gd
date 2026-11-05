@@ -365,6 +365,9 @@ static func list_part(uid: String, on: bool) -> String:
 		if on and not can_list(part):
 			Career.data = before
 			return Ops.w("只有 B 级以上的光帆卷能挂牌", "ONLY SAIL ROLLS OF GRADE B OR BETTER CAN BE LISTED")
+		if on and not StoreBook.exchange_usable():
+			Career.data = before
+			return StoreBook.exchange_closed_text()
 		if on:
 			part["listed"] = {"ask": list_price(part), "t": 0.0}
 		else:

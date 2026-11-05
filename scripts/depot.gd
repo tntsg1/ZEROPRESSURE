@@ -19,6 +19,10 @@ const PERIOD := 300.0
 const GOODS := ["steel_billet:1", "nonferrous_mix:0", "steel_plate:1", "mixed_metal:0"]
 const CRATE_T := 5.0
 const NAG := 360.0                      # s on the counter before the client asks after them
+# 128 号 (user 2026-11-04: "我平常也没有第三方存储，直接去了，这只作为我自己的仓库"): no clients' goods
+# any more — no offers, no auto-taking; lots an old save already holds run out and leave as before
+static func on() -> bool:
+	return not StoreBook.ON
 
 
 static func w(zh: String, en: String) -> String:
@@ -229,7 +233,9 @@ static func advance(dt: float) -> Array:
 		return said
 	var d := data()
 	d.t = float(d.t) + dt
-	if float(d.t) >= EVERY:
+	if not on():
+		d.offers = []
+	if float(d.t) >= EVERY and on():
 		d.t = 0.0
 		if d.offers.size() < MAX_OPEN:
 			var o := new_offer()
@@ -265,7 +271,7 @@ static func advance(dt: float) -> Array:
 					d.lots.erase(l)
 					said.append(w("%s 提走了 %.0f t，收装卸费 %s", "%s COLLECTED %.0f t: HANDLING %s") % [str(l.client), float(l.t), Pal.money(float(l.handling))])
 	var a: Dictionary = d.auto
-	if bool(a.on) and not bool(a.stop_new) and d.lots.size() < int(a.max_lots):
+	if on() and bool(a.on) and not bool(a.stop_new) and d.lots.size() < int(a.max_lots):
 		for o in d.offers.duplicate():
 			if float(o.fee) >= float(a.min_fee) and accept_block(str(o.id), true) == "":
 				accept(str(o.id), true)

@@ -424,7 +424,7 @@ func career_rows() -> Array:
 		elif order.get("sold",false): out.append(["e_work_status",game.txt("g4_order_sold"),"text"])
 		else: out.append(["e_work_status",game.txt("g4_order_pending"),"text"])
 	# 64 号: the furnace's scrap went into the warehouse as ingots
-	if float(r.get("ingot_t", 0.0)) > 0.0005:
+	if float(r.get("ingot_t", 0.0)) > 0.0005 and not StoreBook.ON:
 		out.append(["e_ingots", Ops.w("%.1f 吨，下一页定：直卖或留着加工", "%.1f t: sell or process, on the next page") % float(r.ingot_t), "text"])
 	if float(r.installment) > 0.5 or float(r.interest) > 0.5:
 		out.append_array([["e_inst", -float(r.installment), "money"], ["e_interest", -float(r.interest), "money"]])
@@ -533,6 +533,15 @@ func ending_key(k: int) -> void:
 	if game.career():
 		# settled with the career: no second go at the same contract
 		if game.story == null or not game.story.wants_epilogue():
+			# 128 号: the haul page — one button: put it away, or go and make room
+			if stores_page():
+				if game.get("disposal_ui") != null:
+					return
+				if k == KEY_D:
+					end_detail = not end_detail
+					return
+				stores_go()
+				return
 			# 106 号: the goods' second page first, while anything is left to decide
 			if not Disposal.pending().is_empty() and game.open_disposal():
 				return
@@ -574,6 +583,12 @@ func _input(ev: InputEvent) -> void:
 				end_t = 9.0
 			elif game.story != null and game.story.phase == "settle":
 				game.story.ending_key(KEY_SPACE)
+			elif stores_page() and game.career():
+				var mp := c.get_local_mouse_position()
+				if end_go_rect.has_point(mp):
+					stores_go()
+				elif end_detail_rect.has_point(mp):
+					end_detail = not end_detail
 			get_viewport().set_input_as_handled()
 			return
 		var item := _item_at(c.get_local_mouse_position()) if game.state == "play" else ""
@@ -1479,7 +1494,7 @@ func _main() -> Dictionary:
 
 
 func _main_on() -> bool:
-	return game != null and not game.coach_on() and not game.walk_on() and game.career() and not game.training and game.exam == null and game.in_berth() and game.state == "play" and not game.port_view and _main().chapter != "" and Career.usable()
+	return game != null and not game.coach_on() and not game.walk_on() and not game.store_guide_on() and game.career() and not game.training and game.exam == null and game.in_berth() and game.state == "play" and not game.port_view and _main().chapter != "" and Career.usable()
 
 
 func _main_rect() -> Rect2:
@@ -1856,8 +1871,13 @@ func _ring_overlay() -> void:
 	_text(line, op + Vector2(0, 19), 13, Pal.heat(0.9, 1.2) if tg.get("ok", false) else Pal.ink(0.6), font)
 
 
+# the top hint line; 128 号 返工: it waits while the stores guide speaks (one voice at a time)
+func hint_on() -> bool:
+	return not (hint_text == "" or hint_t > 9.0 or game.state == "porttour" or game.store_guide_on())
+
+
 func _hint(s: Vector2) -> void:
-	if hint_text == "" or hint_t > 9.0 or game.state == "porttour":
+	if not hint_on():
 		return
 	var a := clampf(hint_t / 0.3, 0.0, 1.0) * clampf((9.0 - hint_t) / 0.6, 0.0, 1.0)
 	var w := minf(980.0, _tw(hint_text, 16) + 60.0)
@@ -2516,6 +2536,9 @@ func _settlement(s: Vector2) -> void:
 	var e := end_t - (0.2 if end_early else 1.6)
 	if e < 0.0:
 		return
+	if stores_page():
+		_settlement128(s, e)
+		return
 	var a := clampf(e / 0.5, 0.0, 1.0)
 	UI.sheet(c, s, a)
 	var cx := s.x * 0.5
@@ -2596,6 +2619,183 @@ func _settlement(s: Vector2) -> void:
 	# a sample ship has none)
 	if traps.is_empty():
 		_asset_review(s, e)
+
+
+# ---------------------------------------------------------------- 128 号 the haul page
+
+var end_detail := false
+var end_go_rect := Rect2()
+var end_detail_rect := Rect2()
+
+
+# the settlement of a career's job with the warehouse on (scripts/store_book.gd): the haul, the cells
+func stores_page() -> bool:
+	return game != null and game.career() and StoreBook.live() and game.career_result.has("haul") and (game.story == null or not game.story.wants_epilogue())
+
+
+# the one button: everything fits → put it away and go; it does not → put away what fits, then the
+# warehouse with the rest waiting on its right
+func stores_go() -> void:
+	if end_t < 1.0:
+		end_t = 9.0
+		return
+	if not StoreBook.inbox().is_empty():
+		StoreBook.admit()
+	if StoreBook.inbox().is_empty():
+		game.sfx.play("stamp")
+		game.leave()
+	else:
+		game.open_store_settle()
+
+
+func _settlement128(s: Vector2, e: float) -> void:
+	var g = game
+	var r: Dictionary = g.career_result
+	var h: Dictionary = r.get("haul", {})
+	var a := clampf(e / 0.5, 0.0, 1.0)
+	UI.sheet(c, s, a)
+	var cx := s.x * 0.5
+	var pk := Pal.ease_out(clampf(e / 0.45, 0.0, 1.0))
+	# sized to what is on it: the cell rows (25 a row) and the overflow note
+	var sheet_h: float = 690.0 + (50.0 if StoreBook.used_with(StoreBook.inbox()) > StoreBook.cap() else 0.0)
+	var sheet := Rect2(cx - 400, maxf(40.0, (s.y - sheet_h) * 0.5) + (1.0 - pk) * 40.0, 800, sheet_h)
+	c.draw_rect(sheet, Color(0.022, 0.024, 0.029, 0.98 * pk))
+	c.draw_rect(sheet, Pal.ink(0.1 * pk), false, 1.0)
+	c.draw_rect(Rect2(sheet.position, Vector2(sheet.size.x * pk, 2)), Color(UiSkin.ACCENT, pk))
+	var x0 := sheet.position.x + 48.0
+	var x1 := sheet.end.x - 48.0
+	var y := sheet.position.y + 54.0
+	# the head: done, the contract, the recovery rate
+	_text(Ops.w("拆解完成", "STRIPPED") if not end_early else g.txt("e_early"), Vector2(x0, y), 22, Pal.ink(0.95 * a), font_b)
+	var rk := clampf((e - 0.3) / 1.1, 0.0, 1.0)
+	_text("%s %.1f%%" % [Ops.w("回收率", "RECOVERED"), g.recovery_rate() * 100.0 * Pal.ease_out(rk)], Vector2(x1, y), 22, Pal.ink(0.95 * a), font_b, 1)
+	y += 30.0
+	var tl := (g.txt("e_contract") + " " + str(g.ship.get("contract", ""))).strip_edges() + " · " + (g.txt("e_must_ok") if g.all_mandatory_ok() else g.txt("e_must_no")) + " · " + g.txt("e_time") + " " + _clock(g.playtime)
+	_text(tl, Vector2(x0, y), 14, Pal.ink(0.5 * a), font)
+	y += 44.0
+	# ---- the haul
+	var k1 := clampf((e - 0.5) / 0.4, 0.0, 1.0)
+	_text(Ops.w("这一单的收获", "WHAT THIS JOB BROUGHT HOME"), Vector2(x0, y), 15, Pal.ink(0.6 * k1), font_b)
+	_text(Ops.w("全部放进公司仓库", "ALL OF IT GOES INTO THE COMPANY STORES"), Vector2(x1, y), 13, Pal.ink(0.45 * k1), font, 1)
+	y += 18.0
+	var counts := [float(h.get("raw_t", 0.0)), float(h.get("equip", 0)), float(h.get("part", 0)), float(h.get("special", 0))]
+	var tiles := [["raw", "%.1f t" % counts[0], Ops.w("钢锭等", "INGOTS ETC.")],
+		["equip", Ops.w("%d 件", "%d") % int(counts[1]), Ops.w("整件机器", "WHOLE MACHINES")],
+		["part", Ops.w("%d 件", "%d") % int(counts[2]), Ops.w("阀件、密封圈等", "VALVES, SEALS…")],
+		["special", Ops.w("%d 件", "%d") % int(counts[3]), Ops.w("液体、气体、危险品", "LIQUIDS, GASES, HAZARDS")]]
+	var tw := (x1 - x0 - 3 * 14.0) / 4.0
+	for i in tiles.size():
+		var tk := Pal.back(clampf((e - 0.6 - i * 0.12) / 0.3, 0.0, 1.0), 2.0)
+		var tr := Rect2(x0 + i * (tw + 14.0), y + (1.0 - tk) * 14.0, tw, 112)
+		var some: bool = counts[i] > 0.0005
+		c.draw_rect(tr, Color(1, 1, 1, 0.035 * tk))
+		c.draw_rect(tr, Pal.ink((0.3 if some else 0.12) * tk), false, 1.0)
+		if some:
+			c.draw_rect(Rect2(tr.position, Vector2(3, tr.size.y)), Color(UiSkin.ACCENT, 0.9 * tk))
+		_text(StoreBook.cat_name(str(tiles[i][0])), tr.position + Vector2(18, 30), 15, Pal.ink(0.7 * tk), font_b)
+		_text(str(tiles[i][1]), tr.position + Vector2(18, 72), 30, Pal.ink((0.97 if some else 0.35) * tk), font_l)
+		_text(str(tiles[i][2]), tr.position + Vector2(18, 98), 12, Pal.ink(0.42 * tk), font)
+	y += 150.0
+	var k2 := clampf((e - 1.1) / 0.4, 0.0, 1.0)
+	var roll := Pal.ease_out(clampf((e - 1.1) / 0.9, 0.0, 1.0))
+	_text(Ops.w("按回收价", "AT RECYCLING PRICE"), Vector2(x0, y), 14, Pal.ink(0.5 * k2), font)
+	_text(Pal.money(float(h.get("recycle", 0.0)) * roll), Vector2(x0, y + 38), 32, Pal.ink(0.95 * k2), font_l)
+	_text(Ops.w("现在卖给回收站，立刻到账", "SOLD TO THE RECYCLING STATION NOW, PAID AT ONCE"), Vector2(x0, y + 62), 12, Pal.ink(0.4 * k2), font)
+	var xm := cx + 20.0
+	_text(Ops.w("按市价", "AT MARKET PRICE"), Vector2(xm, y), 14, Pal.ink(0.5 * k2), font)
+	_text(Pal.money(float(h.get("market", 0.0)) * roll), Vector2(xm, y + 38), 32, Pal.ink(0.95 * k2), font_l)
+	_text(Ops.w("修好贸易港后，交易行和订单按这个价收", "WHAT THE EXCHANGE AND ORDERS PAY, ONCE THE TRADE PORT IS MENDED"), Vector2(xm, y + 62), 12, Pal.ink(0.4 * k2), font)
+	y += 96.0
+	# the cash: what is in the account, and the first machine bought on the spot (in one line)
+	var spot := float(r.get("spot_paid", 0.0))
+	var cl := Ops.w("资金 %s", "CASH %s") % Pal.money(float(r.get("money", 0.0)))
+	if spot > 0.5:
+		cl += Ops.w("  ·  其中拆船时回收站现场收购一件 +%s", "  ·  OF WHICH ONE MACHINE BOUGHT ON THE SPOT +%s") % Pal.money(spot)
+	_text(cl, Vector2(x0, y), 14, Pal.ink(0.6 * k2), font)
+	y += 22.0
+	c.draw_line(Vector2(x0, y), Vector2(x1, y), Pal.ink(0.12 * k2), 1.0)
+	y += 40.0
+	# ---- the warehouse's cells
+	var k3 := clampf((e - 1.5) / 0.4, 0.0, 1.0)
+	var cap := StoreBook.cap()
+	var now := StoreBook.used()
+	var after := StoreBook.used_with(StoreBook.inbox())
+	var over := after - cap
+	_text(Ops.w("仓库占用", "WAREHOUSE CELLS"), Vector2(x0, y), 15, Pal.ink(0.6 * k3), font_b)
+	var verdict := (Ops.w("入库后 已用 %d/%d 格 · 还剩 %d 格", "AFTER STORING: %d/%d USED · %d FREE") % [after, cap, cap - after]) if over <= 0 else (Ops.w("已用 %d/%d 格，超出 %d 格", "%d/%d CELLS, %d OVER") % [after, cap, over])
+	_text(verdict, Vector2(x1, y), 18, (Pal.ink(0.95 * k3) if over <= 0 else Color(Pal.heat(1.0, 1.15), k3)), font_b, 1)
+	y += 20.0
+	# one bar: what is in store (grey), this job (accent), over the top (red)
+	var fill := clampf((e - 1.6) / 1.0, 0.0, 1.0)
+	var bw := x1 - x0
+	var bh := 22.0
+	var total := float(maxi(cap, after))
+	c.draw_rect(Rect2(x0, y, bw, bh), Color(1, 1, 1, 0.05 * k3))
+	var wn := bw * float(now) / total
+	var wa := bw * float(after - now) / total * fill
+	c.draw_rect(Rect2(x0, y, wn, bh), Color(Pal.ink(0.45), k3))
+	var cap_x := x0 + bw * float(cap) / total
+	c.draw_rect(Rect2(x0 + wn, y, minf(wa, maxf(0.0, cap_x - x0 - wn)), bh), Color(UiSkin.ACCENT, 0.9 * k3))
+	if x0 + wn + wa > cap_x:
+		c.draw_rect(Rect2(cap_x, y, x0 + wn + wa - cap_x, bh), Color(Pal.heat(1.0, 1.2), k3))
+		c.draw_line(Vector2(cap_x, y - 4), Vector2(cap_x, y + bh + 4), Pal.ink(0.9 * k3), 2.0)
+	for i in range(1, 8):
+		c.draw_line(Vector2(x0 + bw * i / 8.0, y), Vector2(x0 + bw * i / 8.0, y + bh), Color(0, 0, 0, 0.35 * k3), 1.0)
+	y += bh + 24.0
+	c.draw_rect(Rect2(x0, y - 10, 12, 10), Color(Pal.ink(0.45), k3))
+	_text(Ops.w("已有 %d 格", "IN STORE %d") % now, Vector2(x0 + 18, y), 12, Pal.ink(0.5 * k3), font)
+	c.draw_rect(Rect2(x0 + 130, y - 10, 12, 10), Color(UiSkin.ACCENT, 0.9 * k3))
+	_text(Ops.w("这一单约 %d 格", "THIS JOB ~%d") % maxi(0, after - now), Vector2(x0 + 148, y), 12, Pal.ink(0.5 * k3), font)
+	_text(Ops.w("仓库 %d×%d 格 · 每格约 1 米 · 原料一捆 2 吨 · 零件一盒 %d 个", "%d×%d CELLS · ABOUT 1 m EACH · RAW 2 t A BUNDLE · PARTS %d A BOX") % [StoreBook.COLS, StoreBook.rows(), StoreBook.PART_STACK], Vector2(x1, y), 12, Pal.ink(0.4 * k3), font, 1)
+	if over > 0:
+		y += 30.0
+		_text(Ops.w("放不下的先放在仓库页右边的“待入库”：卖掉一些旧货或新货，腾出格子再放进去。", "WHAT DOES NOT FIT WAITS ON THE STORES PAGE'S RIGHT: SELL SOMETHING TO MAKE ROOM."), Vector2(x0, y), 13, Color(Pal.heat(1.0, 1.1), 0.9 * k3), font)
+		_text(Ops.w("待入库清空之前不能接下一单。", "NO NEW JOB TILL IT IS CLEAR."), Vector2(x0, y + 20), 13, Color(Pal.heat(1.0, 1.1), 0.9 * k3), font)
+	# ---- the one button
+	var ge := e - 2.2
+	end_go_rect = Rect2()
+	end_detail_rect = Rect2()
+	if ge > 0.0:
+		var gk := Pal.ease_out(clampf(ge / 0.3, 0.0, 1.0))
+		var br := Rect2(cx - 190, sheet.end.y - 118, 380, 60)
+		end_go_rect = br
+		var hov := br.has_point(c.get_local_mouse_position())
+		var pulse := 0.5 + 0.5 * sin(t * 3.0)
+		c.draw_rect(br, Color(UiSkin.ACCENT, (0.3 if hov else 0.16 + 0.06 * pulse) * gk))
+		c.draw_rect(br, Color(UiSkin.ACCENT, 0.95 * gk), false, 1.5)
+		var label := Ops.w("入库", "PUT IT AWAY") if over <= 0 else Ops.w("去仓库腾位置", "GO AND MAKE ROOM")
+		_text(label, Vector2(br.get_center().x, br.position.y + 40), 24, Pal.ink(0.98 * gk), font_b, 0)
+		_text(Ops.w("按任意键或点这里", "ANY KEY OR CLICK"), Vector2(br.get_center().x, br.end.y + 22), 12, Pal.ink(0.42 * gk), font, 0)
+		var dl := Ops.w("详细：钱款、贷款、工具  [D] %s", "DETAILS: CASH, LOAN, GEAR  [D] %s") % ("▴" if end_detail else "▾")
+		var dw := font.get_string_size(dl, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+		end_detail_rect = Rect2(x1 - dw - 8, sheet.end.y - 40, dw + 16, 28)
+		_text(dl, Vector2(x1, sheet.end.y - 20), 13, Pal.ink((0.8 if end_detail_rect.has_point(c.get_local_mouse_position()) else 0.45) * gk), font, 1)
+	# the review of what was lost (left); the details (right) when asked
+	if e > 1.6:
+		_review(Vector2(sheet.position.x - 30 - 430, sheet.position.y + 40), e - 1.6)
+	if end_detail:
+		_end_details(Rect2(sheet.end.x + 30, sheet.position.y + 40, 440, 0))
+	else:
+		var traps: Array = g.job.get("traps", [])
+		if e > 1.8 and not traps.is_empty():
+			_trap_rows(traps, Vector2(sheet.end.x + 50, sheet.position.y + 50), e - 1.8)
+		elif traps.is_empty():
+			_asset_review(s, e)
+
+
+# the old books (cash, loan, gear, what to repair next), folded under the haul
+func _end_details(r: Rect2) -> void:
+	var rows := career_rows()
+	r.size.y = 70.0 + rows.size() * 28.0
+	UI.panel(c, r, 1.0, 0.0, Pal.FLUID)
+	_text(Ops.w("详细", "DETAILS"), r.position + Vector2(22, 34), 16, Pal.ink(0.9), font_b)
+	var y := r.position.y + 66.0
+	for row in rows:
+		_text(game.txt(row[0]), Vector2(r.position.x + 22, y), 13, Pal.ink(0.5), font, -1, 200.0)
+		var v = row[1]
+		var vt := str(v) if row[2] == "text" else (("+" + Pal.money(float(v))) if row[2] == "note" else Pal.money(float(v)))
+		_text(vt, Vector2(r.end.x - 22, y), 13, Pal.ink(0.85), font, 1)
+		y += 28.0
 
 
 # where the money went: value knocked off by reason, money lost by cause, named pieces lost

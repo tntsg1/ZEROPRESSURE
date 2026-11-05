@@ -17,9 +17,15 @@ extends RefCounted
 const PITCH := TAU / 12.0
 const SLOTS := 12
 const R_CRADLE := 11.5         # m: the cradles' centre on the carousel
-const R_HATCH := 18.4          # m: the hatch at each spoke
-const R_BASE := 17.8           # m: an arm's turret
-const BASE_SIDE := 3.3         # m: the turret beside the hatch, towards the arm's cradle
+# 129 号 (user 2026-11-04: "不要让机械臂挡住了其他的台子，让它显得乱糟糟的"): each spoke's hatch,
+# turret and resting spreader keep to the service deck inside the shuttle's loop (it runs at R 21.5,
+# the stop's platform from R 19.4): the hatch was at 18.4 and the arms rested outside it, over the
+# loop's rails, the berth spoke's over the stop. An idle arm now rests over its own hatch, folded
+# towards the carousel, so the hatch, its turret and its arm read as one unit at the ring's edge.
+# tests/hub_clear_check.gd sweeps them against the console, the stop and the loop.
+const R_HATCH := 17.0          # m: the hatch at each spoke (was 18.4)
+const R_BASE := 17.0           # m: an arm's turret, level with its hatch (was 17.8)
+const BASE_SIDE := 3.4         # m: the turret beside the hatch, towards the arm's cradle (was 3.3)
 const L1 := 4.3                # m: the arm's links
 const L2 := 3.7
 const STALL := 0.16            # rad: where the carousel stopped when the ring died
@@ -27,6 +33,11 @@ const ASKEW := 4               # the cradle whose crate was knocked askew
 # per stage: [carousel rad/s, rad/s², dwell s, s between parcels of a flow, arm rad/s]
 const RUN := [[0.0, 0.0, 0.0, 0.0, 0.0], [0.11, 0.06, 4.2, 22.0, 1.0], [0.26, 0.16, 2.6, 9.0, 1.7]]
 const A_ARM := 3.2
+# 129 号: an arm moves its spreader in a straight line between hatch and cradle (both joints together,
+# as a real arm's controller does): its sweep is the narrow strip between them, not the arcs the two
+# joints made each driven on its own. m/s at full speed per arm rad/s of the stage, m/s²
+const V_TIP := 3.4
+const A_TIP := 9.0
 const V_LIFT := 1.6            # /s the spreader lifts (0 down … 1 up), and the hatch's lift
 const MAX_PARCELS := 9
 # an arm's phases: where its spreader is, and which hold it down on what it grips or sets
@@ -53,6 +64,10 @@ static var t := 0.0
 static var events: Array = []  # [sound, hub-local metres]
 static var moved := 0          # parcels delivered (tests)
 static var _pin_was := 0.0
+# developer workbench "转运环演示货流": every spoke's arm gets goods to move, whatever the port is doing
+static var demo := false
+const DEMO_FLOWS := [["salvage", "cargo", "steel_plate:1"], ["cargo", "process", "ferrous_scrap:1"],
+	["process", "cargo", "steel_billet:1"], ["cargo", "trade", "steel_section:1"], ["tug", "process", "nonferrous_mix:1"], ["trade", "salvage", "steel_parts:1"]]
 
 
 static func w(zh: String, en: String) -> String:
@@ -115,7 +130,8 @@ static func _g(zone: String) -> Dictionary:
 		# the turret stands on the side of the hatch its cradle lies to
 		var base := u * R_BASE + across(a) * BASE_SIDE * side
 		var hatch_p := u * R_HATCH
-		_geo[zone] = {"u": u, "slot": slot, "side": side, "hatch": hatch_p, "base": base, "park": base.lerp(hatch_p, 0.45) + u * 1.4}
+		# at rest: over its own hatch (129 号; was out past it, over the shuttle's rails)
+		_geo[zone] = {"u": u, "slot": slot, "side": side, "hatch": hatch_p, "base": base, "park": hatch_p}
 	return _geo[zone]
 
 
@@ -160,7 +176,7 @@ static func _arm(zone: String) -> Dictionary:
 		var b := base_at(zone)
 		var park := _park(zone)
 		var ik := solve(b, park, _elbow(zone))
-		arms[zone] = {"q1": ik[0], "q2": ik[1], "v1": 0.0, "v2": 0.0, "yaw": float(spokes()[zone]) + PI * 0.5, "vy": 0.0, "h": 1.0, "vh": 0.0,
+		arms[zone] = {"q1": ik[0], "q2": ik[1], "v1": 0.0, "v2": 0.0, "tip": park, "vt": 0.0, "yaw": float(spokes()[zone]) + PI * 0.5, "vy": 0.0, "h": 1.0, "vh": 0.0,
 			"phase": "park", "task": "", "parcel": null, "slot": -1, "wait": 0.0, "beacon": 0.0, "grip": 0.0}
 	return arms[zone]
 
@@ -207,6 +223,8 @@ static func _use(key: String) -> String:
 
 static func scan_flows() -> Array:
 	var out: Array = []
+	if demo:
+		return DEMO_FLOWS.duplicate(true)
 	if Career.data.is_empty():
 		return out
 	for j in Warehouse.data().get("jobs", []):
@@ -418,9 +436,22 @@ static func _arm_step(z: String, dt: float, vmax: float) -> void:
 		yaw = target + int(a.slot) * PITCH + PI * 0.5
 	if ph in DOWN:
 		h = 0.0
-	var ik := solve(base_at(z), to, _elbow(z))
-	var r1 := _drive(float(a.q1), float(a.v1), float(a.q1) + wrapf(float(ik[0]) - float(a.q1), -PI, PI), vmax, A_ARM, dt)
-	var r2 := _drive(float(a.q2), float(a.v2), float(a.q2) + wrapf(float(ik[1]) - float(a.q2), -PI, PI), vmax * 1.2, A_ARM * 1.2, dt)
+	# the spreader along the straight line to where it is going, the joints following it (129 号)
+	var tip: Vector2 = a.tip
+	var gap := to - tip
+	var left := gap.length()
+	var vt := float(a.vt)
+	if left < 0.0005:
+		tip = to
+		vt = 0.0
+	else:
+		vt = move_toward(vt, minf(vmax * V_TIP, sqrt(2.0 * A_TIP * left)), A_TIP * 2.0 * dt)
+		tip += gap / left * minf(vt * dt, left)
+	a.tip = tip
+	a.vt = vt
+	var ik := solve(base_at(z), tip, _elbow(z))
+	var r1 := [float(ik[0]), (wrapf(float(ik[0]) - float(a.q1), -PI, PI)) / maxf(dt, 1e-6)]
+	var r2 := [float(ik[1]), (wrapf(float(ik[1]) - float(a.q2), -PI, PI)) / maxf(dt, 1e-6)]
 	# the spreader turns the short way: a crate is the same either way round
 	var dy := wrapf(yaw - float(a.yaw), -PI * 0.5, PI * 0.5)
 	var ry := _drive(float(a.yaw), float(a.vy), float(a.yaw) + dy, 1.4, 4.0, dt)

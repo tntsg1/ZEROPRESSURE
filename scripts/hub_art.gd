@@ -30,6 +30,7 @@ const PINION_R := 0.5
 const TEETH_R := 8.32          # the ring's teeth: their pitch circle, inside the inner rim
 const PINS := [0.0, PI]        # the lock pins, at the core's rim
 const COOLERS := [0.0, PI]
+const LOAD_SHADOW := Vector2(0.3, 0.4)   # m a load's shadow falls from it per unit of lift (129 号: was 0.35, 0.5)
 
 const FACE := Color(0.118, 0.124, 0.136)
 const FACE2 := Color(0.15, 0.158, 0.172)
@@ -227,8 +228,10 @@ func _still(p, st: int) -> void:
 		var g: float = sp[z]
 		var u := Vector2.from_angle(g)
 		var v := u.orthogonal()
-		var side := -1.0 if z == "power" else W.side_of(z)
-		var jb := u * R_TRAY + W.across(g) * side * 2.3
+		# 129 号: on the side away from the arm (its turret now stands level with the hatch, over the tray)
+		var side := -1.0 if z == "power" else -W.side_of(z)
+		var off := 2.3 if z == "power" else 2.75
+		var jb := u * R_TRAY + W.across(g) * side * off
 		_box(p, jb, g, Vector2(1.0, 0.8), FACE2, _ink(0.5), 0.05)
 		p.rect(Rect2(jb - Vector2(0.12, 0.12), Vector2(0.24, 0.24)), Pal.tint(Pal.VOLT, 0.5 if lit else 0.15, 1.0))
 		var wcol := Pal.tint(Pal.VOLT, 0.3 if lit else 0.12, 0.95)
@@ -236,9 +239,9 @@ func _still(p, st: int) -> void:
 			# the feeder in from the power district: three heavy cores
 			for k in 3:
 				var o := v * (k - 1) * 0.28
-				p.line(jb + u * 0.4 + o, u * (R_OUT + 0.2) + W.across(g) * side * 2.3 + o, wcol, 0.18)
+				p.line(jb + u * 0.4 + o, u * (R_OUT + 0.2) + W.across(g) * side * off + o, wcol, 0.18)
 		else:
-			p.line(jb + u * 0.4, u * R_WALL + W.across(g) * side * 2.3, wcol, 0.12)
+			p.line(jb + u * 0.4, u * R_WALL + W.across(g) * side * off, wcol, 0.12)
 	# ---- the safety line at the pit's edge: stripes and bollards
 	p.arc(Vector2.ZERO, R_CAR_OUT + 0.1, 0.0, TAU, VOID, 0.2, 160)
 	for i in 160:
@@ -752,7 +755,7 @@ func front(ci: CanvasItem, t: float) -> void:
 		var k := 1.0 + 0.07 * h
 		# the load and its shadow (higher, further from it)
 		if a.parcel != null:
-			_put(ci, shadow_mesh(), wr + Vector2(0.35, 0.5) * (0.3 + h), float(a.yaw))
+			_put(ci, shadow_mesh(), wr + LOAD_SHADOW * (0.3 + h), float(a.yaw))
 			_put(ci, goods_mesh(str(a.parcel.use)), wr, float(a.yaw), Color.WHITE, k * 0.98)
 		_put(ci, turret_mesh(), b, float(a.q1))
 		_put(ci, link_mesh(W.L1, 0.8, 0.62), b, float(a.q1))

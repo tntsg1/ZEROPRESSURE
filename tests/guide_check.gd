@@ -75,6 +75,8 @@ func _until(cond: Callable, limit: int) -> bool:
 
 func _run() -> void:
 	Txt.zh = true
+	# 128 号 返工: the old exchange is shut till 第 2 段; this checks its guided flows, so open it here
+	StoreBook.EXCHANGE_ON = true
 	Career.data = Career.fresh()
 	Career.data.story_job = {}
 	Career.data.active = {}

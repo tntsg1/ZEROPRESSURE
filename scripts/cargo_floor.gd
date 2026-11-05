@@ -121,7 +121,12 @@ func use() -> bool:
 		return true
 	var m2 := near_mouth()
 	if m2 != "":
-		game.open_shelf(m2)
+		# 128 号 (user 2026-11-04): the racks open the same stores page as the counter; the racks on
+		# site only show what is on them
+		if StoreBook.live():
+			game.open_counter()
+		else:
+			game.open_shelf(m2)
 		return true
 	return false
 
@@ -238,9 +243,10 @@ func _draw() -> void:
 			draw_rect(Rect2(at(Vector2(ra.x, ra.y - 2.8)), Vector2(10.0, 2.8) * m), Color(col, 0.6 + 0.3 * sin(t * 5.0)), false, 2.0 * lw)
 		var hint := ""
 		if nm == s:
-			hint = Ops.w("[%s] 放下", "[%s] SET IT DOWN") if lit else (Ops.w("[%s] 打开这一边的货架", "[%s] OPEN THIS SIDE'S RACKS") if held.is_empty() else Ops.w("这箱不放这边", "NOT THIS SIDE"))
+			hint = Ops.w("[%s] 放下", "[%s] SET IT DOWN") if lit else (((Ops.w("[%s] 打开仓库", "[%s] OPEN THE STORES") if StoreBook.live() else Ops.w("[%s] 打开这一边的货架", "[%s] OPEN THIS SIDE'S RACKS"))) if held.is_empty() else Ops.w("这箱不放这边", "NOT THIS SIDE"))
 			hint = hint.replace("%s", Keys.label("use")) if hint.contains("%s") else hint
-		ConsoleArt._name_plate(self, p + Vector2(0.0, -2.7) * m, Ops.w("货架口 %s（%s）", "RACK MOUTH %s (%s)") % [s, Ops.w("左边 A1–A4", "LEFT A1–A4") if s == "A" else Ops.w("右边 B1–B4", "RIGHT B1–B4")], hint,
+		var plate := Ops.w("仓库货架", "STORES RACKS") if StoreBook.live() else Ops.w("货架口 %s（%s）", "RACK MOUTH %s (%s)") % [s, Ops.w("左边 A1–A4", "LEFT A1–A4") if s == "A" else Ops.w("右边 B1–B4", "RIGHT B1–B4")]
+		ConsoleArt._name_plate(self, p + Vector2(0.0, -2.7) * m, plate, hint,
 			"work" if lit else "ok", nm == s or lit, t, z)
 	# clients' crates on their rows
 	for row in Warehouse.ROWS.size():

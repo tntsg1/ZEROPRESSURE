@@ -860,7 +860,7 @@ func _at_counter(who: String) -> void:
 
 
 func explain(result: Dictionary) -> void:
-	var reasons := {"insufficient_funds": words("可用资金不足", "INSUFFICIENT FUNDS"), "insufficient_stock": words("可用库存不足", "INSUFFICIENT STOCK"), "trade_repair_required": words("请先恢复贸易港营业", "RESTORE THE TRADE DISTRICT FIRST"), "save_failed": words("保存失败，操作未提交，请重试", "SAVE FAILED; RETRY."), "not_open": words("该挂单已结束", "ORDER ALREADY CLOSED"), "no_rush": words("加急单已经结束了", "THE RUSH HAS ENDED")}
+	var reasons := {"insufficient_funds": words("可用资金不足", "INSUFFICIENT FUNDS"), "insufficient_stock": words("可用库存不足", "INSUFFICIENT STOCK"), "trade_repair_required": words("请先恢复贸易港营业", "RESTORE THE TRADE DISTRICT FIRST"), "exchange_closed": StoreBook.exchange_closed_text(), "save_failed": words("保存失败，操作未提交，请重试", "SAVE FAILED; RETRY."), "not_open": words("该挂单已结束", "ORDER ALREADY CLOSED"), "no_rush": words("加急单已经结束了", "THE RUSH HAS ENDED")}
 	reasons.merge({"quote_unavailable": words("这笔报价已售罄或撤回，请选择另一笔", "LISTING SOLD OUT OR WITHDRAWN"), "quote_changed": words("报价已变更，未扣款，请重新查看", "PRICE CHANGED; NO PAYMENT TAKEN"), "quote_quantity": words("购买量超过该卖家剩余数量，未扣款", "QUANTITY EXCEEDS THIS SELLER'S STOCK")})
 	message.text = words("已提交", "COMMITTED") if result.get("ok", false) else str(reasons.get(result.get("reason", ""), words("操作未提交，请检查选择和数值", "REJECTED; CHECK THE VALUES")))
 	_stamp = ""

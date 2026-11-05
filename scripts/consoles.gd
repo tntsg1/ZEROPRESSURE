@@ -18,6 +18,9 @@ const RACK_SIZE := Vector2(1.6, 1.6)
 
 
 static func rack_on() -> bool:
+	# 128 号: the rack is the warehouse counter now, there from the start, whatever is mended
+	if StoreBook.ON:
+		return Career.usable() and not Career.data.is_empty()
 	return Career.usable() and not Career.data.is_empty() and Port.stage("cargo") < 1
 
 
@@ -73,8 +76,13 @@ func _draw() -> void:
 	if rack_on() and game.career():
 		var n: int = Career.data.get("parts", []).size()
 		var rc := rack_centre() + Vector2(0.2, 0.0) * M
-		ConsoleArt.draw(self, rc, 0.0, ("零件架 · %d 件" % n) if Txt.zh else ("PARTS RACK · %d" % n), ("[%s] 打开零件架" if Txt.zh else "[%s] OPEN THE PARTS RACK") % Keys.label("use"),
-			at == "rack", {"lamp": "ok" if n > 0 else "off"}, t, "rack")
+		if StoreBook.ON:
+			var wait := not StoreBook.inbox().is_empty()
+			ConsoleArt.draw(self, rc, 0.0, ("仓库柜台 · %d/%d 格" % [StoreBook.used(), StoreBook.cap()]) if Txt.zh else ("STORES COUNTER · %d/%d" % [StoreBook.used(), StoreBook.cap()]),
+				("[%s] 打开仓库" if Txt.zh else "[%s] OPEN THE STORES") % Keys.label("use"), at == "rack", {"lamp": "warn" if wait else "ok"}, t, "rack")
+		else:
+			ConsoleArt.draw(self, rc, 0.0, ("零件架 · %d 件" % n) if Txt.zh else ("PARTS RACK · %d" % n), ("[%s] 打开零件架" if Txt.zh else "[%s] OPEN THE PARTS RACK") % Keys.label("use"),
+				at == "rack", {"lamp": "ok" if n > 0 else "off"}, t, "rack")
 		# 107 号 Q2 A: a shelf per class (as the rack's page), its crates side by side and stacked two
 		# high; what does not fit is counted on the beam's end
 		var by := Repair.shelf_by_class()
