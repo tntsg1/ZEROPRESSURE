@@ -84,6 +84,7 @@ func _ready() -> void:
 		var b := Button.new()
 		b.toggle_mode = true
 		b.custom_minimum_size = Vector2(0, 92)
+		BenchFx.note(b, w("选这个配方：之后轧出来的就是它", "Pick this recipe: what is rolled next is this"))
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		# the picture on the left, the name and the recipe beside it (the button's own text stays empty)
 		var inner := HBoxContainer.new()
@@ -135,11 +136,13 @@ func _ready() -> void:
 	column.add_child(row)
 	once_b = Button.new()
 	once_b.text = w("轧一次（1 t）", "ONE PASS (1 t)")
+	BenchFx.note(once_b, w("立刻轧一次：用掉 1 t 钢坯，按选好的配方轧出产品", "Roll once now: 1 t of billet into the chosen recipe"))
 	once_b.custom_minimum_size.y = 42
 	once_b.pressed.connect(_once)
 	row.add_child(once_b)
 	loop_b = CheckButton.new()
 	loop_b.text = w("连续轧（有钢坯就一直轧）", "ROLL ON (WHILE THERE IS BILLET)")
+	BenchFx.note(loop_b, w("打开后，仓库里有钢坯就一直轧下去；关掉就停", "On: it keeps rolling while there is billet; off: it stops"))
 	loop_b.button_pressed = bool(Mill.cfg().loop)
 	loop_b.toggled.connect(func(v):
 		Mill.set_loop(v)
@@ -151,6 +154,7 @@ func _ready() -> void:
 	column.add_child(power_l)
 	power_b = Button.new()
 	power_b.text = w("去电网调度", "TO THE POWER CONTROL SCREEN")
+	BenchFx.note(power_b, w("关掉轧机台，去供电控制屏调电", "Close the mill desk and go to the power control screen"))
 	power_b.custom_minimum_size.y = 42
 	power_b.pressed.connect(func():
 		close()

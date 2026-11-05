@@ -39,6 +39,7 @@ func _ready() -> void:
 	column.add_child(lots_box)
 	column.add_child(OpsSkin.Section.new(words("操作", "CONTROLS")))
 	cancel_button = button(words("撤回正在化验的批次（化验费不退）", "WITHDRAW THE LOT BEING READ (FEE KEPT)"), func(): _show(service.cancel()))
+	BenchFx.note(cancel_button, words("立刻停下这批的化验，货退回去，化验费不退", "Stop reading this lot now; it goes back, the fee is kept"))
 	column.add_child(cancel_button)
 	message = OpsSkin.label("", 15)
 	column.add_child(message)
@@ -108,6 +109,7 @@ func _fill() -> void:
 	for c in cands:
 		var what := words("定级", "GRADE") if c.kind == "grade" else words("测材料描述", "DESCRIBE")
 		var b := button("%s · %s %.3f t · %s" % [what, _name(str(c.key)), float(c.quantity), _origin(str(c.origin))], func(): _show(service.begin(str(c.id))))
+		BenchFx.note(b, words("立刻化验这一批：交化验费，查清它到底是什么成分", "Read this lot now: pay the fee and learn what it really is"))
 		b.disabled = service.running()
 		lots_box.add_child(b)
 

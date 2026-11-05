@@ -35,17 +35,19 @@ func show_result(result: Dictionary) -> void:
 		"furnace_moving":words("炉体运动中，不能启动给料","Feeding is interlocked while the furnace moves"),
 	}
 	var reason := str(result.get("reason","操作失败"))
-	message.text = words("已执行","Done") if result.ok else str(reasons.get(reason,reason))
+	BenchFx.say(message, words("已执行","Done") if result.ok else str(reasons.get(reason,reason)))
 
 func send_feed() -> void:
 	var result: Dictionary = service.begin(quantity.value)
 	show_result(result)
-	if result.ok: message.text = GuideCopy.text("heat.success")
+	if result.ok: BenchFx.say(message, GuideCopy.text("heat.success"))
 var main: Button
 var more: VBoxContainer
 var more_key: Button
 var feed_row: HBoxContainer
 var _main_cb: Callable
+var _more_fold: BenchFx.Fold
+
 
 
 # 36 号 (player 2026-10-25: "too many buttons here and there"): one big button that is always
@@ -90,20 +92,30 @@ func _ready() -> void:
 		if g != null and is_instance_valid(g): g.open_power_screen.call_deferred())
 	power_b.visible = false
 	column.add_child(power_b)
-	more_key = button(words("更多 ▾","MORE ▾"), func():
-		more.visible = not more.visible
-		more_key.text = words("更多 ▴","MORE ▴") if more.visible else words("更多 ▾","MORE ▾"))
+	more_key = button(words("更多 ▾","MORE ▾"), func(): _more_fold.set_open(not _more_fold.open))
 	column.add_child(more_key)
 	more = VBoxContainer.new()
 	more.visible = false
 	column.add_child(more)
+	# 2026-11-04 (BenchFx #052): "more" pushes what is below down; Esc folds it before closing
+	_more_fold = BenchFx.fold(more)
+	_more_fold.on_toggle = func(open: bool): more_key.text = words("更多 ▴","MORE ▴") if open else words("更多 ▾","MORE ▾")
+	BenchFx.note(more_key, words("展开或收起：自动装置、撤回、报损、手动功率", "Show or hide the auto sampler, returning, writing off, manual power"))
+	BenchFx.primary(main)
+	BenchFx.note(main, words("炉台的下一步，按当前炉况来（Enter）", "The furnace's next step, as it stands now (Enter)"))
+	BenchFx.note(power_b, words("关掉炉台，去供电控制屏调电", "Close the desk and go to the power control screen"))
 	auto_key = button(words("给炉子装自动装置：自己测温、自己出钢（%s）" % Pal.money(HeatAuto.PRICE),"INSTALL AUTO SAMPLE-AND-TAP (%s)" % Pal.money(HeatAuto.PRICE)),func():
 		var r := HeatAuto.install()
 		show_result(r)
-		if r.ok: message.text = words("装好了：以后到温自己测温、出钢。","INSTALLED: IT SAMPLES AND TAPS BY ITSELF."))
+		if r.ok: BenchFx.say(message, words("装好了：以后到温自己测温、出钢。","INSTALLED: IT SAMPLES AND TAPS BY ITSELF.")))
 	more.add_child(auto_key)
-	more.add_child(button(words("撤回未投炉批次","RETURN UNCHARGED FEED"),func():show_result(service.cancel())))
-	more.add_child(button(words("报损弃置本批货物（无退款）","WRITE OFF CARGO / NO REFUND"),func():show_result(service.write_off())))
+	BenchFx.note(auto_key, words("花钱给炉子装自动装置：到温后它自己测温、自己出钢，立刻生效", "Pay to fit the auto sampler: at heat it samples and taps by itself"))
+	var undo := button(words("撤回未投炉批次","RETURN UNCHARGED FEED"),func():show_result(service.cancel()))
+	BenchFx.note(undo, words("还没投进炉子的这批钢锭退回仓库", "Send the feed not yet charged back to the store"))
+	more.add_child(undo)
+	var loss := button(words("报损弃置本批货物（无退款）","WRITE OFF CARGO / NO REFUND"),func():show_result(service.write_off()))
+	BenchFx.note(loss, words("这批货直接报废扔掉，钱不退；只在炉子出故障救不回来时用", "Scrap this batch for nothing; only when the heat cannot be saved"))
+	more.add_child(loss)
 	var power_row := HBoxContainer.new()
 	var power_label := label(words("手动功率 / %","MANUAL POWER / %"))
 	power_label.custom_minimum_size.x = 140
@@ -148,6 +160,9 @@ func _next() -> Array:
 		"product_transport":
 			return [words("钢坯冷却、运回仓库中…","BILLETS GOING BACK…"), Callable()]
 		"processing":
+			# 2026-11-04 (user): paused at the power screen, the desk says so and how to undo it
+			if Grid.ctl().defer:
+				return [words("电弧炉已暂停（供电屏）· 在供电屏点“电弧炉工作”恢复", "FURNACE PAUSED (POWER SCREEN) · PRESS 'FURNACE ON' THERE"), Callable()]
 			# 125 号: what the furnace is really doing (cooling, starved, melting) before any old guess
 			var inf: Dictionary = service.info()
 			if str(inf.key) in ["cooling", "debt", "starved", "melting", "tapping", "probe", "deferred", "power_wait"]:
@@ -155,7 +170,7 @@ func _next() -> Array:
 					return [words("电不够：买外购电补上（贵 %d 倍）" % int(Grid.bought_x()),"SHORT: BUY POWER (%dx DEARER)" % int(Grid.bought_x())), func(): show_result(service.ask_shore())]
 				return [str(inf.title), Callable()]
 			if heat.get("grid",{}).is_empty():
-				return [words("新炉次已在动力区控制屏延后","NEW HEATS ARE DEFERRED AT THE POWER SCREEN"), Callable()]
+				return [words("电弧炉已暂停（供电屏）· 在供电屏点“电弧炉工作”恢复", "FURNACE PAUSED (POWER SCREEN) · PRESS 'FURNACE ON' THERE"), Callable()]
 			if str(f.phase) in ["tilt","pour","back"]:
 				return [words("出钢中…","TAPPING…"), Callable()]
 			if not heat.get("auto",false) and (float(f.manual_power) < 0.5 or (float(f.bunker) > 0.0001 and not bool(f.manual_feed))):
@@ -186,6 +201,9 @@ func _update() -> void:
 		if have >= 0.25:
 			quantity.set_value_no_signal(floorf(minf(have, 2.0) * 100.0) / 100.0)
 	var n := _next()
+	# 2026-11-04 (炼钢台专属): the next step arrives with a light across the key and its words rising in
+	if main.text != str(n[0]) and main.text != "":
+		BenchFx.flash(main)
 	main.text = str(n[0])
 	_main_cb = n[1]
 	main.disabled = not _main_cb.is_valid()
@@ -217,7 +235,9 @@ func _process(dt: float) -> void:
 	var inf2: Dictionary = service.info()
 	next_step.text = (str(inf2.title) + ("
 " + str(inf2.text) if str(inf2.text) != "" else "")) if str(heat.get("state","")) in ["raw_transport","processing","product_transport"] else (GuideCopy.text(instruction) if service.waiting == "" else service.waiting)
-	power_b.visible = str(service.waiting).begins_with("等电") or str(service.waiting).begins_with("电不够") or str(service.waiting).begins_with("SHORT")
+	# paused at the power screen: the way there is right on the desk
+	power_b.visible = Grid.ctl().defer or str(service.waiting).begins_with("等电") or str(service.waiting).begins_with("电不够") or str(service.waiting).begins_with("SHORT")
+
 	var ql: Array = []
 	for e in ProcessQueue.entries():
 		if not ProcessQueue.finished(e):
@@ -237,12 +257,13 @@ func _process(dt: float) -> void:
 
 
 func close() -> void:
-	if service.fault != "":
-		if on_close.is_valid(): on_close.call()
+	if BenchFx.leaving(self):
 		return
-	if not service.checkpoint():
+	if service.fault == "" and not service.checkpoint():
 		message.text = words("保存失败，请保留现场","Save failed; keep this scene open")
 		return
+	# 2026-11-04 (BenchFx): closes at once; its picture slides back out on its own layer
+	BenchFx.leave(self)
 	if on_close.is_valid(): on_close.call()
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:

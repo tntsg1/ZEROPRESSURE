@@ -28,6 +28,11 @@ static var playtest := false          # 108 号: the playtest recorder (scripts/
 # trails), "lite" (the motion without particles, afterimages or big glows),
 # "off" (screens switch at once, no transitions; shake and flashes off too)
 static var anim := "full"
+# 2026-11-04 (user Q3): reduce motion — every page and console switches at once, only colours change
+# (scripts/bench_fx.gd, UiSkin.motion()); the on-site effects stay with `anim`
+static var reduce_motion := false
+# 2026-11-04 (人性化 规则 5): the consoles' interface scale, 0.9 … 1.3 (scripts/bench_fx.gd)
+static var ui_scale := 1.0
 const ANIM_LEVELS := ["off", "lite", "full"]
 
 
@@ -2467,6 +2472,8 @@ const S := {
 	"s_film": ["胶片颗粒 / 色差效果", "FILM GRAIN / CHROMATIC ABERRATION"],
 	"s_slowmo": ["大型部件分离慢动作", "SLOW MOTION ON LARGE PART DETACHMENT"],
 	"s_anim": ["动画强度", "ANIMATION"],
+	"s_reduce": ["减少动效（界面即时切换）", "REDUCE MOTION (INSTANT SCREENS)"],
+	"s_ui_scale": ["界面缩放（工作台）", "INTERFACE SCALE (CONSOLES)"],
 	"s_anim_full": ["完整", "FULL"],
 	"s_anim_lite": ["精简", "REDUCED"],
 	"s_anim_off": ["关闭", "OFF"],
@@ -2847,6 +2854,8 @@ static func load_settings(testing: bool) -> void:
 		anim = cf.get_value("video", "anim", "full")
 		if not anim in ANIM_LEVELS:
 			anim = "full"
+		reduce_motion = cf.get_value("video", "reduce_motion", false)
+		ui_scale = clampf(snappedf(float(cf.get_value("ui", "scale", 1.0)), 0.1), 0.9, 1.3)
 		Keys.load_from(cf)
 		vol_master = cf.get_value("audio", "master", 1.0)
 		vol_music = cf.get_value("audio", "music", 0.8)
@@ -2876,6 +2885,9 @@ static func save_settings(testing: bool) -> void:
 	cf.set_value("ui", "codex_cards", codex_cards)
 	cf.set_value("ui", "playtest", playtest)
 	cf.set_value("video", "anim", anim)
+	cf.set_value("video", "reduce_motion", reduce_motion)
+	cf.set_value("ui", "scale", ui_scale)
+
 	Keys.store(cf)
 	cf.set_value("audio", "master", vol_master)
 	cf.set_value("audio", "music", vol_music)

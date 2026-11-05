@@ -181,6 +181,58 @@ var _last_sel := -1
 var _boot_said := 0
 
 
+var _note_key := ""
+var _note_t := 0.0
+var _note_at := Vector2.ZERO
+
+
+# the plain words for each part of the terminal (人性化 规则 4)
+func _note_text(k: String) -> String:
+	match k:
+		"home":
+			return Ops.w("回到终端主屏（Esc）", "Back to the terminal's home screen (Esc)")
+		"goal":
+			return Ops.w("这一章要做的事：点开看怎么做、去哪做", "This chapter's goal: open it to see how and where")
+		"next":
+			return Ops.w("直接带你去下一步要去的地方", "Takes you straight to where the next step is")
+		"cell":
+			return Ops.w("打开这一区的业务终端", "Opens this district's console")
+		"dec":
+			return Ops.w("去处理这件事：带你到对应的终端或现场", "Deal with it: takes you to the right console or place")
+		"app0":
+			return Ops.w("找下一艘要拆的船：接单、派拖船、看二手船市", "Find the next ship: take a contract, send a tug, the hulk market")
+		"app1":
+			return Ops.w("船坞：报修坏了的设备、看扩建计划", "The berth: report what is broken, see the expansion plans")
+		"app5":
+			return Ops.w("学会新的拆法、规划港区建设", "Learn new ways to strip, plan the port's building")
+		"go0":
+			if not next_job.is_empty():
+				return Ops.w("去船坞开工已接下的这一单（Enter）", "Start the job already taken, at the berth (Enter)")
+			var o: Dictionary = offers()[sel] if sel < offers().size() else {}
+			if o.get("find", false):
+				return Ops.w("立刻派拖船把这艘船拖回港，到港后开拆（Enter）", "Send a tug for this ship now; strip it when it is in (Enter)")
+			if o.get("bought", false):
+				return Ops.w("这艘船已经是你的了：进船坞开拆（Enter）", "This ship is yours: strip it at the berth (Enter)")
+			return Ops.w("接下这份合同，立刻进船坞开工；钱不够时会先借款（Enter）", "Take this contract and start at the berth; a loan covers what you lack (Enter)")
+		"go2":
+			return Ops.w("立刻还这一笔借款，钱从资金里扣（Enter）", "Pay this much of the loan back now, from your cash (Enter)")
+		"go4":
+			return Ops.w("立刻买下选中的补给，钱当场扣，东西进库存（Enter）", "Buy the chosen supplies now: paid at once, into stock (Enter)")
+		"go7":
+			return Ops.w("开始这门训练（Enter）", "Start this course (Enter)")
+		"minus":
+			return Ops.w("少要一件", "One fewer")
+		"plus":
+			return Ops.w("多要一件", "One more")
+		"item0":
+			return Ops.w("点一下选中这艘船，看它的详情；再按下面的按钮", "Click to pick this ship and see it; then the key below")
+		"item4":
+			return Ops.w("点一下选中这样补给，再按下面的按钮买", "Click to pick this supply, then buy it with the key below")
+		"item7":
+			return Ops.w("点一下选中这门课，看它练什么", "Click to pick this course and see what it trains")
+	return ""
+
+
 func _ready() -> void:
 	testing = _is_test()
 	if not testing:
@@ -261,6 +313,7 @@ func _ready() -> void:
 	exchange_button = Button.new()
 	exchange_button.name = "IndustrialExchange"
 	exchange_button.text = "交易行 · 买入 / 出售 [F8]" if Txt.zh else "EXCHANGE / BUY & SELL [F8]"
+	BenchFx.note(exchange_button, Ops.w("打开交易行：买原料、卖产品（F8）", "Open the exchange: buy feed, sell products (F8)"))
 	# Dedicated footer access: the old button covered the engineering goal
 	# strip, making it look like a tiny clipped part of the build screen.
 	exchange_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
@@ -277,6 +330,7 @@ func _ready() -> void:
 	end_button = Button.new()
 	end_button.name = "EndContract"
 	end_button.text = Txt.t("m_end")
+	BenchFx.note(end_button, Ops.w("提前结束这一单：先按一次，再按一次确认；按已拆下的结算", "End this job early: press, then press again to confirm; settled on what is off"))
 	end_button.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
 	end_button.offset_left = -820 if exchange_button.visible else -400
 	end_button.offset_right = end_button.offset_left + 360
@@ -314,13 +368,17 @@ func _ready() -> void:
 	add_child(remote_box)
 	sfx = Sfx.new()
 	add_child(sfx)
+	# 2026-11-04 (BenchFx): the native pages inside (berth, methods and build) get the bench's light, notes
+	# and Esc steps; the whole terminal takes the interface scale. Its own boot is its entrance.
+	BenchFx.dress.call_deferred(self, [], null, 1.0, "terminal", false)
+
 	# a new career's terminal opens up as it is needed (28 号): say what just opened
 	var opened := Onboarding.refresh()
 	if not opened.is_empty():
 		say("；".join(opened) if Txt.zh else "; ".join(opened))
 	exchange_button.visible = Career.data.get("market",false) and Onboarding.shown("market_ops")
 	# on site (the left computers), with animation off, and under the tests' stills: up at once
-	if overlay or Txt.anim_level() == 0 or testing:
+	if overlay or not UiSkin.motion() or testing:
 		boot_t = BOOT_T
 	if overlay:
 		process_mode = Node.PROCESS_MODE_ALWAYS
@@ -624,20 +682,20 @@ func _order(page: int) -> int:
 
 # 0..1: how far the page switch has brought the new page in
 func _page_in() -> float:
-	if Txt.anim_level() == 0 or prev_tab == tab:
+	if not UiSkin.motion() or prev_tab == tab:
 		return 1.0
 	return Pal.ease_out(clampf((switch_t - SWITCH_DELAY) / SWITCH_IN, 0.0, 1.0))
 
 
 # 0..1: how far the old page has gone
 func _page_out() -> float:
-	if Txt.anim_level() == 0 or prev_tab == tab:
+	if not UiSkin.motion() or prev_tab == tab:
 		return 1.0
 	return Pal.ease_in(clampf(switch_t / SWITCH_OUT, 0.0, 1.0))
 
 
 func _slide() -> float:
-	return SWITCH_SLIDE if Txt.anim_level() >= 2 else 0.0
+	return SWITCH_SLIDE if Txt.anim_level() >= 2 and UiSkin.motion() else 0.0
 
 
 func _open_app(i: int) -> void:
@@ -722,6 +780,34 @@ func _process(dt: float) -> void:
 	hover_plus = _has_qty() and _qty_rect(1).has_point(m)
 	if dragging:
 		_slide_to(m.x)
+	# 人性化 规则 4: what is under the pointer, held 0.4 s, gets its plain note
+	var nk := ""
+	if hover_home:
+		nk = "home"
+	elif hover_goal >= 0:
+		nk = "goal"
+	elif tab == HOME and hover_next:
+		nk = "next"
+	elif tab == HOME and hover_cell >= 0:
+		nk = "cell"
+	elif tab == HOME and hover_dec >= 0:
+		nk = "dec"
+	elif tab == HOME and hover >= 0:
+		nk = "app%d" % int(APPS[hover][0]) if hover < APPS.size() else ""
+	elif hover_go and _go_live:
+		nk = "go%d" % tab
+	elif hover_minus:
+		nk = "minus"
+	elif hover_plus:
+		nk = "plus"
+	elif hover >= 0:
+		nk = "item%d" % tab
+	if nk != _note_key:
+		_note_key = nk
+		_note_t = 0.0
+	elif nk != "":
+		_note_t += dt
+	_note_at = m
 	shake = maxf(0.0, shake - dt * 2.2)
 	for k in install.keys():
 		install[k] += dt
@@ -1888,6 +1974,11 @@ func _draw() -> void:
 		_milestone(s)
 	_self_test(s)
 	Hmi.lamp_test = false
+	# 人性化 规则 4: the plain note for what is under the pointer (0.4 s)
+	if _note_t >= BenchFx.NOTE_S and not settings.is_open and leaving < 0.0:
+		var nt := _note_text(_note_key)
+		if nt != "":
+			BenchFx.draw_note(self, nt, _note_at, size)
 
 
 func _page(s: Vector2, a: float, with_focus: bool) -> void:

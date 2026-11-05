@@ -120,7 +120,13 @@ static func pane(host: Control, accent: Color, width: float = W_PANE) -> VBoxCon
 	column.add_theme_constant_override("separation", 10)
 	scroll.add_child(column)
 	column.child_entered_tree.connect(func(n: Node) -> void: _pin_close.call_deferred(n, foot))
+	# 2026-11-04 (BenchFx): every side console comes in, lights its keys, remembers itself, steps back
+	# with Esc and takes the interface scale — once the page has filled its column (the star map has
+	# its own motion)
+	if not host.has_method("_enter_column"):
+		BenchFx.dress.call_deferred(host, [column], pane)
 	return column
+
 
 
 static func _pin_close(n: Node, foot: HBoxContainer) -> void:
@@ -167,6 +173,22 @@ class Plate extends Control:
 		accent = acc
 		custom_minimum_size = Vector2(0, 92 if s != "" else 64)
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# 2026-11-04 (BenchFx #005): the title rises from behind its line as the console comes in
+		_title = BenchFx.RiseText.new(t, OpsSkin.fonts()[2], 24, Pal.ink(0.98))
+		add_child(_title)
+
+	var _title: BenchFx.RiseText
+
+	func _title_x() -> float:
+		if code == "":
+			return 4.0
+		return 4.0 + OpsSkin.fonts()[1].get_string_size(code, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 22.0 + 12.0
+
+	func _notification(what: int) -> void:
+		if what == NOTIFICATION_RESIZED and _title != null:
+			var x := _title_x()
+			_title.position = Vector2(x, 6)
+			_title.size = Vector2(maxf(10.0, size.x - x - 40.0), 34)
 
 	func set_lamp(state: String) -> void:
 		if state != lamp:
@@ -185,7 +207,7 @@ class Plate extends Control:
 			draw_style_box(pill, cr)
 			draw_string(f[1], cr.position + Vector2(11, 17), code, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(accent.r, accent.g, accent.b, 1.0).lightened(0.3))
 			x = cr.end.x + 12.0
-		draw_string(f[2], Vector2(x, 36), title, HORIZONTAL_ALIGNMENT_LEFT, size.x - x - 40.0, 24, Pal.ink(0.98))
+		_title.set_text(title)
 		if sub != "":
 			var y := 64.0
 			for line in sub.split("\n"):
@@ -233,16 +255,36 @@ class Readout extends Control:
 class Section extends Control:
 	var text := ""
 
+	var _label: BenchFx.RiseText
+
 	func _init(t: String = "") -> void:
 		text = t
 		custom_minimum_size.y = 28
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# 2026-11-04 (BenchFx #005): the label rises as the console comes in, its rule drawing out after it
+		_label = BenchFx.RiseText.new(t, OpsSkin.fonts()[1], 13, Pal.ink(0.55))
+		_label.position = Vector2(0, 2)
+		_label.size = Vector2(OpsSkin.fonts()[1].get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 4.0, 21)
+		add_child(_label)
+
+	func _process(_dt: float) -> void:
+		queue_redraw()
+		if BenchFx.now() - _label.t0 > 0.9 and _label.t0 < 1e8:
+			set_process(false)
 
 	func _draw() -> void:
 		var f := OpsSkin.fonts()
-		draw_string(f[1], Vector2(0, 19), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Pal.ink(0.55))
+		_label.set_text(text)
 		var tw: float = f[1].get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
-		draw_line(Vector2(tw + 10.0, 14), Vector2(size.x, 14), Color(1, 1, 1, 0.1), 1.0)
+		var k := 1.0
+		if _label.t0 > 1e8:
+			k = 0.0
+		elif BenchFx.on():
+			k = BenchFx.e_io((BenchFx.now() - _label.t0 - 0.3) / 0.5)
+		if k < 1.0:
+			set_process(true)
+		if k > 0.0:
+			draw_line(Vector2(tw + 10.0, 14), Vector2(lerpf(tw + 10.0, size.x, k), 14), Color(1, 1, 1, 0.1), 1.0)
 
 
 # the overview's cells and decisions as a control (the ring's business console)

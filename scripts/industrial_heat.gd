@@ -126,7 +126,8 @@ func info() -> Dictionary:
 		return {"key":"debt","n":3,"title":_w("电费没付清，已停止供电","POWER BILL UNPAID: SUPPLY STOPPED"),"text":_w("资金补上后自动恢复。","It comes back once there is cash."),"press":"","eta":-1.0}
 	if h.get("grid",{}).is_empty():
 		var why := Grid.wait_text(game)
-		return {"key":"deferred" if Grid.ctl().defer else "power_wait","n":3,"title":_w("新炉次已延后","NEW HEATS DEFERRED") if Grid.ctl().defer else _w("等电网分电","WAITING FOR A SHARE OF THE GRID"),"text":why,"press":"","eta":-1.0}
+		return {"key":"deferred" if Grid.ctl().defer else "power_wait","n":3,"title":_w("电弧炉已暂停（供电屏）","FURNACE PAUSED (POWER SCREEN)") if Grid.ctl().defer else _w("等电网分电","WAITING FOR A SHARE OF THE GRID"),"text":why,"press":"","eta":-1.0}
+
 	if not h.get("auto",false) and (float(f.manual_power) < 0.5 or (float(f.bunker) > 0.0001 and not bool(f.manual_feed))):
 		return {"key":"start","n":3,"title":_w("按『通电熔化』","PRESS 'STRIKE THE ARCS'"),"text":_w("料已在炉口。一按就装炉、起弧，温度自己控。","The feed is at the furnace: one press charges it, strikes the arcs and holds the temperature."),"press":"melt","eta":-1.0}
 	var given := float(f.manual_supply_mw)

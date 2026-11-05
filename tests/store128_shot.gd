@@ -18,6 +18,12 @@ func _initialize() -> void:
 	_run.call_deferred()
 
 
+func _wait_ms(ms: int) -> void:
+	var t0 := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - t0 < ms:
+		await process_frame
+
+
 func _shot(name: String) -> void:
 	await _frames(2)
 	Cap.save(root, OUT % name)
@@ -192,24 +198,29 @@ func _run() -> void:
 	var raw_lit := _lum(ui, raw_id)
 	var eq_lit := _lum(ui, eq_id)
 	ui.open_kind("equip")
-	await _frames(6)
+	await _wait_ms(110)
+	Cap.save(root, OUT % "anim_filter_mid")
+	await _wait_ms(320)
 	var raw_dim := _lum(ui, raw_id)
 	var eq_on := _lum(ui, eq_id)
 	print("DIM raw %.4f -> %.4f · equip %.4f -> %.4f" % [raw_lit, raw_dim, eq_lit, eq_on])
-	check(raw_id != "" and raw_dim < raw_lit * 0.4, "filter 设备: a raw bundle is plainly dimmed (%.3f -> %.3f)" % [raw_lit, raw_dim])
-	check(eq_id != "" and eq_on > eq_lit * 0.9, "and a machine stays lit (%.3f -> %.3f)" % [eq_lit, eq_on])
+	# 2026-11-04 (user): left out means plainly darker but still there (about 28 %), not gone
+	check(raw_id != "" and raw_dim < raw_lit * 0.55 and raw_dim > raw_lit * 0.08, "filter 设备: a raw bundle is plainly dimmed but still visible (%.3f -> %.3f)" % [raw_lit, raw_dim])
+	# (0.85: a shown machine now lifts 2.5 px off the floor, so the sampled cells catch a little less of it)
+	check(eq_id != "" and eq_on > eq_lit * 0.85, "and a machine stays lit (%.3f -> %.3f)" % [eq_lit, eq_on])
 	await _shot("4b_filter_equip_dims_rest")
 	ui.open_kind("all")
 	var pick: Dictionary = ui._item(ui.guide_id)
 	var price := float(pick.recycle)
 	check(absf(price - snappedf(float(pick.market) * 0.6, 1.0)) < 1.0, "recycling price is 60 %% of market (%s of %s)" % [Pal.money(price), Pal.money(float(pick.market))])
 	var m1 := float(Career.data.money)
+	# 2026-11-04 (人性化 规则 2): selling takes one press, no confirm; the note says what and where
 	ui.sell_sel()
-	await _frames(2)
-	check(absf(float(Career.data.money) - m1) < 0.5, "one press arms the sale only")
-	ui.sell_sel()
-	await _frames(4)
-	check(absf(float(Career.data.money) - m1 - price) < 1.0, "the second press sells: +%s, cash at once" % Pal.money(price))
+	await _wait_ms(200)
+	Cap.save(root, OUT % "anim_sell_fly")
+	await _wait_ms(450)
+	check(absf(float(Career.data.money) - m1 - price) < 1.0, "one press sells: +%s, cash at once" % Pal.money(price))
+	check(ui.message.contains("卖给回收站"), "the note says where it went (%s)" % ui.message)
 	check(g.store_guide.step == "done_card", "the guide says what happened and what next")
 	await _frames(20)
 	await _shot("5_sold_guide")
@@ -223,14 +234,34 @@ func _run() -> void:
 	var r0: Rect2 = ui.unit_rect(mv)
 	var gp: Vector2 = ui._grid_rect().position
 	ui._start_drag(mv, gp + r0.position + Vector2(10, 10))
+	# the shots show the dragged thing under a stand-in pointer (the real one is never moved)
+	BenchFx.shot_mouse = ui.get_global_transform() * (gp + r0.position + Vector2(60, 40))
+	await _wait_ms(60)
+	Cap.save(root, OUT % "anim_pickup")
 	ui.turn()
+	await _wait_ms(90)
+	Cap.save(root, OUT % "anim_turn")
+	BenchFx.shot_mouse = Vector2.INF
 	ui.scroll = 16.0 * ui.cell()
 	var target: Vector2 = gp + Vector2(0.5, 20.5) * ui.cell() - Vector2(0.0, ui.scroll)
 	ui.drag_grab = Vector2(0.5, 0.5)
 	check(ui.drop_ok(target), "the dragged, turned machine fits at row 20")
 	ui._drop(target)
+	await _wait_ms(70)
+	Cap.save(root, OUT % "anim_snap")
 	await _frames(4)
 	check(int(ui.lay[mv][1]) == 20 and int(ui.lay[mv][2]) == 1, "moved and turned: %s" % str(ui.lay[mv]))
+	# R on a placed machine: it turns a quarter about its centre (0.2 s); turned back after the shot
+	ui.select(mv)
+	ui._keep_in_view()
+	await _frames(2)
+	ui.turn()
+	if int(ui.lay[mv][2]) == 0:
+		await _wait_ms(100)
+		Cap.save(root, OUT % "anim_turn_placed")
+		await _wait_ms(250)
+		ui.turn()
+	await _frames(2)
 	ui.select(mv)
 	# 用户 bug: cards scrolled over the title. The grid draws in its own clipped control: the page
 	# above its top and under its bottom looks the same whatever the scroll
@@ -253,8 +284,30 @@ func _run() -> void:
 	await _frames(4)
 	await _shot("5b_moved_turned_scrolled")
 	check(ui.grid_view.clip_contents and bad == 0, "scrolled half way: nothing drawn past the grid's top or bottom edge (%d stray pixels)" % bad)
+	ui.scroll = 0.0
+	ui.open_kind("all")
+	await _frames(2)
 	ui.tidy()
+	await _wait_ms(260)
+	Cap.save(root, OUT % "anim_tidy_fly")
+	await _wait_ms(380)
+	Cap.save(root, OUT % "anim_tidy_settle")
 	await _frames(3)
+	# 2026-11-04 (user's shot): filtered to machines, tidy puts the machines first and the view at the top
+	ui.open_kind("equip")
+	ui.scroll = ui._scroll_max() * 0.6
+	await _frames(2)
+	ui.tidy()
+	await _wait_ms(900)
+	var top_cat := ""
+	for it in ui.items:
+		if ui.lay.has(str(it.id)) and int(ui.lay[str(it.id)][0]) == 0 and int(ui.lay[str(it.id)][1]) == 0:
+			top_cat = str(it.cat)
+	check(ui.scroll < 0.5 and top_cat == "equip", "filtered tidy: back at the top, the machines first (%s, scroll %.0f)" % [top_cat, ui.scroll])
+	Cap.save(root, OUT % "anim_tidy_equip_first")
+	ui.open_kind("all")
+	ui.tidy()
+	await _wait_ms(900)
 	check(ui.lay.size() == ui.items.size(), "一键整理: everything laid out again (%d)" % ui.lay.size())
 	ui.scroll = 0.0
 	ui._close()
@@ -302,13 +355,11 @@ func _run() -> void:
 	await _shot("7_inbox")
 	var n0: int = StoreBook.inbox().size()
 	ui.sell_sel()
-	ui.sell_sel()
 	await _frames(3)
 	check(StoreBook.inbox().size() == n0 - 1, "an inbox thing sold to the recycling station")
 	# make room: sell an old machine, then keep a waiting one
 	ui.open_kind("equip")
 	ui.select(str(ui.shown()[0].id))
-	ui.sell_sel()
 	ui.sell_sel()
 	await _frames(3)
 	var w0: int = StoreBook.inbox().size()
@@ -317,6 +368,8 @@ func _run() -> void:
 			ui.select(str(it.id))
 			break
 	ui.keep_sel()
+	await _wait_ms(200)
+	Cap.save(root, OUT % "anim_keep_fly")
 	await _frames(3)
 	check(StoreBook.inbox().size() == w0 - 1, "room made: a waiting machine kept (put away)")
 	# 用户定 B: the repair steel in its own slot, a stack of plate and its tonnes, not for sale

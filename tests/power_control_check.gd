@@ -51,7 +51,7 @@ func _run() -> void:
 	Grid.set_ctl("furnace_cap", 6.0)
 	check(Grid.admit_heat(g, {"state": "processing", "grid": {}}).is_empty(), "deferred: a new heat does not ask")
 	Career.data.industrial_heat = {"id": "HEAT-T", "state": "processing", "quantity": 1.0, "grid": {}}
-	check(Grid.wait_text(g).find("延后") >= 0, "and the wait says why: %s" % Grid.wait_text(g))
+	check(Grid.wait_text(g).find("暂停") >= 0, "and the wait says why: %s" % Grid.wait_text(g))
 	Grid.set_ctl("defer", false)
 	# a running heat: down at once, not up past its share
 	Career.data.industrial_heat = {"id": "HEAT-T", "state": "processing", "quantity": 1.0, "grid": {"own": 12.0, "shore": 0.0}}

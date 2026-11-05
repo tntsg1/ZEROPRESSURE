@@ -547,11 +547,12 @@ static func move(id: String, x: int, y: int, rot: int) -> bool:
 
 
 # 一键整理: by kind (raw, equipment, parts, special), the biggest first, each in the first free place
-static func tidy() -> void:
+# first: a kind laid out before the rest (the store page's filter, 2026-11-04), else the usual order
+static func tidy(first := "") -> void:
 	var us := units()
 	us.sort_custom(func(a, b):
-		var ca := CATS.find(str(a.cat))
-		var cb := CATS.find(str(b.cat))
+		var ca := CATS.find(str(a.cat)) - (100 if first != "" and str(a.cat) == first else 0)
+		var cb := CATS.find(str(b.cat)) - (100 if first != "" and str(b.cat) == first else 0)
 		if ca != cb:
 			return ca < cb
 		if int(a.cells) != int(b.cells):

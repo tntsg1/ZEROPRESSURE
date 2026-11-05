@@ -66,6 +66,7 @@ func _fill() -> void:
 		if i == sel:
 			b.add_theme_color_override("font_color", UiSkin.ACCENT)
 		b.pressed.connect(func(): sel = i; _fill())
+		BenchFx.note(b, w("选中这一批，看它的详情", "Pick this batch and see it"))
 		row.add_child(b)
 		for spec in [["↑", -1], ["↓", 1], [w("最前", "FIRST"), -99]]:
 			var m := Button.new()
@@ -74,6 +75,7 @@ func _fill() -> void:
 			m.focus_mode = Control.FOCUS_NONE
 			m.disabled = (int(spec[1]) < 0 and i == 0) or (int(spec[1]) > 0 and i == q.size() - 1)
 			m.pressed.connect(_move.bind(i, int(spec[1])))
+			BenchFx.note(m, [w("往前排一位：早一点加工", "Up one: processed sooner"), w("往后排一位：晚一点加工", "Down one: processed later"), w("排到最前：下一个就加工它", "To the front: processed next")][[-1, 1, -99].find(int(spec[1]))], w("已经排在最前", "Already first") if int(spec[1]) < 0 else w("已经排在最后", "Already last"))
 			row.add_child(m)
 
 

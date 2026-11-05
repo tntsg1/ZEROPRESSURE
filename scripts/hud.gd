@@ -2536,6 +2536,9 @@ func _settlement(s: Vector2) -> void:
 	var e := end_t - (0.2 if end_early else 1.6)
 	if e < 0.0:
 		return
+	# 2026-11-04 (减少动效): the sheet stands complete at once — no rising, no rolling figures
+	if not UiSkin.motion():
+		e = 99.0
 	if stores_page():
 		_settlement128(s, e)
 		return

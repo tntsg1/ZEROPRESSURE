@@ -6,7 +6,7 @@ extends CanvasLayer
 
 signal closed
 
-const ROWS := ["vol_master", "vol_music", "vol_sfx", "quality", "window", "anim", "calm", "film", "slowmo", "lang", "context", "codex_cards", "playtest", "keys_row", "back"]
+const ROWS := ["vol_master", "vol_music", "vol_sfx", "quality", "window", "anim", "reduce", "ui_scale", "calm", "film", "slowmo", "lang", "context", "codex_cards", "playtest", "keys_row", "back"]
 
 var testing := false
 var is_open := false
@@ -52,7 +52,7 @@ func close() -> void:
 
 func _row_rect(i: int) -> Rect2:
 	var s := c.size
-	return Rect2(s.x * 0.5 - 300, s.y * 0.5 - 350 + i * 50, 600, 46)
+	return Rect2(s.x * 0.5 - 300, s.y * 0.5 - 360 + i * 48, 600, 44)
 
 
 func _key_rect(i: int) -> Rect2:
@@ -167,6 +167,10 @@ func change(row: String, dir: int) -> void:
 			Txt.fullscreen = not Txt.fullscreen
 		"calm":
 			Txt.calm = not Txt.calm
+		"reduce":
+			Txt.reduce_motion = not Txt.reduce_motion
+		"ui_scale":
+			Txt.ui_scale = clampf(snappedf(Txt.ui_scale + 0.1 * (1 if dir >= 0 else -1), 0.1), 0.9, 1.3)
 		"film":
 			Txt.film = not Txt.film
 		"slowmo":
@@ -203,6 +207,11 @@ func value(row: String) -> String:
 			return Txt.t("s_win_full") if Txt.fullscreen else Txt.t("s_win_window")
 		"calm":
 			return Txt.t("s_off") if Txt.no_flash() else Txt.t("s_on")
+		"reduce":
+			return Txt.t("s_on") if Txt.reduce_motion else Txt.t("s_off")
+		"ui_scale":
+			return "%d%%" % roundi(Txt.ui_scale * 100.0)
+
 		"film":
 			return Txt.t("s_on") if Txt.film else Txt.t("s_off")
 		"slowmo":
@@ -214,7 +223,7 @@ func value(row: String) -> String:
 
 func _process(dt: float) -> void:
 	_t += dt
-	k = Pal.damp(k, 1.0 if is_open else 0.0, 14.0, dt)
+	k = Pal.damp(k, 1.0 if is_open else 0.0, 14.0, dt) if UiSkin.motion() else (1.0 if is_open else 0.0)
 	hover = -1
 	if is_open:
 		var m := c.get_local_mouse_position()
@@ -258,17 +267,17 @@ func _draw_ui() -> void:
 			r.position.y -= 2.0
 		c.draw_style_box(UiSkin.box("raised", k, 1.0 if on else 0.0), r)
 		if row == "back":
-			_text(Txt.t("s_back"), Vector2(r.get_center().x, r.position.y + 32), 20, Pal.ink((0.95 if on else 0.6) * k), font, 0)
+			_text(Txt.t("s_back"), Vector2(r.get_center().x, r.position.y + 30), 20, Pal.ink((0.95 if on else 0.6) * k), font, 0)
 			continue
 		if row == "keys_row":
-			_text(Txt.t("s_keys_row"), r.position + Vector2(20, 32), 18, Pal.ink((0.95 if on else 0.65) * k), font)
-			_text("→", Vector2(r.end.x - 30, r.position.y + 32), 18, Pal.ink(0.6 * k), font, 0)
+			_text(Txt.t("s_keys_row"), r.position + Vector2(20, 30), 18, Pal.ink((0.95 if on else 0.65) * k), font)
+			_text("→", Vector2(r.end.x - 30, r.position.y + 30), 18, Pal.ink(0.6 * k), font, 0)
 			continue
-		_text(Txt.t("s_" + row), r.position + Vector2(20, 32), 18, Pal.ink((0.95 if on else 0.65) * k), font)
+		_text(Txt.t("s_" + row), r.position + Vector2(20, 30), 18, Pal.ink((0.95 if on else 0.65) * k), font)
 		var v := value(row)
-		_text("◂", Vector2(r.end.x - 190, r.position.y + 32), 18, Pal.ink(0.4 * k), font, 0)
-		_text(v, Vector2(r.end.x - 110, r.position.y + 32), 18, Pal.ink(0.95 * k), font_b, 0)
-		_text("▸", Vector2(r.end.x - 30, r.position.y + 32), 18, Pal.ink(0.4 * k), font, 0)
+		_text("◂", Vector2(r.end.x - 190, r.position.y + 30), 18, Pal.ink(0.4 * k), font, 0)
+		_text(v, Vector2(r.end.x - 110, r.position.y + 30), 18, Pal.ink(0.95 * k), font_b, 0)
+		_text("▸", Vector2(r.end.x - 30, r.position.y + 30), 18, Pal.ink(0.4 * k), font, 0)
 		if row.begins_with("vol_"):
 			var f: float = {"vol_master": Txt.vol_master, "vol_music": Txt.vol_music, "vol_sfx": Txt.vol_sfx}[row]
 			var br := Rect2(r.position.x + 20, r.end.y - 10, 300, 4)

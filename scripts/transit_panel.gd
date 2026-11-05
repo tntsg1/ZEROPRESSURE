@@ -42,7 +42,7 @@ func _ready() -> void:
 				continue
 			var name: String = Port.name_of(s)
 			var seen: bool = s in Tram.found()
-			column.add_child(button(name + ("" if seen else "  · " + Txt.t("tram_unknown")), func(): _go(s)))
+			column.add_child(BenchFx.noted(button(name + ("" if seen else "  · " + Txt.t("tram_unknown")), func(): _go(s)), words("坐接驳车去这一站", "Ride the shuttle to this stop")))
 	else:
 		column.add_child(OpsSkin.Plate.new("WB-1", Txt.t("boat_title"), Txt.t("boat_sub"), accent))
 		column.add_child(OpsSkin.Section.new(words("泊位", "PADS")))
@@ -52,6 +52,7 @@ func _ready() -> void:
 				continue
 			var known: bool = id in seen
 			var b := button(WorkBoat.pad_name(id) if known else WorkBoat.pad_name(id) + "  · " + Txt.t("tram_unknown"), func(): _go(id))
+			BenchFx.note(b, words("坐工作艇去这里", "Take the work boat here"))
 			b.disabled = not known
 			column.add_child(b)
 	message = label("", 15)

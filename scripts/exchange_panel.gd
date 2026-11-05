@@ -221,6 +221,14 @@ func _ready() -> void:
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 10)
 	margin.add_child(column)
+	# 2026-11-04 (BenchFx): comes in from the side, its keys lit; Esc steps back out of a seller list
+	# first; the scale and last visit's place (once the page is built)
+	(func():
+		BenchFx.dress(self, [column], margin, 1.0, "exchange_panel")
+		BenchFx.back_step(self, func(): return sellers_open and not sell_win.visible, func():
+			sellers_open = false
+			_stamp = ""
+			refresh())).call_deferred()
 	# the top bar: the title, the five tabs, the money, guide / pause / close
 	var top := HBoxContainer.new()
 	top.add_theme_constant_override("separation", 6)
@@ -238,6 +246,7 @@ func _ready() -> void:
 		b.custom_minimum_size = Vector2(118, 48)
 		b.add_theme_font_size_override("font_size", 19)
 		b.focus_mode = Control.FOCUS_NONE
+		BenchFx.note(b, {"buy": words("买别人挂出来的货：选货，再选卖家", "Buy what others list: pick the goods, then a seller"), "sell": words("把仓库里的货挂出去卖", "List goods from your store for sale"), "records": words("每一笔买卖和挂单，用白话写着", "Every trade and listing, in plain words"), "ship": words("关掉这里，打开星图的航运页：货船在哪、什么时候到", "Close this and open the star map's shipping: where freighters are, when they come"), "hulk": words("关掉这里，打开二手船市：买整艘旧船回来拆", "Close this and open the hulk market: buy whole old ships to strip")}.get(str(t[0]), ""))
 		tab_keys[t[0]] = b
 		top.add_child(b)
 	var spacer := Control.new()
@@ -248,8 +257,11 @@ func _ready() -> void:
 	balance.add_theme_color_override("font_color", UiSkin.INK)
 	top.add_child(balance)
 	UiSkin.count(balance, float(Career.data.money), func(v: float): return words("可用资金 ", "FUNDS ") + Pal.money(v))
-	top.add_child(key(words("带我做下一步", "GUIDE ME"), start_guide))
+	var guide_key := key(words("带我做下一步", "GUIDE ME"), start_guide)
+	BenchFx.note(guide_key, words("一步一步指给你：现在该点哪里", "Shows you, step by step, what to press now"))
+	top.add_child(guide_key)
 	pause_button = key(words("暂停经营", "PAUSE"), toggle_pause)
+	BenchFx.note(pause_button, words("暂停整个港口和市场的时间，慢慢看；再点一次继续", "Stops the port's and the market's clock while you look; press again to go on"))
 	top.add_child(pause_button)
 	top.add_child(key(words("关闭 [Esc]", "CLOSE [Esc]"), close))
 	# the body: categories on the left, the page in the middle
@@ -268,6 +280,7 @@ func _ready() -> void:
 		var nm: String = words("全部", "ALL") if c == "" else str(Exchange.CATALOG[c].name) if Txt.zh else str(c).to_upper().replace("_", " ")
 		var b := key(nm, _cat.bind(c))
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		BenchFx.note(b, words("只看全部货", "Show every kind of goods") if c == "" else words("只看这一类货：%s", "Show only this kind: %s") % nm)
 		cat_keys[c] = b
 		side.add_child(b)
 	var scroll := ScrollContainer.new()
@@ -383,6 +396,8 @@ func _build_sell_window() -> void:
 	go.add_theme_font_size_override("font_size", 24)
 	UiSkin.accent_button(go)
 	right.add_child(go)
+	BenchFx.primary(go)
+	BenchFx.note(go, words("按上面的价钱和数量挂到交易行；有人出到这个价就成交，钱直接到账", "List it at the price and amount above; it sells when a buyer meets the price"))
 
 
 func _build_purchase(skin: Theme) -> void:
@@ -462,6 +477,8 @@ func _tab(t: String) -> void:
 	sell_win.visible = false
 	_stamp = ""
 	refresh()
+	# #057: the new page comes in
+	BenchFx.swap(main)
 
 
 func _cat(c: String) -> void:
@@ -957,11 +974,15 @@ func close() -> bool:
 		get_tree().paused = false
 		if game != null:
 			game.paused_sim = false
+	if BenchFx.leaving(self):
+		return true
+	var handed := BenchFx.leave(self)
 	if on_close.is_valid():
 		on_close.call()
-	else:
+	elif not handed:
 		queue_free()
 	return true
+
 
 
 func _unhandled_input(event: InputEvent) -> void:

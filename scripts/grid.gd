@@ -121,7 +121,8 @@ static func set_ctl(key: String, value) -> Dictionary:
 					note = w("正在跑的炉子立即降到 %.0f MW", "THE RUNNING HEAT DROPS TO %.0f MW NOW") % float(value)
 		"defer":
 			value = bool(value)
-			note = w("新炉次暂不申请电；正在跑的不受影响", "NEW HEATS WAIT; THE RUNNING ONE IS UNTOUCHED") if value else w("新炉次恢复申请电", "NEW HEATS ASK FOR POWER AGAIN")
+			# 2026-11-04 (user): paused, the heat in the furnace stops too and waits for power (as demands() does)
+			note = w("正在炼的这炉也停下等电，电先给别的区", "THE HEAT IN THE FURNACE STOPS TOO AND WAITS; THE POWER GOES TO THE REST") if value else w("正在炼的这炉继续升温", "THE HEAT IN THE FURNACE WARMS UP AGAIN")
 		"priority":
 			if str(value) not in ["contract", "company"]:
 				return {"ok": false, "reason": w("优先级只有两种", "TWO PRIORITIES ONLY")}
@@ -483,7 +484,8 @@ static func wait_text(game) -> String:
 	if str(heat.get("state", "")) != "processing" or heat.get("grid", {}).get("free", false):
 		return ""
 	if ctl().defer:
-		return w("已在动力区控制屏手动延后新炉次", "NEW HEATS DEFERRED AT THE POWER CONTROL SCREEN")
+		return w("电弧炉已在供电屏暂停：正在炼的这炉停下等电", "THE FURNACE IS PAUSED AT THE POWER SCREEN: THE HEAT WAITS")
+
 	# not on the bus yet, or stopped for the power bill: that is said elsewhere
 	if heat.get("grid", {}).is_empty() or float(heat.get("energy_debt", 0.0)) > 0.000001:
 		return ""

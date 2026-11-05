@@ -17,7 +17,7 @@ const RADIUS := 16
 
 
 static func motion() -> bool:
-	return Txt.anim_level() >= 1
+	return Txt.anim_level() >= 1 and not Txt.reduce_motion
 
 
 static func glass(fill := 0.04, edge := 0.08, radius := RADIUS, pad := 12.0, edge_col := Color(1, 1, 1)) -> StyleBoxFlat:

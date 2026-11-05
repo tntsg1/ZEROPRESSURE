@@ -64,16 +64,21 @@ func _ready() -> void:
 	column.add_child(body)
 	# 127 号: the power district's raw figures, folded
 	if zone == "power":
-		detail_key = button(words("详细 ▾", "DETAILS ▾"), func():
-			detail_box.visible = not detail_box.visible
-			detail_key.text = words("详细 ▴", "DETAILS ▴") if detail_box.visible else words("详细 ▾", "DETAILS ▾"))
+		detail_key = button(words("详细 ▾", "DETAILS ▾"), func(): _detail_fold.set_open(not _detail_fold.open))
 		column.add_child(detail_key)
 		detail_box = OpsSkin.Readout.new()
 		detail_box.visible = false
 		column.add_child(detail_box)
+		# 2026-11-04 (BenchFx #052): the figures push what is below down; Esc folds them first
+		_detail_fold = BenchFx.fold(detail_box)
+		_detail_fold.on_toggle = func(open: bool): detail_key.text = words("详细 ▴", "DETAILS ▴") if open else words("详细 ▾", "DETAILS ▾")
+		BenchFx.note(detail_key, words("展开或收起动力区的详细数字", "Show or hide the power district's figures"))
 	column.add_child(OpsSkin.Section.new(words("操作", "CONTROLS")))
 	for b in _actions():
-		column.add_child(button(b[0], b[1]))
+		var ab := button(b[0], b[1])
+		if b.size() > 2:
+			BenchFx.note(ab, str(b[2]))
+		column.add_child(ab)
 	if zone == "process":
 		column.add_child(OpsSkin.Section.new(words("轧机", "ROLLING MILL")))
 		column.add_child(label(words("轧机在本区中部（排烟管右边）：飞到它下面的操作台按 %s，选配方、开轧。", "The mill stands mid-district, right of the flue: press %s at its pedestal to pick a recipe and roll.") % Keys.label("use"), 15))
@@ -130,15 +135,15 @@ func _subtitle() -> String:
 func _actions() -> Array:
 	match zone:
 		"trade":
-			return [[words("打开交易行 · 买入 / 出售", "OPEN THE EXCHANGE · BUY / SELL"), func(): _then(func(): game.open_exchange())]]
+			return [[words("打开交易行 · 买入 / 出售", "OPEN THE EXCHANGE · BUY / SELL"), func(): _then(func(): game.open_exchange()), words("关掉这里，打开交易行：买原料、卖产品", "Close this and open the exchange: buy feed, sell products")]]
 		"process":
 			# 74 号: the rolling mill, a tonne a pass
 			# 85 号: the mill is run at the mill itself, not from here
 			return []
 		"power":
-			return [[words("动力区控制屏 · 单线图 / 仪表 / 手动调度", "POWER CONTROL SCREEN · LINES / GAUGES / DISPATCH"), func(): _then(func(): game.open_power_screen())]]
+			return [[words("动力区控制屏 · 单线图 / 仪表 / 手动调度", "POWER CONTROL SCREEN · LINES / GAUGES / DISPATCH"), func(): _then(func(): game.open_power_screen()), words("关掉这里，打开供电控制屏：看谁在用电、排顺序、暂停电弧炉、买外购电", "Close this and open the power screen: who uses power, the order, the furnace, bought power")]]
 		"ring":
-			return [[words("船坞终端（合同与建设）", "BERTH TERMINAL (CONTRACTS AND WORKS)"), func(): _then(func(): game.open_console("terminal"))]]
+			return [[words("船坞终端（合同与建设）", "BERTH TERMINAL (CONTRACTS AND WORKS)"), func(): _then(func(): game.open_console("terminal")), words("关掉这里，打开船坞终端：找船接单、报修、建设", "Close this and open the berth terminal: ships, contracts, repairs, building")]]
 	return []
 
 
@@ -146,6 +151,7 @@ var repair_box: VBoxContainer
 var _repair_sig := ""
 var detail_key: Button
 var detail_box: OpsSkin.Readout
+var _detail_fold: BenchFx.Fold
 
 
 func _details(rows: Array) -> void:
@@ -170,6 +176,7 @@ func _fill_repair() -> void:
 	_repair_sig = sig
 	for c in repair_box.get_children():
 		c.queue_free()
+	_primary_set = false
 	if st >= 2:
 		repair_box.add_child(label(words("两期都修好了。", "BOTH STAGES DONE."), 15))
 		return
@@ -199,8 +206,11 @@ func _fill_repair() -> void:
 		var b := button("%s  %s" % [Txt.t("rp_fix_parts") if with_parts else Txt.t("rp_fix_cash"), Pal.money(Port.cash(zone, st + 1, with_parts))], _order.bind(with_parts))
 		b.disabled = why != ""
 		repair_box.add_child(b)
-		# what it lacks is the list above: the long why goes on the button's hover card
-		b.tooltip_text = why
+		# what it lacks is the list above: the long why goes on the button's note (人性化 规则 4)
+		BenchFx.note(b, words("付钱修到下一阶，立刻开工；修好后本区多一阶的能力", "Pay and mend it to the next stage, starting now") if not with_parts else words("用零件抵一部分钱，修到下一阶，立刻开工", "Mend it to the next stage with parts and cash, starting now"), why)
+		if why == "" and not _primary_set:
+			_primary_set = true
+			BenchFx.primary(b)
 		if why != "" and not why.begins_with(words("还需要", "STILL NEEDS")) and why.length() <= 24:
 			repair_box.add_child(label("  " + why, 13))
 
@@ -208,9 +218,9 @@ func _fill_repair() -> void:
 func _order(with_parts: bool) -> void:
 	var why := Works.order_port(zone, with_parts)
 	if why != "":
-		message.text = why
+		BenchFx.say(message, why)
 		return
-	message.text = Txt.t("pt_built") % [Port.name_of(zone), Works.cn_num(Port.stage(zone)) if Txt.zh else str(Port.stage(zone))]
+	BenchFx.say(message, Txt.t("pt_built") % [Port.name_of(zone), Works.cn_num(Port.stage(zone)) if Txt.zh else str(Port.stage(zone))])
 	if game != null and game.get("sfx") != null:
 		game.sfx.play("stamp", Vector2.INF, 0.9)
 	_repair_sig = ""
@@ -220,7 +230,7 @@ func _order(with_parts: bool) -> void:
 var biz_box: VBoxContainer
 var _biz_sig := ""
 func _biz_do(r: Dictionary, ok_text: String) -> void:
-	message.text = ok_text if r.get("ok", true) else str(r.reason)
+	BenchFx.say(message, ok_text if r.get("ok", true) else str(r.reason))
 	_biz_sig = ""
 	_fill_biz.call_deferred()
 
@@ -311,7 +321,7 @@ func _gas_row(items: Array) -> HFlowContainer:
 
 
 func _gas_do(r: Dictionary, ok_text: String) -> void:
-	message.text = ok_text if r.ok else str(r.reason)
+	BenchFx.say(message, ok_text if r.ok else str(r.reason))
 	_gas_sig = ""
 	_fill_gas.call_deferred()
 
@@ -423,11 +433,19 @@ func _fill_people() -> void:
 					var c0: String = cut[0]
 					acts.append([str(cut[1]), func(): _say_deal(TradePeople.haggle(id, c0))])
 			acts.append([words("拒绝", "SEND AWAY"), func(): _say_deal(TradePeople.refuse(id))])
-			for a in acts:
+			# what each key does, as TradePeople really does it (by his temper: yes, halfway once, or he leaves)
+			var deal_notes := [words("按他开的价立刻成交", "Deal at his price, now"),
+				words("还价 5%：按他的脾气，答应、回个中间价或走人；砍得少，最容易答应", "Ask 5%: by his temper he agrees, meets you halfway or leaves; the smallest ask is likeliest"),
+				words("还价 12%：按他的脾气，答应、回个中间价或走人", "Ask 12%: by his temper he agrees, meets you halfway or leaves"),
+				words("还价 25%：砍得最狠，最容易被拒，他可能直接走人", "Ask 25%: the hardest ask, likeliest refused; he may just leave"),
+				words("不做这笔，让他走", "No deal: send him away")]
+			for i in acts.size():
+				var a: Array = acts[i]
 				var b := Button.new()
 				b.text = str(a[0])
 				b.custom_minimum_size.y = 36
 				b.pressed.connect(a[1])
+				BenchFx.note(b, str(deal_notes[i]) if acts.size() == 5 or i == 0 else str(deal_notes[4]))
 				row.add_child(b)
 			box.add_child(row)
 		callers.add_child(box)
@@ -441,11 +459,15 @@ func _fill_people() -> void:
 			var have := float(Career.data.get("exchange", {}).get("actors", {}).get("company", {}).get("stock", {}).get(str(c.key), 0.0))
 			box2.add_child(label(words("执行中：每次 %.1f t %s，$%.0f/t · 第 %d / %d 次 · 下次还剩 %d 秒 · 仓库现有 %.1f t%s", "RUNNING: %.1f t OF %s AT $%.0f/t · %d / %d · NEXT IN %d s · %.1f t IN STOCK%s") % [float(c.qty), Ops.item_name(str(c.key)), float(c.price), int(c.done) + 1, int(c.times), ceili(float(c.next_in)), have, words("（不够！）", " (SHORT!)") if have < float(c.qty) else ""], 14))
 			if int(c.done) == 0:
-				box2.add_child(button(words("退掉这份合同（还没开始交货，不扣信誉）", "HAND IT BACK (NO DELIVERY YET)"), func(): _say_deal(TradePeople.drop_contract(w2))))
+				var drop := button(words("退掉这份合同（还没开始交货，不扣信誉）", "HAND IT BACK (NO DELIVERY YET)"), func(): _say_deal(TradePeople.drop_contract(w2)))
+				BenchFx.note(drop, words("立刻退掉：还没交过货，所以不扣信誉", "Hand it back now: nothing delivered yet, so no reputation lost"))
+				box2.add_child(drop)
 		elif not o.offer.is_empty():
 			var of: Dictionary = o.offer
 			box2.add_child(label(words("给你的合同：每 10 分钟交 %.1f t %s，$%.0f/t，一共 %d 次", "OFFER: %.1f t OF %s EVERY 10 MIN AT $%.0f/t, %d TIMES") % [float(of.qty), Ops.item_name(str(of.key)), float(of.price), int(of.times)], 14))
-			box2.add_child(button(words("接下", "TAKE IT"), func(): _say_deal(TradePeople.take_contract(w2))))
+			var take := button(words("接下", "TAKE IT"), func(): _say_deal(TradePeople.take_contract(w2)))
+			BenchFx.note(take, words("立刻接下这份长期合同：按上面的量和价按期交货，守约涨信誉", "Take this standing contract now: deliver the amount above on time; keeping it raises reputation"))
+			box2.add_child(take)
 		else:
 			box2.add_child(label(words("信誉太低，这家暂时不给合同。", "REPUTATION TOO LOW: NO CONTRACT FOR NOW."), 14))
 		org_box.add_child(box2)
@@ -453,15 +475,15 @@ func _fill_people() -> void:
 
 func _say_deal(r: Dictionary) -> void:
 	if not r.ok:
-		message.text = str(r.reason)
+		BenchFx.say(message, str(r.reason))
 	elif str(r.get("said", "")) == "halfway":
-		message.text = words("他摇头，回了个中间价 $%.0f/t。接受或拒绝。", "HE MEETS YOU HALFWAY AT $%.0f/t.") % float(r.price)
+		BenchFx.say(message, words("他摇头，回了个中间价 $%.0f/t。接受或拒绝。", "HE MEETS YOU HALFWAY AT $%.0f/t.") % float(r.price))
 	elif str(r.get("said", "")) == "no":
-		message.text = words("他不干，开船走了。", "HE SAID NO AND LEFT.")
+		BenchFx.say(message, words("他不干，开船走了。", "HE SAID NO AND LEFT."))
 	elif r.has("total"):
-		message.text = words("成交：$%.0f/t，共 %s。", "DONE: $%.0f/t, %s IN ALL.") % [float(r.price), Pal.money(float(r.total))]
+		BenchFx.say(message, words("成交：$%.0f/t，共 %s。", "DONE: $%.0f/t, %s IN ALL.") % [float(r.price), Pal.money(float(r.total))])
 	else:
-		message.text = words("好。", "DONE.")
+		BenchFx.say(message, words("好。", "DONE."))
 	_people_sig = ""
 	_fill_people.call_deferred()
 
@@ -629,9 +651,18 @@ func _item_name(key: String) -> String:
 	return Ops.item_name(key)
 
 
+var _primary_set := false
+
+
 func close() -> void:
+	if BenchFx.leaving(self):
+		return
+	# 2026-11-04 (BenchFx): closes at once; its picture slides back out on its own layer
+	var handed := BenchFx.leave(self)
 	if on_close.is_valid():
 		on_close.call()
+	elif not handed:
+		queue_free()
 
 
 func _unhandled_input(event: InputEvent) -> void:

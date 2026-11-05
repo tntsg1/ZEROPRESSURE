@@ -41,7 +41,8 @@ func _run() -> void:
 		check(not tx.contains("修好后："), "%s: the repair section does not say it again" % z)
 		var tips := 0
 		for b in g.console_ui.find_children("*", "Button", true, false):
-			if str(b.tooltip_text).begins_with("还需要"):
+			# 2026-11-04 (人性化 规则 4): the why is on the bench's own hover note now (BenchFx.note)
+			if str(b.tooltip_text).begins_with("还需要") or str(b.get_meta("bfx_why", "")).begins_with("还需要"):
 				tips += 1
 		check(tips >= 1 or Port.stage(z) >= 2, "%s: the long lack on the button's hover card (%d)" % [z, tips])
 		Cap.save(root, "res://tests/out/district108_%s_zh.png" % z)

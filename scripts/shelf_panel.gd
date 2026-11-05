@@ -36,6 +36,7 @@ func _ready() -> void:
 		var parts_b := Button.new()
 		parts_b.name = "PartsRack"
 		parts_b.text = w("零件架 · %d 件", "PARTS RACK · %d") % Career.data.get("parts", []).size()
+		BenchFx.note(parts_b, w("打开零件架：看架上有哪些零件、成色多少", "Open the parts rack: what is on it, in what condition"))
 		parts_b.custom_minimum_size.y = 42
 		parts_b.pressed.connect(func():
 			close()
@@ -88,6 +89,7 @@ func _fill() -> void:
 		for u in Warehouse.USES:
 			pick.add_item(Warehouse.use_name(u))
 		pick.selected = Warehouse.USES.find(str(use[i]))
+		BenchFx.note(pick, w("选这一排货架放哪类货：立刻生效", "Choose what this row of racks holds: takes effect at once"))
 		var idx: int = i
 		pick.item_selected.connect(func(j):
 			var res := Warehouse.set_row(idx, Warehouse.USES[j])

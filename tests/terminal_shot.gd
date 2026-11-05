@@ -48,7 +48,9 @@ func _process(_dt: float) -> bool:
 			term.set_tab(2)
 		190:
 			Cap.save(root, "res://tests/out/term_berth%s.png" % l)
-			Game.contract = term.offers()[1]
+			# fewer than two offers on the board now: the test makes its own (the market's own maker)
+			var offs: Array = term.offers()
+			Game.contract = offs[1] if offs.size() > 1 else Market.offer_for(int(Career.data.get("seed", 0)) + 101, Career.data, 1, "full", "gr7")
 			term.queue_free()
 			game = load("res://scenes/main.tscn").instantiate()
 			game.bot = {"skip_intro": true, "aim": Vector2(900, -300), "lmb": false, "move": Vector2.ZERO}
