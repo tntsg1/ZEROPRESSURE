@@ -33,7 +33,10 @@ const DECK_Y := 10.8          # the deck's top
 const DECK_X := Vector2(22.6, 51.8)
 const BERTH_X := [45.0, 31.0]  # T-01 (near lane, far in), T-02 (far lane)
 const GATE := Vector2(5.0, 10.6)   # the tug gate in the left wall, top and bottom
-const OUT_X := -18.0          # where a tug is out of sight beyond the wall
+# where a tug waits outside the gate, handed over to or from the flights outside (scripts/tow_traffic.gd).
+# 2026-11-05: -18 put its aft pod against the sterns of the yard's berths (their sterns at -26): now it
+# stands just clear of the wall (its nose 2.9 m off), 9 m clear of the yard's column
+const OUT_X := -9.5
 const AFT := 5.2              # m from a tug's middle to its aft pod's lifting point
 const POD_K := 0.5            # a tug's pod at half the drawing's size
 const POD_ON_TUG := 7.15      # the pod's lifting point fitted (its bottom at the tug's belly line)
@@ -110,6 +113,26 @@ static var _look := 0.0        # s to the next look at the yard's berth 1
 static var _docked := {}
 static var events: Array = []  # [sound, box-local m] for the machines' real-recording one-shots, drained by the drawer
 static var _was := {}
+# tugs out on a tow, a push or a flight home seen on camera (scripts/tow_traffic.gd draws them):
+# not on the deck, not flown in, until they are let go at the gate (then they fly in as any tug home)
+static var held := {}
+static var gate_call := false   # a tug flying home is near: the gate opens before it gets there
+
+
+static func hold(i: int) -> void:
+	if i < 0 or i >= dock.size():
+		return
+	held[i] = true
+	dock[i] = 0.0
+
+
+static func release(i: int) -> void:
+	held.erase(i)
+
+
+# where a tug waits outside the tug gate (box-local m, its skids): where it is handed over
+static func gate_spot() -> Vector2:
+	return Vector2(OUT_X, DECK_Y)
 
 
 static func w(zh: String, en: String) -> String:
@@ -126,7 +149,7 @@ static func reset() -> void:
 	arm = [0.0, 0.0]; umb = [0.0, 0.0]; steps = []; job_tug = -1; queue = []; wait = 0.0; wait2 = 0.0
 	tank_show = TugYard.tank(); pump = 0.0; fuel_left = 0.0; fuel_tug = -1
 	t = 0.0; lifts = 0; preps = 0; _home = {}; _primed = false; events = []; _was = {}
-	home_now = [false, false]; count_now = 0; _look = 0.0; _docked = {}
+	home_now = [false, false]; count_now = 0; _look = 0.0; _docked = {}; held = {}; gate_call = false
 
 
 static func powered() -> bool:
@@ -183,7 +206,7 @@ static func tick(dt: float) -> void:
 	var moving_tug := false
 	for i in dock.size():
 		var exists := i < count_now
-		var home: bool = home_now[i]
+		var home: bool = home_now[i] and not held.has(i)
 		if _primed and home and not bool(_home.get(i, true)):
 			homecoming(i)
 		if not _primed:
@@ -200,7 +223,7 @@ static func tick(dt: float) -> void:
 		var fueling := fuel_tug == i and fuel_left > 0.0 and berthed and on
 		arm[i] = move_toward(float(arm[i]), 1.0 if fueling else 0.0, dt * 0.6)
 		umb[i] = move_toward(float(umb[i]), 1.0 if berthed and exists and TugYard.charge(name) < 1.0 else 0.0, dt * 0.8)
-	gate = move_toward(gate, 1.0 if moving_tug else 0.0, dt * 0.5)
+	gate = move_toward(gate, 1.0 if moving_tug or gate_call else 0.0, dt * 0.5)
 	_primed = true
 	# the deck's swaps
 	if steps.is_empty() and not queue.is_empty() and on:

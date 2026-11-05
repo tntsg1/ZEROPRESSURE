@@ -111,6 +111,14 @@ func _ready() -> void:
 	moving.draw.connect(_draw_moving)
 	add_child(moving)
 	TugWorks.reset()
+	# 128 号 第 3 段: the districts' broken look and their lighting up when mended, under the game
+	# itself (this node is hidden while nobody is in a district) — scripts/revive_host.gd
+	if game != null and not game.has_meta("revive_host"):
+		var rh = preload("res://scripts/revive_host.gd").new()
+		rh.game = game
+		rh.interiors = self
+		game.set_meta("revive_host", rh)
+		game.add_child.call_deferred(rh)
 	tug_art = TugArt.new()
 	tug_art.font = font
 	# 96 号: the facility card over the machines (scripts/facility_card.gd)
@@ -185,6 +193,10 @@ func _busy(zone: String) -> float:
 	var stage := Port.stage(zone) if zone != "ring" else Port.stage("power")
 	if stage < 1:
 		return 0.0
+	# 128 号 第 3 段: lighting up after its mending, the machinery starts in turn (district_revive.gd)
+	var held := preload("res://scripts/district_revive.gd").held(zone)
+	if held >= 0.0:
+		return held
 	var k := 0.3
 	match zone:
 		"power":
@@ -605,8 +617,8 @@ func _desk_items(zone: String) -> Array:
 			if Consoles.rack_on() and game.career():
 				var n: int = Career.data.get("parts", []).size()
 				if StoreBook.live():
-					add.call(Consoles.rack_centre() + Vector2(0.2, 0.0) * m, "rack", w("仓库柜台", "STORES COUNTER"), w("拆回来的东西都在公司仓库里。在这里可以卖给回收站，或者留着。", "Everything off the ships is in the company stores: sell it to the recycling station here, or keep it."),
-						w("已用 %d/%d 格", "%d/%d CELLS") % [StoreBook.used(), StoreBook.cap()], w("飞到柜台前按 %s 打开仓库。之后在哪都能按 F3。", "At the counter press %s. Then F3 anywhere.") % use_key, "ok")
+					add.call(Consoles.kiosk_at(), "store", w("仓库终端", "STORES TERMINAL"), w("主仓库在货运区，这台小终端用线缆连过去。拆回来的东西都在公司仓库里：在这里可以卖给回收站，或者留着。", "The main stores are in the cargo district; this little terminal is wired to them. Everything off the ships is in the company stores: sell it to the recycling station here, or keep it."),
+						w("已用 %d/%d 格", "%d/%d CELLS") % [StoreBook.used(), StoreBook.cap()], w("飞到终端前按 %s 打开仓库。之后在哪都能按 F3。", "At the terminal press %s. Then F3 anywhere.") % use_key, "ok")
 				else:
 					add.call(Consoles.rack_centre() + Vector2(0.2, 0.0) * m, "rack", w("零件架", "PARTS RACK"), w("拆下来留着的零件放在这里，一格一件。货运区修好后零件改放仓库货架。", "The parts kept from the ships, one to a cubby. Once the cargo district is mended they live on its racks."),
 						w("%d 件" % n, "%d PARTS" % n), w("飞到架前按 %s 打开零件架。", "At the rack press %s.") % use_key, "ok" if n > 0 else "off")

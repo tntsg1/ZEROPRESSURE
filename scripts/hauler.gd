@@ -20,7 +20,8 @@ const MAX_T := 1.5
 # carries, braking into where it is going; it keeps off the ship's walls on the
 # berth's navigation grid (scripts/nav.gd) and eases round loose pieces, the
 # other hauler and the operator.
-const VMAX := Drone.VMAX * 0.92   # px/s empty
+const VMAX := 430.0 * 0.92   # the hauler keeps its own pace (the drone was sped up 2026-11-05)
+#   # px/s empty
 const ACCEL := Drone.ACCEL * 2.0  # px/s² empty (the operator's assisted drone: ~2.3x)
 const LOAD_V := 0.62              # top speed with a full 1.5 t load, as a share
 const ARRIVE := 10.0              # px: there

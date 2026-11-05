@@ -1,4 +1,6 @@
 extends Node2D
+const TugRig = preload("res://scripts/tug_rig.gd")
+const W = preload("res://scripts/tug_works.gd")
 # Tugs at the port (design/…/63_主线重整第3批, 60 号 Q3; player 2026-10-25: "I want to see the tug
 # bring it in"). In the empty berth: a hulk that has come home is brought in on camera — the tug
 # pushing it in from open space below the port to the waiting berth beside the dock, where it
@@ -26,6 +28,8 @@ var _sig := "-"
 func _ready() -> void:
 	font = Fonts.get_font("Regular")
 	z_index = -1
+	# a new scene: the deck has every tug home on its berth again (TugWorks primes it)
+	W.held = {}
 
 
 # where a hulk lies in the tug yard (px, the ship's own origin): its stern on the berth's mark
@@ -50,7 +54,7 @@ func _shape(ship: String) -> Array:
 				y1 = maxf(y1, v.y)
 			if pts.size() >= 3:
 				polys.append(pts)
-		_shapes[ship] = [_silhouette(polys), Vector2(x1, (y0 + y1) * 0.5) if x1 > -INF else Vector2(40.0, 0.0)]
+		_shapes[ship] = [_silhouette(polys), Vector2(x1, (y0 + y1) * 0.5) if x1 > -INF else Vector2(40.0, 0.0), y1 - y0 if x1 > -INF else 12.0]
 	return _shapes[ship]
 
 
@@ -123,7 +127,10 @@ func _process(dt: float) -> void:
 			for a in ShipMarket.data().assets:
 				if str(a.state) == "towing" and not a.get("seen_out", false):
 					a.seen_out = true
-					departures.append({"t": 0.0, "from": PortStructure.box("tug").position + Vector2(-6.0, 10.0) * Geom.M})
+					# the company's tug that flies it (a hired one never was at the station)
+					var ti := TugFleet.NAMES.find(str(a.get("tug", "")))
+					if ti >= 0:
+						departures.append({"t": 0.0, "i": ti})
 		# a hulk home: brought in on camera when the operator is free in the berth
 		# the bringing-in was cut short by something else taking the game out of it: end it, give the
 		# camera back
@@ -146,20 +153,21 @@ func _process(dt: float) -> void:
 			var a := due()
 			if not a.is_empty():
 				start(a)
-	for d in departures.duplicate():
-		d.t += dt
-		if float(d.t) >= OUT_T:
-			departures.erase(d)
+	_depart(dt)
+	_fly(dt)
 	# redraw only while something moves, or when the hulks waiting change
 	var sig := str(_parked.map(func(p): return p.id))
-	if not arrival.is_empty() or not departures.is_empty() or sig != _sig:
+	if not arrival.is_empty() or not departures.is_empty() or not flights.is_empty() or sig != _sig:
 		_sig = sig
 		queue_redraw()
 
 
 func start(a: Dictionary) -> void:
-	var sh := _shape(str(a.listing.offer.ship))
-	arrival = {"id": str(a.id), "polys": sh[0], "stern": sh[1], "t": 0.0, "slot": TugYard.assign(a), "ship": str(a.listing.offer.ship)}
+	var ship := str(a.listing.offer.ship)
+	var sh := _shape(ship)
+	var slot := TugYard.assign(a)
+	arrival = {"id": str(a.id), "polys": sh[0], "stern": sh[1], "h": float(sh[2]), "t": 0.0, "slot": slot, "ship": ship}
+	_plan(arrival, str(a.get("tug", "")))
 	game.state = "towin"
 	game.state_t = 0.0
 	game.tools.release_grab(false)
@@ -167,35 +175,222 @@ func start(a: Dictionary) -> void:
 		game.hud.show_hint(Ops.w("拖船把 %s 拖回来了，停进拖船站外的泊位。按 Esc 跳过。", "The tug is bringing %s in to the tug yard. Esc skips.") % str(a.id))
 
 
-# where the hulk is, 0..1 through the bringing-in (px)
+# ---------------------------------------------------------------- the tow, planned
+# user 2026-11-05: the company's own tug that flew it (asset.tug) brings it in, stern first. Jev C
+# 0.62: the long haul on the tow line — taut while the tug's main drive speeds the two of them up,
+# loose while they coast and the winch reels it in — then the tow arm locks on the stern and the
+# tug's bow retros brake the hulk (a line can only pull). Outside berths the tug brings it to rest
+# itself, casts off and flies to the tug gate; into the station's mouth it brings it to rest off the
+# wall with the tug at the gate's own height, casts off there (the deck takes it in,
+# scripts/tug_works.gd), and the mouth's winch hauls the hulk the last way in onto its clamp arms.
+# A long ship with both tugs home is towed by the two, one on each half of its stern.
+const LINE_M := 24.0            # m of tow line out on the long haul
+const LONG := 60.0              # m: a ship this long gets both tugs
+const PHASES := [2.8, 1.0, 3.2, 1.0]        # s: haul, reel in, brake, cast off (outside berths)
+const PHASES_MOUTH := [2.6, 1.0, 2.4, 2.0]  # … haul, reel in, brake, the winch takes it in
+
+func _plan(arr: Dictionary, tug_name: String) -> void:
+	var M := Geom.M
+	var slot := int(arr.slot)
+	var ship := str(arr.ship)
+	var mouth: bool = slot == 0 and TugYard.dock_in(ship) > 0.0
+	var h := float(arr.h)
+	var p2 := TugYard.slot_px(slot, ship)
+	var p0 := p2 + FROM * M
+	# out of open space, the last of it level, straight at the berth (the stern into the mouth square on)
+	var c1 := p0 + Vector2(70.0, 80.0) * M
+	var c2 := p2 + Vector2(-70.0, 0.0) * M
+	var tab := PackedFloat32Array([0.0])
+	var prev := p0
+	for i in range(1, 97):
+		var q := _bez(p0, c1, c2, p2, i / 96.0)
+		tab.append(tab[i - 1] + q.distance_to(prev))
+		prev = q
+	arr.bez = [p0, c1, c2, p2]
+	arr.tab = tab
+	arr.mouth = mouth
+	var ph: Array = PHASES_MOUTH if mouth else PHASES
+	arr.ph = ph
+	var L: float = tab[tab.size() - 1]
+	# the mouth: brought to rest with the tug at the gate, then winched the rest of the way in
+	var d_in := 0.0
+	var lock_mouth := Vector2.ZERO
+	if mouth:
+		var gate_skid := PortStructure.box("tug").position + W.gate_spot() * M
+		var stop_x := gate_skid.x - 13.0 * M
+		d_in = maxf(p2.x - stop_x, 4.0 * M)
+		lock_mouth = gate_skid - (p2 - Vector2(d_in, 0.0))
+	arr.d_in = d_in
+	var s_stop := L - d_in
+	arr.vmax = s_stop / (float(ph[0]) * 0.5 + float(ph[1]) + float(ph[2]) * 0.5)
+	# who tows
+	var tugs: Array = []
+	var main := TugFleet.NAMES.find(tug_name)
+	if main < 0 or main >= TugFleet.count():
+		tugs.append({"i": -1, "name": Ops.w("租用拖船", "HIRED TUG"), "hire": true})
+	else:
+		tugs.append({"i": main, "name": tug_name, "hire": false})
+		var other := 1 - main
+		var long_ship := float(Market.type_of(ship).get("length", 0.0)) >= LONG or h >= 16.0
+		if long_ship and not mouth and other < TugFleet.count() and TugFleet.home(other) and not W.held.has(other):
+			tugs.append({"i": other, "name": TugFleet.NAMES[other], "hire": false})
+	for k in tugs.size():
+		var tg: Dictionary = tugs[k]
+		if tugs.size() == 1:
+			tg.dy = 0.0
+		else:
+			tg.dy = (-1.0 if k == 0 else 1.0) * h * 0.26
+		tg.seed = float(k) * 2.3
+		# the arm locked: outside, the tug's thrust line level with its shackle, the arm 9 m off the
+		# drum; into the mouth, the tug up at the gate
+		tg.lock = lock_mouth if mouth else Vector2(10.9, -TugRig.AXIS) * M
+		if int(tg.i) >= 0:
+			W.hold(int(tg.i))
+	arr.tugs = tugs
+
+
+static func _bez(p0: Vector2, c1: Vector2, c2: Vector2, p3: Vector2, u: float) -> Vector2:
+	var v := 1.0 - u
+	return p0 * v * v * v + c1 * 3.0 * v * v * u + c2 * 3.0 * v * u * u + p3 * u * u * u
+
+
+# a point (px) on the hulk stern's way in, s px along it (past its end: on along the last, level leg)
+func _along(s: float) -> Vector2:
+	var b: Array = arrival.bez
+	var tab: PackedFloat32Array = arrival.tab
+	var L: float = tab[tab.size() - 1]
+	if s >= L:
+		return (b[3] as Vector2) + Vector2(s - L, 0.0)
+	if s <= 0.0:
+		return b[0]
+	var i := clampi(tab.bsearch(s), 1, tab.size() - 1)
+	var u := (float(i - 1) + (s - tab[i - 1]) / maxf(tab[i] - tab[i - 1], 0.001)) / 96.0
+	return _bez(b[0], b[1], b[2], b[3], u)
+
+
+# how far along its way the stern is t s in (px), from the burns: sped up on the line, coasting
+# while it is reeled in, braked on the arm to rest, then winched in or lying still
+func _s_at(t: float) -> float:
+	var ph: Array = arrival.ph
+	var v := float(arrival.vmax)
+	var t0 := float(ph[0])
+	var t1 := t0 + float(ph[1])
+	var t2 := t1 + float(ph[2])
+	if t <= 0.0:
+		return 0.0
+	if t < t0:
+		return 0.5 * v / t0 * t * t
+	var s := 0.5 * v * t0
+	if t < t1:
+		return s + v * (t - t0)
+	s += v * float(ph[1])
+	if t < t2:
+		var u := t - t1
+		return s + v * u - 0.5 * v / float(ph[2]) * u * u
+	s += v * float(ph[2]) * 0.5
+	if bool(arrival.mouth):
+		return s + float(arrival.d_in) * Pal.ease_io(clampf((t - t2) / float(ph[3]), 0.0, 1.0))
+	return s
+
+
+func _phase(t: float) -> int:
+	var ph: Array = arrival.ph
+	var acc := 0.0
+	for i in ph.size():
+		acc += float(ph[i])
+		if t < acc:
+			return i
+	return ph.size()
+
+
+# where the hulk is, 0..1 through the bringing-in (px, its own origin)
 func path_at(k: float) -> Vector2:
-	var e := Pal.ease_io(clampf(k, 0.0, 1.0))
-	var p2 := moor(int(arrival.get("slot", 0)), arrival.get("stern", Vector2.ZERO), str(arrival.get("ship", "")))
-	var p0 := p2 + FROM * Geom.M
-	var p1 := p2 + VIA * Geom.M
-	return p0.lerp(p1, e).lerp(p1.lerp(p2, e), e)
+	if arrival.is_empty() or not arrival.has("tab"):
+		return Vector2.ZERO
+	return _along(_s_at(clampf(k, 0.0, 1.0) * IN_T)) - (arrival.stern as Vector2) * Geom.M
 
 
-# one frame of the bringing-in, while the game is in "towin": the camera on the tug
+# tug k's shackle on the stern t s in (px)
+func _shackle(k: int, t: float) -> Vector2:
+	return _along(_s_at(t)) + Vector2(0.0, float(arrival.tugs[k].dy)) * Geom.M
+
+
+# tug k's skids t s in (px): ahead on the line, then drawn in to the arm and locked there
+func _tug_px(k: int, t: float) -> Vector2:
+	var M := Geom.M
+	var tg: Dictionary = arrival.tugs[k]
+	var ph: Array = arrival.ph
+	var sh := _shackle(k, t)
+	var s := _s_at(t)
+	var on_line := _along(s + LINE_M * M) + Vector2(-TugRig.HITCH.x, float(tg.dy) - TugRig.AXIS) * M - sh
+	var t0 := float(ph[0])
+	var t1 := t0 + float(ph[1])
+	var off: Vector2 = on_line
+	if t >= t1:
+		off = tg.lock
+	elif t > t0:
+		off = on_line.lerp(tg.lock, Pal.ease_io((t - t0) / float(ph[1])))
+	return sh + off
+
+
+# the tug's acceleration t s in (m/s²), from how it moves
+func _tug_acc(k: int, t: float) -> Vector2:
+	var h := 1.0 / 60.0
+	return (_tug_px(k, t + h) - 2.0 * _tug_px(k, t) + _tug_px(k, t - h)) / (h * h) / Geom.M
+
+
+func _cast_t() -> float:
+	return float(arrival.ph[0]) + float(arrival.ph[1]) + float(arrival.ph[2])
+
+
+# one frame of the bringing-in, while the game is in "towin": the camera on the hulk
+var shot := {}                  # tests: {cam (px), zoom}: the bringing-in held still under that camera
 func step_cine(dt: float) -> void:
 	if arrival.is_empty():
 		game.end_towin()
 		return
-	arrival.t = float(arrival.t) + dt
-	var k: float = float(arrival.t) / IN_T
+	if not shot.is_empty():
+		game.cam_override = shot.cam
+		game.zoom_override = float(shot.zoom)
+		return
+	var before := float(arrival.t)
+	arrival.t = before + dt
+	var tt := float(arrival.t)
+	var k: float = tt / IN_T
 	var at := path_at(k)
 	# led by its speed, so the camera's spring does not leave it behind (game.CAM_LAG)
 	var v := (path_at(k + 1.0 / (60.0 * IN_T)) - at) * 60.0
 	game.cam_override = at + Vector2(float(arrival.stern.x) * 0.5, float(arrival.stern.y)) * Geom.M + v * game.CAM_LAG
 	game.zoom_override = 0.32 if k < 0.6 else lerpf(0.32, 0.5, (k - 0.6) / 0.4)
+	if before < _cast_t() and tt >= _cast_t():
+		_let_go()
 	if k >= 1.0:
 		finish()
 
 
-# the bringing-in done (or skipped): the hulk at the waiting berth, seen for good
+# the tugs cast off, at rest where the arm held them; each flies home to the gate (a hired one away)
+func _let_go() -> void:
+	if arrival.get("cast", false) or not arrival.has("tugs"):
+		return
+	arrival.cast = true
+	for k in arrival.tugs.size():
+		var tg: Dictionary = arrival.tugs[k]
+		var p := _tug_px(k, _cast_t())
+		if bool(tg.hire):
+			flights.append({"i": -1, "p": p, "v": Vector2.ZERO, "face": 1.0, "to_face": -1.0, "away": true, "t": 0.0, "hire": true, "name": tg.name, "seed": tg.seed})
+		elif bool(arrival.mouth):
+			# it is at the gate already: the deck takes it in
+			W.release(int(tg.i))
+		else:
+			flights.append({"i": int(tg.i), "p": p, "v": Vector2.ZERO, "face": 1.0, "to_face": 1.0, "away": false, "t": 0.0, "hire": false, "name": tg.name, "seed": tg.seed})
+
+
+# the bringing-in done (or skipped): the hulk at the waiting berth, seen for good, its tugs cast off
+# where the arm would have left them and on their way home
 func finish() -> void:
 	if arrival.is_empty():
 		return
+	_let_go()
 	var id := str(arrival.id)
 	arrival = {}
 	var a := ShipMarket.asset(id)
@@ -211,6 +406,89 @@ func finish() -> void:
 	_refresh()
 
 
+# ---------------------------------------------------------------- tugs on their own: home or away
+# A flight is one tug flying itself: to the tug gate (holding a tug's length off it while another
+# goes in), handed to the deck there (TugWorks.release); or away into open space (a tug sent out, a
+# hired tug done). Each axis burns and brakes in time like the station's machines; the tug yaws
+# round before it flies nose first.
+var flights: Array = []
+const FLY_V := 34.0             # m/s
+const FLY_A := 11.0             # m/s²
+const YAW_S := 0.9              # s to turn round
+
+
+func _gate_px() -> Vector2:
+	return PortStructure.box("tug").position + W.gate_spot() * Geom.M
+
+
+# another tug in the gate, or nearer it than this one on the way home: this one holds off
+func _gate_busy(me: Dictionary) -> bool:
+	for j in W.dock.size():
+		if j != int(me.i) and j < TugFleet.count() and not W.held.has(j) and bool(W.home_now[j]) and float(W.dock[j]) < 0.3:
+			return true
+	for f in flights:
+		if f != me and int(f.i) >= 0 and not bool(f.away) and float(f.get("near", 99.0)) < float(me.get("near", 99.0)):
+			return true
+	return false
+
+
+func _fly(dt: float) -> void:
+	var M := Geom.M
+	var call := false
+	for f in flights:
+		if not bool(f.away) and float(f.get("near", 99.0)) < 25.0:
+			call = true
+	W.gate_call = call
+	for f in flights.duplicate():
+		f.t = float(f.t) + dt
+		# turning round first, drifting
+		if float(f.face) != float(f.to_face):
+			f.face = move_toward(float(f.face), float(f.to_face), dt * 2.0 / YAW_S)
+			f.p = (f.p as Vector2) + (f.v as Vector2) * dt
+			f.acc = Vector2.ZERO
+			continue
+		if not f.has("from"):
+			f.from = f.p
+		var to: Vector2
+		if bool(f.away):
+			to = (f.from as Vector2) + Vector2(-230.0, -190.0) * M
+		else:
+			to = _gate_px()
+			f.near = (f.p as Vector2).distance_to(to) / M
+			# another tug going in first: this one holds above the gate, in the clear lane between the
+			# yard's column of sterns and the station's wall, a tug's height and a margin off it
+			if _gate_busy(f):
+				to += Vector2(0.0, -8.5) * M
+		var p: Vector2 = (f.p as Vector2) / M
+		var v: Vector2 = (f.v as Vector2) / M
+		var goal := to / M
+		var rx: Array = W._drive(p.x, v.x, goal.x, FLY_V, FLY_A, dt)
+		var ry: Array = W._drive(p.y, v.y, goal.y, FLY_V, FLY_A, dt)
+		var nv := Vector2(float(rx[1]), float(ry[1]))
+		f.acc = (f.get("acc", Vector2.ZERO) as Vector2).lerp((nv - v) / maxf(dt, 1e-4), 0.4)
+		f.p = Vector2(float(rx[0]), float(ry[0])) * M
+		f.v = nv * M
+		if bool(f.away):
+			if float(f.t) > OUT_T + YAW_S or (f.p as Vector2).distance_to(f.from) > 220.0 * M:
+				flights.erase(f)
+		elif (f.p as Vector2).distance_to(_gate_px()) < 0.05 * M and nv.length() < 0.05:
+			W.release(int(f.i))
+			flights.erase(f)
+
+
+# a tug sent out: once the deck has backed it out through the gate, it turns and flies away
+func _depart(dt: float) -> void:
+	for d in departures.duplicate():
+		d.t = float(d.t) + dt
+		var i := int(d.i)
+		if i < 0 or i >= W.dock.size() or float(d.t) > 20.0:
+			departures.erase(d)
+			continue
+		if float(W.dock[i]) <= 0.001:
+			departures.erase(d)
+			flights.append({"i": i, "p": _gate_px(), "v": Vector2.ZERO, "face": 1.0, "to_face": -1.0, "away": true, "t": 0.0, "hire": false, "name": TugFleet.NAMES[i], "seed": float(i) * 2.3})
+
+
 func _draw() -> void:
 	var M := Geom.M
 	for p in _parked:
@@ -218,11 +496,49 @@ func _draw() -> void:
 		if int(p.slot) > 0:
 			_berth_mark(int(p.slot), str(p.id))
 	if not arrival.is_empty():
-		_hulk(arrival.polys, path_at(float(arrival.t) / IN_T), arrival.stern, true, _cut(int(arrival.get("slot", 1)), str(arrival.get("ship", ""))))
-	for d in departures:
-		var e := Pal.ease_in(clampf(float(d.t) / OUT_T, 0.0, 1.0))
-		var p: Vector2 = (d.from as Vector2).lerp((d.from as Vector2) + FROM * M, e)
-		game.dock._tug(p, self)
+		_hulk(arrival.polys, path_at(float(arrival.t) / IN_T), arrival.stern, false, _cut(int(arrival.get("slot", 1)), str(arrival.get("ship", ""))))
+		_draw_tow()
+	for f in flights:
+		TugRig.draw(self, f.p, float(f.face), M, f.get("acc", Vector2.ZERO), _now(), {"hire": f.hire, "seed": f.seed, "name": f.name, "font": font})
+
+
+func _now() -> float:
+	return Time.get_ticks_msec() / 1000.0
+
+
+# the tugs on the tow and what holds them to the hulk
+func _draw_tow() -> void:
+	var M := Geom.M
+	var t := float(arrival.t)
+	var zoom: float = maxf(game.cam_zoom(), 0.05)
+	var ph := _phase(t)
+	var ph_t: Array = arrival.ph
+	var t0 := float(ph_t[0])
+	# the mouth's winch line, from the lip of the mouth to the stern, while it hauls the hulk in
+	if bool(arrival.mouth) and ph == 3:
+		var lip := PortStructure.box("tug").position + Vector2(0.4, W.MOUTH.x + 0.7) * M
+		var sh0 := _shackle(0, t)
+		if sh0.x < lip.x:
+			TugRig.cable(self, lip, sh0, 0.0, M, zoom, _now())
+	if arrival.get("cast", false):
+		return
+	for k in arrival.tugs.size():
+		var tg: Dictionary = arrival.tugs[k]
+		var at := _tug_px(k, t)
+		var drum := TugRig.pt(at, 1.0, M, TugRig.HITCH)
+		var sh := _shackle(k, t)
+		if ph == 0:
+			TugRig.cable(self, drum, sh, 0.0, M, zoom, _now() + k)
+		elif ph == 1:
+			var u := (t - t0) / float(ph_t[1])
+			# coasting, the winch reeling in: the line goes loose, then the arm runs out and locks
+			if u < 0.7:
+				TugRig.cable(self, drum, sh, sin(u / 0.7 * PI) * 0.9, M, zoom, _now() + k)
+			else:
+				TugRig.arm(self, drum, sh, M, zoom)
+		else:
+			TugRig.arm(self, drum, sh, M, zoom)
+		TugRig.draw(self, at, 1.0, M, _tug_acc(k, t), _now(), {"hire": tg.hire, "seed": tg.seed, "name": tg.name, "font": font})
 
 
 # 96 号: a hulk going into the tug station's mouth is drawn only up to the wall; inside, the
@@ -256,8 +572,6 @@ func _hulk(polys: Array, at: Vector2, stern: Vector2, tug: bool, cut := Rect2())
 		ol.append(w[0])
 		# a steady line on screen whatever the zoom (a hair of a world line breaks up from afar)
 		draw_polyline(ol, Pal.ink(0.55), 1.4 / maxf(game.cam_zoom(), 0.05), true)
-	if tug:
-		game.dock._tug(at + stern * M, self)
 
 
 # a yard berth's mark: the bollard frame the stern lies against and its number

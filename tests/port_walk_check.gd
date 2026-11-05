@@ -117,7 +117,8 @@ func _walk(wk) -> int:
 			"hub":
 				await _put(Backdrop.port_centre_px())
 			"station":
-				await _put(Tram.station_at("ring"))
+				# 131 号: the berth's own stop first (the step's own stop)
+				await _put(wk.target())
 			"ride":
 				await _put(Tram.station_at(wk._board_at()))
 				await _e()
@@ -144,7 +145,8 @@ func _walk(wk) -> int:
 				g.console_ui._open_app(1)
 				await _frames(20)
 				check(wk.page_open(), "repair: the terminal's berth page counts")
-				check(wk.layer.visible, "  and the card stays over the terminal")
+				# 131 号 追加: the walk's card never lies over a full-screen page; the terminal shows the step itself
+				check(not wk.layer.visible, "  and the walk's card is hidden over the terminal")
 				await _shot("repair")
 				await _frames(200)
 				check(wk.step == at, "  it holds while the page is open")
@@ -203,7 +205,8 @@ func _run() -> void:
 	check(ok_steps == n, "every step done (%d of %d)" % [ok_steps, n])
 	check(wk.done and not g.walk_on() and Career.data.seen.get("port_walk", false) and not PW.due(), "done: not due again")
 	check(g.tool_ok(2), "tools open again")
-	check(n == 8, "108 号: the first walk is the core only (%d steps, was 21)" % n)
+	check(n == 7, "108/131 号: the first walk is the core only, by shuttle (%d steps)" % n)
+	check(str(wk.steps[0]) == str(["station", "salvage"]) and str(wk.steps[1]) == str(["ride", "ring"]), "131 号: first the berth's stop, then the shuttle to the ring (no flying the corridor)")
 	check(PW.due_part(g) == "", "no district is of use yet: nothing more due")
 	# replayed from the menu: it can be ended
 	g.start_port_walk(false)
@@ -220,7 +223,7 @@ func _run() -> void:
 	g.start_port_walk(true, "process")
 	await _frames(6)
 	var pw = g.port_walk
-	check(pw.part == "process" and not pw.back.is_empty() and pw.kind() == "gate", "it starts from the berth: out to the ring first")
+	check(pw.part == "process" and not pw.back.is_empty() and pw.kind() == "station" and pw.zone() == "salvage", "it starts from the berth: to the berth's stop first")
 	check(pw.count.text.begins_with("加工区现场导览"), "its card names the district (%s)" % pw.count.text)
 	await _shot("process_start")
 	var pn: int = pw.steps.size()
@@ -240,7 +243,7 @@ func _run() -> void:
 	g.start_port_walk(true)
 	await _frames(4)
 	var rw = g.port_walk
-	check(rw.step == at_ride and rw.kind() == "gate", "resumed at the ride home (%d), out of the berth first" % rw.step)
+	check(rw.step == at_ride and rw.kind() == "station" and rw.zone() == "salvage", "resumed at the ride home (%d), to the berth's stop first" % rw.step)
 	rw.stop()
 	await _frames(2)
 	# a walk cut short under the old 21-step round: its number is dropped, the core starts over
@@ -249,7 +252,16 @@ func _run() -> void:
 	Career.data.seen.erase("port_walk")
 	g.start_port_walk(true)
 	await _frames(4)
-	check(g.port_walk.step == 0 and int(Career.data.walk_v) == 2, "an old save's step 14 of 21: the core starts at its first step")
+	check(g.port_walk.step == 0 and int(Career.data.walk_v) == 3, "an old save's step 14 of 21: the core starts at its first step")
+	g.port_walk.stop()
+	await _frames(2)
+	# 131 号: a walk cut short in the 8-step core (at its ride home, step 5 of 8) goes on at the same place
+	Career.data.walk_v = 2
+	Career.data.guide_at = {"port_walk": 4}
+	Career.data.seen.erase("port_walk")
+	g.start_port_walk(true)
+	await _frames(4)
+	check(g.port_walk.step == 3 and str(g.port_walk.steps[3]) == str(["ride", "salvage"]) and int(Career.data.walk_v) == 3, "an 8-step save at its ride home: the 7-step walk at its ride home (%d)" % g.port_walk.step)
 	g.port_walk.stop()
 	await _frames(2)
 	print("PORT WALK %s (%d checks, %d failed)" % ["PASS" if fails == 0 else "FAIL", checks, fails])

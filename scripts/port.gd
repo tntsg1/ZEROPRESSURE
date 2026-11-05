@@ -19,6 +19,7 @@ class_name Port
 # Career.data.port = {zone: stages done}; a stage finished is queued on
 # repaired_pending as "port:<zone>:<n>" for the show back at the berth.
 
+const RepairBill = preload("res://scripts/repair_bill.gd")
 const ZONES := ["power", "salvage", "process", "tug", "trade", "cargo", "ring"]
 # per zone: two stages, each {class: n | "structure": t, "cash": money}
 const STAGES := {
@@ -31,7 +32,10 @@ const STAGES := {
 	"ring": [{"structure": 40.0, "power": 2, "cash": 120000.0}, {"structure": 50.0, "section": 30.0, "drive": 3, "thermal": 2, "cash": 250000.0}],
 }
 # a stage that needs another zone's stage first: zone -> [[other zone, stage], ...] for its stage 1
-const DEPS := {"trade": [["salvage", 1]], "ring": [["power", 1], ["tug", 1]]}
+# 128 号 第 3 段: the trade port no longer waits on the salvage district's stage — the berth's own
+# repairs come first in the main line now, and the salvage district has no console to mend it at
+# (tests/seg3_econ_probe.gd: a fresh career stalled there)
+const DEPS := {"ring": [["power", 1], ["tug", 1]]}
 const TOW_FEE := 1500.0           # per contract while the tug station is down
 const PARTS_SHARE := 0.25          # 74 号: with the materials brought, the crew's wages only
 # the berth repairs that draw on the port's grid: they wait for the power district's stage 1
@@ -57,6 +61,9 @@ static func needs(zone: String, n: int) -> Dictionary:
 
 
 static func cash(zone: String, n: int, with_parts: bool) -> float:
+	# 128 号 第 3 段: the crew is free — what is paid is only what the warehouse lacks, bought at market
+	if RepairBill.ON:
+		return float(RepairBill.of(zone).get("buy_cash", 0.0)) if n == stage(zone) + 1 else 0.0
 	return float(STAGES[zone][clampi(n, 1, 2) - 1].cash) * (PARTS_SHARE if with_parts else 1.0)
 
 
@@ -77,6 +84,11 @@ static func reason(zone: String, with_parts: bool) -> String:
 		for d in DEPS.get(zone, []):
 			parts.append(name_of(str(d[0])))
 		return Txt.t("tm_needs") % ", ".join(parts)
+	if RepairBill.ON:
+		var b := RepairBill.of(zone)
+		if not bool(b.get("cash_ok", true)):
+			return Txt.t("tm_short") % Pal.money(float(b.buy_cash) - float(Career.data.get("money", 0.0)))
+		return ""
 	if with_parts:
 		var pf := Repair.parts_for_needs(needs(zone, n + 1))
 		if not pf.ok:
@@ -178,3 +190,25 @@ static func migrate() -> void:
 		return
 	if not Career.data.has("port"):
 		Career.data.port = {}
+	_migrate_seg3()
+
+
+# 128 号 第 3 段: an older career moves to the new chapters by what it has really mended — every
+# chapter whose district (or berth facility) is mended counts as done, the main line points at the
+# first need not done. Nothing of the career's own is changed; the save is copied first (as 第 1 段 did,
+# G:/zeropower_save_backup/<time>_128_seg3/ for the real save) and the migration noted once.
+static func _migrate_seg3() -> void:
+	var log: Array = Career.data.get("migrations", [])
+	if log.any(func(m): return str(m.get("id", "")) == "128_seg3"):
+		return
+	var fresh: bool = Career.data.get("history", []).is_empty()
+	if not fresh and not StoreBook._backup("128_seg3"):
+		return
+	var done: Array = []
+	for id in Mainline.CHAPTERS:
+		if Mainline.done(id):
+			done.append(id)
+	log.append({"id": "128_seg3", "chapters_done": done, "fresh": fresh})
+	Career.data.migrations = log
+	# a chapter already under way when the save was made says its card once more, in the new words
+	Career.data.erase("main_card")

@@ -80,6 +80,9 @@ static func order_repair(id: String, with_parts: bool) -> String:
 static func order_port(zone: String, with_parts: bool) -> String:
 	if busy():
 		return busy_text()
+	# 128 号 第 3 段: one "修" — own materials first, the rest bought at market, the crew free
+	if RepairBill.ON:
+		return _order_bill(zone)
 	var before := Career.data.duplicate(true)
 	var n := Port.stage(zone) + 1
 	var cost := Port.cash(zone, n, with_parts)
@@ -100,6 +103,38 @@ static func order_port(zone: String, with_parts: bool) -> String:
 		Career.data = before
 		return Txt.t("gr_save_failed")
 	return ""
+
+
+const RepairBill = preload("res://scripts/repair_bill.gd")
+
+
+static func _order_bill(zone: String) -> String:
+	var n := Port.stage(zone) + 1
+	var secs := float(RepairBill.of(zone).get("secs", 30.0))
+	var why := RepairBill.pay(zone)
+	if why != "":
+		return why
+	var d := Career.data
+	var tag := "port:%s:%d" % [zone, n]
+	if not BUILD_TIME:
+		var pt: Dictionary = d.get("port", {})
+		pt[zone] = n
+		d.port = pt
+		_revive(zone, n)
+		Career.save()
+		return ""
+	d.works = {"id": tag, "kind": "port", "zone": zone, "stage": n, "bill": true, "total": secs, "left": secs}
+	if not Career.save():
+		return Txt.t("gr_save_failed")
+	return ""
+
+
+# 第 3 段: a district mended lights up a stretch at a time where it stands (scripts/district_revive.gd,
+# the small live picture), the camera staying with the player — not the berth's repair show
+static func _revive(zone: String, n: int) -> void:
+	var rp: Array = Career.data.get("revive_pending", [])
+	rp.append({"zone": zone, "stage": n})
+	Career.data.revive_pending = rp
 
 
 # 87-5: while a load hangs on a crane or the boat's hook, nobody flies under it: the drone inside
@@ -147,9 +182,12 @@ static func finish() -> bool:
 		d.port = pt
 	else:
 		d.upgrades[str(j.id)] = 1
-	var pend: Array = d.get("repaired_pending", [])
-	pend.append(str(j.id))
-	d.repaired_pending = pend
+	if str(j.kind) == "port" and j.get("bill", false):
+		_revive(str(j.zone), int(j.stage))
+	else:
+		var pend: Array = d.get("repaired_pending", [])
+		pend.append(str(j.id))
+		d.repaired_pending = pend
 	d.erase("works")
 	if not Career.save():
 		Career.data = before

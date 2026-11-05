@@ -591,7 +591,7 @@ func _soot(p) -> void:
 
 # an industrial pusher tug, side on, nose (+x) to the right: the hull on two landing skids, the
 # cockpit, the push plate with its fenders, the tow winch, the RCS quads; its aft pod is separate
-func _tug(p) -> void:
+func _tug(p, fenders := true) -> void:
 	var edge := _ink(0.82)
 	var hull := PackedVector2Array([Vector2(-5.6, -0.6), Vector2(5.0, -0.6), Vector2(5.9, -1.5), Vector2(5.9, -3.1), Vector2(4.6, -4.5), Vector2(-3.0, -4.5), Vector2(-5.6, -3.7)])
 	for sx in [-3.4, 3.2]:
@@ -614,7 +614,8 @@ func _tug(p) -> void:
 	p.rect(Rect2(0.6, -3.7, 1.1, 2.0), _ink(0.55), false, 0.04)
 	# the push plate with its fenders
 	p.rect(Rect2(5.9, -3.9, 0.35, 3.0), FACE2)
-	for k in 3:
+	# out on a tow (scripts/tug_rig.gd) the fenders are drawn apart, squeezed by the push
+	for k in (3 if fenders else 0):
 		p.rect(Rect2(6.25, -3.7 + k * 0.95, 0.3, 0.7), Color(0.03, 0.03, 0.035))
 	# the tow winch on top, its boom
 	p.rect(Rect2(-2.4, -5.0, 1.8, 0.5), FACE2)
@@ -808,16 +809,15 @@ func _deck_moving(ci: CanvasItem, t: float, on: bool) -> void:
 			_pod_at(ci, Vector2(lx, ly), str(W.lift_pod[i]), 1.0)
 	# the tugs: the far lane first (T-02, dimmer and a touch higher), then the near
 	for i in [1, 0]:
-		if i >= W.count_now and float(W.dock[i]) <= 0.001:
+		# out beyond the wall (away, or out on a tow seen on camera) the tow traffic draws it
+		# (scripts/tow_traffic.gd); waiting at the gate to be let in, it is drawn here, whole
+		if float(W.dock[i]) <= 0.001 and (W.held.has(i) or not bool(W.home_now[i]) or i >= W.count_now):
 			continue
 		var at := W.tug_at(i)
-		if at.x < -12.0:
-			continue
 		var far: bool = i == 1
 		var mod := Color(0.78, 0.78, 0.8) if far else Color.WHITE
 		var off := Vector2(0.0, -0.25) if far else Vector2.ZERO
-		var fade := smoothstep(-12.0, -6.0, at.x)
-		mod.a = fade
+		mod.a = 1.0
 		var flying := float(W.dock[i]) > 0.001 and float(W.dock[i]) < 0.999
 		var hover := 0.0
 		if flying:

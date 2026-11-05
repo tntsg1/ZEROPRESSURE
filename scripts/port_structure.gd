@@ -19,7 +19,18 @@ var hub                          # 109 号: the central transfer ring's machines
 const ConsoleArt = preload("res://scripts/console_art.gd")
 const DOOR := 6.0                # m: a district's door
 const HALF := 3.0                # m: half a corridor's width (PortArt's truss)
-const RING_CONSOLE := Vector2(112.0, 17.0)   # 129 号: the hub's business console, ° and m from the centre
+const HALF_SALVAGE := 5.5        # 130 号: the berth's corridor, wide enough for a freight siding beside the line
+
+
+static func half(zone: String) -> float:
+	return HALF_SALVAGE if zone == "salvage" else HALF
+# 129/130 号: the hub's business console, ° and m from the centre. 130 号 review: at 152°, R 17 it stood
+# squeezed against the carousel; now on the hub stop's platform (inside the loop, Tram.RING_A 140°),
+# at its free end, the way a district's console stands by its stop (outside the loop is past the
+# hub's wall, HUB_R 24)
+const RING_CONSOLE := Vector2(146.0, 18.6)
+const RING_DESK := Vector2(133.0, 18.6)
+const RING_FOOT := 1.6                       # 130 号: its stand, m (2.8 reached over the shuttle's rails)
 const REACH := 4.0               # m: how close to a console counts
 const HATCH := 4.0               # m: the cargo district's floor hatch over the yard
 # per zone: the machines inside, as rects in the box's local metres (origin: box top-left)
@@ -76,7 +87,7 @@ static func consoles(zone: String) -> Array:
 		# 129 号: moved to the berth spoke's far side (it was at 76°, R 18.6: a metre from the berth arm's
 		# turret, the arm's links over it all the time and its stand over the shuttle's loop) — the deck
 		# between the salvage and processing spokes is clear; the desk beside it
-		return [c + Vector2.from_angle(deg_to_rad(RING_CONSOLE.x)) * RING_CONSOLE.y * m, c + Vector2.from_angle(deg_to_rad(125.0)) * 18.6 * m]
+		return [c + Vector2.from_angle(deg_to_rad(RING_CONSOLE.x)) * RING_CONSOLE.y * m, c + Vector2.from_angle(deg_to_rad(RING_DESK.x)) * RING_DESK.y * m]
 	var d := door(zone)
 	var p: Vector2 = d[0]
 	var n: Vector2 = d[1]
@@ -172,7 +183,7 @@ func _build() -> void:
 	# the hub's outer ring, open where each spoke arrives
 	var gaps: Array = []
 	for zone in PortArt.ANGLE:
-		gaps.append((PortArt.door_at(zone)[0] as Vector2).angle())
+		gaps.append([(PortArt.door_at(zone)[0] as Vector2).angle(), half(zone)])
 	var segs := 96
 	for i in segs:
 		var a0 := TAU * i / segs
@@ -180,7 +191,7 @@ func _build() -> void:
 		var mid := (a0 + a1) * 0.5
 		var open := false
 		for ga in gaps:
-			if absf(angle_difference(mid, ga)) < (HALF + 1.5) / PortArt.HUB_R:
+			if absf(angle_difference(mid, float(ga[0]))) < (float(ga[1]) + 1.5) / PortArt.HUB_R:
 				open = true
 		if open:
 			continue
@@ -194,7 +205,7 @@ func _build() -> void:
 		var axis := (p - c).normalized()
 		var a0 := c + axis * PortArt.HUB_R * m
 		var a1 := p - axis * 1.0 * m
-		var side := axis.orthogonal() * HALF * m
+		var side := axis.orthogonal() * half(zone) * m
 		if zone != "salvage":
 			var r := box(zone)
 			var corners := [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]
@@ -276,7 +287,7 @@ func _draw() -> void:
 		var axis := (p - c).normalized()
 		var a0 := c + axis * PortArt.HUB_R * m
 		var a1 := p - axis * 1.0 * m
-		var side := axis.orthogonal() * HALF * m
+		var side := axis.orthogonal() * half(zone) * m
 		draw_line(a0 + side, a1 + side, wall_col, 2.0 * lw)
 		draw_line(a0 - side, a1 - side, wall_col, 2.0 * lw)
 	# the hub's floor and machines: scripts/hub_view.gd (109 号)
@@ -300,7 +311,7 @@ func _draw() -> void:
 # (scripts/console_art.gd); the column reaches the floor strip (the hub's: a short stand)
 func _console(p: Vector2, zone: String, on: bool, hint: String) -> void:
 	var m := M()
-	var foot := 2.8
+	var foot := RING_FOOT
 	if zone != "ring":
 		foot = (box(zone).end.y - 1.2 * m - p.y) / m
 	ConsoleArt.draw(self, p, foot, Txt.t("pt_console_business") + " · " + Port.name_of(zone), hint, on, ConsoleArt.summary(zone, game), t)

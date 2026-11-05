@@ -32,6 +32,11 @@ func _run() -> void:
 	var busy := {}
 	var moved0 := W.moved
 	var mid := 0
+	# 130 号: the crates come by freight train now (scripts/freight_works.gd): crates into the hatches
+	# (pushed off wagons, or lifted at the spokes no train serves) count as the flow
+	var FW = preload("res://scripts/freight_works.gd")
+	var in0: int = FW.pushed + FW.pushed_up
+	var in_mid := 0
 	for i in 60 * 150:
 		await _frames(1)
 		for z in W.arms:
@@ -39,10 +44,12 @@ func _run() -> void:
 				busy[z] = true
 		if i == 60 * 90:
 			mid = W.moved
-	print("  moved %d (after 90 s: %d), busy arms %s" % [W.moved - moved0, mid - moved0, busy.keys()])
+			in_mid = FW.pushed + FW.pushed_up
+	var into: int = FW.pushed + FW.pushed_up - in0
+	print("  crates into the hatches %d (after 90 s: %d), handed down %d, busy arms %s" % [into, in_mid - in0, W.moved - moved0, busy.keys()])
 	check(busy.size() == 5, "every spoke's arm works (%d/5)" % busy.size())
-	check(W.moved - moved0 >= 6, "crates get delivered (%d)" % (W.moved - moved0))
-	check(W.moved > mid, "still delivering after 90 s: no deadlock")
+	check(into >= 4, "crates come into the hatches by train or lift (%d)" % into)
+	check(FW.pushed + FW.pushed_up > in_mid, "still coming after 90 s: no deadlock")
 	W.demo = false
 	W._flow_scan = 0.0
 	await _frames(60)

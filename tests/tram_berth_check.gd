@@ -133,7 +133,9 @@ func _run() -> void:
 				two.append("%s→%s" % [a, b])
 	check(gaps == 0, "every ride runs from its stop to the other, each leg on from where the last stopped")
 	check(laps == 0, "no ride runs more than three quarters of the hub's loop (the longest %s, %.0f m)" % [worst, worst_len])
-	check("ring→salvage" in two and "salvage→ring" in two, "the hub's stop and the berth's: a reversal past a switch (%s)" % ", ".join(two))
+	# 130 号: the hub's stop moved to the loop's lower left (Tram.RING_A), just past the processing line's
+	# switch: that is now the pair that changes ends (the berth's is straight on)
+	check("ring→process" in two and "process→ring" in two and not ("ring→salvage" in two), "the hub's stop and the processing district's: a reversal past a switch; to the berth straight on (%s)" % ", ".join(two))
 	# every switch the plans name is one that stands on the rails
 	var ids := {}
 	for sw in tr._switches:
@@ -146,7 +148,8 @@ func _run() -> void:
 					for id in l.sw:
 						if not ids.has(id):
 							unknown += 1
-	check(unknown == 0 and ids.size() == 18, "the plans set only switches that exist (%d switches)" % ids.size())
+	# 130 号: 18, the berth's freight siding (salvage:s) and the ring's passing loop (p1:a, p1:b)
+	check(unknown == 0 and ids.size() == 21, "the plans set only switches that exist (%d switches, %d unknown)" % [ids.size(), unknown])
 	# the still track is built a slice a frame: no frame gives it more than a few ms
 	for i in 120:
 		if tr._job == null:
@@ -169,7 +172,7 @@ func _run() -> void:
 		check(res[3] == 0, "  the doors shut whenever it moved (%d frames open)" % res[3])
 		check(_free_at(g.drone.global_position), "  the drone stepped off onto the platform, clear of walls")
 		if r[0] == "ring" and r[1] == "salvage":
-			check(res[1] == 1 and res[0] < 14.0, "  the hub's stop to the berth's: one reversal, quick (%.1f s)" % res[0])
+			check(res[1] == 0 and res[0] < 14.0, "  the hub's stop to the berth's: straight on, quick (%.1f s)" % res[0])
 		if r[0] == "salvage" and r[1] == "trade":
 			check(res[4] > 0.03 and res[4] < 0.2, "  the bodies lean on their springs through the curves (%.2f m at most)" % res[4])
 	# every stop's platform clear of walls

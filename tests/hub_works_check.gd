@@ -31,6 +31,10 @@ func _run() -> void:
 	Career.save()
 	await _spawn()
 	await _frames(10)
+	# 130 号: the hub's machines on their own (crates up the hatches from below); the freight trains that
+	# feed them in the game have their own test (tests/hub_freight_check.gd)
+	preload("res://scripts/freight_works.gd").on = false
+	W.trains_feed = false
 	var sp := W.spokes()
 	var words := []
 	for z in sp:

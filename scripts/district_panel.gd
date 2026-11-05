@@ -107,7 +107,7 @@ func _ready() -> void:
 	if zone == "cargo" and StoreBook.live():
 		# 128 号 (user 2026-11-04): one stores page — the racks put things away by themselves
 		column.add_child(OpsSkin.Section.new(words("仓库", "STORES")))
-		column.add_child(label(words("在柜台或货架口按 %s，或在哪都按 F3，打开的都是同一个仓库。货物自动上架。", "%s at the counter or a rack, or F3 anywhere: the same stores page. Goods are put away by themselves.") % Keys.label("use"), 15))
+		column.add_child(label(words("在船坞的仓库终端或货架口按 %s，或在哪都按 F3，打开的都是同一个仓库。货物自动上架。", "%s at the berth's stores terminal or a rack, or F3 anywhere: the same stores page. Goods are put away by themselves.") % Keys.label("use"), 15))
 	elif zone == "cargo":
 		column.add_child(OpsSkin.Section.new(words("货架", "RACKS")))
 		var rk := label(words("货架口按 %s 开（左边货架 A1–A4，右边 B1–B4）", "Racks A1–A4 left, B1–B4 right: %s at a rack's mouth") % Keys.label("use"), 15)
@@ -167,6 +167,9 @@ func _details(rows: Array) -> void:
 
 # what the next stage takes, ticked off; the two ways to pay, each greyed with its reason
 func _fill_repair() -> void:
+	if Port.RepairBill.ON:
+		_fill_bill()
+		return
 	var st := Port.stage(zone)
 	var sig := "%d|%s|%s|%.0f" % [st, Port.reason(zone, true), Port.reason(zone, false), float(Career.data.get("money", 0.0))]
 	if st < 2:
@@ -213,6 +216,65 @@ func _fill_repair() -> void:
 			BenchFx.primary(b)
 		if why != "" and not why.begins_with(words("还需要", "STILL NEEDS")) and why.length() <= 24:
 			repair_box.add_child(label("  " + why, 13))
+
+
+# 128 号 第 3 段: one "修" — what the stage takes, what the warehouse has; the button opens the
+# confirmation with the bill (the only confirmation left: money is spent)
+var order_ui: Control
+func _fill_bill() -> void:
+	var st := Port.stage(zone)
+	var b: Dictionary = Port.RepairBill.of(zone)
+	var sig := "B%d|%s|%.0f|%s" % [st, Port.reason(zone, true), float(Career.data.get("money", 0.0)), Port.RepairBill.short_line(b)]
+	if sig == _repair_sig:
+		return
+	_repair_sig = sig
+	for c in repair_box.get_children():
+		c.queue_free()
+	if st >= 2:
+		repair_box.add_child(label(words("两期都修好了。", "BOTH STAGES DONE."), 15))
+		return
+	for row in b.get("rows", []):
+		var ok := int(row.buy) == 0
+		var l := label("%s  %s  %d / %d%s" % ["✓" if ok else "○", str(row.name), int(row.own), int(row.need), "" if ok else words("  · 缺的按市价买", "  · the rest bought")], 15)
+		l.modulate = Hmi.ok_col() if ok else Pal.ink(0.8)
+		repair_box.add_child(l)
+	var sd: Dictionary = b.get("steel", {})
+	var lt := label("%s  %s  %.1f / %.1f t" % ["✓" if float(sd.get("buy", 0.0)) < 0.05 else "○", words("修缮钢材", "REPAIR STEEL"), float(sd.get("own", 0.0)), float(sd.get("need", 0.0))], 15)
+	lt.modulate = Hmi.ok_col() if float(sd.get("buy", 0.0)) < 0.05 else Pal.ink(0.8)
+	repair_box.add_child(lt)
+	for dep in Port.DEPS.get(zone, []):
+		if Port.stage(str(dep[0])) < int(dep[1]):
+			var l2 := label("○  " + Txt.t("rt_first") + "  " + Port.name_of(str(dep[0])), 15)
+			l2.modulate = Hmi.warn_col()
+			repair_box.add_child(l2)
+	var why := Port.reason(zone, true)
+	if why == "" and not Port.deps_ok(zone) and st == 0:
+		why = Txt.t("tm_needs") % Port.name_of(str(Port.DEPS[zone][0][0]))
+	if why == "" and Works.busy():
+		why = Works.busy_text()
+	var cost := float(b.get("buy_cash", 0.0))
+	var bt := words("修 %s期  ·  要买 %s", "MEND STAGE %d  ·  BUY %s") % [Works.cn_num(st + 1), Pal.money(cost)] if Txt.zh else "MEND STAGE %d  ·  BUY %s" % [st + 1, Pal.money(cost)]
+	if cost < 0.5:
+		bt = words("修 %s期  ·  仓库里都有", "MEND STAGE %d  ·  ALL IN STORE") % Works.cn_num(st + 1) if Txt.zh else "MEND STAGE %d  ·  ALL IN STORE" % (st + 1)
+	var mb := button(bt, open_order)
+	mb.disabled = why != ""
+	repair_box.add_child(mb)
+	BenchFx.note(mb, words("看明细再确认：自有的先用，缺的按市价买齐，施工队不收工钱", "See the bill first: own materials go first, the rest is bought at market, the crew is free"), why)
+	if why == "":
+		BenchFx.primary(mb)
+	elif why.length() <= 30:
+		repair_box.add_child(label("  " + why, 13))
+
+
+func open_order() -> void:
+	if order_ui != null and is_instance_valid(order_ui):
+		return
+	order_ui = preload("res://scripts/repair_order.gd").new()
+	order_ui.zone = zone
+	order_ui.on_done = func(ok: bool):
+		if ok:
+			_order(true)
+	add_child(order_ui)
 
 
 func _order(with_parts: bool) -> void:

@@ -45,6 +45,8 @@ func _frames(n: int) -> void:
 
 
 func _run() -> void:
+	# 128 号 第 3 段: this test reads the two old ways to pay (parts or cash); the one "修" is seg3_check's
+	preload("res://scripts/repair_bill.gd").ON = false
 	print("PORT: a new career")
 	Career.data = {}
 	Career.start_new()

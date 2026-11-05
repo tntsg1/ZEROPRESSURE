@@ -95,7 +95,8 @@ func _run() -> void:
 	check(is_equal_approx(after_mixed, before_mixed + 1.0), "1 t of mixed metal in the company's stock")
 	check(Drill.active() and preload("res://scripts/industrial_assay.gd").fee() == 0.0, "its assay is free")
 	check(str(Drill.step().go) == "guide:sort", "and the guide starts at the sorting desk (%s)" % Drill.step().text)
-	check(str(Mainline.step("steel").go) == "guide:sort", "the main line's steel chapter follows the training run")
+	# 128 号 第 3 段: the steel chapter is the processing district's now ("钢锭攒够了")
+	check(str(Mainline.step("process").go) == "guide:sort", "the main line's steel chapter follows the training run")
 	Career.data.industrial_sort = {"id": "S-T", "state": "processing", "drill": true}
 	check(g.industrial_sort._power_price() == 0.0, "a training batch runs on the port's power")
 	Career.data.industrial_sort = {}

@@ -30,6 +30,9 @@ var t := 0.0
 var _hold := 0.0
 var _use := false
 var _placed := false
+const GuideWay = preload("res://scripts/guide_way.gd")
+var way = null
+var _way_t := 0.0
 var step_t := 0.0               # 80 号: time on this step — 20 s adds where to go, 40 s the ring swells
 const STUCK_1 := 20.0
 const STUCK_2 := 40.0
@@ -295,3 +298,11 @@ func _draw() -> void:
 	var d = game.drone
 	if d != null:
 		GuideMark.arrow(self, game.look.lamp_pos() if game.look != null else d.global_position, at, z, Pal.tint(Pal.AIR, 1.0, 1.4), t)
+	# 131 号: off the screen, the arrow on its edge with the metres left (scripts/guide_way.gd)
+	if way == null:
+		way = GuideWay.new()
+		way.floor_on = false
+	var wdt := clampf(t - _way_t, 0.0, 0.1)
+	_way_t = t
+	way.update(game, d.global_position if d != null else Vector2.INF, at, wdt)
+	way.draw_edge(self, w("目标", "TARGET"), Pal.tint(Pal.AIR, 1.0, 1.4), card.get_global_rect() if card != null and card.visible else Rect2())

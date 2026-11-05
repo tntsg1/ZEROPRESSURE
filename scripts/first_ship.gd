@@ -488,15 +488,30 @@ func stop() -> void:
 	queue_redraw()
 
 
+# 131 号: the target off the screen — the arrow on the screen's edge with the metres left, as every
+# "fly there" guide (scripts/guide_way.gd); no floor arrows over the ship
+const GuideWay = preload("res://scripts/guide_way.gd")
+var way = null
+var _way_t := 0.0
+
+
 func _draw() -> void:
+	if way == null:
+		way = GuideWay.new()
+		way.floor_on = false
+	var dt := clampf(t - _way_t, 0.0, 0.1)
+	_way_t = t
 	if done or game == null:
+		way.hide()
 		return
 	var at := target()
+	var d = game.drone
+	way.update(game, d.global_position if d != null and at != Vector2.INF and STEPS[step] != "mouths" else Vector2.INF, at, dt)
 	if at == Vector2.INF:
 		return
 	var z: float = maxf(game.cam_zoom(), 0.02)
 	var big := 1.6 if step_t >= STUCK_2 else 1.0
 	GuideMark.target(self, at, z, UiSkin.ACCENT, t, target_name(), 22.0, big)
-	var d = game.drone
 	if d != null:
 		GuideMark.arrow(self, game.look.lamp_pos() if game.look != null else d.global_position, at, z, UiSkin.ACCENT, t)
+	way.draw_edge(self, target_name(), UiSkin.ACCENT, card.get_global_rect() if card != null and card.visible else Rect2())

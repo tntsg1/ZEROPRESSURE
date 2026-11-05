@@ -24,7 +24,7 @@ const ROWS := 32                      # the grid's rows at the start (rows() is 
 # (wiring it to the works); till then the grid stays 8×32. Rows only ever add at the bottom: what is
 # laid out keeps its cells.
 const ROWS_BY_STAGE := [32, 48, 64]
-static var ROWS_FROM_CARGO := false
+static var ROWS_FROM_CARGO := true    # 第 3 段: on (the cargo district's works make the store bigger)
 const BUNDLE_T := 2.0
 const PART_STACK := 20
 const MAX_SIDE := 4
@@ -389,13 +389,13 @@ static func _raw_units(key: String, t: float, prefix: String) -> Array:
 static func _part_unit(p: Dictionary, id: String) -> Dictionary:
 	var c := cells_of(str(p.get("ship", "")), str(p.get("tag", "")), float(p.get("mass", 0.5)))
 	return {"id": id, "cat": "equip", "name": _part_name(p), "qty": w("1 件", "1 PC"), "w": c.x, "h": c.y, "market": Repair.part_worth(p), "part": p,
-		"ship": str(p.get("ship", "")), "tag": str(p.get("tag", ""))}
+		"ship": str(p.get("ship", "")), "tag": str(p.get("tag", "")), "day": float(p.get("day", -1.0))}
 
 
 static func _good_unit(gd: Dictionary, id: String) -> Dictionary:
 	var c := cells_of(str(gd.get("ship", "")), str(gd.get("tag", "")), float(gd.get("mass", 0.5))) if str(gd.get("fluid", "")) == "" else Vector2i(1, 2)
 	return {"id": id, "cat": str(gd.get("cat", "equip")), "name": good_name(gd), "qty": w("1 件", "1 PC"), "w": c.x, "h": c.y,
-		"market": snappedf(float(gd.get("value", 0.0)), 1.0), "good": gd, "ship": str(gd.get("ship", "")), "tag": str(gd.get("tag", ""))}
+		"market": snappedf(float(gd.get("value", 0.0)), 1.0), "good": gd, "ship": str(gd.get("ship", "")), "tag": str(gd.get("tag", "")), "day": float(gd.get("day", -1.0))}
 
 
 # every thing in the warehouse, one unit a placeable thing: a raw bundle, a machine, a box of spares
@@ -633,9 +633,13 @@ static func used_with(items: Array) -> int:
 static func receive(job: String, ship: String, ingot_t: float, parts: Array, gds: Array) -> Dictionary:
 	var ib: Array = Career.data.get("inbox", [])
 	var mine: Array = []
+	# the game day it came off the ship (the star map's calendar); old saves have none and show "—"
+	var day := snappedf(Shipping.day(), 0.01)
 	if ingot_t > 0.0005:
 		mine.append({"uid": "%s:ingot" % job, "src": "raw", "key": Exchange.INGOT, "t": snappedf(ingot_t, 0.001), "job": job, "ship": ship})
 	for p in parts:
+		if not p.has("day"):
+			p["day"] = day
 		mine.append({"uid": str(p.uid), "src": "part", "part": p, "job": job})
 	var n := 0
 	for gd in gds:
@@ -644,6 +648,8 @@ static func receive(job: String, ship: String, ingot_t: float, parts: Array, gds
 		g2.uid = "%s:%s:%d" % [job, str(g2.get("tag", "g")), n]
 		g2.job = job
 		g2.ship = ship
+		if not g2.has("day"):
+			g2["day"] = day
 		mine.append({"uid": str(g2.uid), "src": "goods", "good": g2, "job": job})
 	ib.append_array(mine)
 	Career.data.inbox = ib

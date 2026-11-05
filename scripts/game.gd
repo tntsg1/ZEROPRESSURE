@@ -148,6 +148,7 @@ var material_receipts: Array = [] # actual G5 raw intake, pending atomic career 
 var receiver_commits: Dictionary = {} # every piece of a G5 mixed receipt, including sold goods
 var material_recovery_value := 0.0 # retained value counts as recovery, never cash
 var structure_t := 0.0          # metal through the furnace this job, tonnes (structure for repairs)
+var freight = null              # 130 号: the freight trains (scripts/freight_view.gd)
 var console_ui: Control = null  # the terminal page open over the berth
 var order_review: Control = null
 var order_review_deferred := false
@@ -611,6 +612,10 @@ func _ready() -> void:
 			tram = Tram.new()
 			tram.game = self
 			add_child(tram)
+			# 130 号: the freight trains on the same rails, through the hub (scripts/freight_view.gd)
+			freight = preload("res://scripts/freight_view.gd").new()
+			freight.game = self
+			add_child(freight)
 			# 63 号: the tugs bringing hulks home, seen
 			tow_traffic = preload("res://scripts/tow_traffic.gd").new()
 			tow_traffic.game = self
@@ -698,7 +703,6 @@ func _ready() -> void:
 	# 80 号 Q5: a TUG-001 job loaded part-way gets its guide back, at the step it is at
 	_first_ship_coach.call_deferred()
 	_store_guide.call_deferred()
-	_recycle_crane.call_deferred()
 	if belt:
 		_end_intro.call_deferred()
 		# the berth's machinery (field, mouths, suction) is not out here
@@ -1296,7 +1300,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 					open_mill()
 				elif cargo_floor != null and state == "play" and cargo_floor.use():
 					pass
-				elif tram != null and state == "play" and tram.phase == "" and tram.near_station() != "":
+				elif tram != null and state == "play" and tram.phase in ["", "return"] and tram.near_station() != "":
 					open_transit("tram", tram.near_station())
 				elif industrial_heat != null and state == "play" and industrial_heat.near():
 					open_heat()
@@ -1686,20 +1690,11 @@ func store_guide_on() -> bool:
 	return store_guide != null and is_instance_valid(store_guide) and not store_guide.done
 
 
-# 128 号: a sale to the recycling station, seen: the dock crane lifts it away (scripts/recycle_crane.gd)
-var recycle_crane = null
-func _recycle_crane() -> void:
-	if not career() or not in_berth() or not StoreBook.live() or (recycle_crane != null and is_instance_valid(recycle_crane)):
-		return
-	recycle_crane = preload("res://scripts/recycle_crane.gd").new()
-	recycle_crane.game = self
-	add_child(recycle_crane)
-
-
+# 128 号: a sale to the recycling station, seen. 130 号 (user): no longer the berth's crane (removed):
+# a freight train takes it from the cargo district's warehouse by way of the ring to the trade port,
+# whose recycling station's crane lifts it away (scripts/freight_works.gd sell). Paid at once.
 func recycle_show(cat: String, cells: int) -> void:
-	_recycle_crane()
-	if recycle_crane != null and is_instance_valid(recycle_crane):
-		recycle_crane.add(cat, cells)
+	preload("res://scripts/freight_works.gd").sell(cat, cells)
 
 
 # 68 号 §3: TUG-001 at the berth, step by step (scripts/first_ship.gd), once per career

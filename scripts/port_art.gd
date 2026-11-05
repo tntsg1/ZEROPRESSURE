@@ -135,7 +135,8 @@ static func draw_part(ci, part: String, c: Vector2, M: float, z: float, t: float
 		var a1 := c + d * M
 		var n: int = int(lit.get(zid, 0))
 		var col := Pal.ink(0.08 + 0.06 * n)
-		_truss(ci, a0, a1, 3.0 * M, 5.0 * M, col, lw)
+		var hw := PortStructure.half(zid)
+		_truss(ci, a0, a1, hw * M, 5.0 * M, col, lw)
 		# the tube's glazing strip and its ribs every five metres
 		ci.draw_line(a0, a1, Pal.tint(Pal.AIR, 0.05 + 0.07 * n, 1.1), lw * 2.0)
 		var len := a0.distance_to(a1)
@@ -143,7 +144,7 @@ static func draw_part(ci, part: String, c: Vector2, M: float, z: float, t: float
 		var ribs := int(len / (5.0 * M))
 		for rb in ribs:
 			var q := a0 + dir * (rb + 0.5) * 5.0 * M
-			ci.draw_line(q + dir.orthogonal() * 3.6 * M, q - dir.orthogonal() * 3.6 * M, Pal.ink(0.1 + 0.05 * n), lw * 1.6)
+			ci.draw_line(q + dir.orthogonal() * (hw + 0.6) * M, q - dir.orthogonal() * (hw + 0.6) * M, Pal.ink(0.1 + 0.05 * n), lw * 1.6)
 		# 100 号 (Q1 C): the feeder cable along the spoke, its current as pulses — into the hub from
 		# the power district, out from the hub to each district by what it draws now
 		var side_v := dir.orthogonal() * 2.3 * M

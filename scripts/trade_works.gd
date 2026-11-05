@@ -74,6 +74,9 @@ static func reset() -> void:
 	lighter_k = 0.0; lighter_for = ""; job = {}; crates = []; hold = 0
 	weigh_show = 0.0; weigh_to = 0.0; seal_t = 0.0; belt_run = 0.0; belt_v = 0.0; intake = 0.0
 	cx = 52.0; cvx = 0.0; cx_to = 52.0; ch = 19.0; cvh = 0.0; ch_to = 19.0; on_hook = false; crane_step = ""
+	# 128 号 第 3 段: not mended, the crane is found where it stopped
+	if Port.stage("trade") < 1:
+		cx = 36.0; cx_to = 36.0; ch = 22.6; ch_to = 22.6
 	linger = 0.0; visitors = {}; tubes = []; _sig = {}; near_k = [0.0, 0.0, 0.0]; _hist_t = 0.0; t = 0.0; handed = 0
 	events = []; _crane_was = false
 
@@ -141,6 +144,11 @@ static func _dock(dt: float, trade: Dictionary) -> void:
 		belt_v = move_toward(belt_v, 0.0, dt * 2.0)
 		cx_to = 52.0
 		ch_to = 19.0
+		# 128 号 第 3 段: not mended, the dock crane hangs where it stopped; mended, it goes home when
+		# its turn comes in the lighting-up (scripts/district_revive.gd)
+		if Port.stage("trade") < 1 or not preload("res://scripts/district_revive.gd").started("trade", "crane"):
+			cx_to = 36.0
+			ch_to = 22.6
 	var r := _drive(cx, cvx, cx_to, 2.0, 1.4, dt)
 	cx = r[0]; cvx = r[1]
 	r = _drive(ch, cvh, ch_to, 1.8, 1.6, dt)

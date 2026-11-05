@@ -39,7 +39,7 @@ const A_ARM := 3.2
 const V_TIP := 3.4
 const A_TIP := 9.0
 const V_LIFT := 1.6            # /s the spreader lifts (0 down … 1 up), and the hatch's lift
-const MAX_PARCELS := 9
+const MAX_PARCELS := 11
 # an arm's phases: where its spreader is, and which hold it down on what it grips or sets
 const AT_HATCH := ["to_hatch", "lower_hatch", "grip_hatch", "lift_hatch", "set_hatch", "free_hatch", "hold"]
 const AT_CRADLE := ["to_cradle", "lower_cradle", "grip_cradle", "lift_cradle", "set_cradle", "free_cradle"]
@@ -66,6 +66,18 @@ static var moved := 0          # parcels delivered (tests)
 static var _pin_was := 0.0
 # developer workbench "转运环演示货流": every spoke's arm gets goods to move, whatever the port is doing
 static var demo := false
+# 130 号: the freight trains bring the crates to the hatches and take them away (scripts/freight_works.gd):
+# a train stands on the loop by a hatch, locks, and its wagon's rollers push a crate across the apron
+# onto the lift (down), or take one off it. While they do (trains_feed), nothing appears on a hatch by
+# itself and a crate handed down waits on its lowered lift ("out") for a train. Without them (the
+# headless tests that run this alone) the old way: crates come up the hatches from below.
+static var trains_feed := false
+static var served := {}        # spokes a freight train serves (the rest still lift their crates from below)
+static var reserved := {}      # spoke -> a train on its way to push a crate onto that hatch: its arm hands none down meanwhile
+const OUT_WAIT := 8.0          # s a handed-down crate waits for a train before it goes on underground
+const OUT_WAIT_TRAIN := 30.0   # … where a train serves the spoke (it comes round to the hatch about this often)
+static var went_down := 0      # tests: crates that went underground for want of a train
+const PUSH_T := 1.0            # s the rollers take to move a crate between a wagon and a lift
 const DEMO_FLOWS := [["salvage", "cargo", "steel_plate:1"], ["cargo", "process", "ferrous_scrap:1"],
 	["process", "cargo", "steel_billet:1"], ["cargo", "trade", "steel_section:1"], ["tug", "process", "nonferrous_mix:1"], ["trade", "salvage", "steel_parts:1"]]
 
@@ -90,6 +102,8 @@ static func reset() -> void:
 	_flow_t = {}
 	events = []
 	moved = 0
+	reserved = {}
+	served = {}
 
 
 static func _drive(cur: float, vel: float, to: float, vmax: float, acc: float, dt: float) -> Array:
@@ -183,7 +197,7 @@ static func _arm(zone: String) -> Dictionary:
 
 static func _hatch(zone: String) -> Dictionary:
 	if not hatch.has(zone):
-		hatch[zone] = {"lift": 0.0, "vlift": 0.0, "doors": 0.0, "vdoors": 0.0, "parcel": null, "lamp": 0.0}
+		hatch[zone] = {"lift": 0.0, "vlift": 0.0, "doors": 0.0, "vdoors": 0.0, "parcel": null, "lamp": 0.0, "push": {}, "handed": null}
 	return hatch[zone]
 
 
@@ -342,12 +356,14 @@ static func _wants_cradle(z: String) -> bool:
 	if str(a.phase) in ["hold"] and a.parcel != null and cradles[k] == null:
 		return true
 	var p = cradles[k]
-	if p != null and str(p.to) == z and a.parcel == null and str(a.phase) == "park" and _hatch(z).parcel == null:
+	if p != null and str(p.to) == z and a.parcel == null and str(a.phase) == "park" and _hatch(z).parcel == null and (_hatch(z).push as Dictionary).is_empty() and not reserved.has(z):
 		return true
 	return false
 
 
 static func _spawn(dt: float, every: float) -> void:
+	if trains_feed:
+		return
 	for f in flows:
 		var k := "%s>%s>%s" % f
 		_flow_t[k] = float(_flow_t.get(k, every * 0.3)) - dt
@@ -383,20 +399,49 @@ static func _hatch_step(z: String, dt: float) -> void:
 	var a := _arm(z)
 	# up with a parcel to hand over or one being handed down; down and shut otherwise
 	var want_up: bool = hz.parcel != null or str(a.phase) in HATCH_UP or (str(a.task) == "unload" and a.parcel != null)
-	if hz.parcel != null and str(hz.parcel.at) == "gone":
+	if hz.parcel != null and str(hz.parcel.at) in ["gone", "out"]:
 		want_up = false
-	var dr := _drive(float(hz.doors), float(hz.vdoors), 1.0 if want_up or float(hz.lift) > 0.05 else 0.0, 1.6, 6.0, dt)
+	var push: Dictionary = hz.push
+	if not push.is_empty():
+		want_up = false
+	# 130 号: the rollers move a crate between a wagon and the lift (down, the doors open)
+	if not push.is_empty() and float(hz.lift) < 0.02 and float(hz.doors) > 0.98:
+		push.t = minf(1.0, float(push.t) + dt / PUSH_T)
+		hz.lamp = float(hz.lamp) + dt * 5.0
+		if float(push.t) >= 1.0:
+			var pp: Dictionary = push.p
+			if str(push.dir) == "in":
+				pp.at = "hatch"
+				parcels.append(pp)
+				hz.parcel = pp
+			else:
+				parcels.erase(pp)
+				hz.handed = pp
+			hz.push = {}
+			events.append(["clamp", hatch_at(z)])
+	var dr := _drive(float(hz.doors), float(hz.vdoors), 1.0 if want_up or float(hz.lift) > 0.05 or not push.is_empty() else 0.0, 2.2, 9.0, dt)
 	hz.doors = dr[0]
 	hz.vdoors = dr[1]
-	var lr := _drive(float(hz.lift), float(hz.vlift), 1.0 if want_up and float(hz.doors) > 0.95 else 0.0, 0.9, 2.0, dt)
+	var lr := _drive(float(hz.lift), float(hz.vlift), 1.0 if want_up and float(hz.doors) > 0.95 else 0.0, 1.4, 4.0, dt)
 	hz.lift = lr[0]
 	hz.vlift = lr[1]
 	hz.lamp = float(hz.lamp) + dt * 5.0 if absf(float(hz.vlift)) > 0.01 or absf(float(hz.vdoors)) > 0.01 else 0.0
-	# a parcel handed down goes once the lift is down
+	# 130 号: a crate waiting on a lowered lift that no train has come for in OUT_WAIT goes on down, under
+	# the deck, as before the trains (the hub keeps turning)
+	if hz.parcel != null and str(hz.parcel.at) == "out" and (hz.push as Dictionary).is_empty():
+		hz.parcel.waited = float(hz.parcel.get("waited", 0.0)) + dt
+		if float(hz.parcel.waited) > (OUT_WAIT_TRAIN if served.has(z) else OUT_WAIT):
+			parcels.erase(hz.parcel)
+			hz.parcel = null
+			went_down += 1
+	# a parcel handed down goes once the lift is down (130 号: with the trains it waits there for one)
 	if hz.parcel != null and str(hz.parcel.at) == "gone" and float(hz.lift) < 0.02:
-		parcels.erase(hz.parcel)
-		hz.parcel = null
 		moved += 1
+		if trains_feed and served.has(z):
+			hz.parcel.at = "out"
+		else:
+			parcels.erase(hz.parcel)
+			hz.parcel = null
 
 
 static func _arm_step(z: String, dt: float, vmax: float) -> void:
@@ -416,7 +461,7 @@ static func _arm_step(z: String, dt: float, vmax: float) -> void:
 			if a.parcel == null and hz.parcel != null and str(hz.parcel.at) == "hatch" and float(hz.lift) > 0.98:
 				a.task = "load"
 				ph = "to_hatch"
-			elif k >= 0 and cradles[k] != null and str(cradles[k].to) == z and hz.parcel == null:
+			elif k >= 0 and cradles[k] != null and str(cradles[k].to) == z and hz.parcel == null and (hz.push as Dictionary).is_empty() and not reserved.has(z):
 				a.task = "unload"
 				a.slot = k
 				ph = "to_cradle"
@@ -549,3 +594,72 @@ static func arm_state(z: String) -> Array:
 	if str(a.phase) != "park":
 		return [w("去取货", "GOING FOR A LOAD"), "work"]
 	return [w("待命", "STANDING BY"), "ok"]
+
+
+# ------------------------------------------------------------------ 130 号: the trains' side of a hatch
+# a crate may be pushed onto this hatch's lift now: the ring running, the lift down and empty, its arm
+# not bringing one down to it
+static func hatch_takes(z: String) -> bool:
+	if stage < 1 or z == "power" or not spokes().has(z):
+		return false
+	var hz := _hatch(z)
+	var a := _arm(z)
+	return hz.parcel == null and (hz.push as Dictionary).is_empty() and hz.handed == null and float(hz.lift) < 0.02 		and not (str(a.task) == "unload") and parcels.size() < MAX_PARCELS
+
+
+# a crate up the lift from below (a spoke no freight train serves)
+static func lift_in(z: String, p: Dictionary) -> void:
+	p.at = "hatch"
+	p.slot = -1
+	parcels.append(p)
+	_hatch(z).parcel = p
+
+
+static func push_in(z: String, p: Dictionary) -> void:
+	p.at = "push"
+	p.slot = -1
+	_hatch(z).push = {"p": p, "t": 0.0, "dir": "in"}
+
+
+# the crate waiting on this hatch's lowered lift for a train (null if none)
+static func hatch_out(z: String):
+	if not hatch.has(z):
+		return null
+	var hz: Dictionary = hatch[z]
+	if hz.parcel != null and str(hz.parcel.at) == "out" and (hz.push as Dictionary).is_empty():
+		return hz.parcel
+	return null
+
+
+static func push_out(z: String) -> void:
+	var hz := _hatch(z)
+	var p: Dictionary = hz.parcel
+	p.at = "push"
+	hz.parcel = null
+	hz.push = {"p": p, "t": 0.0, "dir": "out"}
+
+
+# the crate the rollers have just put on a wagon (taken once), or null
+static func handed(z: String):
+	var hz := _hatch(z)
+	var p = hz.handed
+	hz.handed = null
+	return p
+
+
+# a push under way at this hatch: {p, t 0 … 1, dir} or {}
+static func pushing(z: String) -> Dictionary:
+	return _hatch(z).push if hatch.has(z) else {}
+
+
+# a crate on its way down to this hatch (an arm bringing it, or one waiting there already)
+static func outbound(z: String) -> bool:
+	if hatch_out(z) != null:
+		return true
+	var a: Dictionary = arms.get(z, {})
+	if not a.is_empty() and str(a.task) == "unload":
+		return true
+	for p in cradles:
+		if p != null and str(p.to) == z:
+			return true
+	return false

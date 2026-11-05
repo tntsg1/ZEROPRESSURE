@@ -6,10 +6,12 @@ const FastDraw = preload("res://scripts/fast_draw.gd")
 # way (Space burns every nozzle against the drift). Shift is a hard burn.
 
 const R := 20.0
-const ACCEL := 360.0
-const VMAX := 430.0
+# user 2026-11-05 ("把无人机的最高速度提高"): top speeds ×1.5 (430 → 645, Shift 780 → 1170 px/s);
+# a touch more thrust so the new top speed is reached in a similar time. Inertia as before.
+const ACCEL := 420.0
+const VMAX := 645.0
 const DASH_K := 2.3
-const DASH_VMAX := 780.0
+const DASH_VMAX := 1170.0
 const BRAKE_K := 2.6          # braking beats letting go (the assist stops at ~2.3 x ACCEL)
 
 var game: Game

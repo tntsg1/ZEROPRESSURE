@@ -1,4 +1,5 @@
 extends Node2D
+const TugRig = preload("res://scripts/tug_rig.gd")
 # The berth growing in front of the operator, for an extension bought at the
 # terminal (player 2026-10-20: "a scientific, hard-core animation", not just
 # longer next time) and for a ship taller than the berth (player 2026-10-20: "a
@@ -624,7 +625,10 @@ func _draw_extension(R: float, F: float, vis: Vector2, blink: float) -> void:
 			draw_rect(Rect2(Vector2(cx, ty - 0.55) * M, Vector2(1.15, 1.1) * M), Pal.ink(0.55), false, 1.2)
 			for q in 4:
 				draw_line(Vector2(cx + 0.12 + q * 0.27, ty - 0.45) * M, Vector2(cx + 0.12 + q * 0.27, ty + 0.45) * M, Pal.ink(0.2), 1.0)
-		dock._tug(Vector2(tug_x, ty) * M, self)
+		# the company's own tug pushes the train in, its fenders on the last cassette (scripts/tug_rig.gd)
+		var tp := Vector2(tug_x, ty) * M
+		var tacc := TugRig.track("berth_build", tp, M)
+		TugRig.draw(self, TugRig.push_at(tp, -1.0, M, clampf(-tacc.x / TugRig.A_REF, 0.0, 1.0)), -1.0, M, tacc, Time.get_ticks_msec() / 1000.0, {"squeeze": clampf(-tacc.x / TugRig.A_REF, 0.0, 1.0)})
 	if di < 0 or not passed("deploy"):
 		return
 	# the canister at the old end the truss deploys out of

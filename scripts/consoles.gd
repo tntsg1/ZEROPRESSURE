@@ -27,16 +27,32 @@ static func rack_on() -> bool:
 static func rack_centre() -> Vector2:
 	return (RACK + RACK_SIZE * 0.5) * Geom.M
 
+
+# 131 号 (user 2026-11-05, Q: A): the counter is a small terminal now — the berth terminal's little
+# brother on the tower wall, there from the start, its line to the cargo district (the main stores)
+# drawn by scripts/store_line.gd. Where its screen's centre is, and how big it is drawn
+const KIOSK_K := 0.72
+static func kiosk_at() -> Vector2:
+	return rack_centre() + Vector2(0.2, 0.25) * Geom.M
+
 const ConsoleArt = preload("res://scripts/console_art.gd")
 const FastDraw = preload("res://scripts/fast_draw.gd")
 
 var game: Game
 var t := 0.0
+var line                         # 131 号: the terminal's line to the cargo district (scripts/store_line.gd)
 
 
 func _init() -> void:
 	z_index = 2
 	z_as_relative = false
+
+
+func _ready() -> void:
+	line = preload("res://scripts/store_line.gd").new()
+	line.game = game
+	add_child(line)
+	move_child(line, 0)
 
 
 static func centre(i: int) -> Vector2:
@@ -77,9 +93,10 @@ func _draw() -> void:
 		var n: int = Career.data.get("parts", []).size()
 		var rc := rack_centre() + Vector2(0.2, 0.0) * M
 		if StoreBook.ON:
-			var wait := not StoreBook.inbox().is_empty()
-			ConsoleArt.draw(self, rc, 0.0, ("仓库柜台 · %d/%d 格" % [StoreBook.used(), StoreBook.cap()]) if Txt.zh else ("STORES COUNTER · %d/%d" % [StoreBook.used(), StoreBook.cap()]),
-				("[%s] 打开仓库" if Txt.zh else "[%s] OPEN THE STORES") % Keys.label("use"), at == "rack", {"lamp": "warn" if wait else "ok"}, t, "rack")
+			var wait := StoreBook.inbox().size()
+			ConsoleArt.draw(self, kiosk_at(), 0.0, ConsoleArt.w("仓库终端 · 已用 %d/%d 格", "STORES TERMINAL · %d/%d USED") % [StoreBook.used(), StoreBook.cap()],
+				("[%s] 打开仓库" if Txt.zh else "[%s] OPEN THE STORES") % Keys.label("use"), at == "rack", {"lamp": "warn" if wait > 0 else "ok", "scale": KIOSK_K, "lines": _kiosk_lines(wait)}, t, "store")
+			return
 		else:
 			ConsoleArt.draw(self, rc, 0.0, ("零件架 · %d 件" % n) if Txt.zh else ("PARTS RACK · %d" % n), ("[%s] 打开零件架" if Txt.zh else "[%s] OPEN THE PARTS RACK") % Keys.label("use"),
 				at == "rack", {"lamp": "ok" if n > 0 else "off"}, t, "rack")
@@ -114,3 +131,12 @@ func _screen_lines() -> Array:
 	var job: Dictionary = Career.active()
 	return [[Pal.money(float(Career.data.get("money", 0.0))), Pal.tint(Pal.AIR, 0.95, 1.2)],
 		[(("合同 " if Txt.zh else "JOB ") + str(job.get("id", ""))) if not job.is_empty() else ("没有在做的合同" if Txt.zh else "NO JOB ON"), Pal.ink(0.7)]]
+
+
+# 131 号: the stores terminal's screen — the cells used, what waits to go in, the line up
+func _kiosk_lines(wait: int) -> Array:
+	var lines := [[ConsoleArt.w("仓库 %d/%d 格", "STORES %d/%d") % [StoreBook.used(), StoreBook.cap()], Pal.tint(Pal.AIR, 0.95, 1.2)]]
+	if wait > 0:
+		lines.append([ConsoleArt.w("待入库 %d 件", "%d WAITING") % wait, Pal.heat(0.9, 1.2)])
+	lines.append([ConsoleArt.w("货运区线路 · 在线", "CARGO LINE · UP"), Pal.tint(Pal.FLUID, 0.85, 1.1)])
+	return lines

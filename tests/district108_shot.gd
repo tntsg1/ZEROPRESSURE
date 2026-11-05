@@ -24,6 +24,8 @@ func _texts() -> String:
 
 func _run() -> void:
 	Txt.zh = true
+	# 128 号 第 3 段: these cards read the old two buttons' long lack (parts or cash); the one "修" is seg3_check's
+	preload("res://scripts/repair_bill.gd").ON = false
 	Career.data = Career.fresh()
 	Career.data.prologue_done = true
 	Career.data.seen = {"belt_prelude": true, "first_ship": true, "intro": true, "port_walk": true}

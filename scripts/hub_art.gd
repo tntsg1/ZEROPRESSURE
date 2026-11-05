@@ -14,6 +14,7 @@ extends RefCounted
 
 const MeshPen = preload("res://scripts/mesh_pen.gd")
 const W = preload("res://scripts/hub_works.gd")
+const FW = preload("res://scripts/freight_works.gd")
 
 const R_CORE := 7.6
 const R_CAR_IN := 8.4
@@ -30,6 +31,7 @@ const PINION_R := 0.5
 const TEETH_R := 8.32          # the ring's teeth: their pitch circle, inside the inner rim
 const PINS := [0.0, PI]        # the lock pins, at the core's rim
 const COOLERS := [0.0, PI]
+const APRON_OUT := 20.05                 # 130 号: m, the roller apron's outer edge (the freight wagons' side)
 const LOAD_SHADOW := Vector2(0.3, 0.4)   # m a load's shadow falls from it per unit of lift (129 号: was 0.35, 0.5)
 
 const FACE := Color(0.118, 0.124, 0.136)
@@ -125,13 +127,14 @@ func _fan(p, apex: Vector2, pts: PackedVector2Array, ca: Color, ce: Color) -> vo
 func _gaps() -> Array:
 	var out: Array = []
 	for z in W.spokes():
-		out.append(float(W.spokes()[z]))
+		out.append([float(W.spokes()[z]), PortStructure.half(z) - PortStructure.HALF])
 	return out
 
 
+# within a spoke's mouth (half_m past a standard corridor's half; the berth's is wider, 130 号)
 func _in_gap(a: float, r: float, half_m: float) -> bool:
-	for g: float in _gaps():
-		if absf(wrapf(a - g, -PI, PI)) < half_m / r:
+	for g in _gaps():
+		if absf(wrapf(a - float(g[0]), -PI, PI)) < (half_m + float(g[1])) / r:
 			return true
 	return false
 
@@ -166,11 +169,11 @@ func _still(p, st: int) -> void:
 		var v := u.orthogonal()
 		# the mouth's jambs and the corridor's threshold plate
 		for s: float in [-1.0, 1.0]:
-			var j := u * (R_WALL + R_OUT) * 0.5 + v * s * (PortStructure.HALF + 0.55)
+			var j := u * (R_WALL + R_OUT) * 0.5 + v * s * (PortStructure.half(z) + 0.55)
 			_box(p, j, g, Vector2(R_OUT - R_WALL + 0.4, 0.75), FACE2, _ink(0.45), 0.06)
 		for k in 7:
 			var q := u * (R_WALL + 0.2 + k * 0.28)
-			p.line(q + v * (PortStructure.HALF - 0.1), q - v * (PortStructure.HALF - 0.1), _ink(0.09), 0.06)
+			p.line(q + v * (PortStructure.half(z) - 0.1), q - v * (PortStructure.half(z) - 0.1), _ink(0.09), 0.06)
 	for i in 12:
 		var a := TAU * i / 12.0 + PI / 12.0
 		if _in_gap(a, R_WALL, PortStructure.HALF + 1.6):
@@ -200,6 +203,9 @@ func _still(p, st: int) -> void:
 	for i in 12:
 		var a := TAU * i / 12.0
 		if _in_gap(a, 18.0, 3.4):
+			continue
+		# 130 号: none under the passing loop's inner track
+		if wrapf(a, -PI, PI) > FW.PASS_A - 0.05 and wrapf(a, -PI, PI) < FW.PASS_B + 0.05:
 			continue
 		var u := Vector2.from_angle(a)
 		var v := u.orthogonal()
@@ -371,6 +377,17 @@ func _still(p, st: int) -> void:
 					p.line(h + v * f * 0.92 + u * s * 1.88, h + v * (f + 0.25) * 0.92 + u * s * 1.88, Pal.heat(0.55, 0.9), 0.2)
 		_box(p, h, g, Vector2(hr * 2.0, hr * 2.0), Color(0, 0, 0, 0), _ink(0.5), 0.12)
 		_box(p, h, g, Vector2(3.2, 3.2), Color(0.018, 0.02, 0.024), _ink(0.25), 0.05)
+		# 130 号: the roller apron from the hatch out to the loop, where a freight wagon stands to push
+		# a crate across or take one (its rollers turn while it does: back())
+		var r0 := W.R_HATCH + 2.0
+		var r1 := APRON_OUT
+		_box(p, u * (r0 + r1) * 0.5, g, Vector2(r1 - r0, 3.8), Color(0.034, 0.036, 0.042), _ink(0.3), 0.04)
+		var rr := r0 + 0.12
+		while rr < r1 - 0.05:
+			p.line(u * rr + v * 1.75, u * rr - v * 1.75, _ink(0.16), 0.06)
+			rr += 0.26
+		for s: float in [-1.0, 1.0]:
+			p.line(u * r0 + v * s * 1.95, u * r1 + v * s * 1.95, Pal.heat(0.45, 0.9), 0.08)
 		var b := W.base_at(z)
 		var oct := PackedVector2Array()
 		for k in 8:
@@ -559,18 +576,78 @@ func goods_mesh(use: String) -> ArrayMesh:
 	return _mesh("goods_" + use, func(p): _goods(p, use))
 
 
+# 130 号: a crate as it is drawn anywhere (the carousel, a lift, an arm, a freight wagon): metal as its
+# bundle, skip or pallet (goods_mesh); a machine in an open cage, its own line art inside (the ship
+# file's, as the warehouse draws it), so the two read apart at a glance
+func goods_at(ci: CanvasItem, pc: Dictionary, at: Vector2, rot: float, mod := Color.WHITE, k := 1.0) -> void:
+	if str(pc.get("use", "")) != "equip":
+		_put(ci, goods_mesh(str(pc.get("use", "misc"))), at, rot, mod, k)
+		return
+	_put(ci, cage_mesh(), at, rot, mod, k)
+	var lk: Dictionary = pc.get("look", {})
+	if lk.is_empty():
+		return
+	var look := StoreBook.look_any(str(lk.get("ship", "")), str(lk.get("tag", "")), str(lk.get("nk", "")))
+	# too small on screen to read: the cage alone
+	if look.is_empty() or str(look.get("art", "")) == "" or m * k * ci.get_canvas_transform().get_scale().x < 9.0:
+		return
+	var sz: Vector2 = (look.size as Vector2) * Geom.M
+	var turn := sz.y > sz.x * 1.15
+	var fit_w := sz.y if turn else sz.x
+	var fit_h := sz.x if turn else sz.y
+	var kk := minf(2.9 * m * k / maxf(fit_w, 1.0), 2.2 * m * k / maxf(fit_h, 1.0))
+	var ang := rot + (PI * 0.5 if turn else 0.0)
+	ci.draw_set_transform(_p(at) + (-sz * 0.5 * kk).rotated(ang), ang, Vector2(kk, kk))
+	var poly: PackedVector2Array = look.get("poly", PackedVector2Array())
+	if poly.size() >= 3:
+		var pts := PackedVector2Array()
+		for q in poly:
+			pts.append(q * Geom.M)
+		ci.draw_colored_polygon(pts, Color(0.1, 0.11, 0.124, mod.a))
+	Art.draw(ci, str(look.art), sz, null, font)
+	ci.draw_set_transform(Vector2.ZERO)
+
+
+func cage_mesh() -> ArrayMesh:
+	return _mesh("cage", func(p):
+		var hx := 1.8
+		var hy := 1.45
+		# the skid it stands on, the cage's posts and rails, a brace across each side
+		p.rect(Rect2(-hx, -hy, hx * 2.0, hy * 2.0), Color(0.06, 0.064, 0.072))
+		for x: float in [-1.2, -0.4, 0.4, 1.2]:
+			p.line(Vector2(x, -hy + 0.1), Vector2(x, hy - 0.1), Color(0.09, 0.094, 0.104), 0.22)
+		p.rect(Rect2(-hx, -hy, hx * 2.0, hy * 2.0), Pal.tint(Pal.AIR, 0.5, 1.0), false, 0.08)
+		p.rect(Rect2(-hx + 0.16, -hy + 0.16, hx * 2.0 - 0.32, hy * 2.0 - 0.32), _ink(0.22), false, 0.03)
+		for cx: float in [-1.0, 1.0]:
+			for cy: float in [-1.0, 1.0]:
+				p.rect(Rect2(Vector2(cx * (hx - 0.14), cy * (hy - 0.14)) - Vector2(0.16, 0.16), Vector2(0.32, 0.32)), Pal.tint(Pal.AIR, 0.7, 1.0))
+		p.line(Vector2(-hx, -hy), Vector2(-hx + 0.7, -hy + 0.7), _ink(0.3), 0.04)
+		p.line(Vector2(hx, hy), Vector2(hx - 0.7, hy - 0.7), _ink(0.3), 0.04))
+
+
 func _goods(p, use: String) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(use)
 	match use:
 		"ingot":
-			# a pallet of ingots, three rows of four, bevelled tops
+			# 130 号: a pallet of ingots in two tiers, the top one laid crosswise, two straps over both
 			p.rect(Rect2(-1.75, -1.45, 3.5, 2.9), Color(0.14, 0.12, 0.09))
+			for k in 4:
+				p.line(Vector2(-1.75, -1.2 + k * 0.8), Vector2(1.75, -1.2 + k * 0.8), Color(0.09, 0.08, 0.06), 0.08)
 			for ix in 4:
 				for iy in 3:
 					var q := Vector2(-1.32 + ix * 0.88, -0.96 + iy * 0.96)
-					p.rect(Rect2(q - Vector2(0.4, 0.42), Vector2(0.8, 0.84)), Color(0.3, 0.31, 0.33))
-					p.rect(Rect2(q - Vector2(0.28, 0.3), Vector2(0.56, 0.6)), Color(0.46, 0.47, 0.5))
+					p.rect(Rect2(q - Vector2(0.4, 0.42), Vector2(0.8, 0.84)), Color(0.27, 0.28, 0.3))
+			for ix in 3:
+				for iy in 4:
+					var q2 := Vector2(-0.96 + ix * 0.96, -1.14 + iy * 0.76) + Vector2(0.06, -0.05)
+					var r := Rect2(q2 - Vector2(0.42, 0.33), Vector2(0.84, 0.66))
+					p.rect(r, Color(0.4, 0.41, 0.44))
+					p.rect(Rect2(r.position + Vector2(0.1, 0.08), r.size - Vector2(0.2, 0.16)), Color(0.5, 0.51, 0.54))
+					p.rect(r, _ink(0.28), false, 0.025)
+			for x: float in [-0.7, 0.75]:
+				p.line(Vector2(x, -1.45), Vector2(x, 1.45), Pal.tint(Pal.AIR, 0.55, 0.95), 0.07)
+				p.line(Vector2(x - 0.12, -1.45), Vector2(x + 0.12, -1.45), _ink(0.6), 0.05)
 		"scrap", "nonferrous":
 			# a skip of loose metal
 			var tone := Color(0.55, 0.38, 0.22) if use == "nonferrous" else Color(0.4, 0.4, 0.43)
@@ -587,14 +664,21 @@ func _goods(p, use: String) -> void:
 				p.poly(pts, Color(tone.r * sh, tone.g * sh, tone.b * sh))
 			p.rect(Rect2(-1.8, -1.5, 3.6, 3.0), Pal.heat(0.4, 0.9), false, 0.08)
 		"billet":
-			# a bundle of long square bars, strapped
+			# 130 号: a bundle of long square bars, two layers (the top one in the bottom one's gaps), strapped
 			p.rect(Rect2(-1.85, -1.3, 3.7, 2.6), Color(0.05, 0.05, 0.055))
 			for iy in 5:
 				var y := -1.08 + iy * 0.54
-				p.rect(Rect2(-1.8, y - 0.23, 3.6, 0.46), Color(0.33, 0.34, 0.36))
-				p.line(Vector2(-1.8, y - 0.12), Vector2(1.8, y - 0.12), Color(0.48, 0.49, 0.52), 0.06)
+				p.rect(Rect2(-1.8, y - 0.23, 3.6, 0.46), Color(0.27, 0.28, 0.3))
+			for iy in 4:
+				var y2 := -0.81 + iy * 0.54
+				p.rect(Rect2(-1.72, y2 - 0.24, 3.5, 0.48), Color(0.38, 0.39, 0.42))
+				p.line(Vector2(-1.72, y2 - 0.13), Vector2(1.78, y2 - 0.13), Color(0.52, 0.53, 0.56), 0.06)
+				p.rect(Rect2(-1.72, y2 - 0.24, 3.5, 0.48), _ink(0.26), false, 0.025)
+				# the cut ends
+				p.rect(Rect2(1.7, y2 - 0.2, 0.08, 0.4), Color(0.46, 0.4, 0.34))
 			for x: float in [-1.1, 0.0, 1.1]:
-				p.line(Vector2(x, -1.3), Vector2(x, 1.3), Pal.tint(Pal.AIR, 0.5, 0.9), 0.07)
+				p.line(Vector2(x, -1.3), Vector2(x, 1.3), Pal.tint(Pal.AIR, 0.55, 0.95), 0.07)
+				p.rect(Rect2(Vector2(x - 0.09, -1.36), Vector2(0.18, 0.14)), _ink(0.6))
 		"stock":
 			# plate in a stack, each sheet a little off the last, chalk marks
 			for k in 3:
@@ -603,6 +687,9 @@ func _goods(p, use: String) -> void:
 				p.rect(Rect2(Vector2(-1.75, -1.35) + o, Vector2(3.4, 2.6)), _ink(0.3), false, 0.03)
 			p.line(Vector2(-1.0, -0.6), Vector2(0.4, -0.6), Color(0.9, 0.9, 0.85, 0.6), 0.06)
 			p.line(Vector2(-1.0, -0.35), Vector2(-0.2, -0.35), Color(0.9, 0.9, 0.85, 0.6), 0.06)
+			# 130 号: two straps round the stack
+			for x: float in [-0.9, 0.9]:
+				p.line(Vector2(x, -1.35), Vector2(x, 1.4), Pal.tint(Pal.AIR, 0.55, 0.95), 0.07)
 		"hazard":
 			# a tank in its frame
 			p.rect(Rect2(-1.8, -1.4, 3.6, 2.8), Color(0.08, 0.084, 0.094))
@@ -700,7 +787,7 @@ func back(ci: CanvasItem, t: float) -> void:
 		var pc = W.cradles[k] if k < W.cradles.size() else null
 		var a := th + k * W.PITCH
 		if pc != null:
-			_put(ci, goods_mesh(str(pc.use)), Vector2.from_angle(a) * W.R_CRADLE, a)
+			goods_at(ci, pc, Vector2.from_angle(a) * W.R_CRADLE, a)
 	if st == 0:
 		# the crate knocked askew when the ring died, one corner over the cradle's rail
 		var a := th + W.ASKEW * W.PITCH
@@ -733,7 +820,7 @@ func back(ci: CanvasItem, t: float) -> void:
 			var shade := lerpf(0.35, 1.0, lift)
 			_put(ci, lift_mesh(), hp, g, Color(shade, shade, shade), 0.86 + 0.14 * lift)
 			if hz.parcel != null:
-				_put(ci, goods_mesh(str(hz.parcel.use)), hp, g, Color(shade, shade, shade), (0.86 + 0.14 * lift) * 0.82)
+				goods_at(ci, hz.parcel, hp, g, Color(shade, shade, shade), (0.86 + 0.14 * lift) * 0.82)
 		var v := Vector2.from_angle(g).orthogonal()
 		var slide := 1.5 * doors
 		_put(ci, leaf_mesh(), hp + v * (0.05 + slide), g)
@@ -756,7 +843,7 @@ func front(ci: CanvasItem, t: float) -> void:
 		# the load and its shadow (higher, further from it)
 		if a.parcel != null:
 			_put(ci, shadow_mesh(), wr + LOAD_SHADOW * (0.3 + h), float(a.yaw))
-			_put(ci, goods_mesh(str(a.parcel.use)), wr, float(a.yaw), Color.WHITE, k * 0.98)
+			goods_at(ci, a.parcel, wr, float(a.yaw), Color.WHITE, k * 0.98)
 		_put(ci, turret_mesh(), b, float(a.q1))
 		_put(ci, link_mesh(W.L1, 0.8, 0.62), b, float(a.q1))
 		_put(ci, link_mesh(W.L2, 0.6, 0.46), e, float(a.q2))
@@ -902,7 +989,7 @@ func plates(ci: CanvasItem, t: float) -> void:
 	for z in sp:
 		var g: float = sp[z]
 		var side := -W.side_of(z) if z != "power" else 1.0
-		var a := g + side * (PortStructure.HALF + 2.6) / 23.5
+		var a := g + side * (PortStructure.half(z) + 2.6) / 23.5
 		var at := Vector2.from_angle(a) * 23.5 + Vector2(-1.0, -0.15)
 		if not Pal.labels:
 			continue

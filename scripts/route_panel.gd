@@ -493,6 +493,9 @@ func _port_detail(n: Dictionary) -> void:
 	if st >= 2:
 		_add_line(words("基础设施修复完成。", "BASE FACILITIES RESTORED."), 17, Hmi.ok_col())
 		return
+	if Port.RepairBill.ON:
+		_port_bill(z, st)
+		return
 	var needs := Port.needs(z, st + 1)
 	var pf := Repair.parts_for_needs(needs)
 	detail.add_child(HSeparator.new())
@@ -529,6 +532,44 @@ func _port_detail(n: Dictionary) -> void:
 		_add_line(why_c, 13, Hmi.warn_col())
 	_add_line(Txt.t("pt_effect_" + z), 14, Color(1, 1, 1, 0.6))
 	action_button = bp if why_p == "" else bc
+
+
+# 128 号 第 3 段: the one "修" — the bill, then the confirmation (scripts/repair_order.gd)
+func _port_bill(z: String, st: int) -> void:
+	var b: Dictionary = Port.RepairBill.of(z)
+	detail.add_child(HSeparator.new())
+	detail.add_child(label(Txt.t("rp_needs") + "  ·  " + Txt.t("pt_stage") + " %d" % (st + 1), 16))
+	for row in b.get("rows", []):
+		var ok := int(row.buy) == 0
+		_add_line("%s  %s  %d / %d%s" % ["✓" if ok else "○", str(row.name), int(row.own), int(row.need), "" if ok else words("  · 缺的按市价买", "  · the rest bought")], 16, Hmi.ok_col() if ok else Pal.ink(0.8))
+	var sd: Dictionary = b.get("steel", {})
+	var oks := float(sd.get("buy", 0.0)) < 0.05
+	_add_line("%s  %s  %.1f / %.1f t" % ["✓" if oks else "○", words("修缮钢材", "REPAIR STEEL"), float(sd.get("own", 0.0)), float(sd.get("need", 0.0))], 16, Hmi.ok_col() if oks else Pal.ink(0.8))
+	if st == 0:
+		for d in Port.DEPS.get(z, []):
+			var ok4: bool = Port.stage(str(d[0])) >= int(d[1])
+			_add_line(("✓  " if ok4 else "○  ") + Txt.t("rt_first") + "  " + Port.name_of(str(d[0])), 15, Hmi.ok_col() if ok4 else Hmi.warn_col())
+	detail.add_child(HSeparator.new())
+	var onsite: bool = terminal.overlay and not terminal.between
+	var why := Port.reason(z, true)
+	if why == "" and st == 0 and not Port.deps_ok(z):
+		why = Txt.t("tm_needs") % Port.name_of(str(Port.DEPS[z][0][0]))
+	var bm := key(words("修 · 要买 %s", "MEND · BUY %s") % Pal.money(float(b.get("buy_cash", 0.0))), _port_order.bind(z))
+	bm.disabled = not (why == "" and not onsite)
+	detail.add_child(bm)
+	if why != "":
+		_add_line(why, 13, Hmi.warn_col())
+	_add_line(Txt.t("pt_effect_" + z), 14, Color(1, 1, 1, 0.6))
+	action_button = bm
+
+
+func _port_order(z: String) -> void:
+	var od = preload("res://scripts/repair_order.gd").new()
+	od.zone = z
+	od.on_done = func(ok: bool):
+		if ok:
+			_port_fix(z, true)
+	terminal.add_child(od)
 
 
 func _add_line(text: String, px: int, col: Color) -> void:

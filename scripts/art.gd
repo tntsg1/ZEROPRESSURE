@@ -468,7 +468,7 @@ static func _draw_old(ci: CanvasItem, art: String, w: float, h: float, p, font: 
 			for k in 6:
 				L(ci, Vector2(w * 0.86, h * (0.2 + k * 0.12)), Vector2(w * 0.9, h * (0.2 + k * 0.12)), 0.35)
 			L(ci, Vector2(w * 0.2, h * 0.55), Vector2(w * 0.8, h * 0.55), 0.18)
-			EQ.T(ci, font, Vector2(w * 0.4, h * 0.48), p.label, -1, maxi(9, int(h * 0.1)), 0.5)
+			EQ.T(ci, font, Vector2(w * 0.4, h * 0.48), (p.label if p != null else ""), -1, maxi(9, int(h * 0.1)), 0.5)
 			EQ.T(ci, font, Vector2(w * 0.4, h * 0.66), "-253°C" if p != null and p.name_key == "p_lh2_tank" else "-163°C", -1, maxi(8, int(h * 0.07)), 0.4)
 		"guard":
 			L(ci, Vector2(w * 0.5, 3), Vector2(w * 0.45, h - 3), 0.3)

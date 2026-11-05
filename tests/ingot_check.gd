@@ -61,9 +61,9 @@ func _run() -> void:
 	# ---- the main line's steel steps
 	var plain := true
 	for t in ["heat", "buy_feed", "clients"]:
-		var s := str(Mainline.step("steel").get("text", ""))
+		var s := str(Mainline.step("process").get("text", ""))
 		plain = plain and s.find("炉料") < 0 and s.find("等级") < 0
-	check(plain, "the steel chapter speaks of ingots and billets (%s)" % str(Mainline.step("steel").get("text", "")))
+	check(plain, "the steel chapter speaks of ingots and billets (%s)" % str(Mainline.step("process").get("text", "")))
 	# ---- on site: the furnace desk's feed is the ingot; the exchange's sell page; the shelves
 	await _spawn()
 	await _frames(20)

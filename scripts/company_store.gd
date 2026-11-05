@@ -59,6 +59,8 @@ var guide_btn := ""
 var guide_text := ""
 var sold_n := 0
 var grid_view: Control
+var grid_fx: Control
+var _grid_sig := ""
 var overlay: Control
 
 
@@ -68,6 +70,8 @@ class Layer extends Control:
 	func _draw() -> void:
 		if what == "grid":
 			page._draw_grid(self)
+		elif what == "fx":
+			page._draw_grid_fx(self)
 		else:
 			page._draw_drag(self)
 
@@ -89,6 +93,14 @@ func _ready() -> void:
 	grid_view.clip_contents = true
 	grid_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(grid_view)
+	# 2026-11-05: what moves on the grid (hover, flights, turns, fades, the pointer's light, the chosen
+	# frame) is drawn on its own layer every frame; the grid itself only when something changes
+	grid_fx = Layer.new()
+	grid_fx.page = self
+	grid_fx.what = "fx"
+	grid_fx.clip_contents = true
+	grid_fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(grid_fx)
 	overlay = Layer.new()
 	overlay.page = self
 	overlay.what = "drag"
@@ -218,6 +230,16 @@ func where_of(it: Dictionary) -> String:
 	return w("公司仓库", "COMPANY STORES")
 
 
+# when and where it came off: the game day it was stowed (star map calendar), "—" for old saves with no record
+func origin_of(it: Dictionary) -> String:
+	var src := str(it.get("ship", ""))
+	if src == "" or it.get("steel", false) or str(it.get("cat", "")) == "raw":
+		return ""
+	var d := float(it.get("day", -1.0))
+	var when := (w("第 %d 天", "DAY %d") % int(d)) if d >= 0.0 else "—"
+	return w("拆下于 %s · 来自 %s", "TAKEN OFF %s · FROM %s") % [when, Methods.ship_label(src)]
+
+
 func use_of(it: Dictionary) -> String:
 	match str(it.cat):
 		"steel":
@@ -240,9 +262,8 @@ func use_of(it: Dictionary) -> String:
 					t = w("修「%s」用得上：留着能省钱。也可以卖。", "%s needs it: keep it to save money. It sells too.") % Repair.name_of(str(want[str(p.uid)][0]))
 				elif float(p.get("cond", 0.0)) < Repair.COND_MIN:
 					t += w(" 这件太旧，修缮用不上，只能卖。", " Too worn for repairs: sell it.")
-				return t + "\n" + w("来自 %s", "FROM %s") % Methods.ship_label(str(p.get("ship", "")))
-			var src := str(it.get("good", {}).get("ship", ""))
-			return w("拆下来的完整机器，修缮用不上，可以卖。", "A whole machine off a ship, of no use for repairs: it sells.") + ("\n" + w("来自 %s", "FROM %s") % Methods.ship_label(src) if src != "" else "")
+				return t
+			return w("拆下来的完整机器，修缮用不上，可以卖。", "A whole machine off a ship, of no use for repairs: it sells.")
 		"part":
 			return w("小零件，一盒最多 %d 个，修缮时消耗。", "Small spares, %d to a box, used up by repairs.") % StoreBook.PART_STACK
 		"special":
@@ -429,6 +450,7 @@ func turn() -> void:
 	if drag_id != "":
 		drag_rot = 1 - drag_rot
 		_turn["__drag"] = BenchFx.now()
+		_find_fits()
 		return
 
 	var it := _item(sel)
@@ -631,6 +653,9 @@ func _layout() -> void:
 	var gr := _grid_rect()
 	grid_view.position = gr.position
 	grid_view.size = gr.size
+	if grid_fx != null:
+		grid_fx.position = gr.position
+		grid_fx.size = gr.size
 	overlay.position = Vector2.ZERO
 	overlay.size = size
 	var fx := PAD
@@ -704,6 +729,9 @@ func _process(dt: float) -> void:
 			_confirm = ""
 	if _signature() != _sig:
 		build()
+		for id in _multi.keys():
+			if _item(str(id)).is_empty():
+				_multi.erase(id)
 	scroll = clampf(scroll, 0.0, _scroll_max())
 	_layout()
 	var m := _mouse()
@@ -715,10 +743,22 @@ func _process(dt: float) -> void:
 	for b in _btns:
 		if (_btns[b] as Rect2).has_point(m):
 			hover_btn = str(b)
+	if not _menu.is_empty():
+		_menu.hover = -1
+		for i in _menu.rows.size():
+			if _menu_rect(i).has_point(m):
+				_menu.hover = i
+	if _marq_on:
+		_marq_to = m
+	_ease_hover(dt)
 	if _press_id != "" and drag_id == "" and m.distance_to(_press_at) > 8.0:
 		_start_drag(_press_id, _press_at)
 	queue_redraw()
-	grid_view.queue_redraw()
+	var gsig := "%.2f|%s|%s|%s|%s|%s|%d|%s|%s" % [scroll, _sig, kind, str(_live_ids()), str(_multi.keys()), drag_id, lay.hash(), BenchFx.on(), grid_view.size]
+	if gsig != _grid_sig:
+		_grid_sig = gsig
+		grid_view.queue_redraw()
+	grid_fx.queue_redraw()
 	overlay.queue_redraw()
 
 
@@ -735,6 +775,8 @@ func _start_drag(id: String, at: Vector2) -> void:
 		_sel_prev = id
 		_sel_t0 = -9.0
 	_drag_t0 = BenchFx.now()
+	_multi = {}
+	_menu = {}
 	var c := cell()
 	if lay.has(id) and not it.get("inbox", false):
 		var r := unit_rect(id)
@@ -743,6 +785,8 @@ func _start_drag(id: String, at: Vector2) -> void:
 	else:
 		drag_rot = 0
 		drag_grab = Vector2(0.5, 0.5)
+	# 拖动时其他能放的空位微微发亮
+	_find_fits()
 
 
 # where the dragged thing would land: [x, y] cells (top left)
@@ -792,6 +836,7 @@ func _drop(page_pos: Vector2) -> void:
 			var g1 := _ghost_rect(page_pos).position - _grid_rect().position
 			_fly[id] = [g1 - _rest_rect(id).position, BenchFx.now(), 0.32, "snap"]
 	drag_id = ""
+	_fits = {}
 
 
 func _gui_input(ev: InputEvent) -> void:
@@ -808,15 +853,64 @@ func _gui_input(ev: InputEvent) -> void:
 			else:
 				scroll = clampf(scroll - WHEEL, 0.0, _scroll_max())
 		elif ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
-			turn()
+			# 右键菜单: sell, keep, turn (not while the first visit's guide is showing what to sell)
+			var ru := _unit_at(ev.position)
+			if ru == "":
+				for id in _rects:
+					if (_rects[id] as Rect2).has_point(ev.position):
+						ru = str(id)
+			if _guide_on():
+				turn()
+			elif ru != "":
+				_multi = {}
+				_open_menu(ru, ev.position)
+			else:
+				_menu = {}
 		elif ev.button_index == MOUSE_BUTTON_LEFT:
 			_layout()
 			if not ev.pressed:
+				if _marq_on:
+					_marq_on = false
+					_marq_to = ev.position
+					if _marq_from.distance_to(_marq_to) > 6.0:
+						_box_pick()
+					elif _ctrl_press != "":
+						_toggle_multi(_ctrl_press)
+					_ctrl_press = ""
+					accept_event()
+					return
 				if drag_id != "":
 					_drop(ev.position)
 				_press_id = ""
 				accept_event()
 				return
+			# a menu open: a click on a row does it, anywhere else closes it
+			if not _menu.is_empty():
+				for i in _menu.rows.size():
+					if _menu_rect(i).has_point(ev.position):
+						_menu_pick(i)
+						accept_event()
+						return
+				_menu = {}
+				accept_event()
+				return
+			if BenchFx.on() and _grid_rect().has_point(ev.position):
+				_ripples.append([ev.position, BenchFx.now()])
+			# Ctrl: a box from here (or, if the pointer does not move, the thing under it in or out)
+			if _ctrl() and not _guide_on() and _grid_rect().has_point(ev.position):
+				_marq_on = true
+				_marq_from = ev.position
+				_marq_to = ev.position
+				_ctrl_press = _unit_at(ev.position)
+				accept_event()
+				return
+			if not _multi.is_empty():
+				var on_btn := false
+				for b in _btns:
+					if (_btns[b] as Rect2).has_point(ev.position):
+						on_btn = true
+				if not on_btn:
+					_multi = {}
 			for b in _btns:
 				if (_btns[b] as Rect2).has_point(ev.position):
 					_press(str(b))
@@ -839,9 +933,15 @@ func _press(b: String) -> void:
 	if b.begins_with("f:"):
 		open_kind(b.substr(2))
 	elif b == "sell":
-		sell_sel()
+		if not _multi.is_empty():
+			sell_multi()
+		else:
+			sell_sel()
 	elif b == "keep":
-		keep_sel()
+		if not _multi.is_empty():
+			keep_multi()
+		else:
+			keep_sel()
 	elif b == "keep_all":
 		keep_all()
 	elif b == "tidy":
@@ -869,13 +969,23 @@ func _unhandled_input(ev: InputEvent) -> void:
 			i = k
 	match ev.physical_keycode:
 		KEY_ESCAPE, KEY_F3:
-			if drag_id != "":
+			# Esc steps back: the menu, then the Ctrl selection, then a drag, then the page
+			if not _menu.is_empty():
+				_menu = {}
+			elif not _multi.is_empty() or _marq_on:
+				_multi = {}
+				_marq_on = false
+			elif drag_id != "":
 				drag_id = ""
 				_press_id = ""
+				_fits = {}
 			else:
 				_close()
 		KEY_ENTER, KEY_KP_ENTER:
-			sell_sel()
+			if not _multi.is_empty():
+				sell_multi()
+			else:
+				sell_sel()
 		KEY_K:
 			keep_sel()
 		KEY_R:
@@ -911,10 +1021,16 @@ func _lit(on: bool) -> float:
 func _draw() -> void:
 	_layout()
 	draw_rect(Rect2(Vector2.ZERO, size), BG)
+	# the store's racks behind it all, blurred, moving a little against the pointer
+	_draw_bg()
 	_draw_head()
 	_draw_filters()
 	var gr := _grid_rect()
+	_glass(self, gr.grow(6.0))
 	draw_rect(gr.grow(1.0), Pal.ink(0.16), false, 1.0)
+	_glass(self, _detail_rect())
+	if _inbox_on():
+		_glass(self, _inbox_rect())
 	_draw_scrollbar()
 	_draw_inbox()
 	_draw_detail()
@@ -996,46 +1112,59 @@ func _draw_grid(ci: CanvasItem) -> void:
 			var p := Vector2(x * c, yy)
 			ci.draw_line(p + Vector2(-3, 0), p + Vector2(3, 0), Color(1, 1, 1, 0.09), 1.0)
 			ci.draw_line(p + Vector2(0, -3), p + Vector2(0, 3), Color(1, 1, 1, 0.09), 1.0)
-	var filtered := kind != "all"
+	# the things that are still (the moving ones are on the layer above)
 	for it in items:
 		var id := str(it.id)
-		if not lay.has(id) or id == drag_id:
+		if not lay.has(id) or id == drag_id or _live(id):
+			continue
+		_draw_one(ci, it, id)
+
+
+# is this unit moving now (it is drawn every frame, on the layer above the still grid)
+func _live(id: String) -> bool:
+	if float(_hk.get(id, 0.0)) > 0.0 or _fly.has(id) or id == guide_id or _land_k(id) > 0.0:
+		return true
+	if _turn.has(id) and BenchFx.now() - float(_turn[id]) < TURN_S:
+		return true
+	var dk := float(_dimk.get(id, 0.0))
+	return dk > 0.0 and dk < 1.0
+
+
+func _live_ids() -> Array:
+	var out: Array = []
+	for it in items:
+		if _live(str(it.id)):
+			out.append(str(it.id))
+	return out
+
+
+# where a unit is drawn now: its cells, less the filter's and the pointer's lift
+func _drawn_rect(id: String) -> Rect2:
+	var dk := smoothstep(0.0, 1.0, float(_dimk.get(id, 0.0)))
+	var hk := BenchFx.e_out(float(_hk.get(id, 0.0)))
+	var lift := (1.0 - dk) * (2.5 if kind != "all" and BenchFx.on() else 0.0) + LIFT_PX * hk
+	var ur := unit_rect(id).grow(-2.0)
+	ur.position.y -= lift
+	return ur
+
+
+# the moving layer: the pointer's light on the grid, where a dragged thing could go, the moving
+# units, the chosen frame, the drop preview
+func _draw_grid_fx(ci: CanvasItem) -> void:
+	var c := cell()
+	var gs: Vector2 = grid_view.size
+	_grid_glow(ci)
+	_draw_fits(ci)
+	for it in items:
+		var id := str(it.id)
+		if not lay.has(id) or id == drag_id or not _live(id):
 			continue
 		var r := unit_rect(id)
 		if r.end.y < -2.0 or r.position.y > gs.y + 2.0:
 			continue
-		# 筛选: what the filter leaves out eases down to about 28 %; what it shows keeps its light and
-		# lifts a little off the floor
-		var dk := smoothstep(0.0, 1.0, float(_dimk.get(id, 0.0)))
-		var lift := (1.0 - dk) * (2.5 if filtered and BenchFx.on() else 0.0)
-		var ur := r.grow(-2.0)
-		ur.position.y -= lift
-		# its shadow on the floor (deeper the more it lifts, the more it flies)
-		var fl := _fly.has(id)
-		ci.draw_rect(Rect2(ur.position + Vector2(2, 3 + lift), ur.size), Color(0, 0, 0, 0.35 + 0.1 * lift + (0.15 if fl else 0.0)))
-		var turning := _turn.has(id) and BenchFx.on() and BenchFx.now() - float(_turn[id]) < TURN_S
-		if turning:
-			# R: the new orientation drawn turned back by what is left of the quarter turn
-			var tk := BenchFx.e_io((BenchFx.now() - float(_turn[id])) / TURN_S)
-			_xf = Transform2D(-(1.0 - tk) * PI * 0.5, ur.get_center())
-			ci.draw_set_transform_matrix(_xf)
-			_unit(ci, it, Rect2(-ur.size * 0.5, ur.size), int(lay[id][2]), dk > 0.5, 1.0)
-			_xf = Transform2D.IDENTITY
-			ci.draw_set_transform_matrix(_xf)
-		else:
-			_turn.erase(id)
-			_unit(ci, it, ur, int(lay[id][2]), dk > 0.5, 1.0)
-		# 落位 / 整理到位: its cells flash ice blue for a moment — under the filter's veil, so what the
-		# filter leaves out stays at about 28 % while it lands too
-		var la := _land_k(id)
-		if la > 0.0:
-			ci.draw_rect(_rest_rect(id).grow(-1.0), Color(UiSkin.DATA, 0.9 * la), false, 2.0)
-			ci.draw_rect(_rest_rect(id).grow(-1.0), Color(UiSkin.DATA, 0.08 * la))
-		if dk > 0.0:
-			ci.draw_rect(_rest_rect(id).grow(1.0).merge(ur.grow(1.0)), Color(0.026, 0.03, 0.036, DIM_VEIL * dk))
-		# 选中: its outline is traced round (0.3 s), then glows softly
-		if id == sel:
-			_sel_frame(ci, ur)
+		_draw_one(ci, it, id)
+	if sel != "" and lay.has(sel) and sel != drag_id and _multi.is_empty():
+		_sel_frame(ci, _drawn_rect(sel))
 	# where a drag would land
 	if drag_id != "":
 		var m := _mouse()
@@ -1046,6 +1175,50 @@ func _draw_grid(ci: CanvasItem) -> void:
 			var ok := drop_ok(m)
 			ci.draw_rect(r, Color(UiSkin.DATA, 0.12) if ok else Color(Pal.heat(1.0, 1.0), 0.18))
 			ci.draw_rect(r, Color(UiSkin.DATA, 0.8) if ok else Pal.heat(1.0, 1.2), false, 1.5)
+
+
+# one unit as it is now: its shadow, the thing (turning if it is), the pointer's light and edge, the
+# Ctrl tick, the landing flash, the filter's veil
+func _draw_one(ci: CanvasItem, it: Dictionary, id: String) -> void:
+	var gs: Vector2 = grid_view.size
+	var r := unit_rect(id)
+	if r.end.y < -2.0 or r.position.y > gs.y + 2.0:
+		return
+	var dk := smoothstep(0.0, 1.0, float(_dimk.get(id, 0.0)))
+	var hk := BenchFx.e_out(float(_hk.get(id, 0.0)))
+	var ur := _drawn_rect(id)
+	var lift := r.grow(-2.0).position.y - ur.position.y
+	# its shadow on the floor (deeper and wider the more it lifts, the more it flies)
+	var fl := _fly.has(id)
+	ci.draw_rect(Rect2(ur.position + Vector2(2, 3 + lift), ur.size).grow(hk * 2.0), Color(0, 0, 0, 0.35 + 0.08 * lift + (0.15 if fl else 0.0)))
+	var turning := _turn.has(id) and BenchFx.on() and BenchFx.now() - float(_turn[id]) < TURN_S
+	if turning:
+		# R: the new orientation drawn turned back by what is left of the quarter turn
+		var tk := BenchFx.e_io((BenchFx.now() - float(_turn[id])) / TURN_S)
+		_xf = Transform2D(-(1.0 - tk) * PI * 0.5, ur.get_center())
+		ci.draw_set_transform_matrix(_xf)
+		_unit(ci, it, Rect2(-ur.size * 0.5, ur.size), int(lay[id][2]), dk > 0.5, 1.0)
+		_xf = Transform2D.IDENTITY
+		ci.draw_set_transform_matrix(_xf)
+	else:
+		_unit(ci, it, ur, int(lay[id][2]), dk > 0.5, 1.0)
+	# the pointer's light inside it, its edge warming as it rises
+	if hk > 0.0:
+		_spot(ci, ur, hk)
+		ci.draw_rect(ur, Color(UiSkin.ACCENT, 0.55 * hk), false, 1.5)
+	# chosen with Ctrl: an ice-blue frame and a tick
+	if _multi.has(id):
+		ci.draw_rect(ur.grow(1.0), Color(UiSkin.DATA, 0.95), false, 2.0)
+		ci.draw_rect(Rect2(ur.position + Vector2(ur.size.x - 16, 4), Vector2(12, 12)), Color(UiSkin.DATA, 0.9))
+		ci.draw_polyline(PackedVector2Array([ur.position + Vector2(ur.size.x - 13, 10), ur.position + Vector2(ur.size.x - 10.5, 13), ur.position + Vector2(ur.size.x - 6, 7)]), Color(0.02, 0.03, 0.04), 1.6)
+	# 落位 / 整理到位: its cells flash ice blue for a moment — under the filter's veil, so what the
+	# filter leaves out stays at about 28 % while it lands too
+	var la := _land_k(id)
+	if la > 0.0:
+		ci.draw_rect(_rest_rect(id).grow(-1.0), Color(UiSkin.DATA, 0.9 * la), false, 2.0)
+		ci.draw_rect(_rest_rect(id).grow(-1.0), Color(UiSkin.DATA, 0.08 * la))
+	if dk > 0.0:
+		ci.draw_rect(_rest_rect(id).grow(1.0).merge(ur.grow(1.0)), Color(0.026, 0.03, 0.036, DIM_VEIL * dk))
 
 
 # the chosen unit's frame: traced round from its top-left corner, then a soft accent glow
@@ -1070,6 +1243,7 @@ func _sel_frame(ci: CanvasItem, r: Rect2) -> void:
 # the thing being dragged, floating over the page (not clipped)
 func _draw_drag(ci: CanvasItem) -> void:
 	_draw_gone(ci)
+	_draw_over(ci)
 	if drag_id == "":
 		return
 	var it := _item(drag_id)
@@ -1132,11 +1306,19 @@ func _ghost_rect(m: Vector2) -> Rect2:
 # one unit: its own picture filling its cells, a corner figure for bundles and boxes
 func _unit(ci: CanvasItem, it: Dictionary, r: Rect2, rot: int, dim: bool, alpha := 1.0) -> void:
 	var on: bool = str(it.id) == sel
-	var hov: bool = str(it.id) == hover
+	var hk := float(_hk.get(str(it.id), 0.0))
 	var cat := str(it.cat)
 	var tint: Color = {"raw": Color(0.5, 0.5, 0.52), "equip": Color(UiSkin.DATA), "part": Color(1.0, 0.78, 0.35), "special": Pal.tint(Pal.FLUID, 1.0, 1.0)}.get(cat, Pal.ink(0.6))
-	ci.draw_rect(r, Color(0.07, 0.075, 0.085, alpha) if not hov else Color(0.09, 0.095, 0.105, alpha))
+	# the tray, in one draw: black ground lit a little from the top, an inner shadow down the right and
+	# along the bottom, a lit lip on top and the left, scored lines at the corners (baked once); it
+	# warms as the pointer brings it up
+	ci.draw_style_box(_tray(hk, alpha), r)
 	ci.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(tint, 0.45 * alpha))
+	# its value tier: a faint glow along the bottom and a dot in the corner
+	var tc := tier_col(tier_of(it))
+	var gh := minf(r.size.y * 0.45, 40.0)
+	ci.draw_polygon(PackedVector2Array([Vector2(r.position.x, r.end.y - gh), Vector2(r.end.x, r.end.y - gh), r.end, Vector2(r.position.x, r.end.y)]), PackedColorArray([Color(tc, 0.0), Color(tc, 0.0), Color(tc, 0.07 * alpha), Color(tc, 0.07 * alpha)]))
+	ci.draw_circle(r.position + Vector2(7, 8), 2.4, Color(tc, 0.9 * alpha))
 	_picture(ci, it, r.grow(-4.0), rot, alpha)
 	var corner := ""
 	if cat == "raw":
@@ -1353,8 +1535,9 @@ func _draw_inbox() -> void:
 
 func _draw_detail() -> void:
 	var dr := _detail_rect()
-	draw_rect(dr, Color(1, 1, 1, 0.01))
-	draw_rect(dr, Pal.ink(0.14), false, 1.0)
+	if not _multi.is_empty():
+		_draw_multi_detail(dr)
+		return
 	var it := _item(sel)
 	if it.is_empty():
 		_text(w("点一样东西看详情", "CLICK A THING FOR ITS DETAILS"), dr.position + Vector2(20, 50), 16, Pal.ink(0.4), font_b)
@@ -1365,8 +1548,20 @@ func _draw_detail() -> void:
 	var rk := BenchFx.e_out5((BenchFx.now() - _sel_t0 - 0.05) / 0.45) if BenchFx.on() else 1.0
 	draw_set_transform(Vector2(0, 16.0 * (1.0 - rk)))
 	var pic := Rect2(dr.position + Vector2(20, 20), Vector2(wd, 130))
-	draw_rect(pic, Color(0, 0, 0, 0.35))
-	_picture(self, it, pic.grow(-10.0), 0)
+	# the thing on an instrument screen, turning slowly on its stand, a scan line running down it
+	CodexFx.screen(self, pic, 1.0)
+	var tt := BenchFx.now() if BenchFx.on() else 0.0
+	var yaw := cos(sin(tt * 0.5) * 0.55)
+	var pr := pic.grow(-12.0)
+	var pc := pr.get_center()
+	_xf = Transform2D(0.0, Vector2(yaw, 1.0), 0.0, pc) * Transform2D(0.0, Vector2(1.0, 1.0), 0.0, Vector2(0, 16.0 * (1.0 - rk)))
+	draw_set_transform_matrix(_xf)
+	_picture(self, it, Rect2(pr.position - pc, pr.size), 0)
+	_xf = Transform2D.IDENTITY
+	draw_set_transform(Vector2(0, 16.0 * (1.0 - rk)))
+	CodexFx.scan(self, pic, 1.0, tt)
+	# its size in cells, small, at the screen's corner
+	_draw_size(pic.position + Vector2(8, pic.size.y - 8.0 - 9.0 * maxf(float(it.get("w", 1)), float(it.get("h", 1)))), it)
 	var y := pic.end.y + 38.0
 	_text(str(it.name), Vector2(x, y), 22, Pal.ink(0.97), font_s, wd)
 	var lk := BenchFx.e_io((BenchFx.now() - _sel_t0 - 0.1) / 0.4) * (1.0 - BenchFx.e_io((BenchFx.now() - _sel_t0 - 2.05) / 0.25)) if BenchFx.on() else 0.0
@@ -1377,17 +1572,21 @@ func _draw_detail() -> void:
 	_text(str(it.qty), Vector2(x, y), 24, Pal.ink(0.97), font_s)
 	y += 26.0
 	_text(StoreBook.cat_name(str(it.cat)) + "  ·  " + where_of(it), Vector2(x, y), 13, Pal.ink(0.5), font_b, wd)
+	var org := origin_of(it)
+	if org != "":
+		y += 20.0
+		_text(org, Vector2(x, y), 13, Pal.ink(0.5), font_b, wd)
 	y += 30.0
 	y = _para(use_of(it), x, y, wd, Pal.ink(0.8))
 	var mk := market_of(it)
 	if mk > 0.0 and not it.get("steel", false):
 		y += 14.0
-		# the prices roll up and settle (#007: value · (1 − (1 − p)^4), 0.6 s)
+		# the price ladder as three bars; the figures roll up and settle (#007, 0.6 s)
 		var pk := BenchFx.e_out4((BenchFx.now() - _sel_t0 - 0.1) / 0.6) if BenchFx.on() else 1.0
-		_text(w("回收站 %s · 交易行约 %s · 订单约 %s", "RECYCLING %s · EXCHANGE ~%s · ORDER ~%s") % [Pal.money(roundf(recycle_of(it) * pk)), Pal.money(roundf(mk * TRADE_K * pk)), Pal.money(roundf(mk * ORDER_K * pk))], Vector2(x, y), 14, Pal.ink(0.75), font_b, wd)
+		y += _draw_ladder(Vector2(x, y), wd, it, pk) - 20.0
 	if not it.get("inbox", false) and not it.get("steel", false) and int(it.w) != int(it.h):
 		y += 26.0
-		_text(w("拖动可以挪位置，R 或右键转个方向", "DRAG TO MOVE · R OR RIGHT-CLICK TURNS IT"), Vector2(x, y), 12, Pal.ink(0.45), font_b, wd)
+		_text(w("拖动挪位置，R 转向，右键更多操作", "Drag to move · R turns · right-click for more"), Vector2(x, y), 12, Pal.ink(0.45), font_b, wd)
 	var sb: Rect2 = _btns["sell"]
 	var ok := can_sell(it)
 	var arm := _confirm == str(it.id)
@@ -1449,7 +1648,8 @@ func _draw_foot() -> void:
 	draw_set_transform(Vector2.ZERO)
 	var y := size.y - 34.0
 
-	var line := message if _msg_t > 0.0 else w("Esc / F3 关闭 · 1–%d 筛选 · 拖动挪位置 · R 转向 · T 一键整理 · Enter 卖给回收站 · K 留着 · 滚轮翻页", "Esc / F3 CLOSE · 1–%d FILTER · DRAG MOVES · R TURNS · T TIDY · ENTER SELL · K KEEP · WHEEL SCROLLS") % filters().size()
+	var line := message if _msg_t > 0.0 else w("Esc / F3 关闭 · 1–%d 筛选 · 拖动挪位置 · R 转向 · T 一键整理 · Enter 卖给回收站 · K 留着 · 滚轮翻页", "Esc / F3 CLOSE · 1–%d FILTER · DRAG MOVES · R TURNS · T TIDY · ENTER SELL · K KEEP · WHEEL SCROLLS") % filters().size() + w(" · Ctrl+拖动 框选 · Ctrl+点击 加选或减选 · 右键 菜单", " · CTRL+DRAG BOX · CTRL+CLICK ADD / DROP · RIGHT-CLICK MENU")
+
 	var col := Pal.ink(0.4)
 	if _msg_t > 0.0:
 		col = Pal.heat(1.0, 1.1) if _msg_bad else Pal.ink(0.92)
@@ -1468,3 +1668,548 @@ func _mouse() -> Vector2:
 	if BenchFx.shot_mouse.is_finite():
 		return get_global_transform().affine_inverse() * BenchFx.shot_mouse
 	return get_local_mouse_position()
+
+
+# ================================================================ 2026-11-05 仓库页精修（用户：“还是太粗糙了，要精美、
+# 丝滑、流畅，而且没有和鼠标交互的动画”；问答 1C 2A 3A 4A + Ctrl 框选）
+# 价值档位（按回收价分；危险品单列）：普通 < $300 · 稀有 $300–1 499 · 珍贵 ≥ $1 500 · 危险 = 特殊货（罐装气液、
+# 危险品）。档位只用很淡的颜色：格子底部一层光晕 + 左上角一个小色点。
+
+const TIER_RARE := 300.0
+const TIER_PRECIOUS := 1500.0
+const HOVER_S := 0.15         # 悬停浮起 / 落回的过渡
+const TIP_S := 0.3            # 停 0.3 秒出小卡
+const LIFT_PX := 3.0
+
+var _hk := {}                 # id -> hover 0..1, eased
+var _tip_id := ""
+var _tip_t := 0.0
+var _ripples: Array = []      # [page pos, start]
+var _menu := {}               # {at: page pos, id, t0, items: [[key, label]], hover}
+var _fits := {}               # Vector2i cell -> true: where the thing being dragged could go
+var _multi := {}              # id -> true: the Ctrl selection
+var _marq_on := false
+var _marq_from := Vector2.ZERO
+var _marq_to := Vector2.ZERO
+var _ctrl_press := ""         # Ctrl pressed on this unit (a toggle if the pointer does not move)
+static var _bg_tex: Texture2D     # made once a game (small, then blurred up)
+
+
+static var _tray_tex: Texture2D
+static var _trays := {}
+
+
+# the tray as a 9-slice: 32×32, corners 8 px (scored lines, lips, shadows), a vertical ramp between
+static func _tray(hk: float, alpha: float) -> StyleBoxTexture:
+	var key := "%d|%d" % [int(round(hk * 5.0)), int(round(alpha * 10.0))]
+	if _trays.has(key):
+		return _trays[key]
+	if _tray_tex == null:
+		var img := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+		for y in 32:
+			var k := y / 31.0
+			var c := Color(0.085, 0.09, 0.1).lerp(Color(0.045, 0.05, 0.058), k)
+			for x in 32:
+				img.set_pixel(x, y, c)
+		for i in 32:
+			img.set_pixel(31, i, Color(0.02, 0.022, 0.026))
+			img.set_pixel(30, i, Color(0.03, 0.033, 0.038))
+			img.set_pixel(i, 31, Color(0.02, 0.022, 0.026))
+			img.set_pixel(i, 30, Color(0.03, 0.033, 0.038))
+			img.set_pixel(0, i, img.get_pixel(0, i).lightened(0.12))
+		for x in 32:
+			img.set_pixel(x, 1, img.get_pixel(x, 1).lightened(0.08))
+		for cn in [[3, 3, 1, 1], [28, 3, -1, 1], [28, 28, -1, -1], [3, 28, 1, -1]]:
+			for d in 5:
+				img.set_pixel(cn[0] + d * cn[2], cn[1], img.get_pixel(cn[0] + d * cn[2], cn[1]).lightened(0.22))
+				img.set_pixel(cn[0], cn[1] + d * cn[3], img.get_pixel(cn[0], cn[1] + d * cn[3]).lightened(0.22))
+		_tray_tex = ImageTexture.create_from_image(img)
+	var sb := StyleBoxTexture.new()
+	sb.texture = _tray_tex
+	sb.set_texture_margin_all(8)
+	sb.modulate_color = Color(1, 1, 1, alpha).lerp(Color(1.3, 1.3, 1.3, alpha), clampf(hk, 0.0, 1.0))
+	_trays[key] = sb
+	return sb
+
+
+static func tier_of(it: Dictionary) -> String:
+	if str(it.get("cat", "")) == "special":
+		return "danger"
+	var r := float(it.get("recycle", 0.0))
+	if r >= TIER_PRECIOUS:
+		return "precious"
+	if r >= TIER_RARE:
+		return "rare"
+	return "common"
+
+
+static func tier_col(t: String) -> Color:
+	match t:
+		"rare": return UiSkin.DATA
+		"precious": return UiSkin.ACCENT
+		"danger": return Color(1.0, 0.32, 0.22)
+	return Color(0.82, 0.84, 0.86)
+
+
+func _guide_on() -> bool:
+	return guide_id != ""
+
+
+# ---------------------------------------------------------------- the page: shelving behind frosted glass
+
+# the store's racks as dark silhouettes, drawn once small and blurred (scaled down, then up)
+func _bg() -> Texture2D:
+	if _bg_tex != null:
+		return _bg_tex
+	var w0 := 240
+	var h0 := 135
+	var img := Image.create(w0, h0, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 128
+	var x := 6
+	while x < w0:
+		var bay := rng.randi_range(23, 35)
+		var top := rng.randi_range(20, 45)
+		img.fill_rect(Rect2i(x, top, 2, h0 - top), Color(1, 1, 1, 0.9))
+		img.fill_rect(Rect2i(x + bay - 2, top, 2, h0 - top), Color(1, 1, 1, 0.9))
+		var y := top + 9
+		while y < h0 - 5:
+			img.fill_rect(Rect2i(x, y, bay, 1), Color(1, 1, 1, 0.8))
+			var bx := x + 3
+			while bx < x + bay - 5:
+				var bw := rng.randi_range(4, 10)
+				var bh := rng.randi_range(4, 11)
+				if rng.randf() < 0.75 and bx + bw < x + bay - 2:
+					img.fill_rect(Rect2i(bx, y - bh, bw, bh), Color(1, 1, 1, 0.45 + 0.3 * rng.randf()))
+				bx += bw + rng.randi_range(1, 3)
+			y += rng.randi_range(17, 24)
+		x += bay + rng.randi_range(5, 13)
+	img.resize(60, 34, Image.INTERPOLATE_BILINEAR)
+	img.resize(w0, h0, Image.INTERPOLATE_BILINEAR)
+	_bg_tex = ImageTexture.create_from_image(img)
+	return _bg_tex
+
+
+func _draw_bg() -> void:
+	var m := _mouse()
+	var par := ((m / size) - Vector2(0.5, 0.5)) * -18.0 if BenchFx.on() and size.x > 0.0 else Vector2.ZERO
+	draw_texture_rect(_bg(), Rect2(Vector2(-30, -20) + par, size + Vector2(60, 40)), false, Color(0.55, 0.6, 0.66, 0.07))
+	# a cool light from the top and a darkening toward the floor
+	draw_polygon(PackedVector2Array([Vector2.ZERO, Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(0, size.y)]), PackedColorArray([Color(0.5, 0.6, 0.7, 0.04), Color(0.5, 0.6, 0.7, 0.04), Color(0, 0, 0, 0.25), Color(0, 0, 0, 0.25)]))
+
+
+# a frosted glass panel: a faint fill, fine scan rows, a lit top edge and a softer left one
+func _glass(ci: CanvasItem, r: Rect2, k := 1.0) -> void:
+	ci.draw_rect(r, Color(0.06, 0.07, 0.08, 0.72 * k))
+	ci.draw_texture_rect(CodexFx.rows_tex(), r, true, Color(1, 1, 1, 0.02 * k))
+	ci.draw_rect(r, Pal.ink(0.14 * k), false, 1.0)
+	ci.draw_line(r.position + Vector2(1, 1), Vector2(r.end.x - 1, r.position.y + 1), Color(1, 1, 1, 0.14 * k), 1.0)
+	ci.draw_line(r.position + Vector2(1, 1), Vector2(r.position.x + 1, r.end.y - 1), Color(1, 1, 1, 0.05 * k), 1.0)
+
+
+# ---------------------------------------------------------------- the pointer over the grid
+
+func _ease_hover(dt: float) -> void:
+	var under := hover if drag_id == "" and _menu.is_empty() and not _marq_on else ""
+	for it in items:
+		var id := str(it.id)
+		var goal := 1.0 if id == under else 0.0
+		var cur := float(_hk.get(id, 0.0))
+		if not BenchFx.on():
+			_hk[id] = goal
+		elif cur != goal:
+			_hk[id] = move_toward(cur, goal, dt / HOVER_S)
+	if under != "" and under == _tip_id:
+		_tip_t += dt
+	else:
+		_tip_id = under
+		_tip_t = 0.0
+	var keep: Array = []
+	for rp in _ripples:
+		if BenchFx.now() - float(rp[1]) < 0.5:
+			keep.append(rp)
+	_ripples = keep
+
+
+# the grid near the pointer lights up (as on the star map): the cell edges within 2.5 cells, by distance
+func _grid_glow(ci: CanvasItem) -> void:
+	var m := _mouse() - _grid_rect().position
+	var gs: Vector2 = grid_view.size
+	if not Rect2(Vector2.ZERO, gs).has_point(m) or drag_id != "":
+		return
+	var c := cell()
+	ci.draw_texture_rect(UiSkin.glow_tex(), Rect2(m - Vector2(c * 2.2, c * 2.2), Vector2(c * 4.4, c * 4.4)), false, Color(UiSkin.DATA, 0.05))
+	var cx := int(floor(m.x / c))
+	var cy := int(floor((m.y + scroll) / c))
+	for dy in range(-3, 4):
+		for dx in range(-3, 4):
+			var gx := cx + dx
+			var gy := cy + dy
+			if gx < 0 or gx >= StoreBook.COLS or gy < 0 or gy >= StoreBook.rows():
+				continue
+			var cr := Rect2(Vector2(gx * c, gy * c - scroll) + Vector2(2, 2), Vector2(c - 4, c - 4))
+			var f := 1.0 - clampf(cr.get_center().distance_to(m) / (c * 2.5), 0.0, 1.0)
+			if f > 0.0:
+				ci.draw_rect(cr, Color(UiSkin.DATA, 0.28 * f * f), false, 1.0)
+
+
+# where the dragged thing could go: every cell some free place would cover glows faintly
+func _find_fits() -> void:
+	_fits = {}
+	if drag_id == "":
+		return
+	var it := _item(drag_id)
+	if it.is_empty():
+		return
+	var s := StoreBook._size(it, drag_rot)
+	var occ: PackedByteArray = StoreBook._occ_of(lay, items) if it.get("inbox", false) else StoreBook._occ_of(lay, items, drag_id)
+	for y in StoreBook.rows() - s.y + 1:
+		for x in StoreBook.COLS - s.x + 1:
+			if StoreBook._free(occ, x, y, s):
+				for yy in s.y:
+					for xx in s.x:
+						_fits[Vector2i(x + xx, y + yy)] = true
+
+
+func _draw_fits(ci: CanvasItem) -> void:
+	if _fits.is_empty():
+		return
+	var c := cell()
+	var gs: Vector2 = grid_view.size
+	var pulse := 0.6 + 0.4 * sin(BenchFx.now() * 3.0) if BenchFx.on() else 0.8
+	for k in _fits:
+		var v: Vector2i = k
+		var y := v.y * c - scroll
+		if y + c < 0.0 or y > gs.y:
+			continue
+		ci.draw_rect(Rect2(Vector2(v.x * c, y) + Vector2(3, 3), Vector2(c - 6, c - 6)), Color(UiSkin.DATA, 0.045 * pulse))
+
+
+# a unit lit by the pointer: the light inside its own rectangle only (the glow's piece that falls in it)
+func _spot(ci: CanvasItem, r: Rect2, k: float) -> void:
+	var m := _mouse() - _grid_rect().position
+	var rad := 90.0
+	var g := Rect2(m - Vector2(rad, rad), Vector2(rad, rad) * 2.0)
+	var cut := g.intersection(r)
+	if cut.size.x <= 0.0 or cut.size.y <= 0.0:
+		return
+	var tex := UiSkin.glow_tex()
+	var ts: Vector2 = tex.get_size()
+	var src := Rect2((cut.position - g.position) / g.size * ts, cut.size / g.size * ts)
+	ci.draw_texture_rect_region(tex, cut, src, Color(1, 1, 1, 0.13 * k))
+
+
+# ---------------------------------------------------------------- over the page: the tip, the rings, the menu, the box
+
+func _draw_over(ci: CanvasItem) -> void:
+	# click rings
+	for rp in _ripples:
+		var s := BenchFx.now() - float(rp[1])
+		var q := BenchFx.e_out(s / 0.45)
+		ci.draw_arc(rp[0], 6.0 + 34.0 * q, 0, TAU, 36, Color(UiSkin.DATA, 0.7 * (1.0 - q)), 1.5, true)
+		ci.draw_arc(rp[0], 3.0 + 16.0 * q, 0, TAU, 24, Color(1, 1, 1, 0.35 * (1.0 - q)), 1.0, true)
+	# the Ctrl box
+	if _marq_on:
+		var mr := Rect2(_marq_from, Vector2.ZERO).expand(_marq_to)
+		ci.draw_rect(mr, Color(UiSkin.DATA, 0.08))
+		_ants(ci, mr)
+	# the small card for what the pointer rests on
+	if _tip_id != "" and _tip_t >= TIP_S and _menu.is_empty() and drag_id == "":
+		_draw_tip(ci, _item(_tip_id), _tip_t - TIP_S)
+	if not _menu.is_empty():
+		_draw_menu(ci)
+
+
+# the box's edge: a faint line all round, eight bright dashes chasing along it
+func _ants(ci: CanvasItem, r: Rect2) -> void:
+	ci.draw_rect(r, Color(UiSkin.DATA, 0.45), false, 1.0)
+	var per := 2.0 * (r.size.x + r.size.y)
+	if per < 4.0:
+		return
+	var pts := [r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y), r.position]
+	var off := fmod(BenchFx.now() * 60.0, per) if BenchFx.on() else 0.0
+	for k in 8:
+		var d := fmod(off + per * k / 8.0, per)
+		var a := _on_rect(pts, d)
+		var b := _on_rect(pts, minf(d + 14.0, per - 0.01))
+		ci.draw_line(a, b, Color(UiSkin.DATA, 0.95), 1.6)
+
+
+func _on_rect(pts: Array, d: float) -> Vector2:
+	for i in 4:
+		var a: Vector2 = pts[i]
+		var b: Vector2 = pts[i + 1]
+		var l := a.distance_to(b)
+		if d <= l:
+			return a.lerp(b, d / maxf(l, 0.001))
+		d -= l
+	return pts[0]
+
+
+func _draw_tip(ci: CanvasItem, it: Dictionary, age: float) -> void:
+	if it.is_empty():
+		return
+	var k := BenchFx.e_out(age / 0.12) if BenchFx.on() else 1.0
+	var lines: Array = []
+	var mk := market_of(it)
+	if mk > 0.0:
+		lines.append([w("回收站 %s · 交易行约 %s · 订单约 %s", "RECYCLING %s · EXCHANGE ~%s · ORDER ~%s") % [Pal.money(recycle_of(it)), Pal.money(mk * TRADE_K), Pal.money(mk * ORDER_K)], Pal.ink(0.8)])
+	var src := str(it.get("ship", ""))
+	if src != "":
+		lines.append([w("来自 %s", "FROM %s") % Methods.ship_label(src), Pal.ink(0.55)])
+	var wd := font_s.get_string_size(str(it.name), HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+	for l in lines:
+		wd = maxf(wd, font_b.get_string_size(str(l[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x)
+	var r := Rect2(_mouse() + Vector2(18, 20 + 6.0 * (1.0 - k)), Vector2(wd + 28.0, 34.0 + lines.size() * 20.0))
+	if r.end.x > size.x - 10.0:
+		r.position.x = _mouse().x - 18.0 - r.size.x
+	if r.end.y > size.y - 10.0:
+		r.position.y = _mouse().y - 14.0 - r.size.y
+	ci.draw_rect(Rect2(r.position + Vector2(0, 6), r.size), Color(0, 0, 0, 0.35 * k))
+	ci.draw_rect(r, Color(0.05, 0.06, 0.07, 0.96 * k))
+	ci.draw_rect(r, Color(1, 1, 1, 0.12 * k), false, 1.0)
+	var tc := tier_col(tier_of(it))
+	ci.draw_rect(Rect2(r.position, Vector2(3, r.size.y)), Color(tc, 0.9 * k))
+	ci.draw_string(font_s, r.position + Vector2(14, 22), str(it.name), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Pal.ink(0.97 * k))
+	var y := r.position.y + 44.0
+	for l in lines:
+		var col: Color = l[1]
+		ci.draw_string(font_b, Vector2(r.position.x + 14, y), str(l[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(col, col.a * k))
+		y += 20.0
+
+
+# the right-click menu: sell, keep, turn — each with its key
+func _open_menu(id: String, at: Vector2) -> void:
+	var it := _item(id)
+	if it.is_empty():
+		return
+	select(id)
+	var rows: Array = []
+	if can_sell(it):
+		rows.append(["sell", w("卖给回收站  %s  [Enter]", "SELL TO RECYCLING  %s  [Enter]") % Pal.money(recycle_of(it))])
+	if can_keep(it):
+		rows.append(["keep", keep_label(it)])
+	if not it.get("inbox", false) and not it.get("steel", false) and lay.has(id) and int(it.w) != int(it.h):
+		rows.append(["turn", w("转向  [R]", "TURN  [R]")])
+	if rows.is_empty():
+		return
+	_menu = {"at": at, "id": id, "t0": BenchFx.now(), "rows": rows, "hover": -1}
+
+
+func _menu_rect(i: int) -> Rect2:
+	var at: Vector2 = _menu.at
+	var wd := 40.0
+	for row in _menu.rows:
+		wd = maxf(wd, font_b.get_string_size(str(row[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 36.0)
+	var r := Rect2(at + Vector2(4, 4 + i * 34.0), Vector2(wd, 32.0))
+	var total := Rect2(at + Vector2(4, 4), Vector2(wd, _menu.rows.size() * 34.0))
+	var shift := Vector2(minf(0.0, size.x - 10.0 - total.end.x), minf(0.0, size.y - 10.0 - total.end.y))
+	return Rect2(r.position + shift, r.size)
+
+
+func _draw_menu(ci: CanvasItem) -> void:
+	var k := BenchFx.e_out((BenchFx.now() - float(_menu.t0)) / 0.12) if BenchFx.on() else 1.0
+	var n: int = _menu.rows.size()
+	var all := _menu_rect(0).merge(_menu_rect(n - 1)).grow(4.0)
+	all.size.y *= 0.6 + 0.4 * k
+	ci.draw_rect(Rect2(all.position + Vector2(0, 8), all.size), Color(0, 0, 0, 0.4 * k))
+	ci.draw_rect(all, Color(0.05, 0.06, 0.07, 0.97 * k))
+	ci.draw_rect(all, Color(1, 1, 1, 0.14 * k), false, 1.0)
+	for i in n:
+		var r := _menu_rect(i)
+		if r.end.y > all.end.y:
+			break
+		var hv: bool = int(_menu.hover) == i
+		if hv:
+			ci.draw_rect(r, Color(UiSkin.ACCENT, 0.18 * k))
+			ci.draw_rect(Rect2(r.position, Vector2(2, r.size.y)), Color(UiSkin.ACCENT, k))
+		var row: Array = _menu.rows[i]
+		ci.draw_string(font_b, r.position + Vector2(16, 21), str(row[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.ink((0.97 if hv else 0.8) * k))
+
+
+func _menu_pick(i: int) -> void:
+	var row: Array = _menu.rows[i]
+	var id := str(_menu.id)
+	_menu = {}
+	select(id)
+	match str(row[0]):
+		"sell": sell_sel()
+		"keep": keep_sel()
+		"turn": turn()
+
+
+# ---------------------------------------------------------------- Ctrl: box and pick many
+
+func _ctrl() -> bool:
+	return Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META) or _test_ctrl
+
+
+var _test_ctrl := false        # tests hold Ctrl this way (no real key is pressed)
+
+
+func _box_pick() -> void:
+	var mr := Rect2(_marq_from, Vector2.ZERO).expand(_marq_to)
+	var gp := _grid_rect().position
+	for it in items:
+		var id := str(it.id)
+		if not lay.has(id) or not _matches(it):
+			continue
+		var ur := unit_rect(id)
+		ur.position += gp
+		if ur.intersects(mr):
+			_multi[id] = true
+	_after_multi()
+
+
+func _toggle_multi(id: String) -> void:
+	if _multi.has(id):
+		_multi.erase(id)
+	else:
+		# Ctrl+click on a thing while one alone is chosen: both are now in the selection
+		if _multi.is_empty() and sel != "" and sel != id and lay.has(sel):
+			_multi[sel] = true
+		_multi[id] = true
+	_after_multi()
+
+
+func _after_multi() -> void:
+	if _multi.size() == 1:
+		sel = str(_multi.keys()[0])
+		_multi = {}
+	_sel_t0 = BenchFx.now()
+
+
+# 多选汇总: how many, what they fetch, by kind
+func multi_sum() -> Dictionary:
+	var out := {"n": 0, "recycle": 0.0, "market": 0.0, "by": {}, "sellable": 0}
+	for id in _multi:
+		var it := _item(str(id))
+		if it.is_empty():
+			continue
+		out.n += 1
+		out.recycle += maxf(0.0, recycle_of(it))
+		out.market += maxf(0.0, market_of(it))
+		var c := str(it.cat)
+		out.by[c] = int(out.by.get(c, 0)) + 1
+		if can_sell(it):
+			out.sellable += 1
+	return out
+
+
+# all the chosen go to the recycling station: one by one along their arcs, then one note
+func sell_multi() -> void:
+	var ids: Array = _multi.keys()
+	ids.sort_custom(func(a, b): return unit_rect(str(a)).position.y < unit_rect(str(b)).position.y)
+	var n := 0
+	var cash := 0.0
+	var t0 := BenchFx.now()
+	var cells_by := {}
+	for id in ids:
+		var it := _item(str(id))
+		if it.is_empty() or not can_sell(it):
+			continue
+		var fr := Rect2()
+		if lay.has(str(id)):
+			fr = unit_rect(str(id))
+			fr.position += _grid_rect().position
+		var rot := int(lay[str(id)][2]) if lay.has(str(id)) else 0
+		var r := StoreBook.sell(str(id))
+		if not r.ok:
+			continue
+		n += 1
+		cash += float(r.cash)
+		cells_by[str(it.cat)] = int(cells_by.get(str(it.cat), 0)) + int(r.get("cells", 1))
+		if BenchFx.on() and fr.size.x > 0.0:
+			_gone.append([it.duplicate(true), fr, t0 + minf(n * 0.06, 0.6), rot])
+	_multi = {}
+	if n == 0:
+		_say(w("选中的东西都不能卖", "NONE OF THESE CAN BE SOLD"), true)
+		return
+	sold_n += n
+	var done := w("卖给回收站 %d 件 · +%s", "SOLD TO RECYCLING: %d · +%s") % [n, Pal.money(cash)]
+	if BenchFx.on():
+		_say_later = [done, t0 + minf(n * 0.06, 0.6) + 0.45]
+	else:
+		_say(done)
+	if game != null and is_instance_valid(game):
+		if game.get("sfx") != null:
+			game.sfx.play("receipt", Vector2.INF, 1.0)
+		if game.has_method("recycle_show"):
+			for c in cells_by:
+				game.recycle_show(str(c), int(cells_by[c]))
+	build()
+
+
+func keep_multi() -> void:
+	var n := _multi.size()
+	_multi = {}
+	_say(w("这 %d 件都留在仓库里", "ALL %d KEPT IN STORE") % n)
+
+
+# the summary on the right while several are chosen
+func _draw_multi_detail(dr: Rect2) -> void:
+	var s := multi_sum()
+	var x := dr.position.x + 20.0
+	var wd := dr.size.x - 40.0
+	var y := dr.position.y + 50.0
+	_text(w("已选 %d 件", "%d CHOSEN") % int(s.n), Vector2(x, y), 24, Pal.ink(0.97), font_s)
+	y += 34.0
+	_text(w("Ctrl+拖动 框选 · Ctrl+点击 加选或减选 · Esc 取消", "CTRL+DRAG BOX · CTRL+CLICK ADD / DROP · ESC CLEARS"), Vector2(x, y), 12, Pal.ink(0.5), font_b, wd)
+	y += 34.0
+	for c in s.by:
+		_text("%s  ×%d" % [StoreBook.cat_name(str(c)), int(s.by[c])], Vector2(x, y), 15, Pal.ink(0.85), font_b, wd)
+		y += 24.0
+	y += 10.0
+	_text(w("回收站合计 %s", "RECYCLING IN ALL %s") % Pal.money(float(s.recycle)), Vector2(x, y), 17, UiSkin.ACCENT.lightened(0.2), font_s, wd)
+	y += 26.0
+	_text(w("市价合计 %s", "MARKET IN ALL %s") % Pal.money(float(s.market)), Vector2(x, y), 14, Pal.ink(0.6), font_b, wd)
+	var sb: Rect2 = _btns["sell"]
+	var ok := int(s.sellable) > 0
+	draw_rect(sb, Color(UiSkin.ACCENT, 0.26 if hover_btn == "sell" else 0.15) if ok else Color(1, 1, 1, 0.03))
+	draw_rect(sb, Color(UiSkin.ACCENT, 0.95 if ok else 0.25), false, 1.2)
+	_text(w("全部卖给回收站  %s  [Enter]", "SELL ALL TO RECYCLING  %s  [Enter]") % Pal.money(float(s.recycle)), sb.position + Vector2(0, 26), 17, Pal.ink(0.97 if ok else 0.45), font_s, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(w("立刻到账，市价的 6 成", "PAID AT ONCE, 60% OF MARKET"), sb.position + Vector2(0, 46), 12, Pal.ink(0.6), font_b, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	var kb: Rect2 = _btns["keep"]
+	draw_rect(kb, Color(1, 1, 1, 0.08 if hover_btn == "keep" else 0.035))
+	draw_rect(kb, Pal.ink(0.55), false, 1.0)
+	_text(w("全部留着", "KEEP THEM ALL"), kb.position + Vector2(0, 29), 15, Pal.ink(0.9), font_b, kb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+
+
+# ---------------------------------------------------------------- the details' new parts
+
+# the size: a little grid of its cells
+func _draw_size(at: Vector2, it: Dictionary) -> float:
+	var s := Vector2i(int(it.get("w", 1)), int(it.get("h", 1)))
+	if lay.has(str(it.id)) and int(lay[str(it.id)][2]) == 1:
+		s = Vector2i(s.y, s.x)
+	var c := 9.0
+	for y in s.y:
+		for x in s.x:
+			var r := Rect2(at + Vector2(x * c, y * c), Vector2(c - 2, c - 2))
+			draw_rect(r, Color(UiSkin.DATA, 0.35))
+			draw_rect(r, Color(UiSkin.DATA, 0.8), false, 1.0)
+	return s.y * c
+
+
+# the price ladder as three bars: recycling (now), the exchange and the orders (once the port opens)
+func _draw_ladder(at: Vector2, wd: float, it: Dictionary, pk: float) -> float:
+	var mk := market_of(it)
+	if mk <= 0.0:
+		return 0.0
+	var rows := [[w("回收站 %s", "RECYCLING %s") % Pal.money(roundf(recycle_of(it) * pk)), recycle_of(it), UiSkin.ACCENT, true],
+		[w("交易行约 %s", "EXCHANGE ~%s") % Pal.money(roundf(mk * TRADE_K * pk)), mk * TRADE_K, Pal.ink(0.5), trade_open()],
+		[w("订单约 %s", "ORDER ~%s") % Pal.money(roundf(mk * ORDER_K * pk)), mk * ORDER_K, Pal.ink(0.5), trade_open()]]
+	var top := mk * ORDER_K
+	var y := at.y
+	for row in rows:
+		var f := clampf(float(row[1]) / maxf(top, 1.0), 0.0, 1.0) * pk
+		var bar := Rect2(Vector2(at.x + 150.0, y - 9.0), Vector2((wd - 150.0) * f, 8.0))
+		draw_rect(Rect2(Vector2(at.x + 150.0, y - 9.0), Vector2(wd - 150.0, 8.0)), Color(1, 1, 1, 0.05))
+		var col: Color = row[2]
+		draw_rect(bar, Color(col, 0.85 if row[3] else 0.35))
+		if not row[3]:
+			draw_rect(Rect2(Vector2(at.x + 150.0, y - 9.0), Vector2(wd - 150.0, 8.0)), Pal.ink(0.12), false, 1.0)
+		_text(str(row[0]), Vector2(at.x, y), 13, Pal.ink(0.85 if row[3] else 0.5), font_b, 146.0)
+		y += 20.0
+	return y - at.y

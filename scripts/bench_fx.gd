@@ -54,7 +54,21 @@ static func on() -> bool:
 	return UiSkin.motion()
 
 
+# recording (--write-movie renders frame by frame, slower than real time): the clock is the frames
+# drawn at the movie's rate, so the motion in the film runs at its true speed
+static var _movie := -1
+static var _movie_fps := 30.0
+
+
 static func now() -> float:
+	if _movie < 0:
+		var args := OS.get_cmdline_args()
+		_movie = 1 if "--write-movie" in args else 0
+		var i := args.find("--fixed-fps")
+		if i >= 0 and i + 1 < args.size():
+			_movie_fps = maxf(1.0, float(args[i + 1]))
+	if _movie == 1:
+		return Engine.get_process_frames() / _movie_fps
 	return Time.get_ticks_msec() / 1000.0
 
 

@@ -91,13 +91,21 @@ func _run() -> void:
 	# ---------------------------------------------------------------- the new growth desk
 	Career.data.money = 278484.0
 	Career.data.rep = 9
+	# 人性化 规则 3: pages remember their tab and filter (Career.data.bench_ui) — cleared, so the desk
+	# opens as a first visit does
+	Career.data.erase("bench_ui")
 	term = load("res://scenes/terminal.tscn").instantiate()
 	root.add_child(term)
 	await _frames(40)
 	term.set_tab(5)
 	await _frames(30)
 	var desk = term.route_panel
-	check(desk.visible and desk.cards.size() == desk.PAGE_SIZE, "growth desk opens on the berth repairs, a page of %d" % desk.PAGE_SIZE)
+	# 104 号: the desk opens on the dismantling methods (route_panel.gd category 6); the berth repairs
+	# are one click away — a full page of them
+	check(desk.visible and desk.category == 6, "growth desk opens on the dismantling methods first (104 号)")
+	desk.select_category(0)
+	await _frames(10)
+	check(desk.cards.size() == desk.PAGE_SIZE, "the berth repairs: a page of %d" % desk.PAGE_SIZE)
 	# the techniques category (G3): the achievements, nothing to buy
 	desk.select_key("feat:section")
 	await _frames(3)

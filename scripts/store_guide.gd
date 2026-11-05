@@ -1,6 +1,6 @@
 extends Node2D
 # 128 号 第 1 段 §五/§十二: the warehouse's first visit, after TUG-001 is settled. One card, one
-# target mark (the stores counter in the berth), then the counter's page walks the first sale to the
+# target mark (the stores terminal in the berth, 131 号: was the counter), then the counter's page walks the first sale to the
 # recycling station by the hand: the thing to sell lit, the button lit, one line saying what to do
 # and why. After it, a last card says what happened and what to do from now on (F3 anywhere).
 # While it runs it is the only voice (the main-line card and the port walk wait). Once per career;
@@ -23,6 +23,9 @@ var count: Label
 var title: Label
 var body: Label
 var close_b: Button
+# 131 号: the way there, as every "fly there" guide shows it (scripts/guide_way.gd)
+const GuideWay = preload("res://scripts/guide_way.gd")
+var way = GuideWay.new()
 
 
 func w(zh: String, en: String) -> String:
@@ -58,6 +61,7 @@ func _ready() -> void:
 	col.add_child(title)
 	col.add_child(body)
 	layer.add_child(card)
+	way.attach(self)
 	_sold0 = int(Career.data.get("recycled", {}).get("n", 0))
 	_say()
 
@@ -95,8 +99,8 @@ func _say() -> void:
 	match step:
 		"fly":
 			count.text = w("仓库 · 第 1 步 / 共 2 步", "STORES · STEP 1 OF 2")
-			title.text = w("东西都进了仓库，飞去仓库柜台看看", "IT IS ALL IN THE STORES: FLY TO THE COUNTER AND LOOK")
-			body.text = w("这一单拆下来的东西（%s）全部放进了公司仓库，还没换成钱。\n飞到亮着框的仓库柜台，按 %s 打开仓库。", "This job's haul (%s) is all in the company stores, not yet money.\nFly to the counter in the frame and press %s.") % [_haul_text(), Keys.label("use")]
+			title.text = way.prefix() + w("东西都进了仓库，飞去仓库终端看看", "IT IS ALL IN THE STORES: FLY TO THE STORES TERMINAL AND LOOK")
+			body.text = w("这一单拆下来的东西（%s）全部放进了公司仓库，还没换成钱。\n飞到亮着框的仓库终端，按 %s 打开仓库。", "This job's haul (%s) is all in the company stores, not yet money.\nFly to the stores terminal in the frame and press %s.") % [_haul_text(), Keys.label("use")]
 		"sell":
 			count.text = w("仓库 · 第 2 步 / 共 2 步", "STORES · STEP 2 OF 2")
 			title.text = w("卖一件给回收站", "SELL ONE TO THE RECYCLING STATION")
@@ -114,6 +118,10 @@ func _process(dt: float) -> void:
 	t += dt
 	step_t += dt
 	var ui = game.console_ui
+	var flying: bool = step == "fly" and ui == null and game.drone != null
+	way.update(game, game.drone.global_position if flying else Vector2.INF, target() if flying else Vector2.INF, dt)
+	if step == "fly" and fmod(t, 0.5) < dt:
+		_say()
 	var store_open: bool = ui != null and is_instance_valid(ui) and ui.get_script() == preload("res://scripts/company_store.gd")
 	match step:
 		"fly":
@@ -169,6 +177,7 @@ func stop() -> void:
 	if done:
 		return
 	done = true
+	way.hide()
 	StoreBook.mark("store_guide_done")
 	var ui = game.console_ui if game != null else null
 	if ui != null and is_instance_valid(ui) and ui.get("guide_id") != null:
@@ -178,11 +187,12 @@ func stop() -> void:
 	queue_free()
 
 
-# the counter, for the mark
+# the stores terminal, for the mark
 func target() -> Vector2:
 	if done or step != "fly":
 		return Vector2.INF
-	return Consoles.rack_centre() + Vector2(0.2, 0.0) * Geom.M
+	# 131 号: the middle of the terminal (its screen and keypad)
+	return Consoles.kiosk_at() + Vector2(0.0, -0.6) * PortStructure.M() * Consoles.KIOSK_K
 
 
 # tests: E at the counter, as the use key does
@@ -198,7 +208,11 @@ func _draw() -> void:
 	if at == Vector2.INF:
 		return
 	var z: float = maxf(game.cam_zoom(), 0.02)
-	GuideMark.target(self, at, z, UiSkin.ACCENT, t, w("仓库柜台", "STORES COUNTER"), 30.0, 1.6 if step_t > 40.0 else 1.0)
+	# the brackets round the whole terminal, the name outside it
+	var rr := clampf(1.35 * Consoles.KIOSK_K * PortStructure.M() * z, 30.0, 140.0)
+	GuideMark.target(self, at, z, UiSkin.ACCENT, t, w("仓库终端", "STORES TERMINAL"), rr, 1.6 if step_t > 40.0 else 1.0)
 	var d = game.drone
 	if d != null:
 		GuideMark.arrow(self, game.look.lamp_pos() if game.look != null else d.global_position, at, z, UiSkin.ACCENT, t)
+	if game.console_ui == null:
+		way.draw_edge(self, w("仓库终端", "STORES TERMINAL"), UiSkin.ACCENT, card.get_global_rect() if card.visible else Rect2())

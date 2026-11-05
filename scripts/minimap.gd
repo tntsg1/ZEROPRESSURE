@@ -634,6 +634,14 @@ func _draw_port_live() -> void:
 			ci.draw_line(_trail[i - 1], _trail[i], Pal.tint(Pal.FLUID, 0.6 * float(i) / _trail.size(), 1.2), 2.0)
 		ci.draw_rect(Rect2(tp - Vector2(3.5, 3.5), Vector2(7, 7)), Pal.ink(0.95, 1.4))
 		ci.draw_rect(Rect2(tp - Vector2(5.5, 5.5), Vector2(11, 11)), Pal.tint(Pal.FLUID, 0.5, 1.2), false, 1.0)
+	# 130 号: the freight trains, a short bar each along the rails
+	var FW = preload("res://scripts/freight_works.gd")
+	if FW.on:
+		for tr in FW.trains:
+			var hp := pmap(tr.pos)
+			var bp2 := pmap(FW.behind(tr, 8.7 * Geom.M))
+			ci.draw_line(hp, bp2, Pal.heat(0.9, 1.2), 3.0)
+			ci.draw_rect(Rect2(hp - Vector2(2, 2), Vector2(4, 4)), Pal.ink(0.9, 1.3))
 	# the work boat
 	if game.boat != null and is_instance_valid(game.boat):
 		var bp := pmap(game.boat.global_position)

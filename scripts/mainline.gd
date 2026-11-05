@@ -6,21 +6,27 @@ class_name Mainline
 # contracts, "wait" only shows progress. Chapter names and step lines are interface text;
 # Liang's words at a chapter's start and end are the author's (L_main_<id>_start / _done).
 
-# 123 号 (user 2026-11-04 "先修拖船站"): the tug station before the 88 m berth — the rented tug tows
-# 44 m at most (72 号), so a bigger berth before it would wait for ships it cannot get
-const CHAPTERS := ["opening", "lights", "furnace", "trade", "steel", "industry", "power_tug", "berth88", "ring", "ark"]
+# 128 号 第 3 段 (user 2026-11-05, design/…/128_港区从头设计 §五 §十二): the berth first, then the port a
+# district at a time, each opened by the need the player really runs into — "逐步先完成修船厂，然后再
+# 扩展到其他的部分". Chapter names are that need. The numbers are fixed; the strip points at the first
+# chapter (by number) whose need has come up and which is not done (C), so nothing that can be mended
+# now is hidden behind a chapter still waiting. "修" works at any time; the main line only leads.
+const CHAPTERS := ["opening", "lights", "furnace", "trade", "process", "cargo", "power", "tug", "berth88", "ring", "ark"]
 const NAMES := {
-	"opening": ["把开局那三艘漂流船拆掉", "STRIP THE THREE DRIFTING HULKS YOU STARTED WITH"],
-	"lights": ["修好船坞的照明", "GET THE BERTH'S LIGHTS WORKING"],
-	"furnace": ["修好熔炉和接碎料的网", "MEND THE FURNACE AND THE DEBRIS NET"],
-	"trade": ["修复贸易区，恢复交易", "REOPEN THE TRADE DISTRICT AND START SELLING"],
-	"steel": ["第一次炼出钢坯", "MAKE STEEL BILLETS FOR THE FIRST TIME"],
-	"industry": ["修好货运区", "MEND THE CARGO DISTRICT"],
-	"berth88": ["把船坞扩到 88 米，能拆更大的船", "EXTEND THE BERTH TO 88 m FOR BIGGER SHIPS"],
-	"power_tug": ["修好动力区和拖船站", "MEND THE POWER DISTRICT AND THE TUG STATION"],
+	"opening": ["第一艘船", "THE FIRST HULK"],
+	"lights": ["船坞太暗了", "THE BERTH IS DARK"],
+	"furnace": ["碎料白白漏掉", "THE SCRAP GOES TO WASTE"],
+	"trade": ["回收站只给六成", "THE RECYCLER PAYS SIXTY PER CENT"],
+	"process": ["钢锭攒够了", "ENOUGH INGOTS"],
+	"cargo": ["仓库快满了", "THE STORES ARE NEARLY FULL"],
+	"power": ["电不够用了", "SHORT OF POWER"],
+	"tug": ["船太大，拖不动", "TOO BIG TO TOW"],
+	"berth88": ["船坞放不下了", "THE BERTH IS TOO SHORT"],
 	"ring": ["让中央转运环重新转起来", "GET THE TRANSFER RING TURNING AGAIN"],
 	"ark": ["远航者", "THE ARK"],
 }
+const CARGO_FULL := 0.8          # the stores this full: the cargo district's chapter begins
+const INGOT_T := 2.0             # ingots in store: the processing district's chapter begins
 
 const Exchange = preload("res://scripts/industrial_exchange.gd")
 
@@ -55,23 +61,121 @@ static func done(id: String) -> bool:
 	var d := Career.data
 	var up: Dictionary = d.get("upgrades", {})
 	match id:
-		"opening": return d.get("market", false)
+		# the first hulk stripped, its haul in the stores and the first sale made (128 号 第 1 段)
+		"opening": return d.get("market", false) and (not StoreBook.live() or d.get("seen", {}).has("store_guide_done") or d.get("history", []).size() >= 2)
 		"lights": return up.has("lights")
 		"furnace": return up.has("furnace_main") and up.has("net_fix")
 		"trade": return Port.stage("trade") >= 1
-		"steel": return _billet_made()
-		"industry": return Port.stage("process") >= 1 and Port.stage("cargo") >= 1
+		"process": return Port.stage("process") >= 1 and _billet_made()
+		"cargo": return Port.stage("cargo") >= 1
+		"power": return Port.stage("power") >= 1
+		"tug": return Port.stage("tug") >= 1
 		"berth88": return up.has("berth88")
-		"power_tug": return Port.stage("power") >= 1 and Port.stage("tug") >= 1
 		"ring": return Port.stage("ring") >= 2
 	return false
+
+
+# 第 3 段: has the need that starts this chapter come up? Once it has, it stays (Career.data.need_hit)
+static func hit(id: String) -> bool:
+	if done(id):
+		return true
+	var nh: Dictionary = Career.data.get("need_hit", {})
+	if nh.has(id):
+		return true
+	var d := Career.data
+	match id:
+		"opening": return true
+		"lights", "furnace": return d.get("market", false)
+		"trade": return done("lights") and done("furnace")
+		"process": return float(StoreBook.raw_stock().get(Exchange.INGOT, 0.0)) >= INGOT_T - 0.001 or Port.stage("process") >= 1
+		"cargo": return StoreBook.live() and StoreBook.cap() > 0 and float(StoreBook.used()) >= CARGO_FULL * StoreBook.cap()
+		"power": return false            # set by watch(): the first slowdown for want of power
+		"tug": return _found_longer(TugYard.MAX_LEN[0])
+		"berth88": return _found_longer(Dock.STANDARD)
+		"ring": return done("tug") and done("berth88") and done("power") and done("cargo")
+		"ark": return done("ring")
+	return false
+
+
+static func _found_longer(m: float) -> bool:
+	for o in Career.data.get("offers", []):
+		if o.get("find", false) and float(Market.type_of(str(o.get("ship", ""))).get("length", 0.0)) > m:
+			return true
+	if Career.data.has("ship_market"):
+		for a in ShipMarket.data().assets:
+			if float(Market.type_of(str(a.get("ship", ""))).get("length", 0.0)) > m:
+				return true
+	return false
+
+
+static func _remember(id: String) -> void:
+	var nh: Dictionary = Career.data.get("need_hit", {})
+	if nh.has(id):
+		return
+	nh[id] = int(Time.get_unix_time_from_system())
+	Career.data.need_hit = nh
+	Career.save()
+
+
+# twice a second from the HUD: a need that came up is kept, so a chapter never goes away again (the
+# stores emptied again, the power back) — and the power's shortage can only be seen with the game
+static func watch(game) -> void:
+	if not Career.usable() or Career.data.is_empty():
+		return
+	for id in CHAPTERS:
+		if id != "opening" and not done(id) and not Career.data.get("need_hit", {}).has(id) and hit(id):
+			_remember(id)
+	if not done("power") and not Career.data.get("need_hit", {}).has("power") and game != null and Port.stage("process") >= 1:
+		var v: Dictionary = Grid.verdict(game)
+		if not bool(v.get("ok", true)):
+			_remember("power")
 
 
 # the chapter the career is in: the first not done
 static func chapter() -> String:
 	for id in CHAPTERS:
+		if not done(id) and hit(id):
+			return id
+	return ""
+
+
+# the first chapter not done, whether its need has come up or not ("" all done): what is next
+static func next_open() -> String:
+	for id in CHAPTERS:
 		if not done(id):
 			return id
+	return ""
+
+
+# what starts a chapter, for the chapter list's dim rows
+static func trigger_text(id: String) -> String:
+	match id:
+		"lights", "furnace": return w("拆完第一艘船以后", "Once the first hulk is stripped")
+		"trade": return w("船坞修好以后", "Once the berth is mended")
+		"process": return w("仓库里钢锭攒到 %.0f 吨时", "When %.0f t of ingots are in store") % INGOT_T
+		"cargo": return w("仓库用到八成时", "When the stores are 80 % full")
+		"power": return w("第一次因为缺电，炉子或叉车变慢时", "The first time the furnace or the forklifts slow for want of power")
+		"tug": return w("星图扫到超过 %d m 的船时", "When the star map finds a hulk over %d m") % int(TugYard.MAX_LEN[0])
+		"berth88": return w("扫到超过 %d m、船坞放不下的船时", "When a hulk over %d m turns up, too long for the berth") % int(Dock.STANDARD)
+		"ring": return w("前面几区都修好以后", "Once the districts before it are mended")
+		"ark": return w("中央转运环修好以后", "Once the transfer ring turns")
+	return ""
+
+
+# what a chapter opens, for the list and the opening card
+static func opens_text(id: String) -> String:
+	match id:
+		"opening": return w("仓库 · 回收站", "Stores · recycling station")
+		"lights": return w("修船坞照明 → 看得清、切得快", "Mend the berth's lights: clear readings, faster cutting")
+		"furnace": return w("修熔炉和接碎料的网 → 碎料炼成钢锭", "Mend the furnace and the net: scrap becomes ingots")
+		"trade": return w("修贸易港一期 → 交易行、订单板（即将开放）", "Mend the trade port: exchange and order board (opening soon)")
+		"process": return w("修加工区一期 → 钢锭炼成钢坯", "Mend the processing district: ingots into billets")
+		"cargo": return w("修货运区 → 仓库 8×32 变 8×48", "Mend the cargo district: the stores grow 8×32 → 8×48")
+		"power": return w("修动力区 → 自家发电，炉子和叉车不再变慢", "Mend the power district: your own power, no more slowdowns")
+		"tug": return w("修拖船站 → 能拖超过 %d m 的船", "Mend the tug station: tow hulks over %d m") % int(TugYard.MAX_LEN[0])
+		"berth88": return w("把船坞扩到 88 m → 能拆更大的船", "Extend the berth to 88 m for bigger hulks")
+		"ring": return w("修中央转运环", "Mend the transfer ring")
+		"ark": return w("以后的版本开放", "In a later version")
 	return ""
 
 
@@ -95,6 +199,15 @@ static func _build_step(zone: String) -> Dictionary:
 	for dep in Port.DEPS.get(zone, []):
 		if Port.stage(str(dep[0])) < int(dep[1]):
 			return _build_step(str(dep[0]))
+	if Port.RepairBill.ON:
+		var b: Dictionary = Port.RepairBill.of(zone)
+		var nm := "%s（%s期）" % [Port.name_of(zone), Works.cn_num(Port.stage(zone) + 1)] if Txt.zh else "%s (part %d)" % [Port.name_of(zone), Port.stage(zone) + 1]
+		var why := Port.reason(zone, true)
+		if why == "":
+			var buy := float(b.get("buy_cash", 0.0))
+			var tail := w("仓库里的材料都够。", "The stores have it all.") if buy < 0.5 else w("缺的按市价买齐 %s。", "The rest bought at market, %s.") % Pal.money(buy)
+			return {"text": w("修%s：飞到它的业务终端按 %s，点“修”。%s", "Mend the %s: %s at its business console, then MEND. %s") % [nm, Keys.label("use"), tail], "go": "guide:build:" + zone}
+		return {"text": w("修%s：%s。先拆船攒钱，或者卖掉仓库里的东西。", "Mend the %s: %s. Strip hulks or sell from the stores first.") % [nm, why], "go": "guide:build:" + zone}
 	var node := Route.port_node(zone)
 	if node.get("ready", false):
 		return {"text": w("去修%s（%s期）：都够了。", "Mend the %s (part %s): all there.") % [Port.name_of(zone), Works.cn_num(Port.stage(zone) + 1) if Txt.zh else str(Port.stage(zone) + 1)], "go": "guide:build:" + zone}
@@ -113,6 +226,13 @@ static func _next_ship(why: String) -> Dictionary:
 	if not Scan.found().is_empty():
 		return {"text": why + w(" 已找到船：%s 开星图，派拖船。", " A hulk is found: %s, send the tug.") % Keys.label("starmap"), "go": "scan"}
 	return {"text": why + w(" %s 开星图，扫描找船。", " %s: sweep for hulks.") % Keys.label("starmap"), "go": "scan"}
+
+
+# 第 3 段: no chapter's need is up — strip another hulk (the next chapter starts on its own)
+static func waiting_step() -> Dictionary:
+	if Works.busy():
+		return step(next_open())
+	return _next_ship(w("继续拆船。", "Strip another hulk."))
 
 
 # the next step of the chapter: {text, go}
@@ -150,7 +270,7 @@ static func step(id: String = "") -> Dictionary:
 			return ls
 		"furnace": return _repair_step("furnace_main" if not d.get("upgrades", {}).has("furnace_main") else "net_fix")
 		"trade": return _build_step("trade")
-		"steel":
+		"process":
 			if Port.stage("process") < 1:
 				return _build_step("process")
 			if Drill.open():
@@ -169,9 +289,10 @@ static func step(id: String = "") -> Dictionary:
 			if t == "buy_feed" and Career.INGOTS:
 				return _next_ship(str(txt.buy_feed))
 			return {"text": str(txt.get(t, "")), "go": "guide:" + t}
-		"industry": return _build_step("process" if Port.stage("process") < 1 else "cargo")
+		"cargo": return _build_step("cargo")
+		"power": return _build_step("power")
+		"tug": return _build_step("tug")
 		"berth88": return _repair_step("berth88")
-		"power_tug": return _build_step("power" if Port.stage("power") < 1 else "tug")
 		"ring": return _build_step("ring")
 		"ark": return {"text": w("远航者工程还没做好，以后的版本开放。", "The Ark project comes in a later version."), "go": "wait"}
 	return {"text": "", "go": "wait"}

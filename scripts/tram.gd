@@ -14,6 +14,10 @@ extends Node2D
 class_name Tram
 const Art = preload("res://scripts/tram_art.gd")
 const FastDraw = preload("res://scripts/fast_draw.gd")
+# 130 号: freight trains share the rails (scripts/freight_works.gd); the shuttle comes first, but it
+# sets off only with its whole route clear of them, and throws its switches only then
+const FW = preload("res://scripts/freight_works.gd")
+static var avoid := Callable()   # extra cost of a candidate ride (freight standing on it)
 
 var game
 var t := 0.0
@@ -29,17 +33,23 @@ var phase := ""
 var dwell := 0.0
 var speed := 0.0
 var slide_from := Vector2.ZERO
-const SPEED := 20.0 * 48.0     # px/s (35 号: was 12 m/s)
-const ACCEL := 6.0 * 48.0      # px/s²
-const A_LAT := 4.0 * 48.0      # px/s²: what a curve allows sideways
+const SPEED := 36.0 * 48.0     # px/s (35 号: was 12 m/s; 130 号 review: 20 ×1.8)
+const ACCEL := 10.8 * 48.0      # px/s²
+const A_LAT := 5.0 * 48.0      # px/s²: what a curve allows sideways
 const CURVE_R := 6.0           # m: the rails' curve radius at a corner, at most
 const COUPLE := 3.6            # m between the two cars' centres
 var limits: Array = []         # px/s: the speed allowed at each point of `path`
 var trail: Array = []          # where the front car has been, newest first (the second car follows it)
+var track_lines: Array = []    # tests: every track's centre line, world px (built with the rails)
 const DWELL := 1.3            # s at the boarding stop: doors open, the drone in, doors shut
 const ALIGHT := 0.76           # s at the far stop before the drone is free (the doors shut after)
 const REACH := 4.5             # m: the drone calls the car from this close
-const RING_SIGN := 5.8          # m along the hub stop from its middle to its sign's post (129 号; 1.6 elsewhere)
+# 130 号: the hub's stop stands on the loop at RING_A (it was at the bottom, 90°, right behind the
+# berth spoke's hatch, where the freight trains now stand to hand crates over) — between the berth
+# line's and the processing line's switches, the business console beside it
+const RING_A := 140.0 * PI / 180.0
+const RING_SIGN := 1.6          # m along the hub stop from its middle to its sign's post
+const BUFFER_AT := 2.35         # m past a dead-end stop's point to its buffer (scripts/tram_art.gd)
 const STATION_IN := 2.5        # m inside the door
 const BERTH_STOP := 3.6        # m above the berth's gate rail: where the head car stands (97 号)
 # 97 号: a ride's legs (the train stops and changes ends between them) and the switches
@@ -76,8 +86,8 @@ static func _gate_x() -> float:
 
 static func station_at(zone: String) -> Vector2:
 	if zone == "ring":
-		# on the hub's loop, at its bottom by the berth's spoke (35 号)
-		return Backdrop.port_centre_px() + Vector2(0, LOOP_R) * PortStructure.M()
+		# on the hub's loop (35 号: at its bottom; 130 号: at RING_A)
+		return Backdrop.port_centre_px() + Vector2.from_angle(RING_A) * LOOP_R * PortStructure.M()
 	if zone == "salvage":
 		# 97 号: just inside the berth's port gate (scripts/dock.gd port_gate), facing up the corridor
 		return Vector2(_gate_x(), Dock.RAIL_Y - BERTH_STOP) * Geom.M
@@ -115,7 +125,7 @@ static func discover(zone: String) -> void:
 # along the track at a stop, away from its dead end
 static func station_dir(zone: String) -> Vector2:
 	if zone == "ring":
-		return Vector2.RIGHT
+		return Vector2.from_angle(RING_A - PI * 0.5)
 	var lg := _leg(zone)
 	return ((lg[1] as Vector2) - (lg[0] as Vector2)).normalized()
 
@@ -124,7 +134,7 @@ static func station_dir(zone: String) -> Vector2:
 # upright one's right
 static func platform_side(zone: String) -> Vector2:
 	if zone == "ring":
-		return Vector2.UP
+		return -Vector2.from_angle(RING_A)
 	var d := station_dir(zone)
 	var n := d.orthogonal()
 	if absf(d.x) > absf(d.y):
@@ -161,6 +171,7 @@ func _ready() -> void:
 	z_index = 4
 	z_as_relative = false
 	position_px = station_at(at)
+	_settle(at)
 	if lines_mat == null:
 		lines_mat = ShaderMaterial.new()
 		lines_mat.shader = preload("res://scripts/port_lines.gdshader")
@@ -217,7 +228,7 @@ static func _turn(zone: String) -> float:
 
 static func _angle(zone: String) -> float:
 	if zone == "ring":
-		return PI * 0.5
+		return RING_A
 	return ((PortStructure.door(zone)[0] as Vector2) - Backdrop.port_centre_px()).angle()
 
 
@@ -283,23 +294,31 @@ static func _passed(a0: float, s: float, span: float, sw: Dictionary) -> void:
 			var x := _span(a0, _angle(z) + side * _turn(z), s)
 			if x > 0.01 and x < span - 0.01 and not sw.has(id):
 				sw[id] = 0.0
+	for pid in [["p1:a", FW.PASS_A], ["p1:b", FW.PASS_B]]:
+		var xp := _span(a0, float(pid[1]), s)
+		if xp > 0.01 and xp < span - 0.01 and not sw.has(pid[0]):
+			sw[pid[0]] = 0.0
 
 
 # one way to run it: leave `from` heading s1 round the loop, reach `to` heading s2; heading the
 # other way, reverse once — past `to`'s switch ("a") or just past `from`'s ("b")
 static func _plan(from: String, to: String, s1: float, s2: float, opt: String) -> Array:
 	var clear := CLEAR / LOOP_R
-	var a0 := PI * 0.5
+	var a0 := RING_A
 	var head: Array = [station_at("ring")]
 	var sw0 := {}
+	if from == "salvage":
+		sw0["salvage:s"] = 0.0
 	if from != "ring":
 		a0 = _angle(from) + s1 * _turn(from)
 		head = _leg(from) + _turnout(from, s1).slice(1)
 		sw0[from + ":f"] = 1.0 if s1 > 0.0 else 0.0
 		sw0[from + (":+" if s1 > 0.0 else ":-")] = 1.0
-	var b := PI * 0.5
+	var b := RING_A
 	var tail: Array = []
 	var swt := {}
+	if to == "salvage":
+		swt["salvage:s"] = 0.0
 	if to != "ring":
 		b = _angle(to) - s2 * _turn(to)
 		var back := _turnout(to, -s2)
@@ -327,7 +346,7 @@ static func _plan(from: String, to: String, s1: float, s2: float, opt: String) -
 
 
 # the ride from one stop to another as legs, the shortest way counting a reversal as 30 m
-static func plan(from: String, to: String) -> Array:
+static func plan(from: String, to: String, live := false) -> Array:
 	var best: Array = []
 	var best_cost := INF
 	for s1: float in [1.0, -1.0]:
@@ -338,6 +357,8 @@ static func plan(from: String, to: String) -> Array:
 				var cost := REVERSE_COST * (lg.size() - 1)
 				for l in lg:
 					cost += Art.length(l.pts) / Geom.M
+				if live and avoid.is_valid():
+					cost += float(avoid.call(lg))
 				if cost < best_cost - 0.01:
 					best = lg
 					best_cost = cost
@@ -354,6 +375,10 @@ static func route(from: String, to: String) -> Array:
 # the drone at station `here` wants `to`: if the car is already here it opens its doors
 # at once; otherwise it comes to this station first, then goes on
 func call_to(here: String, to: String) -> bool:
+	# 130 号: on its way back to the hub out of the freight's way: the call waits for it to get there
+	if active() and phase == "return" and to != here and to in stations():
+		_queued = [here, to]
+		return true
 	if not active() or phase != "" or to == here or to not in stations():
 		return false
 	dest = to
@@ -361,12 +386,16 @@ func call_to(here: String, to: String) -> bool:
 	speed = 0.0
 	if at == here or position_px.distance_to(station_at(here)) < 1.0 * Geom.M:
 		position_px = station_at(here)
-		legs = plan(here, to)
+		_ride_from = here
+		legs = plan(here, to, true)
+		FW.passenger_request(self, legs)
 		_next_leg()
 		stop = here
 		_begin_board()
 	else:
-		legs = plan(at, here)
+		_from = at
+		legs = plan(at, here, true)
+		FW.passenger_request(self, legs)
 		_next_leg()
 		stop = ""
 		phase = "fetch"
@@ -374,10 +403,66 @@ func call_to(here: String, to: String) -> bool:
 	return true
 
 
+# 130 号: still at its stop and waiting on freight: every second, the way round the other side if it is
+# clearer now (the freight standing in the way counts against a way: Tram.avoid)
+var _queued: Array = []        # a call made while it was going back to the hub: [here, to]
+const CLEAR_R := 25.0          # m: no drone this close to its stop, it may go back to the hub for freight
+
+
+# 130 号: standing idle at a district's stop with a freight train held up behind it and no drone
+# about: back to the hub's stop, out of the way
+func _maybe_clear() -> void:
+	if not FW.tram_clear:
+		return
+	FW.tram_clear = false
+	if phase != "" or at == "" or at == "ring":
+		return
+	var d = game.drone if game != null else null
+	if d != null and d.alive and (d.global_position as Vector2).distance_to(station_at(at)) < CLEAR_R * Geom.M:
+		return
+	legs = plan(at, "ring", true)
+	if legs.is_empty():
+		return
+	FW.passenger_request(self, legs)
+	_next_leg()
+	stop = ""
+	at = ""
+	speed = 0.0
+	phase = "return"
+
+
+var _replan_t := 0.0
+var _from := ""
+var _ride_from := ""
+func _replan(dt: float) -> void:
+	_replan_t += dt
+	if _replan_t < 1.0:
+		return
+	_replan_t = 0.0
+	var start := ""
+	var to := ""
+	if phase == "fetch":
+		start = _from
+		to = _wait_here
+	elif phase == "ride":
+		start = _ride_from
+		to = dest
+	if start == "" or to == "" or start == to or position_px.distance_to(station_at(start)) > 0.5 * Geom.M:
+		return
+	var lg := plan(start, to, true)
+	if lg.is_empty():
+		return
+	legs = lg
+	FW.passenger_request(self, legs)
+	_next_leg()
+
+
 func _next_leg() -> void:
 	var lg: Dictionary = legs.pop_front()
 	_set_path(lg.pts)
 	_leg_sw = lg.sw
+	if FW.on:
+		return
 	for id in _leg_sw:
 		sw_to[id] = float(_leg_sw[id])
 		_points_dirty = true
@@ -535,6 +620,17 @@ func _finish_alight() -> void:
 func _advance(dt: float) -> bool:
 	if path.is_empty():
 		return true
+	# 130 号: freight on the route: wait (it is giving way), then throw this leg's switches
+	if FW.on:
+		if not FW.passenger_go(self):
+			accel_now = -speed / maxf(dt, 1e-4)
+			speed = 0.0
+			_replan(dt)
+			return false
+		for id in _leg_sw:
+			if float(sw_to.get(id, -1.0)) != float(_leg_sw[id]):
+				sw_to[id] = float(_leg_sw[id])
+				_points_dirty = true
 	# 97 号: standing while the driver changes ends or the switches ahead are still moving
 	if _hold > 0.0 or not _set_ready():
 		_hold -= dt
@@ -623,6 +719,36 @@ func _behind(back: float) -> Vector2:
 		left -= seg
 		prev = p
 	return prev - Vector2.from_angle(heading) * left
+
+
+# standing at a stop with no track behind it yet (a fresh scene, a save loaded): the cab faces the
+# stop's dead end (on the hub's loop, along the loop) and the second car stands behind it on the rails
+# — the trail laid along the track itself, not a straight line (on the loop's curve, or any heading,
+# a straight one stood the second car off the rails)
+func _settle(zone: String) -> void:
+	if zone not in stations():
+		return
+	var M := Geom.M
+	trail = []
+	if zone == "ring":
+		var step := 0.5 / LOOP_R
+		for k in range(1, 25):
+			trail.append(_loop_pt(RING_A - k * step))
+		heading = (RING_A + PI * 0.5)
+		return
+	var pts: Array = smooth(_leg(zone))[0]
+	var acc := 0.0
+	var want := 0.5 * M
+	var prev: Vector2 = pts[0]
+	for i in range(1, pts.size()):
+		var q: Vector2 = pts[i]
+		var seg := prev.distance_to(q)
+		while acc + seg >= want and trail.size() < 24:
+			trail.append(prev.lerp(q, (want - acc) / maxf(seg, 0.001)))
+			want += 0.5 * M
+		acc += seg
+		prev = q
+	heading = ((pts[0] as Vector2) - (pts[1] as Vector2)).angle()
 
 
 # a point s along the train from the head car's centre (ahead +, behind −)
@@ -717,13 +843,30 @@ func _physics_process(dt: float) -> void:
 	var t0 := Time.get_ticks_usec()
 	var d = game.drone
 	match phase:
+		"":
+			_maybe_clear()
+		"return":
+			if _run(dt):
+				speed = 0.0
+				accel_now = 0.0
+				at = "ring"
+				stop = ""
+				phase = ""
+				FW.passenger_arrived(self)
+				if not _queued.is_empty():
+					var q: Array = _queued
+					_queued = []
+					call_to(q[0], q[1])
 		"fetch":
 			if _run(dt):
 				# at the caller's station: doors open
 				speed = 0.0
 				accel_now = 0.0
 				position_px = station_at(_wait_here)
-				legs = plan(_wait_here, dest)
+				FW.passenger_arrived(self)
+				_ride_from = _wait_here
+				legs = plan(_wait_here, dest, true)
+				FW.passenger_request(self, legs)
 				_next_leg()
 				speed = 0.0
 				stop = _wait_here
@@ -751,6 +894,7 @@ func _physics_process(dt: float) -> void:
 				accel_now = 0.0
 				at = dest
 				stop = dest
+				FW.passenger_arrived(self)
 				phase = "alight"
 				dwell = 0.0
 				slide_from = position_px
@@ -834,11 +978,25 @@ func _build() -> void:
 		var post := sp + n * 2.25 * M + sd * (RING_SIGN if zone == "ring" else 1.6) * M
 		var sign := Rect2(post + n * 0.5 * M - Vector2(0.55, 0.28) * M, Vector2(1.1, 0.56) * M)
 		_stops.append({"z": zone, "p": sp - c, "n": n, "d": sd, "sign": Rect2(sign.position - c, sign.size)})
-		stops.append({"at": sp - c, "d": sd, "n": n, "end": zone != "ring", "post": post - c, "sign": Rect2(sign.position - c, sign.size)})
+		# 130 号: where the freight line runs on past the stop into the district, no buffer at the stop
+		var ext: bool = zone in FW.EXT_ZONES
+		stops.append({"at": sp - c, "d": sd, "n": n, "end": zone != "ring" and not ext, "post": post - c, "sign": Rect2(sign.position - c, sign.size)})
+		if ext:
+			lines.append({"pts": rel.call([sp, FW.ext_end(zone)])})
+		if zone == "salvage":
+			# 130 号: the freight siding beside the berth's line, and its switch
+			var sid: Array = FW.siding_pts()
+			lines.append({"pts": rel.call(sid), "skip_a": 2.5})
+			var ax := ((sid[1] as Vector2) - (sid[0] as Vector2)).normalized()
+			_switches.append({"id": "salvage:s", "a": _blade(rel.call(FW.siding_main())), "b": _blade(rel.call(sid)), "side": -ax.orthogonal()})
 		if zone == "ring":
 			continue
 		var leg: Array = smooth(_leg(zone))[0]
 		var ld := ((leg[1] as Vector2) - (leg[0] as Vector2)).normalized()
+		# at a dead end the rails run on past the stop to the buffer (the cab's bogie stands a metre
+		# past the stop's point)
+		if not ext:
+			leg = [sp - sd * BUFFER_AT * M] + leg
 		lines.append({"pts": rel.call(leg)})
 		for s: float in [1.0, -1.0]:
 			lines.append({"pts": rel.call(_turnout(zone, s)), "skip_a": 2.5, "skip_b": 3.2})
@@ -858,9 +1016,22 @@ func _build() -> void:
 			turn.reverse()
 			_switches.append({"id": zone + (":+" if side > 0.0 else ":-"), "a": _blade(rel.call(straight)), "b": _blade(rel.call(turn)), "side": -Vector2.from_angle(ja)})
 			toes.append(_loop_pt(ja) - c)
+	# 130 号: the passing loop inside the ring and its two switches (scripts/freight_works.gd)
+	var pp: Array = FW.pass_pts()
+	lines.append({"pts": rel.call(pp), "skip_a": 2.5, "skip_b": 2.5})
+	var main_a: Array = []
+	var main_b: Array = []
+	for k in 9:
+		main_a.append(_loop_pt(FW.PASS_A + k * 0.03))
+		main_b.append(_loop_pt(FW.PASS_B - k * 0.03))
+	var pb: Array = pp.duplicate()
+	pb.reverse()
+	_switches.append({"id": "p1:a", "a": _blade(rel.call(main_a)), "b": _blade(rel.call(pp)), "side": Vector2.from_angle(FW.PASS_A)})
+	_switches.append({"id": "p1:b", "a": _blade(rel.call(main_b)), "b": _blade(rel.call(pb)), "side": Vector2.from_angle(FW.PASS_B)})
 	_toes = {}
 	for sw in _switches:
 		_toes[sw.id] = sw.a[0]
+	track_lines = lines.map(func(l): return (l.pts as Array).map(func(q): return (q as Vector2) + c))
 	_job = Art.track_job(lines, toes, stops, M)
 	plan_us = Time.get_ticks_usec() - t0
 	_points_dirty = true
@@ -935,7 +1106,12 @@ func _draw() -> void:
 			draw_rect(sign, col, false, 1.2 * lw)
 		draw_set_transform(sign.get_center(), 0, Vector2.ONE / z)
 		var below := 0.28 * M * z + 16.0
-		draw_string(font, Vector2(-90, below), Txt.t("tram_station") + " · " + Port.name_of(st.z), HORIZONTAL_ALIGNMENT_CENTER, 180, 12, col)
+		if st.z == "ring":
+			# 130 号: the hub stop's name beside its sign, on the deck inside the loop (under it, it lay
+			# across the rails the freight trains run on)
+			draw_string(font, Vector2(0.55 * M * z + 6.0, 4.0), Txt.t("tram_station") + " · " + Port.name_of(st.z), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, col)
+		else:
+			draw_string(font, Vector2(-90, below), Txt.t("tram_station") + " · " + Port.name_of(st.z), HORIZONTAL_ALIGNMENT_CENTER, 180, 12, col)
 		if on and not riding:
 			draw_string(font, Vector2(-110, -0.28 * M * z - 10.0), Txt.t("tram_call") % Keys.label("use"), HORIZONTAL_ALIGNMENT_CENTER, 220, 15, Pal.ink(0.95))
 		draw_set_transform(Vector2.ZERO)

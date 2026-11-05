@@ -89,8 +89,15 @@ func _run() -> void:
 	check(sm._tour_i == 1, "space: the next part (%s)" % str(sm._tour_steps()[1][1]))
 	check(Career.guide_at("find_tour") == 1, "the save keeps the part reached (a quit goes on from it)")
 	Cap.save(root, "res://tests/out/onboarding_tour2_zh.png")
+	# user 2026-11-05: Space does not skip past the sweep step before a sweep is started; Esc ends the tour
 	for i in 6:
 		sm._input(space)
+	await _frames(4)
+	check(sm._tour_i == 2, "space stops at the sweep step until a sweep is started (%d)" % sm._tour_i)
+	var esc := InputEventKey.new()
+	esc.keycode = KEY_ESCAPE
+	esc.pressed = true
+	sm._input(esc)
 	await _frames(4)
 	check(not sm.tour_on() and Career.data.seen.get("starmap_tour", false), "after the last part the tour ends and is not shown again")
 	check(sm.next_line().contains("扫描"), "the next step: sweep (%s)" % sm.next_line())

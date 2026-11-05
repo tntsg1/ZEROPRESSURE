@@ -719,6 +719,7 @@ func _process(dt: float) -> void:
 	deal_t += dt
 	switch_t += dt
 	_step_book()
+	_walk_pin()
 	_step_focus(dt)
 	press_t = maxf(0.0, press_t - dt)
 	if press_t <= 0.0:
@@ -766,10 +767,10 @@ func _process(dt: float) -> void:
 		for i in _ops_decs.size():
 			if _dec_rect(i).has_point(m):
 				hover_dec = i
-		hover_next = _next_go_rect().has_point(m) and Mainline.chapter() != ""
+		hover_next = _next_go_rect().has_point(m) and Mainline.chapter() != "" and not _walk_quiet()
 	hover_goal = -1
 	if boot_t >= BOOT_T:
-		for i in (Route.MAX_PINS if Onboarding.shown("rep") else 0):
+		for i in (Route.MAX_PINS if Onboarding.shown("rep") and not _walk_quiet() else 0):
 			if _goal_rect(i).has_point(m):
 				hover_goal = i
 	hover_go = _go_rect().has_point(m)
@@ -1731,6 +1732,13 @@ func _next_step_card(a: float) -> void:
 	if k <= 0.0:
 		return
 	var r := _next_rect()
+	# 131 号 追加 (user: three voices on the terminal's home at once): while the port walk runs it
+	# is the one voice — the main line folds to one grey line, no "take me"; back after the walk
+	if _walk_quiet():
+		var qc := Mainline.chapter()
+		if qc != "":
+			_text(Ops.w("主线 · 第 %d 章 · %s（导览结束后继续）", "MAIN LINE · CHAPTER %d · %s (AFTER THE TOUR)") % [Mainline.index(qc), Mainline.name_of(qc)], r.position + Vector2(34, 34), 15, Pal.ink(0.42 * k), font_b)
+		return
 	r.position.y += (1.0 - k) * 20.0
 	Hmi.raised(self, r, k)
 	var ch := Mainline.chapter()
@@ -1747,6 +1755,77 @@ func _next_step_card(a: float) -> void:
 		var g := _next_go_rect()
 		g.position.y += (1.0 - k) * 20.0
 		Hmi.push(self, font_s, g, Ops.w("带我去", "TAKE ME"), true, 1.0 if hover_next else 0.0, k, t, 0.0, "", "")
+
+
+# ---------------------------------------------------------------- 131 号 追加: the port walk on the terminal
+# (user 2026-11-05, a shot of the home: the walk's card "按 B 打开终端，点‘船坞’" lay over the third
+# key, the orange frame sat on the first, the main line's "take me" up top — "这个引导也不是给我开船坞
+# 的呀"). With the terminal open the walk's card is hidden (port_walk.gd); its step is shown on the
+# key it means: the berth key lit, a small tag on it, Enter opens it; the home's own selection
+# starts on it; the main line folds to one grey line while the walk runs.
+
+# the walk's step while it runs over this terminal ("" none)
+func _walk_kind() -> String:
+	var g = game_ref
+	if g == null or not is_instance_valid(g) or not g.has_method("walk_on") or not g.walk_on():
+		return ""
+	var wk = g.port_walk
+	return str(wk.kind()) if wk.step < wk.steps.size() else ""
+
+
+func _walk_quiet() -> bool:
+	return _walk_kind() != ""
+
+
+# on the home with the walk asking for the berth page
+func walk_berth() -> bool:
+	return tab == HOME and _walk_kind() == "repair" and _app_of(1) >= 0
+
+
+var _walk_pinned := false
+
+
+# the home's selection starts on the berth key once per visit to the home; the player may move it
+func _walk_pin() -> void:
+	if not walk_berth():
+		if tab != HOME:
+			_walk_pinned = false
+		return
+	if not _walk_pinned:
+		_walk_pinned = true
+		sel = _app_of(1)
+
+
+# the berth key lit: a breathing ring round it and a small tag over it
+func _walk_mark(a: float) -> void:
+	if not walk_berth() or boot_t < BOOT_T:
+		return
+	var i := _app_of(1)
+	var k := Pal.ease_out(clampf((deal_t - 0.35) / 0.3, 0.0, 1.0)) * a
+	if k <= 0.0:
+		return
+	var r := _tile_rect(i)
+	var hk: float = hover_k[i].x if i < hover_k.size() else 0.0
+	r.position.y -= hk * 5.0
+	var breathe := 0.5 + 0.5 * sin(t * 3.4)
+	var ring := StyleBoxFlat.new()
+	ring.draw_center = false
+	ring.set_corner_radius_all(18)
+	ring.set_border_width_all(3)
+	ring.anti_aliasing = true
+	ring.border_color = Color(UiSkin.ACCENT, (0.75 + 0.25 * breathe) * k)
+	ring.shadow_color = Color(UiSkin.ACCENT, (0.25 + 0.25 * breathe) * k)
+	ring.shadow_size = int(8.0 + 8.0 * breathe)
+	draw_style_box(ring, r.grow(8.0 + 2.0 * breathe))
+	# the tag: on the key's top edge, inside the screen, never past it
+	var tag := Ops.w("导览：看看船坞哪些设施坏了 · Enter 打开", "TOUR: SEE WHAT IN THE BERTH IS BROKEN · ENTER OPENS")
+	var tw := font_b.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+	var tr := Rect2(Vector2(clampf(r.get_center().x - (tw + 26.0) * 0.5, 8.0, size.x - tw - 34.0), r.position.y - 40.0), Vector2(tw + 26.0, 28.0))
+	draw_rect(tr, Color(0.03, 0.034, 0.042, 0.96 * k))
+	draw_rect(Rect2(tr.position, Vector2(3.0, tr.size.y)), Color(UiSkin.ACCENT, k))
+	draw_rect(tr, Color(UiSkin.ACCENT, 0.6 * k), false, 1.0)
+	draw_line(Vector2(r.get_center().x, tr.end.y), Vector2(r.get_center().x, r.position.y - 8.0), Color(UiSkin.ACCENT, 0.7 * k), 1.5)
+	_text(tag, tr.position + Vector2(14, 19), 14, Pal.ink(0.97 * k), font_b)
 
 
 # a new career's home screen before the market opens (28 号): what to do first, plainly
@@ -2001,6 +2080,7 @@ func _page(s: Vector2, a: float, with_focus: bool) -> void:
 			_training_page(s, a)
 	if with_focus:
 		_focus_frame(a)
+	_walk_mark(a)
 
 
 # the pages whose items take the gliding frame
@@ -2180,6 +2260,18 @@ func _goal_rect(i: int) -> Rect2:
 func _goal_strip(ka: float) -> void:
 	var r := _goal_box()
 	Hmi.sunk(self, r, ka)
+	# 131 号 追加: while the port walk runs it is the one voice here — its line in the strip, the main
+	# line under it in small grey, no goals to click
+	if _walk_quiet():
+		var wk = game_ref.port_walk
+		var line := str(wk.body.text) if wk.body.visible and str(wk.body.text) != "" else str(wk.title.text)
+		draw_rect(Rect2(r.position, Vector2(3.0, r.size.y)), Color(UiSkin.ACCENT, ka))
+		_text(Ops.w("导览", "TOUR"), Vector2(r.position.x + 18, r.position.y + 22), 14, Color(UiSkin.ACCENT, 0.95 * ka), font_b)
+		draw_string(font_b, Vector2(r.position.x + 70, r.position.y + 22), line, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 90, 14, Pal.ink(0.95 * ka))
+		var mc := Mainline.chapter()
+		if mc != "":
+			draw_string(font_b, Vector2(r.position.x + 70, r.position.y + 39), Ops.w("主线 · 第 %d 章 · %s（导览结束后继续）", "MAIN LINE · CHAPTER %d · %s (AFTER THE TOUR)") % [Mainline.index(mc), Mainline.name_of(mc)], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 90, 12, Pal.ink(0.42 * ka))
+		return
 	_text(Txt.t("rt_goals"), Vector2(r.position.x + 18, r.position.y + 29), 14, Pal.ink(0.55 * ka), font_b)
 	var gs := _goals()
 	# the main line takes the first place (28 号 Q17); the career's own goals follow

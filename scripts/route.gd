@@ -209,7 +209,17 @@ static func port_node(z: String) -> Dictionary:
 	var n := Port.stage(z)
 	var done := n >= 2
 	var conds: Array = []
-	if not done:
+	if not done and Port.RepairBill.ON:
+		# 128 号 第 3 段: what the warehouse has, what will be bought, the cash for it
+		var b: Dictionary = Port.RepairBill.of(z)
+		conds.append(_cond(Txt.t("rp_needs"), Port.RepairBill.short_line(b), 1.0 if int(b.get("buy_n", 0)) == 0 else 0.5, true))
+		var money0 := float(d.get("money", 0.0))
+		var price0 := float(b.get("buy_cash", 0.0))
+		conds.append(_cond(Txt.t("rt_money"), "%s / %s" % [Pal.money(money0), Pal.money(price0)], clampf(money0 / maxf(price0, 1.0), 0.0, 1.0), money0 >= price0))
+		for dep in Port.DEPS.get(z, []):
+			var ok0: bool = Port.stage(str(dep[0])) >= int(dep[1])
+			conds.append(_cond(Txt.t("rt_first"), Port.name_of(str(dep[0])), 1.0 if ok0 else 0.0, ok0))
+	elif not done:
 		var needs := Port.needs(z, n + 1)
 		var pf := Repair.parts_for_needs(needs)
 		var lack: Array = []

@@ -230,7 +230,7 @@ const E := {
 	"m_custody": {"cat": "mech", "cls": "isolate", "ships": ["dc84"], "arts": ["drive_carrier", "storage_array"], "inc": ["custody_breach"], "draw": "drive_carrier", "size": [1.4, 0.6]},
 	"m_waterball": {"cat": "mech", "cls": "fluid", "ships": ["bl88"], "inc": ["water_ball_burst"], "draw": "", "glyph": "drop"},
 	"m_media": {"cat": "mech", "cls": "fluid", "ships": ["fl116"], "arts": ["manifold", "separator_3ph", "coriolis"], "inc": ["media_mixed", "manifold_spill"], "draw": "manifold", "size": [2.4, 1.0]},
-	"m_o2_flash": {"cat": "mech", "cls": "atmos", "ships": ["hb86", "my48"], "arts": ["growlamp", "plants", "electrolyser"], "inc": ["o2_fire"], "draw": "", "glyph": "heat"},
+	"m_o2_flash": {"cat": "mech", "cls": "atmos", "ships": ["hb86", "my48"], "arts": ["growlamp", "plants", "electrolyser"], "inc": ["o2_fire"], "draw": "", "glyph": "fire"},
 	"m_composite": {"cat": "mech", "cls": "atmos", "ships": ["st40"], "inc": ["composite_fumes"], "draw": "", "glyph": "gas"},
 	"m_radiation": {"cat": "mech", "cls": "atmos", "ships": ["nr95"], "arts": ["ntr_core", "shadow_shield", "control_drum"], "inc": ["dose_fault", "core_detonation", "drum_slip"], "draw": "shadow_shield", "size": [1.0, 2.0]},
 	"m_decay_heat": {"cat": "mech", "cls": "atmos", "ships": ["nr95", "mf126"], "arts": ["ntr_core", "arc_furnace", "radiator"], "inc": ["core_cracked", "petal_hot"], "draw": "arc_furnace", "size": [2.4, 1.8]},
@@ -252,7 +252,7 @@ const E := {
 	"m_mirror_lock": {"cat": "mech", "cls": "precise", "ships": ["ob90"], "arts": ["mirror", "actuator", "hexapod"], "inc": ["mirror_drop", "mirror_unsupported"], "draw": "actuator", "size": [2.4, 0.6]},
 	"m_glass": {"cat": "mech", "cls": "precise", "ships": ["hb86", "ps12", "bl88", "my48"], "arts": ["glass"], "inc": ["glass_blown", "glass_craze"], "draw": "glass", "size": [1.0, 1.6]},
 	"m_vault": {"cat": "mech", "cls": "isolate", "ships": ["es112"], "arts": ["safe_deposit", "vault", "biometric"], "draw": "safe_deposit", "size": [2.0, 1.6]},
-	"m_hypergolic": {"cat": "mech", "cls": "fluid", "ships": ["vt80"], "names": ["p_mmh_tank", "p_nto_tank"], "inc": ["prop_blast"], "draw": "", "glyph": "heat"},
+	"m_hypergolic": {"cat": "mech", "cls": "fluid", "ships": ["vt80"], "names": ["p_mmh_tank", "p_nto_tank"], "inc": ["prop_blast"], "draw": "", "glyph": "fire"},
 	"m_nested": {"cat": "mech", "cls": "isolate", "ships": ["lc140"], "inc": ["nested_lurch", "nested_cut"], "draw": "engine_s", "size": [2.2, 1.0]},
 
 	# ---------------------------------------------------------------- the berth's systems
@@ -261,7 +261,7 @@ const E := {
 	"s_power": {"cat": "sys", "ev": "volts", "inc": ["arc"], "glyph": "bolt_volt", "always": true},
 	"s_heat": {"cat": "sys", "ev": "temp", "glyph": "heat", "always": true},
 	"s_cloud": {"cat": "sys", "ev": "cloud", "glyph": "gas", "always": true},
-	"s_fire": {"cat": "sys", "inc": ["fire", "doors_blown"], "glyph": "heat", "always": true},
+	"s_fire": {"cat": "sys", "inc": ["fire", "doors_blown"], "glyph": "fire", "always": true},
 	"s_liquid": {"cat": "sys", "ev": "liquid", "inc": ["leak"], "glyph": "drop", "always": true},
 	"s_hose": {"cat": "sys", "ev": "hose", "glyph": "pipe", "always": true},
 	"s_free": {"cat": "sys", "ev": "free", "glyph": "free", "always": true},
@@ -277,5 +277,5 @@ const E := {
 	"s_impact": {"cat": "sys", "inc": ["impact", "snap", "torn"], "glyph": "free", "always": true},
 	"s_ullage": {"cat": "sys", "arts": ["fueltank"], "glyph": "gas", "always": true},
 	"s_contents": {"cat": "sys", "ev": "contents", "glyph": "probe", "always": true},
-	"s_o2_rich": {"cat": "sys", "ev": "o2_rich", "glyph": "heat", "always": true},
+	"s_o2_rich": {"cat": "sys", "ev": "o2_rich", "glyph": "fire", "always": true},
 }

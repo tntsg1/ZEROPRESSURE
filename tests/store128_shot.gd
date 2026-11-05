@@ -312,13 +312,8 @@ func _run() -> void:
 	ui.scroll = 0.0
 	ui._close()
 	await _frames(10)
-	check(g.recycle_crane != null and g.recycle_crane.busy(), "the dock crane is taking it away")
-	g.cam_override = Consoles.rack_centre() + Vector2(2.5, -1.0) * Geom.M
-	await _frames(150)
-	await _shot("6_crane")
-	await _frames(320)
-	check(not g.recycle_crane.busy(), "and it is gone in a few seconds")
-	g.cam_override = null
+	# user 2026-11-05: no crane in the berth any more (the sale leaves from the cargo district by train)
+	check(g.get("recycle_crane") == null, "no recycling crane in the berth (130 号: removed, a sale goes by train)")
 	check(Career.data.get("seen", {}).has("store_guide_done"), "the first visit's guide is over for good")
 	# 返工 4: the old exchange page (F8 and every way in) is shut while exchange_open() is false
 	Career.data.market = true

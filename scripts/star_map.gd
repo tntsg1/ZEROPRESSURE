@@ -26,6 +26,15 @@ var _last_an := ""             # the signal being analysed at the last look
 var _done_sig := ""            # one just analysed: its result on the status line till _done_until
 var _done_until := 0
 const DONE_MS := 4000
+# user 2026-11-05 (截图：“约 12 秒到港”一直不变): texts that count down are set again in place, the page
+# is not rebuilt for them; a hulk docking makes its row flash and a line say where to go
+var _live: Array = []            # [control, Callable → its text now]
+var _tow_was := {}               # signal id → true while its hulk was under tow at the last look
+var _docked_at := {}             # signal id → msec it docked
+var _dock_sig := ""              # the one the "docked" line is about
+var _dock_until := 0
+const DOCK_MS := 8000
+const DOCK_FLASH_S := 1.6
 const SCALE_AU := 3.7          # AU from the Sun to the map's edge (Jupiter drawn at the rim)
 const Fx := preload("res://scripts/star_map_fx.gd")
 const Mo := preload("res://scripts/star_map_motion.gd")
@@ -184,6 +193,7 @@ func _process(dt: float) -> void:
 	var e := 1.0 - exp(-12.0 * dt)
 	# the framed part can move (the tug, the view easing onto it): the frame goes with it
 	if _tour_i >= 0 and _tour_layer != null:
+		_tour_tick()
 		_tour_layer.queue_redraw()
 	view_z = lerpf(view_z, view_zt, e)
 	_inset_pos = _inset_pos.lerp(_inset_goal, 1.0 - exp(-7.0 * dt))
@@ -289,7 +299,7 @@ func _uni(m: ShaderMaterial, kv: Dictionary) -> void:
 
 # every GPU layer's uniforms for this frame: the view, the clock, the pointer, the sweep
 func _push_fx() -> void:
-	var t := Time.get_ticks_msec() / 1000.0
+	var t := Mo.ms() / 1000.0
 	var day := Shipping.day()
 	var sun := _to(Vector2.ZERO)
 	var k := _k()
@@ -370,7 +380,7 @@ func _sel_open() -> float:
 func _radar_ang() -> float:
 	var j: Dictionary = Scan.data().job
 	var sweeping: bool = not j.is_empty() and str(j.kind) == "sweep" and int(j.sector) == sel_sector
-	return (Scan.progress() * TAU * 3.0) if sweeping else fmod(Time.get_ticks_msec() / 1000.0 * 0.9, TAU)
+	return (Scan.progress() * TAU * 3.0) if sweeping else fmod(Mo.ms() / 1000.0 * 0.9, TAU)
 
 
 func _state_name(s: Dictionary) -> String:
@@ -537,7 +547,7 @@ func _draw_map() -> void:
 	cv = _top
 	_labels.clear()
 	var day := Shipping.day()
-	var t := Time.get_ticks_msec() / 1000.0
+	var t := Mo.ms() / 1000.0
 	var c := _to(Vector2.ZERO)
 	_draw_grid_labels(c)
 	cv.draw_string(font, c + Vector2(14, -10) * sqrt(view_z), w("太阳", "SUN"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, UiSkin.ACCENT)
@@ -673,7 +683,7 @@ func _pick_hover(day: float, pp: Vector2) -> void:
 
 func _draw_ptr() -> void:
 	cv = _ptr
-	_draw_pointer(Time.get_ticks_msec() / 1000.0)
+	_draw_pointer(Mo.ms() / 1000.0)
 
 
 # the pointer: a reticle with its range and bearing; over a station, planet or the port the reticle
@@ -873,7 +883,7 @@ func _map_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT):
 		return
 	# a click rings out from where it landed
-	_rip.append([event.position, Time.get_ticks_msec() / 1000.0])
+	_rip.append([event.position, Mo.ms() / 1000.0])
 	_sfx("starmap_click", 0.5)
 	if _rip.size() > 4:
 		_rip.pop_front()
@@ -980,23 +990,33 @@ func _fill_find() -> void:
 	var an := str(j.sig) if str(j.get("kind", "")) == "analyze" else ""
 	if _last_an != "" and an != _last_an and Scan.sig_of(_last_an).get("known", false):
 		_done_sig = _last_an
-		_done_until = Time.get_ticks_msec() + DONE_MS
+		_done_until = Mo.ms() + DONE_MS
 	_last_an = an
-	if _done_sig != "" and (an != "" or Time.get_ticks_msec() >= _done_until):
+	if _done_sig != "" and (an != "" or Mo.ms() >= _done_until):
 		_done_sig = ""
 	var way := ShipMarket.on_the_way()
-	var key := TugYard.status() + "%s|%d|%s|%d|%s|%d|%d|%s|%s|%d|%s" % [str(j.get("kind", "")), sel_sector, sel_sig, found.size(), str(Scan.data().sectors.keys()), int(float(Career.data.get("money", 0.0)) / 100.0), int(Scan.cooldown(sel_sector) > 0.0), _done_sig, str(_sectors_open), way.size(), str(TugYard.taken().map(func(a): return str(a.get("state", ""))))]
+	_watch_docking()
+	if _dock_sig != "" and Mo.ms() >= _dock_until:
+		_dock_sig = ""
+	var key := TugYard.status() + "%s|%d|%s|%d|%s|%d|%d|%s|%s|%d|%s|%s" % [str(j.get("kind", "")), sel_sector, sel_sig, found.size(), str(Scan.data().sectors.keys()), int(float(Career.data.get("money", 0.0)) / 100.0), int(Scan.cooldown(sel_sector) > 0.0), _done_sig, str(_sectors_open), way.size(), str(TugYard.taken().map(func(a): return str(a.get("state", "")))), _dock_sig]
 	if key == _sig_key:
+		_live_text()
 		return
 	_sig_key = key
+	_live = []
 	for c in find_box.get_children():
 		c.queue_free()
+	_tour_parts.erase("send")
+	_tour_parts.sigs = []
 	# 107 号 Q5 A (user's screenshot: the tug button was below the fold): on top, what to do next and
 	# the one button that does it; the sectors fold to one line once one is picked
 	var nx := OpsSkin.label(next_line(), 16, 0.95)
 	nx.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	nx.add_theme_color_override("font_color", UiSkin.ACCENT)
 	find_box.add_child(nx)
+	_live.append([nx, next_line])
+	if _dock_sig != "":
+		find_box.add_child(ScanStatus.new(w("%s 已到港 · 去船坞开工", "%s DOCKED · START STRIPPING IT IN THE BERTH") % _dock_sig))
 	var ord := Scan.order()
 	if _sectors_open or sel_sector < 0:
 		find_box.add_child(OpsSkin.Section.new(w("扇区", "SECTORS")))
@@ -1047,6 +1067,7 @@ func _fill_find() -> void:
 			var sec := OpsSkin.Section.new(w("信号", "SIGNALS"))
 			find_box.add_child(sec)
 			_tour_parts.found = sec
+			_tour_parts.sigs.append(sec)
 			for s in sigs:
 				var id := str(s.id)
 				var stt := sig_state(s)
@@ -1055,12 +1076,19 @@ func _fill_find() -> void:
 					_rise(sendb, id)
 					find_box.add_child(sendb)
 					_tour_parts.found = sendb
+					_tour_parts.sigs.append(sendb)
+					if not _tour_parts.has("send"):
+						_tour_parts.send = sendb
 					continue
 				var txt := "%s · %s" % [id, Scan.verdict(s)]
 				if str(stt.get("words", "")) != "":
 					txt = "%s · %s · %s" % [id, Scan.type_name(str(s.offer.ship)), str(stt.words)]
 				var b := _btn(txt, true, func(): sel_sig = id; _sig_key = ""; _fill(), 32)
 				b.name = "Sig_" + id
+				if str(stt.kind) == "towing":
+					_live.append([b, func(): return _sig_row_text(Scan.sig_of(id))])
+				if _docked_flash(id) > 0.0:
+					b.add_child(DockFlash.new(self, id))
 				_rise(b, id)
 				if id == sel_sig:
 					b.add_theme_color_override("font_color", UiSkin.ACCENT)
@@ -1072,15 +1100,20 @@ func _fill_find() -> void:
 				if id == an:
 					b.add_child(RowBar.new(b, id))
 				find_box.add_child(b)
+				_tour_parts.sigs.append(b)
 			if an != "" or _done_sig != "":
 				# user 2026-10-28 (截图：“正在分析信号 S-001，等它完成”像第三条信号): the analysis under
 				# way is a status line under the list — no button, an accent rule and a bar — and says
 				# what it found for a few seconds when done
-				find_box.add_child(ScanStatus.new(_done_line() if an == "" else ""))
+				var ss := ScanStatus.new(_done_line() if an == "" else "")
+				find_box.add_child(ss)
+				_tour_parts.sigs.append(ss)
 			elif sel_sig != "" and not Scan.sig_of(sel_sig).get("known", false):
 				var why2 := Scan.analyze_block(sel_sig)
 				find_box.add_child(_gap(6))
-				find_box.add_child(_action(_btn(w("分析 %s 的电磁特征（约 %d 秒）", "ANALYSE %s (~%d s)") % [sel_sig, int(Scan.ANALYZE_S)] if why2 == "" else why2, why2 == "", func(): Scan.analyze(sel_sig); _sig_key = ""; _fill(), 42)))
+				var ab := _action(_btn(w("分析 %s 的电磁特征（约 %d 秒）", "ANALYSE %s (~%d s)") % [sel_sig, int(Scan.ANALYZE_S)] if why2 == "" else why2, why2 == "", func(): Scan.analyze(sel_sig); _sig_key = ""; _fill(), 42))
+				find_box.add_child(ab)
+				_tour_parts.sigs.append(ab)
 	# 107 号 Q6 A: hulks found in the other sectors (this sector's are on their own rows above)
 	var elsewhere: Array = []
 	for i in found:
@@ -1091,11 +1124,17 @@ func _fill_find() -> void:
 		find_box.add_child(OpsSkin.Section.new(w("别的扇区找到的船", "FOUND IN OTHER SECTORS")))
 		for i in elsewhere:
 			var o: Dictionary = Career.data.get("offers", [])[i]
-			find_box.add_child(_send_button(i, str(o.get("scan_sig", ""))))
+			var eb := _send_button(i, str(o.get("scan_sig", "")))
+			find_box.add_child(eb)
+			if not _tour_parts.has("send"):
+				_tour_parts.send = eb
 	if not way.is_empty():
 		var wl := OpsSkin.label(w("在路上 %d 艘 · 最快约 %d 秒", "%d ON THE WAY · FIRST ~%d s") % [way.size(), int(float(way[0].left_s))], 14, 0.8)
 		find_box.add_child(wl)
 		_tour_parts.way = wl
+		_live.append([wl, func():
+			var wv := ShipMarket.on_the_way()
+			return wl.text if wv.is_empty() else w("在路上 %d 艘 · 最快约 %d 秒", "%d ON THE WAY · FIRST ~%d s") % [wv.size(), int(float(wv[0].left_s))]])
 	var yard := OpsSkin.label(TugYard.status(), 13, 0.65)
 	find_box.add_child(yard)
 	_tour_parts.yard = yard
@@ -1151,14 +1190,83 @@ func sig_state(s: Dictionary) -> Dictionary:
 							left = int(float(wv.left_s))
 					return {"kind": "towing", "words": w("拖运途中 · 约 %d 秒到港", "UNDER TOW · ~%d s") % left}
 				"arrived":
-					return {"kind": "arrived", "words": w("已拖回港 · 在拖船区等着拆", "HOME · WAITING IN THE TUG YARD")}
+					return {"kind": "arrived", "words": w("已到港 · 在拖船区等着拆", "DOCKED · WAITING IN THE TUG YARD")}
 				"held":
-					return {"kind": "held", "words": w("已拖回港 · 港务扣留", "HOME · HELD BY THE PORT")}
+					return {"kind": "held", "words": w("已到港 · 港务扣留", "DOCKED · HELD BY THE PORT")}
 				"stripping":
 					return {"kind": "done", "words": w("正在船坞里拆", "BEING STRIPPED")}
 				_:
 					return {"kind": "done", "words": w("已经拆完", "STRIPPED")}
 	return {"kind": ""}
+
+
+# a signal row's text from its state (the same words _fill_find writes)
+func _sig_row_text(s: Dictionary) -> String:
+	var id := str(s.get("id", ""))
+	var stt := sig_state(s)
+	if str(stt.get("words", "")) != "":
+		return "%s · %s · %s" % [id, Scan.type_name(str(s.offer.ship)), str(stt.words)]
+	return "%s · %s" % [id, Scan.verdict(s)]
+
+
+func _live_text() -> void:
+	for e in _live:
+		var c = e[0]
+		if c == null or not is_instance_valid(c) or c.is_queued_for_deletion():
+			continue
+		var t := str((e[1] as Callable).call())
+		if c.text != t:
+			c.text = t
+
+
+# a hulk that was under tow is home: its row flashes, a line says where to go
+func _watch_docking() -> void:
+	if not Career.data.has("ship_market"):
+		return
+	var now: Dictionary = {}
+	for a in Career.data.ship_market.get("assets", []):
+		var sig := str(a.get("listing", {}).get("offer", {}).get("scan_sig", ""))
+		if sig == "":
+			continue
+		var st := str(a.get("state", ""))
+		if st == "towing":
+			now[sig] = true
+		elif _tow_was.has(sig) and st in ["arrived", "held"]:
+			_docked_at[sig] = Mo.ms()
+			_dock_sig = sig
+			_dock_until = Mo.ms() + DOCK_MS
+	_tow_was = now
+
+
+# 0..1, the docked row's flash: two quick pulses fading over DOCK_FLASH_S
+func _docked_flash(id: String) -> float:
+	if not _docked_at.has(id):
+		return 0.0
+	var t := (Mo.ms() - int(_docked_at[id])) / 1000.0
+	if t >= DOCK_FLASH_S:
+		return 0.0
+	return (1.0 - t / DOCK_FLASH_S) * (0.55 + 0.45 * cos(t * TAU * 1.6))
+
+
+class DockFlash extends Control:
+	var sm
+	var id := ""
+
+	func _init(owner_map, sig: String) -> void:
+		sm = owner_map
+		id = sig
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	func _process(_dt: float) -> void:
+		queue_redraw()
+
+	func _draw() -> void:
+		var a: float = sm._docked_flash(id)
+		if a <= 0.0:
+			return
+		draw_rect(Rect2(Vector2.ZERO, size), Color(UiSkin.DATA, 0.22 * a))
+		draw_rect(Rect2(Vector2.ZERO, size), Color(UiSkin.DATA, 0.9 * a), false, 1.5)
 
 
 func _done_line() -> String:
@@ -1232,8 +1340,8 @@ class RowBar extends Control:
 		id = sig
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		if not started.has(sig) or Time.get_ticks_msec() / 1000.0 - float(started[sig]) > Scan.ANALYZE_S + 2.0:
-			started[sig] = Time.get_ticks_msec() / 1000.0
+		if not started.has(sig) or Mo.ms() / 1000.0 - float(started[sig]) > Scan.ANALYZE_S + 2.0:
+			started[sig] = Mo.ms() / 1000.0
 
 	func _process(_dt: float) -> void:
 		if str(Scan.data().job.get("sig", "")) == id:
@@ -1245,7 +1353,7 @@ class RowBar extends Control:
 	# over 0.15 s (linear), a 160-wide shine (clear at its edges, brightest in the middle) sweeping
 	# across them every 0.9 s, drawn only on the blocks; the progress along the foot
 	func _draw() -> void:
-		var s := Time.get_ticks_msec() / 1000.0 - float(started.get(id, 0.0))
+		var s := Mo.ms() / 1000.0 - float(started.get(id, 0.0))
 		var sk := clampf(s / Mo.SKEL_IN, 0.0, 1.0)
 		var f := row.get_theme_font("font")
 		var fs := row.get_theme_font_size("font_size")
@@ -1286,8 +1394,10 @@ func next_line() -> String:
 	var found := Scan.found()
 	var waiting := ""
 	if not way.is_empty():
-		# 108 号 Q4/Q11: one line; the rest (the terminal pauses the tow, where to start it) is in the tour
-		waiting = w("拖船在路上，约 %d 秒到港（关掉星图它才走）。", "THE TUG IS ON ITS WAY, ~%d s (IT FLIES ONCE THIS IS CLOSED).") % int(float(way[0].left_s))
+		# 108 号 Q4/Q11: one line; the rest (the terminal pauses the tow, where to start it) is in the tour.
+		# user 2026-11-05: the tug flies with the map open too (the tow clock is the freight pier's, which
+		# the map does not stop): the line no longer says it waits for the map to close
+		waiting = w("拖船在路上，约 %d 秒到港。", "THE TUG IS ON ITS WAY, ~%d s.") % int(float(way[0].left_s))
 	if not found.is_empty():
 		var o: Dictionary = Career.data.get("offers", [])[found[0]]
 		var yb := TugYard.block(str(o.ship))
@@ -1334,8 +1444,8 @@ func _tour_steps() -> Array:
 		["sectors", w("扇区", "SECTORS"), w("小行星带分成一片一片。开局只能扫离港最近的 3 片，修好拖船站、贸易区能扫得更远。", "The belt is cut into sectors. At first only the 3 nearest can be swept; the tug station and the trade district reach further.")],
 		["sweep", w("扫描", "SWEEP"), w("向选中的扇区发一道雷达波，约 %d 秒，不花钱。" % int(Scan.SWEEP_S), "A radar sweep over the picked sector: about %d s, free." % int(Scan.SWEEP_S))],
 		["inset", w("信号点", "SIGNALS"), w("扫完出现几个信号，只知道强弱：可能是船，也可能只是石头。", "A few signals show up, strength only: a hulk, or just rock.")],
-		["sweep", w("分析电磁特征", "ANALYSE"), w("点一个信号再点“分析电磁特征”（约 %d 秒）：看清是不是船、多长、漂了多少年、拖回来要多少钱。" % int(Scan.ANALYZE_S), "Pick a signal and analyse it (~%d s): whether it is a hulk, how long, how old, what the tow costs." % int(Scan.ANALYZE_S))],
-		["found", w("派拖船", "SEND THE TUG"), w("认出是船的那一行会变成“派拖船去拖”按钮。点它，星图上看得见拖船飞过去、拖着船回来。第一趟免费。", "A signal analysed as a hulk becomes a tug button. Click it and watch the tug fly out and tow it home. The first is free.")],
+		["sigs", w("分析电磁特征", "ANALYSE"), w("点一个信号再点“分析电磁特征”（约 %d 秒）：看清是不是船、多长、漂了多少年、拖回来要多少钱。" % int(Scan.ANALYZE_S), "Pick a signal and analyse it (~%d s): whether it is a hulk, how long, how old, what the tow costs." % int(Scan.ANALYZE_S))],
+		["send", w("派拖船", "SEND THE TUG"), w("认出是船的那一行会变成“派拖船去拖”按钮。点它，星图上看得见拖船飞过去、拖着船回来。第一趟免费。", "A signal analysed as a hulk becomes a tug button. Click it and watch the tug fly out and tow it home. The first is free.")],
 		["yard", w("拖船站泊位", "TUG YARD"), w("港里能停几艘等着拆的船。满了就要先拆完一艘，或扩建拖船站。", "How many hulks can wait at the port. Full, strip one first or extend the tug station.")],
 	]
 
@@ -1351,6 +1461,13 @@ func _tour_rect(part: String) -> Rect2:
 	if part == "inset":
 		var r := _inset_rect()
 		return Rect2(map.get_global_rect().position + r.position, r.size)
+	if part == "sigs":
+		var u := Rect2()
+		for c in _tour_parts.get("sigs", []):
+			if is_instance_valid(c) and not c.is_queued_for_deletion() and c.is_visible_in_tree():
+				u = c.get_global_rect() if u.size == Vector2.ZERO else u.merge(c.get_global_rect())
+		if u.size != Vector2.ZERO:
+			return u
 	var c = _tour_parts.get(part)
 	if c != null and is_instance_valid(c) and c.is_visible_in_tree():
 		return c.get_global_rect()
@@ -1359,6 +1476,8 @@ func _tour_rect(part: String) -> Rect2:
 
 func start_tour() -> void:
 	_tour_i = clampi(Career.guide_at(_tour_kind + "_tour"), 0, _tour_steps().size() - 1)
+	while _tour_i > 0 and not _tour_can(_tour_i):
+		_tour_i -= 1
 	if _tour_layer == null:
 		_tour_layer = Control.new()
 		_tour_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1376,19 +1495,119 @@ func _tour_click(ev: InputEvent) -> void:
 	# user 2026-10-26: a click on the lit part does what it says (the button under it is really
 	# pressed — a sector picked, the sweep started, the tug sent), then the tour goes on
 	var at: Vector2 = _tour_layer.get_global_mouse_position()
-	if _tour_i >= 0 and _tour_rect(str(_tour_steps()[_tour_i][0])).has_point(at):
+	var acted := false
+	if _tour_i >= 0 and _tour_rect(_tour_part()).has_point(at):
 		for b in find_box.find_children("*", "Button", true, false):
-			if b.is_visible_in_tree() and not b.disabled and b.get_global_rect().has_point(at):
+			if b.is_visible_in_tree() and not b.disabled and not b.is_queued_for_deletion() and b.get_global_rect().has_point(at):
 				b.pressed.emit()
+				acted = true
 				break
-	_tour_next()
+	# the analyse step takes two presses (a signal, then its button): the hulk found moves it on
+	if acted and _tour_kind == "find" and _tour_i == 4:
+		return
+	_tour_next(acted)
 
 
 func tour_on() -> bool:
 	return _tour_i >= 0
 
 
-func _tour_next() -> void:
+# user 2026-11-05 (截图：扫描到 83%、一个信号都没出来，卡片已经在讲“分析电磁特征”): a step shows only once
+# what it talks about is on screen. Until then the card says what it waits for, lights that, and
+# Space / a click wait too; the analyse step moves on by itself once a hulk is found.
+func _sweeping_here() -> bool:
+	var j: Dictionary = Scan.data().job
+	return sel_sector >= 0 and str(j.get("kind", "")) == "sweep" and int(j.get("sector", -1)) == sel_sector
+
+
+func _swept_here() -> bool:
+	return sel_sector >= 0 and not _sweeping_here() and not Scan.signals(sel_sector).is_empty()
+
+
+func _send_on() -> bool:
+	var b = _tour_parts.get("send")
+	return b != null and is_instance_valid(b) and not b.is_queued_for_deletion() and b.is_visible_in_tree()
+
+
+# can the tour stand on step i at all (its own card, or the card saying what it waits for)
+func _tour_can(i: int) -> bool:
+	if _tour_kind != "find":
+		return true
+	if i == 3 or i == 4:
+		return _sweeping_here() or _swept_here()
+	if i == 5:
+		return _send_on()
+	return true
+
+
+# "" when step i shows as written; else what it waits for
+func tour_wait(i := _tour_i) -> String:
+	if _tour_kind != "find" or i < 0:
+		return ""
+	if i == 3 or i == 4:
+		if _sweeping_here():
+			return "sweeping"
+		if i == 4:
+			if str(Scan.data().job.get("kind", "")) == "analyze":
+				return "analysing"
+			var open := false
+			for sg in Scan.signals(sel_sector):
+				if not sg.get("known", false):
+					open = true
+			if not open and not _send_on():
+				return "no_ship"
+	if i == 5 and not _send_on():
+		return "no_ship"
+	return ""
+
+
+func _tour_part() -> String:
+	match tour_wait():
+		"sweeping":
+			return "sweep"
+		"analysing":
+			return "sigs"
+		"no_ship":
+			return "sectors"
+	return str(_tour_steps()[_tour_i][0])
+
+
+# [title, body, progress (-1: none), footer] of the card now
+func tour_card() -> Array:
+	if _tour_i < 0:
+		return []
+	var st: Array = _tour_steps()[_tour_i]
+	var wt := tour_wait()
+	var foot := w("点一下或按空格：下一项 · Esc 跳过", "CLICK OR SPACE: NEXT · ESC SKIPS")
+	if wt != "" or (_tour_i + 1 < _tour_steps().size() and not _tour_can(_tour_i + 1)):
+		foot = w("照着做，完成后自动继续 · Esc 跳过", "DO IT: THE TOUR GOES ON BY ITSELF · ESC SKIPS")
+	match wt:
+		"sweeping":
+			return [w("正在扫描", "SWEEPING"), w("正在扫描，扫完会出现几个信号。", "Sweeping: a few signals show up when it is done."), Scan.progress(), foot]
+		"analysing":
+			return [w("正在分析", "ANALYSING"), w("正在分析 %s 的电磁特征，分析完就知道是不是船。", "Analysing %s: done, it says whether it is a hulk.") % str(Scan.data().job.get("sig", "")), Scan.progress(), foot]
+		"no_ship":
+			return [w("这片没有船", "NO HULK HERE"), w("这片的信号都看过了，都不是船。换一片扇区再扫描。", "Every signal here is rock. Pick another sector and sweep it."), -1.0, foot]
+	return [str(st[1]), str(st[2]), -1.0, foot]
+
+
+# each frame: off a step whose ground went away, on from the analysis once a hulk is found
+func _tour_tick() -> void:
+	if _tour_kind != "find" or _tour_i < 0:
+		return
+	while _tour_i > 0 and not _tour_can(_tour_i):
+		_tour_i -= 1
+	if _tour_i == 4 and _tour_can(5):
+		_tour_i = 5
+		Career.guide_keep(_tour_kind + "_tour", _tour_i)
+
+
+func _tour_next(acted := false) -> void:
+	# a step still waiting does not let Space or a click past it (a press on its lit part that did it does)
+	if not acted and tour_wait() != "":
+		return
+	if _tour_i + 1 < _tour_steps().size() and not _tour_can(_tour_i + 1):
+		return
 	_tour_i += 1
 	if _tour_i >= _tour_steps().size():
 		_tour_end()
@@ -1412,8 +1631,8 @@ func _tour_end() -> void:
 func _draw_tour() -> void:
 	if _tour_i < 0:
 		return
-	var st: Array = _tour_steps()[_tour_i]
-	var r := _tour_rect(str(st[0])).grow(8.0)
+	var cd := tour_card()
+	var r := _tour_rect(_tour_part()).grow(8.0)
 	var s := _tour_layer.size
 	# hdr_2d blends in linear light: 0.62 barely darkened anything
 	var dim := Color(0, 0, 0, 0.85)
@@ -1433,9 +1652,17 @@ func _draw_tour() -> void:
 	_tour_layer.draw_rect(box, Color(0.09, 0.105, 0.12, 0.97))
 	_tour_layer.draw_rect(Rect2(box.position, Vector2(3, box.size.y)), UiSkin.ACCENT)
 	var f := Fonts.get_font("Medium")
-	_tour_layer.draw_string(f, at + Vector2(18, 30), "%d / %d  %s" % [_tour_i + 1, _tour_steps().size(), str(st[1])], HORIZONTAL_ALIGNMENT_LEFT, cw - 36, 19, UiSkin.ACCENT)
-	_tour_layer.draw_multiline_string(f, at + Vector2(18, 58), str(st[2]), HORIZONTAL_ALIGNMENT_LEFT, cw - 36, 15, -1, Pal.ink(0.88))
-	_tour_layer.draw_string(f, at + Vector2(18, ch - 14), w("点一下或按空格：下一项 · Esc 跳过", "CLICK OR SPACE: NEXT · ESC SKIPS"), HORIZONTAL_ALIGNMENT_LEFT, cw - 36, 12, Pal.ink(0.55))
+	_tour_layer.draw_string(f, at + Vector2(18, 30), "%d / %d  %s" % [_tour_i + 1, _tour_steps().size(), str(cd[0])], HORIZONTAL_ALIGNMENT_LEFT, cw - 36, 19, UiSkin.ACCENT)
+	_tour_layer.draw_multiline_string(f, at + Vector2(18, 58), str(cd[1]), HORIZONTAL_ALIGNMENT_LEFT, cw - 36, 15, -1, Pal.ink(0.88))
+	var pr := float(cd[2])
+	if pr >= 0.0:
+		# the job's progress on the card itself
+		var bw := cw - 36.0 - 52.0
+		var by := at.y + ch - 46.0
+		_tour_layer.draw_rect(Rect2(at.x + 18.0, by, bw, 3.0), Color(1, 1, 1, 0.1))
+		_tour_layer.draw_rect(Rect2(at.x + 18.0, by, bw * pr, 3.0), UiSkin.ACCENT)
+		_tour_layer.draw_string(f, Vector2(at.x + 18.0 + bw + 10.0, by + 6.0), "%d%%" % int(pr * 100.0), HORIZONTAL_ALIGNMENT_LEFT, 44, 13, UiSkin.ACCENT)
+	_tour_layer.draw_string(f, at + Vector2(18, ch - 14), str(cd[3]), HORIZONTAL_ALIGNMENT_LEFT, cw - 36, 12, Pal.ink(0.55))
 
 
 func _input(event: InputEvent) -> void:
@@ -1472,7 +1699,7 @@ func _sig_at(s: Dictionary, day: float) -> Vector2:
 func _draw_find(day: float, pp: Vector2) -> void:
 	# the sector rings, the sweep's wavefronts and the analysis beam are in the fx shader; the
 	# signals on the big map are drawn here
-	var t := Time.get_ticks_msec() / 1000.0
+	var t := Mo.ms() / 1000.0
 	var g := UiSkin.glow_tex()
 	for key in Scan.data().sectors:
 		for sg in Scan.data().sectors[key].sigs:
@@ -1595,7 +1822,7 @@ func _flush_labels() -> void:
 
 # a signal drifts on its own slow path: where it is now, AU from its station
 func _drift(sg: Dictionary) -> Vector2:
-	var t := Time.get_ticks_msec() / 1000.0
+	var t := Mo.ms() / 1000.0
 	var h := float(hash(str(sg.get("id", ""))) % 1000) / 1000.0 * TAU
 	return Vector2(sin(t * 0.06 + h), cos(t * 0.045 + h * 1.7)) * DRIFT_AU
 
@@ -1610,7 +1837,7 @@ func _draw_inset(day: float) -> void:
 	if sel_sector < 0:
 		return
 	var r := _inset_rect()
-	var t := Time.get_ticks_msec() / 1000.0
+	var t := Mo.ms() / 1000.0
 	var g := UiSkin.glow_tex()
 	# the scope itself (rings, ticks, the sweep and its afterglow, clutter) is the radar shader
 	var ok := Pal.ease_out(clampf(_sel_open() / 0.35, 0.0, 1.0))
@@ -1823,7 +2050,7 @@ func _draw_rv_ink() -> void:
 
 # #012: note the moment each signal turns known (only one seen unknown first morphs)
 func _watch_signals() -> void:
-	var now := Time.get_ticks_msec() / 1000.0
+	var now := Mo.ms() / 1000.0
 	for key in Scan.data().sectors:
 		for sg in Scan.data().sectors[key].sigs:
 			var id := str(sg.id)
@@ -1884,14 +2111,14 @@ func _sheen(b: Button, primary := false) -> void:
 	b.add_child(r)
 	var entry := [b, r, primary, -9.0, Vector2.ZERO]
 	b.button_down.connect(func():
-		entry[3] = Time.get_ticks_msec() / 1000.0
+		entry[3] = Mo.ms() / 1000.0
 		entry[4] = b.get_local_mouse_position())
 	b.mouse_entered.connect(func(): if not b.disabled: _sfx("starmap_hover", 0.35))
 	_sheens.append(entry)
 
 
 func _push_sheens() -> void:
-	var t := Time.get_ticks_msec() / 1000.0
+	var t := Mo.ms() / 1000.0
 	var keep: Array = []
 	for e in _sheens:
 		# check before the typed assignment: a freed button can't be assigned to `Button`
@@ -1972,7 +2199,7 @@ class Rise extends Control:
 			row.add_theme_color_override(k, Color(c, 0.0))
 
 	func _s() -> float:
-		return Time.get_ticks_msec() / 1000.0 - t0
+		return Mo.ms() / 1000.0 - t0
 
 	func _line_y() -> float:
 		return row.size.y - 7.0
@@ -2026,11 +2253,11 @@ class RiseLine extends Control:
 
 	func _process(_dt: float) -> void:
 		queue_redraw()
-		if Time.get_ticks_msec() / 1000.0 - t0 > 2.4:
+		if Mo.ms() / 1000.0 - t0 > 2.4:
 			queue_free()
 
 	func _draw() -> void:
-		var lg := Mo.reveal_line(Time.get_ticks_msec() / 1000.0 - t0)
+		var lg := Mo.reveal_line(Mo.ms() / 1000.0 - t0)
 		if lg > 0.005:
 			var wd := (size.x - 24.0) * lg
 			draw_rect(Rect2(size.x * 0.5 - wd * 0.5, size.y - 7.0, wd, 2.0), col)
@@ -2040,7 +2267,7 @@ func _rise(b: Button, id: String) -> void:
 	if not _known_at.has(id):
 		return
 	var t0 := float(_known_at[id])
-	if Time.get_ticks_msec() / 1000.0 - t0 > 2.0:
+	if Mo.ms() / 1000.0 - t0 > 2.0:
 		return
 	b.clip_contents = true
 	var lc := b.get_theme_color("font_color") if b.has_theme_color_override("font_color") else UiSkin.ACCENT

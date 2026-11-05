@@ -349,6 +349,23 @@ func _init() -> void:
 
 
 var stern := Vector2(42.0, 0.0)   # m: where the tug pushes, the ship's aft end
+var stern_h := 12.0               # m: the hull's height at it
+var ship_len := 40.0
+const TugRig = preload("res://scripts/tug_rig.gd")
+var _rig_tugs: Array = []         # who pushes it in / pulls it out: [{name, hire, dy}]
+var _squeeze := 0.0
+const TowRoute = preload("res://scripts/tow_route.gd")
+const TugWorks = preload("res://scripts/tug_works.gd")
+var _hb := Rect2()                # m: the hull's box round its origin
+var _route_done := false
+var _join_t := 0.0                # s: a hull pushed out of the tug station's mouth: the tug joins it then
+const BACK_T := 1.2               # s: pushed home, the tug backs off the stern this far before it flies
+const BACK_M := 3.0
+const STROKES := 8                # the tug station's push frame shoves a hull out of its mouth in strokes
+const HOME_A := 12.0              # m/s²: a tug flying home, each leg its burn and brake
+var route_note := ""              # tests: how the way round was found
+var layout: Array = []            # tests: the solids the hull overlaps lying in the berth (the port's layout)
+var route_ok := false             # a way in clear of everything was found (false: the port's layout leaves none)
 
 
 # the floor, the tower and the boom as walls (the berth's length set by configure)
@@ -452,6 +469,14 @@ func set_ship(ship: Dictionary) -> void:
 			y1 = maxf(y1, q[1])
 	if x1 > -INF:
 		stern = Vector2(x1 + 0.4, (y0 + y1) * 0.5)
+		stern_h = y1 - y0
+		_hb = Ship.bounds(ship)
+		_route_done = false
+		var x0 := INF
+		for pd in ship.get("pieces", []):
+			for q in pd.get("poly", []):
+				x0 = minf(x0, q[0])
+		ship_len = x1 - x0
 	clamps = []
 	clamp_t = []
 	for c in ship.get("clamps", []):
@@ -671,6 +696,7 @@ func _process(dt: float) -> void:
 
 
 func _process_inner(dt: float) -> void:
+	_rig_tick(dt)
 	t += dt
 	if absf(metal_x - mouth_target) > 0.001:
 		metal_x = move_toward(metal_x, mouth_target, RAIL_SPEED * dt)
@@ -1082,6 +1108,7 @@ func _draw_overlay() -> void:
 	var ov = CanvasBatch.new(overlay_node)
 	_draw_overlay_body(ov)
 	ov.flush()
+	_rig(overlay_node)
 
 
 func _draw_overlay_body(ov) -> void:
@@ -1095,10 +1122,6 @@ func _draw_overlay_body(ov) -> void:
 		var pts := PackedVector2Array(hoses[id].pts)
 		FastDraw.polyline(ov, pts, Pal.ink(0.55), 3.4, true)
 		FastDraw.polyline(ov, pts, Color(0.05, 0.05, 0.06), 1.4, true)
-	# the tug that brings GR-7 in
-	var tug := tug_pos()
-	if tug != Vector2.INF:
-		_tug(tug, ov)
 	_furnace_strip(ov)
 	_net_detail(ov)
 	# debris on its way to the net
@@ -1476,32 +1499,442 @@ func _tug_at(tt: float) -> Vector2:
 		return game.yard_at(tt) + stern * M
 	tt -= yt
 	var x: float = game.ship_offset * (1.0 - Pal.ease_io(clampf(tt / 3.4, 0.0, 1.0))) + stern.x * M
-	# pushed home, it backs off and leaves
-	if tt > 3.4:
-		x += pow(tt - 3.4, 2.0) * 900.0
 	return Vector2(x, stern.y * M)
+
+
+# 2026-11-05 (user, the third time: "这尾部怎么不是拖船"): the company's own tug pushes the hull
+# in and pulls it out, the one berthed at the tug station (scripts/tug_rig.gd): its fenders on the
+# stern, squeezed while it pushes; coupled there, it holds the hull on every leg round the station
+# (its retros pull, its RCS quads push it sideways). Out, it pulls on its tow arm locked on the
+# stern. A long ship with both tugs home has the two of them, one on each half of the stern.
+func _pick_tugs() -> Array:
+	var out: Array = []
+	for i in TugFleet.count():
+		if TugFleet.home(i):
+			out.append({"name": TugFleet.NAMES[i], "hire": false})
+	if out.is_empty():
+		out.append({"name": Ops.w("租用拖船", "HIRED TUG"), "hire": true})
+	if out.size() > 1 and ship_len < 60.0 and stern_h < 16.0:
+		out.resize(1)
+	for k in out.size():
+		out[k].dy = 0.0 if out.size() == 1 else (-1.0 if k == 0 else 1.0) * stern_h * 0.26
+		out[k].seed = k * 2.3
+	return out
+
+
+# ---------------------------------------------------------------- the way round, clear of everything
+# 2026-11-05 (user: the hull and its tug went up through the berth's truss; the video): the opening's
+# way out of the yard, round the port and up to the berth's mouth is found against the port's real
+# solids for the hull with its tugs on the stern (scripts/tow_route.gd), and given to the game's
+# own leg-by-leg push (game.yard_path; each leg its own burn and brake). The push in starts where the
+# way in along the berth's line is clear (game.ship_offset). A hull in the tug station's mouth is
+# first shoved out by the station's push frame in strokes, straight back out of the mouth; its tug
+# waits at the gate above until the stern has come out past it, then comes down behind it and closes
+# on it by the end of the strokes. Pushed home, the tugs back off and fly home to the gate one after
+# the other. What the hull already overlaps lying in the berth is the port's layout (87-6's LAYOUT
+# lines), not its way: left out, and noted.
+# The finding takes a few hundred ms, so it runs on a worker thread (60 FPS: no frame waits on it)
+# from the opening's first frame, the opening's clock held at its start (the hull at rest in the
+# yard, the camera on it) until it is ready. The worker touches nothing of the game's: what it needs
+# is gathered first, what it finds is handed over on the main thread.
+var _plan_task := -1
+var _mouth_start := false
+var _plan_in := {}
+var _plan_out := {}
+
+
+func _plan_route() -> void:
+	_route_done = true
+	_join_t = 0.0
+	_meet = []
+	route_ok = false
+	route_note = ""
+	layout = []
+	if game == null or game.yard_start() == Vector2.INF:
+		return
+	var M := Geom.M
+	if _rig_tugs.is_empty():
+		_rig_tugs = _pick_tugs()
+	# a hull lying in the tug station's mouth: its tug waits at the gate while the way is found
+	var own := ShipMarket.asset(str(game.job.get("id", ""))) if Career.usable() and not Career.data.is_empty() and Career.data.has("ship_market") else {}
+	_mouth_start = not own.is_empty() and int(own.get("yard", -1)) == 0 and TugYard.dock_in(str(game.ship_id)) > 0.0
+	var t0 := Time.get_ticks_usec()
+	_plan_in = {"from": game.yard_start(), "hb": _hb, "stern": stern, "dys": _rig_tugs.map(func(x): return float(x.dy)),
+		"solids": TowRoute.solids(game), "parked": TowRoute.parked(str(game.job.get("id", ""))),
+		"gate": PortStructure.box("tug").position + TugWorks.gate_spot() * M, "push_t": float(game.PUSH_T), "M": M}
+	_plan_in.main_ms = (Time.get_ticks_usec() - t0) / 1000.0
+	_plan_out = {}
+	_plan_task = WorkerThreadPool.add_task(_plan_work)
+
+
+func _plan_work() -> void:
+	var t0 := Time.get_ticks_usec()
+	var out := _plan_compute(_plan_in)
+	out.ms = (Time.get_ticks_usec() - t0) / 1000.0
+	_plan_out = out
+
+
+# the opening's first frames: wait for the way (the clock held), then hand it to the game
+func _plan_wait() -> void:
+	if _plan_task < 0:
+		return
+	if not WorkerThreadPool.is_task_completed(_plan_task):
+		game.state_t = 0.0
+		return
+	WorkerThreadPool.wait_for_task_completion(_plan_task)
+	_plan_task = -1
+	var o := _plan_out
+	game.state_t = 0.0
+	layout = o.get("layout", [])
+	route_ok = bool(o.get("ok", false))
+	route_note = str(o.get("note", "")) + " · planned in %.0f ms on a worker (%.1f ms on the main thread)" % [float(o.get("ms", 0.0)), float(_plan_in.get("main_ms", 0.0))]
+	if not o.has("legs"):
+		push_warning("tow route: " + route_note)
+		return
+	game.yard_path = o.legs
+	game.ship_offset = float(o.ship_offset)
+	_join_t = float(o.join_t)
+	_meet = o.meet
+	for k in _rig_tugs.size():
+		var tg: Dictionary = _rig_tugs[k]
+		tg.home = o.home[k]
+		tg.home_T = o.home_T[k]
+		tg.home_wait = o.home_wait[k]
+		tg.meet_err = o.meet_err[k] if k < o.meet_err.size() else 0.0
+	if not route_ok:
+		push_warning("tow route: " + route_note)
+
+
+# where the hull is t s into the push along `path` (game.yard_at's rule: each leg its own burn and
+# brake, a leg's time as the root of its length, PUSH_T in all)
+static func _path_at(path: Array, t: float, T: float) -> Vector2:
+	var n := path.size()
+	if n == 0:
+		return Vector2.ZERO
+	var w: Array = []
+	var tot := 0.0
+	for i in range(1, n):
+		var r := sqrt((path[i] as Vector2).distance_to(path[i - 1]))
+		w.append(r)
+		tot += r
+	if tot <= 0.0:
+		return path[n - 1]
+	var left := clampf(t, 0.0, T)
+	for i in range(1, n):
+		var d: float = float(w[i - 1]) / tot * T
+		if left <= d or i == n - 1:
+			return (path[i - 1] as Vector2).lerp(path[i], Pal.ease_io(left / maxf(d, 0.0001)))
+		left -= d
+	return path[n - 1]
+
+
+# the worker: everything from what was gathered, nothing of the game's
+static func _plan_compute(inp: Dictionary) -> Dictionary:
+	var M: float = inp.M
+	var from: Vector2 = inp.from
+	var hb: Rect2 = inp.hb
+	var st: Vector2 = inp.stern
+	var dys: Array = inp.dys
+	var gate: Vector2 = inp.gate
+	var push_t: float = inp.push_t
+	var out := {}
+	# the hull and its tugs on the stern (push), m round the hull's origin
+	var body := hb
+	for dy in dys:
+		body = body.merge(Rect2(st + Vector2(-0.05, float(dy) - 3.4), Vector2(14.6, 5.75)))
+	var polys: Array = []
+	var lay: Array = []
+	var berthed := PackedVector2Array([body.position * M, Vector2(body.end.x, body.position.y) * M, body.end * M, Vector2(body.position.x, body.end.y) * M])
+	for p in inp.solids:
+		if Geometry2D.intersect_polygons(p, berthed).is_empty():
+			polys.append(p)
+		else:
+			lay.append(p)
+	polys.append_array(inp.parked)
+	out.layout = lay
+	var area := Rect2(from, Vector2.ZERO).expand(Vector2.ZERO).grow(TowRoute.REACH * M)
+	area = area.expand(Vector2(260.0, 0.0) * M)
+	var r = TowRoute.new(area, polys)
+	r.set_body(body, 0.6)
+	# where the push in starts: the first point out along the berth's line whose way in is clear (to
+	# within the grid's reach of the berthed pose: the last metres in are the berth's own)
+	var x_in := 0.0
+	while x_in < 40.0 and not r.is_free(Vector2(x_in, 0.0) * M):
+		x_in += 1.0
+	var x_end := 60.0
+	while x_end < 250.0 and not (r.is_free(Vector2(x_end, 0.0) * M) and r.clear(Vector2(x_end, 0.0) * M, Vector2(x_in, 0.0) * M)):
+		x_end += 1.0
+	var p_end := Vector2(x_end, 0.0) * M
+	# out of the station's mouth first (the push frame's strokes), straight back, until clear and on
+	var legs: Array = []
+	var extra := 30.0
+	var join_t := 0.0
+	var meet: Array = []
+	var meet_err: Array = []
+	for attempt in 5:
+		var start := from
+		legs = [from]
+		if not r.is_free(from):
+			var k := 0
+			while k < 160 and not r.is_free(start):
+				start.x -= M
+				k += 1
+			start.x -= extra * M
+			for k2 in range(1, STROKES + 1):
+				legs.append(from.lerp(start, float(k2) / STROKES))
+		var w: Array = r.way(start, p_end)
+		if w.is_empty():
+			out.note = "no clear way found: the game's own (push in from %.0f m)" % x_end
+			return out
+		for i in range(1, w.size()):
+			legs.append(w[i])
+		join_t = 0.0
+		meet = []
+		meet_err = []
+		if start == from:
+			break
+		join_t = _leg_share(legs, STROKES) * push_t
+		var err := 0.0
+		for dy in dys:
+			var res: Array = _meet_one(legs, push_t, join_t, gate, st, float(dy), M)
+			meet.append(res[0])
+			meet_err.append(res[1])
+			err = maxf(err, float(res[1]))
+		if err < 2.5:
+			break
+		# it could not close on the stern in time: shoved out further (more time) and found again
+		extra += 15.0
+	out.legs = legs
+	out.ship_offset = p_end.x
+	out.join_t = join_t
+	out.meet = meet
+	out.meet_err = meet_err
+	out.ok = x_end < 250.0
+	out.note = "%d legs, push in from %.0f m (clear in to %.0f m), %d layout overlaps left out%s" % [legs.size() - 1, x_end, x_in, lay.size(), "" if out.ok else "; NO CLEAR WAY IN ALONG THE BERTH'S LINE (port layout)"]
+	# home after the push: backed off the berthed stern, then to the gate one after the other (the hull
+	# berthed in the way; planned last first, each before keeping clear of those still waiting)
+	r.add([PackedVector2Array([hb.position * M, Vector2(hb.end.x, hb.position.y) * M, hb.end * M, Vector2(hb.position.x, hb.end.y) * M])])
+	var waits: Array = []
+	for dy in dys:
+		var off := TugRig.push_at((st + Vector2(BACK_M, float(dy))) * M, -1.0, M)
+		waits.append(PackedVector2Array([off + Vector2(-6.6, -5.7) * M, off + Vector2(7.9, -5.7) * M, off + Vector2(7.9, 0.05) * M, off + Vector2(-6.6, 0.05) * M]))
+	var home: Array = []
+	var home_T: Array = []
+	home.resize(dys.size())
+	home_T.resize(dys.size())
+	for k in range(dys.size() - 1, -1, -1):
+		if k + 1 < waits.size():
+			r.add([waits[k + 1]])
+		r.set_body(Rect2(Vector2(-6.6, -5.7), Vector2(14.5, 5.75)), 0.6)
+		var off := TugRig.push_at((st + Vector2(BACK_M, float(dys[k]))) * M, -1.0, M)
+		var hw: Array = r.way(off, gate) if r.is_free(off) else []
+		home[k] = hw
+		home_T[k] = _legs_T(hw, HOME_A)
+	var waits_t: Array = []
+	var after := 0.0
+	for k in dys.size():
+		waits_t.append(after)
+		after += float(home_T[k]) + 0.4
+	out.home = home
+	out.home_T = home_T
+	out.home_wait = waits_t
+	return out
+
+
+# a tug flying to meet the stern as the hull comes out of the mouth: it holds at the gate until the
+# stern is out past its nose, then follows behind it, closing in, burning and braking within its
+# limits; the last of the gap closed over the last 0.8 s onto the stern exactly; sampled at 120 Hz
+var _meet: Array = []             # per tug: [[p (px), a (m/s²)], …]
+const MEET_HZ := 120.0
+const MEET_V := 160.0             # m/s, m/s²: the tug closing on the stern (the opening is a fast-forward:
+const MEET_A := 140.0             # the hull itself is shoved out at this order of speed)
+static func _meet_one(legs: Array, push_t: float, join_t: float, gate: Vector2, st: Vector2, dy: float, M: float) -> Array:
+	var p := gate / M
+	var v := Vector2.ZERO
+	var samples: Array = []
+	var on := false
+	var n := int(ceil(join_t * MEET_HZ)) + 2
+	var off := st + Vector2(0.0, dy) + Vector2(TugRig.PAD, -TugRig.AXIS)
+	for i in n:
+		var t := float(i) / MEET_HZ
+		var contact: Vector2 = (_path_at(legs, t, push_t) / M) + st + Vector2(0.0, dy)
+		var at := contact + Vector2(TugRig.PAD, -TugRig.AXIS)
+		var want := gate / M
+		if not on and p.x - TugRig.PAD > contact.x + 1.5:
+			on = true
+		if on:
+			var close := clampf((t - (join_t - 1.6)) / 1.6, 0.0, 1.0)
+			want = at + Vector2(1.6 * (1.0 - close), 0.0)
+		var dt := 1.0 / MEET_HZ
+		var rx: Array = TugWorks._drive(p.x, v.x, want.x, MEET_V, MEET_A, dt)
+		var ry: Array = TugWorks._drive(p.y, v.y, want.y, MEET_V, MEET_A, dt)
+		var nv := Vector2(float(rx[1]), float(ry[1]))
+		samples.append([Vector2(float(rx[0]), float(ry[0])) * M, Vector2.ZERO])
+		p = Vector2(float(rx[0]), float(ry[0]))
+		v = nv
+	var err := (p - ((_path_at(legs, join_t, push_t) / M) + off)).length()
+	for i in samples.size():
+		var t := float(i) / MEET_HZ
+		var wgt := smoothstep(join_t - 0.8, join_t, t)
+		if wgt > 0.0:
+			var exact := _path_at(legs, t, push_t) + off * M
+			samples[i][0] = (samples[i][0] as Vector2).lerp(exact, wgt)
+	for i in range(1, samples.size() - 1):
+		samples[i][1] = ((samples[i + 1][0] as Vector2) - 2.0 * (samples[i][0] as Vector2) + (samples[i - 1][0] as Vector2)) * MEET_HZ * MEET_HZ / M
+	return [samples, err]
+
+
+func _meet_at(k: int, t: float) -> Array:
+	var s: Array = _meet[k]
+	var i := clampi(int(t * MEET_HZ), 0, s.size() - 1)
+	return s[i]
+
+
+# the share of the push's time the first n legs take (game.yard_at: a leg's time as the root of its length)
+static func _leg_share(path: Array, upto: int) -> float:
+	var tot := 0.0
+	var part := 0.0
+	for i in range(1, path.size()):
+		var r := sqrt((path[i] as Vector2).distance_to(path[i - 1]))
+		tot += r
+		if i <= upto:
+			part += r
+	return part / maxf(tot, 0.0001)
+
+
+# a flight along legs, each its own burn and brake at acc (m/s²): its time, and where it is t s in
+static func _legs_T(path: Array, acc: float) -> float:
+	var T := 0.0
+	for i in range(1, path.size()):
+		T += 2.0 * sqrt((path[i] as Vector2).distance_to(path[i - 1]) / Geom.M / acc)
+	return T
+
+
+static func _legs_at(path: Array, t: float, T: float) -> Vector2:
+	if path.is_empty():
+		return Vector2.INF
+	var tot := 0.0
+	var w: Array = []
+	for i in range(1, path.size()):
+		var d := sqrt((path[i] as Vector2).distance_to(path[i - 1]))
+		w.append(d)
+		tot += d
+	if tot <= 0.0:
+		return path[path.size() - 1]
+	var left := clampf(t, 0.0, T)
+	for i in range(1, path.size()):
+		var d := float(w[i - 1]) / tot * T
+		if left <= d or i == path.size() - 1:
+			return (path[i - 1] as Vector2).lerp(path[i], Pal.ease_io(left / maxf(d, 0.0001)))
+		left -= d
+	return path[path.size() - 1]
+
+
+# where tug k is tt s in (its skids, px), its facing, what holds it ("push" on the stern, "back"
+# just off it, "arm" out, "" flying), and the point it bears on
+func _tug_pose(k: int, tt: float) -> Array:
+	var M := Geom.M
+	var tg: Dictionary = _rig_tugs[k]
+	if game.state == "towout":
+		var c := _tug_at(tt) + Vector2(0.0, float(tg.dy)) * M
+		return [c + Vector2(10.9, -TugRig.AXIS) * M, 1.0, "arm", c]
+	if _plan_task >= 0 and _mouth_start:
+		# the way still being found: it waits at the gate above the mouth
+		return [PortStructure.box("tug").position + TugWorks.gate_spot() * M, -1.0, "", Vector2.INF]
+	if _join_t > 0.0 and tt < _join_t and k < _meet.size():
+		# closing on the stern: its fenders may meet it, nothing else of it
+		return [_meet_at(k, tt)[0], -1.0, "meet", Vector2.INF]
+	var yt: float = game.yard_push_t()
+	var done := yt + 3.4
+	if tt <= done:
+		var c := _tug_at(tt) + Vector2(0.0, float(tg.dy)) * M
+		return [TugRig.push_at(c, -1.0, M), -1.0, "push", c]
+	# backed off the stern, waiting its turn, then home
+	var c0 := _tug_at(done) + Vector2(0.0, float(tg.dy)) * M
+	var at0 := TugRig.push_at(c0, -1.0, M)
+	if tt <= done + BACK_T:
+		return [at0 + Vector2(BACK_M, 0.0) * M * Pal.ease_io((tt - done) / BACK_T), -1.0, "back", Vector2.INF]
+	var home: Array = tg.get("home", [])
+	var T := float(tg.get("home_T", 0.0))
+	var u := tt - done - BACK_T - float(tg.get("home_wait", 0.0))
+	if home.is_empty() or u > T:
+		return [Vector2.INF, -1.0, "", Vector2.INF]
+	if u < 0.0:
+		return [at0 + Vector2(BACK_M, 0.0) * M, -1.0, "back", Vector2.INF]
+	return [_legs_at(home, u, T), -1.0, "", Vector2.INF]
+
+
+# every tug now: [{name, hire, seed, at (px), face, mode, contact (px), acc (m/s²)}]
+var _home_tt := -1.0              # s into the opening, carried on after it while the tugs fly home
+func rig_poses() -> Array:
+	var out: Array = []
+	if game == null or _rig_tugs.is_empty():
+		return out
+	var tt: float = game.state_t
+	if game.state == "intro" or game.state == "towout":
+		_home_tt = tt if game.state == "intro" else -1.0
+	elif _home_tt >= 0.0:
+		tt = _home_tt
+	else:
+		return out
+	var h := 1.0 / 60.0
+	for k in _rig_tugs.size():
+		var p: Array = _tug_pose(k, tt)
+		if p[0] == Vector2.INF:
+			continue
+		var acc := Vector2.ZERO
+		if _join_t > 0.0 and tt < _join_t and k < _meet.size() and game.state == "intro":
+			acc = _meet_at(k, tt)[1]
+		else:
+			var a: Vector2 = _tug_pose(k, tt + h)[0]
+			var b: Vector2 = _tug_pose(k, tt - h)[0]
+			if a != Vector2.INF and b != Vector2.INF:
+				acc = (a - 2.0 * (p[0] as Vector2) + b) / (h * h) / Geom.M
+		var tg: Dictionary = _rig_tugs[k]
+		out.append({"name": tg.name, "hire": tg.hire, "seed": tg.seed, "at": p[0], "face": p[1], "mode": p[2], "contact": p[3], "acc": acc})
+	return out
+
+
+# the opening over, the tugs fly home on the clock they kept
+func _rig_tick(dt: float) -> void:
+	if game == null:
+		return
+	if game.state == "intro" and not _route_done:
+		_plan_route()
+	if game.state == "intro":
+		_plan_wait()
+		if _rig_tugs.is_empty():
+			_rig_tugs = _pick_tugs()
+	elif game.state != "towout" and _home_tt >= 0.0:
+		_home_tt += dt
+		if rig_poses().is_empty():
+			_home_tt = -1.0
+			_rig_tugs = []
+
+
+func _rig(ci) -> void:
+	var poses := rig_poses()
+	if poses.is_empty():
+		_squeeze = 0.0
+		return
+	var M := Geom.M
+	var zoom: float = maxf(game.cam_zoom(), 0.05)
+	for q in poses:
+		var o := {"hire": q.hire, "seed": q.seed, "name": q.name, "font": font}
+		var acc: Vector2 = q.acc
+		if q.mode == "arm":
+			TugRig.arm(ci, TugRig.pt(q.at, 1.0, M, TugRig.HITCH), q.contact, M, zoom)
+		elif q.mode == "push":
+			_squeeze = lerpf(_squeeze, clampf(-acc.x / TugRig.A_REF, 0.0, 1.0), 0.25)
+			o.squeeze = _squeeze
+			q.at = TugRig.push_at(q.contact, -1.0, M, _squeeze)
+		TugRig.draw(ci, q.at, q.face, M, acc, t, o)
 
 
 func tug_pos() -> Vector2:
 	if game == null or not game.state in ["intro", "towout"]:
 		return Vector2.INF
 	return _tug_at(game.state_t)
-
-
-func _tug(p: Vector2, ci) -> void:
-	var M := Geom.M
-	var hull := PackedVector2Array([p + Vector2(0.2 * M, -0.9 * M), p + Vector2(4.6 * M, -1.3 * M), p + Vector2(6.0 * M, -0.6 * M), p + Vector2(6.0 * M, 0.6 * M), p + Vector2(4.6 * M, 1.3 * M), p + Vector2(0.2 * M, 0.9 * M)])
-	FastDraw.poly(ci, hull, Color(0.07, 0.073, 0.082))
-	var cl := hull.duplicate()
-	cl.append(hull[0])
-	FastDraw.polyline(ci, cl, Pal.ink(0.8), 1.4, true)
-	ci.draw_line(p + Vector2(0.0, -0.7 * M), p + Vector2(0.0, 0.7 * M), Pal.ink(0.9), 3.0)
-	ci.draw_rect(Rect2(p + Vector2(2.0 * M, -0.5 * M), Vector2(1.6 * M, 1.0 * M)), Pal.ink(0.3), false, 1.0)
-	# the dorsal and ventral thruster pods (the burns up and down come from these)
-	for s: float in [-1.0, 1.0]:
-		for xm: float in [1.6, 4.4]:
-			ci.draw_rect(Rect2(p + Vector2(xm * M - 6.0, (1.05 * s - 0.1) * M), Vector2(12.0, 0.2 * M)), Pal.ink(0.7), false, 1.0)
-	_note(ci, font, p + Vector2(2.1 * M, -0.6 * M), "TUG-04", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.5))
 
 
 # the buffer platform: a grated deck with tractor emitters along its edge
@@ -2067,39 +2500,6 @@ func _draw_add_body() -> void:
 			_ab.draw_texture_rect(tex, Rect2(throat - Vector2(90, 40), Vector2(180, 80)), false, Pal.heat(br, 1.4))
 	if _furnace_seen():
 		smelter.draw_add(_ab, FLOOR_Y, tex)
-	var tug := tug_pos()
-	if tug != Vector2.INF:
-		# its burn follows its real acceleration (player 2026-10-18: speeding up
-		# blows backwards, slowing down is a reverse burn): the main engine at the
-		# back pushes the ship in, the forward-facing retros either side of the
-		# bow stop it, and then pull the tug away
-		var acc := tug_accel()
-		var ax := acc.x
-		# drawn larger when the camera is pulled back (the route round the station is shot at 0.22)
-		var fl := (0.8 + 0.2 * sin(t * 50.0)) * clampf(0.5 / maxf(game.cam_zoom(), 0.05), 1.0, 2.4)
-		var main := clampf(-ax / 2400.0, 0.0, 1.0)
-		var retro := clampf(ax / 2400.0, 0.0, 1.0)
-		# user 2026-10-28: up and down the same, like the drone — to go down (or stop going up)
-		# the dorsal thrusters blow upwards; to go up (or stop going down) the ventral ones blow down
-		for s: float in [-1.0, 1.0]:
-			var vk := clampf(-s * acc.y / 2400.0, 0.0, 1.0)
-			if vk > 0.03:
-				for xm: float in [1.6, 4.4]:
-					var vb := tug + Vector2(xm * Geom.M, 1.2 * Geom.M * s)
-					var vl := 70.0 * fl * (0.4 + 0.6 * vk)
-					var vw := 8.0 * fl
-					FastDraw.poly(_ab, PackedVector2Array([vb + Vector2(-vw, 0), vb + Vector2(0, vl * s), vb + Vector2(vw, 0)]), Pal.heat(0.6 * vk, 1.8))
-					_ab.draw_texture_rect(tex, Rect2(vb - Vector2(26, 26) * fl, Vector2(52, 52) * fl), false, Pal.heat(0.45 * vk, 1.6))
-		if main > 0.03:
-			var base := tug + Vector2(6.0 * Geom.M, 0)
-			FastDraw.poly(_ab, PackedVector2Array([base + Vector2(0, -16), base + Vector2(90 * fl * (0.4 + 0.6 * main), 0), base + Vector2(0, 16)]), Pal.heat(0.6 * main, 1.8))
-			_ab.draw_texture_rect(tex, Rect2(base - Vector2(40, 40), Vector2(80, 80)), false, Pal.heat(0.5 * main, 1.6))
-		if retro > 0.03:
-			for s: float in [-1.0, 1.0]:
-				var rb := tug + Vector2(1.2 * Geom.M, 1.0 * Geom.M * s)
-				var ln := 60.0 * fl * (0.4 + 0.6 * retro)
-				FastDraw.poly(_ab, PackedVector2Array([rb + Vector2(0, -7), rb + Vector2(-ln, 3.0 * s), rb + Vector2(0, 7)]), Pal.heat(0.6 * retro, 1.8))
-				_ab.draw_texture_rect(tex, Rect2(rb - Vector2(24, 24), Vector2(48, 48)), false, Pal.heat(0.45 * retro, 1.6))
 	for d in debris:
 		var tr: Array = d[7]
 		if tr.size() >= 2:

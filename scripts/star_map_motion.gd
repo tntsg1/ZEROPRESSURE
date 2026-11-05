@@ -184,3 +184,12 @@ static func reveal_drop(s: float, delay := 0.0) -> float:
 # 镜头平移 ±108 px，各层按 平移 × 系数 反向移动，从远到近 0.05、0.1、0.28、0.6、1.25、2.1；越远越暗。
 # 实现在 star_map_fx.gd 的 SPACE 着色器（远星 0.05、星尘 0.1、中层星 0.28、近层亮星 0.6）。
 const PAN_PX := 108.0
+
+
+# the map's motion clock: the wall clock, unless a recording sets it (a movie is written frame by
+# frame slower than real time; its motion must step with the frames, not with the wall)
+static var fake_ms := -1
+
+
+static func ms() -> int:
+	return fake_ms if fake_ms >= 0 else Time.get_ticks_msec()

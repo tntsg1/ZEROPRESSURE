@@ -7,6 +7,7 @@ extends "res://tests/guide_check.gd"
 # sweep (where it reaches) instead of only the verdict.
 #   godot --headless -s tests/hub_clear_check.gd [-- list=1]
 const W = preload("res://scripts/hub_works.gd")
+const FW = preload("res://scripts/freight_works.gd")
 const Tram = preload("res://scripts/tram.gd")
 const TramArt = preload("res://scripts/tram_art.gd")
 const ConsoleArt = preload("res://scripts/console_art.gd")
@@ -69,7 +70,7 @@ static func stations(zref: float) -> Array:
 	var M := PortStructure.M()
 	var out: Array = []
 	var cp: Vector2 = (PortStructure.console_spot("ring") - c) / M
-	var ext := ConsoleArt.extent("console", 2.8)
+	var ext := ConsoleArt.extent("console", PortStructure.RING_FOOT)
 	out.append(["业务终端", _box(Rect2(cp + ext.position, ext.size)), true])
 	# its name plate (screen pixels: as ConsoleArt._name_plate at the reference zoom)
 	var font := Fonts.get_font("Medium")
@@ -91,9 +92,10 @@ static func stations(zref: float) -> Array:
 	out.append(["接驳站站牌", _box(sg.merge(Rect2(post, Vector2.ZERO)).grow(0.05)), true])
 	var label := Txt.t("tram_station") + " · " + Port.name_of("ring")
 	var lw := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x / (M * zref)
-	var below := (0.28 * M * zref + 16.0) / (M * zref)
-	var lc := sg.get_center() + Vector2(0.0, below)
-	out.append(["接驳站站名", _box(Rect2(lc + Vector2(-lw * 0.5, -12.0 / (M * zref)), Vector2(lw, 15.0 / (M * zref)))), true])
+	# beside the sign, left-aligned (scripts/tram.gd _draw, 130 号)
+	var lx := sg.get_center().x + (0.55 * M * zref + 6.0) / (M * zref)
+	var ly := sg.get_center().y + 4.0 / (M * zref)
+	out.append(["接驳站站名", _box(Rect2(Vector2(lx, ly - 12.0 / (M * zref)), Vector2(lw, 15.0 / (M * zref)))), true])
 	# the cars standing at the stop (two, coupled, along the loop either way of it)
 	var hl := TramArt.CAR_L * 0.5 + Tram.COUPLE
 	var car := PackedVector2Array()
@@ -106,6 +108,24 @@ static func stations(zref: float) -> Array:
 # the shuttle's loop: rails and the cars running on it — every arm part stays inside this radius
 static func loop_in() -> float:
 	return Tram.LOOP_R - TramArt.CAR_W * 0.5
+
+
+# 130 号: a freight train's cars, the crates on them and one being pushed, hub metres: [name, polygon]
+static func train_parts(tr: Dictionary) -> Array:
+	var c := PortStructure.centre()
+	var M := PortStructure.M()
+	var out: Array = []
+	for car in FW.cars(tr):
+		var at: Vector2 = ((car[0] as Vector2) - c) / M
+		var half_w := 1.3 if str(car[3]) == "loco" else FW.WIDTH * 0.5
+		out.append(["车厢" if str(car[3]) == "wagon" else "机车", _rect_poly(at, float(car[1]), float(car[2]) * 0.5, half_w)])
+		if str(car[3]) == "wagon" and tr.wag[int(car[4])] != null:
+			out.append(["货箱", _rect_poly(at, float(car[1]), 1.8, 1.45)])
+	var pa := FW.push_at(tr)
+	if not pa.is_empty():
+		var pos: Vector2 = (((pa[0] as Vector2).lerp(pa[1], float(pa[2]))) - c) / M
+		out.append(["推送中的货箱", _rect_poly(pos, pos.angle() + PI * 0.5, 1.8, 1.45)])
+	return out
 
 
 func _hit(a: PackedVector2Array, b: PackedVector2Array) -> bool:
@@ -132,19 +152,44 @@ func _run() -> void:
 		for z in W.spokes():
 			if z != "power":
 				print("  %s: base %s hatch %s cradle %s park %s" % [z, W.base_at(z), W.hatch_at(z), W.cradle_at(0, W.slot_angle(z)), W._park(z)])
+	var thits := {}           # 130 号: "train N/part → station" -> s
+	var fstat := {}
 	var hits := {}            # "arm/part → station" -> [count, phases]
 	var reach := {}           # arm -> [min R, max R, bounding rect]
 	var steps := 0
 	var worked := {}
-	for ring in [1, 2]:
+	var rings := [0, 1, 2] if _arg("ring", "") == "" else [int(_arg("ring", "0"))]
+	for ring in rings:
 		W.reset()
 		W.stage = 0
 		W.demo = true
 		W._flow_scan = 0.0
 		Career.data.port.ring = ring
-		for i in 60 * 240:
+		# 130 号: the freight trains bring and take the crates (no shuttle here: the trains work the switches)
+		FW.reset()
+		FW.debug = _arg("trace", "0") == "1"
+		FW.on = true
+		# the shuttle standing idle at the hub stop holds its cells, as in the game (scripts/tram.gd)
+		var sp0 := Tram.station_at("ring")
+		var sd0 := Tram.station_dir("ring")
+		FW._claim(FW.PASSENGER, FW.cells([sp0 + sd0 * (Tram.COUPLE + 2.4) * Geom.M, sp0 - sd0 * (Tram.COUPLE + 2.4) * Geom.M], 0.0, 1.0))
+		W.trains_feed = true
+		for i in int(60 * (120 if ring == 0 else 240) * float(_arg("k", "1"))):
 			W.tick(1.0 / 60.0)
+			FW.tick(1.0 / 60.0)
 			steps += 1
+			if _arg("trace", "0") == "1" and i % 120 == 0:
+				for tr in FW.trains:
+					print("    t%.0f ring%d #%d place=%s step=%s/%s status=%s blk=%s/%.1f auth=%s wag=%s q=%d pos=%s" % [i / 60.0, ring, tr.id, tr.place, tr.step.get("do", ""), tr.step.get("place", tr.step.get("ph", "")), tr.status, tr.get("blocker"), float(tr.get("blocked_t", 0.0)), tr.get("auth_left"), [tr.wag[0] != null, tr.wag[1] != null], FW.queue.size(), ((tr.pos as Vector2) - PortStructure.centre()) / 48.0])
+			for tr in FW.trains:
+				for part in train_parts(tr):
+					for o in grown:
+						# the platform's edge: trains run past it under its layer (the sign and its name count)
+						if str(o[0]) == "接驳站站台":
+							continue
+						if _hit(part[1], o[1]):
+							var tk := "货运列车%d/%s → %s" % [int(tr.id) + 1, part[0], o[0]]
+							thits[tk] = float(thits.get(tk, 0.0)) + 1.0 / 60.0
 			for z in W.arms:
 				var ph := str(W.arms[z].phase)
 				if ph != "park":
@@ -172,6 +217,20 @@ func _run() -> void:
 							hv[0] += 1
 							hv[1][ph] = true
 							hits[key] = hv
+		fstat[ring] = [FW.trains.size(), FW.pushed, FW.taken, FW.delivered]
+		if _arg("trace", "0") == "1":
+			for z in W.hatch:
+				var hz: Dictionary = W.hatch[z]
+				print("    hatch %s: parcel %s, reserved %s, arm %s/%s" % [z, (str(hz.parcel.at) + ">" + str(hz.parcel.to)) if hz.parcel != null else "-", W.reserved.get(z, "-"), W.arms[z].phase, W.arms[z].task])
+			var cr: Array = []
+			for p in W.cradles:
+				cr.append(str(p.to) if p != null else ".")
+			print("    cradles %s; queue %d" % [cr, FW.queue.size()])
+			for tr in FW.trains:
+				print("    train %d place %s step %s status %s wag %s" % [tr.id, tr.place, tr.step.get("do", ""), tr.status, [tr.wag[0] != null, tr.wag[1] != null]])
+		print("  ring %d: %d trains, pushed %d, taken %d, delivered %d, moved %d; train-seconds %s" % [ring, FW.trains.size(), FW.pushed, FW.taken, FW.delivered, W.moved, str(FW.time_in)])
+	FW.on = false
+	W.trains_feed = false
 	W.demo = false
 	W.reset()
 	if list:
@@ -183,6 +242,17 @@ func _run() -> void:
 		for k in keys:
 			print("  OVERLAP %s: %.1f s (%s)" % [k, hits[k][0] / 60.0, ", ".join(PackedStringArray(hits[k][1].keys()))])
 	check(worked.size() == 5, "the demo works every arm (%d/5)" % worked.size())
+	if rings.size() < 3:
+		print("HUB CLEAR (partial run)")
+		quit()
+		return
+	# 130 号 (choice E): each train works its own corridor and hatch; the chain proven end to end
+	check(int(fstat[2][1]) >= 2 and int(fstat[2][2]) >= 1 and int(fstat[2][3]) >= 1, "ring mended: trains push crates into the hatches, take them off and unload them ([trains, pushed, taken, unloaded] %s)" % str(fstat[2]))
+	check(int(fstat[0][1]) == 0 and int(fstat[0][3]) >= 2, "ring dead: trains run straight between districts, no hatch (%s)" % str(fstat[0]))
+	var tb: Array = []
+	for k in thits:
+		tb.append("%s %.1f s" % [k, thits[k]])
+	check(tb.is_empty(), "no train or crate ever over the console, its plate or the shuttle stop%s" % ("" if tb.is_empty() else ": " + ", ".join(PackedStringArray(tb))))
 	var bad: Array = []
 	for k in hits:
 		bad.append(k)

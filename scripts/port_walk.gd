@@ -122,7 +122,9 @@ func again() -> bool:
 static func plan(which := "all") -> Array:
 	# 108 号 Q2: the core — the ring's console (mending a district), the shuttle, home, the repairs
 	if which == "core":
-		return [["gate", ""], ["hub", ""], ["console", "ring"], ["station", "ring"], ["ride", "salvage"], ["home", ""], ["repair", ""], ["end", ""]]
+		# 131 号 (user 2026-11-05: "不都有列车吗？我为什么不能在拆船厂上等车？"): the shuttle first — out to the
+		# berth's own stop in the gate, ride to the ring, back by shuttle; flying the corridor is optional
+		return [["station", "salvage"], ["ride", "ring"], ["console", "ring"], ["ride", "salvage"], ["home", ""], ["repair", ""], ["end", ""]]
 	if which in ROUND:
 		var one: Array = [["ride", which], ["console", which]]
 		var extra := {"power": "screen", "trade": "exchange", "cargo": "shelf", "process": "mill"}
@@ -130,7 +132,7 @@ static func plan(which := "all") -> Array:
 			one.append([extra[which], which])
 		one.append_array([["ride", "salvage"], ["home", ""], ["end", ""]])
 		return one
-	var out: Array = [["gate", ""], ["hub", ""], ["console", "ring"], ["station", "ring"]]
+	var out: Array = [["station", "salvage"], ["ride", "ring"], ["console", "ring"]]
 	for z in ROUND:
 		out.append(["ride", z])
 		out.append(["console", z])
@@ -160,9 +162,15 @@ func _ready() -> void:
 	if not Career.data.is_empty():
 		Career.data.walk_job = Career.data.get("history", []).size()
 	# a walk cut short under the old 21-step round: its step number means nothing in the new one
+	if part == "core" and not Career.data.is_empty() and int(Career.data.get("walk_v", 1)) == 2:
+		# 131 号: the 8-step core (gate, hub, console, station, ride, home, repair, end) to the 7-step
+		# one (station, ride ring, console, ride home, home, repair, end): the same place in the walk
+		resume = [0, 1, 2, 3, 3, 4, 5, 6][clampi(resume, 0, 7)]
+		Career.data.walk_v = 3
+		Career.guide_keep("port_walk", resume)
 	if part == "core" and not Career.data.is_empty() and int(Career.data.get("walk_v", 1)) < 2:
 		resume = 0
-		Career.data.walk_v = 2
+		Career.data.walk_v = 3
 		Career.guide_keep("port_walk", 0)
 	layer = CanvasLayer.new()
 	layer.layer = 65
@@ -239,21 +247,15 @@ func _legs_to(s: int) -> Array:
 	var z := str(steps[s][1])
 	if k in ["gate", "home", "end", "repair"]:
 		return []
-	# the district the step is in: a ride takes the drone to its zone, so it starts from the ring
-	var need := "ring" if k in ["hub", "station", "ride"] else (z if z != "" else "ring")
+	# 131 号: by shuttle — out to the berth's own stop in the gate, the ride to where the step is
+	var need := "ring" if k == "hub" else (z if z != "" else "ring")
 	var d = game.drone
 	var here := PortStructure.zone_at(d.global_position) if d != null else ""
-	if here == need:
+	if here == need or k == "station" and z == "salvage":
 		return []
-	var legs: Array = []
-	if d == null or _berth_rect().has_point(d.global_position):
-		legs.append(["gate", ""])
-	if k == "hub":
+	var legs: Array = [["station", "salvage"]]
+	if k == "ride":
 		return legs
-	legs.append(["hub", ""])
-	if need == "ring":
-		return legs
-	legs.append(["station", "ring"])
 	legs.append(["ride", need])
 	return legs
 
@@ -294,12 +296,13 @@ func _berth_rect() -> Rect2:
 
 # the station the drone should board at for this ride: where the last ride left it
 func _board_at() -> String:
+	# 131 号: legs (and a walk picked up again) board at the berth's own stop
 	if not back.is_empty() or step == resume and resume > 0:
-		return "ring"
+		return "salvage"
 	for i in range(step - 1, -1, -1):
-		if str(steps[i][0]) == "ride":
+		if str(steps[i][0]) in ["ride", "station"]:
 			return str(steps[i][1])
-	return "ring"
+	return "salvage"
 
 
 func target() -> Vector2:
@@ -319,7 +322,7 @@ func target() -> Vector2:
 		"hub":
 			return Backdrop.port_centre_px()
 		"station":
-			return Tram.station_at("ring")
+			return Tram.station_at(zone() if zone() != "" else "ring")
 		"ride":
 			if game.tram != null and game.tram.riding:
 				return Tram.station_at(zone())
@@ -344,7 +347,7 @@ func target_name() -> String:
 		"hub":
 			return Port.name_of("ring")
 		"station":
-			return w("接驳站", "SHUTTLE STOP")
+			return w("接驳站", "SHUTTLE STOP") + (" · " + Port.name_of(zone()) if zone() != "" else "")
 		"ride":
 			return w("接驳站 → ", "STOP → ") + Port.name_of(zone())
 		"home":
@@ -400,9 +403,10 @@ func passed() -> bool:
 		"hub":
 			return d != null and PortStructure.zone_at(d.global_position) == "ring"
 		"station":
-			return game.tram != null and game.tram.near_station() == "ring"
+			return game.tram != null and game.tram.near_station() == (zone() if zone() != "" else "ring")
 		"ride":
-			return game.tram != null and game.tram.at == zone() and game.tram.phase == "" and not game.tram.riding
+			# 131 号: the car parked at the stop is not the ride — the drone has to be there with it
+			return game.tram != null and game.tram.at == zone() and game.tram.phase == "" and not game.tram.riding 				and d != null and d.global_position.distance_to(Tram.station_at(zone())) < 12.0 * Geom.M
 		"home":
 			return d != null and _berth_rect().has_point(d.global_position) and d.global_position.y > _rail_y()
 		"repair":
@@ -461,7 +465,11 @@ func _fill() -> void:
 			title.text = w("沿走廊飞进中央转运环", "UP THE CORRIDOR INTO THE RING")
 			line = w("港的中心，六条走廊通六个区", "The port's heart: six corridors, six districts")
 		"station":
-			title.text = w("飞到环底部的接驳站", "TO THE SHUTTLE STOP")
+			title.text = w("飞到中央环的接驳站", "TO THE SHUTTLE STOP")
+			if zone() == "salvage":
+				# 131 号 占位: the berth's own stop, first
+				title.text = w("出坞：飞到闸门外的拆船区接驳站", "OUT: TO THE BERTH'S SHUTTLE STOP BY THE GATE")
+				line = w("坐接驳车去各区最省事；想自己沿走廊飞也可以", "The shuttle is the easy way round; flying the corridors is up to you")
 			line = w("接驳车走走廊和中央环，不撞墙，约 10 秒到任何区", "The shuttle runs every corridor: no walls, ~10 s anywhere")
 		"ride":
 			title.text = w("坐车去%s：站台按 %s，点“%s”", "RIDE TO THE %s: %s AT THE STOP, CLICK '%s'") % [nm, e, nm]
@@ -491,6 +499,9 @@ func _fill() -> void:
 		line = w("找不到？跟着无人机旁的箭头飞", "CAN'T FIND IT? FOLLOW THE ARROW BY THE DRONE")
 	body.text = line
 	body.visible = line != ""
+	# 131 号: the way in front of the title while flying there ("往上飞 → "), the words after it unchanged
+	if way != null and _way_on() and not page_open():
+		title.text = way.prefix() + title.text
 
 
 # ---------------------------------------------------------------- the callouts
@@ -673,7 +684,12 @@ func _process(dt: float) -> void:
 	# 91 号 (user: the walk's card lay over the terminal's "find a ship" key): not over the terminal page
 	if layer != null and game != null:
 		var term_open: bool = game.console_ui != null and is_instance_valid(game.console_ui) and (game.console_ui as Node).is_in_group("terminal")
-		layer.visible = not term_open or (not done and step < steps.size() and kind() == "repair")
+		# user 2026-11-05 (two guides talking at once): the star map has its own tour, the walk's card waits
+		var map_open: bool = game.console_ui != null and is_instance_valid(game.console_ui) and (game.console_ui as Node).get_script() != null and str((game.console_ui as Node).get_script().resource_path).ends_with("star_map.gd")
+		# 131 号 追加 (user: the card lay over the terminal's keys): never over a full-screen page — on
+		# the terminal its step is shown on the key it means (terminal.gd _walk_mark), the stores too
+		var store_open: bool = game.console_ui != null and is_instance_valid(game.console_ui) and (game.console_ui as Node).get_script() != null and str((game.console_ui as Node).get_script().resource_path).ends_with("company_store.gd")
+		layer.visible = not map_open and not term_open and not store_open
 	if done or game == null or step >= steps.size():
 		return
 	_place_card()
@@ -727,7 +743,11 @@ func _done_line() -> String:
 		"gate": return w("出坞了：船坞空着时从这道门进出港区", "Out: with the berth empty, this gate is the way into the port")
 		"hub": return w("到中央环了", "In the ring")
 		"station": return w("这就是站台：按 %s 叫车", "This is a stop: %s calls the car") % Keys.label("use")
-		"ride": return w("到%s了：站就在区门里，业务终端在旁边", "At the %s: the stop is inside the door, the console beside it") % nm
+		"ride":
+			if zone() == "ring":
+				# 131 号 占位: off at the hub — the carousel in the middle, the corridors out
+				return w("到中央转运环了：中间是转盘，六条走廊通六个区", "At the ring: the carousel in the middle, six corridors out")
+			return w("到%s了：站就在区门里，业务终端在旁边", "At the %s: the stop is inside the door, the console beside it") % nm
 		"home": return w("回到船坞了", "Back in the berth")
 		"repair": return w("船坞的修缮在终端“船坞”页", "The berth's repairs are on the terminal's BERTH page")
 	return ""
@@ -767,8 +787,31 @@ func stop() -> void:
 	queue_redraw()
 
 
+# 131 号 (user 2026-11-05, Q: A): the way to a place shown as every "fly there" guide shows it
+# (scripts/guide_way.gd): lit chevrons along the corridors, the arrow on the screen's edge with the
+# metres left, the way in front of the card's title; folded away at the target
+const GuideWay = preload("res://scripts/guide_way.gd")
+const FLY_KINDS := ["desk", "console", "shelf", "mill", "gate", "hub", "station", "ride", "home"]
+var way = null
+var _way_t := 0.0
+
+
+func _way_on() -> bool:
+	return not done and game != null and game.console_ui == null and step < steps.size() and kind() in FLY_KINDS \
+		and not (game.tram != null and game.tram.riding) and game.drone != null and game.drone.visible
+
+
 func _draw() -> void:
+	if way == null:
+		way = GuideWay.new()
+		way.attach(self)
+	var dt := clampf(t - _way_t, 0.0, 0.1)
+	_way_t = t
+	var fly := _way_on()
+	var d = game.drone if game != null else null
+	way.update(game, d.global_position if fly else Vector2.INF, target() if fly else Vector2.INF, dt)
 	if done or game == null or game.console_ui != null:
+		way.hide()
 		return
 	var at := target()
 	if at == Vector2.INF:
@@ -776,6 +819,7 @@ func _draw() -> void:
 	var z: float = maxf(game.cam_zoom(), 0.02)
 	var big := 1.6 if step_t >= STUCK_2 else 1.0
 	GuideMark.target(self, at, z, UiSkin.ACCENT, t, target_name(), 26.0, big)
-	var d = game.drone
 	if d != null and d.visible:
 		GuideMark.arrow(self, game.look.lamp_pos() if game.look != null else d.global_position, at, z, UiSkin.ACCENT, t)
+	if fly:
+		way.draw_edge(self, target_name(), UiSkin.ACCENT, card.get_global_rect() if card != null and card.visible and layer.visible else Rect2())

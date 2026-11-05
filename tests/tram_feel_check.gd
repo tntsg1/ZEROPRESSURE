@@ -72,11 +72,15 @@ func _run() -> void:
 			g.zoom_override = -1.0
 	var secs := ride / 60.0
 	check(tr.at == "cargo" and not tr.riding, "it comes for the drone (%.1f s), then the ride (%.1f s)" % [(frames - ride) / 60.0, secs])
-	check(top > 0.75 * Tram.SPEED and top <= Tram.SPEED + 0.01, "it gets up to speed on the corridors (%.1f of 20 m/s)" % (top / Geom.M))
+	# (130 号 review: top speed 36 m/s; the corridors are too short to reach it all, as a real line's)
+	check(top > 0.55 * Tram.SPEED and top <= Tram.SPEED + 0.01, "it gets up to speed on the corridors (%.1f of %.0f m/s)" % [top / Geom.M, Tram.SPEED / Geom.M])
 	check(over <= 0.5 * Geom.M, "it never runs into a curve faster than the curve allows (worst %.2f m/s over)" % (over / Geom.M))
 	check(turned > 1.0 and turn_max < deg_to_rad(3.0), "it turns through the curves smoothly: %.0f° in all, never more than %.1f° a frame" % [rad_to_deg(turned), rad_to_deg(turn_max)])
-	check(jump < Tram.SPEED / 60.0 * 1.2, "no car ever jumps: at most %.2f m in a frame (20 m/s is %.2f)" % [jump / Geom.M, Tram.SPEED / 60.0 / Geom.M])
-	check(secs > 6.0 and secs < 18.0, "a ride across the port, boarding to stepping off, takes a sensible time (%.1f s)" % secs)
+	check(jump < Tram.SPEED / 60.0 * 1.2, "no car ever jumps: at most %.2f m in a frame (top speed is %.2f)" % [jump / Geom.M, Tram.SPEED / 60.0 / Geom.M])
+	# 130 号: the freight trains share the rails; the shuttle comes first but may wait a moment for one to
+	# clear (this ride: 17.6 s with no freight, 18.2 s with it)
+	# (at 20 m/s it took 17.6 s; at 36 m/s, 15.3 s: boarding and stepping off take the same)
+	check(secs > 6.0 and secs < 17.0, "a ride across the port, boarding to stepping off, takes a sensible time (%.1f s)" % secs)
 	g.queue_free()
 	await _frames(4)
 	print("TRAM FEEL %s (%d checks, %d failed)" % ["PASS" if fails == 0 else "FAIL", checks, fails])

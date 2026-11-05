@@ -360,7 +360,15 @@ func close_then(f: Callable) -> void:
 	# the shared transition: the heat line closes, the next screen opens as a blueprint
 	Wipe.go(game.get_tree(), f)
 
+var _hint_berth := false
 func show_hint(text: String) -> void:
+	# 128 号 第 3 段 一个声音: the berth's arrival lines ("船坞空着…", "空船坞：…") say what the main
+	# line's strip already says — while the strip is up they keep quiet
+	_hint_berth = false
+	for k in ["berth_hint", "pt_access_hint"]:
+		var head := Txt.t(k).get_slice("%", 0)
+		if head.length() >= 3 and text.begins_with(head):
+			_hint_berth = true
 	hint_text = text
 	Playtest.hint(text)
 	hint_t = 0.0
@@ -1488,13 +1496,60 @@ func _main() -> Dictionary:
 	var now := Time.get_ticks_msec() / 1000.0
 	if _main_c.is_empty() or now - _main_ct > 0.5:
 		_main_ct = now
+		if game != null and Career.usable():
+			Mainline.watch(game)
 		var ch := Mainline.chapter()
-		_main_c = {"chapter": ch, "step": Mainline.step(ch) if ch != "" else {}}
+		# 128 号 第 3 段: no chapter's need is up yet — the next one waits, the strip says what starts
+		# it and to strip another hulk meanwhile
+		var wait := false
+		if ch == "":
+			ch = Mainline.next_open()
+			wait = ch != "" and ch != "ark"
+			if not wait:
+				ch = ""
+		var st: Dictionary = {}
+		if ch != "":
+			st = Mainline.step(ch) if not wait else Mainline.waiting_step()
+		_main_c = {"chapter": ch, "wait": wait, "step": st}
 	return _main_c
 
 
 func _main_on() -> bool:
-	return game != null and not game.coach_on() and not game.walk_on() and not game.store_guide_on() and game.career() and not game.training and game.exam == null and game.in_berth() and game.state == "play" and not game.port_view and _main().chapter != "" and Career.usable()
+	return game != null and not game.coach_on() and not game.walk_on() and not game.store_guide_on() and not _guide_on() and game.career() and not game.training and game.exam == null and game.in_berth() and game.state == "play" and not game.port_view and _main().chapter != "" and Career.usable()
+
+
+# 128 号 第 3 段 §十二: the one voice (scripts/need_voice.gd) and its one target mark
+# (scripts/need_mark.gd), kept in step with the main line here
+var voice
+var need_mark
+func _voice(_dt: float) -> void:
+	var on := game != null and _main_on()
+	if voice == null and on:
+		voice = preload("res://scripts/need_voice.gd").new()
+		voice.game = game
+		# over the drone feed's gauges (look.gd OSD, layer 21): the card and the list cover them
+		var vl := CanvasLayer.new()
+		vl.layer = 22
+		add_child(vl)
+		vl.add_child(voice)
+	if voice != null:
+		voice.visible = on
+		if on:
+			voice.feed(str(_main().chapter), bool(_main().get("wait", false)), _main().step)
+	if need_mark == null and on and game.drone != null:
+		need_mark = preload("res://scripts/need_mark.gd").new()
+		need_mark.game = game
+		game.add_child(need_mark)
+	if need_mark != null and is_instance_valid(need_mark):
+		need_mark.set_go(str(_main().step.get("go", "")) if on else "", on and not bool(_main().get("wait", false)))
+		need_mark.avoid = Rect2(voice.position, voice.size) if voice != null else Rect2()
+
+
+# a district mended and lit up (scripts/revive_host.gd): the voice says what it opened
+func voice_done(zone: String, stage: int) -> void:
+	_main_c = {}
+	if voice != null:
+		voice.voice_done(zone, stage)
 
 
 func _main_rect() -> Rect2:
@@ -1503,9 +1558,11 @@ func _main_rect() -> Rect2:
 
 
 func _guide_keys() -> void:
+	_voice(0.0)
 	var mon := _main_on()
 	var go := str(_main().step.get("go", "wait")) if mon else "wait"
-	main_go.visible = mon and go != "wait" and not (_guide_on() and go.begins_with("guide:"))
+	# 第 3 段: the voice carries its own "带我去"
+	main_go.visible = false and mon and go != "wait" and not (_guide_on() and go.begins_with("guide:"))
 	if main_go.visible:
 		var mr := _main_rect()
 		main_go.text = Ops.w("带我去", "TAKE ME")
@@ -1531,7 +1588,8 @@ func _guide_keys() -> void:
 
 # the main line in the empty berth's corner (28 号 Q17): chapter, and the next step
 func _main_line(s: Vector2) -> void:
-	if not _main_on():
+	# 128 号 第 3 段: drawn by the voice now (scripts/need_voice.gd)
+	if voice != null or not _main_on():
 		return
 	var id := str(_main().chapter)
 	var r := _main_rect()
@@ -1873,7 +1931,10 @@ func _ring_overlay() -> void:
 
 # the top hint line; 128 号 返工: it waits while the stores guide speaks (one voice at a time)
 func hint_on() -> bool:
-	return not (hint_text == "" or hint_t > 9.0 or game.state == "porttour" or game.store_guide_on())
+	# 128 号 一个声音: what keeps quiet while a guide or the main line speaks is the berth's arrival line
+	# (it says what they say); a refusal's reason ("交易行还没开放") is the answer to what the player just
+	# pressed and always shows (人性化: 点不了写原因)
+	return not (hint_text == "" or hint_t > 9.0 or game.state == "porttour" or (_hint_berth and (game.store_guide_on() or _main_on())))
 
 
 func _hint(s: Vector2) -> void:

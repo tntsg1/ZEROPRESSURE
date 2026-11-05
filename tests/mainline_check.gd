@@ -14,13 +14,16 @@ func _run() -> void:
 	Career.data.active = {}
 	Career.data.money = 1000000.0
 	Career.data.upgrades = {}
+	# 128 号 第 1 段: the opening is done once the first haul is in the stores and the first sale made
+	Career.data.seen = {"store_guide_done": true}
 	Career.save()
 	check(Mainline.chapter() == "lights" and Mainline.step().go == "guide:repair:lights" and str(Mainline.step().text).find("照明") >= 0, "the opening done: mend the lights (%s)" % Mainline.step().text)
 	await _spawn()
 	await _frames(20)
 	Cap.save(root, "res://tests/out/mainline_hud_zh.png")
-	check(g.hud.main_go.visible, "the empty berth shows the main line and its 'take me' key")
-	g.hud.main_go.pressed.emit()
+	# 128 号 第 3 段: one voice — the strip, and its one target mark on the fault not yet looked at
+	check(g.hud.voice != null and g.hud.voice.visible and g.hud.need_mark.target.distance_to(RepairShow.spot("lights")) < 1.0, "the empty berth shows the main line and its one target mark")
+	Mainline.take_me(g, str(Mainline.step().go))
 	await _frames(10)
 	check(g.guide.task == "repair" and str(g.guide.start.get("target", "")) == "lights", "take me: the repair guide, on the lights")
 	g.guide.stop()
@@ -37,21 +40,29 @@ func _run() -> void:
 	# the chapters move on with the state
 	Career.data.upgrades = {"lights": true, "furnace_main": true, "net_fix": true}
 	Career.data.port = {}
-	check(Mainline.chapter() == "trade" and Mainline.step().go == "guide:build:salvage", "the berth mended: the trade port, which waits on the salvage district first (%s)" % Mainline.step().text)
+	check(Mainline.chapter() == "trade" and Mainline.step().go == "guide:build:trade", "the berth mended: the trade port (128 号 第 3 段: no longer behind the salvage district) (%s)" % Mainline.step().text)
+	# 128 号 第 3 段: each chapter starts when its need comes up (C: the first by number of those up)
 	Career.data.port = {"salvage": 1, "trade": 1}
-	check(Mainline.chapter() == "steel" and Mainline.step().go == "guide:build:process", "the trade port open: steel, and the processing district first (%s)" % Mainline.step().text)
+	check(Mainline.chapter() == "" and Mainline.next_open() == "process", "the trade port open: the processing district waits for 2 t of ingots")
+	Career.data.need_hit = {"process": 1}
+	check(Mainline.chapter() == "process" and Mainline.step().go == "guide:build:process", "ingots enough: the processing district (%s)" % Mainline.step().text)
 	Career.data.port = {"salvage": 1, "trade": 1, "process": 1}
 	# 64 号: with no ingots yet the next step is another ship (its scrap becomes ingots), not buying feed — 68 号: found by sweeping the belt on the star map
-	check(Mainline.chapter() == "steel" and (str(Mainline.step().go).begins_with("guide:") or str(Mainline.step().go) in ["contracts", "scan"]), "processing up: the steel guide's first step (%s)" % Mainline.step().go)
+	check(Mainline.chapter() == "process" and (str(Mainline.step().go).begins_with("guide:") or str(Mainline.step().go) in ["contracts", "scan", "drill", ""]), "processing up: the first heat's step (%s)" % Mainline.step().go)
 	Career.data.exchange = preload("res://scripts/industrial_exchange.gd").fresh(float(Career.data.money))
 	Career.data.exchange.trades.append({"id": "T-FIX", "buyer": "merchant_01", "seller": "company", "state": "delivered", "item": "steel_billet", "grade": 1, "quantity": 1.0, "price": 1000.0})
-	check(Mainline.chapter() == "industry" and Mainline.step().go == "guide:build:cargo", "billets sold: the cargo district next")
+	Career.data.need_hit = {"cargo": 1}
+	check(Mainline.chapter() == "cargo" and Mainline.step().go == "guide:build:cargo", "billets made, the stores nearly full: the cargo district")
 	Career.data.port = {"salvage": 1, "trade": 1, "process": 1, "cargo": 1}
-	# 123 号 (user "先修拖船站"): power and the tug station before the 88 m berth
-	check(Mainline.chapter() == "power_tug", "then power and the tug station")
+	Career.data.need_hit = {"power": 1, "tug": 1}
+	check(Mainline.chapter() == "power", "then power, the first slowdown")
+	Career.data.port = {"salvage": 1, "trade": 1, "process": 1, "cargo": 1, "power": 1}
+	check(Mainline.chapter() == "tug", "then the tug station, a hulk over 44 m")
 	Career.data.port = {"salvage": 1, "trade": 1, "process": 1, "cargo": 1, "power": 1, "tug": 1}
-	check(Mainline.chapter() == "berth88" and Mainline.step().go == "guide:repair:berth88", "then the berth to 88 m")
+	Career.data.need_hit = {"berth88": 1}
+	check(Mainline.chapter() == "berth88" and Mainline.step().go == "guide:repair:berth88", "then the berth to 88 m, a hulk too long for it")
 	Career.data.upgrades["berth88"] = true
+	check(Mainline.chapter() == "ring", "every district up: the transfer ring")
 	Career.data.port = {"salvage": 1, "trade": 1, "process": 1, "cargo": 1, "power": 1, "tug": 1, "ring": 2}
 	check(Mainline.chapter() == "ark" and Mainline.step().go == "wait", "the ring restarted: the Ark waits for a later version")
 	g.queue_free()

@@ -52,7 +52,10 @@ static func _mesh(key: String, build: Callable) -> ArrayMesh:
 #            the sample carousel on the bench top
 #   wall     the berth terminal: a cabinet on the tower wall, its bracket and conduit, a keypad
 #   rack     the parts rack: a frame of nine cubbies (the parts drawn in it live), no screen
-const KINDS := ["console", "furnace", "sort", "assay", "wall", "rack"]
+#   store    131 号: the stores terminal in the berth — the berth terminal's little brother on the
+#            tower wall (its bracket, a keypad, the cable gland on its hood where the line to the
+#            cargo district leaves); drawn with info.scale < 1
+const KINDS := ["console", "furnace", "sort", "assay", "wall", "rack", "store"]
 
 
 # the foot plate and column down to the floor (foot below the spot), the cable into the floor
@@ -186,6 +189,32 @@ static func _body(p, kind: String, foot: float) -> void:
 			p.rect(Rect2(-1.1, -0.05, 2.2, 0.62), edge, false, 0.05)
 			_keys_row(p)
 			_head(p, false)
+		"store":
+			# the arm to the tower wall (left, 1.95 m to it at 0.72), its foot plate and two braces
+			p.rect(Rect2(-3.05, -0.95, 1.95, 0.2), FACE2)
+			p.rect(Rect2(-3.05, -0.95, 1.95, 0.2), edge, false, 0.035)
+			p.line(Vector2(-2.95, -0.2), Vector2(-1.15, -0.85), edge, 0.06)
+			p.line(Vector2(-2.95, -1.55), Vector2(-1.15, -1.0), Pal.ink(0.4), 0.04)
+			p.rect(Rect2(-3.15, -1.75, 0.16, 1.75), FACE)
+			p.rect(Rect2(-3.15, -1.75, 0.16, 1.75), edge, false, 0.03)
+			for by in [-1.5, -0.3]:
+				p.bolt(Vector2(-3.07, by), 0.045, Pal.ink(0.55))
+			# the keypad box under the screen: a row of keys, the card slot, its lamp's bezel
+			p.rect(Rect2(-1.1, -0.05, 2.2, 0.62), DARK)
+			p.rect(Rect2(-1.1, -0.05, 2.2, 0.62), edge, false, 0.05)
+			for k in 5:
+				p.rect(Rect2(-0.95 + k * 0.28, 0.1, 0.21, 0.15), Color(0.2, 0.21, 0.225))
+				p.rect(Rect2(-0.95 + k * 0.28, 0.31, 0.21, 0.15), Color(0.2, 0.21, 0.225))
+			p.rect(Rect2(0.5, 0.12, 0.42, 0.06), Color(0.01, 0.012, 0.016))
+			p.rect(Rect2(0.5, 0.12, 0.42, 0.06), Pal.ink(0.45), false, 0.02)
+			p.ring(Vector2(0.75, 0.38), 0.11, Pal.ink(0.5), 0.025, 12)
+			# the gland on the housing's right side: a hex nut round the cable going out to the right
+			p.rect(Rect2(1.1, -1.12, 0.24, 0.36), FACE2)
+			p.rect(Rect2(1.1, -1.12, 0.24, 0.36), edge, false, 0.03)
+			p.rect(Rect2(1.34, -1.06, 0.12, 0.24), Pal.ink(0.45))
+			_head(p, false)
+			# the screen's maker plate under the hood's lip
+			p.rect(Rect2(-0.3, -1.7, 0.6, 0.06), Pal.ink(0.35))
 		"rack":
 			# 107 号: a pallet rack of four shelves (sail, power, thermal, drive — top to bottom), its
 			# crates drawn on it live (scripts/consoles.gd); punched uprights, orange beams, wall brackets
@@ -237,11 +266,12 @@ static func extent(kind: String, foot: float) -> Rect2:
 		"assay": return Rect2(-2.1, -1.9, 4.6, foot + 1.9)
 		"wall": return Rect2(-2.0, -3.2, 3.2, 3.8)
 		"rack": return Rect2(-2.0, -1.1, 3.1, 2.2)
+		"store": return Rect2(-3.2, -2.2, 4.4, 2.8)
 	return Rect2(-1.6, -1.9, 3.2, foot + 1.9)
 
 
 static func draw(ci: CanvasItem, at: Vector2, foot: float, title: String, hint: String, on: bool, info: Dictionary, t: float, kind := "console") -> void:
-	var m := PortStructure.M()
+	var m := PortStructure.M() * float(info.get("scale", 1.0))
 	var z := maxf(ci.get_canvas_transform().get_scale().x, 0.02)
 	var px := m * z
 	var col := Pal.tint(Pal.AIR, 1.0, 1.3)
@@ -252,7 +282,7 @@ static func draw(ci: CanvasItem, at: Vector2, foot: float, title: String, hint: 
 	var body := Rect2(xf * (at + (ext.position - Vector2(0.5, 0.5)) * m), (ext.size + Vector2(1.0, 1.0)) * m * z)
 	if not ci.get_viewport_rect().intersects(body):
 		return
-	var floored := kind not in ["wall", "rack"]
+	var floored := kind not in ["wall", "rack", "store"]
 	# the floor under it lit while the operator is at it (a wall or rack: a glow round it)
 	if on:
 		var pulse := 0.55 + 0.25 * sin(t * 3.0)
@@ -263,16 +293,21 @@ static func draw(ci: CanvasItem, at: Vector2, foot: float, title: String, hint: 
 			ci.draw_rect(Rect2(at + Vector2((ext.position.x - 0.4) * m, foot * m - 0.07 * m), Vector2((ext.size.x + 0.8) * m, 0.14 * m)), Color(col.r, col.g, col.b, 0.9 * pulse))
 		else:
 			# a thin lit frame round the unit itself (its screen and keypad, or the rack)
-			var fr := Rect2(-1.25, -1.85, 2.5, 2.55) if kind == "wall" else Rect2(-1.15, -1.15, 2.3, 2.3)
+			var fr := Rect2(-1.25, -1.85, 2.5, 2.55) if kind in ["wall", "store"] else Rect2(-1.15, -1.15, 2.3, 2.3)
 			ci.draw_rect(Rect2(at + fr.position * m, fr.size * m), Color(col.r, col.g, col.b, 0.8 * pulse), false, maxf(1.0, 0.05 * m))
 	var mesh := _mesh("%s/%d" % [kind, int(round(foot * 10.0))], func(p): _body(p, kind, foot))
+	if kind == "store":
+		# under the body: a soft dark shadow on the tower wall, so it stands off it
+		ci.draw_rect(Rect2(at + Vector2(-1.0, -1.6) * m + Vector2(0.12, 0.14) * m, Vector2(2.2, 2.2) * m), Color(0, 0, 0, 0.35))
 	ci.draw_mesh(mesh, null, Transform2D(0.0, Vector2(m, m), 0.0, at), Color.WHITE)
 	var lamp := str(info.get("lamp", "ok"))
 	if kind == "rack":
 		_name_plate(ci, at + Vector2(0.0, -1.15) * m, title, hint if on else "", lamp, on, t, z)
 		return
 	# the desk's lamps: its state, and the power on
-	var lamp_at := Vector2(0.75, 0.33) if kind != "wall" else Vector2(0.75, -0.0)
+	var lamp_at := Vector2(0.75, 0.33) if kind not in ["wall", "store"] else Vector2(0.75, -0.0)
+	if kind == "store":
+		lamp_at = Vector2(0.75, 0.38)
 	if kind != "assay":
 		FastDraw.circle(ci, at + lamp_at * m, 0.07 * m, lamp_col(lamp, t))
 		FastDraw.circle(ci, at + (lamp_at - Vector2(0.2, 0.0)) * m, 0.07 * m, Pal.tint(Pal.FLUID, 0.9, 1.2))
