@@ -220,11 +220,18 @@ func operations() -> void:
 		if row[1] == "dev_builder":
 			continue
 		action_card(grid, dev._row_label(row), descriptions.get(row[1], ""), func(): dev.run(index + 1), row[1], row[2] == true, row[0])
+	action_card(grid, words("施工瞬间完成", "INSTANT BUILD"), words("施工队修设施、修港区、扩建，下单后当场修好，不播施工过程。退出开发模式自动关闭。", "The crew's repairs and port works finish the moment they're ordered. Off when developer mode is."), func():
+		DevPanel.instant_build = not DevPanel.instant_build
+		refresh(), "dev_instant_build", DevPanel.instant_build)
 	var hub_w = preload("res://scripts/hub_works.gd")
 	action_card(grid, words("转运环演示货流", "HUB DEMO FLOW"), words("中央转运环的五条走廊都送来演示货箱，机械臂一直装卸。要先修好转运环；只是看的，不动仓库和钱。", "Every spoke of the central ring gets demo crates and its arm keeps loading. Needs the ring repaired; for show only, the warehouse and money are untouched."), func():
 		hub_w.demo = not hub_w.demo
 		hub_w._flow_scan = 0.0
 		refresh(), "dev_hub_demo", hub_w.demo)
+	var fw = preload("res://scripts/freight_works.gd")
+	action_card(grid, words("货运调度可视化", "FREIGHT BLOCKS VIEW"), words("在中央环轨道上画出每列货运火车占着的区段、载人车要的区段和停在信号前的车，自查调度用。", "Draws the track each freight train holds, the shuttle's wanted track and trains held at a signal, for checking the dispatching."), func():
+		fw.show_blocks = not fw.show_blocks
+		refresh(), "dev_freight_blocks", fw.show_blocks)
 	if dev.game != null:
 		action_card(grid, words("恢复无人机", "RESTORE DRONE"), words("满耐久、停止漂移，不消耗物资。", "Full integrity and zero drift, without consuming stock."), func(): dev.restore_drone(), "restore")
 		action_card(grid, words("返回机库", "RETURN TO BAY"), words("将无人机安全放回左侧机库并修复。", "Move the drone to the left bay and repair it."), func(): dev.restore_drone(true), "home")

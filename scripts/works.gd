@@ -119,6 +119,9 @@ static func advance(dt: float, drone := Vector2.INF) -> bool:
 	held = ""
 	if j.is_empty() or dt <= 0.0:
 		return false
+	# developer workbench "施工瞬间完成": done now, crew or clock (the crew packs up when it sees no job)
+	if DevPanel.instant_build and Txt.dev:
+		return finish()
 	# 92 号: the crew builds it for real (scripts/crew.gd): done when its work is, not on a clock
 	if j.get("crew", false):
 		return false

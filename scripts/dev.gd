@@ -38,6 +38,7 @@ static var time_k := 1.0         # time on site (1 = as it runs)
 static var xray := false
 static var inspect := false
 static var sort_on := false      # loose pieces fly to their mouths by themselves
+static var instant_build := false  # user 2026-11-05 ("施工……做一个马上跳过功能"): the crew's jobs finish at once
 # the contract builder's settings, kept while the game runs
 static var b_ship := "gr7"
 static var b_traps: Array = []
@@ -203,6 +204,7 @@ func disable() -> void:
 	set_open(false)
 	Txt.dev = false
 	god = false
+	instant_build = false
 	preload("res://scripts/hub_works.gd").demo = false
 	xray = false
 	inspect = false
