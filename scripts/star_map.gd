@@ -1894,9 +1894,11 @@ func _push_sheens() -> void:
 	var t := Time.get_ticks_msec() / 1000.0
 	var keep: Array = []
 	for e in _sheens:
-		var b: Button = e[0]
-		if not is_instance_valid(b) or b.is_queued_for_deletion():
+		# check before the typed assignment: a freed button can't be assigned to `Button`
+		# (user 2026-11-05: "Trying to assign invalid previously freed instance" here)
+		if not is_instance_valid(e[0]) or not is_instance_valid(e[1]) or e[0].is_queued_for_deletion():
 			continue
+		var b: Button = e[0]
 		keep.append(e)
 		if not b.is_visible_in_tree():
 			continue
