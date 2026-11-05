@@ -40,7 +40,7 @@ func run() -> void:
 	check(not f.manual_command("power",NAN).ok and not f.manual_command("power",1.1).ok,"invalid power inputs leave the physical process unchanged")
 	f.manual_command("feed",1.0)
 	f.manual_command("power",1.0)
-	step(f,30.0)
+	step(f,30.0/Furnace.MELT_K)   # 2026-11-05: melting is time-compressed (smelter.gd MELT_K)
 	check(f.bunker > 2.2 and f.m_l == 0.0 and f.T > 20.0 and f.T < Furnace.T_LIQ,"real feeder meters cold material while sensible heating precedes melting")
 	var power_before: float = f.energy_j
 	f.manual_supply_mw = 0.0

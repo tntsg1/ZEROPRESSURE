@@ -395,7 +395,7 @@ func _manual_step(dt: float) -> void:
 	line_off = move_toward(line_off,goal,0.5*dt)
 	var retained: Array = []
 	for ingot in ingots:
-		ingot[1] = 25.0+(float(ingot[1])-25.0)*exp(-dt/70.0)
+		ingot[1] = 25.0+(float(ingot[1])-25.0)*exp(-dt/COOL_TAU)
 		if FILL_X+line_off-float(ingot[0]) >= LINE_X1-0.3 and float(ingot[1]) < 200.0:
 			shipped += 1
 			shipped_t += float(ingot[2])
@@ -481,9 +481,34 @@ func water_out() -> float:
 	return T_IN + q * 1e6 / (FLOW / 3600.0 * 1000.0 * 4186.0)
 
 
+# user 2026-11-05 ("这个电弧熔炉的烧速太慢了，4 分钟能不能在 30 秒之内就融化"): the melting and
+# heating run time-compressed — the same physics in MELT_K sub-steps a frame (energy, mass and the
+# power meter all integrate per sub-step, so a heat costs what it did); tilting, pouring, the probe
+# and everything the operator watches by hand stay at real speed
+const MELT_K := 32
+# user 2026-11-05 ("这冷却时间也是压缩 10 秒以内"): the billets are quenched under sprays on the casting
+# line: from tapping heat to the 200 °C hand-off in under 10 s (was a 70 s time constant, ~150 s)
+const COOL_TAU := 4.0
+func _fast() -> bool:
+	# only while there is still solid charge or the bath is short of tapping heat: once it is at
+	# temperature the operator's window (sampling, tapping, overheating) runs in real time
+	return phase in ["melt", "hold", "heat"] and lance_phase == "idle" and (m_s > 0.001 or T < T_TAP - 25.0)
+
+
 func step(dt: float) -> void:
 	if dt <= 0.0:
 		return
+	var n := MELT_K if _fast() else 1
+	var t0 := t
+	for i in n:
+		_step_once(dt)
+		if i < n - 1 and not _fast():
+			break
+	# the clocks the operator reads (sample age, the heat's time) stay real
+	t = t0 + dt
+
+
+func _step_once(dt: float) -> void:
 	if manual:
 		_manual_step(dt)
 		return
@@ -566,7 +591,7 @@ func step(dt: float) -> void:
 	line_off = move_toward(line_off, line_goal, 0.5 * dt)
 	for ig in ingots:
 		# water-cooled copper: fast at first, then slower as the shell forms
-		ig[1] = 25.0 + (float(ig[1]) - 25.0) * exp(-dt / 70.0)
+		ig[1] = 25.0 + (float(ig[1]) - 25.0) * exp(-dt / COOL_TAU)
 	for ig in ingots:
 		if FILL_X + line_off - float(ig[0]) >= LINE_X1 - 0.3:
 			shipped += 1

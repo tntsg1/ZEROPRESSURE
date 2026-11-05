@@ -326,6 +326,9 @@ static func decisions(game = null) -> Array:
 			"why": Route.missing(n), "go": "route:" + str(n.key)})
 	out.sort_custom(func(a, b): return int(a.level) < int(b.level))
 	# the training run, pinned first; the other production items wait behind it (28 号 Q15)
+	# 128 号: no exchange errands while the exchange is shut
+	if not StoreBook.exchange_usable():
+		out = out.filter(func(o): return str(o.go) != "clients")
 	if Drill.open():
 		out = out.filter(func(o): return int(o.level) == DANGER or not (str(o.go) in ["site:heat", "site:sort", "site:assay", "clients"]))
 		var st := Drill.step()
@@ -356,6 +359,8 @@ static func next_step() -> Dictionary:
 	if _busy(heat) or _busy(sort):
 		return {"text": w("设备在搬运或加工，等它把货送回仓库。", "The plant is moving or working stock; wait for it to reach the warehouse."), "go": ""}
 	var billets := _stock_t(Exchange.lot_key("steel_billet", 1))
+	if billets > Exchange.EPS and not StoreBook.exchange_usable():
+		return {"text": w("仓库有 %.2f t 合格钢坯：按 F3 打开仓库，可以卖给回收站或留着。", "%.2f t of grade 1 billets in store: F3 to sell to the recycler or keep.") % billets, "go": ""}
 	if billets > Exchange.EPS:
 		return {"text": w("仓库有 %.2f t 合格钢坯：去交易行“工业客户”承接或发运。", "%.2f t of grade 1 billets: take or ship a client order on the exchange.") % billets, "go": "clients"}
 	var feed := _stock_t(Exchange.lot_key("ferrous_scrap", 1))

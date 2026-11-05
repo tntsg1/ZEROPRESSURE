@@ -157,6 +157,9 @@ static func step(id: String = "") -> Dictionary:
 				var ds := Drill.step()
 				return {"text": str(ds.text), "go": "drill" if str(ds.go) == "drill" else str(ds.go)}
 			var t := Guide.first_for_clients()
+			# 128 号: the exchange shut, the billets wait in the warehouse (F3 sells them to the recycler)
+			if t == "store":
+				return {"text": w("钢坯已入库：按 F3 打开仓库，可以卖给回收站或留着。", "Billets in store: F3 opens the warehouse — sell to the recycler or keep."), "go": ""}
 			var txt := {"clients": w("有钢坯了：去交易行挂价卖。", "Billets in stock: list them on the exchange."),
 				"heat": w("去加工区炉台，把钢锭炼成钢坯。", "To the furnace desk: melt the ingots into billets."),
 				"assay": w("去加工区化验台，测废铁杂质。", "To the assay bench: test the scrap."),

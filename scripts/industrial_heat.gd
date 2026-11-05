@@ -209,7 +209,7 @@ func _cool_left() -> float:
 	for ig in furnace().ingots:
 		hot = maxf(hot,float(ig[1]))
 	if hot <= 200.0: return 2.0
-	return 70.0*log((hot-25.0)/175.0)+2.0
+	return SmelterModel.COOL_TAU*log((hot-25.0)/175.0)+2.0
 
 
 # s to all-liquid at tapping heat at the power drawn now (the heat balance the furnace runs on)

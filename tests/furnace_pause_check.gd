@@ -45,10 +45,10 @@ func _run() -> void:
 	Career.data.industrial_heat = heat
 	var f = Furnace.new()
 	f.begin_manual()
-	f.manual_charge(2.0)
+	f.manual_charge(12.0)   # 2026-11-05: melting is time-compressed (MELT_K); a full charge keeps it mid-melt
 	f.manual_command("feed", 1.0)
 	f.manual_command("power", 1.0)
-	_heat(f, heat, 20.0)
+	_heat(f, heat, 5.0)
 	var t1: float = f.T
 	check(t1 > 25.0 and Grid.heat_supply(g, heat) > 0.5, "running: the heat gets power and warms (%.0f °C, %.1f MW)" % [t1, Grid.heat_supply(g, heat)])
 	# paused at the power screen: at once, no confirm, a note of what happens
@@ -88,7 +88,7 @@ func _run() -> void:
 	check(not bool(Grid.ctl().defer) and ui.msg.text.contains("继续升温"), "电弧炉工作: back at once, the note says so (%s)" % ui.msg.text)
 	ui.close()
 	await _frames(20)
-	_heat(f, heat, 20.0)
+	_heat(f, heat, 5.0)
 	var t4: float = f.T
 	check(t4 > t3 + 5.0, "running again: the heat warms up again (%.1f → %.1f °C)" % [t3, t4])
 	Career.data.industrial_heat = {}

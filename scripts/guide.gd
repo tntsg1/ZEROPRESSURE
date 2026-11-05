@@ -74,6 +74,13 @@ static func task_for(go: String) -> String:
 # a client order short: start from where the company's own steel stands now
 static func first_for_clients() -> String:
 	var heat: Dictionary = Career.data.get("industrial_heat", {})
+	# user 2026-11-05: no "list it at the exchange" guide while the exchange isn't open (128 号)
+	if not StoreBook.exchange_usable():
+		if Ops._busy(heat) or _stock(Exchange.lot_key("ferrous_scrap", 1)) >= 0.25:
+			return "heat"
+		if _stock(Exchange.lot_key("steel_billet", 1)) > Exchange.EPS:
+			return "store"      # not a guide task: the caller says where the billets are
+		return "buy_feed"
 	if _stock(Exchange.lot_key("steel_billet", 1)) > Exchange.EPS:
 		return "clients"
 	if Ops._busy(heat) or _stock(Exchange.lot_key("ferrous_scrap", 1)) >= 0.25:
@@ -248,6 +255,9 @@ func _heat() -> Dictionary:
 
 # 37 号: selling is a listing — the client buys it, the money is there on the sale, the courier delivers
 func _clients() -> Dictionary:
+	# the exchange shut (128 号): the billets are in the warehouse; F3 sells them to the recycler
+	if not StoreBook.exchange_usable():
+		return {"done": w("钢坯已入库：按 F3 打开仓库，可以卖给回收站或留着", "THE BILLETS ARE IN STORE: F3 TO SELL OR KEEP"), "end": true}
 	var ex: Dictionary = Career.data.get("exchange", {})
 	var open: bool = game.console_ui != null and is_instance_valid(game.console_ui) and game.console_ui.get_script() == preload("res://scripts/exchange_panel.gd")
 	for trade in ex.get("trades", []):
@@ -527,7 +537,7 @@ func _next(after: String) -> Array:
 			if _stock(Exchange.lot_key("ferrous_scrap", 1)) >= 0.25:
 				return ["heat", w("钢锭可以开炉了", "grade 1 feed: run a heat")]
 		"heat":
-			if _stock(Exchange.lot_key("steel_billet", 1)) > Exchange.EPS:
+			if _stock(Exchange.lot_key("steel_billet", 1)) > Exchange.EPS and StoreBook.exchange_usable():
 				return ["clients", w("钢坯交给工业客户", "billets for the client")]
 		"buy_feed":
 			return ["heat", w("钢锭到了，开炉", "the feed is in: run a heat")]
