@@ -71,7 +71,7 @@ func _run() -> void:
 	g.leave()
 	check(g.state == "towout", "after the settlement the ship is towed out (state %s)" % g.state)
 	await _frames(60)
-	var ax: float = g.dock.tug_accel()
+	var ax: float = g.dock.tug_accel().x
 	check(ax > 0.0 and g.world.position.x > 0.0, "the tug pulls it away, speeding up (%.0f px/s², hull at %.0f px)" % [ax, g.world.position.x])
 	Cap.save(root, "res://tests/out/berth_towout.png")
 	var before: Vector2 = g.drone.global_position
@@ -134,7 +134,13 @@ func _run() -> void:
 		t += 1
 	await _frames(10)
 	var n: Node = _scene()
-	check(n != b and not n.in_berth() and str(n.job.get("id", "")) == want and n.state == "intro" and not paused, "a contract taken there brings its ship in (%s, %s)" % [n.job.get("id", ""), n.state])
+	check(n != b and not n.in_berth() and str(n.job.get("id", "")) == want and n.state == "intro" and not paused, "a contract starts with the berth entrance animation (%s, %s)" % [n.job.get("id", ""), n.state])
+	var entrance_x: float = n.world.position.x
+	check(n.yard_start() == Vector2.INF and n.yard_push_t() == 0.0 and entrance_x > 0.0 and is_zero_approx(n.world.position.y), "the ship starts on the right, without the tug yard route")
+	await _frames(90)
+	check(n.state == "intro" and n.world.position.x < entrance_x and n.world.position.x > 0.0, "the ship moves from the right into the berth")
+	await _frames(330)
+	check(n.state == "play" and n.world.position == Vector2.ZERO and n.drone.alive and n.contract_open and n.dock.clamp_t.all(func(v): return is_equal_approx(float(v), 0.0)), "after arrival the ship is secured, the drone is ready and the contract is open")
 	# ---------------------------------------------------------------- the career's way in
 	n.queue_free()
 	await _frames(4)

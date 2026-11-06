@@ -2708,27 +2708,8 @@ static func along(path: Array, u: float) -> Vector2:
 		want -= seg
 	return path[path.size() - 1]
 func yard_start() -> Vector2:
-	if _yard_from != null:
-		return _yard_from
-	_yard_from = Vector2.INF
-	if job.is_empty() or not Career.usable() or Career.data.is_empty() or not Career.data.has("ship_market"):
-		return _yard_from
-	var a := ShipMarket.asset(str(job.get("id", "")))
-	if a.is_empty() or not a.has("yard"):
-		return _yard_from
-	var x1 := -INF
-	var y0 := INF
-	var y1 := -INF
-	for pd in Ship.load_data(ship_id).get("pieces", []):
-		for q in pd.get("poly", []):
-			x1 = maxf(x1, float(q[0]))
-			y0 = minf(y0, float(q[1]))
-			y1 = maxf(y1, float(q[1]))
-	var stern := Vector2(x1, (y0 + y1) * 0.5) if x1 > -INF else Vector2(40.0, 0.0)
-	_yard_mid = stern * 0.5 * Geom.M
-	_yard_from = TugYard.slot_px(int(a.yard), ship_id) - stern * Geom.M
-	yard_path = _yard_route(_yard_from, hull_box(ship_id), str(job.get("id", "")))
-	return _yard_from
+	# Start at the berth entrance; do not animate the trip from the tug yard.
+	return Vector2.INF
 
 
 func _intro(dt: float) -> void:
