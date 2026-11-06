@@ -210,7 +210,96 @@ func steel_item() -> Dictionary:
 
 
 func trade_open() -> bool:
-	return StoreBook.exchange_open()
+	return HallMarket.open()
+
+
+# 128 号 第 2 段: what the exchange pays for a thing now, after its 5 %
+func trade_net(it: Dictionary) -> float:
+	return HallMarket.net(HallMarket.market_now(it)) if market_of(it) > 0.0 else -1.0
+
+
+# the best open order on the board that wants this kind: {oid, client, price (for this thing)} or {}
+func order_offer(it: Dictionary) -> Dictionary:
+	if not trade_open() or market_of(it) <= 0.0:
+		return {}
+	var kind := HallMarket.kind_of(it)
+	var cat := "raw" if str(it.get("cat", "")) == "raw" else "equip"
+	var best := {}
+	for o in HallMarket.orders():
+		if str(o.state) != "open" or str(o.kind) != kind or str(o.cat) != cat:
+			continue
+		var each := float(o.price) / maxf(float(o.n), 0.001)
+		var p := each * (float(it.get("t", 1.0)) if cat == "raw" else 1.0)
+		if best.is_empty() or p > float(best.price):
+			best = {"oid": str(o.id), "client": str(o.client), "price": snappedf(p, 1.0), "want": HallMarket.want_name(o)}
+	return best
+
+
+func order_est(it: Dictionary) -> float:
+	var of := order_offer(it)
+	return float(of.price) if not of.is_empty() else market_of(it) * ORDER_K
+
+
+# 一键挂单: at the suggested price, at once; the note says what and when
+func list_sel() -> void:
+	var it := _item(sel)
+	if it.is_empty() or not can_sell(it):
+		_say(w("这样东西不能挂单", "THIS CANNOT BE LISTED"), true)
+		return
+	var from_r := Rect2()
+	if lay.has(sel) and not it.get("inbox", false):
+		from_r = unit_rect(sel)
+		from_r.position += _grid_rect().position
+	elif _rects.has(sel):
+		from_r = _rects[sel]
+	var r := HallMarket.list(str(it.id))
+	if not r.ok:
+		_say(str(r.reason), true)
+		return
+	var done := w("挂到交易行：%s · 要价 %s · %s，成交后到账 %s（扣 5%% 手续费）", "LISTED: %s · ASKING %s · %s, %s PAID ON THE SALE (LESS 5%%)") % [str(r.name), Pal.money(float(r.price)), HallMarket.eta_text(float(r.secs)), Pal.money(float(r.net))]
+	if BenchFx.on() and from_r.size.x > 0.0:
+		_gone.append([it.duplicate(true), from_r, BenchFx.now(), int(lay[str(it.id)][2]) if lay.has(str(it.id)) else 0])
+		_say_later = [done, BenchFx.now() + 0.45]
+	else:
+		_say(done)
+	if game != null and is_instance_valid(game) and game.get("sfx") != null:
+		game.sfx.play("receipt", Vector2.INF, 0.8)
+	var was := sel
+	build()
+	if _item(was).is_empty():
+		sel = ""
+		var vis := shown()
+		if not vis.is_empty():
+			sel = str(vis[0].id)
+
+
+# 订单: an order wanting it is taken at once (the stores make it up); else the order board opens
+func order_sel() -> void:
+	var it := _item(sel)
+	var of := order_offer(it)
+	if of.is_empty():
+		_to_hall("orders", HallMarket.kind_of(it) if not it.is_empty() else "")
+		return
+	var r := HallMarket.take(str(of.oid))
+	if not r.ok:
+		_say(str(r.reason), true)
+		return
+	_say(w("接了 %s 的订单（%s）：仓库自动备货，火车送到贸易港，客户来取", "TOOK %s'S ORDER (%s): THE STORES MAKE IT UP, THE TRAIN TAKES IT TO THE TRADE PORT") % [str(of.client), str(of.want)])
+	if game != null and is_instance_valid(game) and game.get("sfx") != null:
+		game.sfx.play("receipt", Vector2.INF, 0.8)
+	build()
+
+
+# close the stores and open the exchange (Esc there comes back here)
+func _to_hall(tab: String, pick: String) -> void:
+	if game == null or not is_instance_valid(game) or not game.has_method("open_hall"):
+		return
+	var g = game
+	_close()
+	(func():
+		g.open_hall(tab, pick)
+		if g.console_ui != null and g.console_ui.get("back_to_store") != null:
+			g.console_ui.back_to_store = true).call_deferred()
 
 
 # tonnes of the picked raw goods a listing still holds ("撤下挂单" in the details)
@@ -852,6 +941,9 @@ func _gui_input(ev: InputEvent) -> void:
 				_vel -= WHEEL * 7.0
 			else:
 				scroll = clampf(scroll - WHEEL, 0.0, _scroll_max())
+		elif ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT and trade_open() and _btns.has("trade") and (_btns["trade"] as Rect2).has_point(ev.position) and sel != "" and listed_of(_item(sel)) <= 0.004:
+			# 128 号 第 2 段: right on the exchange's key — its price curve, to set one's own price
+			_to_hall("sell", sel)
 		elif ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
 			# 右键菜单: sell, keep, turn (not while the first visit's guide is showing what to sell)
 			var ru := _unit_at(ev.position)
@@ -953,6 +1045,10 @@ func _press(b: String) -> void:
 			build()
 		else:
 			_say(str(r.reason), true)
+	elif b == "trade" and trade_open():
+		list_sel()
+	elif b == "order" and trade_open():
+		order_sel()
 	elif b in ["trade", "order"]:
 		_say(StoreBook.exchange_shut_text(), true)
 	elif b == "close":
@@ -1620,12 +1716,32 @@ func _draw_detail() -> void:
 		if (b == "trade" and held > 0.004) or it.get("steel", false):
 			continue
 		var r: Rect2 = _btns[b]
+		if trade_open() and mk > 0.0 and ok:
+			var hv: bool = hover_btn == b
+			var acc := UiSkin.ACCENT if b == "trade" else UiSkin.DATA
+			draw_rect(r, Color(1, 1, 1, 0.08 if hv else 0.04))
+			draw_rect(r, Color(acc, 0.85 if hv else 0.55), false, 1.2)
+			var of := order_offer(it) if b == "order" else {}
+			var top := ""
+			var sub := ""
+			if b == "trade":
+				top = w("交易行  约 %s", "EXCHANGE ~%s") % Pal.money(trade_net(it))
+				sub = w("%s · 右键自己定价", "%s · RIGHT: OWN PRICE") % HallMarket.vs_avg_text(HallMarket.kind_of(it))
+			elif not of.is_empty():
+				top = w("订单  %s", "ORDER  %s") % Pal.money(float(of.price))
+				sub = w("%s要 · 点了就接单", "%s WANTS IT · CLICK TO TAKE") % str(of.client)
+			else:
+				top = w("订单  约 %s", "ORDER ~%s") % Pal.money(mk * ORDER_K)
+				sub = w("现在没有订单要它 · 看订单板", "NO ORDER FOR IT NOW · SEE THE BOARD")
+			_text(top, r.position + Vector2(0, 22), 14, Pal.ink(0.95), font_b, r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+			_text(sub, r.position + Vector2(0, 41), 11, Pal.ink(0.6), font_b, r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+			continue
 		draw_rect(r, Color(1, 1, 1, 0.02))
 		draw_rect(r, Pal.ink(0.16), false, 1.0)
 		var price := mk * (TRADE_K if b == "trade" else ORDER_K)
 		var top := ((w("交易行  约 %s", "EXCHANGE ~%s") if b == "trade" else w("订单  约 %s", "ORDER ~%s")) % Pal.money(price)) if mk > 0.0 else (w("交易行", "EXCHANGE") if b == "trade" else w("订单", "ORDERS"))
 		_text(top, r.position + Vector2(0, 22), 14, Pal.ink(0.5), font_b, r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
-		_text(StoreBook.exchange_shut_text(), r.position + Vector2(0, 41), 11, Pal.ink(0.38), font_b, r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+		_text(StoreBook.exchange_shut_text() if not trade_open() else w("不能卖", "NOT FOR SALE"), r.position + Vector2(0, 41), 11, Pal.ink(0.38), font_b, r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func _para(s: String, x: float, y: float, wd: float, col: Color) -> float:
@@ -1954,7 +2070,7 @@ func _draw_tip(ci: CanvasItem, it: Dictionary, age: float) -> void:
 	var lines: Array = []
 	var mk := market_of(it)
 	if mk > 0.0:
-		lines.append([w("回收站 %s · 交易行约 %s · 订单约 %s", "RECYCLING %s · EXCHANGE ~%s · ORDER ~%s") % [Pal.money(recycle_of(it)), Pal.money(mk * TRADE_K), Pal.money(mk * ORDER_K)], Pal.ink(0.8)])
+		lines.append([w("回收站 %s · 交易行约 %s · 订单约 %s", "RECYCLING %s · EXCHANGE ~%s · ORDER ~%s") % [Pal.money(recycle_of(it)), Pal.money(trade_net(it) if trade_open() else mk * TRADE_K), Pal.money(order_est(it))], Pal.ink(0.8)])
 	var src := str(it.get("ship", ""))
 	if src != "":
 		lines.append([w("来自 %s", "FROM %s") % Methods.ship_label(src), Pal.ink(0.55)])
@@ -1988,6 +2104,9 @@ func _open_menu(id: String, at: Vector2) -> void:
 	var rows: Array = []
 	if can_sell(it):
 		rows.append(["sell", w("卖给回收站  %s  [Enter]", "SELL TO RECYCLING  %s  [Enter]") % Pal.money(recycle_of(it))])
+	if can_sell(it) and trade_open():
+		rows.append(["trade", w("挂到交易行  约 %s", "LIST ON THE EXCHANGE  ~%s") % Pal.money(trade_net(it))])
+		rows.append(["price", w("看价格曲线，自己定价…", "PRICE CURVE, SET MY OWN PRICE…")])
 	if can_keep(it):
 		rows.append(["keep", keep_label(it)])
 	if not it.get("inbox", false) and not it.get("steel", false) and lay.has(id) and int(it.w) != int(it.h):
@@ -2037,6 +2156,8 @@ func _menu_pick(i: int) -> void:
 		"sell": sell_sel()
 		"keep": keep_sel()
 		"turn": turn()
+		"trade": list_sel()
+		"price": _to_hall("sell", id)
 
 
 # ---------------------------------------------------------------- Ctrl: box and pick many
@@ -2198,9 +2319,9 @@ func _draw_ladder(at: Vector2, wd: float, it: Dictionary, pk: float) -> float:
 	if mk <= 0.0:
 		return 0.0
 	var rows := [[w("回收站 %s", "RECYCLING %s") % Pal.money(roundf(recycle_of(it) * pk)), recycle_of(it), UiSkin.ACCENT, true],
-		[w("交易行约 %s", "EXCHANGE ~%s") % Pal.money(roundf(mk * TRADE_K * pk)), mk * TRADE_K, Pal.ink(0.5), trade_open()],
-		[w("订单约 %s", "ORDER ~%s") % Pal.money(roundf(mk * ORDER_K * pk)), mk * ORDER_K, Pal.ink(0.5), trade_open()]]
-	var top := mk * ORDER_K
+		[w("交易行约 %s", "EXCHANGE ~%s") % Pal.money(roundf((trade_net(it) if trade_open() else mk * TRADE_K) * pk)), (trade_net(it) if trade_open() else mk * TRADE_K), Pal.ink(0.5), trade_open()],
+		[(w("订单 %s", "ORDER %s") if not order_offer(it).is_empty() else w("订单约 %s", "ORDER ~%s")) % Pal.money(roundf(order_est(it) * pk)), order_est(it), Pal.ink(0.5), trade_open()]]
+	var top := maxf(order_est(it), mk * ORDER_K)
 	var y := at.y
 	for row in rows:
 		var f := clampf(float(row[1]) / maxf(top, 1.0), 0.0, 1.0) * pk

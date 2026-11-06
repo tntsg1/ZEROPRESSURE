@@ -826,7 +826,17 @@ static func card(g) -> Dictionary:
 		var risks := _t(m.risks)
 		if run.has("note"):
 			risks += w("；", "; ") + _t(run.note)
-		methods.append({"key": m.key, "name": _t(m.name), "lo": lo, "hi": hi, "minutes": mins, "risks": risks, "need": need})
+		var method_name := _t(m.name)
+		if Txt.zh and str(g.job.get("reg", "")) == "H-38" and ship_key(g) == "h22":
+			if str(m.key) == "careful":
+				method_name = "方案 A · 消磁泄压后拆解"
+				risks = "先断开供电线路并消磁，给液压系统泄压，再拆下拖臂销轴。最后拆下拖头进行回收。每个拖头约 2.2 吨，需要吊车。未彻底断电或泄压可能发生意外。"
+			elif str(m.key) == "demolish":
+				method_name = "方案 B · 带磁带压快拆"
+				risks = "跳过消磁和泄压，直接拆除连接结构。残留磁力可能吸走附近的无人机和碎件；液压系统仍有压力，拖臂可能突然弹出，损坏拖头。"
+				if run.has("note"):
+					risks += "；" + _t(run.note)
+		methods.append({"key": m.key, "name": method_name, "lo": lo, "hi": hi, "minutes": mins, "risks": risks, "need": need})
 	return {"name": _t(sp.name), "units": _t(sp.units), "full": f, "methods": methods}
 
 
@@ -1234,10 +1244,10 @@ static func _ship_warn(g, warn: Array) -> void:
 			for t in ["TH-U", "TH-L"]:
 				mt = maxf(mt, m.field(t))
 			if mt > 1.0:
-				warn.append(w("拖头残磁 %.0f mT：会吸住无人机和碎件（断开 K-H 后拨 DEGAUSS）", "TOW HEADS AT %.0f mT: THEY PULL THE DRONE IN (K-H OFF, THEN DEGAUSS)") % mt)
+				warn.append(w("拖头残磁：%.0f mT。断开 K-H 后再消磁。残磁可能吸走无人机和附近碎件。", "TOW HEADS AT %.0f mT: THEY PULL THE DRONE IN (K-H OFF, THEN DEGAUSS)") % mt)
 			for l in m.loads:
 				if l.alive and not l.fired:
-					warn.append(w("拖臂还带压上着销：先给 ACC 泄压、拔 PIN 再拆", "ARMS PINNED UNDER PRESSURE: BLEED ACC, PULL THE PINS FIRST"))
+					warn.append(w("拆除拖臂销轴前，先给 ACC 泄压，再拔出 PIN，防止拖臂突然弹出。", "ARMS PINNED UNDER PRESSURE: BLEED ACC, PULL THE PINS FIRST"))
 					break
 		"st40":
 			var c = g.composite

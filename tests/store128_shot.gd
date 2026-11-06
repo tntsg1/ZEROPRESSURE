@@ -442,14 +442,16 @@ func _run() -> void:
 	co.stock["steel_plate:1"] = float(co.stock.get("steel_plate:1", 0.0)) + 5.0
 	co.lots["test_plate2"] = {"id": "test_plate2", "key": "steel_plate:1", "available": 5.0, "total": 5.0, "origin": "test"}
 	post = preload("res://scripts/industrial_exchange.gd").post(ex, "company", "sell", "steel_plate", 1, 5.0, 900.0)
-	check(bool(post.get("ok", false)) and not StoreBook.exchange_open(), "trade port mended, exchange not usable, a listing holds 5 t")
-	# 返工 4: no new listing through the exchange's commands while it is shut
+	# 128 号 第 2 段: the trade port mended now opens the new exchange; its first tick withdraws the old
+	# listing (HallMarket.migrate, copied aside first) and old commands stay refused
+	check(bool(post.get("ok", false)) and StoreBook.exchange_open(), "trade port mended: the new exchange is open, an old listing holds 5 t")
 	var cmd: Dictionary = preload("res://scripts/industrial_exchange.gd").command("post", {"side": "sell", "item": "steel_plate", "grade": 1, "quantity": 1.0, "price": 900.0})
-	check(not bool(cmd.get("ok", true)) and str(cmd.get("reason", "")) == "exchange_closed", "posting a listing is refused: %s" % str(cmd.get("reason", "")))
+	check(not bool(cmd.get("ok", true)) and str(cmd.get("reason", "")) == "exchange_closed", "posting on the old book is refused: %s" % str(cmd.get("reason", "")))
 	Career.save()
 	Career.data = {}
 	Career.load_or_new()
-	check(StoreBook.listed_t("steel_plate:1") < 0.01, "loading withdraws it here too")
+	HallMarket.tick(0.1)
+	check(StoreBook.listed_t("steel_plate:1") < 0.01, "the new exchange's first tick withdraws it")
 	plate_id = ""
 	for u in StoreBook.units():
 		if str(u.get("key", "")) == "steel_plate:1":
@@ -459,7 +461,9 @@ func _run() -> void:
 	check(bool(sold.get("ok", false)) and float(Career.data.money) > m2, "and it sells to the recycling station")
 	Career.data = {}
 	Career.load_or_new()
-	check(Career.data.get("migrations", []).filter(func(m): return str(m.id) == "128_orders").size() == 1, "the migration runs once")
+	HallMarket.tick(0.1)
+	check(Career.data.get("migrations", []).filter(func(m): return str(m.id) == "128_hall").size() == 1, "the new exchange's migration runs once")
+	check(Career.data.get("migrations", []).filter(func(m): return str(m.id) == "128_orders").size() <= 1, "the old migration never twice")
 	# a listing made later (an old exchange page): withdrawn from the stores page itself
 	ex = Career.data.exchange
 	co = ex.actors.company

@@ -80,7 +80,8 @@ func _draw() -> void:
 	var st := int(bill.get("stage", 1))
 	draw_string(font, Vector2(x0, y - 14), w("修缮 · %s · %s期", "MEND · %s · STAGE %d") % [Port.name_of(zone), Works.cn_num(st)] if Txt.zh else "MEND · %s · STAGE %d" % [Port.name_of(zone), st], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(acc, 0.9))
 	draw_string(font, Vector2(x0, y + 16), w("修好后：交易行按市价卖货 · 订单板接客户订单", "Mended: the exchange sells at market · the order board takes client orders"), HORIZONTAL_ALIGNMENT_LEFT, W - 56, 22, Pal.ink(0.96))
-	draw_string(font, Vector2(x0, y + 44), w("仓库里有的先用自己的，缺的按市价一键买齐。施工队不收工钱。", "What the warehouse has goes first; what is short is bought at market in the same click. The crew is free."), HORIZONTAL_ALIGNMENT_LEFT, W - 56, 14, Pal.ink(0.6))
+	var lead_s := w("仓库里有的先用自己的，缺的从交易行一键买齐（别家的货，比自己拆的贵）。施工队不收工钱。", "What the warehouse has goes first; what is short is bought on the exchange in the same click (other companies' goods, dearer than your own). The crew is free.") if bool(bill.get("at_hall", false)) else w("仓库里有的先用自己的，缺的按市价一键买齐。施工队不收工钱。", "What the warehouse has goes first; what is short is bought at market in the same click. The crew is free.")
+	draw_string(font, Vector2(x0, y + 44), lead_s, HORIZONTAL_ALIGNMENT_LEFT, W - 56, 14, Pal.ink(0.6))
 	y += 74
 	# the column heads
 	var cx_need := r.position.x + 380

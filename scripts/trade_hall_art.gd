@@ -491,15 +491,20 @@ func _outside(ci: CanvasItem, t: float, names: Dictionary) -> void:
 				ci.draw_multiline(ribs, _ink(0.3), 1.0)
 		FastDraw.circle(ci, _p(Vector2(58.4, lk.x - 0.75)), 0.16 * m, Pal.tint(Pal.FLUID, 0.9, 1.3) if g >= 1.0 else Pal.heat(0.4 + 0.6 * absf(sin(t * 6.0)), 1.5))
 	# the client lighter in the east port
-	if TW.lighter_k > 0.0:
+	# 128 号 第 2 段: with the new exchange the port's lighter is an order's client freighter
+	# (scripts/client_ships.gd draws it); the old one shows only when it lies alongside
+	if TW.lighter_k > 0.0 and (TW.lighter_hide or not HallMarket.open()):
 		var k := Pal.ease_out(TW.lighter_k)
 		var at := Vector2(52.0 + (1.0 - k) * 45.0, TW.LIGHTER_Y)
-		_put(ci, _mesh("lighter", _lighter), at)
+		if TW.lighter_hide:
+			at = Vector2(52.0, TW.LIGHTER_Y)
+		else:
+			_put(ci, _mesh("lighter", _lighter), at)
 		# what is in its hold
 		for i in TW.hold:
 			_put(ci, _mesh("crate", _crate), at + Vector2(3.0 + (i % 4) * 1.75, 0.0 - (i / 4) * TW.CRATE.y))
 		var nm := str(names.get(TW.lighter_for, {}).get("name", ""))
-		if Pal.labels:
+		if Pal.labels and not TW.lighter_hide:
 			_text(ci, at + Vector2(11.0, -4.4), nm, 0.5, Pal.ink(0.8), true)
 
 

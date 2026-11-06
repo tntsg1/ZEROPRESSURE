@@ -154,6 +154,7 @@ static func reset() -> void:
 	pushed_up = 0
 	real_runs = 0
 	time_in = {}
+	order_in = {}
 
 
 # ------------------------------------------------------------------ the network's fixed places
@@ -1914,7 +1915,7 @@ static func _lift_unserved() -> void:
 		if W.parcels.size() >= W.MAX_PARCELS - 3:
 			break
 		queue.erase(it)
-		W.lift_in(z, {"key": str(it.key), "use": str(it.use), "from": z, "to": str(it.to), "at": "hatch", "slot": -1, "name": str(it.get("name", "")), "look": it.get("look", {})})
+		W.lift_in(z, {"key": str(it.key), "use": str(it.use), "from": z, "to": str(it.to), "at": "hatch", "slot": -1, "name": str(it.get("name", "")), "look": it.get("look", {}), "order": str(it.get("order", ""))})
 		pushed_up += 1
 
 
@@ -2113,7 +2114,7 @@ static func _item_of(u: Dictionary, from: String, to: String) -> Dictionary:
 # warehouse) by way of the ring to the trade port, where the recycling station's crane lifts it off the
 # wagon. Seen only: the sale is paid the moment it is made. Sales come first, before the base service.
 static var sold_runs := 0     # tests: sold crates lifted away at the trade port
-static func sell(cat: String, _cells: int) -> void:
+static func sell(cat: String, _cells: int, label := "") -> void:
 	if not on or not _open("cargo") or not _open("trade"):
 		return
 	var key := "equip"
@@ -2125,7 +2126,7 @@ static func sell(cat: String, _cells: int) -> void:
 		"tank":
 			key = "equip"
 	var it := {"from": "cargo", "to": "trade", "key": key, "use": W._use(key) if key != "equip" else "equip",
-		"name": w("卖给回收站", "SOLD FOR RECYCLING"), "look": {}, "sell": true}
+		"name": label if label != "" else w("卖给回收站", "SOLD FOR RECYCLING"), "look": {}, "sell": true}
 	var n := 0
 	for q in queue:
 		if bool(q.get("sell", false)):
@@ -2139,6 +2140,35 @@ static func sell(cat: String, _cells: int) -> void:
 	queue.insert(at, it)
 	if queue.size() > 14:
 		queue.pop_back()
+
+
+# 128 号 第 2 段 (user: "货运火车把货送到贸易港"): an order made up in the warehouse goes as `n` crates from
+# the cargo district by way of the ring to the trade port, where they are unloaded for the client's
+# ship. Ahead of everything but the sales. false: no trains (the board then sends it on at once).
+static var order_in := {}     # order id -> crates unloaded at the trade port
+static func ship_order(oid: String, n: int, label: String) -> bool:
+	if not on or not _open("trade"):
+		return false
+	# the main stores are in the cargo district; till it is mended they are the berth's counter
+	var from := "cargo" if _open("cargo") else "salvage"
+	order_in[oid] = 0
+	var at := 0
+	while at < queue.size() and bool(queue[at].get("sell", false)):
+		at += 1
+	for i in n:
+		queue.insert(at, {"from": from, "to": "trade", "key": "equip", "use": "equip", "name": w("订单交付 · %s", "ORDER · %s") % label, "look": {}, "order": oid})
+	if queue.size() > 16:
+		queue.pop_back()
+	return true
+
+
+static func order_arrived(oid: String) -> int:
+	return int(order_in.get(oid, 0))
+
+
+static func order_done(oid: String) -> void:
+	order_in.erase(oid)
+	queue = queue.filter(func(q): return str(q.get("order", "")) != oid)
 
 
 static func _ship(it: Dictionary) -> void:
@@ -2455,6 +2485,9 @@ static func _step(tr: Dictionary, dt: float) -> void:
 				if not an.is_empty() and str(an.dir) in ["down", "sell"]:
 					if str(an.dir) == "sell":
 						sold_runs += 1
+					var oid := str((tr.wag[i] as Dictionary).get("order", "")) if tr.wag[i] is Dictionary else ""
+					if oid != "" and str(tr.place) == "d:trade" and order_in.has(oid):
+						order_in[oid] = int(order_in[oid]) + 1
 					tr.wag[i] = null
 					tr.anim[i] = {}
 					delivered += 1
@@ -2516,7 +2549,7 @@ static func _push(tr: Dictionary, st: Dictionary, dt: float) -> void:
 			st.wait = float(st.get("wait", 0.0)) + dt
 			if float(tr.lock) >= 1.0 and W.hatch_takes(z):
 				var p: Dictionary = tr.wag[wi]
-				var parcel := {"key": str(p.key), "use": str(p.use), "from": z, "to": str(p.to), "at": "push", "slot": -1, "name": str(p.get("name", "")), "look": p.get("look", {})}
+				var parcel := {"key": str(p.key), "use": str(p.use), "from": z, "to": str(p.to), "at": "push", "slot": -1, "name": str(p.get("name", "")), "look": p.get("look", {}), "order": str(p.get("order", ""))}
 				tr.wag[wi] = null
 				tr.pushing = {"wi": wi, "z": z}
 				W.push_in(z, parcel)
@@ -2593,7 +2626,7 @@ static func _take(tr: Dictionary, st: Dictionary, dt: float) -> void:
 			tr.roll = float(tr.roll) + dt * 3.0
 			var p = W.handed(z)
 			if p != null:
-				tr.wag[int(tr.pushing.wi)] = {"key": str(p.key), "use": str(p.use), "from": str(p.from), "to": z, "leg": "out", "name": str(p.get("name", "")), "look": p.get("look", {})}
+				tr.wag[int(tr.pushing.wi)] = {"key": str(p.key), "use": str(p.use), "from": str(p.from), "to": z, "leg": "out", "name": str(p.get("name", "")), "look": p.get("look", {}), "order": str(p.get("order", ""))}
 				tr.pushing = {}
 				taken += 1
 				st.ph = "align"

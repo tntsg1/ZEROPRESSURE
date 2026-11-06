@@ -11473,41 +11473,41 @@
 "zh": "轧机轧好一吨，送回仓库了。",
 "en": "THE MILL ROLLED A TONNE: BACK ON THE RACKS.",
 "file": "game.gd",
-"line": 1004,
+"line": 1014,
 "func": "_process",
-"en_line": 1004
+"en_line": 1014
 },
 "game:_process:2": {
 "zh": "拖船充满电了：%s",
 "en": "TUGS CHARGED: %s",
 "file": "game.gd",
-"line": 1007,
+"line": 1017,
 "func": "_process",
-"en_line": 1007
+"en_line": 1017
 },
 "game:_process:3": {
 "zh": "挂牌的光帆卷卖出了：%s",
 "en": "LISTED SAIL ROLLS SOLD: %s",
 "file": "game.gd",
-"line": 1011,
+"line": 1021,
 "func": "_process",
-"en_line": 1011
+"en_line": 1021
 },
 "game:start_port_walk:1": {
 "zh": "船坞空着时才能出去走港区：先把这艘船拆完。",
 "en": "The port opens only on an empty berth: finish this ship first.",
 "file": "game.gd",
-"line": 1752,
+"line": 1749,
 "func": "start_port_walk",
-"en_line": 1752
+"en_line": 1749
 },
 "game:open_tools_text:1": {
 "zh": "飞行，先不用工具",
 "en": "flying, no tool yet",
 "file": "game.gd",
-"line": 1814,
+"line": 1811,
 "func": "open_tools_text",
-"en_line": 1814
+"en_line": 1811
 },
 "growth:顶层:8": {
 "zh": "承受的所有伤害；越低越耐用。",
@@ -16555,185 +16555,185 @@
 "zh": "回到船坞后再打开二手船市。",
 "en": "Open the hulk market from the berth.",
 "file": "terminal.gd",
-"line": 875,
+"line": 876,
 "func": "_gui_input",
-"en_line": 875
+"en_line": 876
 },
 "terminal:take:2": {
 "zh": "先赊着 %s，下次结算扣",
 "en": "%s on credit till the next settlement",
 "file": "terminal.gd",
-"line": 1390,
+"line": 1391,
 "func": "take",
-"en_line": 1390
+"en_line": 1391
 },
 "terminal:take:3": {
 "zh": "拖船出发了，拖运费：%s",
 "en": "The tug is away (tow: %s)",
 "file": "terminal.gd",
-"line": 1391,
+"line": 1392,
 "func": "take",
-"en_line": 1391
+"en_line": 1392
 },
 "terminal:_next_step_card:1": {
 "zh": "主线 · 第 %d 章 · %s（导览结束后继续）",
 "en": "MAIN LINE · CHAPTER %d · %s (AFTER THE TOUR)",
 "file": "terminal.gd",
-"line": 1740,
+"line": 1741,
 "func": "_next_step_card",
-"en_line": 1740
+"en_line": 1741
 },
 "terminal:_next_step_card:2": {
 "zh": "眼下的事都做完了。",
 "en": "Everything in hand is done.",
 "file": "terminal.gd",
-"line": 1746,
+"line": 1747,
 "func": "_next_step_card",
-"en_line": 1746
+"en_line": 1747
 },
 "terminal:_next_step_card:4": {
 "zh": "第 %d 章 · %s",
 "en": "CHAPTER %d · %s",
 "file": "terminal.gd",
-"line": 1749,
+"line": 1750,
 "func": "_next_step_card",
-"en_line": 1749
+"en_line": 1750
 },
 "terminal:_walk_mark:1": {
 "zh": "导览：看看船坞哪些设施坏了 · Enter 打开",
 "en": "TOUR: SEE WHAT IN THE BERTH IS BROKEN · ENTER OPENS",
 "file": "terminal.gd",
-"line": 1821,
+"line": 1822,
 "func": "_walk_mark",
-"en_line": 1821
+"en_line": 1822
 },
 "terminal:_onboard_welcome:1": {
 "zh": "七号坞 · 回收权使用中",
 "en": "BERTH 07 · UNDER SALVAGE CLAIM",
 "file": "terminal.gd",
-"line": 1837,
+"line": 1838,
 "func": "_onboard_welcome",
-"en_line": 1837
+"en_line": 1838
 },
 "terminal:_onboard_welcome:2": {
 "zh": "你的拖船从小行星带拖回了漂流船。拆下来的东西换成钱，钱用来把七号坞修起来。",
 "en": "Your tug has towed drifting hulks in from the belt. What you strip becomes money; the money mends Berth 07.",
 "file": "terminal.gd",
-"line": 1839,
+"line": 1840,
 "func": "_onboard_welcome",
-"en_line": 1839
+"en_line": 1840
 },
 "terminal:_onboard_welcome:3": {
 "zh": "第一步：按 1 打开合同，接下等着进坞的那艘船。",
 "en": "First: press 1 for the contracts and take the hulk that is waiting.",
 "file": "terminal.gd",
-"line": 1840,
+"line": 1841,
 "func": "_onboard_welcome",
-"en_line": 1840
+"en_line": 1841
 },
 "terminal:_onboard_welcome:4": {
 "zh": "终端里其他的东西，用到时会一样一样亮起来。",
 "en": "The rest of this terminal lights up as you need it.",
 "file": "terminal.gd",
-"line": 1841,
+"line": 1842,
 "func": "_onboard_welcome",
-"en_line": 1841
+"en_line": 1842
 },
 "terminal:_goal_strip:2": {
 "zh": "主线 · 第 %d 章 · %s（导览结束后继续）",
 "en": "MAIN LINE · CHAPTER %d · %s (AFTER THE TOUR)",
 "file": "terminal.gd",
-"line": 2273,
+"line": 2274,
 "func": "_goal_strip",
-"en_line": 2273
+"en_line": 2274
 },
 "terminal:_goal_strip:3": {
 "zh": "主线 %d · %s",
 "en": "MAIN %d · %s",
 "file": "terminal.gd",
-"line": 2286,
+"line": 2287,
 "func": "_goal_strip",
-"en_line": 2286
+"en_line": 2287
 },
 "terminal:_find_head:1": {
 "zh": "星图扫描找船",
 "en": "SWEEP THE BELT",
 "file": "terminal.gd",
-"line": 2428,
+"line": 2429,
 "func": "_find_head",
-"en_line": 2428
+"en_line": 2429
 },
 "terminal:_find_head:3": {
 "zh": "贸易区修好后才能去二手船市买船。",
 "en": "The hulk market opens once the trade district is mended.",
 "file": "terminal.gd",
-"line": 2431,
+"line": 2432,
 "func": "_find_head",
-"en_line": 2431
+"en_line": 2432
 },
 "terminal:_find_head:4": {
 "zh": "在路上 %d 艘，最快的约 %d 秒后到港。",
 "en": "%d on the way; the first in about %d s.",
 "file": "terminal.gd",
-"line": 2433,
+"line": 2434,
 "func": "_find_head",
-"en_line": 2433
+"en_line": 2434
 },
 "terminal:_market:1": {
 "zh": "还没找到船。点上面“星图扫描找船”，去小行星带扫一扫。",
 "en": "No hulks found yet. Sweep the belt on the star map.",
 "file": "terminal.gd",
-"line": 2448,
+"line": 2449,
 "func": "_market",
-"en_line": 2448
+"en_line": 2449
 },
 "terminal:_bottom:1": {
 "zh": "派拖船去拖 · %s · 约 %d 秒",
 "en": "SEND A TUG · %s · ~%d s",
 "file": "terminal.gd",
-"line": 3098,
+"line": 3099,
 "func": "_bottom",
-"en_line": 3098
+"en_line": 3099
 },
 "terminal:_bottom:3": {
 "zh": "这艘船有%s，没练过。点“开工拆”会先带你去练这几门专项（必练），练完直接回来拆它。",
 "en": "This ship has %s, not trained for: start stripping takes you through those courses first (required), then straight back to it.",
 "file": "terminal.gd",
-"line": 3118,
+"line": 3119,
 "func": "_bottom",
-"en_line": 3118
+"en_line": 3119
 },
 "terminal:_bottom:4": {
 "zh": "现在派不了拖船",
 "en": "NO TUG CAN GO NOW",
 "file": "terminal.gd",
-"line": 3126,
+"line": 3127,
 "func": "_bottom",
-"en_line": 3126
+"en_line": 3127
 },
 "terminal:_bottom:5": {
 "zh": "。路上那艘约 %d 秒到港，到了在这里点“开工拆”。",
 "en": ". The one on its way docks in ~%d s; then start stripping it here.",
 "file": "terminal.gd",
-"line": 3130,
+"line": 3131,
 "func": "_bottom",
-"en_line": 3130
+"en_line": 3131
 },
 "terminal:_next_card:1": {
 "zh": "已接的合同 · 还没开工",
 "en": "TAKEN · NOT STARTED",
 "file": "terminal.gd",
-"line": 3322,
+"line": 3323,
 "func": "_next_card",
-"en_line": 3322
+"en_line": 3323
 },
 "terminal:_next_card:2": {
 "zh": "这艘船你已经接下了，但装备页被关掉，所以还没开工：它停在拖船站的船坞口（太高的船停在外面泊位）。点“开始下一单”配好装备，就把它推进船坞开拆。",
 "en": "You took this hulk but closed its loadout page, so it is not started: it lies in the tug station's mouth (a tall one in the yard outside). Start it, fit out, and it is pushed into the berth.",
 "file": "terminal.gd",
-"line": 3336,
+"line": 3337,
 "func": "_next_card",
-"en_line": 3336
+"en_line": 3337
 },
 "work_orders:顶层:2": {
 "zh": "完整回收 C-03 货箱，完整度至少 85%；选择通道，再解除固定。",
@@ -21407,25 +21407,25 @@
 "zh": "反应堆 A",
 "en": "REACTOR A",
 "file": "port_structure.gd",
-"line": 45,
+"line": 50,
 "func": "half",
-"en_line": 45
+"en_line": 50
 },
 "port_structure:half:2": {
 "zh": "反应堆 B",
 "en": "REACTOR B",
 "file": "port_structure.gd",
-"line": 45,
+"line": 50,
 "func": "half",
-"en_line": 45
+"en_line": 50
 },
 "port_structure:half:6": {
 "zh": "吊舱检修台",
 "en": "POD SERVICE TABLE",
 "file": "port_structure.gd",
-"line": 46,
+"line": 51,
 "func": "half",
-"en_line": 46
+"en_line": 51
 },
 "power_panel:readings:2": {
 "zh": "外购电 %.1f / %.0f",
@@ -22927,225 +22927,225 @@
 "zh": "报价大屏 · 港内三家与小行星带商人",
 "en": "QUOTES · THE PORT'S THREE AND THE BELT'S MERCHANTS",
 "file": "trade_hall_art.gd",
-"line": 510,
+"line": 513,
 "func": "board",
-"en_line": 510
+"en_line": 513
 },
 "trade_hall_art:board:6": {
 "zh": "走势（每格 1 分钟）",
 "en": "TREND (1 MIN / STEP)",
 "file": "trade_hall_art.gd",
-"line": 512,
+"line": 515,
 "func": "board",
-"en_line": 512
+"en_line": 515
 },
 "trade_hall_art:board:7": {
 "zh": "买 / 卖 深度",
 "en": "BID / ASK DEPTH",
 "file": "trade_hall_art.gd",
-"line": 512,
+"line": 515,
 "func": "board",
-"en_line": 512
+"en_line": 515
 },
 "trade_hall_art:signs:5": {
 "zh": "台账 · 上一笔 %s %.2f t %s/t",
 "en": "LEDGER · LAST %s %.2f t %s/t",
 "file": "trade_hall_art.gd",
-"line": 591,
+"line": 594,
 "func": "signs",
-"en_line": 591
+"en_line": 594
 },
 "trade_hall_art:signs:6": {
 "zh": "货单 %d 张在途 · 上一批过磅 %.2f t",
 "en": "%d DOCKETS OPEN · LAST WEIGHED %.2f t",
 "file": "trade_hall_art.gd",
-"line": 593,
+"line": 596,
 "func": "signs",
-"en_line": 593
+"en_line": 596
 },
 "trade_hall_art:signs:7": {
 "zh": "修复件 · 收 %s 还要 %.1f t",
 "en": "REPAIR PARTS · BUYS %s, %.1f t MORE",
 "file": "trade_hall_art.gd",
-"line": 596,
+"line": 599,
 "func": "signs",
-"en_line": 596
+"en_line": 599
 },
 "trade_hall_art:signs:8": {
 "zh": "按 %s 到柜台办理",
 "en": "%s AT THE COUNTER",
 "file": "trade_hall_art.gd",
-"line": 601,
+"line": 604,
 "func": "signs",
-"en_line": 601
+"en_line": 604
 },
 "trade_hall_art:ticker:1": {
 "zh": "成交 · 今天还没有成交",
 "en": "DEALS · NONE YET TODAY",
 "file": "trade_hall_art.gd",
-"line": 610,
+"line": 613,
 "func": "ticker",
-"en_line": 610
+"en_line": 613
 },
 "trade_hall_art:hover_items:2": {
 "zh": "整个港口每样货的最高收价、最低卖价、上次成交价，每分钟记一点的走势，以及买卖两边各挂了多少吨。",
 "en": "Every goods' best bid, best ask and last price at the port, its trend one point a minute, and how many tonnes are bid and offered.",
 "file": "trade_hall_art.gd",
-"line": 629,
+"line": 632,
 "func": "hover_items",
-"en_line": 629
+"en_line": 632
 },
 "trade_hall_art:hover_items:3": {
 "zh": "%d 种货在报价",
 "en": "%d GOODS QUOTED",
 "file": "trade_hall_art.gd",
-"line": 630,
+"line": 633,
 "func": "hover_items",
-"en_line": 630
+"en_line": 633
 },
 "trade_hall_art:hover_items:4": {
 "zh": "看准价差再去柜台或终端（F8）买卖。蓝线高过平时就是卖的好时候。",
 "en": "Mind the spread, then deal at a counter or the exchange (F8). Blue above its usual is the time to sell.",
 "file": "trade_hall_art.gd",
-"line": 631,
+"line": 634,
 "func": "hover_items",
-"en_line": 631
+"en_line": 634
 },
 "trade_hall_art:hover_items:8": {
 "zh": "炉料商：卖废钢、混合金属等炉料，收钢锭。",
 "en": "Furnace feed: sells scrap and mixed metal, buys billets.",
 "file": "trade_hall_art.gd",
-"line": 639,
+"line": 642,
 "func": "hover_items",
-"en_line": 639
+"en_line": 642
 },
 "trade_hall_art:hover_items:9": {
 "zh": "物流商：收成品，开货单、过磅、发运。",
 "en": "Logistics: buys products, writes dockets, weighs, ships.",
 "file": "trade_hall_art.gd",
-"line": 640,
+"line": 643,
 "func": "hover_items",
-"en_line": 640
+"en_line": 643
 },
 "trade_hall_art:hover_items:10": {
 "zh": "修理工场：收钢锭做法兰、轴套、支架等修复件。",
 "en": "Repair shop: buys billets for flanges, bushes, brackets.",
 "file": "trade_hall_art.gd",
-"line": 641,
+"line": 644,
 "func": "hover_items",
-"en_line": 641
+"en_line": 644
 },
 "trade_hall_art:hover_items:11": {
 "zh": "飞到柜台前按 %s：挂单、按它的报价成交。和它成交的货在下层交货码头交接。",
 "en": "Fly to the desk, %s: post, or take its quote. What you deal with it is handed over at the dock below.",
 "file": "trade_hall_art.gd",
-"line": 642,
+"line": 645,
 "func": "hover_items",
-"en_line": 642
+"en_line": 645
 },
 "trade_hall_art:hover_items:12": {
 "zh": "仓库进货口",
 "en": "WAREHOUSE INTAKE",
 "file": "trade_hall_art.gd",
-"line": 643,
+"line": 646,
 "func": "hover_items",
-"en_line": 643
+"en_line": 646
 },
 "trade_hall_art:hover_items:13": {
 "zh": "交货码头和仓库之间的口：卖出的货从这里出来，买进的货从这里进仓。",
 "en": "Between the dock and the warehouse: what you sell comes out here, what you buy goes in.",
 "file": "trade_hall_art.gd",
-"line": 643,
+"line": 646,
 "func": "hover_items",
-"en_line": 643
+"en_line": 646
 },
 "trade_hall_art:hover_items:14": {
 "zh": "不用操作；仓库里要有货，卖单才能交货。",
 "en": "Nothing to do; a sale needs the goods in the warehouse.",
 "file": "trade_hall_art.gd",
-"line": 643,
+"line": 646,
 "func": "hover_items",
-"en_line": 643
+"en_line": 646
 },
 "trade_hall_art:hover_items:16": {
 "zh": "每箱货过磅，读数是这笔成交的真实吨数。",
 "en": "Each crate is weighed; the reading is the deal's real tonnes.",
 "file": "trade_hall_art.gd",
-"line": 644,
+"line": 647,
 "func": "hover_items",
-"en_line": 644
+"en_line": 647
 },
 "trade_hall_art:hover_items:17": {
 "zh": "看着读数就知道这笔交了多少。",
 "en": "The reading is how much of the deal has gone.",
 "file": "trade_hall_art.gd",
-"line": 644,
+"line": 647,
 "func": "hover_items",
-"en_line": 644
+"en_line": 647
 },
 "trade_hall_art:hover_items:19": {
 "zh": "给过了磅的货箱打铅封，橙色标签就是封好的。",
 "en": "Seals each weighed crate; the orange tag is its seal.",
 "file": "trade_hall_art.gd",
-"line": 645,
+"line": 648,
 "func": "hover_items",
-"en_line": 645
+"en_line": 648
 },
 "trade_hall_art:hover_items:20": {
 "zh": "不用操作。",
 "en": "Nothing to do.",
 "file": "trade_hall_art.gd",
-"line": 645,
+"line": 648,
 "func": "hover_items",
-"en_line": 645
+"en_line": 648
 },
 "trade_hall_art:hover_items:21": {
 "zh": "码头吊车与驳船口",
 "en": "DOCK CRANE · LIGHTER PORT",
 "file": "trade_hall_art.gd",
-"line": 647,
+"line": 650,
 "func": "hover_items",
-"en_line": 647
+"en_line": 650
 },
 "trade_hall_art:hover_items:22": {
 "zh": "和港内公司成交后，对方的驳船靠进东墙下的口子，吊车把货箱吊进吊出。",
 "en": "A deal with one of the port's companies brings its lighter into the port under the east wall; the crane swings the crates in or out.",
 "file": "trade_hall_art.gd",
-"line": 647,
+"line": 650,
 "func": "hover_items",
-"en_line": 647
+"en_line": 650
 },
 "trade_hall_art:hover_items:23": {
 "zh": "在柜台或终端和港内公司成交，就会看到它来交货。",
 "en": "Deal with a port company at a counter or the exchange and it comes.",
 "file": "trade_hall_art.gd",
-"line": 647,
+"line": 650,
 "func": "hover_items",
-"en_line": 647
+"en_line": 650
 },
 "trade_hall_art:hover_items:25": {
 "zh": "独立商人和个体船主的小船靠在这里，廊桥接上舱门，接驳小车把客人送到业务终端旁边。",
 "en": "The independent merchants' small ships berth here; the gangway meets the hatch and the cart takes the visitor to the business console.",
 "file": "trade_hall_art.gd",
-"line": 649,
+"line": 652,
 "func": "hover_items",
-"en_line": 649
+"en_line": 652
 },
 "trade_hall_art:hover_items:26": {
 "zh": "%d 位客人在港",
 "en": "%d VISITORS IN",
 "file": "trade_hall_art.gd",
-"line": 649,
+"line": 652,
 "func": "hover_items",
-"en_line": 649
+"en_line": 652
 },
 "trade_hall_art:hover_items:27": {
 "zh": "到西边业务终端按 %s：接受、还价或拒绝。急着要货的客人一分钟内不谈就走。",
 "en": "At the business console in the west, %s: accept, haggle or send away. One in a hurry leaves after a minute.",
 "file": "trade_hall_art.gd",
-"line": 649,
+"line": 652,
 "func": "hover_items",
-"en_line": 649
+"en_line": 652
 },
 "trade_people:card_text:1": {
 "zh": "想买 %s %.1f t，出 %s/t",
@@ -23263,41 +23263,41 @@
 "zh": "没开 · 贸易港未修复",
 "en": "CLOSED · NOT MENDED",
 "file": "trade_works.gd",
-"line": 397,
+"line": 398,
 "func": "dock_state",
-"en_line": 397
+"en_line": 398
 },
 "trade_works:dock_state:2": {
 "zh": "空闲 · 和港内公司成交后在这里交货",
 "en": "IDLE · DEALS WITH THE PORT'S COMPANIES ARE HANDED OVER HERE",
 "file": "trade_works.gd",
-"line": 399,
+"line": 400,
 "func": "dock_state",
-"en_line": 399
+"en_line": 400
 },
 "trade_works:dock_state:5": {
 "zh": "%s · %.2f t · 已过磅 %d / %d 箱",
 "en": "%s · %.2f t · %d / %d WEIGHED",
 "file": "trade_works.gd",
-"line": 401,
+"line": 402,
 "func": "dock_state",
-"en_line": 401
+"en_line": 402
 },
 "trade_works:lighter_state:1": {
 "zh": "不在 · 成交后来接货送货",
 "en": "AWAY · COMES WITH A DEAL",
 "file": "trade_works.gd",
-"line": 406,
+"line": 407,
 "func": "lighter_state",
-"en_line": 406
+"en_line": 407
 },
 "trade_works:lighter_state:5": {
 "zh": "%s 的驳船靠泊 · 舱内 %d 箱",
 "en": "%s'S LIGHTER · %d IN THE HOLD",
 "file": "trade_works.gd",
-"line": 409,
+"line": 410,
 "func": "lighter_state",
-"en_line": 409
+"en_line": 410
 },
 "transit_panel:_ready:2": {
 "zh": "坐接驳车去这一站",
@@ -23826,6 +23826,38 @@
 "line": 112,
 "func": "_fill",
 "en_line": 112
+},
+"client_ships:ships:1": {
+"zh": "来下新订单",
+"en": "POSTING A NEW ORDER",
+"file": "client_ships.gd",
+"line": 169,
+"func": "ships",
+"en_line": 169
+},
+"client_ships:_items:3": {
+"zh": "来取订单的货：%s",
+"en": "COMING FOR AN ORDER: %s",
+"file": "client_ships.gd",
+"line": 373,
+"func": "_items",
+"en_line": 373
+},
+"client_ships:_items:4": {
+"zh": "来订单板下单：%s",
+"en": "POSTING AN ORDER: %s",
+"file": "client_ships.gd",
+"line": 373,
+"func": "_items",
+"en_line": 373
+},
+"client_ships:_items:5": {
+"zh": "订单板（F8 · 订单）里接单，仓库自动备货，货运火车送到贸易港，它来取走。",
+"en": "Take orders on the order board (F8 · ORDERS): the stores make them up, the freight train brings them to the trade port, a ship like this takes them.",
+"file": "client_ships.gd",
+"line": 375,
+"func": "_items",
+"en_line": 375
 },
 "exchange_logistics:_draw:1": {
 "zh": "等待空闲装卸位",
@@ -24386,6 +24418,854 @@
 "line": 906,
 "func": "update_purchase_total",
 "en_line": 906
+},
+"hall_market:vs_avg_text:1": {
+"zh": "现在比平均高 %d%%",
+"en": "%d%% ABOVE AVERAGE NOW",
+"file": "hall_market.gd",
+"line": 127,
+"func": "vs_avg_text",
+"en_line": 127
+},
+"hall_market:vs_avg_text:2": {
+"zh": "现在比平均低 %d%%",
+"en": "%d%% BELOW AVERAGE NOW",
+"file": "hall_market.gd",
+"line": 129,
+"func": "vs_avg_text",
+"en_line": 129
+},
+"hall_market:vs_avg_text:3": {
+"zh": "现在和平均差不多",
+"en": "ABOUT AVERAGE NOW",
+"file": "hall_market.gd",
+"line": 130,
+"func": "vs_avg_text",
+"en_line": 130
+},
+"hall_market:eta_text:1": {
+"zh": "约 %d 秒成交",
+"en": "SELLS IN ~%d s",
+"file": "hall_market.gd",
+"line": 145,
+"func": "eta_text",
+"en_line": 145
+},
+"hall_market:eta_text:2": {
+"zh": "约 %d 分钟成交",
+"en": "SELLS IN ~%d MIN",
+"file": "hall_market.gd",
+"line": 147,
+"func": "eta_text",
+"en_line": 147
+},
+"hall_market:eta_text:3": {
+"zh": "很难卖出去",
+"en": "UNLIKELY TO SELL",
+"file": "hall_market.gd",
+"line": 148,
+"func": "eta_text",
+"en_line": 148
+},
+"hall_market:list:1": {
+"zh": "这件东西现在不能挂单",
+"en": "THIS CANNOT BE LISTED NOW",
+"file": "hall_market.gd",
+"line": 260,
+"func": "list",
+"en_line": 260
+},
+"hall_market:cancel:2": {
+"zh": "没有这张挂单",
+"en": "NO SUCH LISTING",
+"file": "hall_market.gd",
+"line": 302,
+"func": "cancel",
+"en_line": 302
+},
+"hall_market:_fill:1": {
+"zh": "交易行成交：%s 卖了 %s，扣 5%% 手续费，到账 %s",
+"en": "SOLD ON THE EXCHANGE: %s FOR %s, LESS 5%%, %s PAID",
+"file": "hall_market.gd",
+"line": 315,
+"func": "_fill",
+"en_line": 315
+},
+"hall_market:_fill:2": {
+"zh": "交易行成交",
+"en": "SOLD ON THE EXCHANGE",
+"file": "hall_market.gd",
+"line": 316,
+"func": "_fill",
+"en_line": 316
+},
+"hall_market:buy:1": {
+"zh": "现金不够：还差 %s",
+"en": "NOT ENOUGH CASH: %s SHORT",
+"file": "hall_market.gd",
+"line": 379,
+"func": "buy",
+"en_line": 379
+},
+"hall_market:buy:2": {
+"zh": "放进修缮钢材区",
+"en": "INTO THE REPAIR STEEL",
+"file": "hall_market.gd",
+"line": 385,
+"func": "buy",
+"en_line": 385
+},
+"hall_market:buy:4": {
+"zh": "仓库放不下，%d 件在待入库",
+"en": "NO ROOM: %d WAITING TO BE STORED",
+"file": "hall_market.gd",
+"line": 396,
+"func": "buy",
+"en_line": 396
+},
+"hall_market:buy:6": {
+"zh": "修缮钢材 %.0f t",
+"en": "%.0f t REPAIR STEEL",
+"file": "hall_market.gd",
+"line": 401,
+"func": "buy",
+"en_line": 401
+},
+"hall_market:level_text:1": {
+"zh": "信誉 %d 级 · %s",
+"en": "REPUTATION %d · %s",
+"file": "hall_market.gd",
+"line": 455,
+"func": "level_text",
+"en_line": 455
+},
+"hall_market:next_level_text:2": {
+"zh": "再完成 %d 张升 %d 级",
+"en": "%d MORE ORDERS TO LEVEL %d",
+"file": "hall_market.gd",
+"line": 463,
+"func": "next_level_text",
+"en_line": 463
+},
+"hall_market:short_ways:1": {
+"zh": "钢锭不够：拆船时熔炉把碎料炼成钢锭，带回来就入库",
+"en": "SHORT OF INGOTS: THE BERTH'S FURNACE CASTS THEM FROM THE SCRAP",
+"file": "hall_market.gd",
+"line": 477,
+"func": "short_ways",
+"en_line": 477
+},
+"hall_market:short_ways:2": {
+"zh": "交易行不卖钢锭，只能自己攒",
+"en": "THE EXCHANGE SELLS NONE: YOUR OWN ONLY",
+"file": "hall_market.gd",
+"line": 477,
+"func": "short_ways",
+"en_line": 477
+},
+"hall_market:short_ways:3": {
+"zh": "钢坯不够：在加工区把钢锭炼成钢坯",
+"en": "SHORT OF BILLETS: MELT INGOTS IN THE PROCESSING DISTRICT",
+"file": "hall_market.gd",
+"line": 478,
+"func": "short_ways",
+"en_line": 478
+},
+"hall_market:short_ways:4": {
+"zh": "交易行不卖钢坯，只能自己炼",
+"en": "THE EXCHANGE SELLS NONE: YOUR OWN ONLY",
+"file": "hall_market.gd",
+"line": 478,
+"func": "short_ways",
+"en_line": 478
+},
+"hall_market:short_ways:5": {
+"zh": "或在“买”页买 %d 台（每台 %s，",
+"en": "OR BUY %d ON THE BUY PAGE (%s EACH, ",
+"file": "hall_market.gd",
+"line": 482,
+"func": "short_ways",
+"en_line": 482
+},
+"hall_market:short_ways:6": {
+"zh": "交单每台还赚 %s）",
+"en": "%s MORE EACH ON DELIVERY)",
+"file": "hall_market.gd",
+"line": 483,
+"func": "short_ways",
+"en_line": 483
+},
+"hall_market:short_ways:7": {
+"zh": "买来交单每台亏 %s）",
+"en": "%s LOST EACH)",
+"file": "hall_market.gd",
+"line": 483,
+"func": "short_ways",
+"en_line": 483
+},
+"hall_market:short_ways:8": {
+"zh": "去拆一艘带%s的船，拆下整台就自动入库",
+"en": "SALVAGE A HULK WITH A %s: WHOLE ONES GO TO THE STORES",
+"file": "hall_market.gd",
+"line": 484,
+"func": "short_ways",
+"en_line": 484
+},
+"hall_market:clients:1": {
+"zh": "港务维修队",
+"en": "PORT MAINTENANCE",
+"file": "hall_market.gd",
+"line": 488,
+"func": "clients",
+"en_line": 488
+},
+"hall_market:clients:7": {
+"zh": "环带拖船队",
+"en": "BELT TUG FLEET",
+"file": "hall_market.gd",
+"line": 489,
+"func": "clients",
+"en_line": 489
+},
+"hall_market:take:1": {
+"zh": "这张订单已经不在了",
+"en": "THIS ORDER IS GONE",
+"file": "hall_market.gd",
+"line": 571,
+"func": "take",
+"en_line": 571
+},
+"hall_market:drop:1": {
+"zh": "已经在送货了，不能退",
+"en": "ALREADY ON ITS WAY",
+"file": "hall_market.gd",
+"line": 588,
+"func": "drop",
+"en_line": 588
+},
+"hall_market:_settle:1": {
+"zh": "订单完成：%s 取走 %s，到账 %s · 信誉 +1",
+"en": "ORDER DONE: %s TOOK %s, %s PAID · REPUTATION +1",
+"file": "hall_market.gd",
+"line": 644,
+"func": "_settle",
+"en_line": 644
+},
+"hall_market:_settle:2": {
+"zh": " · 升到 %d 级：订单更大、给价更高",
+"en": " · NOW LEVEL %d: BIGGER ORDERS, BETTER PRICES",
+"file": "hall_market.gd",
+"line": 646,
+"func": "_settle",
+"en_line": 646
+},
+"hall_market:order_state_text:2": {
+"zh": "备货中：还差 %.1f t，入库后自动补上",
+"en": "MAKING UP: %.1f t SHORT, ADDED AS IT COMES IN",
+"file": "hall_market.gd",
+"line": 677,
+"func": "order_state_text",
+"en_line": 677
+},
+"hall_market:order_state_text:3": {
+"zh": "备货中：还差 %d 台，入库后自动补上",
+"en": "MAKING UP: %d SHORT, ADDED AS THEY COME IN",
+"file": "hall_market.gd",
+"line": 678,
+"func": "order_state_text",
+"en_line": 678
+},
+"hall_market:order_state_text:4": {
+"zh": "到了贸易港，等客户飞船靠泊",
+"en": "AT THE TRADE PORT, WAITING FOR THE CLIENT'S SHIP",
+"file": "hall_market.gd",
+"line": 681,
+"func": "order_state_text",
+"en_line": 681
+},
+"hall_market:order_state_text:5": {
+"zh": "货运火车送往贸易港",
+"en": "ON THE FREIGHT TRAIN TO THE TRADE PORT",
+"file": "hall_market.gd",
+"line": 682,
+"func": "order_state_text",
+"en_line": 682
+},
+"hall_market:order_state_text:6": {
+"zh": "客户飞船进港",
+"en": "THE CLIENT'S SHIP COMING IN",
+"file": "hall_market.gd",
+"line": 685,
+"func": "order_state_text",
+"en_line": 685
+},
+"hall_market:order_state_text:8": {
+"zh": "客户飞船离港",
+"en": "THE CLIENT'S SHIP LEAVING",
+"file": "hall_market.gd",
+"line": 687,
+"func": "order_state_text",
+"en_line": 687
+},
+"hall_market:tick:1": {
+"zh": "订单板来了新订单：%s 要 %s，给 %s",
+"en": "NEW ORDER: %s WANTS %s FOR %s",
+"file": "hall_market.gd",
+"line": 725,
+"func": "tick",
+"en_line": 725
+},
+"hall_market:tick:2": {
+"zh": "订单过期：%s 的单没备齐，货已放回仓库，没有罚款",
+"en": "ORDER LAPSED: %s's — THE GOODS ARE BACK IN STORE, NO PENALTY",
+"file": "hall_market.gd",
+"line": 739,
+"func": "tick",
+"en_line": 739
+},
+"hall_panel:list_now:1": {
+"zh": "仓库里没有能挂单的东西",
+"en": "NOTHING IN STORE TO LIST",
+"file": "hall_panel.gd",
+"line": 169,
+"func": "list_now",
+"en_line": 169
+},
+"hall_panel:list_now:2": {
+"zh": "挂到交易行：%s · 要价 %s · %s，成交后到账 %s（扣 5%% 手续费）",
+"en": "LISTED: %s · ASKING %s · %s, %s PAID ON THE SALE (LESS 5%%)",
+"file": "hall_panel.gd",
+"line": 176,
+"func": "list_now",
+"en_line": 176
+},
+"hall_panel:cancel_listing:1": {
+"zh": "撤下挂单：%s 回到仓库",
+"en": "WITHDRAWN: %s IS BACK IN STORE",
+"file": "hall_panel.gd",
+"line": 188,
+"func": "cancel_listing",
+"en_line": 188
+},
+"hall_panel:buy_now:1": {
+"zh": "买下 %s · 付了 %s · %s",
+"en": "BOUGHT %s · PAID %s · %s",
+"file": "hall_panel.gd",
+"line": 201,
+"func": "buy_now",
+"en_line": 201
+},
+"hall_panel:take_order:1": {
+"zh": "接了 %s 的订单：仓库里都有，已备好，货运火车送往贸易港",
+"en": "TOOK %s'S ORDER: ALL IN STORE, ON THE FREIGHT TRAIN TO THE TRADE PORT",
+"file": "hall_panel.gd",
+"line": 216,
+"func": "take_order",
+"en_line": 216
+},
+"hall_panel:take_order:2": {
+"zh": "接了 %s 的订单：仓库自动备货，缺的入库后自动补上",
+"en": "TOOK %s'S ORDER: THE STORES MAKE IT UP, THE REST AS IT COMES IN",
+"file": "hall_panel.gd",
+"line": 218,
+"func": "take_order",
+"en_line": 218
+},
+"hall_panel:take_order:3": {
+"zh": "退了这张订单：备好的货放回仓库，没有罚款",
+"en": "ORDER GIVEN BACK: THE GOODS ARE BACK IN STORE, NO PENALTY",
+"file": "hall_panel.gd",
+"line": 224,
+"func": "take_order",
+"en_line": 224
+},
+"hall_panel:_draw_head:1": {
+"zh": "交易行 · 贸易港",
+"en": "THE EXCHANGE · TRADE PORT",
+"file": "hall_panel.gd",
+"line": 496,
+"func": "_draw_head",
+"en_line": 496
+},
+"hall_panel:_draw_head:2": {
+"zh": "挂单中 %d 件 · 订单 %d/%d 张 · %s",
+"en": "%d LISTED · %d/%d ORDERS · %s",
+"file": "hall_panel.gd",
+"line": 499,
+"func": "_draw_head",
+"en_line": 499
+},
+"hall_panel:_draw_head:4": {
+"zh": "回仓库  [Esc]",
+"en": "BACK TO STORES  [Esc]",
+"file": "hall_panel.gd",
+"line": 503,
+"func": "_draw_head",
+"en_line": 503
+},
+"hall_panel:_draw_head:5": {
+"zh": "关闭  [Esc]",
+"en": "CLOSE  [Esc]",
+"file": "hall_panel.gd",
+"line": 503,
+"func": "_draw_head",
+"en_line": 503
+},
+"hall_panel:_draw_head:6": {
+"zh": "关掉交易行",
+"en": "Close the exchange",
+"file": "hall_panel.gd",
+"line": 504,
+"func": "_draw_head",
+"en_line": 504
+},
+"hall_panel:_draw_head:7": {
+"zh": "回到仓库页",
+"en": "Back to the stores page",
+"file": "hall_panel.gd",
+"line": 504,
+"func": "_draw_head",
+"en_line": 504
+},
+"hall_panel:_draw_tabs:4": {
+"zh": "把仓库里的东西挂到交易行，按真实时间成交",
+"en": "List what is in store; it sells in real time",
+"file": "hall_panel.gd",
+"line": 510,
+"func": "_draw_tabs",
+"en_line": 510
+},
+"hall_panel:_draw_tabs:5": {
+"zh": "买别家公司的设备和钢材，比自己拆的贵",
+"en": "Buy other companies' machines and steel, dearer than your own",
+"file": "hall_panel.gd",
+"line": 511,
+"func": "_draw_tabs",
+"en_line": 511
+},
+"hall_panel:_draw_tabs:6": {
+"zh": "客户点名要的货，市价的 130% 起",
+"en": "What clients ask for, from 130% of market",
+"file": "hall_panel.gd",
+"line": 512,
+"func": "_draw_tabs",
+"en_line": 512
+},
+"hall_panel:_draw_tabs:7": {
+"zh": "Tab 换页",
+"en": "TAB: NEXT PAGE",
+"file": "hall_panel.gd",
+"line": 533,
+"func": "_draw_tabs",
+"en_line": 533
+},
+"hall_panel:_draw_sell:1": {
+"zh": "仓库里能卖的",
+"en": "IN STORE, FOR SALE",
+"file": "hall_panel.gd",
+"line": 554,
+"func": "_draw_sell",
+"en_line": 554
+},
+"hall_panel:_draw_sell:2": {
+"zh": "仓库是空的：拆船带回来的东西会进这里",
+"en": "THE STORES ARE EMPTY: WHAT YOU BRING HOME COMES HERE",
+"file": "hall_panel.gd",
+"line": 560,
+"func": "_draw_sell",
+"en_line": 560
+},
+"hall_panel:_draw_sell:4": {
+"zh": "在左边点一件东西",
+"en": "PICK SOMETHING ON THE LEFT",
+"file": "hall_panel.gd",
+"line": 591,
+"func": "_draw_sell",
+"en_line": 591
+},
+"hall_panel:_draw_sell:5": {
+"zh": "回收站 %s · 交易行约 %s · 订单 %s",
+"en": "RECYCLING %s · EXCHANGE ~%s · ORDER %s",
+"file": "hall_panel.gd",
+"line": 601,
+"func": "_draw_sell",
+"en_line": 601
+},
+"hall_panel:_draw_sell:6": {
+"zh": "约 %s（现在没人要）",
+"en": "~%s (NONE WANT IT NOW)",
+"file": "hall_panel.gd",
+"line": 601,
+"func": "_draw_sell",
+"en_line": 601
+},
+"hall_panel:_draw_sell:7": {
+"zh": "按建议价挂单  %s  [Enter]",
+"en": "LIST AT THE SUGGESTED PRICE  %s  [Enter]",
+"file": "hall_panel.gd",
+"line": 608,
+"func": "_draw_sell",
+"en_line": 608
+},
+"hall_panel:_draw_sell:8": {
+"zh": "挂到交易行：要价就是现在的市价，成交后扣 5% 手续费到账",
+"en": "Listed at the market now; paid less 5% on the sale",
+"file": "hall_panel.gd",
+"line": 609,
+"func": "_draw_sell",
+"en_line": 609
+},
+"hall_panel:_draw_sell:9": {
+"zh": "到账 %s · %s",
+"en": "%s PAID · %s",
+"file": "hall_panel.gd",
+"line": 610,
+"func": "_draw_sell",
+"en_line": 610
+},
+"hall_panel:_draw_sell:10": {
+"zh": "自己定价…",
+"en": "SET MY OWN PRICE…",
+"file": "hall_panel.gd",
+"line": 611,
+"func": "_draw_sell",
+"en_line": 611
+},
+"hall_panel:_draw_sell:11": {
+"zh": "打开价格滑条：要价高卖得慢，低卖得快",
+"en": "Open the price slider: dearer sells slower, cheaper faster",
+"file": "hall_panel.gd",
+"line": 611,
+"func": "_draw_sell",
+"en_line": 611
+},
+"hall_panel:_draw_curve:2": {
+"zh": "30 分钟前",
+"en": "30 MIN AGO",
+"file": "hall_panel.gd",
+"line": 670,
+"func": "_draw_curve",
+"en_line": 670
+},
+"hall_panel:_draw_curve:4": {
+"zh": "价格每隔一阵在 ±10% 之间浮动",
+"en": "PRICES DRIFT WITHIN ±10%",
+"file": "hall_panel.gd",
+"line": 675,
+"func": "_draw_curve",
+"en_line": 675
+},
+"hall_panel:_draw_slider:2": {
+"zh": "比现在市价高 %d%%",
+"en": "%d%% OVER THE MARKET NOW",
+"file": "hall_panel.gd",
+"line": 684,
+"func": "_draw_slider",
+"en_line": 684
+},
+"hall_panel:_draw_slider:3": {
+"zh": "比现在市价低 %d%%",
+"en": "%d%% UNDER THE MARKET NOW",
+"file": "hall_panel.gd",
+"line": 684,
+"func": "_draw_slider",
+"en_line": 684
+},
+"hall_panel:_draw_slider:4": {
+"zh": "就是现在的市价",
+"en": "THE MARKET NOW",
+"file": "hall_panel.gd",
+"line": 684,
+"func": "_draw_slider",
+"en_line": 684
+},
+"hall_panel:_draw_slider:7": {
+"zh": "和平均一样",
+"en": "THE AVERAGE",
+"file": "hall_panel.gd",
+"line": 685,
+"func": "_draw_slider",
+"en_line": 685
+},
+"hall_panel:_draw_slider:13": {
+"zh": "便宜 1%",
+"en": "1% cheaper",
+"file": "hall_panel.gd",
+"line": 707,
+"func": "_draw_slider",
+"en_line": 707
+},
+"hall_panel:_draw_slider:15": {
+"zh": "按这个价挂单  %s  [Enter]",
+"en": "LIST AT THIS PRICE  %s  [Enter]",
+"file": "hall_panel.gd",
+"line": 710,
+"func": "_draw_slider",
+"en_line": 710
+},
+"hall_panel:_draw_slider:16": {
+"zh": "挂到交易行：成交后扣 5% 手续费到账",
+"en": "Listed; paid less 5% on the sale",
+"file": "hall_panel.gd",
+"line": 711,
+"func": "_draw_slider",
+"en_line": 711
+},
+"hall_panel:_draw_slider:18": {
+"zh": "要价设成平均价",
+"en": "Ask the average price",
+"file": "hall_panel.gd",
+"line": 712,
+"func": "_draw_slider",
+"en_line": 712
+},
+"hall_panel:_draw_slider:19": {
+"zh": "收起  [Esc]",
+"en": "CLOSE  [Esc]",
+"file": "hall_panel.gd",
+"line": 713,
+"func": "_draw_slider",
+"en_line": 713
+},
+"hall_panel:_draw_slider:20": {
+"zh": "回到按建议价挂单",
+"en": "Back to the suggested price",
+"file": "hall_panel.gd",
+"line": 713,
+"func": "_draw_slider",
+"en_line": 713
+},
+"hall_panel:_draw_listings:1": {
+"zh": "挂单中 %d 件",
+"en": "LISTED: %d",
+"file": "hall_panel.gd",
+"line": 719,
+"func": "_draw_listings",
+"en_line": 719
+},
+"hall_panel:_draw_listings:2": {
+"zh": "最近成交：%s %s（到账 %s）",
+"en": "LAST SALE: %s %s (%s PAID)",
+"file": "hall_panel.gd",
+"line": 723,
+"func": "_draw_listings",
+"en_line": 723
+},
+"hall_panel:_draw_listings:3": {
+"zh": "还没有挂单：在上面挑一件，按 Enter 一键挂单",
+"en": "NOTHING LISTED: PICK ONE ABOVE, ENTER TO LIST",
+"file": "hall_panel.gd",
+"line": 725,
+"func": "_draw_listings",
+"en_line": 725
+},
+"hall_panel:_draw_listings:4": {
+"zh": "要价 %s · %s",
+"en": "%s · %s",
+"file": "hall_panel.gd",
+"line": 736,
+"func": "_draw_listings",
+"en_line": 736
+},
+"hall_panel:_draw_listings:6": {
+"zh": "撤下挂单，东西回到仓库",
+"en": "Withdraw: it comes back to the stores",
+"file": "hall_panel.gd",
+"line": 740,
+"func": "_draw_listings",
+"en_line": 740
+},
+"hall_panel:_draw_buy:1": {
+"zh": "别家公司挂着的货",
+"en": "OTHER COMPANIES' GOODS",
+"file": "hall_panel.gd",
+"line": 749,
+"func": "_draw_buy",
+"en_line": 749
+},
+"hall_panel:_draw_buy:2": {
+"zh": " · 修缮要用",
+"en": " · FOR THE MENDING",
+"file": "hall_panel.gd",
+"line": 772,
+"func": "_draw_buy",
+"en_line": 772
+},
+"hall_panel:_draw_buy:4": {
+"zh": "修缮钢材按吨卖，放进仓库的修缮钢材区，修港区时从那里扣",
+"en": "Repair steel by the tonne, into the stores' repair steel slot; the works take from it",
+"file": "hall_panel.gd",
+"line": 793,
+"func": "_draw_buy",
+"en_line": 793
+},
+"hall_panel:_draw_buy:5": {
+"zh": "自己拆下来的同类约 %s · 这里贵 %d%%",
+"en": "YOUR OWN SALVAGE OF THIS KIND ~%s · %d%% DEARER HERE",
+"file": "hall_panel.gd",
+"line": 795,
+"func": "_draw_buy",
+"en_line": 795
+},
+"hall_panel:_draw_buy:6": {
+"zh": "仓库里有 %.1f t",
+"en": "IN STORE: %.1f t",
+"file": "hall_panel.gd",
+"line": 797,
+"func": "_draw_buy",
+"en_line": 797
+},
+"hall_panel:_draw_buy:7": {
+"zh": "仓库里有 %d 台",
+"en": "IN STORE: %d",
+"file": "hall_panel.gd",
+"line": 797,
+"func": "_draw_buy",
+"en_line": 797
+},
+"hall_panel:_draw_buy:10": {
+"zh": "现金不够：还差 %s",
+"en": "NOT ENOUGH CASH: %s SHORT",
+"file": "hall_panel.gd",
+"line": 809,
+"func": "_draw_buy",
+"en_line": 809
+},
+"hall_panel:_draw_buy:11": {
+"zh": "买下  %s  [Enter]",
+"en": "BUY  %s  [Enter]",
+"file": "hall_panel.gd",
+"line": 810,
+"func": "_draw_buy",
+"en_line": 810
+},
+"hall_panel:_draw_buy:12": {
+"zh": "马上付钱，货放进仓库（放不下的进待入库）",
+"en": "Paid at once; into the stores (what does not fit waits to be stored)",
+"file": "hall_panel.gd",
+"line": 811,
+"func": "_draw_buy",
+"en_line": 811
+},
+"hall_panel:_draw_buy:13": {
+"zh": "现金 %s → %s",
+"en": "CASH %s → %s",
+"file": "hall_panel.gd",
+"line": 812,
+"func": "_draw_buy",
+"en_line": 812
+},
+"hall_panel:_repair_need:1": {
+"zh": "修%s还缺 %d 台：买下后修缮时自动用上",
+"en": "%s'S MENDING IS %d SHORT: BOUGHT, THE MENDING USES IT",
+"file": "hall_panel.gd",
+"line": 822,
+"func": "_repair_need",
+"en_line": 822
+},
+"hall_panel:_repair_need:2": {
+"zh": "修%s还缺钢材 %.0f t",
+"en": "%s'S MENDING IS %.0f t OF STEEL SHORT",
+"file": "hall_panel.gd",
+"line": 824,
+"func": "_repair_need",
+"en_line": 824
+},
+"hall_panel:_draw_orders:1": {
+"zh": "给价按下单时的信誉等级：1 级是市价的 130%%，每升一级多 4%%（现在 %d 级 · %d%%）· 等级越高订单越大 · 最多同时 8 张 · 过期不罚",
+"en": "PRICE BY THE LEVEL WHEN POSTED: LEVEL 1 IS 130%% OF MARKET, +4%% A LEVEL (NOW %d · %d%%) · BIGGER ORDERS HIGHER UP · UP TO 8 · NO PENALTY",
+"file": "hall_panel.gd",
+"line": 847,
+"func": "_draw_orders",
+"en_line": 847
+},
+"hall_panel:_empty_card:1": {
+"zh": "等新订单 · 约 %d 秒",
+"en": "NEXT ORDER IN ~%d s",
+"file": "hall_panel.gd",
+"line": 877,
+"func": "_empty_card",
+"en_line": 877
+},
+"hall_panel:_order_card:1": {
+"zh": "信誉 %d 级",
+"en": "REP %d",
+"file": "hall_panel.gd",
+"line": 900,
+"func": "_order_card",
+"en_line": 900
+},
+"hall_panel:_order_card:3": {
+"zh": "市价的 %d%% · 信誉 %d 级价",
+"en": "%d%% OF MARKET · LEVEL %d PRICE",
+"file": "hall_panel.gd",
+"line": 909,
+"func": "_order_card",
+"en_line": 909
+},
+"hall_panel:_order_card:4": {
+"zh": "仓库有 %.1f / %.0f t",
+"en": "IN STORE %.1f / %.0f t",
+"file": "hall_panel.gd",
+"line": 914,
+"func": "_order_card",
+"en_line": 914
+},
+"hall_panel:_order_card:5": {
+"zh": "仓库有 %d / %d 台",
+"en": "IN STORE %d / %d",
+"file": "hall_panel.gd",
+"line": 914,
+"func": "_order_card",
+"en_line": 914
+},
+"hall_panel:_order_card:6": {
+"zh": " · 可以马上交",
+"en": " · CAN GO AT ONCE",
+"file": "hall_panel.gd",
+"line": 915,
+"func": "_order_card",
+"en_line": 915
+},
+"hall_panel:_order_card:7": {
+"zh": "还有 %d 分钟 · 过期不罚",
+"en": "%d MIN LEFT · NO PENALTY",
+"file": "hall_panel.gd",
+"line": 922,
+"func": "_order_card",
+"en_line": 922
+},
+"hall_panel:_order_card:8": {
+"zh": "接单  [Enter]",
+"en": "TAKE  [Enter]",
+"file": "hall_panel.gd",
+"line": 931,
+"func": "_order_card",
+"en_line": 931
+},
+"hall_panel:_order_card:10": {
+"zh": "接下这张订单：仓库自动备货，备齐后货运火车送到贸易港，客户来取",
+"en": "Take it: the stores make it up, the train takes it to the trade port, the client collects",
+"file": "hall_panel.gd",
+"line": 932,
+"func": "_order_card",
+"en_line": 932
+},
+"hall_panel:_order_card:11": {
+"zh": "退掉这张订单：备好的货放回仓库，没有罚款",
+"en": "Give it back: the goods go back to the stores, no penalty",
+"file": "hall_panel.gd",
+"line": 932,
+"func": "_order_card",
+"en_line": 932
+},
+"hall_panel:_draw_foot:1": {
+"zh": "Enter 做这一页的主操作 · Esc 退一步 · Tab 换页",
+"en": "ENTER: THIS PAGE'S ACTION · ESC: BACK · TAB: NEXT PAGE",
+"file": "hall_panel.gd",
+"line": 970,
+"func": "_draw_foot",
+"en_line": 970
 },
 "heat_auto:install:1": {
 "zh": "已经装好了",
@@ -44269,581 +45149,661 @@
 "func": "untrained_text",
 "en_line": 0
 },
+"company_store:list_sel:1": {
+"zh": "这样东西不能挂单",
+"en": "THIS CANNOT BE LISTED",
+"file": "company_store.gd",
+"line": 247,
+"func": "list_sel",
+"en_line": 247
+},
+"company_store:list_sel:2": {
+"zh": "挂到交易行：%s · 要价 %s · %s，成交后到账 %s（扣 5%% 手续费）",
+"en": "LISTED: %s · ASKING %s · %s, %s PAID ON THE SALE (LESS 5%%)",
+"file": "company_store.gd",
+"line": 259,
+"func": "list_sel",
+"en_line": 259
+},
+"company_store:order_sel:1": {
+"zh": "接了 %s 的订单（%s）：仓库自动备货，火车送到贸易港，客户来取",
+"en": "TOOK %s'S ORDER (%s): THE STORES MAKE IT UP, THE TRAIN TAKES IT TO THE TRADE PORT",
+"file": "company_store.gd",
+"line": 287,
+"func": "order_sel",
+"en_line": 287
+},
 "company_store:where_of:1": {
 "zh": "专用区，不占仓库格子",
 "en": "ITS OWN SLOT, NOT IN THE GRID",
 "file": "company_store.gd",
-"line": 227,
+"line": 316,
 "func": "where_of",
-"en_line": 227
+"en_line": 316
 },
 "company_store:where_of:2": {
 "zh": "待入库：这一单拆回来、仓库里还放不下的货",
 "en": "WAITING: FROM THE LAST JOB, NO ROOM FOR IT YET",
 "file": "company_store.gd",
-"line": 229,
+"line": 318,
 "func": "where_of",
-"en_line": 229
+"en_line": 318
 },
 "company_store:origin_of:2": {
 "zh": "拆下于 %s · 来自 %s",
 "en": "TAKEN OFF %s · FROM %s",
 "file": "company_store.gd",
-"line": 240,
+"line": 329,
 "func": "origin_of",
-"en_line": 240
+"en_line": 329
 },
 "company_store:use_of:1": {
 "zh": "修船坞和港区用的钢板，按吨记。修港区时从这里扣，不能卖。",
 "en": "Plate for the berth's and the port's works, by the tonne. The works take from it; it is not for sale.",
 "file": "company_store.gd",
-"line": 246,
+"line": 335,
 "func": "use_of",
-"en_line": 246
+"en_line": 335
 },
 "company_store:use_of:2": {
 "zh": "熔炉把碎料炼成的钢锭，一捆 2 吨。可以卖；修好加工区以后，还能炼成钢坯卖更高的价。",
 "en": "The furnace's ingots, 2 t a bundle. They sell; once the processing district is mended they melt into billet, which sells higher.",
 "file": "company_store.gd",
-"line": 250,
+"line": 339,
 "func": "use_of",
-"en_line": 250
+"en_line": 339
 },
 "company_store:use_of:3": {
 "zh": "钢坯，一捆 2 吨：可以卖，也能轧成钢板或型材。",
 "en": "Billet, 2 t a bundle: it sells, or rolls into plate or sections.",
 "file": "company_store.gd",
-"line": 252,
+"line": 341,
 "func": "use_of",
-"en_line": 252
+"en_line": 341
 },
 "company_store:use_of:4": {
 "zh": "钢板、型材，一捆 2 吨：修船坞和港区工程用得上，也能卖。",
 "en": "Plate and sections, 2 t a bundle: for the berth's and the port's works; they sell too.",
 "file": "company_store.gd",
-"line": 254,
+"line": 343,
 "func": "use_of",
-"en_line": 254
+"en_line": 343
 },
 "company_store:use_of:5": {
 "zh": "一捆 2 吨，可以卖。",
 "en": "2 t a bundle. It sells.",
 "file": "company_store.gd",
-"line": 255,
+"line": 344,
 "func": "use_of",
-"en_line": 255
+"en_line": 344
 },
 "company_store:use_of:6": {
 "zh": "拆下来的完整机器。可以卖；也能留着修船坞和港区。",
 "en": "A whole machine off a ship. It sells, or is kept for the berth's and the port's repairs.",
 "file": "company_store.gd",
-"line": 259,
+"line": 348,
 "func": "use_of",
-"en_line": 259
+"en_line": 348
 },
 "company_store:use_of:7": {
 "zh": "修「%s」用得上：留着能省钱。也可以卖。",
 "en": "%s needs it: keep it to save money. It sells too.",
 "file": "company_store.gd",
-"line": 262,
+"line": 351,
 "func": "use_of",
-"en_line": 262
+"en_line": 351
 },
 "company_store:use_of:8": {
 "zh": " 这件太旧，修缮用不上，只能卖。",
 "en": " Too worn for repairs: sell it.",
 "file": "company_store.gd",
-"line": 264,
+"line": 353,
 "func": "use_of",
-"en_line": 264
+"en_line": 353
 },
 "company_store:use_of:9": {
 "zh": "拆下来的完整机器，修缮用不上，可以卖。",
 "en": "A whole machine off a ship, of no use for repairs: it sells.",
 "file": "company_store.gd",
-"line": 266,
+"line": 355,
 "func": "use_of",
-"en_line": 266
+"en_line": 355
 },
 "company_store:use_of:10": {
 "zh": "小零件，一盒最多 %d 个，修缮时消耗。",
 "en": "Small spares, %d to a box, used up by repairs.",
 "file": "company_store.gd",
-"line": 268,
+"line": 357,
 "func": "use_of",
-"en_line": 268
+"en_line": 357
 },
 "company_store:use_of:11": {
 "zh": "从船上抽回来的气体或液体，装在罐里。现在只能卖。",
 "en": "Gas or liquid drawn off the ship, in tanks. For now it only sells.",
 "file": "company_store.gd",
-"line": 271,
+"line": 360,
 "func": "use_of",
-"en_line": 271
+"en_line": 360
 },
 "company_store:use_of:12": {
 "zh": "危险品，装在专用箱里。现在只能卖。",
 "en": "Hazardous goods in their own boxes. For now they only sell.",
 "file": "company_store.gd",
-"line": 272,
+"line": 361,
 "func": "use_of",
-"en_line": 272
+"en_line": 361
 },
 "company_store:keep_label:1": {
 "zh": "留在修缮钢材区  [K]",
 "en": "STAYS IN ITS SLOT  [K]",
 "file": "company_store.gd",
-"line": 294,
+"line": 383,
 "func": "keep_label",
-"en_line": 294
+"en_line": 383
 },
 "company_store:keep_label:2": {
 "zh": "留着 · 仓库里没有放得下它的空位，先卖掉一些",
 "en": "KEEP · NO ROOM FOR IT: SELL SOMETHING FIRST",
 "file": "company_store.gd",
-"line": 297,
+"line": 386,
 "func": "keep_label",
-"en_line": 297
+"en_line": 386
 },
 "company_store:keep_label:3": {
 "zh": "留着 · 放进仓库（能放多少放多少）  [K]",
 "en": "KEEP · PUT IT AWAY (AS MUCH AS FITS)  [K]",
 "file": "company_store.gd",
-"line": 299,
+"line": 388,
 "func": "keep_label",
-"en_line": 299
+"en_line": 388
 },
 "company_store:keep_label:4": {
 "zh": "留着 · 放进仓库  [K]",
 "en": "KEEP · PUT IT AWAY  [K]",
 "file": "company_store.gd",
-"line": 300,
+"line": 389,
 "func": "keep_label",
-"en_line": 300
+"en_line": 389
 },
 "company_store:keep_label:5": {
 "zh": "留着 · 放进格子  [K]",
 "en": "KEEP · PUT IT IN THE GRID  [K]",
 "file": "company_store.gd",
-"line": 302,
+"line": 391,
 "func": "keep_label",
-"en_line": 302
+"en_line": 391
 },
 "company_store:keep_label:6": {
 "zh": "留着  [K]",
 "en": "KEEP  [K]",
 "file": "company_store.gd",
-"line": 303,
+"line": 392,
 "func": "keep_label",
-"en_line": 303
+"en_line": 392
 },
 "company_store:sell_sel:1": {
 "zh": "挂牌中，先撤下来",
 "en": "LISTED: WITHDRAW IT FIRST",
 "file": "company_store.gd",
-"line": 332,
+"line": 421,
 "func": "sell_sel",
-"en_line": 332
+"en_line": 421
 },
 "company_store:sell_sel:2": {
 "zh": "这样东西不能卖",
 "en": "THIS IS NOT FOR SALE",
 "file": "company_store.gd",
-"line": 334,
+"line": 423,
 "func": "sell_sel",
-"en_line": 334
+"en_line": 423
 },
 "company_store:sell_sel:3": {
 "zh": "卖给回收站：%s · +%s  现金已到账",
 "en": "SOLD TO THE RECYCLING STATION: %s · +%s, PAID",
 "file": "company_store.gd",
-"line": 343,
+"line": 432,
 "func": "sell_sel",
-"en_line": 343
+"en_line": 432
 },
 "company_store:keep_sel:1": {
 "zh": "格子里还没有放得下它的空位：先卖掉一些",
 "en": "NO ROOM FOR IT YET: SELL SOMETHING FIRST",
 "file": "company_store.gd",
-"line": 371,
+"line": 460,
 "func": "keep_sel",
-"en_line": 371
+"en_line": 460
 },
 "company_store:keep_sel:2": {
 "zh": "放进格子：%s",
 "en": "PUT IN THE GRID: %s",
 "file": "company_store.gd",
-"line": 373,
+"line": 462,
 "func": "keep_sel",
-"en_line": 373
+"en_line": 462
 },
 "company_store:keep_sel:3": {
 "zh": "修缮钢材留在专用区，修港区时自动扣",
 "en": "THE REPAIR STEEL STAYS IN ITS SLOT FOR THE WORKS",
 "file": "company_store.gd",
-"line": 377,
+"line": 466,
 "func": "keep_sel",
-"en_line": 377
+"en_line": 466
 },
 "company_store:keep_sel:4": {
 "zh": "留在仓库里：%s",
 "en": "KEPT IN STORE: %s",
 "file": "company_store.gd",
-"line": 380,
+"line": 469,
 "func": "keep_sel",
-"en_line": 380
+"en_line": 469
 },
 "company_store:keep_sel:5": {
 "zh": "仓库里没有放得下它的空位：先卖掉一些旧货或新货",
 "en": "NO ROOM FOR IT: SELL SOMETHING FIRST",
 "file": "company_store.gd",
-"line": 383,
+"line": 472,
 "func": "keep_sel",
-"en_line": 383
+"en_line": 472
 },
 "company_store:keep_sel:6": {
 "zh": "放进仓库：%s",
 "en": "PUT AWAY: %s",
 "file": "company_store.gd",
-"line": 390,
+"line": 479,
 "func": "keep_sel",
-"en_line": 390
+"en_line": 479
 },
 "company_store:keep_sel:7": {
 "zh": "待入库清空了，可以关掉仓库接下一单",
 "en": "NOTHING WAITING: CLOSE AND TAKE THE NEXT JOB",
 "file": "company_store.gd",
-"line": 399,
+"line": 488,
 "func": "keep_sel",
-"en_line": 399
+"en_line": 488
 },
 "company_store:keep_all:1": {
 "zh": "能放的都放进去了",
 "en": "WHAT FITS IS PUT AWAY",
 "file": "company_store.gd",
-"line": 408,
+"line": 497,
 "func": "keep_all",
-"en_line": 408
+"en_line": 497
 },
 "company_store:keep_all:2": {
 "zh": "待入库清空了",
 "en": "NOTHING WAITING NOW",
 "file": "company_store.gd",
-"line": 408,
+"line": 497,
 "func": "keep_all",
-"en_line": 408
+"en_line": 497
 },
 "company_store:tidy:1": {
 "zh": "整理好了：%s排在最前，其余按原料、设备、零件、特殊货，大的在前",
 "en": "TIDIED: %s FIRST, THEN RAW, EQUIPMENT, PARTS, SPECIAL, BIGGEST FIRST",
 "file": "company_store.gd",
-"line": 441,
+"line": 530,
 "func": "tidy",
-"en_line": 441
+"en_line": 530
 },
 "company_store:tidy:2": {
 "zh": "整理好了：按原料、设备、零件、特殊货，大的在前",
 "en": "TIDIED: RAW, EQUIPMENT, PARTS, SPECIAL, BIGGEST FIRST",
 "file": "company_store.gd",
-"line": 443,
+"line": 532,
 "func": "tidy",
-"en_line": 443
+"en_line": 532
 },
 "company_store:turn:1": {
 "zh": "这里转不开：先挪到空一点的地方",
 "en": "NO ROOM TO TURN IT HERE",
 "file": "company_store.gd",
-"line": 464,
+"line": 553,
 "func": "turn",
-"en_line": 464
+"en_line": 553
 },
 "company_store:_line:1": {
 "zh": "这一单有货放不下，在右边“待入库”。卖掉一些（旧货新货都行）腾出位置，再按“留着”放进来，或把它拖进格子。",
 "en": "SOME OF THE HAUL DOES NOT FIT: IT WAITS ON THE RIGHT. SELL SOMETHING TO MAKE ROOM, THEN KEEP IT OR DRAG IT IN.",
 "file": "company_store.gd",
-"line": 496,
+"line": 585,
 "func": "_line",
-"en_line": 496
+"en_line": 585
 },
 "company_store:_drop:1": {
 "zh": "放进仓库：%s",
 "en": "PUT AWAY: %s",
 "file": "company_store.gd",
-"line": 820,
+"line": 909,
 "func": "_drop",
-"en_line": 820
+"en_line": 909
 },
 "company_store:_drop:2": {
 "zh": "放不下：这里被别的东西占着",
 "en": "NO ROOM THERE",
 "file": "company_store.gd",
-"line": 833,
+"line": 922,
 "func": "_drop",
-"en_line": 833
+"en_line": 922
 },
 "company_store:_press:1": {
 "zh": "撤下了 %d 张挂单：%.1f t 回到仓库",
 "en": "%d LISTINGS WITHDRAWN: %.1f t BACK IN STORE",
 "file": "company_store.gd",
-"line": 952,
+"line": 1044,
 "func": "_press",
-"en_line": 952
+"en_line": 1044
 },
 "company_store:_draw_head:3": {
 "zh": "关闭  [Esc]",
 "en": "CLOSE  [Esc]",
 "file": "company_store.gd",
-"line": 1056,
+"line": 1152,
 "func": "_draw_head",
-"en_line": 1056
+"en_line": 1152
 },
 "company_store:_draw_filters:1": {
 "zh": "一键整理  [T]",
 "en": "TIDY  [T]",
 "file": "company_store.gd",
-"line": 1078,
+"line": 1174,
 "func": "_draw_filters",
-"en_line": 1078
+"en_line": 1174
 },
 "company_store:_draw_steel:3": {
 "zh": "修港区时从这里扣 · 不能卖 · 不占格子",
 "en": "THE WORKS TAKE FROM IT · NOT FOR SALE · NOT IN THE GRID",
 "file": "company_store.gd",
-"line": 1466,
+"line": 1562,
 "func": "_draw_steel",
-"en_line": 1466
+"en_line": 1562
 },
 "company_store:_draw_inbox:2": {
 "zh": "没有等着放进仓库的货",
 "en": "NOTHING WAITING TO BE STORED",
 "file": "company_store.gd",
-"line": 1494,
+"line": 1590,
 "func": "_draw_inbox",
-"en_line": 1494
+"en_line": 1590
 },
 "company_store:_draw_inbox:4": {
 "zh": "%d 样 · 拖进格子或按“留着”放进去",
 "en": "%d · DRAG INTO THE GRID OR KEEP",
 "file": "company_store.gd",
-"line": 1501,
+"line": 1597,
 "func": "_draw_inbox",
-"en_line": 1501
+"en_line": 1597
 },
 "company_store:_draw_inbox:5": {
 "zh": "%d 样 · 其中 %d 样是格子里放不下的旧货",
 "en": "%d · %d OLD THINGS WITH NO ROOM",
 "file": "company_store.gd",
-"line": 1503,
+"line": 1599,
 "func": "_draw_inbox",
-"en_line": 1503
+"en_line": 1599
 },
 "company_store:_draw_inbox:6": {
 "zh": "能放的都放进去",
 "en": "PUT AWAY WHAT FITS",
 "file": "company_store.gd",
-"line": 1508,
+"line": 1604,
 "func": "_draw_inbox",
-"en_line": 1508
+"en_line": 1604
 },
 "company_store:_draw_inbox:7": {
 "zh": " · 没有位置",
 "en": " · NO ROOM",
 "file": "company_store.gd",
-"line": 1529,
+"line": 1625,
 "func": "_draw_inbox",
-"en_line": 1529
+"en_line": 1625
 },
 "company_store:_draw_inbox:9": {
 "zh": "↓ 还有 %d 样",
 "en": "↓ %d MORE",
 "file": "company_store.gd",
-"line": 1533,
+"line": 1629,
 "func": "_draw_inbox",
-"en_line": 1533
+"en_line": 1629
 },
 "company_store:_draw_detail:1": {
 "zh": "点一样东西看详情",
 "en": "CLICK A THING FOR ITS DETAILS",
 "file": "company_store.gd",
-"line": 1543,
+"line": 1639,
 "func": "_draw_detail",
-"en_line": 1543
+"en_line": 1639
 },
 "company_store:_draw_detail:2": {
 "zh": "拖动挪位置，R 转向，右键更多操作",
 "en": "Drag to move · R turns · right-click for more",
 "file": "company_store.gd",
-"line": 1589,
+"line": 1685,
 "func": "_draw_detail",
-"en_line": 1589
+"en_line": 1685
 },
 "company_store:_draw_detail:3": {
 "zh": "挂牌中，不能卖",
 "en": "LISTED",
 "file": "company_store.gd",
-"line": 1598,
+"line": 1694,
 "func": "_draw_detail",
-"en_line": 1598
+"en_line": 1694
 },
 "company_store:_draw_detail:5": {
 "zh": "再按一次确认：卖给回收站 %s",
 "en": "PRESS AGAIN: SELL FOR %s",
 "file": "company_store.gd",
-"line": 1600,
+"line": 1696,
 "func": "_draw_detail",
-"en_line": 1600
+"en_line": 1696
 },
 "company_store:_draw_detail:6": {
 "zh": "卖给回收站  %s  [Enter]",
 "en": "SELL TO RECYCLING  %s  [Enter]",
 "file": "company_store.gd",
-"line": 1602,
+"line": 1698,
 "func": "_draw_detail",
-"en_line": 1602
+"en_line": 1698
 },
 "company_store:_draw_detail:7": {
 "zh": "立刻到账，市价的 6 成",
 "en": "PAID AT ONCE, 60% OF MARKET",
 "file": "company_store.gd",
-"line": 1605,
+"line": 1701,
 "func": "_draw_detail",
-"en_line": 1605
+"en_line": 1701
 },
 "company_store:_draw_detail:8": {
 "zh": "撤下挂单  %.1f t",
 "en": "WITHDRAW  %.1f t",
 "file": "company_store.gd",
-"line": 1617,
+"line": 1713,
 "func": "_draw_detail",
-"en_line": 1617
+"en_line": 1713
 },
 "company_store:_draw_detail:9": {
 "zh": "货回到仓库，才能卖或留着",
 "en": "BACK IN STORE, THEN SELL OR KEEP",
 "file": "company_store.gd",
-"line": 1618,
+"line": 1714,
 "func": "_draw_detail",
-"en_line": 1618
+"en_line": 1714
 },
 "company_store:_draw_detail:10": {
 "zh": "交易行  约 %s",
 "en": "EXCHANGE ~%s",
 "file": "company_store.gd",
-"line": 1626,
+"line": 1728,
 "func": "_draw_detail",
-"en_line": 1626
+"en_line": 1728
 },
 "company_store:_draw_detail:11": {
+"zh": "%s · 右键自己定价",
+"en": "%s · RIGHT: OWN PRICE",
+"file": "company_store.gd",
+"line": 1729,
+"func": "_draw_detail",
+"en_line": 1729
+},
+"company_store:_draw_detail:13": {
+"zh": "%s要 · 点了就接单",
+"en": "%s WANTS IT · CLICK TO TAKE",
+"file": "company_store.gd",
+"line": 1732,
+"func": "_draw_detail",
+"en_line": 1732
+},
+"company_store:_draw_detail:14": {
 "zh": "订单  约 %s",
 "en": "ORDER ~%s",
 "file": "company_store.gd",
-"line": 1626,
+"line": 1734,
 "func": "_draw_detail",
-"en_line": 1626
+"en_line": 1734
+},
+"company_store:_draw_detail:15": {
+"zh": "现在没有订单要它 · 看订单板",
+"en": "NO ORDER FOR IT NOW · SEE THE BOARD",
+"file": "company_store.gd",
+"line": 1735,
+"func": "_draw_detail",
+"en_line": 1735
+},
+"company_store:_draw_detail:16": {
+"zh": "交易行  约 %s",
+"en": "EXCHANGE ~%s",
+"file": "company_store.gd",
+"line": 1742,
+"func": "_draw_detail",
+"en_line": 1742
+},
+"company_store:_draw_detail:17": {
+"zh": "订单  约 %s",
+"en": "ORDER ~%s",
+"file": "company_store.gd",
+"line": 1742,
+"func": "_draw_detail",
+"en_line": 1742
 },
 "company_store:_draw_foot:1": {
 "zh": "Esc / F3 关闭 · 1–%d 筛选 · 拖动挪位置 · R 转向 · T 一键整理 · Enter 卖给回收站 · K 留着 · 滚轮翻页",
 "en": "Esc / F3 CLOSE · 1–%d FILTER · DRAG MOVES · R TURNS · T TIDY · ENTER SELL · K KEEP · WHEEL SCROLLS",
 "file": "company_store.gd",
-"line": 1651,
+"line": 1767,
 "func": "_draw_foot",
-"en_line": 1651
+"en_line": 1767
 },
 "company_store:_draw_foot:2": {
 "zh": " · Ctrl+拖动 框选 · Ctrl+点击 加选或减选 · 右键 菜单",
 "en": " · CTRL+DRAG BOX · CTRL+CLICK ADD / DROP · RIGHT-CLICK MENU",
 "file": "company_store.gd",
-"line": 1651,
+"line": 1767,
 "func": "_draw_foot",
-"en_line": 1651
+"en_line": 1767
 },
 "company_store:_draw_tip:1": {
 "zh": "回收站 %s · 交易行约 %s · 订单约 %s",
 "en": "RECYCLING %s · EXCHANGE ~%s · ORDER ~%s",
 "file": "company_store.gd",
-"line": 1957,
+"line": 2073,
 "func": "_draw_tip",
-"en_line": 1957
+"en_line": 2073
 },
 "company_store:_open_menu:1": {
 "zh": "卖给回收站  %s  [Enter]",
 "en": "SELL TO RECYCLING  %s  [Enter]",
 "file": "company_store.gd",
-"line": 1990,
+"line": 2106,
 "func": "_open_menu",
-"en_line": 1990
+"en_line": 2106
 },
 "company_store:_open_menu:2": {
+"zh": "挂到交易行  约 %s",
+"en": "LIST ON THE EXCHANGE  ~%s",
+"file": "company_store.gd",
+"line": 2108,
+"func": "_open_menu",
+"en_line": 2108
+},
+"company_store:_open_menu:3": {
+"zh": "看价格曲线，自己定价…",
+"en": "PRICE CURVE, SET MY OWN PRICE…",
+"file": "company_store.gd",
+"line": 2109,
+"func": "_open_menu",
+"en_line": 2109
+},
+"company_store:_open_menu:4": {
 "zh": "转向  [R]",
 "en": "TURN  [R]",
 "file": "company_store.gd",
-"line": 1994,
+"line": 2113,
 "func": "_open_menu",
-"en_line": 1994
+"en_line": 2113
 },
 "company_store:sell_multi:1": {
 "zh": "选中的东西都不能卖",
 "en": "NONE OF THESE CAN BE SOLD",
 "file": "company_store.gd",
-"line": 2127,
+"line": 2248,
 "func": "sell_multi",
-"en_line": 2127
+"en_line": 2248
 },
 "company_store:sell_multi:2": {
 "zh": "卖给回收站 %d 件 · +%s",
 "en": "SOLD TO RECYCLING: %d · +%s",
 "file": "company_store.gd",
-"line": 2130,
+"line": 2251,
 "func": "sell_multi",
-"en_line": 2130
+"en_line": 2251
 },
 "company_store:keep_multi:1": {
 "zh": "这 %d 件都留在仓库里",
 "en": "ALL %d KEPT IN STORE",
 "file": "company_store.gd",
-"line": 2147,
+"line": 2268,
 "func": "keep_multi",
-"en_line": 2147
+"en_line": 2268
 },
 "company_store:_draw_multi_detail:1": {
 "zh": "已选 %d 件",
 "en": "%d CHOSEN",
 "file": "company_store.gd",
-"line": 2156,
+"line": 2277,
 "func": "_draw_multi_detail",
-"en_line": 2156
+"en_line": 2277
 },
 "company_store:_draw_multi_detail:2": {
 "zh": "Ctrl+拖动 框选 · Ctrl+点击 加选或减选 · Esc 取消",
 "en": "CTRL+DRAG BOX · CTRL+CLICK ADD / DROP · ESC CLEARS",
 "file": "company_store.gd",
-"line": 2158,
+"line": 2279,
 "func": "_draw_multi_detail",
-"en_line": 2158
+"en_line": 2279
 },
 "company_store:_draw_multi_detail:3": {
 "zh": "回收站合计 %s",
 "en": "RECYCLING IN ALL %s",
 "file": "company_store.gd",
-"line": 2164,
+"line": 2285,
 "func": "_draw_multi_detail",
-"en_line": 2164
+"en_line": 2285
 },
 "company_store:_draw_multi_detail:5": {
 "zh": "全部卖给回收站  %s  [Enter]",
 "en": "SELL ALL TO RECYCLING  %s  [Enter]",
 "file": "company_store.gd",
-"line": 2171,
+"line": 2292,
 "func": "_draw_multi_detail",
-"en_line": 2171
+"en_line": 2292
 },
 "company_store:_draw_multi_detail:6": {
 "zh": "立刻到账，市价的 6 成",
 "en": "PAID AT ONCE, 60% OF MARKET",
 "file": "company_store.gd",
-"line": 2172,
+"line": 2293,
 "func": "_draw_multi_detail",
-"en_line": 2172
+"en_line": 2293
 },
 "demo:error_text:1": {
 "zh": "这个激活码已经在另一台电脑上用过了。",
@@ -45113,241 +46073,289 @@
 "zh": "机车加两节滚道平板车：在各区走廊里装卸，到中央环停在舱口旁，车厢滚道把货箱推进舱口，机械臂送上转盘；反过来把舱口降下的货接上车。",
 "en": "A locomotive and two roller-bed wagons: they load in the districts' corridors, stand by the ring's hatches and roll crates onto the lifts for the arms, and take the ones handed down.",
 "file": "freight_view.gd",
-"line": 373,
+"line": 484,
 "func": "_items",
-"en_line": 373
+"en_line": 484
 },
 "freight_view:_items:5": {
 "zh": "自动调度，载人接驳车优先；拉的是仓库里真实的入库、出售和炼钢的货。",
 "en": "Runs itself, the shuttle first; it carries what really moves in the warehouse.",
 "file": "freight_view.gd",
-"line": 375,
+"line": 486,
 "func": "_items",
-"en_line": 375
+"en_line": 486
 },
 "freight_works:_cut_short:1": {
 "zh": "让接驳车先过",
 "en": "LETTING THE SHUTTLE BY",
 "file": "freight_works.gd",
-"line": 965,
+"line": 969,
 "func": "_cut_short",
-"en_line": 965
+"en_line": 969
 },
 "freight_works:_retreat:1": {
 "zh": "退回让接驳车先过",
 "en": "BACKING UP FOR THE SHUTTLE",
 "file": "freight_works.gd",
-"line": 1000,
+"line": 1004,
 "func": "_retreat",
-"en_line": 1000
+"en_line": 1004
 },
 "freight_works:_retreat:2": {
 "zh": "退回让接驳车先过",
 "en": "BACKING UP FOR THE SHUTTLE",
 "file": "freight_works.gd",
-"line": 1001,
+"line": 1005,
 "func": "_retreat",
-"en_line": 1001
+"en_line": 1005
 },
 "freight_works:_back_off:1": {
 "zh": "退回让对向车先过",
 "en": "BACKING OFF FOR THE TRAIN COMING",
 "file": "freight_works.gd",
-"line": 1235,
+"line": 1239,
 "func": "_back_off",
-"en_line": 1235
+"en_line": 1239
 },
 "freight_works:_back_off:2": {
 "zh": "退回让对向车先过",
 "en": "BACKING OFF FOR THE TRAIN COMING",
 "file": "freight_works.gd",
-"line": 1236,
+"line": 1240,
 "func": "_back_off",
-"en_line": 1236
+"en_line": 1240
 },
 "freight_works:_extend:1": {
 "zh": "信号停车：前方区段有车",
 "en": "HELD AT A SIGNAL: THE BLOCK AHEAD IS OCCUPIED",
 "file": "freight_works.gd",
-"line": 1578,
+"line": 1582,
 "func": "_extend",
-"en_line": 1578
+"en_line": 1582
 },
 "freight_works:_place_name:1": {
 "zh": "中央环%s舱口",
 "en": "THE RING'S %s HATCH",
 "file": "freight_works.gd",
-"line": 1729,
+"line": 1733,
 "func": "_place_name",
-"en_line": 1729
+"en_line": 1733
 },
 "freight_works:_assign:1": {
 "zh": "等%s舱口空出",
 "en": "WAITING FOR THE %s HATCH",
 "file": "freight_works.gd",
-"line": 1749,
+"line": 1753,
 "func": "_assign",
-"en_line": 1749
+"en_line": 1753
 },
 "freight_works:_assign:2": {
 "zh": "开往中央环 · %s舱口",
 "en": "TO THE RING · %s HATCH",
 "file": "freight_works.gd",
-"line": 1752,
+"line": 1756,
 "func": "_assign",
-"en_line": 1752
+"en_line": 1756
 },
 "freight_works:_assign:4": {
 "zh": "去中央环取货 · %s舱口",
 "en": "TO THE RING FOR A CRATE · %s",
 "file": "freight_works.gd",
-"line": 1770,
+"line": 1774,
 "func": "_assign",
-"en_line": 1770
+"en_line": 1774
 },
 "freight_works:_assign:6": {
 "zh": "回%s走廊待命",
 "en": "BACK INTO THE %s CORRIDOR",
 "file": "freight_works.gd",
-"line": 1806,
+"line": 1810,
 "func": "_assign",
-"en_line": 1806
+"en_line": 1810
 },
 "freight_works:_assign_corridor:1": {
+"zh": "回货运区装上卖出的货",
+"en": "BACK TO THE CARGO DISTRICT FOR A SALE",
+"file": "freight_works.gd",
+"line": 1827,
+"func": "_assign_corridor",
+"en_line": 1827
+},
+"freight_works:_assign_corridor:2": {
+"zh": "送卖出的货去贸易港回收站",
+"en": "TAKING A SALE TO THE TRADE PORT'S RECYCLING STATION",
+"file": "freight_works.gd",
+"line": 1828,
+"func": "_assign_corridor",
+"en_line": 1828
+},
+"freight_works:_assign_corridor:3": {
+"zh": "送卖出的货去贸易港回收站",
+"en": "TAKING A SALE TO THE TRADE PORT'S RECYCLING STATION",
+"file": "freight_works.gd",
+"line": 1831,
+"func": "_assign_corridor",
+"en_line": 1831
+},
+"freight_works:_assign_corridor:4": {
 "zh": "等%s舱口空出",
 "en": "WAITING FOR THE %s HATCH",
 "file": "freight_works.gd",
-"line": 1829,
+"line": 1847,
 "func": "_assign_corridor",
-"en_line": 1829
-},
-"freight_works:_assign_corridor:2": {
-"zh": "去中央环取货 · %s舱口",
-"en": "TO THE RING FOR A CRATE · %s",
-"file": "freight_works.gd",
-"line": 1833,
-"func": "_assign_corridor",
-"en_line": 1833
-},
-"freight_works:_assign_corridor:3": {
-"zh": "开往中央环 · %s舱口",
-"en": "TO THE RING · %s HATCH",
-"file": "freight_works.gd",
-"line": 1851,
-"func": "_assign_corridor",
-"en_line": 1851
+"en_line": 1847
 },
 "freight_works:_assign_corridor:5": {
 "zh": "去中央环取货 · %s舱口",
 "en": "TO THE RING FOR A CRATE · %s",
 "file": "freight_works.gd",
-"line": 1860,
+"line": 1851,
 "func": "_assign_corridor",
-"en_line": 1860
+"en_line": 1851
 },
-"freight_works:_assign_corridor:7": {
-"zh": "回%s走廊待命",
-"en": "BACK INTO THE %s CORRIDOR",
+"freight_works:_assign_corridor:6": {
+"zh": "开往中央环 · %s舱口",
+"en": "TO THE RING · %s HATCH",
+"file": "freight_works.gd",
+"line": 1869,
+"func": "_assign_corridor",
+"en_line": 1869
+},
+"freight_works:_assign_corridor:8": {
+"zh": "去中央环取货 · %s舱口",
+"en": "TO THE RING FOR A CRATE · %s",
 "file": "freight_works.gd",
 "line": 1878,
 "func": "_assign_corridor",
 "en_line": 1878
 },
+"freight_works:_assign_corridor:10": {
+"zh": "回%s走廊待命",
+"en": "BACK INTO THE %s CORRIDOR",
+"file": "freight_works.gd",
+"line": 1896,
+"func": "_assign_corridor",
+"en_line": 1896
+},
 "freight_works:_yield:1": {
 "zh": "让接驳车先过",
 "en": "LETTING THE SHUTTLE BY",
 "file": "freight_works.gd",
-"line": 1950,
+"line": 1968,
 "func": "_yield",
-"en_line": 1950
+"en_line": 1968
 },
 "freight_works:_yield:2": {
 "zh": "给接驳车让路",
 "en": "MAKING WAY FOR THE SHUTTLE",
 "file": "freight_works.gd",
-"line": 2001,
+"line": 2019,
 "func": "_yield",
-"en_line": 2001
+"en_line": 2019
 },
 "freight_works:_yield:3": {
 "zh": "给接驳车让路",
 "en": "MAKING WAY FOR THE SHUTTLE",
 "file": "freight_works.gd",
-"line": 2002,
+"line": 2020,
 "func": "_yield",
-"en_line": 2002
+"en_line": 2020
 },
 "freight_works:_slide_clear:1": {
 "zh": "给接驳车让路",
 "en": "MAKING WAY FOR THE SHUTTLE",
 "file": "freight_works.gd",
-"line": 2057,
+"line": 2075,
 "func": "_slide_clear",
-"en_line": 2057
+"en_line": 2075
 },
 "freight_works:_slide_clear:2": {
 "zh": "给接驳车让路",
 "en": "MAKING WAY FOR THE SHUTTLE",
 "file": "freight_works.gd",
-"line": 2058,
+"line": 2076,
 "func": "_slide_clear",
-"en_line": 2058
+"en_line": 2076
+},
+"freight_works:sell:1": {
+"zh": "卖给回收站",
+"en": "SOLD FOR RECYCLING",
+"file": "freight_works.gd",
+"line": 2129,
+"func": "sell",
+"en_line": 2129
+},
+"freight_works:ship_order:1": {
+"zh": "订单交付 · %s",
+"en": "ORDER · %s",
+"file": "freight_works.gd",
+"line": 2159,
+"func": "ship_order",
+"en_line": 2159
 },
 "freight_works:_step:2": {
 "zh": "让开站台，去%s等候",
 "en": "MAKING ROOM: WAITING AT %s",
 "file": "freight_works.gd",
-"line": 2331,
+"line": 2433,
 "func": "_step",
-"en_line": 2331
+"en_line": 2433
 },
 "freight_works:_step:3": {
 "zh": "回走廊等候",
 "en": "INTO A CORRIDOR TO WAIT",
 "file": "freight_works.gd",
-"line": 2337,
+"line": 2439,
 "func": "_step",
-"en_line": 2337
+"en_line": 2439
+},
+"freight_works:_step:6": {
+"zh": "回收站吊走卖出的货",
+"en": "THE RECYCLING STATION LIFTS THE SALE AWAY",
+"file": "freight_works.gd",
+"line": 2499,
+"func": "_step",
+"en_line": 2499
 },
 "freight_works:_push:1": {
 "zh": "推货进%s舱口",
 "en": "PUSHING INTO THE %s HATCH",
 "file": "freight_works.gd",
-"line": 2402,
+"line": 2511,
 "func": "_push",
-"en_line": 2402
+"en_line": 2511
 },
 "freight_works:_push:3": {
 "zh": "锁车 · 等%s舱口",
 "en": "LOCKED · WAITING FOR THE %s HATCH",
 "file": "freight_works.gd",
-"line": 2439,
+"line": 2548,
 "func": "_push",
-"en_line": 2439
+"en_line": 2548
 },
 "freight_works:_push:4": {
 "zh": "推货进%s舱口",
 "en": "PUSHING INTO THE %s HATCH",
 "file": "freight_works.gd",
-"line": 2457,
+"line": 2566,
 "func": "_push",
-"en_line": 2457
+"en_line": 2566
 },
 "freight_works:_take:2": {
 "zh": "锁车 · 等%s舱口出货",
 "en": "LOCKED · WAITING FOR THE %s HATCH",
 "file": "freight_works.gd",
-"line": 2503,
+"line": 2612,
 "func": "_take",
-"en_line": 2503
+"en_line": 2612
 },
 "freight_works:_take:4": {
 "zh": "从%s舱口取货",
 "en": "TAKING A CRATE OFF THE %s HATCH",
 "file": "freight_works.gd",
-"line": 2516,
+"line": 2625,
 "func": "_take",
-"en_line": 2516
+"en_line": 2625
 },
 "guide_way:draw_edge:1": {
 "zh": " · 还有 %d m",
@@ -47497,73 +48505,81 @@
 "zh": "自有 %d 件",
 "en": "%d OWN",
 "file": "repair_bill.gd",
-"line": 102,
+"line": 112,
 "func": "line",
-"en_line": 102
+"en_line": 112
 },
 "repair_bill:line:2": {
 "zh": " + 钢材 %.1f t",
 "en": " + %.1f t STEEL",
 "file": "repair_bill.gd",
-"line": 104,
+"line": 114,
 "func": "line",
-"en_line": 104
+"en_line": 114
 },
 "repair_bill:line:3": {
 "zh": "要买 %d 件",
 "en": "BUY %d",
 "file": "repair_bill.gd",
-"line": 105,
+"line": 115,
 "func": "line",
-"en_line": 105
+"en_line": 115
 },
 "repair_bill:line:4": {
 "zh": " + 钢材 %.1f t",
 "en": " + %.1f t STEEL",
 "file": "repair_bill.gd",
-"line": 107,
+"line": 117,
 "func": "line",
-"en_line": 107
+"en_line": 117
 },
 "repair_bill:line:5": {
 "zh": "%s · %s %s · 合计 %s · 约 %d 秒完工",
 "en": "%s · %s %s · TOTAL %s · DONE IN ~%d s",
 "file": "repair_bill.gd",
-"line": 108,
+"line": 118,
 "func": "line",
-"en_line": 108
+"en_line": 118
 },
 "repair_bill:pay:1": {
 "zh": "现金不够：还差 %s",
 "en": "NOT ENOUGH CASH: %s SHORT",
 "file": "repair_bill.gd",
-"line": 123,
+"line": 133,
 "func": "pay",
-"en_line": 123
+"en_line": 133
 },
 "repair_bill:short_line:1": {
 "zh": "钢材 %.0f t",
 "en": "steel %.0f t",
 "file": "repair_bill.gd",
-"line": 160,
+"line": 172,
 "func": "short_line",
-"en_line": 160
+"en_line": 172
 },
 "repair_bill:short_line:2": {
+"zh": "（缺的从交易行买 %s）",
+"en": " (the rest bought on the exchange, %s)",
+"file": "repair_bill.gd",
+"line": 176,
+"func": "short_line",
+"en_line": 176
+},
+"repair_bill:short_line:3": {
 "zh": "（缺的按市价买 %s）",
 "en": " (the rest bought at market, %s)",
 "file": "repair_bill.gd",
-"line": 163,
+"line": 178,
 "func": "short_line",
-"en_line": 163
+"en_line": 178
 },
-"repair_bill:short_line:3": {
+"repair_bill:short_line:4": {
 "zh": "（仓库里都有）",
 "en": " (all in the stores)",
 "file": "repair_bill.gd",
-"line": 165,
+"line": 180,
 "func": "short_line",
-"en_line": 165
+"en_line": 180
 },
 "repair_order:_ready:1": {
 "zh": "修  [Enter]",
@@ -47614,6 +48630,14 @@
 "en_line": 82
 },
 "repair_order:_draw:3": {
+"zh": "仓库里有的先用自己的，缺的从交易行一键买齐（别家的货，比自己拆的贵）。施工队不收工钱。",
+"en": "What the warehouse has goes first; what is short is bought on the exchange in the same click (other companies' goods, dearer than your own). The crew is free.",
+"file": "repair_order.gd",
+"line": 83,
+"func": "_draw",
+"en_line": 83
+},
+"repair_order:_draw:4": {
 "zh": "仓库里有的先用自己的，缺的按市价一键买齐。施工队不收工钱。",
 "en": "What the warehouse has goes first; what is short is bought at market in the same click. The crew is free.",
 "file": "repair_order.gd",
@@ -47621,13 +48645,13 @@
 "func": "_draw",
 "en_line": 83
 },
-"repair_order:_draw:12": {
+"repair_order:_draw:13": {
 "zh": "现金 %s → 修完后 %s",
 "en": "CASH %s → AFTER %s",
 "file": "repair_order.gd",
-"line": 139,
+"line": 140,
 "func": "_draw",
-"en_line": 139
+"en_line": 140
 },
 "revive_pip:_stage_text:2": {
 "zh": "施工小艇进场",
@@ -47689,81 +48713,81 @@
 "zh": "交易行还没开放",
 "en": "THE EXCHANGE IS NOT OPEN YET",
 "file": "store_book.gd",
-"line": 72,
+"line": 73,
 "func": "exchange_closed_text",
-"en_line": 72
+"en_line": 73
 },
 "store_book:exchange_shut_text:2": {
 "zh": "修好贸易港后开放",
 "en": "ONCE THE TRADE PORT IS MENDED",
 "file": "store_book.gd",
-"line": 77,
+"line": 78,
 "func": "exchange_shut_text",
-"en_line": 77
+"en_line": 78
 },
 "store_book:blocked_text:1": {
 "zh": "还有货在“待入库”：先到仓库（F3）放进去或卖给回收站，才能接下一单",
 "en": "GOODS ARE WAITING TO BE STORED: PUT THEM AWAY OR SELL THEM (F3) BEFORE THE NEXT JOB",
 "file": "store_book.gd",
-"line": 357,
+"line": 358,
 "func": "blocked_text",
-"en_line": 357
+"en_line": 358
 },
 "store_book:summary_line:1": {
 "zh": "仓库总值 %s（回收价）/ %s（市价） · 已用 %d/%d 格",
 "en": "STORES WORTH %s (RECYCLING) / %s (MARKET) · %d/%d CELLS USED",
 "file": "store_book.gd",
-"line": 585,
+"line": 586,
 "func": "summary_line",
-"en_line": 585
+"en_line": 586
 },
 "store_book:admit:1": {
 "zh": "仓库里没有放得下它的空位了",
 "en": "NO ROOM FOR IT IN THE STORES",
 "file": "store_book.gd",
-"line": 764,
+"line": 765,
 "func": "admit",
-"en_line": 764
+"en_line": 765
 },
 "store_book:sell:1": {
 "zh": "没有这件东西",
 "en": "NOT FOUND",
 "file": "store_book.gd",
-"line": 806,
+"line": 807,
 "func": "sell",
-"en_line": 806
+"en_line": 807
 },
 "store_book:sell:2": {
 "zh": "这批被挂单占着：先按下面的“撤下挂单”",
 "en": "HELD BY A LISTING: WITHDRAW IT BELOW FIRST",
 "file": "store_book.gd",
-"line": 812,
+"line": 813,
 "func": "sell",
-"en_line": 812
+"en_line": 813
 },
 "store_book:sell:3": {
 "zh": "这批货暂时取不出来",
 "en": "THESE GOODS CANNOT BE TAKEN OUT NOW",
 "file": "store_book.gd",
-"line": 812,
+"line": 813,
 "func": "sell",
-"en_line": 812
+"en_line": 813
 },
 "store_book:sell:4": {
 "zh": "挂牌中，先撤下来",
 "en": "LISTED: WITHDRAW IT FIRST",
 "file": "store_book.gd",
-"line": 819,
+"line": 820,
 "func": "sell",
-"en_line": 819
+"en_line": 820
 },
 "store_book:sell:5": {
 "zh": "没有这件东西",
 "en": "NOT FOUND",
 "file": "store_book.gd",
-"line": 832,
+"line": 833,
 "func": "sell",
-"en_line": 832
+"en_line": 833
 },
 "store_guide:_haul_text:1": {
 "zh": "原料 %.1f 吨",
@@ -49156,9 +50180,9 @@
 "zh": "下一步",
 "en": "NEXT",
 "file": "terminal.gd",
-"line": 1748,
+"line": 1749,
 "func": "_next_step_card",
-"en_line": 1748
+"en_line": 1749
 },
 "short:85": {
 "zh": "熔化",
@@ -52100,9 +53124,9 @@
 "zh": "空",
 "en": "EMPTY",
 "file": "company_store.gd",
-"line": 1465,
+"line": 1561,
 "func": "_draw_steel",
-"en_line": 1465
+"en_line": 1561
 },
 "parts_rack_panel:_draw_rack:2": {
 "zh": "空",
@@ -53715,7 +54739,8 @@
 "zh": "已完成",
 "en": "DONE",
 "same": [
-"gear:tm_trial_done"
+"gear:tm_trial_done",
+"hall_market:order_state_text:9"
 ]
 },
 "gear:tm_trial_done": {
@@ -53723,6 +54748,14 @@
 "en": "DONE",
 "file": "gear_txt.gd",
 "line": 0
+},
+"hall_market:order_state_text:9": {
+"zh": "已完成",
+"en": "DONE",
+"file": "hall_market.gd",
+"line": 689,
+"func": "order_state_text",
+"en_line": 689
 },
 "short:407": {
 "zh": "找船",
@@ -55529,6 +56562,36 @@
 "func": "new_offer",
 "en_line": 0
 },
+"short:1656": {
+"zh": "%s 的货船",
+"en": "%s'S FREIGHTER",
+"same": [
+"client_ships:_items:1"
+]
+},
+"client_ships:_items:1": {
+"zh": "%s 的货船",
+"en": "%s'S FREIGHTER",
+"file": "client_ships.gd",
+"line": 372,
+"func": "_items",
+"en_line": 372
+},
+"short:1657": {
+"zh": "%s 的小飞船",
+"en": "%s'S COURIER",
+"same": [
+"client_ships:_items:2"
+]
+},
+"client_ships:_items:2": {
+"zh": "%s 的小飞船",
+"en": "%s'S COURIER",
+"file": "client_ships.gd",
+"line": 372,
+"func": "_items",
+"en_line": 372
+},
 "short:524": {
 "zh": "打开图鉴",
 "en": "OPEN CODEX",
@@ -55566,7 +56629,8 @@
 "company_store:steel_item:1",
 "company_store:_draw_steel:1",
 "district_panel:_fill_bill:3",
-"repair_order:_draw:8",
+"hall_market:offers:2",
+"repair_order:_draw:9",
 "route_panel:_port_bill:2",
 "store_book:cat_name:6"
 ]
@@ -55583,9 +56647,9 @@
 "zh": "修缮钢材",
 "en": "REPAIR STEEL",
 "file": "company_store.gd",
-"line": 1456,
+"line": 1552,
 "func": "_draw_steel",
-"en_line": 1456
+"en_line": 1552
 },
 "district_panel:_fill_bill:3": {
 "zh": "修缮钢材",
@@ -55595,13 +56659,21 @@
 "func": "_fill_bill",
 "en_line": 242
 },
-"repair_order:_draw:8": {
+"hall_market:offers:2": {
+"zh": "修缮钢材",
+"en": "REPAIR STEEL",
+"file": "hall_market.gd",
+"line": 357,
+"func": "offers",
+"en_line": 357
+},
+"repair_order:_draw:9": {
 "zh": "修缮钢材",
 "en": "REPAIR STEEL",
 "file": "repair_order.gd",
-"line": 112,
+"line": 113,
 "func": "_draw",
-"en_line": 112
+"en_line": 113
 },
 "route_panel:_port_bill:2": {
 "zh": "修缮钢材",
@@ -55631,17 +56703,17 @@
 "zh": "公司仓库",
 "en": "COMPANY STORES",
 "file": "company_store.gd",
-"line": 230,
+"line": 319,
 "func": "where_of",
-"en_line": 230
+"en_line": 319
 },
 "company_store:_draw_head:1": {
 "zh": "公司仓库",
 "en": "COMPANY STORES",
 "file": "company_store.gd",
-"line": 1042,
+"line": 1138,
 "func": "_draw_head",
-"en_line": 1042
+"en_line": 1138
 },
 "short:1645": {
 "zh": "第 %d 天",
@@ -55654,24 +56726,33 @@
 "zh": "第 %d 天",
 "en": "DAY %d",
 "file": "company_store.gd",
-"line": 239,
+"line": 328,
 "func": "origin_of",
-"en_line": 239
+"en_line": 328
 },
 "short:1527": {
 "zh": "资金",
 "en": "CASH",
 "same": [
-"company_store:_draw_head:2"
+"company_store:_draw_head:2",
+"hall_panel:_draw_head:3"
 ]
 },
 "company_store:_draw_head:2": {
 "zh": "资金",
 "en": "CASH",
 "file": "company_store.gd",
-"line": 1050,
+"line": 1146,
 "func": "_draw_head",
-"en_line": 1050
+"en_line": 1146
+},
+"hall_panel:_draw_head:3": {
+"zh": "资金",
+"en": "CASH",
+"file": "hall_panel.gd",
+"line": 501,
+"func": "_draw_head",
+"en_line": 501
 },
 "short:1565": {
 "zh": "待入库",
@@ -55685,17 +56766,17 @@
 "zh": "待入库",
 "en": "WAITING",
 "file": "company_store.gd",
-"line": 1493,
+"line": 1589,
 "func": "_draw_inbox",
-"en_line": 1493
+"en_line": 1589
 },
 "company_store:_draw_inbox:3": {
 "zh": "待入库",
 "en": "WAITING",
 "file": "company_store.gd",
-"line": 1499,
+"line": 1595,
 "func": "_draw_inbox",
-"en_line": 1499
+"en_line": 1595
 },
 "short:1566": {
 "zh": "回收 %s",
@@ -55708,40 +56789,64 @@
 "zh": "回收 %s",
 "en": "RECYCLE %s",
 "file": "company_store.gd",
-"line": 1531,
+"line": 1627,
 "func": "_draw_inbox",
-"en_line": 1531
+"en_line": 1627
 },
 "short:1567": {
 "zh": "不能卖",
 "en": "NOT FOR SALE",
 "same": [
-"company_store:_draw_detail:4"
+"company_store:_draw_detail:4",
+"company_store:_draw_detail:20"
 ]
 },
 "company_store:_draw_detail:4": {
 "zh": "不能卖",
 "en": "NOT FOR SALE",
 "file": "company_store.gd",
-"line": 1598,
+"line": 1694,
 "func": "_draw_detail",
-"en_line": 1598
+"en_line": 1694
+},
+"company_store:_draw_detail:20": {
+"zh": "不能卖",
+"en": "NOT FOR SALE",
+"file": "company_store.gd",
+"line": 1744,
+"func": "_draw_detail",
+"en_line": 1744
+},
+"short:1658": {
+"zh": "订单  %s",
+"en": "ORDER  %s",
+"same": [
+"company_store:_draw_detail:12"
+]
+},
+"company_store:_draw_detail:12": {
+"zh": "订单  %s",
+"en": "ORDER  %s",
+"file": "company_store.gd",
+"line": 1731,
+"func": "_draw_detail",
+"en_line": 1731
 },
 "short:1191": {
 "zh": "交易行",
 "en": "EXCHANGE",
 "same": [
-"company_store:_draw_detail:12",
+"company_store:_draw_detail:18",
 "port_walk:_fill:37"
 ]
 },
-"company_store:_draw_detail:12": {
+"company_store:_draw_detail:18": {
 "zh": "交易行",
 "en": "EXCHANGE",
 "file": "company_store.gd",
-"line": 1626,
+"line": 1742,
 "func": "_draw_detail",
-"en_line": 1626
+"en_line": 1742
 },
 "port_walk:_fill:37": {
 "zh": "交易行",
@@ -55755,16 +56860,25 @@
 "zh": "订单",
 "en": "ORDERS",
 "same": [
-"company_store:_draw_detail:13"
+"company_store:_draw_detail:19",
+"hall_panel:_draw_tabs:3"
 ]
 },
-"company_store:_draw_detail:13": {
+"company_store:_draw_detail:19": {
 "zh": "订单",
 "en": "ORDERS",
 "file": "company_store.gd",
-"line": 1626,
+"line": 1742,
 "func": "_draw_detail",
-"en_line": 1626
+"en_line": 1742
+},
+"hall_panel:_draw_tabs:3": {
+"zh": "订单",
+"en": "ORDERS",
+"file": "hall_panel.gd",
+"line": 509,
+"func": "_draw_tabs",
+"en_line": 509
 },
 "short:1564": {
 "zh": "来自 %s",
@@ -55777,9 +56891,9 @@
 "zh": "来自 %s",
 "en": "FROM %s",
 "file": "company_store.gd",
-"line": 1960,
+"line": 2076,
 "func": "_draw_tip",
-"en_line": 1960
+"en_line": 2076
 },
 "short:1621": {
 "zh": "市价合计 %s",
@@ -55792,9 +56906,9 @@
 "zh": "市价合计 %s",
 "en": "MARKET IN ALL %s",
 "file": "company_store.gd",
-"line": 2166,
+"line": 2287,
 "func": "_draw_multi_detail",
-"en_line": 2166
+"en_line": 2287
 },
 "short:1622": {
 "zh": "全部留着",
@@ -55807,9 +56921,9 @@
 "zh": "全部留着",
 "en": "KEEP THEM ALL",
 "file": "company_store.gd",
-"line": 2176,
+"line": 2297,
 "func": "_draw_multi_detail",
-"en_line": 2176
+"en_line": 2297
 },
 "short:1623": {
 "zh": "回收站 %s",
@@ -55822,9 +56936,9 @@
 "zh": "回收站 %s",
 "en": "RECYCLING %s",
 "file": "company_store.gd",
-"line": 2200,
+"line": 2321,
 "func": "_draw_ladder",
-"en_line": 2200
+"en_line": 2321
 },
 "short:1624": {
 "zh": "交易行约 %s",
@@ -55837,24 +56951,39 @@
 "zh": "交易行约 %s",
 "en": "EXCHANGE ~%s",
 "file": "company_store.gd",
-"line": 2201,
+"line": 2322,
 "func": "_draw_ladder",
-"en_line": 2201
+"en_line": 2322
 },
-"short:1625": {
-"zh": "订单约 %s",
-"en": "ORDER ~%s",
+"short:1659": {
+"zh": "订单 %s",
+"en": "ORDER %s",
 "same": [
 "company_store:_draw_ladder:3"
 ]
 },
 "company_store:_draw_ladder:3": {
+"zh": "订单 %s",
+"en": "ORDER %s",
+"file": "company_store.gd",
+"line": 2323,
+"func": "_draw_ladder",
+"en_line": 2323
+},
+"short:1625": {
+"zh": "订单约 %s",
+"en": "ORDER ~%s",
+"same": [
+"company_store:_draw_ladder:4"
+]
+},
+"company_store:_draw_ladder:4": {
 "zh": "订单约 %s",
 "en": "ORDER ~%s",
 "file": "company_store.gd",
-"line": 2202,
+"line": 2323,
 "func": "_draw_ladder",
-"en_line": 2202
+"en_line": 2323
 },
 "short:526": {
 "zh": "燃料电池",
@@ -61552,6 +62681,7 @@
 "en": "NOW",
 "same": [
 "facility_card:_draw_card:2",
+"hall_panel:_draw_curve:3",
 "port_tour:_draw_card:4"
 ]
 },
@@ -61562,6 +62692,14 @@
 "line": 82,
 "func": "_draw_card",
 "en_line": 82
+},
+"hall_panel:_draw_curve:3": {
+"zh": "现在",
+"en": "NOW",
+"file": "hall_panel.gd",
+"line": 671,
+"func": "_draw_curve",
+"en_line": 671
 },
 "port_tour:_draw_card:4": {
 "zh": "现在",
@@ -61702,7 +62840,7 @@
 "zh": " 停 %.1fs",
 "en": "",
 "file": "freight_view.gd",
-"line": 326,
+"line": 437,
 "func": "_draw_blocks",
 "en_line": 0
 },
@@ -61717,9 +62855,9 @@
 "zh": "拉着：",
 "en": "CARRYING: ",
 "file": "freight_view.gd",
-"line": 367,
+"line": 478,
 "func": "_items",
-"en_line": 367
+"en_line": 478
 },
 "short:1571": {
 "zh": "空车",
@@ -61732,9 +62870,9 @@
 "zh": "空车",
 "en": "EMPTY",
 "file": "freight_view.gd",
-"line": 369,
+"line": 480,
 "func": "_items",
-"en_line": 369
+"en_line": 480
 },
 "short:1572": {
 "zh": "货运列车 %d",
@@ -61747,9 +62885,9 @@
 "zh": "货运列车 %d",
 "en": "FREIGHT TRAIN %d",
 "file": "freight_view.gd",
-"line": 372,
+"line": 483,
 "func": "_items",
-"en_line": 372
+"en_line": 483
 },
 "short:944": {
 "zh": "待命",
@@ -61757,7 +62895,7 @@
 "same": [
 "freight_works:_new_train:1",
 "freight_works:_assign:7",
-"freight_works:_assign_corridor:8",
+"freight_works:_assign_corridor:11",
 "hub_works:arm_state:4"
 ]
 },
@@ -61765,25 +62903,25 @@
 "zh": "待命",
 "en": "STANDING BY",
 "file": "freight_works.gd",
-"line": 360,
+"line": 364,
 "func": "_new_train",
-"en_line": 360
+"en_line": 364
 },
 "freight_works:_assign:7": {
 "zh": "待命",
 "en": "STANDING BY",
 "file": "freight_works.gd",
-"line": 1808,
+"line": 1812,
 "func": "_assign",
-"en_line": 1808
+"en_line": 1812
 },
-"freight_works:_assign_corridor:8": {
+"freight_works:_assign_corridor:11": {
 "zh": "待命",
 "en": "STANDING BY",
 "file": "freight_works.gd",
-"line": 1880,
+"line": 1898,
 "func": "_assign_corridor",
-"en_line": 1880
+"en_line": 1898
 },
 "hub_works:arm_state:4": {
 "zh": "待命",
@@ -61798,7 +62936,7 @@
 "en": "TO %s",
 "same": [
 "freight_works:_assign:3",
-"freight_works:_assign_corridor:4",
+"freight_works:_assign_corridor:7",
 "freight_works:_take:3",
 "freight_works:_take:5"
 ]
@@ -61807,33 +62945,33 @@
 "zh": "开往%s",
 "en": "TO %s",
 "file": "freight_works.gd",
-"line": 1761,
+"line": 1765,
 "func": "_assign",
-"en_line": 1761
+"en_line": 1765
 },
-"freight_works:_assign_corridor:4": {
+"freight_works:_assign_corridor:7": {
 "zh": "开往%s",
 "en": "TO %s",
 "file": "freight_works.gd",
-"line": 1855,
+"line": 1873,
 "func": "_assign_corridor",
-"en_line": 1855
+"en_line": 1873
 },
 "freight_works:_take:3": {
 "zh": "开往%s",
 "en": "TO %s",
 "file": "freight_works.gd",
-"line": 2514,
+"line": 2623,
 "func": "_take",
-"en_line": 2514
+"en_line": 2623
 },
 "freight_works:_take:5": {
 "zh": "开往%s",
 "en": "TO %s",
 "file": "freight_works.gd",
-"line": 2530,
+"line": 2639,
 "func": "_take",
-"en_line": 2530
+"en_line": 2639
 },
 "short:1574": {
 "zh": "开往%s装货",
@@ -61846,24 +62984,24 @@
 "zh": "开往%s装货",
 "en": "TO %s TO LOAD",
 "file": "freight_works.gd",
-"line": 1797,
+"line": 1801,
 "func": "_assign",
-"en_line": 1797
+"en_line": 1801
 },
 "short:1575": {
 "zh": "回%s装货",
 "en": "BACK TO %s TO LOAD",
 "same": [
-"freight_works:_assign_corridor:6"
+"freight_works:_assign_corridor:9"
 ]
 },
-"freight_works:_assign_corridor:6": {
+"freight_works:_assign_corridor:9": {
 "zh": "回%s装货",
 "en": "BACK TO %s TO LOAD",
 "file": "freight_works.gd",
-"line": 1875,
+"line": 1893,
 "func": "_assign_corridor",
-"en_line": 1875
+"en_line": 1893
 },
 "short:1576": {
 "zh": "等%s空出",
@@ -61876,9 +63014,9 @@
 "zh": "等%s空出",
 "en": "WAITING FOR %s TO CLEAR",
 "file": "freight_works.gd",
-"line": 2322,
+"line": 2424,
 "func": "_step",
-"en_line": 2322
+"en_line": 2424
 },
 "short:1577": {
 "zh": "在%s装货",
@@ -61891,9 +63029,9 @@
 "zh": "在%s装货",
 "en": "LOADING AT %s",
 "file": "freight_works.gd",
-"line": 2351,
+"line": 2453,
 "func": "_step",
-"en_line": 2351
+"en_line": 2453
 },
 "short:1578": {
 "zh": "在%s卸货",
@@ -61906,9 +63044,9 @@
 "zh": "在%s卸货",
 "en": "UNLOADING AT %s",
 "file": "freight_works.gd",
-"line": 2376,
+"line": 2478,
 "func": "_step",
-"en_line": 2376
+"en_line": 2478
 },
 "short:1579": {
 "zh": "对准%s舱口",
@@ -61922,17 +63060,17 @@
 "zh": "对准%s舱口",
 "en": "LINING UP AT THE %s HATCH",
 "file": "freight_works.gd",
-"line": 2434,
+"line": 2543,
 "func": "_push",
-"en_line": 2434
+"en_line": 2543
 },
 "freight_works:_take:1": {
 "zh": "对准%s舱口",
 "en": "LINING UP AT THE %s HATCH",
 "file": "freight_works.gd",
-"line": 2498,
+"line": 2607,
 "func": "_take",
-"en_line": 2498
+"en_line": 2607
 },
 "short:1031": {
 "zh": "中央环",
@@ -61946,9 +63084,9 @@
 "zh": "中央环",
 "en": "THE RING",
 "file": "freight_works.gd",
-"line": 2566,
+"line": 2675,
 "func": "says",
-"en_line": 2566
+"en_line": 2675
 },
 "minimap:_draw_port:4": {
 "zh": "中央环",
@@ -61970,17 +63108,17 @@
 "zh": "回收气体",
 "en": "RECOVERED GAS",
 "file": "game.gd",
-"line": 2975,
+"line": 3006,
 "func": "_goods_report",
-"en_line": 2975
+"en_line": 3006
 },
 "store_book:good_name:1": {
 "zh": "回收气体",
 "en": "RECOVERED GAS",
 "file": "store_book.gd",
-"line": 369,
+"line": 370,
 "func": "good_name",
-"en_line": 369
+"en_line": 370
 },
 "short:1581": {
 "zh": "回收液体",
@@ -61994,17 +63132,17 @@
 "zh": "回收液体",
 "en": "RECOVERED LIQUIDS",
 "file": "game.gd",
-"line": 2978,
+"line": 3009,
 "func": "_goods_report",
-"en_line": 2978
+"en_line": 3009
 },
 "store_book:good_name:2": {
 "zh": "回收液体",
 "en": "RECOVERED LIQUIDS",
 "file": "store_book.gd",
-"line": 370,
+"line": 371,
 "func": "good_name",
-"en_line": 370
+"en_line": 371
 },
 "short:840": {
 "zh": "钱不够",
@@ -62314,6 +63452,11 @@
 "en": "SAVE FAILED",
 "same": [
 "grid:set_ctl:11",
+"hall_market:list:2",
+"hall_market:cancel:1",
+"hall_market:buy:5",
+"hall_market:take:2",
+"hall_market:drop:2",
 "rolling_mill:start:1",
 "ship_market:haggle:4",
 "ship_market:resell:3",
@@ -62334,6 +63477,46 @@
 "line": 150,
 "func": "set_ctl",
 "en_line": 150
+},
+"hall_market:list:2": {
+"zh": "保存失败",
+"en": "SAVE FAILED",
+"file": "hall_market.gd",
+"line": 273,
+"func": "list",
+"en_line": 273
+},
+"hall_market:cancel:1": {
+"zh": "保存失败",
+"en": "SAVE FAILED",
+"file": "hall_market.gd",
+"line": 299,
+"func": "cancel",
+"en_line": 299
+},
+"hall_market:buy:5": {
+"zh": "保存失败",
+"en": "SAVE FAILED",
+"file": "hall_market.gd",
+"line": 400,
+"func": "buy",
+"en_line": 400
+},
+"hall_market:take:2": {
+"zh": "保存失败",
+"en": "SAVE FAILED",
+"file": "hall_market.gd",
+"line": 577,
+"func": "take",
+"en_line": 577
+},
+"hall_market:drop:2": {
+"zh": "保存失败",
+"en": "SAVE FAILED",
+"file": "hall_market.gd",
+"line": 596,
+"func": "drop",
+"en_line": 596
 },
 "rolling_mill:start:1": {
 "zh": "保存失败",
@@ -62395,25 +63578,25 @@
 "zh": "保存失败",
 "en": "SAVE FAILED",
 "file": "store_book.gd",
-"line": 321,
+"line": 322,
 "func": "withdraw_key",
-"en_line": 321
+"en_line": 322
 },
 "store_book:admit:2": {
 "zh": "保存失败",
 "en": "SAVE FAILED",
 "file": "store_book.gd",
-"line": 767,
+"line": 768,
 "func": "admit",
-"en_line": 767
+"en_line": 768
 },
 "store_book:sell:6": {
 "zh": "保存失败",
 "en": "SAVE FAILED",
 "file": "store_book.gd",
-"line": 842,
+"line": 843,
 "func": "sell",
-"en_line": 842
+"en_line": 843
 },
 "warehouse:set_row:2": {
 "zh": "保存失败",
@@ -63545,6 +64728,657 @@
 "func": "prefix",
 "en_line": 139
 },
+"short:1660": {
+"zh": "台",
+"en": "PC",
+"same": [
+"hall_market:offers:1"
+]
+},
+"hall_market:offers:1": {
+"zh": "台",
+"en": "PC",
+"file": "hall_market.gd",
+"line": 356,
+"func": "offers",
+"en_line": 356
+},
+"short:1661": {
+"zh": "恒岳工业",
+"en": "HENGYUE INDUSTRIES",
+"same": [
+"hall_market:sellers_list:1",
+"hall_market:clients:3"
+]
+},
+"hall_market:sellers_list:1": {
+"zh": "恒岳工业",
+"en": "HENGYUE INDUSTRIES",
+"file": "hall_market.gd",
+"line": 362,
+"func": "sellers_list",
+"en_line": 362
+},
+"hall_market:clients:3": {
+"zh": "恒岳工业",
+"en": "HENGYUE INDUSTRIES",
+"file": "hall_market.gd",
+"line": 488,
+"func": "clients",
+"en_line": 488
+},
+"short:1662": {
+"zh": "天衡物流",
+"en": "TIANHENG LOGISTICS",
+"same": [
+"hall_market:sellers_list:2",
+"hall_market:clients:6"
+]
+},
+"hall_market:sellers_list:2": {
+"zh": "天衡物流",
+"en": "TIANHENG LOGISTICS",
+"file": "hall_market.gd",
+"line": 362,
+"func": "sellers_list",
+"en_line": 362
+},
+"hall_market:clients:6": {
+"zh": "天衡物流",
+"en": "TIANHENG LOGISTICS",
+"file": "hall_market.gd",
+"line": 489,
+"func": "clients",
+"en_line": 489
+},
+"short:1663": {
+"zh": "远岫工场",
+"en": "YUANXIU WORKS",
+"same": [
+"hall_market:sellers_list:3",
+"hall_market:clients:2"
+]
+},
+"hall_market:sellers_list:3": {
+"zh": "远岫工场",
+"en": "YUANXIU WORKS",
+"file": "hall_market.gd",
+"line": 362,
+"func": "sellers_list",
+"en_line": 362
+},
+"hall_market:clients:2": {
+"zh": "远岫工场",
+"en": "YUANXIU WORKS",
+"file": "hall_market.gd",
+"line": 488,
+"func": "clients",
+"en_line": 488
+},
+"short:1664": {
+"zh": "北辰船务",
+"en": "BEICHEN SHIPPING",
+"same": [
+"hall_market:sellers_list:4",
+"hall_market:clients:4"
+]
+},
+"hall_market:sellers_list:4": {
+"zh": "北辰船务",
+"en": "BEICHEN SHIPPING",
+"file": "hall_market.gd",
+"line": 362,
+"func": "sellers_list",
+"en_line": 362
+},
+"hall_market:clients:4": {
+"zh": "北辰船务",
+"en": "BEICHEN SHIPPING",
+"file": "hall_market.gd",
+"line": 488,
+"func": "clients",
+"en_line": 488
+},
+"short:1665": {
+"zh": "放进仓库",
+"en": "INTO THE STORES",
+"same": [
+"hall_market:buy:3"
+]
+},
+"hall_market:buy:3": {
+"zh": "放进仓库",
+"en": "INTO THE STORES",
+"file": "hall_market.gd",
+"line": 396,
+"func": "buy",
+"en_line": 396
+},
+"short:1666": {
+"zh": "新客户",
+"en": "NEW",
+"same": [
+"hall_market:level_name:1"
+]
+},
+"hall_market:level_name:1": {
+"zh": "新客户",
+"en": "NEW",
+"file": "hall_market.gd",
+"line": 449,
+"func": "level_name",
+"en_line": 449
+},
+"short:1667": {
+"zh": "熟客",
+"en": "KNOWN",
+"same": [
+"hall_market:level_name:2"
+]
+},
+"hall_market:level_name:2": {
+"zh": "熟客",
+"en": "KNOWN",
+"file": "hall_market.gd",
+"line": 449,
+"func": "level_name",
+"en_line": 449
+},
+"short:1668": {
+"zh": "可靠",
+"en": "RELIABLE",
+"same": [
+"hall_market:level_name:3"
+]
+},
+"hall_market:level_name:3": {
+"zh": "可靠",
+"en": "RELIABLE",
+"file": "hall_market.gd",
+"line": 449,
+"func": "level_name",
+"en_line": 449
+},
+"short:1669": {
+"zh": "优选",
+"en": "PREFERRED",
+"same": [
+"hall_market:level_name:4"
+]
+},
+"hall_market:level_name:4": {
+"zh": "优选",
+"en": "PREFERRED",
+"file": "hall_market.gd",
+"line": 449,
+"func": "level_name",
+"en_line": 449
+},
+"short:1670": {
+"zh": "金牌",
+"en": "GOLD",
+"same": [
+"hall_market:level_name:5"
+]
+},
+"hall_market:level_name:5": {
+"zh": "金牌",
+"en": "GOLD",
+"file": "hall_market.gd",
+"line": 449,
+"func": "level_name",
+"en_line": 449
+},
+"short:1671": {
+"zh": "已是最高",
+"en": "AT THE TOP",
+"same": [
+"hall_market:next_level_text:1"
+]
+},
+"hall_market:next_level_text:1": {
+"zh": "已是最高",
+"en": "AT THE TOP",
+"file": "hall_market.gd",
+"line": 462,
+"func": "next_level_text",
+"en_line": 462
+},
+"short:1672": {
+"zh": "青石矿业",
+"en": "QINGSHI MINING",
+"same": [
+"hall_market:clients:5"
+]
+},
+"hall_market:clients:5": {
+"zh": "青石矿业",
+"en": "QINGSHI MINING",
+"file": "hall_market.gd",
+"line": 489,
+"func": "clients",
+"en_line": 489
+},
+"short:1673": {
+"zh": "星港建设",
+"en": "STARPORT BUILDERS",
+"same": [
+"hall_market:clients:8"
+]
+},
+"hall_market:clients:8": {
+"zh": "星港建设",
+"en": "STARPORT BUILDERS",
+"file": "hall_market.gd",
+"line": 489,
+"func": "clients",
+"en_line": 489
+},
+"short:1674": {
+"zh": "可接单",
+"en": "OPEN",
+"same": [
+"hall_market:order_state_text:1"
+]
+},
+"hall_market:order_state_text:1": {
+"zh": "可接单",
+"en": "OPEN",
+"file": "hall_market.gd",
+"line": 673,
+"func": "order_state_text",
+"en_line": 673
+},
+"short:1675": {
+"zh": "装船中",
+"en": "LOADING",
+"same": [
+"hall_market:order_state_text:7"
+]
+},
+"hall_market:order_state_text:7": {
+"zh": "装船中",
+"en": "LOADING",
+"file": "hall_market.gd",
+"line": 686,
+"func": "order_state_text",
+"en_line": 686
+},
+"short:1676": {
+"zh": "已过期",
+"en": "LAPSED",
+"same": [
+"hall_market:order_state_text:10"
+]
+},
+"hall_market:order_state_text:10": {
+"zh": "已过期",
+"en": "LAPSED",
+"file": "hall_market.gd",
+"line": 690,
+"func": "order_state_text",
+"en_line": 690
+},
+"short:1677": {
+"zh": "卖",
+"en": "SELL",
+"same": [
+"hall_panel:_draw_tabs:1"
+]
+},
+"hall_panel:_draw_tabs:1": {
+"zh": "卖",
+"en": "SELL",
+"file": "hall_panel.gd",
+"line": 509,
+"func": "_draw_tabs",
+"en_line": 509
+},
+"short:1678": {
+"zh": "买",
+"en": "BUY",
+"same": [
+"hall_panel:_draw_tabs:2"
+]
+},
+"hall_panel:_draw_tabs:2": {
+"zh": "买",
+"en": "BUY",
+"file": "hall_panel.gd",
+"line": 509,
+"func": "_draw_tabs",
+"en_line": 509
+},
+"short:1679": {
+"zh": "约 %s",
+"en": "~%s",
+"same": [
+"hall_panel:_draw_sell:3"
+]
+},
+"hall_panel:_draw_sell:3": {
+"zh": "约 %s",
+"en": "~%s",
+"file": "hall_panel.gd",
+"line": 580,
+"func": "_draw_sell",
+"en_line": 580
+},
+"short:1680": {
+"zh": "平均 %s",
+"en": "AVERAGE %s",
+"same": [
+"hall_panel:_draw_curve:1"
+]
+},
+"hall_panel:_draw_curve:1": {
+"zh": "平均 %s",
+"en": "AVERAGE %s",
+"file": "hall_panel.gd",
+"line": 644,
+"func": "_draw_curve",
+"en_line": 644
+},
+"short:1681": {
+"zh": "要价  %s",
+"en": "ASKING  %s",
+"same": [
+"hall_panel:_draw_slider:1"
+]
+},
+"hall_panel:_draw_slider:1": {
+"zh": "要价  %s",
+"en": "ASKING  %s",
+"file": "hall_panel.gd",
+"line": 683,
+"func": "_draw_slider",
+"en_line": 683
+},
+"short:1682": {
+"zh": "比平均高 %d%%",
+"en": "%d%% OVER THE AVERAGE",
+"same": [
+"hall_panel:_draw_slider:5"
+]
+},
+"hall_panel:_draw_slider:5": {
+"zh": "比平均高 %d%%",
+"en": "%d%% OVER THE AVERAGE",
+"file": "hall_panel.gd",
+"line": 685,
+"func": "_draw_slider",
+"en_line": 685
+},
+"short:1683": {
+"zh": "比平均低 %d%%",
+"en": "%d%% UNDER THE AVERAGE",
+"same": [
+"hall_panel:_draw_slider:6"
+]
+},
+"hall_panel:_draw_slider:6": {
+"zh": "比平均低 %d%%",
+"en": "%d%% UNDER THE AVERAGE",
+"file": "hall_panel.gd",
+"line": 685,
+"func": "_draw_slider",
+"en_line": 685
+},
+"short:1684": {
+"zh": "到账 %s",
+"en": "%s PAID",
+"same": [
+"hall_panel:_draw_slider:8"
+]
+},
+"hall_panel:_draw_slider:8": {
+"zh": "到账 %s",
+"en": "%s PAID",
+"file": "hall_panel.gd",
+"line": 686,
+"func": "_draw_slider",
+"en_line": 686
+},
+"short:1685": {
+"zh": "市价",
+"en": "MARKET",
+"same": [
+"hall_panel:_draw_slider:9"
+]
+},
+"hall_panel:_draw_slider:9": {
+"zh": "市价",
+"en": "MARKET",
+"file": "hall_panel.gd",
+"line": 699,
+"func": "_draw_slider",
+"en_line": 699
+},
+"short:1686": {
+"zh": "平均",
+"en": "AVG",
+"same": [
+"hall_panel:_draw_slider:10"
+]
+},
+"hall_panel:_draw_slider:10": {
+"zh": "平均",
+"en": "AVG",
+"file": "hall_panel.gd",
+"line": 701,
+"func": "_draw_slider",
+"en_line": 701
+},
+"short:1687": {
+"zh": "卖得快",
+"en": "SELLS FAST",
+"same": [
+"hall_panel:_draw_slider:11"
+]
+},
+"hall_panel:_draw_slider:11": {
+"zh": "卖得快",
+"en": "SELLS FAST",
+"file": "hall_panel.gd",
+"line": 702,
+"func": "_draw_slider",
+"en_line": 702
+},
+"short:1688": {
+"zh": "卖得慢",
+"en": "SELLS SLOW",
+"same": [
+"hall_panel:_draw_slider:12"
+]
+},
+"hall_panel:_draw_slider:12": {
+"zh": "卖得慢",
+"en": "SELLS SLOW",
+"file": "hall_panel.gd",
+"line": 703,
+"func": "_draw_slider",
+"en_line": 703
+},
+"short:1689": {
+"zh": "贵 1%",
+"en": "1% dearer",
+"same": [
+"hall_panel:_draw_slider:14"
+]
+},
+"hall_panel:_draw_slider:14": {
+"zh": "贵 1%",
+"en": "1% dearer",
+"file": "hall_panel.gd",
+"line": 708,
+"func": "_draw_slider",
+"en_line": 708
+},
+"short:1690": {
+"zh": "按平均价",
+"en": "AT THE AVERAGE",
+"same": [
+"hall_panel:_draw_slider:17"
+]
+},
+"hall_panel:_draw_slider:17": {
+"zh": "按平均价",
+"en": "AT THE AVERAGE",
+"file": "hall_panel.gd",
+"line": 712,
+"func": "_draw_slider",
+"en_line": 712
+},
+"short:1691": {
+"zh": "撤单",
+"en": "WITHDRAW",
+"same": [
+"hall_panel:_draw_listings:5"
+]
+},
+"hall_panel:_draw_listings:5": {
+"zh": "撤单",
+"en": "WITHDRAW",
+"file": "hall_panel.gd",
+"line": 740,
+"func": "_draw_listings",
+"en_line": 740
+},
+"short:1692": {
+"zh": "卖家 %s",
+"en": "SELLER %s",
+"same": [
+"hall_panel:_draw_buy:3"
+]
+},
+"hall_panel:_draw_buy:3": {
+"zh": "卖家 %s",
+"en": "SELLER %s",
+"file": "hall_panel.gd",
+"line": 787,
+"func": "_draw_buy",
+"en_line": 787
+},
+"short:1693": {
+"zh": "少买一些",
+"en": "Fewer",
+"same": [
+"hall_panel:_draw_buy:8"
+]
+},
+"hall_panel:_draw_buy:8": {
+"zh": "少买一些",
+"en": "Fewer",
+"file": "hall_panel.gd",
+"line": 804,
+"func": "_draw_buy",
+"en_line": 804
+},
+"short:1694": {
+"zh": "多买一些",
+"en": "More",
+"same": [
+"hall_panel:_draw_buy:9"
+]
+},
+"hall_panel:_draw_buy:9": {
+"zh": "多买一些",
+"en": "More",
+"file": "hall_panel.gd",
+"line": 806,
+"func": "_draw_buy",
+"en_line": 806
+},
+"short:1695": {
+"zh": "市价约 %s",
+"en": "MARKET ~%s",
+"same": [
+"hall_panel:_order_card:2"
+]
+},
+"hall_panel:_order_card:2": {
+"zh": "市价约 %s",
+"en": "MARKET ~%s",
+"file": "hall_panel.gd",
+"line": 906,
+"func": "_order_card",
+"en_line": 906
+},
+"short:1696": {
+"zh": "退单",
+"en": "GIVE BACK",
+"same": [
+"hall_panel:_order_card:9"
+]
+},
+"hall_panel:_order_card:9": {
+"zh": "退单",
+"en": "GIVE BACK",
+"file": "hall_panel.gd",
+"line": 931,
+"func": "_order_card",
+"en_line": 931
+},
+"short:1697": {
+"zh": "备货",
+"en": "MAKE UP",
+"same": [
+"hall_panel:_pipeline:1"
+]
+},
+"hall_panel:_pipeline:1": {
+"zh": "备货",
+"en": "MAKE UP",
+"file": "hall_panel.gd",
+"line": 938,
+"func": "_pipeline",
+"en_line": 938
+},
+"short:1698": {
+"zh": "火车",
+"en": "TRAIN",
+"same": [
+"hall_panel:_pipeline:2"
+]
+},
+"hall_panel:_pipeline:2": {
+"zh": "火车",
+"en": "TRAIN",
+"file": "hall_panel.gd",
+"line": 938,
+"func": "_pipeline",
+"en_line": 938
+},
+"short:1699": {
+"zh": "客户飞船",
+"en": "CLIENT SHIP",
+"same": [
+"hall_panel:_pipeline:3"
+]
+},
+"hall_panel:_pipeline:3": {
+"zh": "客户飞船",
+"en": "CLIENT SHIP",
+"file": "hall_panel.gd",
+"line": 938,
+"func": "_pipeline",
+"en_line": 938
+},
+"short:1700": {
+"zh": "到账",
+"en": "PAID",
+"same": [
+"hall_panel:_pipeline:4"
+]
+},
+"hall_panel:_pipeline:4": {
+"zh": "到账",
+"en": "PAID",
+"file": "hall_panel.gd",
+"line": 938,
+"func": "_pipeline",
+"en_line": 938
+},
 "short:918": {
 "zh": "现金不够 %s",
 "en": "Not enough cash for %s",
@@ -64033,9 +65867,9 @@
 "zh": "带我去",
 "en": "TAKE ME",
 "file": "terminal.gd",
-"line": 1757,
+"line": 1758,
 "func": "_next_step_card",
-"en_line": 1757
+"en_line": 1758
 },
 "short:1495": {
 "zh": "退出引导",
@@ -67895,9 +69729,9 @@
 "zh": "机位 C",
 "en": "BAY C",
 "file": "port_structure.gd",
-"line": 45,
+"line": 50,
 "func": "half",
-"en_line": 45
+"en_line": 50
 },
 "power_station_art:_plates:2": {
 "zh": "机位 C",
@@ -67920,9 +69754,9 @@
 "zh": "配电柜",
 "en": "SWITCHGEAR",
 "file": "port_structure.gd",
-"line": 45,
+"line": 50,
 "func": "half",
-"en_line": 45
+"en_line": 50
 },
 "power_station_art:_plates:7": {
 "zh": "配电柜",
@@ -67951,9 +69785,9 @@
 "zh": "拖船托架",
 "en": "TUG CRADLE",
 "file": "port_structure.gd",
-"line": 46,
+"line": 51,
 "func": "half",
-"en_line": 46
+"en_line": 51
 },
 "short:1175": {
 "zh": "拖船甲板",
@@ -67966,9 +69800,9 @@
 "zh": "拖船甲板",
 "en": "TUG DECK",
 "file": "port_structure.gd",
-"line": 46,
+"line": 51,
 "func": "half",
-"en_line": 46
+"en_line": 51
 },
 "short:1176": {
 "zh": "备件架",
@@ -67981,9 +69815,9 @@
 "zh": "备件架",
 "en": "PARTS RACK",
 "file": "port_structure.gd",
-"line": 46,
+"line": 51,
 "func": "half",
-"en_line": 46
+"en_line": 51
 },
 "short:1177": {
 "zh": "预处理机",
@@ -67996,9 +69830,9 @@
 "zh": "预处理机",
 "en": "PRE-SHREDDER",
 "file": "port_structure.gd",
-"line": 47,
+"line": 52,
 "func": "half",
-"en_line": 47
+"en_line": 52
 },
 "short:1178": {
 "zh": "精炼炉位",
@@ -68011,9 +69845,9 @@
 "zh": "精炼炉位",
 "en": "REFINING BAY",
 "file": "port_structure.gd",
-"line": 47,
+"line": 52,
 "func": "half",
-"en_line": 47
+"en_line": 52
 },
 "short:1179": {
 "zh": "港务窗口",
@@ -68026,9 +69860,9 @@
 "zh": "港务窗口",
 "en": "PORT COUNTER",
 "file": "port_structure.gd",
-"line": 48,
+"line": 53,
 "func": "half",
-"en_line": 48
+"en_line": 53
 },
 "short:1180": {
 "zh": "候客席",
@@ -68041,9 +69875,9 @@
 "zh": "候客席",
 "en": "WAITING",
 "file": "port_structure.gd",
-"line": 48,
+"line": 53,
 "func": "half",
-"en_line": 48
+"en_line": 53
 },
 "short:1181": {
 "zh": "货位 A",
@@ -68056,9 +69890,9 @@
 "zh": "货位 A",
 "en": "BAY A",
 "file": "port_structure.gd",
-"line": 49,
+"line": 54,
 "func": "half",
-"en_line": 49
+"en_line": 54
 },
 "short:1182": {
 "zh": "货位 B",
@@ -68071,9 +69905,9 @@
 "zh": "货位 B",
 "en": "BAY B",
 "file": "port_structure.gd",
-"line": 49,
+"line": 54,
 "func": "half",
-"en_line": 49
+"en_line": 54
 },
 "short:1183": {
 "zh": "是什么",
@@ -69324,106 +71158,106 @@
 "zh": "材料",
 "en": "MATERIAL",
 "same": [
-"repair_order:_draw:4"
+"repair_order:_draw:5"
 ]
 },
-"repair_order:_draw:4": {
+"repair_order:_draw:5": {
 "zh": "材料",
 "en": "MATERIAL",
 "file": "repair_order.gd",
-"line": 89,
+"line": 90,
 "func": "_draw",
-"en_line": 89
+"en_line": 90
 },
 "short:1636": {
 "zh": "要",
 "en": "NEED",
 "same": [
-"repair_order:_draw:5"
+"repair_order:_draw:6"
 ]
 },
-"repair_order:_draw:5": {
+"repair_order:_draw:6": {
 "zh": "要",
 "en": "NEED",
 "file": "repair_order.gd",
-"line": 89,
+"line": 90,
 "func": "_draw",
-"en_line": 89
+"en_line": 90
 },
 "short:1637": {
 "zh": "自有",
 "en": "OWN",
 "same": [
-"repair_order:_draw:6"
+"repair_order:_draw:7"
 ]
 },
-"repair_order:_draw:6": {
+"repair_order:_draw:7": {
 "zh": "自有",
 "en": "OWN",
 "file": "repair_order.gd",
-"line": 89,
+"line": 90,
 "func": "_draw",
-"en_line": 89
+"en_line": 90
 },
 "short:1638": {
 "zh": "要买",
 "en": "BUY",
 "same": [
-"repair_order:_draw:7"
+"repair_order:_draw:8"
 ]
 },
-"repair_order:_draw:7": {
+"repair_order:_draw:8": {
 "zh": "要买",
 "en": "BUY",
 "file": "repair_order.gd",
-"line": 89,
+"line": 90,
 "func": "_draw",
-"en_line": 89
+"en_line": 90
 },
 "short:1639": {
 "zh": "%d 台",
 "en": "%d",
 "same": [
-"repair_order:_draw:9"
+"repair_order:_draw:10"
 ]
 },
-"repair_order:_draw:9": {
+"repair_order:_draw:10": {
 "zh": "%d 台",
 "en": "%d",
 "file": "repair_order.gd",
-"line": 121,
+"line": 122,
 "func": "_draw",
-"en_line": 121
+"en_line": 122
 },
 "short:1640": {
 "zh": "台",
 "en": "",
 "same": [
-"repair_order:_draw:10"
+"repair_order:_draw:11"
 ]
 },
-"repair_order:_draw:10": {
+"repair_order:_draw:11": {
 "zh": "台",
 "en": "",
 "file": "repair_order.gd",
-"line": 125,
+"line": 126,
 "func": "_draw",
-"en_line": 125
+"en_line": 126
 },
 "short:1641": {
 "zh": "不用买",
 "en": "NONE",
 "same": [
-"repair_order:_draw:11"
+"repair_order:_draw:12"
 ]
 },
-"repair_order:_draw:11": {
+"repair_order:_draw:12": {
 "zh": "不用买",
 "en": "NONE",
 "file": "repair_order.gd",
-"line": 134,
+"line": 135,
 "func": "_draw",
-"en_line": 134
+"en_line": 135
 },
 "short:1250": {
 "zh": "扩建计划",
@@ -71260,9 +73094,9 @@
 "zh": "即将开放",
 "en": "COMING SOON",
 "file": "store_book.gd",
-"line": 77,
+"line": 78,
 "func": "exchange_shut_text",
-"en_line": 77
+"en_line": 78
 },
 "short:1604": {
 "zh": "没有挂单",
@@ -71275,9 +73109,9 @@
 "zh": "没有挂单",
 "en": "NOTHING LISTED",
 "file": "store_book.gd",
-"line": 318,
+"line": 319,
 "func": "withdraw_key",
-"en_line": 318
+"en_line": 319
 },
 "short:1519": {
 "zh": "1 件",
@@ -71291,17 +73125,17 @@
 "zh": "1 件",
 "en": "1 PC",
 "file": "store_book.gd",
-"line": 391,
+"line": 392,
 "func": "_part_unit",
-"en_line": 391
+"en_line": 392
 },
 "store_book:_good_unit:1": {
 "zh": "1 件",
 "en": "1 PC",
 "file": "store_book.gd",
-"line": 397,
+"line": 398,
 "func": "_good_unit",
-"en_line": 397
+"en_line": 398
 },
 "short:1605": {
 "zh": "退出引导",
@@ -71359,9 +73193,9 @@
 "zh": "首趟免费",
 "en": "the first is free",
 "file": "terminal.gd",
-"line": 1388,
+"line": 1389,
 "func": "take",
-"en_line": 1388
+"en_line": 1389
 },
 "short:1644": {
 "zh": "导览",
@@ -71374,9 +73208,9 @@
 "zh": "导览",
 "en": "TOUR",
 "file": "terminal.gd",
-"line": 2269,
+"line": 2270,
 "func": "_goal_strip",
-"en_line": 2269
+"en_line": 2270
 },
 "short:1366": {
 "zh": "可升级",
@@ -71389,9 +73223,9 @@
 "zh": "可升级",
 "en": "UPGRADE",
 "file": "terminal.gd",
-"line": 2306,
+"line": 2307,
 "func": "_goal_strip",
-"en_line": 2306
+"en_line": 2307
 },
 "short:1367": {
 "zh": "可建设",
@@ -71404,9 +73238,9 @@
 "zh": "可建设",
 "en": "BUILD",
 "file": "terminal.gd",
-"line": 2306,
+"line": 2307,
 "func": "_goal_strip",
-"en_line": 2306
+"en_line": 2307
 },
 "short:1368": {
 "zh": "二手船市",
@@ -71419,9 +73253,9 @@
 "zh": "二手船市",
 "en": "HULK MARKET",
 "file": "terminal.gd",
-"line": 2429,
+"line": 2430,
 "func": "_find_head",
-"en_line": 2429
+"en_line": 2430
 },
 "short:1369": {
 "zh": "开工拆",
@@ -71434,9 +73268,9 @@
 "zh": "开工拆",
 "en": "START STRIPPING",
 "file": "terminal.gd",
-"line": 3100,
+"line": 3101,
 "func": "_bottom",
-"en_line": 3100
+"en_line": 3101
 },
 "short:1370": {
 "zh": "出问题了",
@@ -71449,9 +73283,9 @@
 "zh": "出问题了",
 "en": "SOMETHING IS WRONG",
 "file": "terminal.gd",
-"line": 3414,
+"line": 3415,
 "func": "_home",
-"en_line": 3414
+"en_line": 3415
 },
 "short:1371": {
 "zh": "%d 项",
@@ -71464,9 +73298,9 @@
 "zh": "%d 项",
 "en": "%d",
 "file": "terminal.gd",
-"line": 3418,
+"line": 3419,
 "func": "_home",
-"en_line": 3418
+"en_line": 3419
 },
 "short:1372": {
 "zh": "信号 %d",
@@ -71479,9 +73313,9 @@
 "zh": "信号 %d",
 "en": "SIGNALS %d",
 "file": "terminal.gd",
-"line": 3532,
+"line": 3533,
 "func": "_tile_live",
-"en_line": 3532
+"en_line": 3533
 },
 "short:1373": {
 "zh": "是船 %d",
@@ -71494,9 +73328,9 @@
 "zh": "是船 %d",
 "en": "HULKS %d",
 "file": "terminal.gd",
-"line": 3533,
+"line": 3534,
 "func": "_tile_live",
-"en_line": 3533
+"en_line": 3534
 },
 "short:1374": {
 "zh": "拖运途中 %d",
@@ -71509,9 +73343,9 @@
 "zh": "拖运途中 %d",
 "en": "UNDER TOW %d",
 "file": "terminal.gd",
-"line": 3535,
+"line": 3536,
 "func": "_tile_live",
-"en_line": 3535
+"en_line": 3536
 },
 "short:1375": {
 "zh": "继续作业",
@@ -71902,9 +73736,9 @@
 "zh": "商品",
 "en": "GOODS",
 "file": "trade_hall_art.gd",
-"line": 512,
+"line": 515,
 "func": "board",
-"en_line": 512
+"en_line": 515
 },
 "short:1399": {
 "zh": "最高收价",
@@ -71917,9 +73751,9 @@
 "zh": "最高收价",
 "en": "BEST BID",
 "file": "trade_hall_art.gd",
-"line": 512,
+"line": 515,
 "func": "board",
-"en_line": 512
+"en_line": 515
 },
 "short:1400": {
 "zh": "最低卖价",
@@ -71932,9 +73766,9 @@
 "zh": "最低卖价",
 "en": "BEST ASK",
 "file": "trade_hall_art.gd",
-"line": 512,
+"line": 515,
 "func": "board",
-"en_line": 512
+"en_line": 515
 },
 "short:1401": {
 "zh": "上次成交",
@@ -71947,9 +73781,9 @@
 "zh": "上次成交",
 "en": "LAST",
 "file": "trade_hall_art.gd",
-"line": 512,
+"line": 515,
 "func": "board",
-"en_line": 512
+"en_line": 515
 },
 "short:1402": {
 "zh": "加急 ",
@@ -71962,9 +73796,9 @@
 "zh": "加急 ",
 "en": "RUSH ",
 "file": "trade_hall_art.gd",
-"line": 518,
+"line": 521,
 "func": "board",
-"en_line": 518
+"en_line": 521
 },
 "short:1403": {
 "zh": "记录中…",
@@ -71977,9 +73811,9 @@
 "zh": "记录中…",
 "en": "RECORDING…",
 "file": "trade_hall_art.gd",
-"line": 531,
+"line": 534,
 "func": "_spark",
-"en_line": 531
+"en_line": 534
 },
 "short:1404": {
 "zh": "暂无生意",
@@ -71993,17 +73827,17 @@
 "zh": "暂无生意",
 "en": "NO BUSINESS",
 "file": "trade_hall_art.gd",
-"line": 579,
+"line": 582,
 "func": "signs",
-"en_line": 579
+"en_line": 582
 },
 "trade_hall_art:hover_items:5": {
 "zh": "暂无生意",
 "en": "NO BUSINESS",
 "file": "trade_hall_art.gd",
-"line": 636,
+"line": 639,
 "func": "hover_items",
-"en_line": 636
+"en_line": 639
 },
 "short:1405": {
 "zh": "收",
@@ -72017,17 +73851,17 @@
 "zh": "收",
 "en": "BUYS",
 "file": "trade_hall_art.gd",
-"line": 581,
+"line": 584,
 "func": "signs",
-"en_line": 581
+"en_line": 584
 },
 "trade_hall_art:hover_items:6": {
 "zh": "收",
 "en": "BUYS",
 "file": "trade_hall_art.gd",
-"line": 638,
+"line": 641,
 "func": "hover_items",
-"en_line": 638
+"en_line": 641
 },
 "short:1406": {
 "zh": "卖",
@@ -72041,17 +73875,17 @@
 "zh": "卖",
 "en": "SELLS",
 "file": "trade_hall_art.gd",
-"line": 581,
+"line": 584,
 "func": "signs",
-"en_line": 581
+"en_line": 584
 },
 "trade_hall_art:hover_items:7": {
 "zh": "卖",
 "en": "SELLS",
 "file": "trade_hall_art.gd",
-"line": 638,
+"line": 641,
 "func": "hover_items",
-"en_line": 638
+"en_line": 641
 },
 "short:1407": {
 "zh": "加急 · ",
@@ -72064,9 +73898,9 @@
 "zh": "加急 · ",
 "en": "RUSH · ",
 "file": "trade_hall_art.gd",
-"line": 583,
+"line": 586,
 "func": "signs",
-"en_line": 583
+"en_line": 586
 },
 "short:1408": {
 "zh": "成交 · ",
@@ -72079,9 +73913,9 @@
 "zh": "成交 · ",
 "en": "DEAL · ",
 "file": "trade_hall_art.gd",
-"line": 617,
+"line": 620,
 "func": "ticker",
-"en_line": 617
+"en_line": 620
 },
 "short:1409": {
 "zh": "报价大屏",
@@ -72094,9 +73928,9 @@
 "zh": "报价大屏",
 "en": "QUOTE BOARD",
 "file": "trade_hall_art.gd",
-"line": 628,
+"line": 631,
 "func": "hover_items",
-"en_line": 628
+"en_line": 631
 },
 "short:1410": {
 "zh": "过磅台",
@@ -72109,9 +73943,9 @@
 "zh": "过磅台",
 "en": "WEIGHBRIDGE",
 "file": "trade_hall_art.gd",
-"line": 644,
+"line": 647,
 "func": "hover_items",
-"en_line": 644
+"en_line": 647
 },
 "short:1411": {
 "zh": "封签机",
@@ -72124,9 +73958,9 @@
 "zh": "封签机",
 "en": "SEALER",
 "file": "trade_hall_art.gd",
-"line": 645,
+"line": 648,
 "func": "hover_items",
-"en_line": 645
+"en_line": 648
 },
 "short:1412": {
 "zh": "客人气闸",
@@ -72139,9 +73973,9 @@
 "zh": "客人气闸",
 "en": "VISITORS' AIRLOCK",
 "file": "trade_hall_art.gd",
-"line": 649,
+"line": 652,
 "func": "hover_items",
-"en_line": 649
+"en_line": 652
 },
 "short:1413": {
 "zh": "爽快",
@@ -72244,9 +74078,9 @@
 "zh": "装船",
 "en": "LOADING",
 "file": "trade_works.gd",
-"line": 400,
+"line": 401,
 "func": "dock_state",
-"en_line": 400
+"en_line": 401
 },
 "short:1420": {
 "zh": "卸货进仓",
@@ -72259,9 +74093,9 @@
 "zh": "卸货进仓",
 "en": "UNLOADING",
 "file": "trade_works.gd",
-"line": 400,
+"line": 401,
 "func": "dock_state",
-"en_line": 400
+"en_line": 401
 },
 "short:1421": {
 "zh": "%s 的驳船%s",
@@ -72274,9 +74108,9 @@
 "zh": "%s 的驳船%s",
 "en": "%s'S LIGHTER %s",
 "file": "trade_works.gd",
-"line": 408,
+"line": 409,
 "func": "lighter_state",
-"en_line": 408
+"en_line": 409
 },
 "short:1422": {
 "zh": "靠泊中",
@@ -72289,9 +74123,9 @@
 "zh": "靠泊中",
 "en": "BERTHING",
 "file": "trade_works.gd",
-"line": 408,
+"line": 409,
 "func": "lighter_state",
-"en_line": 408
+"en_line": 409
 },
 "short:1423": {
 "zh": "离港",
@@ -72304,9 +74138,9 @@
 "zh": "离港",
 "en": "LEAVING",
 "file": "trade_works.gd",
-"line": 408,
+"line": 409,
 "func": "lighter_state",
-"en_line": 408
+"en_line": 409
 },
 "short:1424": {
 "zh": "离开",
@@ -72319,9 +74153,9 @@
 "zh": "离开",
 "en": "LEAVING",
 "file": "trade_works.gd",
-"line": 415,
+"line": 416,
 "func": "visitor_state",
-"en_line": 415
+"en_line": 416
 },
 "short:1425": {
 "zh": "进厅中",
@@ -72334,9 +74168,9 @@
 "zh": "进厅中",
 "en": "COMING IN",
 "file": "trade_works.gd",
-"line": 417,
+"line": 418,
 "func": "visitor_state",
-"en_line": 417
+"en_line": 418
 },
 "short:1426": {
 "zh": "站",

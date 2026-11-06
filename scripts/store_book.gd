@@ -57,15 +57,16 @@ static func cap() -> int:
 
 # 128 号: the ONE answer to "can the exchange be used now" — the stores page's buttons, its messages
 # and the old-listing migration all ask this. Off until 第 2 段 (交易行与订单板) builds the new one.
-static var EXCHANGE_ON := false
+static var EXCHANGE_ON := true       # 第 2 段: the new exchange and order board (scripts/hall_market.gd)
 static func exchange_open() -> bool:
 	return EXCHANGE_ON and Port.stage("trade") >= 1
 
 
 # 128 号 返工: may the company use the old exchange at all (F8, its page, any listing)? Only when the
 # stores are off (legacy tests) or the exchange is open.
+# 第 2 段: the new exchange replaces it (scripts/hall_market.gd), so with the stores on, never.
 static func exchange_usable() -> bool:
-	return not live() or exchange_open()
+	return not live()
 
 
 static func exchange_closed_text() -> String:
@@ -92,7 +93,7 @@ static func look(ship: String, tag: String) -> Dictionary:
 	if _look.has(k):
 		return _look[k]
 	var out := {}
-	if ship != "" and tag != "" and FileAccess.file_exists(Ship.DIR + ship + ".json"):
+	if ship != "" and not ship.ends_with("_course") and tag != "" and FileAccess.file_exists(Ship.DIR + ship + ".json"):
 		for pd in Ship.load_data(ship).get("pieces", []):
 			if str(pd.get("tag", "")) != tag:
 				continue
@@ -132,7 +133,8 @@ static func look_any(ship: String, tag: String, nk: String) -> Dictionary:
 		if f.ends_with(".json") and f.get_basename() != ship:
 			files.append(f.get_basename())
 	for sh in files:
-		if not FileAccess.file_exists(Ship.DIR + str(sh) + ".json"):
+		# Training course definitions live beside ships, but are not ship data.
+		if str(sh).ends_with("_course") or not FileAccess.file_exists(Ship.DIR + str(sh) + ".json"):
 			continue
 		for pd in Ship.load_data(str(sh)).get("pieces", []):
 			if str(pd.get("name_key", "")) == nk and str(pd.get("art", "")) != "" and str(pd.get("tag", "")) != "":

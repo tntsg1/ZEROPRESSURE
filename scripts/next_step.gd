@@ -172,6 +172,8 @@ static func _open_room(g, room: String, depth := 0) -> Dictionary:
 			if g.sys.hoses.has(port):
 				return _step(w("%s 泄压中：%.0f kPa", "VENTING %s: %.0f kPa") % [_room(g, room), p],
 					w("降到 %.0f kPa 以下再开门", "open it below %.0f kPa") % LOW, _ctrl_at(g, port), true)
+			if Txt.zh and str(g.job.get("reg", "")) == "H-38" and room == "C":
+				return _step("抽空 C 控制舱：连接 %s" % port, "当前压力：%.0f kPa。使用气液回收工具（5）回收舱内气体。" % p, _ctrl_at(g, port))
 			return _step(w("抽空 %s：接 %s", "VENT %s AT %s") % [_room(g, room), port],
 				w("气液回收（5）对着接口，现在 %.0f kPa", "hose (5) on the port, %.0f kPa now") % p, _ctrl_at(g, port))
 	var door := _door_into(g, room)

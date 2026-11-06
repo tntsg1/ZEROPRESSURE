@@ -564,7 +564,7 @@ func open_remote(kind: String) -> void:
 func open_exchange(page: String = "") -> void:
 	if not Career.data.get("market",false): return
 	# 128 号 返工: the old exchange page is shut till 第 2 段 builds the new one (the stores sell to recycling)
-	if not StoreBook.exchange_usable():
+	if not StoreBook.exchange_usable() and not StoreBook.exchange_open():
 		say(StoreBook.exchange_closed_text())
 		return
 	if game_ref != null:
@@ -712,6 +712,7 @@ func _open_app(i: int) -> void:
 func _process(dt: float) -> void:
 	if game_ref == null and not get_tree().paused and not settings.is_open:
 		preload("res://scripts/industrial_exchange.gd").advance_career(dt)
+		HallMarket.tick(dt)
 	t += dt
 	_dt = dt
 	_push_t += dt

@@ -37,6 +37,7 @@ const HIST_N := 60
 
 static var lighter_k := 0.0             # 0 away … 1 alongside
 static var lighter_for := ""
+static var lighter_hide := false        # 128 号 第 2 段: an order's client freighter lies in the port (scripts/client_ships.gd)
 static var job := {}                    # {id, sell, n, made, done, crates: [...]} the trade being handed over
 static var crates: Array = []           # {x, y, at: "belt"/"hook"/"hold", wait, weighed, sealed}
 static var hold := 0                    # crates in the lighter's hold

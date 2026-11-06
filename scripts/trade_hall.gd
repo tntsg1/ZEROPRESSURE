@@ -98,6 +98,10 @@ func near_counter() -> String:
 
 # a company trade with one of the port's counters, under way: the lighter's
 func _local_trade() -> Dictionary:
+	# 128 号 第 2 段: an order's client freighter alongside — the dock's crane loads its crates
+	for o in HallMarket.orders():
+		if str(o.state) == "ship" and str(HallMarket.ship_phase(o)[0]) == "load" and not bool(o.get("loaded", false)):
+			return {"id": "hall:" + str(o.id), "state": "loading", "seller": Exchange.PLAYER, "buyer": "hall_client", "quantity": 0.5 * int(o.get("crates", 1))}
 	for t in Career.data.get("exchange", {}).get("trades", []):
 		if str(t.state) in ["awaiting_dispatch", "loading", "in_transit"] and not Shipping.orbital(t) and Shipping.other(t) in COMPANIES:
 			return t

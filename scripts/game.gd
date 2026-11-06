@@ -149,6 +149,7 @@ var receiver_commits: Dictionary = {} # every piece of a G5 mixed receipt, inclu
 var material_recovery_value := 0.0 # retained value counts as recovery, never cash
 var structure_t := 0.0          # metal through the furnace this job, tonnes (structure for repairs)
 var freight = null              # 130 号: the freight trains (scripts/freight_view.gd)
+var client_ships = null         # 128 号 第 2 段: the order board's clients' ships
 var console_ui: Control = null  # the terminal page open over the berth
 var order_review: Control = null
 var order_review_deferred := false
@@ -616,6 +617,10 @@ func _ready() -> void:
 			freight = preload("res://scripts/freight_view.gd").new()
 			freight.game = self
 			add_child(freight)
+			# 128 号 第 2 段: the order board's clients' ships (scripts/client_ships.gd)
+			client_ships = preload("res://scripts/client_ships.gd").new()
+			client_ships.game = self
+			add_child(client_ships)
 			# 63 号: the tugs bringing hulks home, seen
 			tow_traffic = preload("res://scripts/tow_traffic.gd").new()
 			tow_traffic.game = self
@@ -955,6 +960,12 @@ func _process(dt: float) -> void:
 		playtime += dt
 		if career() and Career.usable():
 			preload("res://scripts/industrial_exchange.gd").advance_career(dt)
+			# 128 号 第 2 段: the exchange's listings and the order board run in real time
+			HallMarket.tick(rdt)
+			for e in HallMarket.events:
+				if str(e.kind) != "new" and hud != null:
+					hud.show_hint(str(e.text))
+			HallMarket.events.clear()
 		# the end is checked when something is delivered; once a second as well, for a
 		# last piece that went some other way (and for a contract loaded with nothing left)
 		done_t += rdt
@@ -1975,6 +1986,15 @@ func open_district(zone: String) -> void:
 
 func open_exchange(page: String = "") -> void:
 	if console_ui != null or menu_open or state != "play": return
+	# 128 号 第 2 段: one entry — F8, the counters, the console, the guides all open the new exchange
+	if StoreBook.live():
+		if not StoreBook.exchange_open():
+			exchange_requested = false
+			say_text(StoreBook.exchange_closed_text(), Vector2.ZERO)
+			if sfx != null: sfx.play("deny")
+			return
+		open_hall("orders" if page in ["clients", "orders"] else ("buy" if page in ["feed", "buy"] else ""))
+		return
 	# 128 号 返工: shut (F8, the trade hall's counters, the trade console, the guides) until 第 2 段
 	if not StoreBook.exchange_usable():
 		exchange_requested = false
@@ -2000,6 +2020,31 @@ func open_exchange(page: String = "") -> void:
 	console_ui = panel
 	layer.add_child(panel)
 	_cover_world(true)
+
+
+# 128 号 第 2 段 交易行与订单板 (scripts/hall_panel.gd): tab "sell" / "buy" / "orders" ("" = as left);
+# pick: a warehouse unit to list (the stores page's "交易行约 $…"), or a kind the orders want
+func open_hall(tab := "", pick := "") -> void:
+	if console_ui != null or menu_open or state != "play" or not HallMarket.open():
+		return
+	tools.release_grab(false)
+	var layer := CanvasLayer.new()
+	layer.layer = 60
+	layer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(layer)
+	var panel = preload("res://scripts/hall_panel.gd").new()
+	panel.game = self
+	panel.start_tab = tab
+	panel.start_pick = pick
+	panel.on_close = func():
+		console_ui = null
+		modal_release = true
+		layer.queue_free()
+		_cover_world(false)
+	console_ui = panel
+	layer.add_child(panel)
+	_cover_world(true)
+	sfx.play("menu")
 
 
 # the hulk market (scripts/ship_market_panel.gd, 33 号)

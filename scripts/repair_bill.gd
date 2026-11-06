@@ -67,6 +67,14 @@ static func own_of(nk: String) -> Array:
 	return out
 
 
+# 128 号 第 2 段: what is short is bought at market until the exchange opens; from then on from the
+# exchange's buy page, at its price (other companies' goods, dearer than one's own salvage)
+static func buy_price(nk: String) -> float:
+	if HallMarket.open():
+		return HallMarket.buy_each(nk)
+	return STEEL_PRICE if nk == HallMarket.STEEL else kind_price(nk)
+
+
 # the bill for a zone's next stage:
 #   {zone, stage, rows: [{nk, name, need, own, buy, each}], steel: {need, own, buy, each},
 #    own_n, buy_n, buy_cash, secs, cash_ok}
@@ -80,7 +88,7 @@ static func of(zone: String) -> Dictionary:
 		var nk := str(k[0])
 		var want := int(k[1])
 		var own := mini(want, own_of(nk).size())
-		var each := kind_price(nk)
+		var each := buy_price(nk)
 		out.rows.append({"nk": nk, "name": kind_name(nk), "need": want, "own": own, "buy": want - own, "each": each})
 		out.own_n += own
 		out.buy_n += want - own
@@ -88,8 +96,10 @@ static func of(zone: String) -> Dictionary:
 	var have := float(Career.data.get("structure_t", 0.0))
 	var steel := float(need.steel)
 	var own_t := minf(steel, have)
-	out.steel = {"need": steel, "own": own_t, "buy": steel - own_t, "each": STEEL_PRICE}
-	out.buy_cash += (steel - own_t) * STEEL_PRICE
+	var steel_each := buy_price(HallMarket.STEEL)
+	out.steel = {"need": steel, "own": own_t, "buy": steel - own_t, "each": steel_each}
+	out.buy_cash += (steel - own_t) * steel_each
+	out.at_hall = HallMarket.open()
 	out.buy_cash = snappedf(out.buy_cash, 1.0)
 	out.secs = SECS_BASE + SECS_EACH * (out.own_n + out.buy_n)
 	out.cash_ok = float(Career.data.get("money", 0.0)) + 0.5 >= float(out.buy_cash)
@@ -140,6 +150,8 @@ static func pay(zone: String) -> String:
 	d.store_pos = pos
 	d.structure_t = maxf(0.0, float(d.get("structure_t", 0.0)) - float(b.steel.own))
 	d.money = float(d.get("money", 0.0)) - float(b.buy_cash)
+	if bool(b.get("at_hall", false)):
+		HallMarket.log_repair_buys(b.rows, float(b.steel.buy))
 	if d.get("exchange", {}).get("actors", {}).has(StoreBook.Exchange.PLAYER):
 		d.exchange.actors[StoreBook.Exchange.PLAYER].cash = float(d.money)
 	var log: Array = d.get("repairs", [])
@@ -160,7 +172,10 @@ static func short_line(b: Dictionary) -> String:
 		parts.append(w("钢材 %.0f t", "steel %.0f t") % float(b.steel.need))
 	var s := " · ".join(parts)
 	if int(b.get("buy_n", 0)) > 0 or float(b.get("steel", {}).get("buy", 0.0)) > 0.05:
-		s += w("（缺的按市价买 %s）", " (the rest bought at market, %s)") % Pal.money(float(b.get("buy_cash", 0.0)))
+		if bool(b.get("at_hall", false)):
+			s += w("（缺的从交易行买 %s）", " (the rest bought on the exchange, %s)") % Pal.money(float(b.get("buy_cash", 0.0)))
+		else:
+			s += w("（缺的按市价买 %s）", " (the rest bought at market, %s)") % Pal.money(float(b.get("buy_cash", 0.0)))
 	else:
 		s += w("（仓库里都有）", " (all in the stores)")
 	return s

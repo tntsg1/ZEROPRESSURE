@@ -63,12 +63,19 @@ static func centre(i: int) -> Vector2:
 func near() -> String:
 	if game == null or game.drone == null or not game.drone.alive:
 		return ""
+	var closest := ""
+	var best := REACH * Geom.M
 	for i in SPOTS.size():
-		if game.drone.global_position.distance_to(centre(i)) < REACH * Geom.M:
-			return SPOTS[i][0]
-	if rack_on() and game.career() and game.drone.global_position.distance_to(rack_centre()) < REACH * Geom.M:
-		return "rack"
-	return ""
+		var distance := game.drone.global_position.distance_to(centre(i) + Vector2(0.55, 0.0) * Geom.M)
+		if distance < best:
+			best = distance
+			closest = SPOTS[i][0]
+	if rack_on() and game.career():
+		var rack_at := kiosk_at() if StoreBook.ON else rack_centre() + Vector2(0.2, 0.0) * Geom.M
+		var distance := game.drone.global_position.distance_to(rack_at)
+		if distance < best:
+			closest = "rack"
+	return closest
 
 
 func _process(dt: float) -> void:

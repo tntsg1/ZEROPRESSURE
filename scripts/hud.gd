@@ -812,6 +812,14 @@ func _tw(s: String, size_px: int, f: Font = null) -> float:
 	return (f if f != null else font).get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x
 
 
+# Measure wrapping with the same font and width used to draw the HUD text.
+func _wrapped_lines(s: String, width: float, size_px: int, f: Font = null) -> int:
+	var fo := f if f != null else font
+	var line_h: float = fo.get_height(size_px)
+	var total_h: float = fo.get_multiline_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, maxf(width, 1.0), size_px).y
+	return maxi(1, ceili(total_h / maxf(line_h, 1.0) - 0.001))
+
+
 func _panel(r: Rect2, a: float = 0.82) -> void:
 	UI.panel(c, r, a / 0.95)
 
@@ -2453,8 +2461,9 @@ func _offer_rows() -> Array:
 	var g = game
 	var o: Dictionary = g.job
 	var ty: Dictionary = Market.type_of(o.get("ship", ""))
+	var is_h38 := Txt.zh and str(o.get("reg", "")) == "H-38"
 	var rows: Array = []
-	rows.append(["h", g.txt("c_title_n") % o.get("id", ""), 14])
+	rows.append(["h", ("拆解作业 %s · 尚未开工" % o.get("id", "")) if is_h38 else g.txt("c_title_n") % o.get("id", ""), 14])
 	if o.has("reg"):
 		rows.append(["t", "%s · %s" % [o.get("reg", ""), (ty.name[0] if Txt.zh else ty.name[1]) if not ty.is_empty() else ""], 28])
 	else:
@@ -2462,16 +2471,16 @@ func _offer_rows() -> Array:
 		rows.append(["t", str(ttl[0] if Txt.zh else ttl[1]), 26])
 	rows.append(["gap", "", 12])
 	rows.append(["h", g.txt("c_req"), 13])
-	rows.append(["li", g.txt("c_req1"), 16])
+	rows.append(["li", "不得发生重大船坞事故。" if is_h38 else g.txt("c_req1"), 16])
 	# what this contract asks for by name (a part-ship job has its own list, or none)
 	var must: Array = []
 	for it in g.mandatory_items():
 		must.append("%s %s" % [it[1], it[0]])
 	if not must.is_empty():
 		rows.append(["li", g.txt("c_req2_n") % "、".join(must), 16])
-	rows.append(["li", g.txt("c_req3_n") % Pal.money(float(o.get("value", g.ship.get("value", {}).get("total", 0.0)))), 16])
+	rows.append(["li", ("回收价值至少达到预估总额的 70%%（预估 %s）。" if is_h38 else g.txt("c_req3_n")) % Pal.money(float(o.get("value", g.ship.get("value", {}).get("total", 0.0)))), 16])
 	if o.get("scope", "full") == "full":
-		rows.append(["li", g.txt("c_req4"), 16])
+		rows.append(["li", "拆完整艘船，清空船坞。" if is_h38 else g.txt("c_req4"), 16])
 	if Market.goal_text(o) != "":
 		rows.append(["li", Market.goal_text(o), 16])
 	rows.append(["gap", "", 10])
@@ -2480,11 +2489,12 @@ func _offer_rows() -> Array:
 	rows.append(["h", g.txt("tm_reason"), 13])
 	rows.append(["p", Copy.slot(reason), 15])
 	if not o.get("logs", []).is_empty():
-		rows.append(["h", g.txt("c_log_n"), 13])
+		rows.append(["h", "船舶记录 · 尚未核实" if is_h38 else g.txt("c_log_n"), 13])
+		var h38_logs := {"X_log_fire_system_2": "值班记录：昨天警报突然自己响了，查了半天没找到原因。最后只好先把警报声关掉。", "G_log_08": "交接记录：离船之前，记得通知其他人来拿去年拍的合照。", "G_log_04": "值班记录：船员的私人物品已经清点完毕。剩下的旧家具和生活用品不用带走。"}
 		for lid in o.get("logs", []):
-			rows.append(["li", Copy.slot(lid), 16])
+			rows.append(["li", str(h38_logs.get(str(lid), Copy.slot(lid))) if is_h38 else Copy.slot(lid), 16])
 	rows.append(["gap", "", 6])
-	rows.append(["p", g.txt("c_drawing"), 15])
+	rows.append(["p", "出厂工程图：按 Tab 查看原始设计图。图纸记录的是出厂结构，实际船况可能有所不同。" if is_h38 else g.txt("c_drawing"), 15])
 	if o.get("scope", "full") != "full":
 		rows.append(["h", g.txt("sc_" + o.scope), 13])
 		rows.append(["p", Market.scope_text(o), 15])
@@ -3137,21 +3147,26 @@ func _asset_board(cr: Rect2) -> void:
 	# 110 号 (Q2 C / Q3 A): the one thing to do next, at the top; under a row that isn't safe, how
 	var nx: Dictionary = NextStep.of(game)
 	var nx_how := 0
-	if not nx.is_empty() and str(nx.how) != "":
-		nx_how = clampi(ceili(_tw(str(nx.how), 12) / maxf(cr.size.x - 40.0, 1.0)), 1, 3)
+	var nx_title_lines := 0
+	if not nx.is_empty():
+		nx_title_lines = _wrapped_lines(str(nx.t), cr.size.x - 40.0, 15, font_b)
+		if str(nx.how) != "":
+			nx_how = _wrapped_lines(str(nx.how), cr.size.x - 40.0, 12)
 	var fixes := 0
 	if NextStep.on(game):
 		for row in rows:
 			if row.get("alert", false) and str(row.get("fix", "")) != "":
 				fixes += 1
-	var nx_h := (42.0 + nx_how * 17.0) if not nx.is_empty() else 0.0
+	var nx_h := (42.0 + nx_how * 17.0 + maxf(0, nx_title_lines - 1) * 20.0) if not nx.is_empty() else 0.0
 	# 112 号: a long warning wraps inside the board instead of running past its edge
 	var warn_w := cr.size.x - 34.0
 	var warn_n := 0
 	for wl in warn:
-		warn_n += clampi(ceili(_tw(str(wl), 12) / maxf(warn_w, 1.0)), 1, 3)
+		warn_n += _wrapped_lines(str(wl), warn_w, 12)
 	var h := 64.0 + (18.0 if two else 0.0) + nx_h + rows.size() * 24.0 + fixes * 17.0 + warn_n * 17.0 + (10.0 + recent.size() * 20.0 if not recent.is_empty() else 0.0)
-	var r := Rect2(cr.position.x, cr.end.y + 12.0, cr.size.x, h)
+	# The camera OSD labels the contract panel below its bottom edge. Reserve a
+	# separate line for that label before starting the asset board.
+	var r := Rect2(cr.position.x, cr.end.y + 38.0, cr.size.x, h)
 	asset_rect = r
 	UI.panel(c, r, 0.82, 0.0, UiSkin.ACCENT, 1.0)
 	var x := r.position.x + 18.0
@@ -3168,18 +3183,18 @@ func _asset_board(cr: Rect2) -> void:
 	if not nx.is_empty():
 		var wait: bool = nx.get("wait", false)
 		var pulse := 0.55 + 0.45 * absf(sin(Time.get_ticks_msec() * 0.004)) if not wait else 0.8
-		c.draw_rect(Rect2(x - 10.0, y - 14.0, 3.0, 20.0 + nx_how * 17.0 + 8.0), Color(UiSkin.ACCENT, pulse))
+		c.draw_rect(Rect2(x - 10.0, y - 14.0, 3.0, 20.0 + nx_how * 17.0 + maxf(0, nx_title_lines - 1) * 20.0 + 8.0), Color(UiSkin.ACCENT, pulse))
 		_text(Ops.w("进行中", "UNDER WAY") if wait else Ops.w("下一步", "NEXT"), Vector2(x, y - 2.0), 11, Color(UiSkin.ACCENT, 0.95), font)
 		y += 17.0
-		_text(str(nx.t), Vector2(x, y), 15, Pal.ink(0.97), font_b)
-		y += 6.0
+		_mtext(str(nx.t), Vector2(x, y), r.size.x - 40.0, 15, -1, Pal.ink(0.97), font_b)
+		y += maxf(0, nx_title_lines - 1) * 20.0 + 6.0
 		if nx_how > 0:
-			_mtext(str(nx.how), Vector2(x, y + 12.0), r.size.x - 40.0, 12, nx_how, Pal.ink(0.62))
+			_mtext(str(nx.how), Vector2(x, y + 12.0), r.size.x - 40.0, 12, -1, Pal.ink(0.62))
 			y += nx_how * 17.0
 		y += 22.0
 	for wl in warn:
-		var wn := clampi(ceili(_tw(str(wl), 12) / maxf(warn_w, 1.0)), 1, 3)
-		_mtext(str(wl), Vector2(x, y - 6.0), warn_w, 12, wn, Pal.heat(0.9, 1.2))
+		var wn := _wrapped_lines(str(wl), warn_w, 12)
+		_mtext(str(wl), Vector2(x, y - 6.0), warn_w, 12, -1, Pal.heat(0.9, 1.2))
 		y += 17.0 * wn
 	var must: Array = game.mandatory_items()
 	for row in rows:

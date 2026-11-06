@@ -11,6 +11,10 @@ var last_key := ""
 var last_at := Vector2.INF
 var bad_heat := false
 func _initialize() -> void:
+	# 128 号 第 2 段: this tests the old exchange (order book, before the warehouse and the new trade hall):
+	# the legacy switch, as the other pre-128 tests do
+	StoreBook.ON = false
+	HallMarket.ON = false
 	# 73 号: this test is about the physical feed and delivery runs, not the racks: goods leave at once
 	Warehouse.ON = false
 	# 64 号: this checks the older feed chain (bought / kept scrap, sorting); kept in code, switched off in play

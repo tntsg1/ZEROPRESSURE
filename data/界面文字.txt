@@ -11,7 +11,7 @@
 #
 # 已停用的功能（梁工、关掉的剧情层、取消的耗材）、开发者面板、只打印到日志的字不在这里。
 #
-# 本文件共 8472 条。
+# 本文件共 8645 条。
 
 ============================================================
 # 一、标题、菜单与设置（116 条）
@@ -13920,7 +13920,7 @@
 英：%s %s · PICK ~%d s
 
 ============================================================
-# 十、交易行、炉台与加工（325 条）
+# 十、交易行、炉台与加工（435 条）
 # 交易行（买入、出售、记录、航运、船市）、货物物流、炉台（电弧炉一炉钢）、分选台、化验台、自动出钢、订单结算。
 # 字要让玩家算得清账：价格、吨数、等级、多久到货。
 ============================================================
@@ -13999,6 +13999,27 @@
 英：Read this lot now: pay the fee and learn what it really is
 
 ------------------------------------------------------------
+# 【客户小飞船（client_ships.gd）】
+# 出现在：鼠标悬停客户飞船时的说明。占位文案。
+------------------------------------------------------------
+
+[client_ships:ships:1]
+中：来下新订单
+英：POSTING A NEW ORDER
+
+[client_ships:_items:3]
+中：来取订单的货：%s
+英：COMING FOR AN ORDER: %s
+
+[client_ships:_items:4]
+中：来订单板下单：%s
+英：POSTING AN ORDER: %s
+
+[client_ships:_items:5]
+中：订单板（F8 · 订单）里接单，仓库自动备货，货运火车送到贸易港，它来取走。
+英：Take orders on the order board (F8 · ORDERS): the stores make them up, the freight train brings them to the trade port, a ship like this takes them.
+
+------------------------------------------------------------
 # 【交易物流（exchange_logistics.gd）】
 # 出现在：买卖的货在路上、到仓库的字。
 ------------------------------------------------------------
@@ -14036,7 +14057,7 @@
 英：Freight paused; inspect the cargo district
 
 ------------------------------------------------------------
-# 【交易行（exchange_panel.gd）】
+# 【交易行（旧版，只剩旧测试用）（exchange_panel.gd）】
 # 出现在：按 F8 或在贸易港打开：买入、出售、交易记录、航运、船市五页；出售窗口的价格分布、港务回收价、上架。
 ------------------------------------------------------------
 
@@ -14287,6 +14308,440 @@
 [exchange_panel:update_purchase_total:2]
 中：\n成交后运进仓库，到了才能用。
 英：\nSHIPPED IN; USABLE ON ARRIVAL.
+
+------------------------------------------------------------
+# 【交易行规则的字（hall_market.gd）】
+# 出现在：成交、订单完成、过期的提示，订单状态、信誉等级名、客户名、缺货出路。全部是占位文案。
+------------------------------------------------------------
+
+[hall_market:vs_avg_text:1]
+中：现在比平均高 %d%%
+英：%d%% ABOVE AVERAGE NOW
+
+[hall_market:vs_avg_text:2]
+中：现在比平均低 %d%%
+英：%d%% BELOW AVERAGE NOW
+
+[hall_market:vs_avg_text:3]
+中：现在和平均差不多
+英：ABOUT AVERAGE NOW
+
+[hall_market:eta_text:1]
+中：约 %d 秒成交
+英：SELLS IN ~%d s
+
+[hall_market:eta_text:2]
+中：约 %d 分钟成交
+英：SELLS IN ~%d MIN
+
+[hall_market:eta_text:3]
+中：很难卖出去
+英：UNLIKELY TO SELL
+
+[hall_market:list:1]
+中：这件东西现在不能挂单
+英：THIS CANNOT BE LISTED NOW
+
+[hall_market:cancel:2]
+中：没有这张挂单
+英：NO SUCH LISTING
+
+[hall_market:_fill:1]
+中：交易行成交：%s 卖了 %s，扣 5%% 手续费，到账 %s
+英：SOLD ON THE EXCHANGE: %s FOR %s, LESS 5%%, %s PAID
+
+[hall_market:_fill:2]
+中：交易行成交
+英：SOLD ON THE EXCHANGE
+
+[hall_market:buy:1]
+中：现金不够：还差 %s
+英：NOT ENOUGH CASH: %s SHORT
+
+[hall_market:buy:2]
+中：放进修缮钢材区
+英：INTO THE REPAIR STEEL
+
+[hall_market:buy:4]
+中：仓库放不下，%d 件在待入库
+英：NO ROOM: %d WAITING TO BE STORED
+
+[hall_market:buy:6]
+中：修缮钢材 %.0f t
+英：%.0f t REPAIR STEEL
+
+[hall_market:level_text:1]
+中：信誉 %d 级 · %s
+英：REPUTATION %d · %s
+
+[hall_market:next_level_text:2]
+中：再完成 %d 张升 %d 级
+英：%d MORE ORDERS TO LEVEL %d
+
+[hall_market:short_ways:1]
+中：钢锭不够：拆船时熔炉把碎料炼成钢锭，带回来就入库
+英：SHORT OF INGOTS: THE BERTH'S FURNACE CASTS THEM FROM THE SCRAP
+
+[hall_market:short_ways:2]
+中：交易行不卖钢锭，只能自己攒
+英：THE EXCHANGE SELLS NONE: YOUR OWN ONLY
+
+[hall_market:short_ways:3]
+中：钢坯不够：在加工区把钢锭炼成钢坯
+英：SHORT OF BILLETS: MELT INGOTS IN THE PROCESSING DISTRICT
+
+[hall_market:short_ways:4]
+中：交易行不卖钢坯，只能自己炼
+英：THE EXCHANGE SELLS NONE: YOUR OWN ONLY
+
+[hall_market:short_ways:5]
+中：或在“买”页买 %d 台（每台 %s，
+英：OR BUY %d ON THE BUY PAGE (%s EACH, 
+
+[hall_market:short_ways:6]
+中：交单每台还赚 %s）
+英：%s MORE EACH ON DELIVERY)
+
+[hall_market:short_ways:7]
+中：买来交单每台亏 %s）
+英：%s LOST EACH)
+
+[hall_market:short_ways:8]
+中：去拆一艘带%s的船，拆下整台就自动入库
+英：SALVAGE A HULK WITH A %s: WHOLE ONES GO TO THE STORES
+
+[hall_market:clients:1]
+中：港务维修队
+英：PORT MAINTENANCE
+
+[hall_market:clients:7]
+中：环带拖船队
+英：BELT TUG FLEET
+
+[hall_market:take:1]
+中：这张订单已经不在了
+英：THIS ORDER IS GONE
+
+[hall_market:drop:1]
+中：已经在送货了，不能退
+英：ALREADY ON ITS WAY
+
+[hall_market:_settle:1]
+中：订单完成：%s 取走 %s，到账 %s · 信誉 +1
+英：ORDER DONE: %s TOOK %s, %s PAID · REPUTATION +1
+
+[hall_market:_settle:2]
+中： · 升到 %d 级：订单更大、给价更高
+英： · NOW LEVEL %d: BIGGER ORDERS, BETTER PRICES
+
+[hall_market:order_state_text:2]
+中：备货中：还差 %.1f t，入库后自动补上
+英：MAKING UP: %.1f t SHORT, ADDED AS IT COMES IN
+
+[hall_market:order_state_text:3]
+中：备货中：还差 %d 台，入库后自动补上
+英：MAKING UP: %d SHORT, ADDED AS THEY COME IN
+
+[hall_market:order_state_text:4]
+中：到了贸易港，等客户飞船靠泊
+英：AT THE TRADE PORT, WAITING FOR THE CLIENT'S SHIP
+
+[hall_market:order_state_text:5]
+中：货运火车送往贸易港
+英：ON THE FREIGHT TRAIN TO THE TRADE PORT
+
+[hall_market:order_state_text:6]
+中：客户飞船进港
+英：THE CLIENT'S SHIP COMING IN
+
+[hall_market:order_state_text:8]
+中：客户飞船离港
+英：THE CLIENT'S SHIP LEAVING
+
+[hall_market:tick:1]
+中：订单板来了新订单：%s 要 %s，给 %s
+英：NEW ORDER: %s WANTS %s FOR %s
+
+[hall_market:tick:2]
+中：订单过期：%s 的单没备齐，货已放回仓库，没有罚款
+英：ORDER LAPSED: %s's — THE GOODS ARE BACK IN STORE, NO PENALTY
+
+------------------------------------------------------------
+# 【交易行（128 号新版）（hall_panel.gd）】
+# 出现在：贸易港修好后 F8 打开：卖（一键挂单、价格曲线、自己定价）、买（别家的设备和钢材）、订单板（8 张卡、信誉）。全部是占位文案。
+------------------------------------------------------------
+
+[hall_panel:list_now:1]
+中：仓库里没有能挂单的东西
+英：NOTHING IN STORE TO LIST
+
+[hall_panel:list_now:2]
+中：挂到交易行：%s · 要价 %s · %s，成交后到账 %s（扣 5%% 手续费）
+英：LISTED: %s · ASKING %s · %s, %s PAID ON THE SALE (LESS 5%%)
+
+[hall_panel:cancel_listing:1]
+中：撤下挂单：%s 回到仓库
+英：WITHDRAWN: %s IS BACK IN STORE
+
+[hall_panel:buy_now:1]
+中：买下 %s · 付了 %s · %s
+英：BOUGHT %s · PAID %s · %s
+
+[hall_panel:take_order:1]
+中：接了 %s 的订单：仓库里都有，已备好，货运火车送往贸易港
+英：TOOK %s'S ORDER: ALL IN STORE, ON THE FREIGHT TRAIN TO THE TRADE PORT
+
+[hall_panel:take_order:2]
+中：接了 %s 的订单：仓库自动备货，缺的入库后自动补上
+英：TOOK %s'S ORDER: THE STORES MAKE IT UP, THE REST AS IT COMES IN
+
+[hall_panel:take_order:3]
+中：退了这张订单：备好的货放回仓库，没有罚款
+英：ORDER GIVEN BACK: THE GOODS ARE BACK IN STORE, NO PENALTY
+
+[hall_panel:_draw_head:1]
+中：交易行 · 贸易港
+英：THE EXCHANGE · TRADE PORT
+
+[hall_panel:_draw_head:2]
+中：挂单中 %d 件 · 订单 %d/%d 张 · %s
+英：%d LISTED · %d/%d ORDERS · %s
+
+[hall_panel:_draw_head:4]
+中：回仓库  [Esc]
+英：BACK TO STORES  [Esc]
+
+[hall_panel:_draw_head:5]
+中：关闭  [Esc]
+英：CLOSE  [Esc]
+
+[hall_panel:_draw_head:6]
+中：关掉交易行
+英：Close the exchange
+
+[hall_panel:_draw_head:7]
+中：回到仓库页
+英：Back to the stores page
+
+[hall_panel:_draw_tabs:4]
+中：把仓库里的东西挂到交易行，按真实时间成交
+英：List what is in store; it sells in real time
+
+[hall_panel:_draw_tabs:5]
+中：买别家公司的设备和钢材，比自己拆的贵
+英：Buy other companies' machines and steel, dearer than your own
+
+[hall_panel:_draw_tabs:6]
+中：客户点名要的货，市价的 130% 起
+英：What clients ask for, from 130% of market
+
+[hall_panel:_draw_tabs:7]
+中：Tab 换页
+英：TAB: NEXT PAGE
+
+[hall_panel:_draw_sell:1]
+中：仓库里能卖的
+英：IN STORE, FOR SALE
+
+[hall_panel:_draw_sell:2]
+中：仓库是空的：拆船带回来的东西会进这里
+英：THE STORES ARE EMPTY: WHAT YOU BRING HOME COMES HERE
+
+[hall_panel:_draw_sell:4]
+中：在左边点一件东西
+英：PICK SOMETHING ON THE LEFT
+
+[hall_panel:_draw_sell:5]
+中：回收站 %s · 交易行约 %s · 订单 %s
+英：RECYCLING %s · EXCHANGE ~%s · ORDER %s
+
+[hall_panel:_draw_sell:6]
+中：约 %s（现在没人要）
+英：~%s (NONE WANT IT NOW)
+
+[hall_panel:_draw_sell:7]
+中：按建议价挂单  %s  [Enter]
+英：LIST AT THE SUGGESTED PRICE  %s  [Enter]
+
+[hall_panel:_draw_sell:8]
+中：挂到交易行：要价就是现在的市价，成交后扣 5% 手续费到账
+英：Listed at the market now; paid less 5% on the sale
+
+[hall_panel:_draw_sell:9]
+中：到账 %s · %s
+英：%s PAID · %s
+
+[hall_panel:_draw_sell:10]
+中：自己定价…
+英：SET MY OWN PRICE…
+
+[hall_panel:_draw_sell:11]
+中：打开价格滑条：要价高卖得慢，低卖得快
+英：Open the price slider: dearer sells slower, cheaper faster
+
+[hall_panel:_draw_curve:2]
+中：30 分钟前
+英：30 MIN AGO
+
+[hall_panel:_draw_curve:4]
+中：价格每隔一阵在 ±10% 之间浮动
+英：PRICES DRIFT WITHIN ±10%
+
+[hall_panel:_draw_slider:2]
+中：比现在市价高 %d%%
+英：%d%% OVER THE MARKET NOW
+
+[hall_panel:_draw_slider:3]
+中：比现在市价低 %d%%
+英：%d%% UNDER THE MARKET NOW
+
+[hall_panel:_draw_slider:4]
+中：就是现在的市价
+英：THE MARKET NOW
+
+[hall_panel:_draw_slider:7]
+中：和平均一样
+英：THE AVERAGE
+
+[hall_panel:_draw_slider:13]
+中：便宜 1%
+英：1% cheaper
+
+[hall_panel:_draw_slider:15]
+中：按这个价挂单  %s  [Enter]
+英：LIST AT THIS PRICE  %s  [Enter]
+
+[hall_panel:_draw_slider:16]
+中：挂到交易行：成交后扣 5% 手续费到账
+英：Listed; paid less 5% on the sale
+
+[hall_panel:_draw_slider:18]
+中：要价设成平均价
+英：Ask the average price
+
+[hall_panel:_draw_slider:19]
+中：收起  [Esc]
+英：CLOSE  [Esc]
+
+[hall_panel:_draw_slider:20]
+中：回到按建议价挂单
+英：Back to the suggested price
+
+[hall_panel:_draw_listings:1]
+中：挂单中 %d 件
+英：LISTED: %d
+
+[hall_panel:_draw_listings:2]
+中：最近成交：%s %s（到账 %s）
+英：LAST SALE: %s %s (%s PAID)
+
+[hall_panel:_draw_listings:3]
+中：还没有挂单：在上面挑一件，按 Enter 一键挂单
+英：NOTHING LISTED: PICK ONE ABOVE, ENTER TO LIST
+
+[hall_panel:_draw_listings:4]
+中：要价 %s · %s
+英：%s · %s
+
+[hall_panel:_draw_listings:6]
+中：撤下挂单，东西回到仓库
+英：Withdraw: it comes back to the stores
+
+[hall_panel:_draw_buy:1]
+中：别家公司挂着的货
+英：OTHER COMPANIES' GOODS
+
+[hall_panel:_draw_buy:2]
+中： · 修缮要用
+英： · FOR THE MENDING
+
+[hall_panel:_draw_buy:4]
+中：修缮钢材按吨卖，放进仓库的修缮钢材区，修港区时从那里扣
+英：Repair steel by the tonne, into the stores' repair steel slot; the works take from it
+
+[hall_panel:_draw_buy:5]
+中：自己拆下来的同类约 %s · 这里贵 %d%%
+英：YOUR OWN SALVAGE OF THIS KIND ~%s · %d%% DEARER HERE
+
+[hall_panel:_draw_buy:6]
+中：仓库里有 %.1f t
+英：IN STORE: %.1f t
+
+[hall_panel:_draw_buy:7]
+中：仓库里有 %d 台
+英：IN STORE: %d
+
+[hall_panel:_draw_buy:10]
+中：现金不够：还差 %s
+英：NOT ENOUGH CASH: %s SHORT
+
+[hall_panel:_draw_buy:11]
+中：买下  %s  [Enter]
+英：BUY  %s  [Enter]
+
+[hall_panel:_draw_buy:12]
+中：马上付钱，货放进仓库（放不下的进待入库）
+英：Paid at once; into the stores (what does not fit waits to be stored)
+
+[hall_panel:_draw_buy:13]
+中：现金 %s → %s
+英：CASH %s → %s
+
+[hall_panel:_repair_need:1]
+中：修%s还缺 %d 台：买下后修缮时自动用上
+英：%s'S MENDING IS %d SHORT: BOUGHT, THE MENDING USES IT
+
+[hall_panel:_repair_need:2]
+中：修%s还缺钢材 %.0f t
+英：%s'S MENDING IS %.0f t OF STEEL SHORT
+
+[hall_panel:_draw_orders:1]
+中：给价按下单时的信誉等级：1 级是市价的 130%%，每升一级多 4%%（现在 %d 级 · %d%%）· 等级越高订单越大 · 最多同时 8 张 · 过期不罚
+英：PRICE BY THE LEVEL WHEN POSTED: LEVEL 1 IS 130%% OF MARKET, +4%% A LEVEL (NOW %d · %d%%) · BIGGER ORDERS HIGHER UP · UP TO 8 · NO PENALTY
+
+[hall_panel:_empty_card:1]
+中：等新订单 · 约 %d 秒
+英：NEXT ORDER IN ~%d s
+
+[hall_panel:_order_card:1]
+中：信誉 %d 级
+英：REP %d
+
+[hall_panel:_order_card:3]
+中：市价的 %d%% · 信誉 %d 级价
+英：%d%% OF MARKET · LEVEL %d PRICE
+
+[hall_panel:_order_card:4]
+中：仓库有 %.1f / %.0f t
+英：IN STORE %.1f / %.0f t
+
+[hall_panel:_order_card:5]
+中：仓库有 %d / %d 台
+英：IN STORE %d / %d
+
+[hall_panel:_order_card:6]
+中： · 可以马上交
+英： · CAN GO AT ONCE
+
+[hall_panel:_order_card:7]
+中：还有 %d 分钟 · 过期不罚
+英：%d MIN LEFT · NO PENALTY
+
+[hall_panel:_order_card:8]
+中：接单  [Enter]
+英：TAKE  [Enter]
+
+[hall_panel:_order_card:10]
+中：接下这张订单：仓库自动备货，备齐后货运火车送到贸易港，客户来取
+英：Take it: the stores make it up, the train takes it to the trade port, the client collects
+
+[hall_panel:_order_card:11]
+中：退掉这张订单：备好的货放回仓库，没有罚款
+英：Give it back: the goods go back to the stores, no penalty
+
+[hall_panel:_draw_foot:1]
+中：Enter 做这一页的主操作 · Esc 退一步 · Tab 换页
+英：ENTER: THIS PAGE'S ACTION · ESC: BACK · TAB: NEXT PAGE
 
 ------------------------------------------------------------
 # 【自动出钢（heat_auto.gd）】
@@ -26921,13 +27376,25 @@
 英：
 
 ============================================================
-# 十四、其他（454 条）
+# 十四、其他（472 条）
 # 没归到上面各章的零散文字。
 ============================================================
 
 ------------------------------------------------------------
 # 【company_store.gd（company_store.gd）】
 ------------------------------------------------------------
+
+[company_store:list_sel:1]
+中：这样东西不能挂单
+英：THIS CANNOT BE LISTED
+
+[company_store:list_sel:2]
+中：挂到交易行：%s · 要价 %s · %s，成交后到账 %s（扣 5%% 手续费）
+英：LISTED: %s · ASKING %s · %s, %s PAID ON THE SALE (LESS 5%%)
+
+[company_store:order_sel:1]
+中：接了 %s 的订单（%s）：仓库自动备货，火车送到贸易港，客户来取
+英：TOOK %s'S ORDER (%s): THE STORES MAKE IT UP, THE TRAIN TAKES IT TO THE TRADE PORT
 
 [company_store:where_of:1]
 中：专用区，不占仓库格子
@@ -27162,6 +27629,26 @@
 英：EXCHANGE ~%s
 
 [company_store:_draw_detail:11]
+中：%s · 右键自己定价
+英：%s · RIGHT: OWN PRICE
+
+[company_store:_draw_detail:13]
+中：%s要 · 点了就接单
+英：%s WANTS IT · CLICK TO TAKE
+
+[company_store:_draw_detail:14]
+中：订单  约 %s
+英：ORDER ~%s
+
+[company_store:_draw_detail:15]
+中：现在没有订单要它 · 看订单板
+英：NO ORDER FOR IT NOW · SEE THE BOARD
+
+[company_store:_draw_detail:16]
+中：交易行  约 %s
+英：EXCHANGE ~%s
+
+[company_store:_draw_detail:17]
 中：订单  约 %s
 英：ORDER ~%s
 
@@ -27182,6 +27669,14 @@
 英：SELL TO RECYCLING  %s  [Enter]
 
 [company_store:_open_menu:2]
+中：挂到交易行  约 %s
+英：LIST ON THE EXCHANGE  ~%s
+
+[company_store:_open_menu:3]
+中：看价格曲线，自己定价…
+英：PRICE CURVE, SET MY OWN PRICE…
+
+[company_store:_open_menu:4]
 中：转向  [R]
 英：TURN  [R]
 
@@ -27426,22 +27921,34 @@
 英：BACK INTO THE %s CORRIDOR
 
 [freight_works:_assign_corridor:1]
-中：等%s舱口空出
-英：WAITING FOR THE %s HATCH
+中：回货运区装上卖出的货
+英：BACK TO THE CARGO DISTRICT FOR A SALE
 
 [freight_works:_assign_corridor:2]
-中：去中央环取货 · %s舱口
-英：TO THE RING FOR A CRATE · %s
+中：送卖出的货去贸易港回收站
+英：TAKING A SALE TO THE TRADE PORT'S RECYCLING STATION
 
 [freight_works:_assign_corridor:3]
-中：开往中央环 · %s舱口
-英：TO THE RING · %s HATCH
+中：送卖出的货去贸易港回收站
+英：TAKING A SALE TO THE TRADE PORT'S RECYCLING STATION
+
+[freight_works:_assign_corridor:4]
+中：等%s舱口空出
+英：WAITING FOR THE %s HATCH
 
 [freight_works:_assign_corridor:5]
 中：去中央环取货 · %s舱口
 英：TO THE RING FOR A CRATE · %s
 
-[freight_works:_assign_corridor:7]
+[freight_works:_assign_corridor:6]
+中：开往中央环 · %s舱口
+英：TO THE RING · %s HATCH
+
+[freight_works:_assign_corridor:8]
+中：去中央环取货 · %s舱口
+英：TO THE RING FOR A CRATE · %s
+
+[freight_works:_assign_corridor:10]
 中：回%s走廊待命
 英：BACK INTO THE %s CORRIDOR
 
@@ -27465,6 +27972,14 @@
 中：给接驳车让路
 英：MAKING WAY FOR THE SHUTTLE
 
+[freight_works:sell:1]
+中：卖给回收站
+英：SOLD FOR RECYCLING
+
+[freight_works:ship_order:1]
+中：订单交付 · %s
+英：ORDER · %s
+
 [freight_works:_step:2]
 中：让开站台，去%s等候
 英：MAKING ROOM: WAITING AT %s
@@ -27472,6 +27987,10 @@
 [freight_works:_step:3]
 中：回走廊等候
 英：INTO A CORRIDOR TO WAIT
+
+[freight_works:_step:6]
+中：回收站吊走卖出的货
+英：THE RECYCLING STATION LIFTS THE SALE AWAY
 
 [freight_works:_push:1]
 中：推货进%s舱口
@@ -28610,10 +29129,14 @@
 英：steel %.0f t
 
 [repair_bill:short_line:2]
+中：（缺的从交易行买 %s）
+英： (the rest bought on the exchange, %s)
+
+[repair_bill:short_line:3]
 中：（缺的按市价买 %s）
 英： (the rest bought at market, %s)
 
-[repair_bill:short_line:3]
+[repair_bill:short_line:4]
 中：（仓库里都有）
 英： (all in the stores)
 
@@ -28646,10 +29169,14 @@
 英：Mended: the exchange sells at market · the order board takes client orders
 
 [repair_order:_draw:3]
+中：仓库里有的先用自己的，缺的从交易行一键买齐（别家的货，比自己拆的贵）。施工队不收工钱。
+英：What the warehouse has goes first; what is short is bought on the exchange in the same click (other companies' goods, dearer than your own). The crew is free.
+
+[repair_order:_draw:4]
 中：仓库里有的先用自己的，缺的按市价一键买齐。施工队不收工钱。
 英：What the warehouse has goes first; what is short is bought at market in the same click. The crew is free.
 
-[repair_order:_draw:12]
+[repair_order:_draw:13]
 中：现金 %s → 修完后 %s
 英：CASH %s → AFTER %s
 
@@ -28806,7 +29333,7 @@
 英：STORES LINE · FROM BERTH 07
 
 ============================================================
-# 十五、短标签（四个字以内的按钮、栏目名、单位）（1599 条）
+# 十五、短标签（四个字以内的按钮、栏目名、单位）（1644 条）
 # 同样的字在很多界面出现时只列一次，「# 在」写了出现在哪些界面、共几处；改这里一条，所有这些地方一起改。
 # 这些字要短：按钮和栏目的宽度是按现在的字数排的，多一两个字可能放不下（合并后会跑超框检查）。
 ============================================================
@@ -30802,7 +31329,7 @@
 英：QUEUE DONE
 
 [short:404]
-# 在：终端通用（1 处）
+# 在：终端通用、交易行规则的字（2 处）
 中：已完成
 英：DONE
 
@@ -31396,6 +31923,16 @@
 中：独立商户
 英：
 
+[short:1656]
+# 在：客户小飞船（1 处）
+中：%s 的货船
+英：%s'S FREIGHTER
+
+[short:1657]
+# 在：客户小飞船（1 处）
+中：%s 的小飞船
+英：%s'S COURIER
+
 [short:524]
 # 在：讲解卡按钮（1 处）
 中：打开图鉴
@@ -31407,7 +31944,7 @@
 英：CODEX
 
 [short:1563]
-# 在：company_store.gd、各区业务终端、repair_order.gd、成长与建设页、store_book.gd（6 处）
+# 在：company_store.gd、各区业务终端、交易行规则的字、repair_order.gd、成长与建设页、store_book.gd（7 处）
 中：修缮钢材
 英：REPAIR STEEL
 
@@ -31422,7 +31959,7 @@
 英：DAY %d
 
 [short:1527]
-# 在：company_store.gd（1 处）
+# 在：company_store.gd、交易行（128 号新版）（2 处）
 中：资金
 英：CASH
 
@@ -31437,9 +31974,14 @@
 英：RECYCLE %s
 
 [short:1567]
-# 在：company_store.gd（1 处）
+# 在：company_store.gd（2 处）
 中：不能卖
 英：NOT FOR SALE
+
+[short:1658]
+# 在：company_store.gd（1 处）
+中：订单  %s
+英：ORDER  %s
 
 [short:1191]
 # 在：company_store.gd、港区现场导览（2 处）
@@ -31447,7 +31989,7 @@
 英：EXCHANGE
 
 [short:1568]
-# 在：company_store.gd（1 处）
+# 在：company_store.gd、交易行（128 号新版）（2 处）
 中：订单
 英：ORDERS
 
@@ -31475,6 +32017,11 @@
 # 在：company_store.gd（1 处）
 中：交易行约 %s
 英：EXCHANGE ~%s
+
+[short:1659]
+# 在：company_store.gd（1 处）
+中：订单 %s
+英：ORDER %s
 
 [short:1625]
 # 在：company_store.gd（1 处）
@@ -32957,197 +33504,197 @@
 英：HIRED TUG
 
 [short:791]
-# 在：交易行、港区现场导览（3 处）
+# 在：交易行（旧版，只剩旧测试用）、港区现场导览（3 处）
 中：购买
 英：BUY
 
 [short:792]
-# 在：交易行、港区现场导览（2 处）
+# 在：交易行（旧版，只剩旧测试用）、港区现场导览（2 处）
 中：出售
 英：SELL
 
 [short:793]
-# 在：交易行、港区现场导览（2 处）
+# 在：交易行（旧版，只剩旧测试用）、港区现场导览（2 处）
 中：交易记录
 英：RECORDS
 
 [short:794]
-# 在：交易行、港区现场导览、星图（3 处）
+# 在：交易行（旧版，只剩旧测试用）、港区现场导览、星图（3 处）
 中：航运
 英：SHIPPING
 
 [short:795]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：船市
 英：HULKS
 
 [short:796]
-# 在：交易行、二手船市（3 处）
+# 在：交易行（旧版，只剩旧测试用）、二手船市（3 处）
 中：可用资金 
 英：FUNDS 
 
 [short:797]
-# 在：交易行（2 处）
+# 在：交易行（旧版，只剩旧测试用）（2 处）
 中：暂停经营
 英：PAUSE
 
 [short:798]
-# 在：交易行、store_book.gd（2 处）
+# 在：交易行（旧版，只剩旧测试用）、store_book.gd（2 处）
 中：全部
 英：ALL
 
 [short:799]
-# 在：交易行、港区现场导览、二手船市（3 处）
+# 在：交易行（旧版，只剩旧测试用）、港区现场导览、二手船市（3 处）
 中：关闭
 英：CLOSE
 
 [short:800]
-# 在：交易行、引导卡（2 处）
+# 在：交易行（旧版，只剩旧测试用）、引导卡（2 处）
 中：上架
 英：LIST IT
 
 [short:801]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：确认购买
 英：CONFIRM PURCHASE
 
 [short:802]
-# 在：交易行、动力区控制屏（2 处）
+# 在：交易行（旧版，只剩旧测试用）、动力区控制屏（2 处）
 中：取消
 英：CANCEL
 
 [short:803]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：恢复经营
 英：RESUME
 
 [short:804]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：本港柜台
 英：PORT
 
 [short:805]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：小行星带
 英：BELT
 
 [short:806]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：暂无卖家
 英：NO SELLERS
 
 [short:807]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：最低 
 英：FROM 
 
 [short:808]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：最高收价 
 英：BEST BID 
 
 [short:809]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：加急
 英：RUSH
 
 [short:810]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：挂牌卖
 英：LISTED
 
 [short:811]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：挂单求购
 英：BID
 
 [short:812]
-# 在：交易行、零件架（2 处）
+# 在：交易行（旧版，只剩旧测试用）、零件架（2 处）
 中：挂牌中
 英：LISTED
 
 [short:813]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：求购中
 英：BIDDING
 
 [short:814]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：已到库
 英：IN STOCK
 
 [short:815]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：送货中
 英：DELIVERING
 
 [short:816]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：卖给 
 英：TO 
 
 [short:817]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：从 
 英：FROM 
 
 [short:818]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中： 买
 英：
 
 [short:819]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：时间
 英：WHEN
 
 [short:820]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：货
 英：GOODS
 
 [short:821]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：数量
 英：QTY
 
 [short:822]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：单价
 英：PRICE
 
 [short:823]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：状态
 英：STATE
 
 [short:824]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：刚才
 英：JUST NOW
 
 [short:825]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：%d 分钟前
 英：%d MIN AGO
 
 [short:826]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：撤回
 英：WITHDRAW
 
 [short:827]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：看星图
 英：STAR MAP
 
 [short:828]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：已提交
 英：COMMITTED
 
 [short:829]
-# 在：交易行（1 处）
+# 在：交易行（旧版，只剩旧测试用）（1 处）
 中：本次合计 
 英：TOTAL 
 
@@ -33157,7 +33704,7 @@
 英：WHAT
 
 [short:831]
-# 在：facility_card.gd、港区图卡（速查）（2 处）
+# 在：facility_card.gd、交易行（128 号新版）、港区图卡（速查）（3 处）
 中：现在
 英：NOW
 
@@ -33372,7 +33919,7 @@
 英：BASE
 
 [short:859]
-# 在：电网、轧机状态、找到的船 / 船市的船、store_book.gd、仓库（12 处）
+# 在：电网、交易行规则的字、轧机状态、找到的船 / 船市的船、store_book.gd、仓库（17 处）
 中：保存失败
 英：SAVE FAILED
 
@@ -33725,6 +34272,211 @@
 # 在：guide_way.gd（1 处）
 中：往右上飞
 英：FLY UP-RIGHT
+
+[short:1660]
+# 在：交易行规则的字（1 处）
+中：台
+英：PC
+
+[short:1661]
+# 在：交易行规则的字（2 处）
+中：恒岳工业
+英：HENGYUE INDUSTRIES
+
+[short:1662]
+# 在：交易行规则的字（2 处）
+中：天衡物流
+英：TIANHENG LOGISTICS
+
+[short:1663]
+# 在：交易行规则的字（2 处）
+中：远岫工场
+英：YUANXIU WORKS
+
+[short:1664]
+# 在：交易行规则的字（2 处）
+中：北辰船务
+英：BEICHEN SHIPPING
+
+[short:1665]
+# 在：交易行规则的字（1 处）
+中：放进仓库
+英：INTO THE STORES
+
+[short:1666]
+# 在：交易行规则的字（1 处）
+中：新客户
+英：NEW
+
+[short:1667]
+# 在：交易行规则的字（1 处）
+中：熟客
+英：KNOWN
+
+[short:1668]
+# 在：交易行规则的字（1 处）
+中：可靠
+英：RELIABLE
+
+[short:1669]
+# 在：交易行规则的字（1 处）
+中：优选
+英：PREFERRED
+
+[short:1670]
+# 在：交易行规则的字（1 处）
+中：金牌
+英：GOLD
+
+[short:1671]
+# 在：交易行规则的字（1 处）
+中：已是最高
+英：AT THE TOP
+
+[short:1672]
+# 在：交易行规则的字（1 处）
+中：青石矿业
+英：QINGSHI MINING
+
+[short:1673]
+# 在：交易行规则的字（1 处）
+中：星港建设
+英：STARPORT BUILDERS
+
+[short:1674]
+# 在：交易行规则的字（1 处）
+中：可接单
+英：OPEN
+
+[short:1675]
+# 在：交易行规则的字（1 处）
+中：装船中
+英：LOADING
+
+[short:1676]
+# 在：交易行规则的字（1 处）
+中：已过期
+英：LAPSED
+
+[short:1677]
+# 在：交易行（128 号新版）（1 处）
+中：卖
+英：SELL
+
+[short:1678]
+# 在：交易行（128 号新版）（1 处）
+中：买
+英：BUY
+
+[short:1679]
+# 在：交易行（128 号新版）（1 处）
+中：约 %s
+英：~%s
+
+[short:1680]
+# 在：交易行（128 号新版）（1 处）
+中：平均 %s
+英：AVERAGE %s
+
+[short:1681]
+# 在：交易行（128 号新版）（1 处）
+中：要价  %s
+英：ASKING  %s
+
+[short:1682]
+# 在：交易行（128 号新版）（1 处）
+中：比平均高 %d%%
+英：%d%% OVER THE AVERAGE
+
+[short:1683]
+# 在：交易行（128 号新版）（1 处）
+中：比平均低 %d%%
+英：%d%% UNDER THE AVERAGE
+
+[short:1684]
+# 在：交易行（128 号新版）（1 处）
+中：到账 %s
+英：%s PAID
+
+[short:1685]
+# 在：交易行（128 号新版）（1 处）
+中：市价
+英：MARKET
+
+[short:1686]
+# 在：交易行（128 号新版）（1 处）
+中：平均
+英：AVG
+
+[short:1687]
+# 在：交易行（128 号新版）（1 处）
+中：卖得快
+英：SELLS FAST
+
+[short:1688]
+# 在：交易行（128 号新版）（1 处）
+中：卖得慢
+英：SELLS SLOW
+
+[short:1689]
+# 在：交易行（128 号新版）（1 处）
+中：贵 1%
+英：1% dearer
+
+[short:1690]
+# 在：交易行（128 号新版）（1 处）
+中：按平均价
+英：AT THE AVERAGE
+
+[short:1691]
+# 在：交易行（128 号新版）（1 处）
+中：撤单
+英：WITHDRAW
+
+[short:1692]
+# 在：交易行（128 号新版）（1 处）
+中：卖家 %s
+英：SELLER %s
+
+[short:1693]
+# 在：交易行（128 号新版）（1 处）
+中：少买一些
+英：Fewer
+
+[short:1694]
+# 在：交易行（128 号新版）（1 处）
+中：多买一些
+英：More
+
+[short:1695]
+# 在：交易行（128 号新版）（1 处）
+中：市价约 %s
+英：MARKET ~%s
+
+[short:1696]
+# 在：交易行（128 号新版）（1 处）
+中：退单
+英：GIVE BACK
+
+[short:1697]
+# 在：交易行（128 号新版）（1 处）
+中：备货
+英：MAKE UP
+
+[short:1698]
+# 在：交易行（128 号新版）（1 处）
+中：火车
+英：TRAIN
+
+[short:1699]
+# 在：交易行（128 号新版）（1 处）
+中：客户飞船
+英：CLIENT SHIP
+
+[short:1700]
+# 在：交易行（128 号新版）（1 处）
+中：到账
+英：PAID
 
 [short:918]
 # 在：自动出钢（1 处）

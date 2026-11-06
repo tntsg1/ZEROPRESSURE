@@ -4,7 +4,12 @@ extends SceneTree
 var g: Node
 var checks := 0
 var fails := 0
-func _initialize() -> void: run.call_deferred()
+func _initialize() -> void:
+	# 128 号 第 2 段: this tests the old exchange (order book, before the warehouse and the new trade hall):
+	# the legacy switch, as the other pre-128 tests do
+	StoreBook.ON = false
+	HallMarket.ON = false
+	run.call_deferred()
 func frames(n: int) -> void:
 	for i in n: await process_frame
 func check(ok: bool, label: String) -> void:

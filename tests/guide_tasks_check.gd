@@ -5,6 +5,10 @@ extends "res://tests/guide_check.gd"
 
 
 func _run() -> void:
+	# 128 号 第 2 段: this tests the old exchange (order book, before the warehouse and the new trade hall):
+	# the legacy switch, as the other pre-128 tests do
+	StoreBook.ON = false
+	HallMarket.ON = false
 	Txt.zh = true
 	Career.data = Career.fresh()
 	Career.data.story_job = {}
