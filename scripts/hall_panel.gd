@@ -951,7 +951,7 @@ func _order_card(r: Rect2, o: Dictionary, a: float) -> void:
 		_key("take", Rect2(x, r.end.y - 62.0, r.size.x - 36.0, 46.0), bl, note, "", st == "open")
 		# 128 号 第 4 段: cast steel the warehouse is short of — one key puts a batch first in the queue
 		if str(o.cat) == "raw" and ProcessLine.mould_of_key(str(o.kind)) != "" and HallMarket.have_of("raw", str(o.kind)) + ProcessLine.for_order_t(str(o.id)) < float(o.n) - float(o.get("got", 0.0)) - 0.05:
-			var why := "" if ProcessLine.first_done() else w("第一炉先到加工区炉台亲手炼一次", "MAKE THE FIRST HEAT BY HAND AT THE FURNACE DESK FIRST")
+			var why := "" if ProcessLine.first_done() or not ProcessLine.LEGACY_DESKS else w("第一炉先到加工区炉台亲手炼一次", "MAKE THE FIRST HEAT BY HAND AT THE FURNACE DESK FIRST")
 			_key("plan", Rect2(x, r.end.y - 114.0, r.size.x - 36.0, 44.0), w("为这单排产 · %s模，插到队列最前", "PLAN FOR THIS ORDER · %s MOULD, FIRST IN THE QUEUE") % ProcessLine.mould_name(ProcessLine.mould_of_key(str(o.kind))), w("把仓库里的钢锭排进加工队列最前面，炼成这张订单要的%s", "Puts ingots first in the processing queue, cast as the order wants") % StoreBook.raw_name(str(o.kind)), why)
 
 

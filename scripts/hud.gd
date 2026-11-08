@@ -1489,7 +1489,7 @@ const GUIDE_W := 720.0
 
 
 func _guide_on() -> bool:
-	return game != null and game.guide != null and game.guide.active() and game.in_berth() and game.state == "play" and not game.port_view
+	return game != null and game.guide != null and game.guide.active() and game.in_berth() and game.state == "play" and not game.port_view and not game.walk_on()
 
 
 func _guide_rect(s: Vector2) -> Rect2:

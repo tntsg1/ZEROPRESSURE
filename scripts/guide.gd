@@ -228,6 +228,8 @@ func _assay() -> Dictionary:
 
 
 func _heat() -> Dictionary:
+	if not ProcessLine.LEGACY_DESKS:
+		return _heat_queue()
 	var srv = game.industrial_heat
 	var name := w("炉台", "FURNACE DESK")
 	var purpose := w("把钢锭重新熔成钢水、浇成钢坯，卖给工业客户", "Melts grade 1 feed and casts billets for industrial clients")
@@ -251,6 +253,31 @@ func _heat() -> Dictionary:
 			s1.text = w("按卡片上的按钮就开始送，你飞过去的路上料也在走；到了炉台再按『通电熔化』。", "The card's button starts it; the feed travels while you fly over. At the desk, strike the arcs.")
 		return s1
 	return {"done": w("仓库里没有钢锭", "NO GRADE 1 FEED"), "end": true}
+
+
+# 128 号 第 4 段 收尾: up onto the gallery, E at the furnace console, "排一炉", the machines watched at work
+func _heat_queue() -> Dictionary:
+	var srv = game.industrial_heat
+	var name := w("炉体控制台", "FURNACE CONSOLE")
+	var purpose := w("在观察廊最左边：打开加工队列，把钢锭排一炉", "At the gallery's far left: the processing queue, a heat of ingots")
+	var path := "res://scripts/process_queue_panel.gd"
+	var h: Dictionary = Career.data.get("industrial_heat", {})
+	var inf: Dictionary = srv.info()
+	if str(h.get("state", "")) not in ["", "complete", "cancelled", "written_off"]:
+		return _wait(srv, name, purpose, 4, 4, w("往下看：%s", "LOOK DOWN: %s") % str(inf.title), w("机器自己在跑：送料、熔化、出钢浇铸，钢坯自己回仓库。", "It runs by itself: feed, melt, cast; the billets go back to the stores."))
+	if str(h.get("id", "")) != str(start.get("heat", "")) and str(h.get("state", "")) == "complete":
+		return {"done": w("出钢完成：钢坯已入库", "TAPPED: billets in the warehouse")}
+	if not ProcessQueue.open_entries().is_empty():
+		return _wait(srv, name, purpose, 4, 4, str(inf.title), w("排上了，炉子按队列自己开炉。", "Queued: the furnace starts by itself."))
+	if _stock(Exchange.INGOT) >= 0.25:
+		var s := _at(srv, path, name, purpose, 3, 4, w("按『排一炉』（或按 Enter）", "PRESS 'QUEUE A HEAT' (OR ENTER)"), "")
+		if not _panel(path) and not srv.near():
+			s.n = 1
+			s.title = w("飞上观察廊，到最左边的炉体控制台", "UP ONTO THE GALLERY, TO THE FURNACE CONSOLE AT THE FAR LEFT")
+		elif not _panel(path):
+			s.n = 2
+		return s
+	return {"done": w("仓库里没有钢锭", "NO INGOTS"), "end": true}
 
 
 # 37 号: selling is a listing — the client buys it, the money is there on the sale, the courier delivers

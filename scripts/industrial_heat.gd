@@ -33,7 +33,9 @@ func _set_furnace(s) -> void:
 func _power_price() -> float: return Grid.price(heat())
 # the overhead rail runs a trolley twice the floor courier's pace (30 号)
 # 124 号 (user "太慢了"): the overhead rail at 30 m/s (was 12) — about 8 s along its 236 m
-func _speed() -> float: return 30.0*Geom.M if plant() != null else SPEED
+# 128 号 第 4 段 收尾: the works' trolley runs the warehouse → furnace leg in under 5 s
+const TROLLEY_V := 55.0
+func _speed() -> float: return TROLLEY_V*Geom.M if plant() != null else SPEED
 # 36 号: one press melts — charging on, the arcs struck, and the power runs itself from then on
 # (full until the charge is liquid and hot enough, then holding just above tapping heat)
 func start_melt() -> Dictionary:
@@ -118,7 +120,7 @@ func info() -> Dictionary:
 			pass
 		_:
 			# 128 号 第 4 段: after the first heat the furnace works the queue by itself
-			if ProcessLine.first_done() and not ProcessLine.LEGACY_DESKS:
+			if not ProcessLine.LEGACY_DESKS:
 				if ProcessLine.changing():
 					return {"key":"idle","n":1,"title":_w("换模中，还要约 %d 秒","CHANGING THE MOULD, ~%d s") % int(ceil(ProcessLine.change_left())),"text":"","press":"","eta":ProcessLine.change_left()}
 				return {"key":"idle","n":1,"title":_w("空闲：加工队列有批次就自己开炉","IDLE: IT STARTS BY ITSELF WHEN THE QUEUE HAS A BATCH"),"text":"","press":"","eta":-1.0}
@@ -913,12 +915,26 @@ func _physics_process(dt: float) -> void:
 		waiting = "等待仓库接收通道"
 		return
 	if index < path.size():
-		var delta: Vector2 = (path[index]-body.global_position).limit_length(_speed()*dt)
-		if robot.test_move(robot.global_transform,delta) or not Loads.move(body,delta):
-			waiting = "搬运通道受阻，请检查现场"
-			return
-		robot.global_position += delta
-		if body.global_position.distance_to(path[index]) < 0.01: heat().transport.waypoint = index+1
+		# 128 号 第 4 段 收尾: the faster trolley moves in steps no longer than the old one's (its collision
+		# checks were tuned to them), as many a frame as its speed takes, round the corners too
+		var budget := _speed()*dt
+		# the trolley and the load it carries never stop each other (within a frame the load's place in the
+		# physics lags the steps)
+		if robot is PhysicsBody2D and body is PhysicsBody2D:
+			robot.add_collision_exception_with(body)
+			body.add_collision_exception_with(robot)
+		while budget > 0.001 and index < path.size():
+			var delta: Vector2 = (path[index]-body.global_position).limit_length(minf(budget,0.5*Geom.M))
+			if robot.test_move(robot.global_transform,delta) or not Loads.move(body,delta):
+				waiting = "搬运通道受阻，请检查现场"
+				return
+			robot.global_position += delta
+			budget -= delta.length()
+			if body.global_position.distance_to(path[index]) < 0.01:
+				index += 1
+				heat().transport.waypoint = index
+				if _hold(index,0.0): break
+			if delta.length() < 0.001: break
 		waiting = ""
 	else: _receive()
 	if is_instance_valid(body): heat().transport.at = [body.global_position.x,body.global_position.y]
@@ -962,7 +978,7 @@ func _draw_desk(ci: CanvasItem) -> void:
 	if live:
 		info.lines[1][0] = Methods.ship_label(ship) + " · " + str(info.lines[1][0])
 	# 128 号 第 4 段: after the first heat by hand the desk opens the processing queue
-	var desk_key := Ops.w("[%s] 加工队列", "[%s] PROCESSING QUEUE") if ProcessLine.first_done() and not ProcessLine.LEGACY_DESKS else Ops.w("[%s] 炉体操作", "[%s] FURNACE CONTROLS")
+	var desk_key := Ops.w("[%s] 加工队列", "[%s] PROCESSING QUEUE") if not ProcessLine.LEGACY_DESKS else Ops.w("[%s] 炉体操作", "[%s] FURNACE CONTROLS")
 	ConsoleArt.draw(ci, at, ConsoleArt.foot_at(at), Ops.w("炉体操作台", "FURNACE DESK"), desk_key % Keys.label("use"), near(), info, Time.get_ticks_msec() * 0.001, "furnace")
 	if not live:
 		return

@@ -125,6 +125,10 @@ static func plan(which := "all") -> Array:
 		# 131 号 (user 2026-11-05: "不都有列车吗？我为什么不能在拆船厂上等车？"): the shuttle first — out to the
 		# berth's own stop in the gate, ride to the ring, back by shuttle; flying the corridor is optional
 		return [["station", "salvage"], ["ride", "ring"], ["console", "ring"], ["ride", "salvage"], ["home", ""], ["repair", ""], ["end", ""]]
+	# 128 号 第 4 段 收尾 (2026-11-07): the processing district's first walk is its first heat — up onto the
+	# gallery, E at the furnace console, a heat queued, the machines watched at work below
+	if which == "process" and not ProcessLine.LEGACY_DESKS:
+		return [["ride", "process"], ["gallery", "process"], ["furnace", "process"], ["queue", "process"], ["watch", "process"], ["ride", "salvage"], ["home", ""], ["end", ""]]
 	if which in ROUND:
 		var one: Array = [["ride", which], ["console", which]]
 		var extra := {"power": "screen", "trade": "exchange", "cargo": "shelf", "process": "mill"}
@@ -317,6 +321,13 @@ func target() -> Vector2:
 			return preload("res://scripts/cargo_floor.gd").mouth("A")
 		"mill":
 			return preload("res://scripts/mill_line.gd").pedestal()
+		"gallery":
+			return preload("res://scripts/process_gallery.gd").at(Vector2(50.0, preload("res://scripts/process_gallery.gd").FLY_Y))
+		"furnace", "queue":
+			return preload("res://scripts/process_gallery.gd").term("furnace")
+		"watch":
+			var pl = game.get("plant")
+			return Vector2(float(pl.X) + 1.0, float(pl.F) + 5.0) * Geom.M if pl != null else preload("res://scripts/process_gallery.gd").term("furnace")
 		"gate":
 			return Vector2(_gate_x(), _rail_y() - 8.0 * Geom.M)
 		"hub":
@@ -342,6 +353,14 @@ func target_name() -> String:
 			return w("货架口 A（左边货架）", "RACK MOUTH A (LEFT RACKS)")
 		"mill":
 			return w("轧机操作台", "MILL PEDESTAL")
+		"gallery":
+			return w("观察廊上方的走廊", "THE CORRIDOR OVER THE GALLERY")
+		"furnace":
+			return w("炉体控制台", "FURNACE CONSOLE")
+		"queue":
+			return w("加工队列 · 排一炉", "PROCESSING QUEUE · A HEAT")
+		"watch":
+			return w("电弧炉", "ARC FURNACE")
 		"gate":
 			return w("港区通道", "PORT ACCESS")
 		"hub":
@@ -374,6 +393,8 @@ func _page() -> String:
 		return "transit"
 	if path.ends_with("mill_panel.gd"):
 		return "mill:process"
+	if path.ends_with("process_queue_panel.gd"):
+		return ("queue" if kind() in ["queue", "watch"] else "furnace") + ":process"
 	if path.ends_with("shelf_panel.gd"):
 		return "shelf:cargo"
 	if path.ends_with("company_store.gd") and kind() == "shelf" and zone() == "cargo":
@@ -400,6 +421,20 @@ func passed() -> bool:
 			if kind() == "console" and zone() in ["power", "trade"]:
 				return opened and page_open() and callouts_done()
 			return opened and _seen_all and game.console_ui == null
+		"gallery":
+			if d == null:
+				return false
+			var gl: Vector2 = (d.global_position - PortStructure.box("process").position) / Geom.M
+			return gl.y < preload("res://scripts/process_gallery.gd").DECK and gl.x < preload("res://scripts/process_gallery.gd").X1 and gl.x > preload("res://scripts/process_gallery.gd").X0
+		"furnace":
+			return page_open()
+		"queue":
+			return not ProcessQueue.open_entries().is_empty() or str(Career.data.get("industrial_heat", {}).get("state", "")) not in ["", "complete", "cancelled", "written_off"]
+		"watch":
+			# the machines seen at work: the ingots in the furnace and melting (or further on)
+			var ih = game.get("industrial_heat")
+			# (nothing to melt — no ingots, the grid short — the walk does not wait for ever)
+			return ih != null and (str(ih.info().key) in ["melting", "probe", "tapping", "cooling", "returning"] and step_t > 2.0 or step_t > 45.0)
 		"gate":
 			return d != null and d.global_position.y < _rail_y() - 6.0 * Geom.M
 		"hub":
@@ -460,6 +495,23 @@ func _fill() -> void:
 		"mill":
 			title.text = w("轧机操作台：飞到亮圈，按 %s", "THE MILL'S PEDESTAL: TO THE LIT RING, PRESS %s") % e
 			line = w("轧机就站在区里：钢坯从左边进，钢板 / 型材从右边出", "The mill stands here: billet in on the left, plate out on the right")
+		"gallery":
+			title.text = w("往上飞到观察廊上方的走廊", "UP INTO THE CORRIDOR OVER THE GALLERY")
+			line = w("机器都在廊道下面干活；终端是栏杆上的矮控制台，飞到哪台上面往下看就是哪台", "The machines work under the gallery; their consoles stand on its railing, each over its machine")
+		"furnace":
+			title.text = w("飞到最左边的炉体控制台，按 %s", "TO THE FURNACE CONSOLE AT THE FAR LEFT, PRESS %s") % e
+			line = w("炉体控制台打开加工队列：炼什么、先炼哪批都在这里排", "It opens the processing queue: what is melted, which batch first")
+		"queue":
+			title.text = w("按『排一炉』（或按 Enter）", "PRESS 'QUEUE A HEAT' (OR ENTER)")
+			line = w("把仓库里的钢锭排一炉，炉子按队列自己开炉、熔化、浇铸", "A heat of the ingots in store; the furnace starts, melts and casts by itself")
+			if page_open():
+				title.text = w("加工队列 · 按『排一炉』（或按 Enter）", "THE QUEUE · PRESS 'QUEUE A HEAT' (OR ENTER)")
+			elif not page_open():
+				title.text = w("回到炉体控制台按 %s，再按『排一炉』", "BACK TO THE FURNACE CONSOLE: %s, THEN 'QUEUE A HEAT'") % e
+		"watch":
+			var ih = game.get("industrial_heat")
+			title.text = w("往下看：%s", "LOOK DOWN: %s") % (str(ih.info().title) if ih != null else "")
+			line = w("叉车和吊轨车把钢锭送到炉口，电弧炉起弧熔化，再出钢浇进模具；不用按什么，面板关掉也行", "The forklift and the trolley bring the ingots, the arcs melt them, the melt is cast; nothing to press")
 		"gate":
 			title.text = w("出坞：沿青色箭头往上飞", "OUT: UP ALONG THE CYAN ARROWS")
 			line = w("船坞空着时，顶上这道门通向整个港区", "With the berth empty, this gate opens on the port")
@@ -491,7 +543,7 @@ func _fill() -> void:
 		"end":
 			title.text = w("导览完成", "TOUR DONE")
 			line = w("拆船赚钱 → 到各区修港 → 港修好了拆得更快、卖得更贵", "Strip for money → mend the districts → faster, better paid")
-	if page_open() and kind() != "repair":
+	if page_open() and kind() not in ["repair", "furnace", "queue", "watch"]:
 		title.text = (nm + " · " if nm != "" else "") + {"desk": Txt.t("pt_access_terminal"), "console": Txt.t("pt_console_business"), "screen": w("控制屏", "CONTROL SCREEN"), "exchange": w("交易行", "EXCHANGE"), "shelf": w("公司仓库", "COMPANY STORES"), "mill": w("轧机", "ROLLING MILL")}.get(kind(), "")
 		var left := _callouts().size() - co_i
 		line = w("看高亮框：点一下或按空格看下一条（还有 %d 条）", "THE FRAMED PART: CLICK OR SPACE FOR THE NEXT (%d LEFT)") % left if left > 0 else w("看完了：按 Esc 关掉", "DONE: PRESS ESC TO CLOSE")
@@ -751,6 +803,10 @@ func _done_line() -> String:
 	match kind():
 		"desk": return w("%s工程台用过了：修这个区就来这里", "%s desk done: this is where the district is mended") % nm
 		"shelf", "mill": return Ops.w("%s用过了", "%s done") % target_name()
+		"gallery": return w("上了观察廊：沿这条走廊能直飞过全场", "On the gallery: this corridor runs the whole hall")
+		"furnace": return w("加工队列开了：以后在这里排产", "The queue is open: this is where the work is ordered")
+		"queue": return w("排上了：炉子会自己开炉", "Queued: the furnace starts by itself")
+		"watch": return w("炉子在熔化了：出钢后钢坯自己回仓库", "Melting: the billets go back to the stores by themselves")
 		"console", "screen", "exchange": return w("%s看过了", "%s seen") % nm
 		"gate": return w("出坞了：船坞空着时从这道门进出港区", "Out: with the berth empty, this gate is the way into the port")
 		"hub": return w("到中央环了", "In the ring")
@@ -803,7 +859,7 @@ func stop() -> void:
 # (scripts/guide_way.gd): lit chevrons along the corridors, the arrow on the screen's edge with the
 # metres left, the way in front of the card's title; folded away at the target
 const GuideWay = preload("res://scripts/guide_way.gd")
-const FLY_KINDS := ["desk", "console", "shelf", "mill", "gate", "hub", "station", "ride", "home"]
+const FLY_KINDS := ["desk", "console", "shelf", "mill", "gate", "hub", "station", "ride", "home", "gallery", "furnace"]
 var way = null
 var _way_t := 0.0
 

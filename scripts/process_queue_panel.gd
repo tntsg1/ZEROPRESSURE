@@ -195,12 +195,30 @@ func _press(id: String) -> void:
 		toggle_auto()
 	elif id == "store":
 		_to_store()
+	elif id == "one":
+		queue_one()
 	elif id.begins_with("use:"):
 		cycle_use(id.substr(4))
 	elif id.begins_with("mould:"):
 		cycle_mould(id.substr(6))
 	elif id.begins_with("x:"):
 		drop_batch(id.substr(2))
+
+
+# the ingots in store no batch has taken yet
+static func free_t() -> float:
+	return float(StoreBook.raw_stock().get(preload("res://scripts/industrial_exchange.gd").INGOT, 0.0)) - ProcessLine.queued_t(preload("res://scripts/industrial_exchange.gd").INGOT)
+
+
+# "排一炉": one heat's ingots from the store into the queue
+func queue_one() -> void:
+	var r := ProcessLine.queue_ingots(minf(free_t(), ProcessQueue.HEAT_T))
+	if not r.ok:
+		_say(str(r.reason), true)
+		return
+	var e: Dictionary = r.entry
+	_say(w("排进第 %d 批：钢锭 %.1f t → %s · %s · 炉子会自己开炉", "BATCH %d: %.1f t → %s · %s · THE FURNACE STARTS BY ITSELF") % [int(r.place), float(e.t), ProcessLine.mould_name(str(e.mould)), ProcessLine.use_text(e)])
+	queue_redraw()
 
 
 func _to_store() -> void:
@@ -260,7 +278,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			else:
 				close()
 		KEY_ENTER, KEY_KP_ENTER:
-			_press("store")
+			_press("one" if free_t() >= ProcessQueue.HEAT_MIN else "store")
 		_:
 			return
 	get_viewport().set_input_as_handled()
@@ -347,8 +365,11 @@ func _draw() -> void:
 	_text(w("模具", "MOULD"), Vector2(x, 132), 12, Pal.ink(0.5), font_b)
 	_mould_icon(Rect2(x + 70, 116, 44, 22), ProcessLine.line_mould(), 1.0)
 	_text(w("%s模在座上 · 架上：%s", "%s MOULD IN THE SEAT · ON THE RACK: %s") % [ProcessLine.mould_name(ProcessLine.line_mould()), _rack_text()], Vector2(x + 124, 132), 14, Pal.ink(0.75), font_b, wd - 124.0)
-	# ---- the auto toggle and the key to the stores
-	var ar := Rect2(x, 156, 330, 40)
+	# ---- the auto toggle, the key to the stores, and (ingots in store not queued yet) "排一炉"
+	var one_r := Rect2(pr.end.x - PAD - 250.0, 156, 250.0, 40.0)
+	var free := free_t()
+	var store_r := Rect2(one_r.position.x - 140.0, 156, 130.0, 40.0) if free >= ProcessQueue.HEAT_MIN else one_r
+	var ar := Rect2(x, 156, minf(330.0, store_r.position.x - 10.0 - x), 40)
 	_btns["auto"] = ar
 	_notes["auto"] = [w("开着时：订单批次按截止先后排在最前，其余在后，同模具的连着炼，少换模", "On: order batches by their deadlines first, the rest after, the same mould together"), ""]
 	var on := ProcessLine.auto_on()
@@ -359,7 +380,11 @@ func _draw() -> void:
 	draw_rect(sw, Color(UiSkin.ACCENT, 0.85) if on else Pal.ink(0.2))
 	draw_rect(Rect2(sw.position + Vector2(18.0 if on else 2.0, 2.0), Vector2(14, 14)), Pal.ink(0.95))
 	_text(w("按订单截止时间自动排", "AUTO BY DEADLINE"), ar.position + Vector2(58, 26), 14, Pal.ink(0.92), font_b)
-	_key("store", Rect2(pr.end.x - PAD - 250.0, 156, 250.0, 40.0), w("去仓库选钢锭  [Enter]", "PICK INGOTS IN STORE  [Enter]"), w("在仓库里点钢锭“炼成钢坯”就排进来", "In the stores, ingots → 'cast' adds a batch"), "", true)
+	if free >= ProcessQueue.HEAT_MIN:
+		_key("one", one_r, w("排一炉：钢锭 %.1f t  [Enter]", "QUEUE A HEAT: %.1f t  [Enter]") % minf(free, ProcessQueue.HEAT_T), w("把仓库里还没排上的钢锭排一炉，炉子按队列自己炼", "Queue a heat of the ingots in store; the furnace works the queue by itself"), "", true)
+		_key("store", store_r, w("去仓库选", "PICK IN STORE"), w("在仓库里点钢锭“炼成钢坯”，可以挑吨数", "In the stores, ingots → 'cast', any tonnage"))
+	else:
+		_key("store", store_r, w("去仓库选钢锭  [Enter]", "PICK INGOTS IN STORE  [Enter]"), w("在仓库里点钢锭“炼成钢坯”就排进来", "In the stores, ingots → 'cast' adds a batch"), "", true)
 	draw_line(Vector2(x, 214), Vector2(pr.end.x - PAD, 214), Pal.ink(0.1), 1.0)
 	_text(w("炼钢 · 拖动排序，点用途和模具可以换", "MELTING · DRAG TO ORDER, CLICK USE OR MOULD TO CHANGE"), Vector2(x, 232), 12, Pal.ink(0.5), font_b)
 	# ---- the batches
@@ -369,7 +394,7 @@ func _draw() -> void:
 	var list_r := Rect2(x, top, wd, pr.end.y - top - press_h - 60.0)
 	scroll = clampf(scroll, 0.0, maxf(0.0, open.size() * ROW_H - list_r.size.y))
 	if open.is_empty():
-		_text(w("队列是空的。到仓库里点钢锭，选“炼成钢坯”。", "THE QUEUE IS EMPTY. IN THE STORES PICK INGOTS → 'CAST'."), Vector2(x, top + 40), 15, Pal.ink(0.45), font_b, wd)
+		_text(w("队列是空的：按『排一炉』，或到仓库里点钢锭，选“炼成钢坯”。", "THE QUEUE IS EMPTY: 'QUEUE A HEAT', OR IN THE STORES PICK INGOTS → 'CAST'.") if free_t() >= ProcessQueue.HEAT_MIN else w("队列是空的。到仓库里点钢锭，选“炼成钢坯”。", "THE QUEUE IS EMPTY. IN THE STORES PICK INGOTS → 'CAST'."), Vector2(x, top + 40), 15, Pal.ink(0.45), font_b, wd)
 	var mould_prev := ProcessLine.line_mould() if not ProcessLine.changing() else ProcessLine.change_to()
 	var cur := str(Career.data.get("industrial_heat", {}).get("queue", ""))
 	for i in open.size():

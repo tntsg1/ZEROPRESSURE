@@ -969,14 +969,15 @@ func _process(dt: float) -> void:
 			preload("res://scripts/industrial_exchange.gd").advance_career(dt)
 			# 128 号 第 2 段: the exchange's listings and the order board run in real time
 			HallMarket.tick(rdt)
+			# 128 号 第 4 段 收尾: one voice — while a walk is on its card speaks, these notes wait their turn
 			for e in HallMarket.events:
-				if str(e.kind) != "new" and hud != null:
+				if str(e.kind) != "new" and hud != null and not walk_on():
 					hud.show_hint(str(e.text))
 			HallMarket.events.clear()
 			# 128 号 第 4 段: the baler works its jobs in real time; the processing line's notes
 			ProcessLine.tick_press(rdt)
 			for e in ProcessLine.events:
-				if hud != null:
+				if hud != null and not walk_on():
 					hud.show_hint(str(e.text))
 			ProcessLine.events.clear()
 		# the end is checked when something is delivered; once a second as well, for a
@@ -1331,7 +1332,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 				elif industrial_heat != null and state == "play" and industrial_heat.near():
 					# 128 号 第 4 段: after the first heat by hand the desk is the processing queue
 					var hand: bool = str(Career.data.get("industrial_heat", {}).get("state", "")) not in ["", "complete", "cancelled", "written_off"] and str(Career.data.get("industrial_heat", {}).get("queue", "")) == ""
-					if ProcessLine.first_done() and not ProcessLine.LEGACY_DESKS and not hand:
+					if not ProcessLine.LEGACY_DESKS and not hand:
 						open_queue_panel()
 					else:
 						open_heat()

@@ -103,6 +103,27 @@ func _walk(wk) -> int:
 				await _frames(10)
 				check(wk.page_open(), "the exchange open")
 				await _close()
+			# 128 号 第 4 段 收尾: the processing walk is its first heat (tests/seg4_finish_check.gd flies it)
+			"gallery":
+				await _put(wk.target())
+				check(wk.step > at, "process: up onto the gallery")
+			"furnace":
+				await _put(wk.target() + Vector2(0, -0.6) * Geom.M)
+				await _e()
+				check(wk.step > at, "process: E at the furnace console opens the queue (%s)" % wk._page())
+			"queue":
+				if g.console_ui != null and g.console_ui.has_method("queue_one"):
+					g.console_ui.queue_one()
+				await _frames(10)
+				check(wk.step > at, "process: a heat queued (%d batches)" % ProcessQueue.open_entries().size())
+				await _close()
+			"watch":
+				await _close()
+				var wf := 0
+				while wk.step == at and wf < 60 * 60:
+					await _frames(1)
+					wf += 1
+				check(wk.step > at, "process: watched (%.1f s, %s)" % [wf / 60.0, str(g.industrial_heat.info().title)])
 			"shelf", "mill":
 				await _put(wk.target())
 				await _e()
@@ -155,7 +176,9 @@ func _walk(wk) -> int:
 				await _frames(int(wk.END_S * 60.0) + 10)
 		await _frames(4)
 		if wk.step > at or wk.done:
-			ok_steps += 1
+			# (a step whose condition already holds passes with the one before: the processing walk's queue
+			# step when batches are queued already)
+			ok_steps += maxi(1, wk.step - at) if not wk.done else 1
 		elif legs > 0 and wk.back.size() < legs:
 			# a leg out to where the walk starts: on, not counted
 			pass

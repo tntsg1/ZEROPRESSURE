@@ -1995,7 +1995,7 @@ func work_state(it: Dictionary) -> Dictionary:
 			var t := _cast_t(it)
 			var free := float(StoreBook.raw_stock().get(StoreBook.Exchange.INGOT, 0.0)) - ProcessLine.queued_t(StoreBook.Exchange.INGOT)
 			var why := ""
-			if not ProcessLine.first_done():
+			if not ProcessLine.first_done() and ProcessLine.LEGACY_DESKS:
 				why = w("第一炉先到加工区炉台亲手炼一次（主线会带你去），之后在这里一键排产", "MAKE THE FIRST HEAT BY HAND AT THE FURNACE DESK; AFTER THAT IT IS ONE KEY HERE")
 			elif free < ProcessQueue.HEAT_MIN:
 				why = w("仓库里的钢锭都已经排进加工队列了", "ALL THE INGOTS ARE QUEUED ALREADY")
