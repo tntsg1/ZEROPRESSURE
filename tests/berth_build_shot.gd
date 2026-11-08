@@ -133,7 +133,8 @@ func _run() -> void:
 	check(g3.state == "build" and not g3.world.visible, "a contract's start: the build first, the ship kept out of sight")
 	g3._end_build()
 	await _frames(3)
-	check(g3.state == "intro" and g3.world.visible and is_equal_approx(Dock.FLOOR_X1, 88.0), "then the tug brings the ship into the 88 m berth")
+	# 船坞自适应 (user 2026-11-08): the berth runs out only as far as the ship needs (gr7, 42 m: 54 m)
+	check(g3.state == "intro" and g3.world.visible and is_equal_approx(Dock.FLOOR_X1, 54.0), "then the tug brings the ship into its 54 m berth (%.1f)" % Dock.FLOOR_X1)
 	g3.queue_free()
 	await _frames(3)
 	# a solar sail into the long low berth: the boom jacked up, the platform drawn down

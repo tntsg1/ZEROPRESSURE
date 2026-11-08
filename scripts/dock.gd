@@ -38,9 +38,20 @@ static func owned(upgrades: Dictionary) -> float:
 	return best
 
 
-# the berth a ship takes: what has been paid for, or longer if the ship needs it
-# (a developer's or a test's contract may bring a ship the career couldn't take)
+# the berth a ship takes (自适应, user 2026-11-08 Q1=B): the berth runs out only as far as the ship needs —
+# its length and BERTH_ROOM, never under the standard berth nor past what has been paid for (what was bought
+# is how far it can reach, not how long it always is). A ship longer than that (a developer's or a test's
+# contract may bring one the career couldn't take) gets the tier it needs, as before.
+const BERTH_ROOM := 12.0      # m the berth runs past the ship's length
 static func length_for(ship_len: float, upgrades: Dictionary) -> float:
+	var x := owned(upgrades)
+	if ship_len <= x - 6.0:
+		return clampf(ship_len + BERTH_ROOM, STANDARD, x)
+	return length_for_tier(ship_len, upgrades)
+
+
+# the berth before 自适应: what had been paid for, the whole of it (a contract saved then keeps it)
+static func length_for_tier(ship_len: float, upgrades: Dictionary) -> float:
 	var x := owned(upgrades)
 	for t in TIERS:
 		if ship_len <= float(t[0]) - 6.0:

@@ -317,7 +317,22 @@ func _ready() -> void:
 	var ext := Ship.extent(ship)
 	berth_ext = ext
 	prev_shape = {"len": Dock.floor_end, "lift": Dock.LIFT, "drop": Dock.DROP}
-	berth_len = Dock.length_for(float(ship.get("length", 0.0)), _upgrades_for_berth())
+	# 自适应 (user 2026-11-08): a contract's berth is as long as its ship needs; a saved contract keeps the
+	# length it was saved with (a save from before keeps the whole berth it had then)
+	_berth_kept = false
+	if in_berth():
+		berth_len = _empty_berth_len()
+	elif not data.is_empty():
+		berth_len = float(data.get("berth_len", Dock.length_for_tier(float(ship.get("length", 0.0)), _upgrades_for_berth())))
+		_berth_kept = true
+	else:
+		berth_len = Dock.length_for(float(ship.get("length", 0.0)), _upgrades_for_berth())
+	if career() and not in_berth():
+		Career.data["berth_now"] = berth_len
+		# the bridge the port hangs the berth on (the empty berth's is the port structure's)
+		berth_bridge = preload("res://scripts/berth_bridge.gd").new()
+		berth_bridge.game = self
+		add_child(berth_bridge)
 	Dock.configure(berth_len, ext.x, ext.y)
 	if has_upgrade("port2"):
 		Dock.add_port2()
@@ -2358,6 +2373,19 @@ func _end_survey() -> void:
 var berth_ext := Vector2.ZERO
 var berth_len := Dock.STANDARD
 var prev_shape := {}            # the berth as the last scene left it: {len, lift, drop}
+var _berth_kept := false        # 自适应: this contract's berth length came from its save
+var berth_bridge = null         # a contract's berth's bridge up to the port (scripts/berth_bridge.gd)
+
+
+# 自适应: the empty berth between contracts stays as long as the last contract left it (Career berth_now),
+# never past what is paid for; a purchase not yet shown runs it out to the whole of it (the build shows it)
+func _empty_berth_len() -> float:
+	var owned := Dock.owned(Career.data.get("upgrades", {}) if career() else _upgrades_for_berth())
+	if not career():
+		return owned
+	if Career.data.has("berth_seen") and owned > float(Career.data.berth_seen) + 0.5:
+		return owned
+	return clampf(float(Career.data.get("berth_now", owned)), Dock.STANDARD, owned)
 var build = null
 var _after_build := "play"
 static var reshaped := {}       # ship types the berth has grown for this session (outside a career)
@@ -2367,9 +2395,16 @@ func _maybe_build() -> void:
 	if build != null or bot != null or (testing and not cine_in_tests) or state == "build":
 		return
 	# what the berth is now (over the empty berth a purchase has only just been made)
-	berth_len = Dock.length_for(float(ship.get("length", 0.0)), _upgrades_for_berth())
+	if in_berth():
+		berth_len = _empty_berth_len()
+	elif not _berth_kept:
+		berth_len = Dock.length_for(float(ship.get("length", 0.0)), _upgrades_for_berth())
 	var to := {"len": berth_len, "lift": Dock.lift_for(berth_ext.x), "drop": Dock.drop_for(berth_ext.y)}
 	var from := to.duplicate()
+	# 自适应 (Q2=A): a new contract's berth runs out or draws in from the length the last scene left it at,
+	# with the extension's own build (before the hull is brought in); a saved contract is already laid out
+	if career() and not in_berth() and not _berth_kept and not prev_shape.is_empty():
+		from.len = float(prev_shape.len)
 	var paid := false
 	if career() and Career.data.has("berth_seen"):
 		var seen := float(Career.data.berth_seen)
@@ -2443,6 +2478,7 @@ func _end_build() -> void:
 	if career():
 		if Career.data.has("berth_seen"):
 			Career.data["berth_seen"] = Dock.owned(Career.data.get("upgrades", {}))
+		Career.data["berth_now"] = berth_len
 		if not in_berth():
 			var rs: Dictionary = Career.data.get("reshaped", {})
 			rs[ship_id] = true

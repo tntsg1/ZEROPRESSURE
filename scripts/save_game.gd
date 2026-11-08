@@ -215,6 +215,7 @@ static func snapshot(g) -> Dictionary:
 	var d := {
 		"version": VERSION,
 		"ship": g.ship_id,
+		"berth_len": g.berth_len,
 		"exchange_cargo": g.exchange_logistics.field_state() if g.exchange_logistics != null else {},
 		"industrial_cargo": g.industrial_heat.field_state() if g.industrial_heat != null else {},
 		"sorting_cargo": g.industrial_sort.field_state() if g.industrial_sort != null else {},

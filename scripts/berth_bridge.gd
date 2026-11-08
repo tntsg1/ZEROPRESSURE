@@ -25,16 +25,16 @@ func _ready() -> void:
 	z_as_relative = false
 
 
+# wherever the port is drawn: the empty berth (where its walls stand too) and a contract's berth (船坞自适应:
+# the port over a contract's berth hung on nothing before)
 func active() -> bool:
-	return game != null and is_instance_valid(game) and game.in_berth() and game.career()
+	return game != null and is_instance_valid(game) and game.career() and not game.get("belt")
 
 
 func _ends() -> Array:
-	var ps = game.get("port_structure")
 	var c := Backdrop.port_centre_px()
 	var top: Vector2 = c + (PortArt.door_at("salvage")[0] as Vector2) * PortStructure.M()
-	var foot: Vector2 = ps.corridor_end("salvage") if ps != null else top
-	return [top, foot]
+	return [top, PortStructure.corridor_end("salvage")]
 
 
 func _process(dt: float) -> void:

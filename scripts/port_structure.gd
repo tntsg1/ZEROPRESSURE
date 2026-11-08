@@ -174,7 +174,7 @@ var power5
 
 # where a district's corridor walls stop: a metre short of its door; the berth's (方案 A, 2026-11-08) runs on
 # down the bridge to the boom's top over the berth's gate, however far under the port the berth hangs
-func corridor_end(zone: String) -> Vector2:
+static func corridor_end(zone: String) -> Vector2:
 	var d := door(zone)
 	var p: Vector2 = d[0]
 	var c := centre()

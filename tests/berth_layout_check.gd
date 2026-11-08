@@ -58,13 +58,33 @@ func _layout(tier: float) -> void:
 
 
 func _run() -> void:
-	var M := Geom.M
 	for tier in TIERS:
 		await _layout(tier)
 		check(absf(Dock.FLOOR_X1 - tier) < 0.5, "%.0f m: the berth laid out at its tier (%.0f m)" % [tier, Dock.FLOOR_X1])
+		await _check_berth(tier, tier - 6.0)
+		if tier == 50.0 or tier == 88.0 or tier == 620.0:
+			g.port_view = true
+			_ui(false)
+			for i in 90:
+				await _frames(1)
+			Cap.save(root, "res://tests/out/berth_layout_pano_%d.png" % int(tier))
+			g.port_view = false
+			_ui(true)
+			await _frames(20)
+	g.queue_free()
+	await _frames(4)
+	print("BERTH LAYOUT %s (%d checks, %d failed)" % ["PASS" if fails == 0 else "FAIL", checks, fails])
+	quit()
+
+
+# the berth as it is laid out now (tier: its length, m; hull: the longest hull it takes, m): clear of the
+# port, its bridge down to its gate, the shuttle from the hub to it, the way in for a hull clear
+func _check_berth(tier: float, hull: float) -> void:
+	var M := Geom.M
+	if true:
 		var berth := Rect2(Dock.BOUNDS.position * M, Dock.BOUNDS.size * M)
 		var c := Backdrop.port_centre_px()
-		var cx: float = g.port_structure.corridor_end("salvage").x
+		var cx: float = PortStructure.corridor_end("salvage").x
 		var bridge := Rect2(Vector2(cx - (PortStructure.HALF_SALVAGE + 1.5) * M, c.y), Vector2((PortStructure.HALF_SALVAGE + 1.5) * 2.0 * M, berth.position.y - c.y + 6.0 * M))
 		var hit: Array = []
 		for z in PortArt.ANGLE:
@@ -96,7 +116,7 @@ func _run() -> void:
 					hit.append("track " + z)
 		check(hit.is_empty(), "%.0f m: the berth (drop %.1f m) is clear of the port%s" % [tier, Dock.berth_drop(), (": " + str(hit)) if not hit.is_empty() else ""])
 		# the bridge reaches down to the boom over the gate
-		var foot: Vector2 = g.port_structure.corridor_end("salvage")
+		var foot: Vector2 = PortStructure.corridor_end("salvage")
 		check(absf(foot.y - (Dock.RAIL_Y - 0.3) * M) < 2.0 and absf(foot.x - g.dock.port_gate().get_center().x * M) < 1.0 * M, "%.0f m: the bridge's walls come down to the boom over the gate" % tier)
 		# the shuttle: hub to the berth
 		var tr = g.tram
@@ -120,7 +140,7 @@ func _run() -> void:
 		# trip from the tug yard any more): that way in, as far out as the hull starts, holds nothing of the port
 		# the hull starts game.ship_offset (60 m) right of its berthed place: the lane is that and the longest
 		# hull the tier takes (its length less 6 m), from the berth's open end
-		var lane := Rect2(Vector2(Dock.FLOOR_X1 - 2.0, Dock.BOUNDS.position.y + 1.0) * M, Vector2(g.ship_offset / M + tier - 6.0 + 4.0, Dock.BOUNDS.size.y - 2.0) * M)
+		var lane := Rect2(Vector2(Dock.FLOOR_X1 - 2.0, Dock.BOUNDS.position.y + 1.0) * M, Vector2(g.ship_offset / M + hull + 4.0, Dock.BOUNDS.size.y - 2.0) * M)
 		var in_lane: Array = []
 		for b in root.find_children("*", "StaticBody2D", true, false):
 			if b in own or (int(b.collision_layer) & (4 | 16)) == 0 or str(b.name) == "TugHulls":
@@ -132,16 +152,3 @@ func _run() -> void:
 			if z != "salvage" and PortStructure.box(z).intersects(lane):
 				in_lane.append(z)
 		check(in_lane.is_empty(), "%.0f m: the tow-in lane off the berth's open end is clear%s" % [tier, (": " + str(in_lane)) if not in_lane.is_empty() else ""])
-		if tier == 50.0 or tier == 88.0 or tier == 620.0:
-			g.port_view = true
-			_ui(false)
-			for i in 90:
-				await _frames(1)
-			Cap.save(root, "res://tests/out/berth_layout_pano_%d.png" % int(tier))
-			g.port_view = false
-			_ui(true)
-			await _frames(20)
-	g.queue_free()
-	await _frames(4)
-	print("BERTH LAYOUT %s (%d checks, %d failed)" % ["PASS" if fails == 0 else "FAIL", checks, fails])
-	quit()

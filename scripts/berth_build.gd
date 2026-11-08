@@ -18,6 +18,9 @@ const TugRig = preload("res://scripts/tug_rig.gd")
 #   weld   the seams are electron-beam welded: EB welding needs a vacuum, which the berth is;
 #   test   the service lines are proof-pressurised with helium to 1.5 × working while
 #          the floor carries 1.25 × its design load (sag drawn 200 × against L/800);
+#   stow   (自适应, user 2026-11-08: a contract's berth only as long as its ship needs) a shorter
+#          berth: the truss is folded back bay by bay into the canister, the berth drawing in
+#          as it goes (everything laid out by it — the port, the bridge — follows it in);
 #   cert   the berth is laid out at its new size: the mouths and the furnace roll to
 #          their new places, the field is recalibrated and the lights come up.
 # A ship type's second time runs the same steps fast. Any key or click skips to
@@ -53,6 +56,7 @@ var _step := -1
 var _flash_t := 0.0
 var _last_bay := 0
 var _shape := Vector2(-1, -1)
+var _x_now := -1.0
 var _sect := 0
 # a close-up window under the checklist: a second camera on the same world, held on
 # the mechanism the step is about (the climbing frame, a strand jack, the truss tip...)
@@ -82,7 +86,12 @@ func setup(g, from: Dictionary, to: Dictionary, fast: bool = false, env: Rect2 =
 		steps.append(["drop", clampf((drop_b - drop_a) * 0.12, 3.0, 7.0)])
 	if x_b > x_a + 0.1:
 		steps.append_array([["haul", 3.5], ["deploy", clampf(float(modules()) * 0.55, 4.0, 9.0)], ["latch", 3.0], ["weld", 3.5]])
-	steps.append_array([["test", 4.0], ["cert", 3.0]])
+		steps.append(["test", 4.0])
+	elif x_b < x_a - 0.1:
+		steps.append(["stow", clampf((x_a - x_b) / MOD * 0.35, 3.0, 7.0)])
+	else:
+		steps.append(["test", 4.0])
+	steps.append(["cert", 3.0])
 	var acc := 0.0
 	for s in steps:
 		s[1] = float(s[1]) * k
@@ -128,6 +137,8 @@ func inset_focus() -> Array:
 			return [Vector2(x_a + 3.0, F + 1.2), 0.85, "bb_c_haul"]
 		"deploy":
 			return [Vector2(x_a + front(), F + 0.3), 1.5, "bb_c_deploy"]
+		"stow":
+			return [Vector2(stow_x(), F + 0.3), 1.5, "bb_c_stow"]
 		"latch":
 			return [Vector2(x_a, F + 0.3), 1.6, "bb_c_latch"]
 		"weld":
@@ -227,6 +238,13 @@ func front() -> float:
 	return (x_b - x_a) * Pal.ease_io(kk("deploy"))
 
 
+# 自适应: the berth's end now, while it draws in (m)
+func stow_x() -> float:
+	if x_b >= x_a - 0.1:
+		return x_a
+	return lerpf(x_a, x_b, Pal.ease_io(kk("stow")))
+
+
 # the boom's lift now: one climbing stroke per section (the cylinders push for the
 # first 60 % of a cycle, then the new section slides into the gap)
 func lift_now() -> float:
@@ -268,7 +286,7 @@ static func field(len_: float, lift: float, drop: float) -> Rect2:
 # the heading line: what changes
 func head() -> String:
 	var parts: Array = []
-	if x_b > x_a + 0.1:
+	if absf(x_b - x_a) > 0.1:
 		parts.append(Txt.t("bb_h_len") % [x_a, x_b])
 	if lift_b > lift_a + 0.1:
 		parts.append(Txt.t("bb_h_lift") % (lift_b - lift_a))
@@ -295,6 +313,8 @@ func detail(i: int) -> String:
 			return Txt.t("bb_haul") % [cassettes(), x_b - x_a]
 		"deploy":
 			return Txt.t("bb_deploy") % [mini(bays(), int(front() / BAY + 0.001)), bays()]
+		"stow":
+			return Txt.t("bb_stow") % [x_a - stow_x(), x_a - x_b]
 		"latch":
 			var nl := 0
 			for j in modules() + 1:
@@ -349,13 +369,17 @@ func cam(vs: Vector2) -> Array:
 	elif kname == "deploy":
 		lo = x_a - 12.0
 		hi = x_a + maxf(28.0, front() + 14.0)
+	elif kname == "stow":
+		# the whole berth as it draws in, its old end still in the picture
+		lo = Dock.TOWER_X - 4.0
+		hi = x_a + 8.0
 	elif kname in ["latch", "weld", "test"]:
 		lo = x_a - 12.0 if x_b > x_a + 0.1 else Dock.TOWER_X - 4.0
 		hi = x_b + 8.0
 	elif kname == "cert":
 		lo = Dock.TOWER_X - 2.0
 		hi = x_b + 8.0
-	hi = minf(hi, maxf(x_b, envelope.end.x + 4.0) + 8.0)
+	hi = minf(hi, maxf(maxf(x_b, x_a if kname == "stow" else x_b), envelope.end.x + 4.0) + 8.0)
 	if not kname in ["iso", "lift", "drop", "cert"] and bot - top > 40.0:
 		# a very tall berth: the work on the floor
 		top = Dock.FLOOR_Y - 16.0
@@ -374,14 +398,16 @@ func step(dt: float) -> bool:
 		_step = i
 		var snd: String = {"iso": "holo", "lift": "clamp", "drop": "hiss", "haul": "launch", "deploy": "clank", "latch": "clamp", "weld": "arc", "test": "hiss", "cert": "ok"}.get(kname, "ok")
 		game.sfx.play(snd, Vector2.INF, 0.8)
-		if kname == "test" and not relaid:
+		if kname in ["test", "cert"] and not relaid:
 			_relay()
-	# the berth's shape follows the jacks
+	# the berth's shape follows the jacks (and, drawing in, its end)
 	if not relaid:
 		var sh := Vector2(lift_now(), drop_now())
-		if sh.distance_to(_shape) > 0.01:
+		var xn := stow_x()
+		if sh.distance_to(_shape) > 0.01 or absf(xn - _x_now) > 0.005:
 			_shape = sh
-			game._layout_shape(x_a, sh.x, sh.y)
+			_x_now = xn
+			game._layout_shape(xn, sh.x, sh.y)
 	_flash_t -= dt
 	var vis: Vector2 = dock._vis_x() / M
 	var F := Dock.FLOOR_Y
@@ -511,6 +537,8 @@ func _draw() -> void:
 		# amber beacons on the corners that are about to move
 		for bp in [Vector2(Dock.TOWER_X + 0.3, R - 0.3), Vector2(x_a, F + 0.3), Vector2(x_a, R - 0.3)]:
 			draw_circle(bp * M, minf(4.0 * px, 12.0), Pal.heat(0.4 + 0.6 * blink, 1.8))
+	if key() == "stow":
+		_draw_stow(R, F, px, blink)
 	if passed("lift"):
 		_draw_lift(R, F, px)
 	if passed("drop"):
@@ -768,3 +796,23 @@ func _truss(x0: float, x1: float, y: float, h: float, vis: Vector2) -> void:
 		draw_multiline(braces, Pal.ink(0.2), 1.2)
 	draw_line(Vector2(a, y) * M, Vector2(b, y) * M, Pal.ink(0.65), 1.6)
 	draw_line(Vector2(a, y + h) * M, Vector2(b, y + h) * M, Pal.ink(0.3), 1.2)
+
+
+# 自适应: drawing in — where the berth reached (dashed), the folded bays stacking into the canister at
+# the end as it comes in, a lamp on the tip
+func _draw_stow(R: float, F: float, px: float, blink: float) -> void:
+	var xn := stow_x()
+	var col := Pal.tint(Pal.AIR, 0.45, 1.2)
+	_dashed(Vector2(xn, F) * M, Vector2(x_a, F) * M, col, -1.0, 12.0 * px, 9.0 * px)
+	_dashed(Vector2(xn, R) * M, Vector2(x_a, R) * M, col, -1.0, 12.0 * px, 9.0 * px)
+	_dashed(Vector2(x_a, R) * M, Vector2(x_a, F) * M, col, -1.0, 12.0 * px, 9.0 * px)
+	# the canister at the floor's end, the folded bays in it growing with what came in
+	var n := mini(14, int((x_a - xn) / BAY / 6.0) + 1)
+	var c0 := Vector2(xn - 1.6, F - 0.2)
+	draw_rect(Rect2(c0 * M, Vector2(1.6, 1.0) * M), Color(0.07, 0.075, 0.085))
+	for i in n:
+		var yy := (F - 0.15 - i * 0.06) * M
+		draw_line(Vector2(xn - 1.5, 0.0) * M + Vector2(0.0, yy), Vector2(xn - 0.1, 0.0) * M + Vector2(0.0, yy), Pal.ink(0.45), 1.2 * px)
+	draw_rect(Rect2(c0 * M, Vector2(1.6, 1.0) * M), Pal.ink(0.6), false, 1.4 * px)
+	draw_circle(Vector2(xn, F + 0.3) * M, minf(4.0 * px, 12.0), Pal.heat(0.4 + 0.6 * blink, 1.8))
+	draw_circle(Vector2(xn, R - 0.3) * M, minf(4.0 * px, 12.0), Pal.heat(0.4 + 0.6 * blink, 1.8))
