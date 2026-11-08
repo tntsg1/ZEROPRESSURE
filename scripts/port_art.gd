@@ -299,7 +299,12 @@ static func _district(ci, c: Vector2, zone: String, M: float, z: float, t: float
 	if n >= 1 and zone != "salvage":
 		_anim(ci, t, func(cc, tt: float, _z: float): cc.draw_circle(Vector2(r.get_center().x, r.position.y) - Vector2(0, 2.0 * M), 0.5 * M, Pal.heat(0.6 + 0.4 * sin(tt * 2.0 + c.x), 1.6)))
 	var codes := {"power": "PWR", "tug": "TUG", "process": "PRC", "trade": "TRD", "cargo": "CGO", "salvage": "SLV"}
-	var at := r.position + Vector2(0, -8.0 * M) if zone != "salvage" else r.position + Vector2(-20.0 * M, -2.0 * M)
+	var at := r.position + Vector2(0, -8.0 * M)
+	if zone == "salvage":
+		# 128 号 第 6 段: on the berth itself (it hangs under the port on its bridge): hung on the frame of
+		# its open end, under the boom (the tower end has the parts store and the bridge's foot over it)
+		var m := M / PM
+		at = c - Dock.centre() * m + Vector2(0.0, Dock.berth_drop()) * m + Vector2(Dock.BOUNDS.end.x + 0.6, Dock.RAIL_Y + 0.8) * m
 	_anim(ci, t, func(cc, _t: float, zz: float): _plate(cc, at, Port.name_of(zone), "%s-%d" % [codes.get(zone, "Z"), n], n, M, zz))
 	# 43 号 (player 2026-10-25: "you haven't built it, how do you know something is there?"):
 	# the next stage is previewed at the district's works desk, never drawn on the station
@@ -907,7 +912,8 @@ static func _cargo(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: i
 static func _salvage(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: int) -> void:
 	var ink := _ink(n)
 	var m := M / PM
-	var o := c - Dock.centre() * m        # world px of the berth's (0, 0)
+	# world px of the berth's (0, 0): 方案 A, a long berth hangs Dock.berth_drop() m lower on its bridge
+	var o := c - Dock.centre() * m + Vector2(0.0, Dock.berth_drop()) * m
 	var fy: float = Dock.FLOOR_Y
 	var x1: float = Dock.FLOOR_X1
 	# the quay truss under the whole district, pylons down from it

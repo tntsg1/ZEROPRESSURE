@@ -144,9 +144,6 @@ func _ready() -> void:
 	gallery_walls.collision_layer = 16
 	gallery_walls.collision_mask = 0
 	add_child(gallery_walls)
-	if preload("res://scripts/process_gallery.gd").on():
-		for e in preload("res://scripts/process_gallery.gd").edges():
-			_seg_on(gallery_walls, e[0], e[1])
 	# 128 号 第 6 段: what the art draws solid (scripts/port_solids.gd), its own body (layer 4 like the
 	# walls) so the works' overhead-rail trolley and its load, which run on their own rail through the
 	# racks' tops and down past the mill, can be let through it (scripts/industrial_heat.gd)
@@ -157,6 +154,11 @@ func _ready() -> void:
 	add_child(solids)
 	_build()
 	_tug_hulls()
+	_port_at = Backdrop.port_centre_px()
+	# 方案 A: the bridge down to a berth hung under the port (scripts/berth_bridge.gd)
+	var bridge = preload("res://scripts/berth_bridge.gd").new()
+	bridge.game = game
+	add_child(bridge)
 	interiors = Interiors.new()
 	interiors.game = game
 	add_child(interiors)
@@ -168,6 +170,36 @@ func _ready() -> void:
 	power5.game = game
 	add_child(power5)
 var power5
+
+
+# where a district's corridor walls stop: a metre short of its door; the berth's (方案 A, 2026-11-08) runs on
+# down the bridge to the boom's top over the berth's gate, however far under the port the berth hangs
+func corridor_end(zone: String) -> Vector2:
+	var d := door(zone)
+	var p: Vector2 = d[0]
+	var c := centre()
+	var axis := (p - c).normalized()
+	if zone == "salvage" and absf(axis.y) > 0.01:
+		var y := (Dock.RAIL_Y - 0.3) * Geom.M
+		return c + axis * ((y - c.y) / axis.y)
+	return p - axis * 1.0 * M()
+
+
+# the walls laid out again where the port now is (a berth grown or shrunk moves the port over it)
+var _port_at := Vector2.INF
+func _rebuild() -> void:
+	for b in [walls, gallery_walls, solids]:
+		for ch in b.get_children():
+			b.remove_child(ch)
+			ch.queue_free()
+	var th = get_node_or_null("TugHulls")
+	if th != null:
+		remove_child(th)
+		th.queue_free()
+	tug_hulls = []
+	_build()
+	_tug_hulls()
+	_port_at = Backdrop.port_centre_px()
 
 
 # 128 号 第 6 段: a company tug at home on its deck berth is solid (its hull); gone while it is out
@@ -254,6 +286,9 @@ func _edge_with_gap(a: Vector2, b: Vector2, g: Vector2, w: float) -> void:
 
 func _build() -> void:
 	var m := M()
+	if gallery_walls != null and preload("res://scripts/process_gallery.gd").on():
+		for e in preload("res://scripts/process_gallery.gd").edges():
+			_seg_on(gallery_walls, e[0], e[1])
 	var c := centre()
 	# the hub's outer ring, open where each spoke arrives
 	var gaps: Array = []
@@ -287,7 +322,7 @@ func _build() -> void:
 		# the corridor runs straight from the hub's rim to the door; its walls stop a metre short
 		var axis := (p - c).normalized()
 		var a0 := c + axis * PortArt.HUB_R * m
-		var a1 := p - axis * 1.0 * m
+		var a1 := corridor_end(zone)
 		var side := axis.orthogonal() * half(zone) * m
 		if zone != "salvage":
 			var r := box(zone)
@@ -319,6 +354,8 @@ func _build() -> void:
 func _process(dt: float) -> void:
 	t += dt
 	visible = active()
+	if Backdrop.port_centre_px() != _port_at:
+		_rebuild()
 	_tug_hulls_tick()
 	if not visible:
 		PortArt.inside = ""
@@ -373,7 +410,7 @@ func _draw() -> void:
 		# corridor walls
 		var axis := (p - c).normalized()
 		var a0 := c + axis * PortArt.HUB_R * m
-		var a1 := p - axis * 1.0 * m
+		var a1 := corridor_end(zone)
 		var side := axis.orthogonal() * half(zone) * m
 		draw_line(a0 + side, a1 + side, wall_col, 2.0 * lw)
 		draw_line(a0 - side, a1 - side, wall_col, 2.0 * lw)

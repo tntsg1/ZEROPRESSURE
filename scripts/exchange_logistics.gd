@@ -37,7 +37,7 @@ func restore_field(state: Dictionary) -> void:
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	z_index = 3
-	position = Backdrop.port_centre_px()+(PortArt.district_at("cargo")+Vector2(0,PortArt.BOX.y*0.5+9))*PortArt.PM*Geom.M
+	position = yard_at()
 	# Physical walls with an actual opening, not backdrop strokes.
 	# the east wall opens onto the freight pier (31 号)
 	for rect in [Rect2(-292,-112,12,264),Rect2(280,40,12,112),Rect2(-280,140,560,12),Rect2(-280,-112,220,12),Rect2(60,-112,220,12)]:
@@ -193,7 +193,15 @@ func _start() -> void:
 			return
 	_adopt(chosen)
 
+# the cargo district's yard under its hatch, world px: it moves with the port (方案 A, 2026-11-08: a berth
+# grown or shrunk in the scene moves the port over it)
+static func yard_at() -> Vector2:
+	return Backdrop.port_centre_px()+(PortArt.district_at("cargo")+Vector2(0,PortArt.BOX.y*0.5+9))*PortArt.PM*Geom.M
+
 func _physics_process(dt: float) -> void:
+	var ya := yard_at()
+	if position.distance_squared_to(ya) > 1.0:
+		position = ya
 	if game == null or game.state != "play" or game.menu_open or game.paused_sim: return
 	_retry = maxf(0.0,_retry-dt)
 	if _retry > 0.0: return

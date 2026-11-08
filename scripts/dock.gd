@@ -231,6 +231,21 @@ func in_buffer(b) -> bool:
 static func centre() -> Vector2:
 	return Vector2((TOWER_X + FLOOR_X1) * 0.5, -2.0)
 
+
+# 128 号 第 6 段 方案 A (user 2026-11-08; the standard 50 m one too, user 2026-11-08 later): the berth does not sit in
+# the cargo district any more: it hangs in open space under the port on a long bridge (the salvage corridor
+# run on down, scripts/berth_bridge.gd). This is how far under (m) its top is from where the standard berth's is:
+# clear of everything the port has (its lowest, PortArt.bounds, 116 m under the hub) by 6 m, and lower the
+# longer it is. The port is placed by it (scripts/backdrop.gd port_centre_px): the berth stays at the origin.
+const DROP_CLEAR := 122.0             # m under the hub the berth's top must stay
+static var DROP_ON := true            # tests: false lays the berth out the old way (the before picture)
+static func berth_drop() -> float:
+	if not DROP_ON:
+		return 0.0
+	var top := BOUNDS.position.y - (-2.0)        # the berth's top over its centre line (m, negative)
+	var need := DROP_CLEAR - (PortArt.RADIUS.y + top)
+	return maxf(0.0, need) + maxf(0.0, FLOOR_X1 - EXTENDED) * 0.05
+
 var game: Game
 var world: World
 var zone_state := {}       # id -> {"glow": float, "busy": float, "reject": float, "eat": float}

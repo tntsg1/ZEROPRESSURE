@@ -175,17 +175,25 @@ const PORT_S := PortArt.PM
 
 
 static func port_centre_px() -> Vector2:
-	return (Dock.centre() - Vector2(0, PortArt.RADIUS.y * PortArt.PM)) * Geom.M
+	return (Dock.centre() - Vector2(0, PortArt.RADIUS.y * PortArt.PM + Dock.berth_drop())) * Geom.M
 
 
 # the middle of everything the panorama frames (the station and ARK-01), world px
 static func pano_centre_px() -> Vector2:
-	return port_centre_px() + PortArt.bounds().get_center() * PortArt.PM * Geom.M
+	return pano_rect_px().get_center()
 
 
-# the zoom that fits the whole station and ARK-01 in a view of this size
+# 方案 A (2026-11-08): the panorama frames the station and the berth hung under it, however long
+static func pano_rect_px() -> Rect2:
+	var pb := PortArt.bounds()
+	var port := Rect2(port_centre_px() + pb.position * PortArt.PM * Geom.M, pb.size * PortArt.PM * Geom.M)
+	var berth := Rect2(Dock.BOUNDS.position * Geom.M, Dock.BOUNDS.size * Geom.M).grow(6.0 * Geom.M)
+	return port.merge(berth)
+
+
+# the zoom that fits the whole station, ARK-01 and the berth in a view of this size
 static func port_zoom(vs: Vector2) -> float:
-	var span := PortArt.extent() * PortArt.PM * Geom.M
+	var span := pano_rect_px().size
 	return minf(vs.x / span.x, vs.y / span.y) * 0.94
 
 
