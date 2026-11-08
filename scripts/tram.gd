@@ -34,7 +34,17 @@ var dwell := 0.0
 var speed := 0.0
 var slide_from := Vector2.ZERO
 const SPEED := 36.0 * 48.0     # px/s (35 号: was 12 m/s; 130 号 review: 20 ×1.8)
-const ACCEL := 10.8 * 48.0      # px/s²
+const ACCEL := 10.8 * 48.0      # px/s²: the most it speeds up, and the braking it plans with
+# 接驳车平顺 (user 2026-11-08, 方案 A: the top speed kept, only smoother): the acceleration is never thrown
+# on or off at once but built up and eased off at JERK (an S-curve) — setting off, braking for a curve,
+# braking into a stop. 36 m/s³: full acceleration (10.8 m/s²) builds in 0.3 s — no kick to the body, and
+# the rides take about 11 % longer than when it was thrown on at once (at 24 m/s³ it was 15 %, and the
+# freight trains waited on it longer). Every frame it takes the most acceleration from which it can still
+# brake on such an S-curve for every curve and the stop ahead (Tram._brake_dist);
+# the controller may use JERK_SLACK more jerk and braking than it plans with, room to catch up when a
+# frame's step puts it a hair past the curve it planned on. It never stands still in one frame.
+const JERK := 36.0 * 48.0       # px/s³
+const JERK_SLACK := 1.25        # so at most 45 m/s³ and 13.5 m/s² braking
 const A_LAT := 5.0 * 48.0      # px/s²: what a curve allows sideways
 const CURVE_R := 6.0           # m: the rails' curve radius at a corner, at most
 const COUPLE := 3.6            # m between the two cars' centres
@@ -73,7 +83,7 @@ var lean_v := [Vector2.ZERO, Vector2.ZERO]
 const K_LAT := 0.025           # m of lean a m/s² sideways, m of pitch a m/s² along
 const K_LONG := 0.008
 const SPRING_W := 9.0          # rad/s and damping ratio of the body on its springs
-const SPRING_Z := 0.45
+const SPRING_Z := 0.9           # 接驳车平顺: 0.45 rocked to and fro; 0.9 sways once and settles
 
 
 func active() -> bool:
@@ -615,42 +625,45 @@ func _finish_alight() -> void:
 	d.visible = true
 
 
-# follow the rails (35 号): speed up at 6 m/s² to 20 m/s, slow before each curve to what
-# 4 m/s² sideways allows on its radius, brake into the stop
+# follow the rails (35 号): speed up to SPEED, slow before each curve to what A_LAT sideways allows on its
+# radius, brake into the stop — each on an S-curve (接驳车平顺: JERK above)
 func _advance(dt: float) -> bool:
 	if path.is_empty():
+		# at the end of the rails: the last of the S-curve (the brake eased off as the speed dies) is
+		# finished where it stands, a centimetre or so short of nothing — stopped only when both are naught
+		if speed > 0.0 or accel_now != 0.0:
+			accel_now = move_toward(accel_now, 0.0, JERK * dt)
+			speed = maxf(0.0, speed + accel_now * dt)
+			return false
 		return true
-	# 130 号: freight on the route: wait (it is giving way), then throw this leg's switches
+	# standing: waiting for its route (130 号: freight on it gives way first), the driver changing ends,
+	# the switches ahead still moving (97 号). These are asked where it stands — a ride is only cleared,
+	# its ends changed and its switches set before it sets off, so it is never running when one says wait;
+	# if one ever did, it brakes on its hardest S-curve rather than stop dead
+	var stand := false
 	if FW.on:
 		if not FW.passenger_go(self):
-			accel_now = -speed / maxf(dt, 1e-4)
-			speed = 0.0
+			stand = true
 			_replan(dt)
-			return false
-		for id in _leg_sw:
-			if float(sw_to.get(id, -1.0)) != float(_leg_sw[id]):
-				sw_to[id] = float(_leg_sw[id])
-				_points_dirty = true
-	# 97 号: standing while the driver changes ends or the switches ahead are still moving
-	if _hold > 0.0 or not _set_ready():
+		else:
+			for id in _leg_sw:
+				if float(sw_to.get(id, -1.0)) != float(_leg_sw[id]):
+					sw_to[id] = float(_leg_sw[id])
+					_points_dirty = true
+	if not stand and (_hold > 0.0 or not _set_ready()):
 		_hold -= dt
-		accel_now = -speed / maxf(dt, 1e-4)
-		speed = 0.0
-		return false
-	var cap := SPEED
-	var dist := 0.0
-	var prev := position_px
-	for i in path.size():
-		dist += prev.distance_to(path[i])
-		prev = path[i]
-		var lim: float = limits[i] if i < limits.size() else SPEED
-		cap = minf(cap, sqrt(lim * lim + 2.0 * ACCEL * dist))
-		if dist > SPEED * SPEED / (2.0 * ACCEL):
-			break
+		stand = true
 	var was := speed
-	speed = clampf(cap, 0.0, speed + ACCEL * dt)
-	accel_now = (speed - was) / maxf(dt, 1e-4)
-	var step := speed * dt
+	if stand:
+		if speed <= 0.0:
+			speed = 0.0
+			accel_now = move_toward(accel_now, 0.0, JERK * JERK_SLACK * dt)
+			return false
+		accel_now = move_toward(accel_now, -ACCEL * JERK_SLACK, JERK * JERK_SLACK * dt)
+	else:
+		accel_now = _pick_accel(dt)
+	speed = maxf(0.0, speed + accel_now * dt)
+	var step := (was + speed) * 0.5 * dt
 	while step > 0.0 and not path.is_empty():
 		var wp: Vector2 = path[0]
 		var d := wp - position_px
@@ -672,7 +685,86 @@ func _advance(dt: float) -> bool:
 		trail.push_front(position_px)
 		if trail.size() > 80:
 			trail.pop_back()
-	return path.is_empty()
+	return path.is_empty() and speed <= 0.0 and accel_now == 0.0
+
+
+# 接驳车平顺: the distance (px) to come from speed v0 at acceleration a0 down to speed vt with the
+# acceleration back at nothing: the braking built up at jerk j to at most b, held, eased off at j
+static func _brake_dist(v0: float, a0: float, vt: float, b: float, j: float) -> float:
+	var p2 := (v0 - vt) * j + a0 * a0 * 0.5
+	if a0 <= 0.0 and p2 <= a0 * a0:
+		# easing the brake it has on off is enough
+		var te := -a0 / j
+		return v0 * te + a0 * te * te * 0.5 + j * te * te * te / 6.0
+	var p := minf(b, sqrt(maxf(p2, 0.0)))
+	var t1 := (a0 + p) / j
+	var d1 := v0 * t1 + a0 * t1 * t1 * 0.5 - j * t1 * t1 * t1 / 6.0
+	var v1 := v0 + a0 * t1 - j * t1 * t1 * 0.5
+	var th := 0.0
+	if p >= b - 0.001:
+		th = maxf(0.0, (v1 - vt - b * b / (2.0 * j)) / b)
+	var d2 := v1 * th - p * th * th * 0.5
+	var v2 := v1 - p * th
+	var t3 := p / j
+	return d1 + d2 + v2 * t3 - p * t3 * t3 * 0.5 + j * t3 * t3 * t3 / 6.0
+
+
+# the speed limits ahead it must brake for: [distance px, speed px/s], within braking reach
+func _limits_ahead() -> Array:
+	var out: Array = []
+	var reach := SPEED * SPEED / (2.0 * ACCEL) + SPEED * (ACCEL / JERK) + 4.0 * Geom.M
+	var dist := 0.0
+	var prev := position_px
+	for i in path.size():
+		dist += prev.distance_to(path[i])
+		prev = path[i]
+		var lim: float = limits[i] if i < limits.size() else SPEED
+		if lim < SPEED - 0.5:
+			out.append([dist, lim])
+		if dist > reach:
+			break
+	return out
+
+
+# could it still make every limit ahead from speed v at acceleration a, `ds` px further on?
+func _can_make(v: float, a: float, ahead: Array, ds: float) -> bool:
+	if v < 0.0:
+		return false
+	var peak := v + maxf(a, 0.0) * maxf(a, 0.0) / (2.0 * JERK)
+	if peak > SPEED + 0.01:
+		return false
+	for c in ahead:
+		if peak <= float(c[1]):
+			continue
+		if _brake_dist(v, a, float(c[1]), ACCEL, JERK) > float(c[0]) - ds + 0.005 * Geom.M:
+			return false
+	return true
+
+
+# this frame's acceleration: the most, within the jerk it may use, that keeps every limit ahead makeable
+func _pick_accel(dt: float) -> float:
+	var ahead := _limits_ahead()
+	var hi := minf(ACCEL, accel_now + JERK * dt)
+	var lo := maxf(-ACCEL * JERK_SLACK, accel_now - JERK * JERK_SLACK * dt)
+	if lo > hi:
+		lo = hi
+	var ok := func(a: float) -> bool:
+		var v := speed + a * dt
+		return _can_make(v, a, ahead, (speed + v) * 0.5 * dt)
+	if ok.call(hi):
+		return hi
+	if not ok.call(lo):
+		return lo
+	# the most of the candidates between that still makes it (it gets harder the more it speeds up)
+	var good := lo
+	var bad := hi
+	for i in 6:
+		var mid := (good + bad) * 0.5
+		if ok.call(mid):
+			good = mid
+		else:
+			bad = mid
+	return good
 
 
 # run the legs: true when the last one has stopped at its stop
