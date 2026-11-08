@@ -291,9 +291,7 @@ func _physics_process(dt: float) -> void:
 				carried += 1
 				_done()
 			elif hold_t > 0.25:
-				body.collision_layer = 1
-				body.collision_mask = FreeBody.MASK
-				body.set_deferred("freeze", false)
+				LoadMotion.let_go(body)
 				body.linear_velocity = Dock.ZONES[zone].face * -60.0 + vel
 				body.set_meta("arm", false)
 				body.remove_meta("arm_by")
@@ -315,16 +313,8 @@ func _set_off(b, automatic: bool = false) -> void:
 # can it get there at all (a piece shut in a room nobody has opened is not for it);
 # one it can't reach is left alone for a while
 func _reachable(b) -> bool:
-	if t < float(b.get_meta("no_way_till", -1.0)):
-		return false
-	var p: Vector2 = b.global_transform * b.center_of_mass
-	var way: PackedVector2Array = game.nav_grid().path(pos, p, preload("res://scripts/nav.gd").EMPTY_CLEAR)
-	if way.is_empty():
-		if b.get_meta("manual_mark",false) and not b.get_meta("plan_dispatch",false) and game.arm_extract(b,_zone_for(b),false):
-			return false
-		b.set_meta("no_way_till", t + 6.0)
-		return false
-	return true
+	# user 2026-11-08: the hauler passes through structure (no way in is no reason to leave it)
+	return t >= float(b.get_meta("no_way_till", -1.0))
 
 
 # Unasked scrap must not monopolize the machine while a deliberately marked
@@ -339,12 +329,8 @@ func _delivery_reachable(b) -> bool:
 	if to_zone == "":
 		b.set_meta("no_way_till",t+6.0)
 		return false
-	var destination := LoadMotion.plan_intake(b,to_zone) if Dock.kind(to_zone) == "equip" else _drop_point(to_zone)
-	if LoadMotion.clear_to(b,destination-center): return true
-	var way: PackedVector2Array = game.nav_grid().payload_path(center,destination,LoadMotion.plan_extents(b,to_zone),b)
-	if not way.is_empty() and LoadMotion.clear_to(b,way[0]-center): return true
-	b.set_meta("no_way_till",t+6.0)
-	return false
+	# user 2026-11-08: carried, it passes through structure: any mouth that takes it is reachable
+	return true
 
 
 # how much it carries now (0 empty, 1 a full 1.5 t load)
@@ -363,23 +349,24 @@ func _fly(to: Vector2, dt: float, arrive: float = ARRIVE, tv: Vector2 = Vector2.
 	var loaded: bool = state in ["carry", "release"] and is_instance_valid(body) and body.capture == null
 	var clear: float = Nav.LOAD_CLEAR if ld > 0.0 else Nav.EMPTY_CLEAR
 	_replan_t -= dt
-	if (route.is_empty() and wait_reason == "") or _replan_t <= 0.0 or _goal.distance_to(to) > 24.0 or clear != _clear:
-		if loaded:
-			route = game.nav_grid().payload_path(pos, to, LoadMotion.plan_extents(body,zone),body)
-		else:
-			route = game.nav_grid().path(pos, to, clear)
-		if route.is_empty() and not loaded:
+	if loaded:
+		# user 2026-11-08: loaded, it goes straight for the mouth through whatever is in the way
+		route = PackedVector2Array([to])
+		_goal = to
+		_clear = clear
+	elif route.is_empty() or _replan_t <= 0.0 or _goal.distance_to(to) > 24.0 or clear != _clear:
+		# empty it keeps to the grid where there is a way, and flies straight where there is none
+		route = game.nav_grid().path(pos, to, clear)
+		if route.is_empty():
 			route = PackedVector2Array([to])
 		_goal = to
 		_clear = clear
 		_replan_t = REPLAN
-	if loaded and LoadMotion.clear_to(body,to-pos): route = PackedVector2Array([to])
 	if route.is_empty():
 		_brake(dt)
-		if wait_reason != "load_obstructed": wait_reason = "load_no_route"
 		return false
 	# the next point, skipping ahead when the one after is in clear sight
-	while route.size() > 1 and ((pos.distance_to(route[0]) < 3.0 or LoadMotion.clear_to(body,route[1]-pos)) if loaded else (pos.distance_to(route[0]) < 28.0 or game.nav_grid().sight(pos, route[1], clear * 0.8))):
+	while route.size() > 1 and (pos.distance_to(route[0]) < 28.0 or game.nav_grid().sight(pos, route[1], clear * 0.8)):
 		route.remove_at(0)
 	var nxt: Vector2 = route[0]
 	var left := pos.distance_to(nxt)
@@ -413,20 +400,7 @@ func _brake(dt: float) -> void:
 
 func _advance(delta: Vector2) -> bool:
 	if state in ["carry", "release"] and is_instance_valid(body) and body.capture == null:
-		if not LoadMotion.move(body, delta):
-			var normal: Vector2 = body.get_meta("carrier_normal",Vector2.ZERO)
-			var tangent := delta.slide(normal) if normal.length_squared() > 0.9 else Vector2.ZERO
-			if tangent.length_squared() > 0.00001 and LoadMotion.move(body,tangent):
-				pos += tangent
-				vel = vel.slide(normal)
-				wait_reason = ""
-				return true
-			vel = Vector2.ZERO
-			# Keep the intended approach while contact is being cleared. Dropping
-			# the route also skipped _avoid() until the next replan, reducing the
-			# clearing thrust to one frame every 1.2 s and effectively stalling it.
-			wait_reason = "load_obstructed"
-			return false
+		LoadMotion.move(body, delta)
 	pos += delta
 	if delta.length_squared() > 0.00001: wait_reason = ""
 	return true
@@ -541,9 +515,7 @@ func _heading() -> Vector2:
 func halt() -> void:
 	if body != null and is_instance_valid(body):
 		if state in ["carry", "release"]:
-			body.collision_layer = 1
-			body.collision_mask = FreeBody.MASK
-			body.set_deferred("freeze", false)
+			LoadMotion.let_go(body)
 			body.linear_velocity = vel
 		_unclaim(body)
 	_done()

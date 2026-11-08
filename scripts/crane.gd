@@ -182,41 +182,29 @@ func _physics_process(dt: float) -> void:
 			LoadMotion.line_up(body, zone, 0.6, dt)
 			var drop := _drop_point(zone)
 			if Dock.kind(zone) == "equip": drop = LoadMotion.intake_point(body, zone, pos)
-			route_t -= dt
-			if (path.is_empty() and wait_reason == "") or route_t <= 0.0:
-				path = Array(game.nav_grid().payload_path(pos, drop, LoadMotion.plan_extents(body, zone)))
-				route_t = 1.2
-			# A full-shape sweep also validates the final intake approach, where
-			# the grid intentionally stops short of the receiving lip.
-			if LoadMotion.clear_to(body, drop-pos): path = [drop]
+			# user 2026-11-08: the load passes through whatever is in the way (LoadMotion.grip): no
+			# route to plan, nothing to wait for but the mouth. Up to the carrying height, along, down
+			# (the last point follows the mouth's intake point as the load is turned).
+			if path.is_empty(): path = _overhead(pos, drop)
+			path[path.size() - 1] = drop
 			while path.size() > 1 and pos.distance_to(path[0]) < 2.0: path.pop_front()
+			wait_reason = ""
 			if pos.distance_to(drop) < 2.0:
 				state = "release"
 				hold_t = 0.0
 				return
-			if path.is_empty():
-				wait_reason = "load_no_route"
-				return
 			if path.size() == 1 and not game.mouth_take(zone, "crane"):
 				return
 			var next: Vector2 = pos.move_toward(path[0], SPEED * dt)
-			if not LoadMotion.move(body, next-pos):
-				wait_reason = "load_obstructed"
-				path.clear()
-				return
-			wait_reason = ""
+			LoadMotion.move(body, next-pos)
 			pos = next
-			if pos.distance_to(path[0]) < 2.0:
-				path.pop_front()
 		"release":
 			hold_t += dt
 			if not is_instance_valid(body) or body.capture != null:
 				carried += 1
 				_done()
 			elif hold_t > 0.4:
-				body.collision_layer = 1
-				body.collision_mask = FreeBody.MASK
-				body.set_deferred("freeze", false)
+				LoadMotion.let_go(body)
 				body.linear_velocity = Dock.ZONES[zone].face * -50.0
 				body.set_meta("arm", false)
 				body.set_meta("arm_drop", t)
@@ -275,9 +263,7 @@ func _heading() -> Vector2:
 func halt() -> void:
 	if body != null and is_instance_valid(body):
 		if state in ["carry", "release"]:
-			body.collision_layer = 1
-			body.collision_mask = FreeBody.MASK
-			body.set_deferred("freeze", false)
+			LoadMotion.let_go(body)
 			body.linear_velocity = Vector2.ZERO
 		body.set_meta("arm", false)
 	_done()

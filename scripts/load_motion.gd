@@ -12,8 +12,9 @@ static func clear_spawn(space: PhysicsDirectSpaceState2D, at: Vector2, size: Vec
 	query.margin = 1.0
 	query.exclude = exclude
 	return space.intersect_shape(query,1).is_empty()
-# Shared by carrier machines and receiving bays. Carrying never removes collision
-# shapes or masks; every displacement sweeps the complete compound body.
+# Shared by carrier machines and receiving bays. User 2026-11-08 ("起重机、吊车这类机器干脆都改成可以
+#穿模"): a load in a crane's hook or a hauler's claw collides with nothing (mask 0) from the grip to
+# the mouth — no sweep, no route, never held up by a wall — and let_go() gives its collision back.
 static func bounds(body) -> Rect2:
 	var result := Rect2()
 	var first := true
@@ -29,6 +30,8 @@ static func half_extents(body) -> Vector2:
 	var box := bounds(body)
 	return Vector2(maxf(absf(box.position.x-centre.x),absf(box.end.x-centre.x)),maxf(absf(box.position.y-centre.y),absf(box.end.y-centre.y)))+Vector2.ONE*2.0
 
+# a gripped load (mask 0, LoadMotion.grip) sweeps into nothing, so it passes through everything;
+# other carriers (the trade and furnace robots) keep their loads' collision and are still swept
 static func move(body, delta: Vector2) -> bool:
 	if delta.length_squared() < 0.00001: return true
 	var from: Transform2D = body.global_transform
@@ -58,6 +61,17 @@ static func move(body, delta: Vector2) -> bool:
 	body.angular_velocity = 0.0
 	return true
 
+# out of the hook or the claw: its collision back. Let go inside the ship it eases out of it the way
+# a piece born overlapping does (FreeBody.start_ghost); inside anything else, gently (calm).
+static func let_go(body) -> void:
+	body.collision_layer = 1
+	body.collision_mask = FreeBody.MASK
+	body.set_deferred("freeze", false)
+	var od: Dictionary = body.world.overlap_dir(body.pieces)
+	if od.is_empty(): return
+	body.calm = FreeBody.CALM_T
+	if od.get("ship", false): body.start_ghost(od.dir)
+
 static func wait_line(body, reason: String) -> String:
 	if reason == "": return ""
 	var line := Txt.t(reason)
@@ -70,20 +84,11 @@ static func clear_to(body, delta: Vector2) -> bool:
 	return not body.test_move(body.global_transform, delta)
 
 static func grip(body) -> bool:
-	# A newly released object may still be separating from authored contacts.
-	# Freezing it mid-recovery locks the overlap in place and every later sweep
-	# fails, even when the route ahead is open. Keep it dynamic until clear.
-	if body.ghost > 0.0: return false
-	var contact := KinematicCollision2D.new()
-	if body.test_move(body.global_transform,Vector2.ZERO,contact,0.05,true):
-		if not body.freeze:
-			var normal := contact.get_normal()
-			var along: float = body.linear_velocity.dot(normal)
-			var acceleration := clampf((40.0-along)*5.0,0.0,150.0)
-			body.sleeping = false
-			body.apply_central_force(normal*acceleration*minf(body.mass,1.5))
-		return false
-	body.collision_mask = FreeBody.MASK
+	# Gripped, it collides with nothing until let go (a wedged or overlapping load is taken all the
+	# same: nothing in its way matters now). Its own ghost easing ends here, or it would put the
+	# mask back mid-carry.
+	body.ghost = 0.0
+	body.collision_mask = 0
 	body.freeze_mode = RigidBody2D.FREEZE_MODE_KINEMATIC
 	body.set_deferred("freeze", true)
 	body.linear_velocity = Vector2.ZERO

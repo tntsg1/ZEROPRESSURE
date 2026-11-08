@@ -75,8 +75,8 @@ func _run() -> void:
 	# two marked by the operator
 	g.hauler.toggle(made[0].body)
 	g.hauler.toggle(made[1].body)
-	# and one marked inside a room still shut in by its hull: there is no way in, so
-	# it must be left alone, not fetched through the wall
+	# and one marked inside a room still shut in by its hull: there is no way in. User 2026-11-08:
+	# haulers pass through structure, so it is fetched through the wall all the same
 	var shut = null
 	for rn in g.world.rooms:
 		var rc: Vector2 = Geom.centroid(g.world.rooms[rn].poly)
@@ -107,6 +107,10 @@ func _run() -> void:
 			same += 1
 		if int(t * 60.0) % 4 == 0:
 			for h in machines:
+				# 2026-11-08: a hauler with a load, or on its way to the shut-in piece (no way in),
+				# goes through walls by design; on an open way it still keeps to the grid
+				if h.state in ["carry", "release"] or (shut != null and h.body == shut.body):
+					continue
 				var tag := inside_walls(g, h.pos)
 				if tag != "" and clipped.size() < 6:
 					clipped.append("%s in %s at %s m (%s)" % [h.who, tag, (h.pos / M).snapped(Vector2(0.1, 0.1)), h.state])
@@ -127,11 +131,11 @@ func _run() -> void:
 			break
 	print("HAULERS: %.0f s, %d of %d delivered (haulers %d, the arm the rest), top acceleration %.0f px/s² (limit %.0f)" % [t, delivered, made.size(), g.hauler.carried + g.hauler2.carried - start_carried, jump, g.hauler.ACCEL])
 	check(same == 0, "no two machines after the same body (%d frames)" % same)
-	check(clipped.is_empty(), "no hauler nor its load inside the ship's walls %s" % [clipped])
+	check(clipped.is_empty(), "no empty hauler inside the ship's walls where it has a way round %s" % [clipped])
 	check(jump <= g.hauler.ACCEL * 1.25, "it accelerates like a drone, no jumps")
 	if shut != null:
 		var fetched: bool = shut.gone or shut.body == null or not is_instance_valid(shut.body) or shut.body.capture != null
-		check(not fetched, "a piece shut in a room with no way in is left alone (not fetched through the hull)")
+		check(fetched, "a piece shut in a room with no way in is fetched through the hull (user 2026-11-08)")
 	check(delivered == made.size(), "all the loose scrap delivered, by the haulers and the arm (%d / %d)" % [delivered, made.size()])
 	print("HAULER_NAV %s" % ("PASS" if fails == 0 else "FAIL (%d)" % fails))
 	done = true

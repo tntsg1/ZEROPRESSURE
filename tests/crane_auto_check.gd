@@ -75,7 +75,8 @@ func _run() -> void:
 		check(held.body.get_meta("crane_skip", false) and g.crane.body != held.body, "taken back by the operator: the crane leaves it unless marked")
 	else:
 		check(false, "the crane came for the released piece")
-	# a piece taken unasked with no way out (boxed in by walls) is put down and left
+	# user 2026-11-08: a piece taken unasked and boxed in by walls is lifted out through them (the
+	# crane passes through structure) instead of being put down and left
 	var box_c := Vector2(ex - 9.0, -3.0) * Geom.M
 	var walls: Array = []
 	for r in [Rect2(-2.2, -1.8, 4.4, 0.3), Rect2(-2.2, 1.5, 4.4, 0.3), Rect2(-2.2, -1.8, 0.3, 3.6), Rect2(1.9, -1.8, 0.3, 3.6)]:
@@ -85,8 +86,8 @@ func _run() -> void:
 	g.nav_grid().dirty = true
 	g.nav_grid()._built_frame = -100000
 	var boxed = _loose(box_c / Geom.M, "BOXED-4T", 4.0)
-	var gave_up := await _until(func(): return boxed.body.get_meta("crane_skip", false), 1500)
-	check(gave_up and g.crane.body != boxed.body, "a boxed-in piece taken unasked is put down after %.0f s and left" % Crane.STUCK_S)
+	var out := await _until(func(): return boxed.gone, 4000)
+	check(out and g.crane.wait_reason == "", "a boxed-in piece taken unasked is lifted out through the walls into a mouth")
 	g.queue_free()
 	g = null
 	await _frames(5)

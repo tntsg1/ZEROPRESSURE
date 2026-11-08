@@ -307,6 +307,11 @@ static func _take(g, tag: String, fix: String = "") -> Dictionary:
 			var fluid_in: float = g.world.content_mass(p)
 			if fluid_in > 0.01 and mass - fluid_in <= Methods.crane_t() + 0.001:
 				return _step(w("%s 里还有液体：先抽空", "%s STILL HOLDS FLUID: DRAIN IT") % tag, w("连液体 %.1f t，超过吊车额定 %.0f t；抽空后就吊得动", "%.1f t with it, past the crane's %.0f t; drained, it lifts") % [mass, Methods.crane_t()], at)
+			# 2026-11-08 (FR-26 T-1 came loose with its whole jacket ring, 20 t): the weight is what is
+			# still fixed to it, not the unit, and no crane upgrade is the answer
+			var own: float = p.mass + fluid_in
+			if p.body != null and p.body.pieces.size() > 1 and own <= Methods.crane_t() + 0.001:
+				return _step(w("%s 还连着别的件：先卸开", "%s STILL HAS PARTS ON IT: TAKE THEM OFF") % tag, w("整块 %.1f t，%s 本身 %.1f t：维护工具（4）拧下它的固定件，吊车（%.0f t）就吊得动", "%.1f t as it is, %s itself %.1f t: wrench (4) on its fixings, then the crane (%.0f t) lifts it") % [mass, tag, own, Methods.crane_t()], at)
 			return _step(w("%s 超过吊车额定", "%s IS PAST THE CRANE") % tag, w("%.1f t，吊车只吊 %.0f t：船坞页把吊车升级到 16 t", "%.1f t, the crane takes %.0f t: upgrade it to 16 t on the berth page") % [mass, Methods.crane_t()], at)
 		if g.crane != null:
 			return _step(w("%s 交给吊车", "%s TO THE CRANE") % tag, w("%.1f t 超过抓钩：对着它按右键，吊车整件吊走", "%.1f t, past the grapple: right-click it, the crane takes it whole") % mass, at)

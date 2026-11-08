@@ -1,8 +1,7 @@
 extends SceneTree
 # Controlled physical obstacles, not a claim of playing an authored commission.
-# Both real carrier state machines must retain collision and refuse a doorway
-# which fits an empty drone but not its 5.55 m load; removing the fixture wall
-# must allow real intake and payment without moving the load by the test.
+# A doorway which fits an empty drone but not its 5.55 m load: since user 2026-11-08 both real
+# carrier state machines take the load through the walls as they stand (collision off while carried).
 const Motion = preload("res://scripts/load_motion.gd")
 var g: Node
 var checks := 0
@@ -54,42 +53,21 @@ func fixture(machine: String) -> void:
 	var loaded: PackedVector2Array = g.nav_grid().payload_path(center,center+Vector2(0,-6*Geom.M),Motion.half_extents(b))
 	check(not empty.is_empty() and loaded.is_empty(),machine+": doorway admits empty drone but refuses the actual payload footprint")
 	if machine == "hauler":
-		check(not m._delivery_reachable(b),"unasked unreachable scrap does not monopolize the hauler ahead of marked work")
+		check(m._delivery_reachable(b),"user 2026-11-08: a load that only fits through walls is still deliverable (carried, it passes through)")
 	m.pos = center
 	m.toggle(b)
-	for i in 500:
+	# user 2026-11-08: gripped, the payload collides with nothing and goes through the doorway's
+	# walls as they stand — no route, no width check, no wait — into the rack, paid
+	var gripped := false
+	var reasons := {}
+	for i in 3000:
 		await process_frame
-		if m.state == "carry" and m.wait_reason != "": break
-	check(m.state == "carry" and b.collision_layer == 1 and b.collision_mask == FreeBody.MASK,machine+": real pickup retains all payload collisions")
-	await frames(120)
-	check(b.capture == null and b.global_position.y > -2.25*Geom.M and m.wait_reason != "",machine+": narrow doorway stops the load and reports an actionable wait")
-	g.plan.steps = [{"do":"haul","keys":[p.key],"zone":"equip"}]
-	g.plan.haul_watch = [{"keys":[p.key],"zone":"equip"}]
-	g.plan.i = 1
-	g.plan.running = true
-	g.plan.package_mode = false
-	g.plan.set_physics_process(false)
-	check(g.plan.status()[1].contains(Txt.t(m.wait_reason)),machine+": plan panel identifies the blocked target and physical obstruction")
-	if "--capture" in OS.get_cmdline_user_args() and machine == "hauler":
-		g.cam_override = Dock.zpos("equip_bulk")+Vector2(0,150)
-		g.cam_pos = g.cam_override
-		g.cam_vel = Vector2.ZERO
-		g.zoom_override = 1.2
-		g.zoom_now = 1.2
-		await frames(8)
-		await RenderingServer.frame_post_draw
-		preload("res://tests/cap.gd").save(root,"res://proofs/g4_bulk_receiving.png")
-	# Specifically challenge the native sweep, independently of grid refusal.
-	var before: Vector2 = b.global_position
-	check(not Motion.move(b,Vector2(0,-6*Geom.M)) and b.global_position == before,machine+": full-body sweep rejects a displacement through the wall")
-	for wall in walls: g.world.remove_piece(wall)
-	g.nav_grid().dirty = true
-	g.nav_grid()._built_frame = -100000
-	for i in 2400:
-		await process_frame
+		if m.wait_reason != "": reasons[m.wait_reason] = true
+		if m.state == "carry" and is_instance_valid(b) and b.collision_mask == 0: gripped = true
 		if p.gone: break
-	check(p.gone and g.income_equip > 0,machine+": clearing the doorway resumes actual transport, intake and payment")
-	check(m.wait_reason == "",machine+": obstruction indication clears after delivery")
+	check(gripped,machine+": gripped, the payload collides with nothing")
+	check(p.gone and g.income_equip > 0,machine+": through the walls as they stand into the rack, and paid")
+	check(reasons.is_empty(),machine+": no wait on the way %s" % str(reasons.keys()))
 	g.queue_free()
 	await frames(5)
 func _run() -> void:
@@ -202,8 +180,9 @@ func reachable_start_projection() -> void:
 	g.hauler.pos = at
 	g.hauler._set_off(load.body)
 	g.hauler.state = "carry"
+	load.body.collision_mask = 0     # as LoadMotion.grip leaves it
 	var before: Vector2 = load.body.global_position
 	check(g.hauler._advance(Vector2(6,24)),"a blocked diagonal can retain a physically clear contact tangent")
-	check(load.body.global_position.distance_to(before+Vector2(6,0)) < 0.05 and load.body.collision_mask == FreeBody.MASK,"contact sliding retains full collision and never crosses the floor")
+	check(load.body.global_position.distance_to(before+Vector2(6,24)) < 0.05,"user 2026-11-08: a carried load goes through the floor rather than stopping")
 	g.queue_free()
 	await frames(5)
