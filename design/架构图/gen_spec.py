@@ -41,7 +41,7 @@ components = [
     n("port", "backend", "港区总表 Port", "port · port_structure", 2, 3, ["scripts/port.gd", "scripts/port_structure.gd"]),
     n("transit", "frontend", "港内通行", "port_walk · tram · 中央环", 3, 3, ["scripts/port_walk.gd", "scripts/tram.gd", "scripts/hub_works.gd"]),
     n("scan", "backend", "星图与找船", "star_map · scan · ship_market", 4, 3, ["scripts/star_map.gd", "scripts/scan.gd", "scripts/ship_market.gd"]),
-    n("tug", "backend", "拖船区", "tug_yard · tug_fleet · charter", 5, 3, ["scripts/tug_yard.gd", "scripts/tug_fleet.gd", "scripts/charter.gd"]),
+    n("tug", "backend", "拖船区", "tug_yard · tug_fleet", 5, 3, ["scripts/tug_yard.gd", "scripts/tug_fleet.gd"]),
     n("process", "backend", "加工区", "process_plant · rolling_mill", 6, 3, ["scripts/process_plant.gd", "scripts/rolling_mill.gd", "scripts/gas_line.gd"]),
     n("grid", "backend", "动力区 Grid", "grid · power_works", 2, 4, ["scripts/grid.gd", "scripts/power_works.gd"]),
     n("shipping", "external", "轨道货运", "shipping · orbits", 4, 4, ["scripts/shipping.gd", "scripts/orbits.gd"]),
