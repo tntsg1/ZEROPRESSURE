@@ -92,17 +92,20 @@ func _run() -> void:
 	p = PS.d()
 	# ---- 3: the ship
 	_beat(3, "外星系货船 CB-7 送货", "反推刹停在两片散热片之间，开舱门，绞车把电池吊进泊位接上总线（2 倍速）")
+	# slot B holds a spent shell: the ship sets the new block in A, then lifts the shell away
+	p.slots[1] = {"size": "s", "left": 0.0, "t": 0.0}
+	p.pickup_t = 999.0
 	var o: Dictionary = PS.pending()[0]
 	o.t = 7.0
 	g.drone.global_position = _b(Vector2(30.0, -8.0))
 	g.drone.linear_velocity = Vector2.ZERO
 	Engine.time_scale = 2.0
-	for i in int(9 * FPS):
-		var close: bool = str(o.phase) in ["lower", "latch"]
+	for i in int(13 * FPS):
+		var close: bool = str(o.phase) in ["lower", "latch", "lift_old"]
 		_put(_b(Vector2(46.0, -6.0 if close else -11.0)), 1.05 if close else 0.62)
 		_fold()
 		await _frames(1)
-		if str(o.phase) == "leave" and float(o.pt) > 1.5:
+		if str(o.phase) == "leave" and float(o.pt) > 2.5:
 			break
 	Engine.time_scale = 1.0
 	# ---- 4: overload, trip
