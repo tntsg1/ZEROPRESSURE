@@ -55,7 +55,7 @@ func _ready() -> void:
 	l.add_theme_font_size_override("font_size", 16)
 	l.add_theme_color_override("font_outline_color", Color.BLACK)
 	l.add_theme_constant_override("outline_size", 6)
-	l.text = "显示碰撞（F12 工作台）\n青  港区墙 / 设备外壳\n品红  只挡无人机的墙\n琥珀  泊位里的船\n绿  零件 / 拖船 / 货箱等会动的东西"
+	l.text = "显示碰撞（F12 工作台）\n青  港区墙 / 设备外壳\n品红  只挡无人机的墙\n琥珀  泊位里的船\n绿  零件 / 拖船 / 货箱等会动的东西\n橙虚线  船坞牵引力场：只拦零件，无人机不受"
 	_legend.add_child(l)
 
 
@@ -127,6 +127,20 @@ func _paint() -> void:
 				_shape(s.global_transform, s.shape, col, z)
 			elif s is CollisionPolygon2D and not s.disabled and s.polygon.size() >= 2:
 				_poly(s.global_transform, s.polygon, col, z, s.build_mode == CollisionPolygon2D.BUILD_SEGMENTS)
+	# 128 号 第 6 段追加: the berth's tractor field is no shape but it stops the pieces (only them): its
+	# box as an orange dashed line, so nothing that stops a piece is left unseen
+	if game != null and game.get("dock") != null and is_instance_valid(game.dock) and game.dock.visible:
+		var fr: Rect2 = Dock.field_rect()
+		_pen.draw_set_transform_matrix(game.dock.get_global_transform())
+		var oc := Color(1.0, 0.55, 0.12, 0.9)
+		var corners := [fr.position, Vector2(fr.end.x, fr.position.y), fr.end, Vector2(fr.position.x, fr.end.y)]
+		for i in 4:
+			var a: Vector2 = corners[i]
+			var b: Vector2 = corners[(i + 1) % 4]
+			var n := int(a.distance_to(b) / 24.0)
+			for k in n:
+				if k % 2 == 0:
+					_pen.draw_line(a.lerp(b, float(k) / n), a.lerp(b, float(k + 1) / n), oc, 2.5 / z)
 	_pen.draw_set_transform_matrix(Transform2D.IDENTITY)
 
 

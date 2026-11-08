@@ -10,9 +10,11 @@ extends Control
 # 人性化: Esc closes; every change is said at once in the note line; the scroll is kept; a key's plain
 # note after 0.4 s (and why a shut one is shut); the interface scale; Enter: to the stores to add more.
 
-const PANEL_W := 760.0          # at least; half the screen when there is room
+const PANEL_W := 730.0          # 132 号: 730 px at most, the works stay in view on the left
 const PAD := 40.0
-const ROW_H := 108.0
+const ROW_H := 120.0
+const ConsoleKit = preload("res://scripts/console_kit.gd")
+var more_open := false        # 132 号: the switch and the baler folded under "更多"
 const BG := Color(0.043, 0.048, 0.057)
 
 var game
@@ -83,7 +85,7 @@ func _say(s: String, bad := false) -> void:
 
 
 func _rect() -> Rect2:
-	var pw := maxf(PANEL_W, size.x * 0.5)
+	var pw := PANEL_W
 	return Rect2(size.x - pw, 0.0, pw, size.y)
 
 
@@ -194,6 +196,8 @@ func _press(id: String) -> void:
 		close()
 	elif id == "auto":
 		toggle_auto()
+	elif id == "more":
+		more_open = not more_open
 	elif id == "store":
 		_to_store()
 	elif id == "one":
@@ -276,6 +280,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 		KEY_ESCAPE:
 			if _drag != "":
 				_drag = ""
+			elif more_open:
+				more_open = false
 			else:
 				close()
 		KEY_ENTER, KEY_KP_ENTER:
@@ -339,7 +345,7 @@ func _key(id: String, r: Rect2, label: String, note := "", why := "", primary :=
 
 
 func _list_top() -> float:
-	return 150.0
+	return 196.0
 
 
 func _draw() -> void:
@@ -354,20 +360,22 @@ func _draw() -> void:
 	var x := pr.position.x + PAD
 	var wd := pr.size.x - PAD * 2.0
 	# ---- the head: the district's code, the name, the furnace and the mould in one line
-	_pill("PRC-3", Vector2(x, 38))
-	_text(w("加工队列", "PROCESSING QUEUE"), Vector2(x + 82, 64), 30, Pal.ink(0.97), font_s)
+	_text(w("加工队列", "PROCESSING QUEUE"), Vector2(x, 64), 30, Pal.ink(0.97), font_s)
+	_text(w("PRC-3 · 炉体控制台", "PRC-3 · FURNACE CONSOLE"), Vector2(x + 170, 62), 14, Pal.ink(0.35), font_b)
 	_key("close", Rect2(pr.end.x - PAD - 132.0, 34, 132.0, 40.0), w("关闭  [Esc]", "CLOSE  [Esc]"), w("关掉队列，回到现场", "Close the queue"))
-	_text(_state_line(), Vector2(x, 112), 16, Pal.ink(0.62), font_b, wd)
 	var open := _open()
 	var free := free_t()
-	var press_busy: bool = not ProcessLine.press().get("cur", {}).is_empty() or not ProcessLine.press().get("jobs", []).is_empty()
+	var nw := now_of()
+	ConsoleKit.draw_now(self, Rect2(x, 88, wd, 50), bool(nw[0]), str(nw[1]))
+	_text(_state_line(), Vector2(x, 172), 18, Pal.ink(0.62), font_b, wd)
+	var press_busy: bool = more_open and (not ProcessLine.press().get("cur", {}).is_empty() or not ProcessLine.press().get("jobs", []).is_empty())
 	var foot_y := pr.end.y - 34.0
 	if open.is_empty():
 		_draw_empty(pr, x, wd, free)
 	else:
 		_draw_list(pr, x, wd, open, free, press_busy)
 	if press_busy:
-		_draw_press(Rect2(x, foot_y - (196.0 if not open.is_empty() else 64.0), wd, 46.0))
+		_draw_press(Rect2(x, foot_y - 64.0 - 140.0 - 60.0, wd, 46.0))
 	_draw_foot(pr)
 	if hover != "" and _hover_t >= BenchFx.NOTE_S and _notes.has(hover) and _drag == "":
 		var n: Array = _notes[hover]
@@ -376,6 +384,22 @@ func _draw() -> void:
 			s = (s + "\n" if s != "" else "") + str(n[1])
 		if s != "":
 			BenchFx.draw_note(self, s, get_local_mouse_position() if BenchFx.shot_mouse == Vector2.INF else BenchFx.shot_mouse, size)
+
+
+# 132 号: the line under the title — whether to queue anything now
+func now_of() -> Array:
+	var free := free_t()
+	var open := _open()
+	if free >= ProcessQueue.HEAT_MIN:
+		if open.is_empty():
+			return [true, w("仓库有 %.1f t 钢锭，炉子空着", "%.1f t OF INGOT IN STORE, THE FURNACE IDLE") % free]
+		return [true, w("仓库还有 %.1f t 钢锭，可以再排一炉", "%.1f t OF INGOT LEFT: QUEUE ANOTHER HEAT") % free]
+	if not open.is_empty():
+		var eta := 0.0
+		for e in open:
+			eta = maxf(eta, ProcessLine.eta(e))
+		return [false, w("还排着 %d 炉，约 %d 分钟", "%d HEATS QUEUED, ~%d MIN") % [open.size(), maxi(1, ceili(eta / 60.0))]]
+	return [false, w("仓库没有钢锭：再拆一艘船", "NO INGOTS IN STORE: STRIP ANOTHER SHIP")]
 
 
 # the furnace now, the mould in the seat, the rack: one plain line
@@ -435,7 +459,7 @@ func _draw_empty(pr: Rect2, x: float, wd: float, free: float) -> void:
 	# one line, the main key, the way to pick other ingots
 	var have := free >= ProcessQueue.HEAT_MIN
 	var line := w("队列是空的。仓库里有 %.1f t 钢锭可以炼。", "THE QUEUE IS EMPTY. %.1f t OF INGOT IN STORE.") % free if have else w("队列是空的，仓库里也没有没排上的钢锭：再拆一艘船，碎料会炼成钢锭。", "THE QUEUE IS EMPTY AND NO INGOTS ARE FREE: STRIP ANOTHER SHIP, ITS SCRAP BECOMES INGOTS.")
-	_text(line, Vector2(x, cy + 150), 19, Pal.ink(0.92), font_s, wd, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(line, Vector2(x, cy + 150), 20, Pal.ink(0.92), font_s, wd, HORIZONTAL_ALIGNMENT_CENTER)
 	var kw := minf(380.0, wd)
 	if have:
 		_key("one", Rect2(cx - kw * 0.5, cy + 186, kw, 58), w("排一炉：钢锭 %.1f t  [Enter]", "QUEUE A HEAT: %.1f t  [Enter]") % minf(free, ProcessQueue.HEAT_T), w("把仓库里还没排上的钢锭排一炉，炉子按队列自己炼", "Queue a heat of the ingots in store; the furnace works the queue by itself"), "", true)
@@ -446,7 +470,7 @@ func _draw_empty(pr: Rect2, x: float, wd: float, free: float) -> void:
 
 # ---- the queue: one card a batch, the mould changes between them, the switch and the main key below
 func _draw_list(pr: Rect2, x: float, wd: float, open: Array, free: float, press_busy: bool) -> void:
-	var bottom := pr.end.y - 34.0 - 140.0 - (60.0 if press_busy else 0.0)
+	var bottom := pr.end.y - 34.0 - 150.0 - (124.0 if more_open else 0.0) - (60.0 if press_busy else 0.0)
 	var list_r := Rect2(x, _list_top(), wd, bottom - _list_top())
 	scroll = clampf(scroll, 0.0, maxf(0.0, open.size() * ROW_H - list_r.size.y))
 	var mould_prev := ProcessLine.line_mould() if not ProcessLine.changing() else ProcessLine.change_to()
@@ -467,8 +491,11 @@ func _draw_list(pr: Rect2, x: float, wd: float, open: Array, free: float, press_
 			continue
 		if change:
 			# a mould change before this batch: the furnace stands for it
-			var lbl := w("换模 %s → %s · 停炉约 %d 秒", "MOULD CHANGE %s → %s · ~%d s STANDING") % [ProcessLine.mould_name(ProcessLine.line_mould() if i == 0 else str(open[i - 1].get("mould", "billet"))), ProcessLine.mould_name(mk), int(ProcessLine.CHANGE_S)]
-			_text(lbl, Vector2(x + 60, yy + 14.0), 13, Pal.heat(0.85, 1.2), font_b)
+			var lbl := w("换模：%s → %s，炉子停约 %d 秒", "MOULD CHANGE: %s → %s, THE FURNACE STANDS ~%d s") % [ProcessLine.mould_name(ProcessLine.line_mould() if i == 0 else str(open[i - 1].get("mould", "billet"))), ProcessLine.mould_name(mk), int(ProcessLine.CHANGE_S)]
+			var lr2 := Rect2(x + 40, yy - 6.0, wd - 80, 28.0)
+			draw_rect(lr2, Color(1, 1, 1, 0.05))
+			draw_rect(lr2, Pal.ink(0.25), false, 1.0)
+			_text(lbl, Vector2(lr2.position.x + 14, yy + 14.0), 16, Pal.ink(0.85), font_b, lr2.size.x - 20)
 		_row(Rect2(x, yy + 22.0, wd, ROW_H - 30.0), e, i, lot == cur and float(e.melted) > 0.0, 1.0)
 	if _drag != "":
 		var e2 := ProcessQueue.of_lot(_drag)
@@ -478,26 +505,34 @@ func _draw_list(pr: Rect2, x: float, wd: float, open: Array, free: float, press_
 			draw_line(Vector2(x, list_r.position.y + to * ROW_H - scroll + 16.0), Vector2(x + wd, list_r.position.y + to * ROW_H - scroll + 16.0), UiSkin.ACCENT, 2.0)
 			draw_rect(Rect2(x - 4, ry + 26.0, wd + 8, ROW_H - 22.0), Color(0, 0, 0, 0.45))
 			_row(Rect2(x, ry + 22.0, wd, ROW_H - 30.0), e2, open.find(e2), false, 1.0, true)
-	# the switch, then the main key
-	var ar := Rect2(x, pr.end.y - 34.0 - 132.0, wd, 50)
+	# the main key, then "更多" (the switch inside it)
+	var mr := Rect2(x, pr.end.y - 34.0 - 58.0, wd, 48)
+	_btns["more"] = mr
+	_notes["more"] = [w("展开或收起：按订单截止自动排、压块机", "Show or hide: auto by deadline, the baler"), ""]
+	draw_rect(mr, Color(1, 1, 1, 0.04 + 0.04 * float(_hov.get("more", 0.0))))
+	draw_rect(mr, Pal.ink(0.22), false, 1.0)
+	_text((w("更多 ▾", "MORE ▾") if more_open else w("更多 ›", "MORE ›")), mr.position + Vector2(16, 31), 20, Pal.ink(0.92), font_s)
+	_text(w("按订单截止自动排 · 压块机", "AUTO BY DEADLINE · THE BALER"), mr.position + Vector2(110, 31), 17, Pal.ink(0.5), font_b)
+	var kr := Rect2(x, mr.position.y - 76.0, wd - 186.0, 60)
+	if free >= ProcessQueue.HEAT_MIN:
+		_key("one", kr, w("再排一炉：钢锭 %.1f t  [Enter]", "ONE MORE HEAT: %.1f t  [Enter]") % minf(free, ProcessQueue.HEAT_T), w("把仓库里还没排上的钢锭再排一炉", "Queue another heat of the ingots in store"), "", true)
+		_key("store", Rect2(kr.end.x + 14, kr.position.y, 172, 60), w("去仓库挑", "PICK IN STORE"), w("在仓库里点钢锭“炼成钢坯”，可以挑吨数", "In the stores, ingots → 'cast', any tonnage"))
+	else:
+		_key("store", Rect2(x, kr.position.y, wd, 60), w("去仓库挑别的  [Enter]", "PICK OTHERS IN STORE  [Enter]"), w("仓库里没有没排上的钢锭了；在仓库里可以看别的", "No free ingots left; see the stores"), "", true)
+	if not more_open:
+		return
+	var ar := Rect2(x, kr.position.y - 64.0, wd, 50)
 	_btns["auto"] = ar
 	_notes["auto"] = [w("开着时：订单批次按截止先后排在最前，其余在后，同模具的连着炼，少换模", "On: order batches by their deadlines first, the rest after, the same mould together"), ""]
 	var on := ProcessLine.auto_on()
 	var hv := float(_hov.get("auto", 0.0))
 	draw_rect(ar, Color(1, 1, 1, 0.03 + 0.04 * hv))
 	draw_rect(ar, Pal.ink(0.22 + 0.3 * hv), false, 1.0)
-	_text(w("按订单截止时间自动排", "AUTO BY DEADLINE"), ar.position + Vector2(18, 32), 16, Pal.ink(0.92), font_b)
+	_text(w("按订单截止时间自动排", "AUTO BY DEADLINE"), ar.position + Vector2(18, 33), 20, Pal.ink(0.92), font_b)
 	var sw := Rect2(Vector2(ar.end.x - 70, ar.position.y + 14), Vector2(48, 22))
 	draw_rect(sw, Color(UiSkin.ACCENT, 0.85) if on else Pal.ink(0.22))
 	var knob := lerpf(2.0, 28.0, 1.0 if on else 0.0)
 	draw_rect(Rect2(sw.position + Vector2(knob, 2.0), Vector2(18, 18)), Pal.ink(0.95))
-	var kw := minf(380.0, wd)
-	var kr := Rect2(x + wd * 0.5 - kw * 0.5, pr.end.y - 34.0 - 68.0, kw, 56)
-	if free >= ProcessQueue.HEAT_MIN:
-		_key("one", kr, w("再排一炉：钢锭 %.1f t  [Enter]", "ONE MORE HEAT: %.1f t  [Enter]") % minf(free, ProcessQueue.HEAT_T), w("把仓库里还没排上的钢锭再排一炉", "Queue another heat of the ingots in store"), "", true)
-		_key("store", Rect2(kr.end.x + 12, kr.position.y + 6, minf(150.0, pr.end.x - PAD - kr.end.x - 12), 44), w("去仓库挑", "PICK IN STORE"), w("在仓库里点钢锭“炼成钢坯”，可以挑吨数", "In the stores, ingots → 'cast', any tonnage"))
-	else:
-		_key("store", kr, w("去仓库挑别的  [Enter]", "PICK OTHERS IN STORE  [Enter]"), w("仓库里没有没排上的钢锭了；在仓库里可以看别的", "No free ingots left; see the stores"), "", true)
 
 
 func _rack_text() -> String:
@@ -535,11 +570,11 @@ func _row(r: Rect2, e: Dictionary, i: int, live: bool, a: float, lifted := false
 	# what goes in → the mould (a key: click to change it)
 	var mk := str(e.get("mould", "billet"))
 	var head := w("钢锭 %.1f t →", "INGOT %.1f t →") % float(e.t)
-	_text(head, r.position + Vector2(56, 34), 20, Pal.ink(0.96), font_s)
-	var hw := font_s.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
+	_text(head, r.position + Vector2(56, 36), 26, Pal.ink(0.96), font_s)
+	var hw := font_s.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
 	var mname := ProcessLine.mould_name(mk)
-	var mw := font_s.get_string_size(mname, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
-	var mr := Rect2(r.position + Vector2(56 + hw + 6, 10), Vector2(mw + 12, 32))
+	var mw := font_s.get_string_size(mname, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
+	var mr := Rect2(r.position + Vector2(56 + hw + 6, 6), Vector2(mw + 12, 38))
 	_btns["mould:" + lot] = mr
 	var order_bound := str(e.get("use", {}).get("kind", "")) == "order"
 	_notes["mould:" + lot] = [ProcessLine.mould_note(mk) + w("。点一下换模具", ". Click to change the mould"), w("订单点名要这种，跟着订单走", "THE ORDER NAMES THIS MOULD") if order_bound else ""]
@@ -549,26 +584,26 @@ func _row(r: Rect2, e: Dictionary, i: int, live: bool, a: float, lifted := false
 	if mh > 0.01:
 		draw_rect(mr, Color(1, 1, 1, 0.06 * mh))
 		draw_line(Vector2(mr.position.x + 6, mr.end.y - 4), Vector2(mr.end.x - 6, mr.end.y - 4), Pal.ink(0.5 * mh), 1.0)
-	_text(mname, mr.position + Vector2(6, 24), 20, Pal.ink(0.96), font_s)
+	_text(mname, mr.position + Vector2(6, 30), 26, Pal.ink(0.96), font_s)
 	if str(e.get("ship", "")) != "":
 		_text(Methods.ship_label(str(e.ship)), Vector2(mr.end.x + 12, r.position.y + 34), 13, Pal.ink(0.5), font_b, r.size.x - (mr.end.x - r.position.x) - 260.0)
 	# its use (a key: click to go round keep / sell / the orders)
 	var ut := ProcessLine.use_text(e)
-	var uw := minf(font_b.get_string_size(ut, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 12.0, r.size.x - 320.0)
-	var ur := Rect2(r.position + Vector2(50, 44), Vector2(uw, 28))
+	var uw := minf(font_b.get_string_size(ut, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x + 12.0, r.size.x - 320.0)
+	var ur := Rect2(r.position + Vector2(50, 50), Vector2(uw, 32))
 	_btns["use:" + lot] = ur
 	_notes["use:" + lot] = [w("这批炼来干什么：留着 / 卖 / 给哪张订单。点一下换", "What it is for: keep / sell / an order. Click to change"), ""]
 	var uh := float(_hov.get("use:" + lot, 0.0))
 	if uh > 0.01:
 		draw_rect(ur, Color(UiSkin.DATA, 0.08 * uh))
-	_text(ut, ur.position + Vector2(6, 20), 15, Color(UiSkin.DATA, 0.85 + 0.15 * uh), font_b, ur.size.x - 8.0)
+	_text(ut, ur.position + Vector2(6, 24), 20, Color(UiSkin.DATA, 0.85 + 0.15 * uh), font_b, ur.size.x - 8.0)
 	# where it stands: in the furnace and how long, or when it comes
 	var eta := ProcessLine.eta(e)
 	var et := (w("炉里 · 还剩约 %d 秒", "IN THE FURNACE · ~%d s LEFT") % int(eta) if eta >= 1.0 else w("炉里 · 正在炼", "IN THE FURNACE")) if live else (w("约 %d 秒后", "IN ~%d s") % int(eta) if eta < 90.0 else w("约 %d 分钟后", "IN ~%d MIN") % int(ceil(eta / 60.0)))
-	_text(et, Vector2(r.end.x - 250, r.position.y + 32), 15, Pal.ink(0.72), font_b, 190.0)
+	_text(et, Vector2(r.end.x - 250, r.position.y + 34), 20, Pal.ink(0.72), font_b, 190.0)
 	if live or float(e.melted) > 0.0 or float(e.get("billet", 0.0)) > 0.0:
 		var done := float(e.get("billet", 0.0))
-		var bar := Rect2(r.end.x - 250, r.position.y + 48, 190, 6)
+		var bar := Rect2(r.end.x - 250, r.position.y + 56, 190, 8)
 		draw_rect(bar, Pal.ink(0.14))
 		draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(float(e.melted) / maxf(float(e.t), 0.01), 0.0, 1.0), bar.size.y)), Color(UiSkin.ACCENT, 0.45))
 		draw_rect(Rect2(bar.position, Vector2(bar.size.x * clampf(done / maxf(float(e.t), 0.01), 0.0, 1.0), bar.size.y)), UiSkin.ACCENT)
@@ -618,4 +653,4 @@ func _draw_foot(pr: Rect2) -> void:
 		draw_rect(Rect2(r.position.x, r.end.y - 2.0, r.size.x * clampf(_msg_t / 4.0, 0.0, 1.0), 2.0), Color(UiSkin.DATA, 0.6 * k))
 		_text(message, r.position + Vector2(18, 25), 14, Pal.ink(0.97 * k), font_b, r.size.x - 24.0)
 	else:
-		_text(w("拖动卡片排序 · 点模具或用途可以换 · Enter 排一炉 · Esc 关闭", "DRAG CARDS TO ORDER · CLICK THE MOULD OR USE TO CHANGE · ENTER QUEUES A HEAT · ESC CLOSES") if not _open().is_empty() else w("Enter 排一炉 · Esc 关闭", "ENTER QUEUES A HEAT · ESC CLOSES"), Vector2(x, y), 12, Pal.ink(0.35), font_b)
+		_text(w("Enter 排一炉 · Esc 关闭 · 拖动卡片换先后", "ENTER QUEUES A HEAT · ESC CLOSES · DRAG TO REORDER") if not _open().is_empty() else w("Enter 排一炉 · Esc 关闭", "ENTER QUEUES A HEAT · ESC CLOSES"), Vector2(x, y), 16, Pal.ink(0.4), font_b)

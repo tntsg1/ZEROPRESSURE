@@ -2,7 +2,7 @@ extends RefCounted
 
 # A dispatch berth is shared by physical consignments. Wait for an actual
 # empty footprint instead of spawning a second load overlapping the first.
-static func clear_spawn(space: PhysicsDirectSpaceState2D, at: Vector2, size: Vector2) -> bool:
+static func clear_spawn(space: PhysicsDirectSpaceState2D, at: Vector2, size: Vector2, exclude: Array[RID] = []) -> bool:
 	var shape := RectangleShape2D.new()
 	shape.size = size
 	var query := PhysicsShapeQueryParameters2D.new()
@@ -10,6 +10,7 @@ static func clear_spawn(space: PhysicsDirectSpaceState2D, at: Vector2, size: Vec
 	query.transform = Transform2D(0.0,at)
 	query.collision_mask = FreeBody.MASK
 	query.margin = 1.0
+	query.exclude = exclude
 	return space.intersect_shape(query,1).is_empty()
 # Shared by carrier machines and receiving bays. Carrying never removes collision
 # shapes or masks; every displacement sweeps the complete compound body.

@@ -114,7 +114,7 @@ func _how_line(z: String) -> String:
 	if n >= 2:
 		return w("已经修完。", "DONE.")
 	var why := Port.reason(z, true)
-	var place := w("修复单在终端“成长与建设”里下；施工队修，要等施工完才生效。", "Order it in the terminal under Growth & Build; the crew builds it, it works once built.")
+	var place := w("在终端“成长与建设”里下单，施工队修完才算数。", "Order it in the terminal under Growth & Build; the crew builds it, it works once built.")
 	return place + (w(" 现在还缺：%s", " Still missing: %s") % why if why != "" else w(" 材料和钱都够，可以下单。", " You have what it takes."))
 
 
@@ -123,45 +123,45 @@ func rows(z: String) -> Array:
 	match z:
 		"all":
 			return [w("零压港 · 全貌", "ZERO PRESSURE PORT"),
-				w("一座废弃的太空港，围着中央转运环有六个区。你接手的是拆船区的七号船坞，其它区现在大多停着。", "An abandoned port: six districts round the central ring. You have Berth 07 in the salvage district; most of the rest stands idle."),
-				w("整个游戏就是一个循环：拆船赚钱 → 用钱和材料修港 → 各区修好以后拆得更快、卖得更贵、能接更大的船 → 最后让中央转运环重新转起来。", "The whole game is one loop: strip ships for money → mend the port with money and materials → mended districts strip faster, sell dearer, take bigger ships → at last the central ring turns again."),
-				w("你刚拆完第一艘船。接下来逐个看每个区是干什么的。", "You have stripped your first ship. Now each district, one by one."),
+				w("废港，六个区围着中央转运环。你只有七号船坞，别的区都停着。", "An abandoned port: six districts round the central ring. You have Berth 07 in the salvage district; most of the rest stands idle."),
+				w("拆船挣钱，挣了修港。港修得越好，拆得越快，卖得越贵，船接得越大。最后让转运环转起来。", "The whole game is one loop: strip ships for money → mend the port with money and materials → mended districts strip faster, sell dearer, take bigger ships → at last the central ring turns again."),
+				w("第一艘拆完了。挨个看看各区干什么。", "You have stripped your first ship. Now each district, one by one."),
 				"", ""]
 		"salvage":
 			return [Port.name_of(z) + w(" · 你的船坞", " · YOUR BERTH"),
 				w("拆船的地方。拖回来的船推进七号船坞，你在这里断电、泄压、切割、抓取。", "Where ships are taken apart. A hulk is pushed into Berth 07; here you isolate, vent, cut and grab."),
-				w("钱几乎都从这里来：完整设备送设备回收口按设备价卖，太宽的送重载接收架，碎料进熔炉炼成钢锭（修港和加工都要用）。", "Nearly all your money starts here: whole machines through the equipment mouth sell as machines, wide ones go to the heavy rack, scrap goes to the furnace as ingots (the port and the works need them)."),
+				w("钱基本从这儿来。整件设备送设备口，太宽的送重载架，碎料进熔炉炼钢锭。", "Nearly all your money starts here: whole machines through the equipment mouth sell as machines, wide ones go to the heavy rack, scrap goes to the furnace as ingots (the port and the works need them)."),
 				_stage_line(z) + w("。船坞里的照明、熔炉主火、碎屑网等设施坏着，要一项项修。", ". The berth's lights, the furnace's main fire, the debris net and more are broken: mend them one by one."),
 				_next_line(z), _how_line(z)]
 		"power":
 			return [Port.name_of(z),
-				w("全港的电从这里来。电网按顺序把电分给各区，电不够时后面的区分到的少。", "The whole port's power. The grid shares it out district by district; when it runs short the last in line get less."),
-				w("拆船时激光、传送带、熔炉都吃电。屏幕上“电不够：船坞只分到 … MW”就是它在提醒你——电越足，切得越快、熔炉越快。", "Cutting, the conveyors and the furnace all draw power. The \"short of power\" line is this district talking: more power, faster cutting and melting."),
+				w("全港的电从这儿出。按顺序分给各区；电力不足时，排后面的功率先降。", "The whole port's power. The grid shares it out district by district; when it runs short the last in line get less."),
+				w("激光、传送带、熔炉都吃电。屏幕上出“电力不足—功率 xx%”，就是这儿的事。", "Cutting, the conveyors and the furnace all draw power. The \"short of power\" line is this district talking: more power, faster cutting and melting."),
 				_stage_line(z), _next_line(z), _how_line(z)]
 		"tug":
 			return [Port.name_of(z),
 				w("拖船从这里出发去小行星带，把你在星图上找到的废船拖回来；拖回来的船先停在这里的泊位上。", "The tugs leave from here for the belt and bring home the hulks you find on the star map; they wait at its berths."),
-				w("泊位数决定能同时停几艘等着拆的船；拖船站越好，能拖的船越长（44 m → 88 m → 不限）。有了自家拖船，拖运费减半。", "Its berths say how many hulks can wait; the better it is, the longer the ships it can tow (44 m → 88 m → any). Your own tugs halve the tow."),
+				w("几个泊位就能停几艘。站越好拖得越长：44 米、88 米、不限。自家拖船，运费减半。", "Its berths say how many hulks can wait; the better it is, the longer the ships it can tow (44 m → 88 m → any). Your own tugs halve the tow."),
 				_stage_line(z) + w(" · ", " · ") + TugYard.status(), _next_line(z), _how_line(z)]
 		"cargo":
 			return [Port.name_of(z),
 				w("港里的仓库：一排排货架，叉车搬货。钢锭、零件、你卖出的货都从这里进出。", "The port's warehouse: racks and forklifts. Ingots, parts and what you sell all pass through here."),
-				w("卖出去的货要叉车从这里出库发运；熔炉取料也从这里拿。仓库越顺，钱到得越快。", "Sold goods leave from here by forklift; the furnace draws its feed from here. The smoother it runs, the sooner you are paid."),
+				w("卖掉的货从这儿发走，熔炉也从这儿取料。", "Sold goods leave from here by forklift; the furnace draws its feed from here. The smoother it runs, the sooner you are paid."),
 				_stage_line(z), _next_line(z), _how_line(z)]
 		"trade":
 			return [Port.name_of(z),
-				w("港里做买卖的地方：交易行（终端里按 F8）、上门的客人、公司的长期合同。", "Where the port does business: the exchange (F8 in the terminal), visiting buyers, company contracts."),
-				w("钢坯、材料、零件在这里卖；修港缺的零件在这里买。贸易港修好以后，完整设备卖得更贵，二手船市也在这里开。", "Billets, materials and parts are sold here; parts you lack for repairs are bought here. Mended, it pays more for whole machines and opens the hulk market."),
+				w("港里做买卖的地方：交易行、上门的客人、公司的长期合同。", "Where the port does business: the exchange (F8 in the terminal), visiting buyers, company contracts."),
+				w("在这儿卖钢坯、材料、零件，买修港缺的零件。修好了，设备卖得更贵，还能买二手船。", "Billets, materials and parts are sold here; parts you lack for repairs are bought here. Mended, it pays more for whole machines and opens the hulk market."),
 				_stage_line(z), _next_line(z), _how_line(z)]
 		"process":
 			return [Port.name_of(z),
-				w("把拆下来的东西再加工的地方：炉台把钢锭炼成钢坯，轧机轧成钢板和型材，分选台、化验台分开混在一起的金属；还有气体线，把回收的气分离成液氧。", "Where what you strip is worked again: the furnace desk makes billets, the mill rolls plate and sections, sorting and assay desks part mixed metal; the gas line separates recovered gas into liquid oxygen."),
-				w("加工过的东西比原料值钱得多：钢坯卖给工业公司，钢板和型材还能用来修港。", "Worked goods pay far better than raw: billets sell to the firms, plate and sections also mend the port."),
+				w("再加工的地方。钢锭炼钢坯，钢坯轧钢板。混料在这儿分开，抽回的气在这儿做液氧。", "Where what you strip is worked again: the furnace desk makes billets, the mill rolls plate and sections, sorting and assay desks part mixed metal; the gas line separates recovered gas into liquid oxygen."),
+				w("加工过的值钱。钢坯卖给公司，钢板型材能修港。", "Worked goods pay far better than raw: billets sell to the firms, plate and sections also mend the port."),
 				_stage_line(z), _next_line(z), _how_line(z)]
 		"ring":
 			return [w("中央转运环", "THE CENTRAL RING"),
 				w("港的中心：一圈连着所有区的环，走廊和接驳车从这里通到各区。", "The heart of the port: a ring joining every district; the corridors and the shuttle run from here."),
-				w("它重新转起来，是整个游戏最后的目标——那时才能接远航者那样的巨舰。要先修好动力区和拖船站。", "Getting it turning again is the game's last goal — only then can giants like the Ark come in. The power district and the tug station come first."),
+				w("最后要让它转起来，那时才接得了远航者那样的大船。先修动力区和拖船站。", "Getting it turning again is the game's last goal — only then can giants like the Ark come in. The power district and the tug station come first."),
 				_stage_line(z), _next_line(z), _how_line(z)]
 	return [z, "", "", "", "", ""]
 
@@ -194,7 +194,7 @@ func _draw_card() -> void:
 		y += lines + 4.0
 	# the way on: held for MIN_S the first time
 	var ready := not forced or t >= MIN_S
-	var nav := w("空格 / 点一下：下一个", "SPACE / CLICK: NEXT") if i < ORDER.size() - 1 else w("空格 / 点一下：导览完成，左上角主线卡继续告诉你下一步", "SPACE / CLICK: DONE — THE MAIN-LINE CARD TAKES IT FROM HERE")
+	var nav := w("空格 / 点一下：下一个", "SPACE / CLICK: NEXT") if i < ORDER.size() - 1 else w("看完了。下一步看左上角。", "SPACE / CLICK: DONE — THE MAIN-LINE CARD TAKES IT FROM HERE")
 	if not ready:
 		nav = w("请先看一下……", "READ IT FIRST…")
 	if not forced:

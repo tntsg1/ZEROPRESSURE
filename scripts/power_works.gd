@@ -444,7 +444,7 @@ static func shore_state() -> Array:
 		var P5 = preload("res://scripts/power_supply.gd")
 		return [w("电池泊位 %.1f 兆瓦时 · 在给 %.1f 兆瓦" % [P5.left_mwh(), shore], "BATTERY BERTH %.1f MWh · GIVING %.1f MW" % [P5.left_mwh(), shore]), "work" if shore > 0.05 else "ok"]
 	if umb <= 0.0 and shore <= 0.05:
-		return [w("收起 · 没买外购电", "STOWED · NO BOUGHT POWER"), "off"]
+		return [w("收起", "STOWED"), "off"]
 	if umb < 1.0:
-		return [w("外购电接头伸出中 %d%%" % int(umb * 100.0), "UMBILICAL SWINGING OUT %d%%" % int(umb * 100.0)), "work"]
-	return [w("已接上 · 外购电 %.1f 兆瓦" % shore, "PLUGGED IN · %.1f MW SHORE ($%d/MWh)" % [shore, int(Grid.SHORE_PRICE)]), "work" if shore > 0.05 else "ok"]
+		return [w("接头伸出中 %d%%" % int(umb * 100.0), "UMBILICAL SWINGING OUT %d%%" % int(umb * 100.0)), "work"]
+	return [w("已接上 · %.1f 兆瓦" % shore, "PLUGGED IN · %.1f MW" % shore), "work" if shore > 0.05 else "ok"]

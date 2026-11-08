@@ -510,7 +510,7 @@ class GroupCard extends Control:
 			return [panel.w("供电正常", "POWERED"), Hmi.ok_col()]
 		if got <= 0.01:
 			return [panel.w("暂时无电", "NO POWER FOR NOW"), UiSkin.ACCENT]
-		return [panel.w("电不够：只拿到 %d%%", "SHORT: %d%%") % int(100.0 * got / maxf(0.001, want)), UiSkin.ACCENT]
+		return [Grid.short_label(int(floor(100.0 * got / maxf(0.001, want)))), UiSkin.ACCENT]
 	func _draw() -> void:
 		var fb := Fonts.get_font("SemiBold")
 		var fr := Fonts.get_font("Regular")
@@ -741,7 +741,7 @@ func _ready() -> void:
 	hands.add_child(left)
 	# 128 号 第 5 段 (用户定): no bought power any more; the three-way choice goes
 	left.visible = not PS5.ENABLED
-	_section(left, w("电不够时怎么办", "WHEN IT RUNS SHORT"))
+	_section(left, w("电力不足时怎么办", "WHEN IT IS UNDERPOWERED"))
 	var group := ButtonGroup.new()
 	var opts := [
 		[w("等着，需要时再买", "WAIT; BUY WHEN ASKED"), w("排在后面的先变慢；炼钢急用时在炉台点“买外购电”", "The last in line slow down; buy power at the furnace when a heat needs it")],
@@ -949,7 +949,7 @@ func _refresh() -> void:
 	banner.ok = bool(v.ok) and gap < 0.05
 	if not banner.ok:
 		var who: Array = dk.short
-		banner.head = w("电力不足：%s受到影响", "SHORT OF POWER: %s HIT") % ("、".join(who) if not who.is_empty() else Grid.group_name("process"))
+		banner.head = Grid.short_label(Grid.pct(game)) + w("：%s", ": %s") % ("、".join(who) if not who.is_empty() else Grid.group_name("process"))
 		banner.sub = w("目前总需求 %.1f MW，可用 %.1f MW，还差 %.1f MW。", "ASKED %.1f MW, AVAILABLE %.1f MW, %.1f MW SHORT.") % [float(dk.ask), float(dk.avail), gap]
 	else:
 		var t := str(v.t)
@@ -1072,11 +1072,11 @@ func _fill_order() -> void:
 			b.tooltip_text = str(d[2])
 			b.custom_minimum_size = Vector2(36, 34)
 			b.disabled = (i == 0 and int(d[0]) < 0) or (i == rows.size() - 1 and int(d[0]) > 0)
-			BenchFx.note(b, w("往前调一位：电不够时比后面的区先拿到电", "Up one: gets power before those below when short") if int(d[0]) < 0 else w("往后调一位：电不够时先让给前面的区", "Down one: gives way to those above when short"), w("已经排在第一", "Already first") if int(d[0]) < 0 else w("已经排在最后", "Already last"))
+			BenchFx.note(b, w("往前调一位：电力不足时先拿电", "Up one: gets power first when underpowered") if int(d[0]) < 0 else w("往后调一位：电力不足时先让给前面", "Down one: gives way when underpowered"), w("已经排在第一", "Already first") if int(d[0]) < 0 else w("已经排在最后", "Already last"))
 			b.tooltip_text = ""
 
 			var dir: int = d[0]
-			b.pressed.connect(func(): _ask("order", Grid.moved(g, dir), w("把「%s」%s？之后电不够时，排在后面的先变慢。", "MOVE %s %s?") % [Grid.group_name(g), w("往前调一位", "UP") if dir < 0 else w("往后调一位", "DOWN")]))
+			b.pressed.connect(func(): _ask("order", Grid.moved(g, dir), w("把「%s」%s？电力不足时，排在后面的功率先降。", "MOVE %s %s?") % [Grid.group_name(g), w("往前调一位", "UP") if dir < 0 else w("往后调一位", "DOWN")]))
 			keys.add_child(b)
 		order_box.add_child(card)
 	_sync_controls()
@@ -1146,7 +1146,7 @@ func drag_end() -> void:
 		return
 	var o: Array = _cards.map(func(cd): return str(cd.get_meta("group")))
 	_order_sig = str(o)
-	_apply("order", o, w("用电顺序已改：", "ORDER NOW: ") + " → ".join(o.map(func(g): return Grid.group_name(str(g)))) + w(" · 电不够时排在后面的先变慢", " · SHORT, THE LAST SLOW DOWN FIRST"))
+	_apply("order", o, w("用电顺序已改：", "ORDER NOW: ") + " → ".join(o.map(func(g): return Grid.group_name(str(g)))) + w(" · 电力不足时排在后面的功率先降", " · UNDERPOWERED, THE LAST LOSE POWER FIRST"))
 
 
 func _process(dt: float) -> void:

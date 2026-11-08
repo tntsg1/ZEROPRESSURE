@@ -1,6 +1,9 @@
 extends Control
 const GuideCopy = preload("res://scripts/onboarding_text.gd")
 const SmelterModel = preload("res://scripts/smelter.gd")
+const ConsoleKit = preload("res://scripts/console_kit.gd")
+var now_line
+var temp_l: Label
 # Site-only native controls over the real live furnace, not a paused minigame.
 var service
 var on_close: Callable
@@ -54,14 +57,22 @@ var _more_fold: BenchFx.Fold
 # the next step; the rest folded under "more"
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var column := OpsSkin.pane(self, Pal.heat(1.0, 1.4), 420.0)
-	plate = OpsSkin.Plate.new("EAF-3", words("电弧炉 · 炉台","ARC FURNACE · DESK"), words("现场操作 · 功率自动
-用自家发的电；不够时可买外购电（贵 %d 倍）" % int(Grid.bought_x()),"ON SITE · AUTOMATIC POWER\nOur own power; bought power when short (%dx dearer)" % int(Grid.bought_x())) if not preload("res://scripts/power_supply.gd").ENABLED else words("现场操作 · 功率自动\n用自家发的电；不够时到供电屏买电池块","ON SITE · AUTOMATIC POWER\nOur own power; short, buy a battery block at the power screen"), Pal.heat(1.0, 1.4))
-	column.add_child(plate)
-	readout = OpsSkin.as_screen(label("", 17))
-	readout.custom_minimum_size.y = 120
+	# 132 号: a 520 px card on the far side of the furnace, as tall as it needs; the top line, the
+	# temperature big, the power as a per cent, one orange key; the rest under "更多"
+	var column := ConsoleKit.solid(self, ConsoleKit.W_CARD)
+	var fx: Vector2 = Vector2(service._furnace_x(), service._floor()) * Geom.M if service.plant() != null else service.site()
+	ConsoleKit.card_side(self, ConsoleKit.screen_x(service.game, fx))
+	plate = OpsSkin.Plate.new("EAF-3", words("电弧炉 · 炉台","ARC FURNACE · DESK"), "", Pal.heat(1.0, 1.4))
+	column.add_child(ConsoleKit.header(words("炉台 · 电弧炉", "FURNACE DESK"), "EAF-3"))
+	now_line = ConsoleKit.NowLine.new()
+	column.add_child(now_line)
+	temp_l = ConsoleKit.text("", 48, 0.97)
+	temp_l.add_theme_font_override("font", Fonts.get_font("SemiBold"))
+	column.add_child(temp_l)
+	readout = ConsoleKit.text("", 20, 0.85)
 	column.add_child(readout)
-	next_step = label(GuideCopy.text("heat.idle"),16)
+	next_step = label(GuideCopy.text("heat.idle"),18)
+	next_step.visible = false
 	column.add_child(next_step)
 	feed_row = HBoxContainer.new()
 	var feed_label := label(words("钢锭 / 吨","INGOTS / t"))
@@ -78,28 +89,30 @@ func _ready() -> void:
 	column.add_child(feed_row)
 	main = button("", _press_main)
 	main.custom_minimum_size.y = 64
-	main.add_theme_font_size_override("font_size", 22)
+	ConsoleKit.orange(main, 24)
 	column.add_child(main)
-	message = label("",15)
+	message = label("",18)
 	column.add_child(message)
-	# 106 号: the batches kept to be processed, by ship; short of power, the way to the control screen
-	queue_l = label("",14)
+	# 106 号: the batches kept to be processed, by ship (under "更多" now); short of power, the way to the control screen
+	queue_l = label("",16)
 	queue_l.modulate = Color(1, 1, 1, 0.75)
-	column.add_child(queue_l)
-	power_b = button(words("去电网调度","TO THE POWER CONTROL SCREEN"), func():
+	power_b = button(words("去动力区","TO THE POWER DISTRICT"), func():
 		var g = service.game
 		close()
 		if g != null and is_instance_valid(g): g.open_power_screen.call_deferred())
 	power_b.visible = false
 	column.add_child(power_b)
-	more_key = button(words("更多 ▾","MORE ▾"), func(): _more_fold.set_open(not _more_fold.open))
+	more_key = button(words("更多 ›   测温取样 · 功率 · 撤回 · 队列","MORE ›   SAMPLE · POWER · RETURN · QUEUE"), func(): _more_fold.set_open(not _more_fold.open))
+	more_key.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	more_key.add_theme_font_size_override("font_size", 18)
 	column.add_child(more_key)
 	more = VBoxContainer.new()
 	more.visible = false
 	column.add_child(more)
+	more.add_child(queue_l)
 	# 2026-11-04 (BenchFx #052): "more" pushes what is below down; Esc folds it before closing
 	_more_fold = BenchFx.fold(more)
-	_more_fold.on_toggle = func(open: bool): more_key.text = words("更多 ▴","MORE ▴") if open else words("更多 ▾","MORE ▾")
+	_more_fold.on_toggle = func(open: bool): more_key.text = words("更多 ▾","MORE ▾") if open else words("更多 ›   测温取样 · 功率 · 撤回 · 队列","MORE ›   SAMPLE · POWER · RETURN · QUEUE")
 	BenchFx.note(more_key, words("展开或收起：自动装置、撤回、报损、手动功率", "Show or hide the auto sampler, returning, writing off, manual power"))
 	BenchFx.primary(main)
 	BenchFx.note(main, words("炉台的下一步，按当前炉况来（Enter）", "The furnace's next step, as it stands now (Enter)"))
@@ -166,8 +179,6 @@ func _next() -> Array:
 			# 125 号: what the furnace is really doing (cooling, starved, melting) before any old guess
 			var inf: Dictionary = service.info()
 			if str(inf.key) in ["cooling", "debt", "starved", "melting", "tapping", "probe", "deferred", "power_wait"]:
-				if str(inf.press) == "shore":
-					return [words("电不够：买外购电补上（贵 %d 倍）" % int(Grid.bought_x()),"SHORT: BUY POWER (%dx DEARER)" % int(Grid.bought_x())), func(): show_result(service.ask_shore())]
 				return [str(inf.title), Callable()]
 			if heat.get("grid",{}).is_empty():
 				return [words("电弧炉已暂停（供电屏）· 在供电屏点“电弧炉工作”恢复", "FURNACE PAUSED (POWER SCREEN) · PRESS 'FURNACE ON' THERE"), Callable()]
@@ -175,9 +186,6 @@ func _next() -> Array:
 				return [words("出钢中…","TAPPING…"), Callable()]
 			if not heat.get("auto",false) and (float(f.manual_power) < 0.5 or (float(f.bunker) > 0.0001 and not bool(f.manual_feed))):
 				return [GuideCopy.text("heat.melt"), func(): show_result(service.start_melt())]
-			# 70 号: short of power, it melts slowly — the shore line can make up the rest
-			if Grid.wait_text(service.game) != "" and not heat.get("shore_asked",false) and str(Grid.ctl().line) != "own_only" and not preload("res://scripts/power_supply.gd").ENABLED:
-				return [words("电不够：买外购电补上（贵 %d 倍）" % int(Grid.bought_x()),"SHORT: BUY POWER (%dx DEARER)" % int(Grid.bought_x())), func(): show_result(service.ask_shore())]
 			if float(f.m_s) > 0.000001 or float(f.bunker) > 0.000001 or float(f.T) < SmelterModel.T_TAP:
 				return [words("熔化中 · %d °C" % int(f.T),"MELTING · %d °C" % int(f.T)), Callable()]
 			if float(f.dip) > 0.0001 or str(f.lance_phase) != "idle":
@@ -213,6 +221,7 @@ func _update() -> void:
 
 
 func _process(dt: float) -> void:
+	ConsoleKit.card_fit(self)
 	_update()
 	_refresh += dt
 	if _refresh < 0.2: return
@@ -236,7 +245,9 @@ func _process(dt: float) -> void:
 	next_step.text = (str(inf2.title) + ("
 " + str(inf2.text) if str(inf2.text) != "" else "")) if str(heat.get("state","")) in ["raw_transport","processing","product_transport"] else (GuideCopy.text(instruction) if service.waiting == "" else service.waiting)
 	# paused at the power screen: the way there is right on the desk
-	power_b.visible = Grid.ctl().defer or str(service.waiting).begins_with("等电") or str(service.waiting).begins_with("电不够") or str(service.waiting).begins_with("SHORT")
+	var pp := _pct()
+	power_b.visible = Grid.ctl().defer or Grid.is_short_text(str(service.waiting)) or pp < 100
+	_now(inf2, pp)
 
 	var ql: Array = []
 	for e in ProcessQueue.entries():
@@ -251,9 +262,37 @@ func _process(dt: float) -> void:
 	var total: float = maxf(0.001, float(heat.get("quantity", 0.0)))
 	var melted := clampf(float(f.m_l) / total, 0.0, 1.0) if str(heat.get("state","")) == "processing" else 0.0
 	var available: float = Career.data.get("exchange",{}).get("actors",{}).get("company",{}).get("stock",{}).get("ferrous_scrap:1",0.0)
-	readout.text = "%d °C · %s %d%%
-%s · %s $%.2f%s
-%s %.2f t" % [int(f.T), words("已熔","MELTED"), int(melted * 100.0), words("实际 %.1f MW · 分到 %.1f MW","DRAWING %.1f MW · GIVEN %.1f MW") % [f.power, f.manual_supply_mw], words("本炉电费","POWER"), float(heat.get("energy_cost",0.0)), (words(" · 待缴 $%.2f" % due, " · DUE $%.2f" % due) if due > 0.005 else ""), words("仓库合格炉料","GRADE 1 FEED IN STOCK"), available]
+	temp_l.text = "%d °C" % int(f.T)
+	readout.text = "%s %d%% · %s %.2f t\n%s %d%% · %s $%.2f%s" % [words("已熔","MELTED"), int(melted * 100.0), words("钢水","MELT"), float(f.m_l), words("功率","POWER"), _pct(), words("本炉电费","POWER COST"), float(heat.get("energy_cost",0.0)), (words(" · 待缴 $%.2f" % due, " · DUE $%.2f" % due) if due > 0.005 else "")]
+
+
+# the furnace's power: what it is given of what it asks, a per cent (100 when idle)
+func _pct() -> int:
+	var heat: Dictionary = service.heat()
+	if str(heat.get("state","")) != "processing" or heat.get("grid",{}).get("free",false):
+		return 100
+	var f = service.furnace()
+	if float(f.manual_power) < 0.5 and float(f.T) >= SmelterModel.T_TAP:
+		return 100
+	return mini(100, int(floor(float(f.manual_supply_mw) / maxf(Grid.furnace_cap(), 0.001) * 100.0 + 0.5)))
+
+
+# 132 号: the top line says the same as the orange key — or, short of power, that first
+func _now(inf: Dictionary, pp: int) -> void:
+	if now_line == null:
+		return
+	if pp < 100 and str(service.heat().get("state","")) == "processing":
+		now_line.set_now(true, Grid.short_label(pp) + words("：去动力区", ": TO THE POWER DISTRICT"))
+		return
+	if _main_cb.is_valid():
+		var f = service.furnace()
+		if main.text == words("倾炉出钢","TILT / TAP"):
+			now_line.set_now(true, words("%d °C 了，可以出钢", "%d °C: READY TO TAP") % int(f.T))
+		else:
+			now_line.set_now(true, main.text)
+		return
+	var s := str(inf.get("title", "")) if str(service.heat().get("state","")) in ["raw_transport","processing","product_transport"] else ""
+	now_line.set_now(false, s if s != "" else words("炉子空着；排炉在加工队列", "THE FURNACE IS EMPTY; HEATS ARE QUEUED IN THE QUEUE"))
 
 
 func close() -> void:

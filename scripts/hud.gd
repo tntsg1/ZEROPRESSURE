@@ -2,6 +2,7 @@ class_name Hud
 extends CanvasLayer
 const FastDraw = preload("res://scripts/fast_draw.gd")
 const CoreAsset = preload("res://scripts/core_asset.gd")
+const GuideCards = preload("res://scripts/guide_cards.gd")
 # Screen-space layer: contract panel, income, toolbar, drone status, cursor
 # labels, measurement tags, messages, hints, the contract card, the pause
 # menu and the settlement. Everything moves on springs and real time.
@@ -343,7 +344,7 @@ func _salvage_power(s: Vector2) -> void:
 			var want := float(gn.get("want", 0.0))
 			var got := float(gn.get("own", 0.0)) + float(gn.get("shore", 0.0))
 			if want > 0.0 and got < want * 0.9:
-				_sp_text = Ops.w("电不够：船坞只分到 %.1f / %.1f MW（激光 %d%%、传送带 %d%%、熔炉 %d%%）。修动力区，或在动力区控制屏把拆船区往前调。", "SHORT OF POWER: THE BERTH GETS %.1f / %.1f MW (LASER %d%%, BELT %d%%, FURNACE %d%%).") % [got, want, int(Grid.salvage_k(game, "laser", 0.15) * 100.0), int(Grid.salvage_k(game, "mouth", 0.2) * 100.0), int(Grid.salvage_k(game, "berth_furnace", 0.0) * 100.0)]
+				_sp_text = Grid.short_label(Grid.pct(game, "salvage")) + Ops.w("。修动力区，或在供电屏把拆船区往前拖。", ". MEND THE POWER DISTRICT, OR DRAG THE BERTH UP AT THE POWER SCREEN.")
 	if _sp_text == "":
 		return
 	var r := Rect2(s.x * 0.5 - 460.0, 176.0, 920.0, 34.0)
@@ -623,6 +624,12 @@ func _process(dt: float) -> void:
 	t += dt
 	hint_t += dt
 	op_t += dt
+	# 132 号: the situation cards; while one is up the other voices step aside
+	GuideCards.tick(game, dt)
+	if game.codex_hud != null and is_instance_valid(game.codex_hud):
+		game.codex_hud.visible = not GuideCards.showing()
+	if need_mark != null and is_instance_valid(need_mark):
+		need_mark.visible = not GuideCards.showing()
 	alert_t += dt
 	saved_t += dt
 	flash = maxf(0.0, flash - dt * 2.5)
@@ -876,7 +883,8 @@ func _draw_hud_body() -> void:
 		_boundary(s)
 		_haul_guide(s)
 		if not g.training and g.exam == null and not g.in_berth():
-			_next_mark(s)
+			if not GuideCards.showing():
+				_next_mark(s)
 		if g.warp:
 			_warp(s)
 		_xform(Vector2((1.0 - _in(1)) * 380.0, 0.0))
@@ -1519,7 +1527,7 @@ func _main() -> Dictionary:
 
 
 func _main_on() -> bool:
-	return game != null and not game.coach_on() and not game.walk_on() and not game.store_guide_on() and not _guide_on() and game.career() and not game.training and game.exam == null and game.in_berth() and game.state == "play" and not game.port_view and Career.usable() and not _main().step.is_empty()
+	return game != null and not GuideCards.showing() and not game.coach_on() and not game.walk_on() and not game.store_guide_on() and not _guide_on() and game.career() and not game.training and game.exam == null and game.in_berth() and game.state == "play" and not game.port_view and Career.usable() and not _main().step.is_empty()
 
 
 # 128 号 第 3 段 §十二: the one voice (scripts/need_voice.gd) and its one target mark
@@ -1939,7 +1947,7 @@ func hint_on() -> bool:
 	# 128 号 一个声音: what keeps quiet while a guide or the main line speaks is the berth's arrival line
 	# (it says what they say); a refusal's reason ("交易行还没开放") is the answer to what the player just
 	# pressed and always shows (人性化: 点不了写原因)
-	return not (hint_text == "" or hint_t > 9.0 or game.state == "porttour" or (_hint_berth and (game.store_guide_on() or _main_on())))
+	return not (hint_text == "" or GuideCards.showing() or hint_t > 9.0 or game.state == "porttour" or (_hint_berth and (game.store_guide_on() or _main_on())))
 
 
 func _hint(s: Vector2) -> void:

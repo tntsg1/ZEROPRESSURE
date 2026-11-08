@@ -4,10 +4,8 @@ extends "res://tests/guide_check.gd"
 # comes home as a batch instead of cash; separation conserves mass to the gram; taint lowers the
 # purity and keeps oxygen from life-support grade; hydrogen stops a batch; the life-support test
 # needs a clean certified source; liquefaction changes the phase not the mass, and a full tank
-# stops it; without power the tank boils off (vented, logged), with power it holds; a passing
-# ship is reserved for, docks on the cargo pier, is filled through the arm and pays for what came
-# aboard; short of power it gets nothing and leaves on time, with the penalty its terms set;
-# automation takes only standard batches and only once two were done by hand. Own saves only.
+# stops it; without power the tank boils off (vented, logged), with power it holds; 132 号: no
+# passing ship buys gas (an old save's supply orders are dropped); automation takes only standard batches and only once two were done by hand. Own saves only.
 #   tools/run_test.sh tests/gas_line_check.gd --fixed-fps 60
 
 
@@ -146,64 +144,22 @@ func _run() -> void:
 	GasLine.advance(g, 60.0)
 	check(is_equal_approx(float(d.lox.kg), hold0), "power back: the cold box holds it")
 	d.lox.kg = 6000.0
-	# ---- a passing ship
-	d.callers = []
-	var c: Dictionary = GasLine.new_caller()
-	c.want = "lox"
-	c.grade = "ind"
-	c.kg = 3000.0
-	c.price = 0.5
-	c.partial = false
-	c.eta = 5.0
-	c.stay = 90.0
-	check(GasLine.accept(str(c.id)).ok and is_equal_approx(float(c.reserved), 3000.0), "taken: 3 t of LOX reserved")
-	check(is_equal_approx(GasLine.reserved("lox"), 3000.0), "the reservation stands against the tank")
-	m0 = float(Career.data.money)
-	GasLine.advance(g, 5.1)
-	check(str(c.state) == "docked", "on time it docks at the supply berth (the cargo pier has a berth free)")
-	g.cam_override = preload("res://scripts/gas_works.gd").berth_at() + Vector2(10, -16) * PortStructure.M()
-	g.zoom_override = 0.3
-	for i in 70:
-		GasLine.advance(g, 1.0)
+	# ---- 132 号 (user 2026-11-07 "燃料外运也删了"): no passing ship buys gas any more
+	var said_all: Array = []
+	for i in 12:
+		said_all += GasLine.advance(g, 60.0)
 		await _frames(1)
-		if i == 20:
-			await _frames(20)
-			Cap.save(root, "res://tests/out/gas_supply_berth_zh.png")
-	check(str(c.state) == "done" and is_equal_approx(float(c.got), 3000.0), "the arm fills it: 3000 kg aboard")
-	# (the money also pays the line's power now, 77 号: the order's own payment is checked)
-	check(is_equal_approx(float(c.paid), 3000.0 * 0.5) and float(Career.data.money) - m0 > 1400.0 and is_equal_approx(float(d.lox.kg), 3000.0), "it pays for what came aboard ($1,500, power aside) and the tank is 3 t lighter")
-	# short of power at the pier: nothing transfers, it leaves on time with the penalty
-	var c2: Dictionary = GasLine.new_caller()
-	c2.want = "lox"
-	c2.grade = "ind"
-	c2.kg = 1000.0
-	c2.price = 0.5
-	c2.partial = false
-	c2.eta = 1.0
-	c2.stay = 20.0
-	GasLine.accept(str(c2.id))
-	var fake2 := preload("res://tests/grid_check.gd").Fake.new()
-	fake2.group = "salvage"
-	fake2.mw = 30.0
-	root.add_child(fake2)
-	Grid.add_load_source(fake2)
-	Career.data.port["power"] = 0
-	await _frames(2)
-	m0 = float(Career.data.money)
-	for i in 25:
-		GasLine.advance(g, 1.0)
-		await _frames(1)
-	check(str(c2.state) == "missed" and float(c2.got) == 0.0 and is_equal_approx(float(c2.paid), -50.0), "no power for the arm: nothing aboard, it leaves on time, 10 pct penalty ($50)")
-	fake2.queue_free()
-	Career.data.port["power"] = 1
-	await _frames(2)
-	# a grade it cannot have
-	var c3: Dictionary = GasLine.new_caller()
-	c3.want = "lox"
-	c3.grade = "ls"
-	c3.kg = 500.0
-	check(GasLine.accept_block(str(c3.id)) != "", "industrial LOX in the tank: a life-support LOX order cannot be taken (%s)" % GasLine.accept_block(str(c3.id)))
-	c3.state = "declined"
+	check(not d.has("callers") and not said_all.any(func(s): return str(s).find("补给") >= 0), "twelve minutes: no passing ship asks for supply (%d lines said)" % said_all.size())
+	check(not GasLine.grid_loads().any(func(l): return str(l.id) == "lox_arm"), "no supply arm on the grid")
+	check(not GasLine.set_auto("supply", true).ok, "no 'take supply orders' switch")
+	# an old save: its supply orders and what they held back are dropped as it is read, no error
+	d["callers"] = [{"id": "SUP-OLD", "ship": "远帆号-38", "want": "lox", "grade": "ind", "kg": 2000.0, "price": 0.6, "eta": 10.0, "stay": 60.0, "partial": false, "state": "accepted", "reserved": 2000.0, "got": 0.0, "t": 0.0}]
+	d.auto["supply"] = true
+	d.auto["keep_lox"] = 2000.0
+	var d2 := GasLine.data()
+	check(not d2.has("callers") and not d2.auto.has("supply") and not d2.auto.has("keep_lox"), "an old save's supply order and its switch are dropped")
+	check(not GasLine.set_auto("buy", true).ok and d2.auto.keys().filter(func(k): return str(k) in ["buy", "buy_max_price", "buy_t", "cash_floor"]).is_empty(), "no feed-buying switch or bounds left")
+	check(is_equal_approx(preload("res://scripts/power_supply.gd")._gas_lox(), float(d.lox.kg)), "the LOX the fuel cells may take is the whole tank (nothing held back)")
 	# ---- automation
 	d.made = 0
 	check(not GasLine.set_auto("process", true).ok, "automatic separation only after two batches by hand")

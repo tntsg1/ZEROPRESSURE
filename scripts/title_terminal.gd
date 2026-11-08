@@ -804,7 +804,7 @@ func _draw() -> void:
 			draw_polyline(PackedVector2Array([arrow + Vector2(377, 21), arrow + Vector2(384, 28), arrow + Vector2(377, 35)]), Pal.ink(0.8 * hk * ia), 1.3)
 	var data := _home_data()
 	var active: Dictionary = data.get("active", {})
-	var company := str(data.get("company", Txt.t("t_company_default"))) if not data.is_empty() else words("欢迎来到零压拆船厂", "WELCOME TO BERTH 07")
+	var company := str(data.get("company", Txt.t("t_company_default"))) if not data.is_empty() else words("零压拆船厂 · 七号坞", "WELCOME TO BERTH 07")
 	_text(company, Vector2(136, 407), 14, 0.5, false, 310)
 	_text(_status(data, active), Vector2(136, 427), 12, 0.33)
 	_rule(864, 48, 1552, 0.24)

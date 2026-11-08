@@ -43,7 +43,8 @@ const MACHINES := {
 	"process": [],
 	# the trade hall's counters and quote board are scripts/trade_hall.gd (38 号)
 	"trade": [],
-	"cargo": [["stack_a", Vector2(6, 12), Vector2(10, 9)], ["stack_b", Vector2(42, 12), Vector2(10, 9)]],
+	# 128 号 第 6 段: the racks' real extent is in scripts/port_solids.gd (these stood over the freight line)
+	"cargo": [],
 }
 const DRAWN_INSIDE := ["cradle", "table", "deck", "rack", "reactor_a", "reactor_b", "reactor_c", "switchgear"]
 const NAMES := {
@@ -146,7 +147,16 @@ func _ready() -> void:
 	if preload("res://scripts/process_gallery.gd").on():
 		for e in preload("res://scripts/process_gallery.gd").edges():
 			_seg_on(gallery_walls, e[0], e[1])
+	# 128 号 第 6 段: what the art draws solid (scripts/port_solids.gd), its own body (layer 4 like the
+	# walls) so the works' overhead-rail trolley and its load, which run on their own rail through the
+	# racks' tops and down past the mill, can be let through it (scripts/industrial_heat.gd)
+	solids = StaticBody2D.new()
+	solids.name = "PortSolids"
+	solids.collision_layer = 4
+	solids.collision_mask = 0
+	add_child(solids)
 	_build()
+	_tug_hulls()
 	interiors = Interiors.new()
 	interiors.game = game
 	add_child(interiors)
@@ -158,6 +168,43 @@ func _ready() -> void:
 	power5.game = game
 	add_child(power5)
 var power5
+
+
+# 128 号 第 6 段: a company tug at home on its deck berth is solid (its hull); gone while it is out
+const PortSolids = preload("res://scripts/port_solids.gd")
+const TugW = preload("res://scripts/tug_works.gd")
+var tug_hulls: Array = []
+var solids: StaticBody2D
+const CORE_SOLID := 4.3     # m: the hub's slip ring and bus ring (its facility card's rect)
+func _tug_hulls() -> void:
+	var body := StaticBody2D.new()
+	body.name = "TugHulls"
+	body.collision_layer = 4
+	body.collision_mask = 0
+	add_child(body)
+	var m := M()
+	for i in 2:
+		var cp := CollisionPolygon2D.new()
+		var pts := PackedVector2Array()
+		for v: Vector2 in PortSolids.TUG_HULL:
+			pts.append(v * m)
+		cp.polygon = pts
+		var off := Vector2(0.0, -0.25) if i == 1 else Vector2.ZERO
+		cp.position = box("tug").position + (Vector2(float(TugW.BERTH_X[i]), TugW.DECK_Y) + off) * m
+		cp.disabled = true
+		body.add_child(cp)
+		tug_hulls.append(cp)
+
+
+static func tug_home(i: int) -> bool:
+	return float(TugW.dock[i]) >= 0.999 and bool(TugW.home_now[i]) and i < TugW.count_now and not TugW.held.has(i)
+
+
+func _tug_hulls_tick() -> void:
+	for i in tug_hulls.size():
+		var off: bool = not (Port.stage("tug") >= 1 and tug_home(i))
+		if tug_hulls[i].disabled != off:
+			tug_hulls[i].set_deferred("disabled", off)
 
 
 # a wall from a to b: a thin solid slab (a zero-width segment lets a fast drone slip through)
@@ -184,13 +231,13 @@ func _seg_on(body: StaticBody2D, a: Vector2, b: Vector2) -> void:
 	body.add_child(cs)
 
 
-func _rect(r: Rect2) -> void:
+func _rect(r: Rect2, on: StaticBody2D = null) -> void:
 	var cs := CollisionShape2D.new()
 	var sh := RectangleShape2D.new()
 	sh.size = r.size
 	cs.shape = sh
 	cs.position = r.get_center()
-	walls.add_child(cs)
+	(on if on != null else walls).add_child(cs)
 
 
 # an edge from a to b with a gap of width w centred at g (g on the edge)
@@ -224,6 +271,14 @@ func _build() -> void:
 		if open:
 			continue
 		_seg(c + Vector2.from_angle(a0) * PortArt.HUB_R * m, c + Vector2.from_angle(a1) * PortArt.HUB_R * m)
+	# 128 号 第 6 段: the ring's core (the slip ring and bus ring the carousel turns round) is solid;
+	# the carousel and its tracks are floor, dimmed (scripts/hub_art.gd)
+	var core := CollisionShape2D.new()
+	var cs0 := CircleShape2D.new()
+	cs0.radius = CORE_SOLID * m
+	core.shape = cs0
+	core.position = c
+	walls.add_child(core)
 	# the districts: shells with a door, corridors, machines
 	for zone in PortArt.ANGLE:
 		var d := door(zone)
@@ -253,6 +308,9 @@ func _build() -> void:
 				_rect(Rect2(r.position + mc[1] * m, mc[2] * m))
 			for sr in Interiors.solid_rects(zone):
 				_rect(sr)
+			# 128 号 第 6 段: the floor where it is drawn, and what the art draws solid (scripts/port_solids.gd)
+			for lr in PortSolids.rects(zone) + PortSolids.floor_rects(zone):
+				_rect(Rect2(r.position + (lr as Rect2).position * m, (lr as Rect2).size * m), solids)
 		# the corridor's two walls
 		_seg(a0 + side, a1 + side)
 		_seg(a0 - side, a1 - side)
@@ -261,6 +319,7 @@ func _build() -> void:
 func _process(dt: float) -> void:
 	t += dt
 	visible = active()
+	_tug_hulls_tick()
 	if not visible:
 		PortArt.inside = ""
 		return

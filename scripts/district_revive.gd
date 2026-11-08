@@ -193,10 +193,10 @@ func plan() -> Dictionary:
 
 # the not-mended card's second line: what mending it opens
 const OPENS := {
-	"trade": ["修好后能：按市价卖货（交易行）、接客户订单（即将开放）", "Mended: sell at market and take client orders (opening soon)"],
+	"trade": ["修好后能：按市价卖货，接客户订单", "Mended: sell at market and take client orders (opening soon)"],
 	"process": ["修好后能：把钢锭炼成钢坯", "Mended: melt ingots into billets"],
 	"cargo": ["修好后能：仓库扩到 8×48", "Mended: the stores grow to 8×48"],
-	"power": ["修好后能：自家发电，炉子和叉车不再因缺电变慢", "Mended: your own power, no more slowdowns"],
+	"power": ["修好后能：自家发电，功率回到 100%", "Mended: your own power, no more slowdowns"],
 	"tug": ["修好后能：拖超过 44 m 的大船", "Mended: tow hulks over 44 m"],
 }
 

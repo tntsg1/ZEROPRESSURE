@@ -197,11 +197,11 @@ func _note_text(k: String) -> String:
 		"goal":
 			return Ops.w("这一章要做的事：点开看怎么做、去哪做", "This chapter's goal: open it to see how and where")
 		"next":
-			return Ops.w("直接带你去下一步要去的地方", "Takes you straight to where the next step is")
+			return Ops.w("去下一步", "Takes you straight to where the next step is")
 		"cell":
 			return Ops.w("打开这一区的业务终端", "Opens this district's console")
 		"dec":
-			return Ops.w("去处理这件事：带你到对应的终端或现场", "Deal with it: takes you to the right console or place")
+			return Ops.w("去处理", "Deal with it: takes you to the right console or place")
 		"app0":
 			return Ops.w("找下一艘要拆的船：接单、派拖船、看二手船市", "Find the next ship: take a contract, send a tug, the hulk market")
 		"app1":

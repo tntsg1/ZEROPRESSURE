@@ -839,7 +839,7 @@ func _draw_detail(a: float) -> void:
 				_text(need, Vector2(x, y), 13, (Pal.ink(0.55) if ready else Color(UiSkin.ACCENT)) * Color(1, 1, 1, a), font_b, wmax, HORIZONTAL_ALIGNMENT_RIGHT)
 				y += 28.0
 		elif usable:
-			_text(w("眼下没有要这一类零件的修缮，可以放心卖。", "No open repair takes this class now: safe to sell."), Vector2(x, y), 14, Pal.ink(0.5 * a), font_b, wmax)
+			_text(w("修港用不上这类零件，卖了吧。", "No open repair takes this class now: safe to sell."), Vector2(x, y), 14, Pal.ink(0.5 * a), font_b, wmax)
 			y += 28.0
 		# the crate itself, larger, in what room is left
 		var room := sell_b.position.y - 56.0 - y

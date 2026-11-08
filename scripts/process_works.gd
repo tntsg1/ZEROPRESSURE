@@ -459,7 +459,7 @@ static func furnace_state(game) -> Array:
 	if float(f.m_s) + float(f.bunker) > 0.001:
 		if float(f.manual_power) < 0.5:
 			return [w("有料 · 等按『通电熔化』", "CHARGED · PRESS STRIKE THE ARCS"), "warn"]
-		return [w("有料未加热 %d °C · 没分到电", "CHARGED, NOT HEATING %d °C · NO POWER") % int(f.T), "warn"]
+		return [w("有料未加热 %d °C · ", "CHARGED, NOT HEATING %d °C · ") % int(f.T) + Grid.short_label(0), "warn"]
 	if float(f.m_l) > 0.05:
 		return [w("保温 %d °C", "holding %d °C") % int(f.T), "ok"]
 	for ig in f.ingots:

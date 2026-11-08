@@ -1,8 +1,8 @@
 extends Node2D
 # The gas line's works outside the processing district (76 号): the purifier column and its
 # compressor, the cold box, the LOX tank with its level and frost, the vent stack (a plume when
-# the tank boils off or the residue is vented), and the supply berth where a passing freighter
-# lies alongside with the loading arm on it. Drawn in the port's metres from the game's own
+# the tank boils off or the residue is vented). (132 号: no supply berth — passing ships no longer buy
+# gas; LOX and LH2 go by the exchange and the orders.) Drawn in the port's metres from the game's own
 # state; redrawn when it changes.
 
 var game
@@ -29,10 +29,6 @@ static func origin() -> Vector2:
 	return Vector2(b.position.x - 46.0 * PortStructure.M(), b.position.y + 2.0 * PortStructure.M())
 
 
-static func berth_at() -> Vector2:
-	return origin() + Vector2(-34.0, 30.0) * PortStructure.M()
-
-
 func _process(dt: float) -> void:
 	visible = active()
 	if not visible:
@@ -45,8 +41,7 @@ func _process(dt: float) -> void:
 		plume = 1.0
 	_vented0 = float(d.vented)
 	plume = maxf(0.0, plume - dt * 0.5)
-	var docked: Array = d.callers.filter(func(c): return str(c.state) == "docked")
-	var sig := "%d/%d/%s/%d/%d" % [int(float(d.lox.kg) / 200.0), docked.size(), str(d.job.is_empty()) + str(d.get("liq", {}).is_empty()), int(plume * 10.0), int(_t * 4.0) if not d.job.is_empty() or not d.get("liq", {}).is_empty() or not docked.is_empty() else 0]
+	var sig := "%d/%s/%d/%d" % [int(float(d.lox.kg) / 200.0), str(d.job.is_empty()) + str(d.get("liq", {}).is_empty()), int(plume * 10.0), int(_t * 4.0) if not d.job.is_empty() or not d.get("liq", {}).is_empty() else 0]
 	if sig != _sig:
 		_sig = sig
 		queue_redraw()
@@ -112,28 +107,3 @@ func _draw() -> void:
 			for i in 4:
 				var r := (0.6 + i * 0.7) * M
 				draw_circle(_p(Vector2(36 + i * 0.6, 0.5 - i * 1.2)), r, Color(0.8, 0.85, 0.9, 0.18 * plume))
-		# the supply line out to the berth
-		draw_line(_p(Vector2(33, 24)), _p(Vector2(33, 28)), Pal.ink(0.5), lw * 1.4)
-		draw_line(_p(Vector2(33, 28)), berth_at() + Vector2(14, -2) * M, Pal.ink(0.5), lw * 1.4)
-	# the supply berth: bollards; a freighter alongside with the arm on it
-	var bt := berth_at()
-	for i in 3:
-		draw_rect(Rect2(bt + Vector2(-6.0 + i * 8.0, 2.4) * M, Vector2(1.2, 1.2) * M), ink)
-	if Pal.labels: draw_string(font, bt + Vector2(-6, 5.2) * M, Ops.w("补给泊位", "SUPPLY BERTH"), HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.8 * M), Pal.ink(0.6))
-	for c in d.callers:
-		if str(c.state) != "docked":
-			continue
-		var hull := PackedVector2Array([bt + Vector2(-14, -2) * M, bt + Vector2(10, -4) * M, bt + Vector2(16, -1) * M, bt + Vector2(10, 2) * M, bt + Vector2(-14, 2) * M])
-		draw_colored_polygon(hull, Color(0.07, 0.075, 0.085))
-		var ol := hull.duplicate()
-		ol.append(hull[0])
-		draw_polyline(ol, Pal.ink(0.7), lw)
-		draw_rect(Rect2(bt + Vector2(-8, -6) * M, Vector2(6, 4) * M), Pal.ink(0.4), false, lw)
-		draw_string(font, bt + Vector2(-13, -7) * M, "%s · %s %.0f / %.0f kg" % [str(c.ship), GasLine.want_name(str(c.want)), float(c.got), float(c.reserved)], HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.9 * M), Pal.tint(Pal.AIR, 0.85, 1.1))
-		# the arm: a pulse of frost running down it while it transfers
-		var a0 := bt + Vector2(14, -2) * M
-		var a1 := bt + Vector2(4, -3) * M
-		draw_line(a0, a1, Pal.tint(Pal.AIR, 0.8, 1.2), lw * 2.0)
-		var k := fmod(_t, 1.0)
-		draw_circle(a0.lerp(a1, k), 0.5 * M, Pal.tint(Pal.AIR, 0.9, 1.4))
-		break

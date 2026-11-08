@@ -34,6 +34,9 @@ const S := {
 	"key_codex": ["图鉴", "CODEX"],
 	"m_codex": ["图鉴", "CODEX"],
 	"s_codex_cards": ["陌生事物讲解卡", "FIRST-MEETING CARDS"],
+	"s_guide_cards": ["情境讲解卡", "SITUATION CARDS"],
+	"cxu_cat_guide": ["讲解", "GUIDES"],
+	"cxu_replay": ["重看  [Enter]", "AGAIN  [Enter]"],
 	"cxu_brief": ["本船陌生系统", "NEW ON THIS SHIP"],
 	"cxu_brief_more": ["%s 查看图鉴", "%s OPEN THE CODEX"],
 	# the special courses and the training page

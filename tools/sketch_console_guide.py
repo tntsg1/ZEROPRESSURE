@@ -341,7 +341,7 @@ def field_furnace():
     p.mark(1, R + 4, y0 + 72)
     p.t((L, y0 + 140), "1664 °C", 48, INK, True)
     p.t((L, y0 + 208), "已熔 40% · 钢水 0.40 t", 22, INK)
-    p.t((L, y0 + 252), "电  24 / 24 MW", 22, DIM)
+    p.t((L, y0 + 252), "功率 100%", 22, DIM)
     p.bar((L, y0 + 290, R, y0 + 300), 1.0, GREEN)
     p.button((L, y0 + 330, R, y0 + 392), "倾炉出钢", True, "Enter", 26)
     p.mark(2, R + 4, y0 + 330)
@@ -360,7 +360,7 @@ def field_mill():
     L, R = x0 + 24, x0 + w - 24
     p.t((L, y0 + 22), "轧机", 28, INK, True)
     p.t((R, y0 + 32), "ROLL-1", 14, FAINT, False, "ra")
-    p.now((L, y0 + 72, R, y0 + 118), True, "电只给了一半，轧得慢")
+    p.now((L, y0 + 72, R, y0 + 118), True, "电力不足—功率 50%")
     p.mark(1, R + 4, y0 + 72)
     tw = (R - L - 12) / 2
     for i, (s, on) in enumerate([("钢板", False), ("型材", True)]):
@@ -371,7 +371,7 @@ def field_mill():
     p.t((L, y0 + 250), "钢坯 2.0 t", 24, INK, True)
     p.t((R, y0 + 250), "型材 0.0 t", 24, INK, True, "ra")
     p.bar((L, y0 + 300, R, y0 + 310), 0.2, ORG)
-    p.t((L, y0 + 324), "20% · 还要约 64 秒 · 满电 40 秒", 20, DIM)
+    p.t((L, y0 + 324), "进度 20% · 还要约 64 秒", 20, DIM)
     p.button((L, y0 + 380, R, y0 + 442), "去动力区", True, "Enter", 26)
     p.mark(2, R + 4, y0 + 380)
     p.box((L, y0 + 460, R, y0 + 510), fill=(40, 45, 53, 255), line=(92, 99, 110, 255), rad=8)
@@ -480,7 +480,7 @@ def power_diagram(p, r, stage):
     bus_x0, bus_x1 = gx + S(150), x1 - S(330)
     bus_y = gy + S(60)
     p.d.line((bus_x0, bus_y, bus_x1, bus_y), fill=(160, 166, 176, 255), width=max(1, S(3)))
-    loads = [("拆船现场", "要 4 · 给 4", True), ("加工区 · 电弧炉", "要 24 · 给 2", False), ("贸易港 · 吊车", "要 3 · 给 0", False)]
+    loads = [("拆船现场", "功率 100%", True), ("加工区 · 电弧炉", "功率 8%", False), ("贸易港 · 吊车", "功率 0%", False)]
     ly0 = y0 + S(70)
     for i, (n, v, first) in enumerate(loads):
         ly = ly0 + i * S(100)
@@ -491,7 +491,7 @@ def power_diagram(p, r, stage):
         p.d.rectangle(rr2, outline=col, width=max(1, S(2)), fill=(col[0], col[1], col[2], 40 if (first or stage == 2) else 12))
         p.d.ellipse((rr2[0] + S(14), ly + S(22), rr2[0] + S(30), ly + S(38)), fill=col if (first or stage == 2) else (col[0] // 3, col[1] // 3, col[2] // 3, 255))
         p.t((rr2[0] + S(44), ly + S(18)), n, S(20), INK, True)
-        p.t((rr2[0] + S(44), ly + S(42)), "要 24 · 给 22" if (stage == 2 and i == 1) else ("要 3 · 给 3" if (stage == 2 and i == 2) else v), S(16), DIM)
+        p.t((rr2[0] + S(44), ly + S(42)), "功率 92%" if (stage == 2 and i == 1) else ("功率 100%" if (stage == 2 and i == 2) else v), S(16), DIM)
         if i == 0:
             p.t((rr2[2] - S(10), ly + S(6)), "排第一", S(14), GREEN, False, "ra")
     # 电流的点
@@ -502,7 +502,7 @@ def power_diagram(p, r, stage):
         p.d.ellipse((x - S(5), bus_y - S(5), x + S(5), bus_y + S(5)), fill=(255, 220, 140, 255))
     # 顶部表
     need, have = 31, (26 if stage == 2 else 6)
-    p.t((x0 + S(30), y0 + S(22)), f"全港要 {need} MW · 现在有 {have} MW", S(20), INK, True)
+    p.t((x0 + S(30), y0 + S(22)), ("全港功率 %d%%" % round(100 * have / need)) if stage == 2 else ("电力不足—功率 %d%%" % round(100 * have / need)), S(20), INK if stage == 2 else ORG, True)
     bw = S(300)
     p.d.rectangle((x0 + S(30), y0 + S(56), x0 + S(30) + bw, y0 + S(66)), fill=(55, 60, 68, 255))
     p.d.rectangle((x0 + S(30), y0 + S(56), x0 + S(30) + bw * have / need, y0 + S(66)), fill=GREEN if stage == 2 else ORG)
@@ -522,8 +522,8 @@ def guide_card():
     p.t((1470, 176), "以后在图鉴「讲解」里能重看", 16, FAINT, False, "ra")
     power_diagram(p, (450, 214, 1470, 604), 1)
     p.mark(1, 1470, 214)
-    p.t((450, 630), "电不够", 44, INK, True)
-    lines = ["电不够，炉子和吊车都慢下来了。", "拆船现场先用电，港区排在后面。", "去动力区，买块电池，或者修发电机。"]
+    p.t((450, 630), "电力不足—功率 19%", 44, INK, True)
+    lines = ["发电机顶不住，全港功率只有 19%。", "拆船现场排第一，先拿满；加工区功率 8%，贸易港 0%。", "去动力区，买块电池，或者修发电机。"]
     for i, s in enumerate(lines):
         p.t((450, 700 + i * 40), s, 26, INK)
     p.mark(2, 1150, 740)
@@ -534,7 +534,7 @@ def guide_card():
     p.draw_marks()
     # 分镜
     p.t((40, 1112), "示意图三帧（实际是循环动画，codex_fx 画法：网格屏、角框、扫描线）", 24, INK, True)
-    caps = ["① 电从旧主机出来，沿母线流", "② 拆船现场排第一先吃满，后面两盏变红", "③ 电池块滑进泊位，三盏都亮：解决办法"]
+    caps = ["① 电从旧主机出来，沿母线流", "② 拆船现场排第一拿满，后面两区功率 8%、0%", "③ 电池块滑进泊位，全港功率回到 84%：解决办法"]
     for s in range(3):
         fx = 40 + s * 620
         power_diagram(p, (fx, 1160, fx + 600, 1390), s)
@@ -583,8 +583,8 @@ def main():
     f, fc, pf = field_furnace(); pf.draw_marks()
     m, pm = field_mill(); pm.draw_marks()
     sheet("4_field_consoles.png", "4 现场操作台：炉台（上）· 轧机（下右）", shot("guide_heat_zh.png"), (1298, 25, 1895, 1055), f, fc, [
-        (1, "炉台和轧机改成 520 宽的小卡，停在机器的另一侧；顶上一行说现在能不能出钢、为什么慢。"),
-        (2, "主按钮只有一个：炉台是“倾炉出钢”，轧机缺电时是“去动力区”（跟着顶上那行走）。"),
+        (1, "炉台和轧机改成 520 宽的小卡，停在机器的另一侧；顶上一行说现在能不能出钢、功率多少。"),
+        (2, "主按钮只有一个：炉台是“倾炉出钢”，轧机电力不足时是“去动力区”（跟着顶上那行走）。"),
         (3, "原来右侧面板的位置空出来，炉子和浇铸线整台看得见；小卡用一根细线指向操作台。"),
         (0, "下排左是原轧机面板，右是新轧机小卡：配方两块大字，连续轧是开关，“轧一次”和电网调度进“更多”。"),
     ], small=m, crop_src=shot("mill_panel_zh.png"))

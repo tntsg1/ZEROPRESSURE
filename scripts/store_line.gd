@@ -151,7 +151,7 @@ func _build() -> void:
 	var pts := _fillet(raw, 0.6 * M)
 	var pen := MeshPen.new()
 	var tray := Color(0.11, 0.115, 0.125)
-	var tray_edge := Pal.ink(0.42)
+	var tray_edge := Pal.ink(0.26)   # 128 号 第 6 段: a cable tray is not solid: dim
 	var dark := Color(0.018, 0.02, 0.024)
 	var sheath := Color(0.075, 0.08, 0.09)
 	# the tray: a shallow channel under the cable, its two lips, a rib every 0.6 m (only along the

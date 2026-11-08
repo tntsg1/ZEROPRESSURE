@@ -52,7 +52,6 @@ func _run() -> void:
 	GasLine.receive({"o2": 52.0, "n2": 174.0}, "S09-001")
 	GasLine.data().o2.ind = 420.0
 	GasLine.data().lox.kg = 3600.0
-	GasLine.new_caller()
 	g.open_district("process")
 	await _s(2.4)
 	BenchFx.shot_mouse = g.console_ui.next_key.get_global_rect().get_center()

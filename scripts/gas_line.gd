@@ -7,19 +7,17 @@ class_name GasLine
 # (fuel hazard: controlled disposal only). Oxygen is liquefied (4 MW) into the LOX tank — the
 # phase changes, the mass does not; a full tank stops the liquefier. The tank always leaks heat:
 # the cold box (0.3 MW) recondenses the boil-off while it has power, without it the oxygen boils
-# off and is vented (logged). Passing freighters ask for LOX or bottled gas: quoted, reserved,
-# they dock on the cargo pier, the arm (0.5 MW) transfers what there is, they pay for what came
-# aboard and leave on time.
+# off and is vented (logged). 132 号 (user 2026-11-07 "燃料外运也删了"; 128 号 §六): no passing ships
+# buy gas any more — LOX and LH2 are sold by the exchange and the orders; an old save's supply
+# orders and what they held back are dropped as it is read.
 #   Career.data.gas = {batches, o2: {ind, ok, ls}, n2, residue, waste, lox: {kg, grade}, job,
-#                      callers, auto, made, vented, disposed, supplier, t, n, log}
+#                      auto, made, vented, disposed, supplier, t, n, log}
 
 const SEP_MW := 6.0
 const SEP_S_PER_T := 30.0          # s to separate a tonne at full power
 const LIQ_MW := 4.0
 const LIQ_S_PER_T := 25.0          # s to liquefy a tonne of oxygen at full power
 const HOLD_MW := 0.3               # the cold box holding the tank
-const ARM_MW := 0.5                # the loading arm while it transfers
-const ARM_KG_S := 50.0             # kg a second through the arm at full power
 const TANK_CAP := 20000.0          # kg of LOX the tank takes
 const BOIL := 0.0008               # of the tank's LOX a second boiling off with no cooling
 const O2_RECOVERY := 0.9           # of the oxygen in a batch the column gets out as product
@@ -32,8 +30,6 @@ const DISPOSE_PER_T := 400.0       # $ a tonne of tainted or fuel-bearing gas, c
 const MIXED_PRICE := 60.0          # $ a tonne of known mixed gas from the belt supplier
 const SUPPLY_MAX_T := 10.0         # t an order
 const SUPPLY_S := 60.0             # s the supplier's freighter takes
-const CALL_EVERY := 180.0          # s between passing ships asking
-const CALL_MAX := 3
 const AUTO_AFTER := 2              # batches separated by hand before automation may be set
 
 
@@ -56,11 +52,19 @@ static func keeping() -> bool:
 static func data() -> Dictionary:
 	if not Career.data.has("gas") or Career.data.gas.is_empty():
 		Career.data.gas = {"batches": [], "o2": {"ind": 0.0, "ok": 0.0, "ls": 0.0}, "n2": 0.0, "residue": 0.0, "waste": 0.0,
-			"lox": {"kg": 0.0, "grade": "ls"}, "job": {}, "liq": {}, "callers": [], "auto": {"process": false, "liquefy": false, "keep_o2": 500.0,
-			"supply": false, "min_price": 0.4, "max_open": 2, "keep_lox": 2000.0,
-			"buy": false, "buy_max_price": 70.0, "buy_t": 10.0, "cash_floor": 50000.0}, "made": 0, "vented": 0.0, "disposed": 0.0,
+			"lox": {"kg": 0.0, "grade": "ls"}, "job": {}, "liq": {}, "auto": {"process": false, "liquefy": false, "keep_o2": 500.0,
+			}, "made": 0, "vented": 0.0, "disposed": 0.0,
 			"supplier": {"stock": 30.0, "t": 0.0}, "orders": [], "t": 0.0, "n": 0, "log": [], "test": {}, "earned": 0.0, "spent": 0.0}
-	return Career.data.gas
+	var d: Dictionary = Career.data.gas
+	# 132 号: an old save's passing-ship orders (and the LOX and gas they held back) are dropped
+	if d.has("callers"):
+		d.erase("callers")
+		for k in ["supply", "min_price", "max_open", "keep_lox"]:
+			d.get("auto", {}).erase(k)
+	# 132 号 (user 2026-11-07): no automatic feed buying either — an old save's switch and bounds go
+	for k in ["buy", "buy_max_price", "buy_t", "cash_floor"]:
+		d.get("auto", {}).erase(k)
+	return d
 
 
 static func _cash(delta: float) -> void:
@@ -262,10 +266,9 @@ static func ls_test() -> Dictionary:
 
 static func o2_free(grade: String = "any") -> float:
 	var d := data()
-	var res := reserved("o2", grade)
 	if grade == "ls":
-		return maxf(0.0, float(d.o2.ls) - res)
-	return maxf(0.0, float(d.o2.ind) + float(d.o2.ok) + float(d.o2.ls) - res)
+		return maxf(0.0, float(d.o2.ls))
+	return maxf(0.0, float(d.o2.ind) + float(d.o2.ok) + float(d.o2.ls))
 
 
 static func space() -> float:
@@ -336,8 +339,6 @@ static func grid_loads() -> Array:
 		out.append({"id": "gas_liq", "name": w("液化冷箱", "LIQUEFIER"), "group": "process", "rated": LIQ_MW, "demand": LIQ_MW, "mw_now": -1.0, "state": "run"})
 	if float(d.lox.kg) > 0.0:
 		out.append({"id": "lox_hold", "name": w("液氧储罐保冷", "LOX TANK COOLING"), "group": "process", "rated": HOLD_MW, "demand": HOLD_MW, "mw_now": -1.0, "state": "run"})
-	if d.callers.any(func(c): return str(c.state) == "docked"):
-		out.append({"id": "lox_arm", "name": w("补给装卸臂", "SUPPLY ARM"), "group": "cargo", "rated": ARM_MW, "demand": ARM_MW, "mw_now": -1.0, "state": "run"})
 	return out
 
 
@@ -345,134 +346,6 @@ static func k(game, id: String) -> float:
 	if game == null or not is_instance_valid(game):
 		return 1.0
 	return Grid.k(game, id)
-
-
-# ---------------------------------------------------------------- passing ships
-
-static func reserved(product: String, grade: String = "any") -> float:
-	var r := 0.0
-	for c in data().callers:
-		if str(c.state) in ["accepted", "docked"] and str(c.want) == product and (grade == "any" or str(c.grade) == grade):
-			r += float(c.reserved) - float(c.got)
-	return maxf(0.0, r)
-
-
-static func want_name(wt: String) -> String:
-	return {"lox": w("液氧", "LOX"), "o2": w("瓶装氧", "BOTTLED O₂"), "n2": w("瓶装氮", "BOTTLED N₂")}.get(wt, wt)
-
-
-static func _rng(salt: int) -> RandomNumberGenerator:
-	var r := RandomNumberGenerator.new()
-	r.seed = hash([int(Career.data.get("seed", 0)), "gas", salt])
-	return r
-
-
-static func new_caller() -> Dictionary:
-	var d := data()
-	d.n = int(d.n) + 1
-	var rng := _rng(int(d.n))
-	var roll := rng.randf()
-	var want := "lox" if roll < 0.6 else ("o2" if roll < 0.85 else "n2")
-	var grade := "ls" if want != "n2" and rng.randf() < 0.3 else "ind"
-	var kg := snappedf(rng.randf_range(1000.0, 4000.0) if want == "lox" else (rng.randf_range(200.0, 800.0) if want == "o2" else rng.randf_range(300.0, 1500.0)), 100.0)
-	var base: float = float({"lox": 0.6, "o2": 0.4, "n2": 0.2}[want]) * (1.5 if grade == "ls" else 1.0)
-	var c := {"id": "SUP-%03d" % int(d.n), "ship": "%s-%d" % [["灰燕号", "长庚号", "远帆号", "启明号", "白鲸号"][rng.randi_range(0, 4)], rng.randi_range(10, 99)],
-		"want": want, "grade": grade, "kg": kg, "price": snappedf(base * rng.randf_range(0.9, 1.2), 0.01),
-		"eta": rng.randf_range(90.0, 150.0), "stay": 60.0, "partial": rng.randf() < 0.5, "state": "offered", "reserved": 0.0, "got": 0.0, "t": 0.0}
-	d.callers.append(c)
-	return c
-
-
-static func caller(id: String) -> Dictionary:
-	for c in data().callers:
-		if str(c.id) == id:
-			return c
-	return {}
-
-
-static func have(c: Dictionary) -> float:
-	match str(c.want):
-		"lox":
-			if str(c.grade) == "ls" and str(data().lox.grade) != "ls":
-				return 0.0
-			return maxf(0.0, float(data().lox.kg) - reserved("lox"))
-		"o2":
-			return o2_free("ls" if str(c.grade) == "ls" else "any")
-		"n2":
-			return maxf(0.0, float(data().n2) - reserved("n2"))
-	return 0.0
-
-
-static func accept_block(id: String) -> String:
-	var c := caller(id)
-	if c.is_empty() or str(c.state) != "offered":
-		return w("这张单不在了", "GONE")
-	if str(c.want) == "lox" and not tank_built():
-		return w("没有液氧储罐", "NO LOX TANK")
-	var need := float(c.kg) * (0.25 if c.partial else 1.0)
-	if have(c) < need - 0.01:
-		return w("%s（%s）现有可用 %.0f kg，不够预留 %.0f kg", "%s (%s): %.0f kg FREE, %.0f kg NEEDED") % [want_name(str(c.want)), grade_name(str(c.grade)), have(c), need]
-	return ""
-
-
-# quote taken: the product it needs (what there is, up to the order) and a place on the pier reserved
-static func accept(id: String) -> Dictionary:
-	var why := accept_block(id)
-	if why != "":
-		return {"ok": false, "reason": why}
-	var c := caller(id)
-	c.reserved = minf(float(c.kg), have(c))
-	c.state = "accepted"
-	Career.save()
-	return {"ok": true}
-
-
-static func decline(id: String) -> Dictionary:
-	var c := caller(id)
-	if c.is_empty() or not str(c.state) in ["offered", "accepted"]:
-		return {"ok": false, "reason": w("这张单不在了", "GONE")}
-	if str(c.state) == "accepted":
-		# backing out before it docks costs a little
-		_cash(-0.05 * float(c.kg) * float(c.price))
-	c.state = "declined"
-	Career.save()
-	return {"ok": true}
-
-
-# a docked ship takes from the tank or the cylinders as fast as the arm runs
-static func _transfer(c: Dictionary, kg: float) -> float:
-	var d := data()
-	var take := minf(kg, float(c.reserved) - float(c.got))
-	match str(c.want):
-		"lox":
-			take = minf(take, float(d.lox.kg))
-			d.lox.kg = float(d.lox.kg) - take
-		"o2":
-			var left := take
-			var order := ["ls"] if str(c.grade) == "ls" else ["ind", "ok", "ls"]
-			for g in order:
-				var t2 := minf(left, float(d.o2[g]))
-				d.o2[g] = float(d.o2[g]) - t2
-				left -= t2
-			take -= left
-		"n2":
-			take = minf(take, float(d.n2))
-			d.n2 = float(d.n2) - take
-	c.got = float(c.got) + take
-	return take
-
-
-static func _settle(c: Dictionary) -> void:
-	var got := float(c.got)
-	var pay := got * float(c.price)
-	var short := float(c.kg) - got
-	var pen := 0.0
-	if short > 0.5 and not bool(c.partial):
-		pen = 0.1 * float(c.kg) * float(c.price)
-	_cash(pay - pen)
-	c.paid = pay - pen
-	c.state = "done" if short <= 0.5 else ("partial" if got > 0.0 else "missed")
-	_say(w("%s 离港：收到 %.0f kg %s，付 %s%s", "%s LEFT: %.0f kg OF %s, PAID %s%s") % [str(c.ship), got, want_name(str(c.want)), Pal.money(pay), w("，违约金 %s", ", PENALTY %s") % Pal.money(pen) if pen > 0.0 else ""])
 
 
 # ---------------------------------------------------------------- the clock
@@ -533,40 +406,6 @@ static func advance(game, dt: float) -> Array:
 		if lost > 0.0:
 			d.lox.kg = maxf(0.0, float(d.lox.kg) - lost)
 			d.vented = float(d.vented) + lost
-	# passing ships
-	d.t = float(d.t) + dt
-	var open: Array = d.callers.filter(func(c): return str(c.state) in ["offered", "accepted", "docked"])
-	if float(d.t) >= CALL_EVERY:
-		d.t = 0.0
-		if open.size() < CALL_MAX:
-			var c := new_caller()
-			said.append(w("%s 申请补给：%s %.0f kg（%s），约 %d 秒后到", "%s ASKS FOR %s %.0f kg (%s), IN ~%d s") % [str(c.ship), want_name(str(c.want)), float(c.kg), grade_name(str(c.grade)), int(float(c.eta))])
-	var arm_k := k(game, "lox_arm")
-	for c in d.callers:
-		match str(c.state):
-			"offered":
-				c.t = float(c.t) + dt
-				if float(c.t) >= float(c.eta):
-					c.state = "passed"
-			"accepted":
-				c.t = float(c.t) + dt
-				if float(c.t) >= float(c.eta):
-					if Shipping.counts().get("docked", 0) < Shipping.slots():
-						c.state = "docked"
-						c.docked_t = 0.0
-						said.append(w("%s 靠上补给泊位，开始装%s", "%s ALONGSIDE: LOADING %s") % [str(c.ship), want_name(str(c.want))])
-					elif float(c.t) >= float(c.eta) + float(c.stay):
-						_settle(c)
-						said.append(str(d.log.back()))
-			"docked":
-				c.docked_t = float(c.docked_t) + dt
-				_transfer(c, ARM_KG_S * arm_k * dt)
-				if float(c.got) >= float(c.reserved) - 0.01 or float(c.docked_t) >= float(c.stay):
-					_settle(c)
-					said.append(str(d.log.back()))
-	# drop what is long finished
-	if d.callers.size() > 12:
-		d.callers = d.callers.filter(func(c): return str(c.state) in ["offered", "accepted", "docked"]) + d.callers.slice(d.callers.size() - 4)
 	_auto(game)
 	return said
 
@@ -583,7 +422,7 @@ static func auto_block(key: String) -> String:
 
 static func set_auto(key: String, value) -> Dictionary:
 	var a: Dictionary = data().auto
-	if not key in ["process", "liquefy", "supply", "buy"] and not a.has(key):
+	if not key in ["process", "liquefy"] and not a.has(key):
 		return {"ok": false, "reason": "?"}
 	if value is bool and value:
 		var why := auto_block(key)
@@ -602,8 +441,6 @@ static func standard(b: Dictionary) -> bool:
 static func _auto(_game) -> void:
 	var d := data()
 	var a: Dictionary = d.auto
-	_auto_supply(d, a)
-	_auto_buy(d, a)
 	if a.process and d.job.is_empty():
 		for b in d.batches:
 			if standard(b):
@@ -617,57 +454,6 @@ static func _auto(_game) -> void:
 			liquefy(kg)
 			return
 
-
-
-# 77 号: buying feed within the player's bounds — only what the ships asking need beyond the
-# oxygen on hand and coming, never above the price cap, never below the cash floor
-static func oxygen_short() -> float:
-	var d := data()
-	var want := 0.0
-	for c in d.callers:
-		if str(c.state) in ["offered", "accepted"] and str(c.want) != "n2":
-			want += float(c.kg) - float(c.got)
-	var have := o2_free() + float(d.lox.kg) - reserved("lox")
-	for o in d.orders:
-		have += float(o.t) * 1000.0 * 0.21 * O2_RECOVERY
-	for b in d.batches:
-		if str(b.state) in ["raw", "processing"]:
-			have += float(b.kg.get("o2", 0.0)) * O2_RECOVERY
-	return maxf(0.0, want - have)
-
-
-static func _auto_buy(d: Dictionary, a: Dictionary) -> void:
-	if not a.get("buy", false) or oxygen_short() <= 0.0:
-		return
-	if not a.has("buy_max_price"):
-		a.buy_max_price = 70.0
-		a.buy_t = 10.0
-		a.cash_floor = 50000.0
-	if MIXED_PRICE > float(a.buy_max_price):
-		return
-	# just the tonnes the shortfall needs (21 % oxygen, 90 % of it recovered), up to the cap
-	var per_t := 1000.0 * 0.21 * O2_RECOVERY
-	var t := minf(minf(float(a.buy_t), SUPPLY_MAX_T), ceilf(oxygen_short() / per_t))
-	if float(Career.data.get("money", 0.0)) - t * MIXED_PRICE < float(a.cash_floor):
-		return
-	if buy_block(t) == "":
-		buy_mixed(t)
-		_say(w("自动订了 %.0f 吨混合气（客户要的氧还差 %.0f kg）", "AUTO-ORDERED %.0f t OF MIXED GAS") % ([t, oxygen_short()] if Txt.zh else [t]))
-
-
-# taking supply orders does not wait for the line to be idle
-static func _auto_supply(d: Dictionary, a: Dictionary) -> void:
-	if a.supply:
-		var open: int = d.callers.filter(func(c): return str(c.state) in ["accepted", "docked"]).size()
-		for c in d.callers:
-			if open >= int(a.max_open):
-				break
-			if str(c.state) == "offered" and float(c.price) >= float(a.min_price) and accept_block(str(c.id)) == "":
-				# keep what the player wants kept
-				if str(c.want) == "lox" and float(d.lox.kg) - reserved("lox") - float(c.kg) < float(a.keep_lox):
-					continue
-				accept(str(c.id))
-				open += 1
 
 
 static func status() -> String:

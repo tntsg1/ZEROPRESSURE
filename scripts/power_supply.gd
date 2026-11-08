@@ -63,7 +63,7 @@ const CRYO_LOW := 0.5
 # 2026-11-07 (用户定): the runs carry what is really in stock, none when there is none. A fuel cell
 # turns hydrogen's 33.3 kWh/kg (lower heating value) into electricity at about half, so a MWh out takes
 # 60 kg of LH2 and, at 8 kg of oxygen to each kilo of hydrogen, 480 kg of LOX.
-#   LOX: the processing district's gas line (separated, liquefied, in its tank), less what callers reserved;
+#   LOX: the processing district's gas line (separated, liquefied, in its tank) — 132 号: nothing held back for passing ships any more;
 #        whole oxygen tanks taken off ships at the tug station and stored in the warehouse, by what they hold
 #   LH2: the gas line makes none (hydrogen is disposed of); whole LH2 tanks from the tug station only
 const H2_KG_MWH := 60.0
@@ -167,7 +167,7 @@ static func set_over(id: String, on_: bool) -> Dictionary:
 		return {"ok": false, "reason": w("%s已过热停机，先用维护工具修好", "%s TRIPPED; MEND IT WITH THE WRENCH FIRST") % gen_name(id)}
 	g.over = on_
 	Career.save()
-	return {"ok": true, "note": (w("%s超载 +%d%% · 热量会上升，满了强制停机", "%s OVERLOAD +%d%% · IT HEATS; FULL, IT TRIPS") if on_ else w("%s回到额定 · 慢慢散热", "%s BACK TO RATED · COOLING")) % ([gen_name(id), int(OVER_K * 100)] if on_ else [gen_name(id)])}
+	return {"ok": true, "note": (w("%s超载 +%d%%。热量满了就停机。", "%s OVERLOAD +%d%% · IT HEATS; FULL, IT TRIPS") if on_ else w("%s回到额定 · 慢慢散热", "%s BACK TO RATED · COOLING")) % ([gen_name(id), int(OVER_K * 100)] if on_ else [gen_name(id)])}
 
 
 # box-local metres: where the wrench must be held for each set
@@ -547,7 +547,9 @@ static func _drain(game, own: float, dt: float) -> void:
 				g.over = false
 				g.fix = 0.0
 				Career.save()
-				_say(game, w("%s过热，强制停机！飞过去用维护工具（4）修一下才能重启", "%s OVERHEATED AND TRIPPED: TAKE THE WRENCH (4) TO IT") % gen_name(id))
+				# 132 号: the first time, the situation card says it (not this line as well)
+				if not load("res://scripts/guide_cards.gd").will_show("first_trip"):
+					_say(game, w("%s过热停机。拿维护工具（4）修一下才能重启。", "%s OVERHEATED AND TRIPPED: TAKE THE WRENCH (4) TO IT") % gen_name(id))
 		else:
 			g.heat = maxf(0.0, float(g.heat) - HEAT_DOWN * dt)
 
@@ -676,7 +678,7 @@ static func _gas_lox() -> float:
 	var gas: Dictionary = Career.data.get("gas", {})
 	if gas.is_empty():
 		return 0.0
-	return maxf(0.0, float(gas.get("lox", {}).get("kg", 0.0)) - GasLine.reserved("lox"))
+	return maxf(0.0, float(gas.get("lox", {}).get("kg", 0.0)))
 
 
 static func stock_o2() -> float:

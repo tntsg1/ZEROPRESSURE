@@ -488,7 +488,7 @@ func _fill() -> void:
 			line = w("在动力区业务终端里（按 %s 打开）", "In the power console (%s opens it)") % e
 		"exchange":
 			title.text = w("点“打开交易行”", "CLICK 'OPEN THE EXCHANGE'")
-			line = w("在贸易港业务终端里（按 %s 打开）；平时任何地方按 F8 也行", "In the trade console (%s opens it); F8 anywhere too") % e
+			line = w("在贸易港业务终端里（按 %s 打开）", "In the trade console (%s opens it); F8 anywhere too") % e
 		"shelf":
 			title.text = w("飞到左边货架口，按 %s 打开仓库", "FLY TO THE LEFT RACK AND PRESS %s TO OPEN THE STORES") % e
 			line = w("两个货架口都能打开同一个公司仓库，看看拆回来的东西。", "Both racks open the same company stores, where the recovered goods are kept.")
@@ -497,10 +497,10 @@ func _fill() -> void:
 			line = w("轧机就站在区里：钢坯从左边进，钢板 / 型材从右边出", "The mill stands here: billet in on the left, plate out on the right")
 		"gallery":
 			title.text = w("往上飞到观察廊上方的走廊", "UP INTO THE CORRIDOR OVER THE GALLERY")
-			line = w("机器都在廊道下面干活；终端是栏杆上的矮控制台，飞到哪台上面往下看就是哪台", "The machines work under the gallery; their consoles stand on its railing, each over its machine")
+			line = w("机器在廊道下面。栏杆上的矮台子就是它的控制台。", "The machines work under the gallery; their consoles stand on its railing, each over its machine")
 		"furnace":
 			title.text = w("飞到最左边的炉体控制台，按 %s", "TO THE FURNACE CONSOLE AT THE FAR LEFT, PRESS %s") % e
-			line = w("炉体控制台打开加工队列：炼什么、先炼哪批都在这里排", "It opens the processing queue: what is melted, which batch first")
+			line = w("这儿排炉：炼什么、先炼哪批。", "It opens the processing queue: what is melted, which batch first")
 		"queue":
 			title.text = w("按『排一炉』（或按 Enter）", "PRESS 'QUEUE A HEAT' (OR ENTER)")
 			line = w("把仓库里的钢锭排一炉，炉子按队列自己开炉、熔化、浇铸", "A heat of the ingots in store; the furnace starts, melts and casts by itself")
@@ -511,7 +511,7 @@ func _fill() -> void:
 		"watch":
 			var ih = game.get("industrial_heat")
 			title.text = w("往下看：%s", "LOOK DOWN: %s") % (str(ih.info().title) if ih != null else "")
-			line = w("叉车和吊轨车把钢锭送到炉口，电弧炉起弧熔化，再出钢浇进模具；不用按什么，面板关掉也行", "The forklift and the trolley bring the ingots, the arcs melt them, the melt is cast; nothing to press")
+			line = w("料自己送到炉口，炉子自己熔、自己浇。不用按，关掉面板看就行。", "The forklift and the trolley bring the ingots, the arcs melt them, the melt is cast; nothing to press")
 		"gate":
 			title.text = w("出坞：沿青色箭头往上飞", "OUT: UP ALONG THE CYAN ARROWS")
 			line = w("船坞空着时，顶上这道门通向整个港区", "With the berth empty, this gate opens on the port")
@@ -523,7 +523,7 @@ func _fill() -> void:
 			if zone() == "salvage":
 				# 131 号 占位: the berth's own stop, first
 				title.text = w("出坞：飞到闸门外的拆船区接驳站", "OUT: TO THE BERTH'S SHUTTLE STOP BY THE GATE")
-				line = w("坐接驳车去各区最省事；想自己沿走廊飞也可以", "The shuttle is the easy way round; flying the corridors is up to you")
+				line = w("坐车最快。自己飞也行。", "The shuttle is the easy way round; flying the corridors is up to you")
 			line = w("接驳车走走廊和中央环，不撞墙，约 10 秒到任何区", "The shuttle runs every corridor: no walls, ~10 s anywhere")
 		"ride":
 			title.text = w("坐车去%s：站台按 %s，点“%s”", "RIDE TO THE %s: %s AT THE STOP, CLICK '%s'") % [nm, e, nm]
@@ -539,14 +539,14 @@ func _fill() -> void:
 			line = w("看看船坞哪些设施坏了、修好有什么用", "See what in the berth is broken, and what mending it does")
 			if page_open():
 				title.text = w("船坞 · 设施", "BERTH · FACILITIES")
-				line = w("标红的设施是坏的：修好照明看得清、修好熔炉收得多。修要零件和钱，零件从拆下的设备里来。看完按 Esc 关掉", "Red is broken: lights let you see, the furnace pays more. Mending takes parts and money; parts come from the machines you strip. Esc closes")
+				line = w("红的是坏的。修要零件和钱，零件从拆下的设备里来。Esc 关掉。", "Red is broken: lights let you see, the furnace pays more. Mending takes parts and money; parts come from the machines you strip. Esc closes")
 		"end":
 			title.text = w("导览完成", "TOUR DONE")
-			line = w("拆船赚钱 → 到各区修港 → 港修好了拆得更快、卖得更贵", "Strip for money → mend the districts → faster, better paid")
+			line = w("拆船挣钱，挣了修港，港修好了挣得更多。", "Strip for money → mend the districts → faster, better paid")
 	if page_open() and kind() not in ["repair", "furnace", "queue", "watch"]:
 		title.text = (nm + " · " if nm != "" else "") + {"desk": Txt.t("pt_access_terminal"), "console": Txt.t("pt_console_business"), "screen": w("控制屏", "CONTROL SCREEN"), "exchange": w("交易行", "EXCHANGE"), "shelf": w("公司仓库", "COMPANY STORES"), "mill": w("轧机", "ROLLING MILL")}.get(kind(), "")
 		var left := _callouts().size() - co_i
-		line = w("看高亮框：点一下或按空格看下一条（还有 %d 条）", "THE FRAMED PART: CLICK OR SPACE FOR THE NEXT (%d LEFT)") % left if left > 0 else w("看完了：按 Esc 关掉", "DONE: PRESS ESC TO CLOSE")
+		line = w("看亮框。点一下，下一条（还剩 %d 条）", "THE FRAMED PART: CLICK OR SPACE FOR THE NEXT (%d LEFT)") % left if left > 0 else w("看完了：按 Esc 关掉", "DONE: PRESS ESC TO CLOSE")
 	elif _why != "" and _why_t < WHY_S and kind() != "end" and not (kind() == "repair" and page_open()):
 		line = _why
 	if step_t >= STUCK_1 and kind() in ["desk", "console", "gate", "hub", "station", "ride", "home", "shelf", "mill"] and not page_open():
@@ -602,13 +602,13 @@ func _callouts() -> Array:
 				["m:gauges", w("每台机组的出力、转速、冷却", "Each set: output, speed, coolant")],
 				["m:trend", w("最近 5 分钟用电 vs 容量", "Five minutes of load against capacity")],
 				["m:cap_slider", w("熔炉最多能用多少电", "How much the furnace may draw")],
-				["m:order_box", w("电不够时谁先用", "Who comes first when power is short")], close]
+				["m:order_box", w("电力不足时谁先用", "Who comes first when underpowered")], close]
 		"mill:process":
 			return [["m:recipe_box", w("配方：点一块，下一次就轧它", "Recipe: pick one, the next pass rolls it")],
 				["m:in_slot", w("进料：仓库里的钢坯，每次 1 t", "In: billet in stock, a tonne a pass")],
 				["m:bar", w("这一次轧到哪了、还剩几秒", "This pass: how far, how long")],
 				["m:out_slot", w("出料：轧好的进仓库", "Out: rolled goods go to the warehouse")],
-				["m:lamp_label", w("状态灯：在轧 / 等钢坯 / 缺电，原因写在这", "The lamp: rolling, waiting or short, and why")],
+				["m:lamp_label", w("状态灯：在轧 / 等钢坯 / 电力不足，原因写在这", "The lamp: rolling, waiting or underpowered, and why")],
 				["m:loop_b", w("连续轧：有钢坯就一直轧", "Roll on: keeps rolling while there is billet")], close]
 		"shelf:cargo":
 			if str(game.console_ui.get_script().resource_path).ends_with("company_store.gd"):

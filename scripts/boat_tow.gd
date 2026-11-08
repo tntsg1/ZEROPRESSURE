@@ -66,8 +66,10 @@ func _make_hulk(st: Dictionary) -> void:
 	hulk.linear_damp = 0.01
 	hulk.angular_damp_mode = RigidBody2D.DAMP_MODE_REPLACE
 	hulk.angular_damp = 0.05
-	hulk.collision_layer = 4
-	hulk.collision_mask = 1 | 2 | 4 | World.STATIC_LAYER
+	# 128 号 第 6 段: drawn as a dim dotted outline, so not solid to the drone (layer 32, no 2 in its
+	# mask); the work boat still bears on it and tows it (workboat.gd's mask has 32)
+	hulk.collision_layer = 32
+	hulk.collision_mask = 1 | 4 | World.STATIC_LAYER
 	var cs := CollisionShape2D.new()
 	var sh := ConvexPolygonShape2D.new()
 	sh.points = _outline()

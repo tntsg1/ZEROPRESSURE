@@ -175,7 +175,7 @@ func _fill() -> void:
 			_body(w("按 %s 操控无人机移动，按 %s 快速冲刺。沿着无人机旁的指引箭头前进。", "%s to move, %s to dash. Follow the arrow by the drone.") % [_keys_move(), k.call("dash")], w("%s 移动，%s 冲刺。漂流船在画面外，无人机旁边的箭头指着它，到了它会被亮圈圈住。这一趟只是把它带回港。" % [_keys_move(), k.call("dash")], "%s to move, %s to dash. The hulk is off screen: the arrow by the drone points at it, and a ring marks it when you are there. This trip only brings it home." % [_keys_move(), k.call("dash")]))
 		"brake":
 			title.text = w("按 %s 刹停" % k.call("brake"), "PRESS %s TO STOP" % k.call("brake"))
-			_body(w("太空里没有摩擦，松手也会一直漂。", "Nothing slows you in space."), w("太空里没有摩擦，松开方向键也会一直漂。%s 开飞行稳定会自动帮你减速。" % k.call("assist"), "Nothing slows you in space. %s turns on flight assist." % k.call("assist")))
+			_body(w("太空里没有摩擦，松手也会一直漂。", "Nothing slows you in space."), w("太空里没摩擦，松手也一直漂。%s 开飞行稳定，它替你刹。" % k.call("assist"), "Nothing slows you in space. %s turns on flight assist." % k.call("assist")))
 		"measure":
 			title.text = w("按 1 切换至测量仪，使用鼠标左键扫描目标残骸。", "PRESS 1 TO EQUIP THE SCANNER. LEFT-CLICK THE DERELICT TO INSPECT IT.")
 			body.text = w("拆解前先检查目标状态，确认质量、材料类型、供电情况及内部压力。", "INSPECT THE TARGET BEFORE DISMANTLING. CHECK ITS MASS, MATERIAL TYPE, ELECTRICAL STATUS, AND INTERNAL PRESSURE.")

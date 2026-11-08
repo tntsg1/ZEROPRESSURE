@@ -22,6 +22,11 @@ var loop_b: CheckButton
 var stop_b: Button
 var message: Label
 var _t := 0.0
+const ConsoleKit = preload("res://scripts/console_kit.gd")
+var now_line
+var more_key: Button
+var more_box: VBoxContainer
+var _more_fold: BenchFx.Fold
 
 
 func w(zh: String, en: String) -> String:
@@ -74,9 +79,12 @@ class Flow extends Control:
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var accent := Pal.tint(Pal.AIR, 1.0, 1.2)
-	var column := OpsSkin.pane(self, accent, 600.0)
-	column.add_child(OpsSkin.Plate.new("ROLL-1", w("轧机", "ROLLING MILL"), w("加工区 · 钢坯 → 钢板 / 型材 · %.0f MW", "PROCESSING · BILLET → PLATE / SECTIONS · %.0f MW") % Mill.MW, accent))
-	column.add_child(OpsSkin.Section.new(w("配方（点一块，下一次就轧它）", "RECIPE (PICK ONE: THE NEXT PASS ROLLS IT)")))
+	# 132 号: a 520 px card on the far side of the mill; the top line, the recipe, the flow, one orange key
+	var column := ConsoleKit.solid(self, ConsoleKit.W_CARD)
+	ConsoleKit.card_side(self, ConsoleKit.screen_x(game, preload("res://scripts/mill_line.gd").centre()))
+	column.add_child(ConsoleKit.header(w("轧机", "ROLLING MILL"), "ROLL-1"))
+	now_line = ConsoleKit.NowLine.new()
+	column.add_child(now_line)
 	recipe_box = HBoxContainer.new()
 	recipe_box.add_theme_constant_override("separation", 10)
 	column.add_child(recipe_box)
@@ -104,10 +112,10 @@ func _ready() -> void:
 		words_box.alignment = BoxContainer.ALIGNMENT_CENTER
 		words_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		words_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var nm := OpsSkin.label(Mill.product_name(p), 20)
+		var nm := OpsSkin.label(Mill.product_name(p), 24)
 		nm.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		words_box.add_child(nm)
-		var rc := OpsSkin.label(w("1 t 钢坯 → 1 t · 满电 %d 秒", "1 t BILLET → 1 t · %d s AT FULL POWER") % int(Mill.ROLL_S), 13, 0.65)
+		var rc := OpsSkin.label(w("1 t 钢坯 → 1 t", "1 t BILLET → 1 t"), 16, 0.65)
 		rc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		words_box.add_child(rc)
 		inner.add_child(words_box)
@@ -115,7 +123,6 @@ func _ready() -> void:
 		b.pressed.connect(func(): _pick(p))
 		recipe_box.add_child(b)
 		tiles[p] = b
-	column.add_child(OpsSkin.Section.new(w("生产", "PRODUCTION")))
 	var flow := HBoxContainer.new()
 	flow.add_theme_constant_override("separation", 8)
 	column.add_child(flow)
@@ -128,20 +135,22 @@ func _ready() -> void:
 	out_slot = Slot.new()
 	out_slot.title = w("出料", "OUT")
 	flow.add_child(out_slot)
-	lamp_label = OpsSkin.label("", 17)
+	lamp_label = OpsSkin.label("", 20)
 	column.add_child(lamp_label)
-	rate_label = OpsSkin.label("", 14, 0.65)
-	column.add_child(rate_label)
+	rate_label = OpsSkin.label("", 16, 0.65)
 	var row := HFlowContainer.new()
 	column.add_child(row)
 	once_b = Button.new()
 	once_b.text = w("轧一次（1 t）", "ONE PASS (1 t)")
 	BenchFx.note(once_b, w("立刻轧一次：用掉 1 t 钢坯，按选好的配方轧出产品", "Roll once now: 1 t of billet into the chosen recipe"))
-	once_b.custom_minimum_size.y = 42
+	once_b.custom_minimum_size.y = 48
+	once_b.add_theme_font_size_override("font_size", 20)
 	once_b.pressed.connect(_once)
-	row.add_child(once_b)
+	column.add_child(once_b)
 	loop_b = CheckButton.new()
-	loop_b.text = w("连续轧（有钢坯就一直轧）", "ROLL ON (WHILE THERE IS BILLET)")
+	loop_b.text = w("连续轧：钢坯一到就轧", "ROLL ON: EACH BILLET AS IT COMES")
+	loop_b.add_theme_font_size_override("font_size", 20)
+	loop_b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	BenchFx.note(loop_b, w("打开后，仓库里有钢坯就一直轧下去；关掉就停", "On: it keeps rolling while there is billet; off: it stops"))
 	loop_b.button_pressed = bool(Mill.cfg().loop)
 	loop_b.toggled.connect(func(v):
@@ -150,10 +159,9 @@ func _ready() -> void:
 		_refresh())
 	row.add_child(loop_b)
 	# 106 号: short of power — the reason and the way to the power control screen
-	power_l = OpsSkin.label("", 14, 0.7)
-	column.add_child(power_l)
+	power_l = OpsSkin.label("", 16, 0.7)
 	power_b = Button.new()
-	power_b.text = w("去电网调度", "TO THE POWER CONTROL SCREEN")
+	power_b.text = w("去动力区", "TO THE POWER DISTRICT")
 	BenchFx.note(power_b, w("关掉轧机台，去供电控制屏调电", "Close the mill desk and go to the power control screen"))
 	power_b.custom_minimum_size.y = 42
 	power_b.pressed.connect(func():
@@ -161,7 +169,22 @@ func _ready() -> void:
 		if game != null and is_instance_valid(game):
 			game.open_power_screen.call_deferred())
 	column.add_child(power_b)
-	message = OpsSkin.label("", 15)
+	# 更多: the rate, what can be done about the power
+	more_key = Button.new()
+	more_key.text = w("更多 ›   速度 · 电网", "MORE ›   RATE · POWER")
+	more_key.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	more_key.add_theme_font_size_override("font_size", 18)
+	more_key.custom_minimum_size.y = 44
+	more_key.pressed.connect(func(): _more_fold.set_open(not _more_fold.open))
+	column.add_child(more_key)
+	more_box = VBoxContainer.new()
+	more_box.visible = false
+	column.add_child(more_box)
+	more_box.add_child(rate_label)
+	more_box.add_child(power_l)
+	_more_fold = BenchFx.fold(more_box)
+	_more_fold.on_toggle = func(open: bool): more_key.text = w("更多 ▾", "MORE ▾") if open else w("更多 ›   速度 · 电网", "MORE ›   RATE · POWER")
+	message = OpsSkin.label("", 18)
 	column.add_child(message)
 	var close_b := Button.new()
 	close_b.text = w("关闭 [Esc]", "CLOSE [Esc]")
@@ -220,11 +243,32 @@ func _refresh() -> void:
 	if short:
 		# the reason is on the lamp's line above; here what can be done about it
 		power_l.text = Grid.short_fix()
+	# 132 号: the one orange key and the line that says it
+	if short and (Mill.busy() or bool(c.loop)):
+		ConsoleKit.orange(power_b, 22)
+		power_b.text = w("去动力区", "TO THE POWER DISTRICT")
+		ConsoleKit.plain(once_b, 20)
+		now_line.set_now(true, Grid.short_label(int(Mill.k(game) * 100.0)) + w("：去动力区", ": TO THE POWER DISTRICT"))
+	elif why == "" and not Mill.busy():
+		ConsoleKit.orange(once_b, 22)
+		once_b.text = w("轧一次（1 t）", "ONE PASS (1 t)")
+		ConsoleKit.plain(power_b, 20)
+		now_line.set_now(true, w("仓库有 %.1f t 钢坯，轧机停着", "%.1f t OF BILLET IN STORE, THE MILL IDLE") % feed)
+	else:
+		ConsoleKit.plain(once_b, 20)
+		once_b.text = w("轧一次（1 t）", "ONE PASS (1 t)")
+		ConsoleKit.plain(power_b, 20)
+		power_b.text = w("去动力区", "TO THE POWER DISTRICT")
+		if Mill.busy():
+			now_line.set_now(false, (w("连续轧开着，在轧%s", "ROLLING ON: %s") if bool(c.loop) else w("在轧%s", "ROLLING %s")) % Mill.product_name(str(Mill.job().get("product", p))))
+		else:
+			now_line.set_now(false, why if why != "" else w("停着", "STOPPED"))
 	for n in [in_slot, bar, out_slot]:
 		n.queue_redraw()
 
 
 func _process(dt: float) -> void:
+	ConsoleKit.card_fit(self)
 	_t += dt
 	bar.t = _t
 	bar.queue_redraw()

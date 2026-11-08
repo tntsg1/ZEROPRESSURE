@@ -153,7 +153,8 @@ func _run() -> void:
 	g.zoom_override = -1.0
 	g.open_district("trade")
 	await _frames(20)
-	check(g.console_ui != null and g.console_ui.callers != null and g.console_ui.callers.get_child_count() >= 1 and g.console_ui.org_box.get_child_count() == 3, "the trade console shows the caller and the three companies")
+	# 132 号: one visitor card at a time, the companies folded into one line (a row each inside)
+	check(g.console_ui != null and g.console_ui.get("trade_box") != null and g.console_ui.trade_box.get_child_count() >= 1 and g.console_ui.org_list.get_child_count() >= 3, "the trade console shows the caller and the three companies")
 	Cap.save(root, "res://tests/out/trade_people_console_zh.png")
 	if g.console_ui != null:
 		g.console_ui.close()

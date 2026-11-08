@@ -80,6 +80,8 @@ func _ready() -> void:
 	if tab == "sell" and start_pick != "":
 		sel = start_pick
 		custom = true
+	elif tab == "orders" and start_pick == "":
+		ord_sel = ""
 	elif tab == "orders" and start_pick != "":
 		for o in HallMarket.orders():
 			if str(o.kind) == start_pick and str(o.state) == "open":
@@ -119,8 +121,19 @@ func _unit(id: String) -> Dictionary:
 	return {}
 
 
+# 132 号: the cards by how much they want doing now — open and in store (soonest due first), open and
+# short, then the ones on their way
 func _cards() -> Array:
-	return HallMarket.orders().filter(func(o): return str(o.state) != "gone")
+	var cs: Array = HallMarket.orders().filter(func(o): return str(o.state) != "gone")
+	cs.sort_custom(func(x, y): return _rank(x) < _rank(y))
+	return cs
+
+
+func _rank(o: Dictionary) -> float:
+	if str(o.state) == "open":
+		var ok := HallMarket.have_of(str(o.cat), str(o.kind)) >= float(o.n) - 0.0005
+		return (0.0 if ok else 10000.0) + float(o.due)
+	return 20000.0 + float(o.get("due", 0.0))
 
 
 func set_tab(t: String) -> void:
@@ -350,8 +363,6 @@ func _unhandled_input(ev: InputEvent) -> void:
 				close()
 		KEY_ENTER, KEY_KP_ENTER:
 			_primary()
-		KEY_TAB:
-			set_tab(TABS[(TABS.find(tab) + 1) % TABS.size()])
 		_:
 			return
 	get_viewport().set_input_as_handled()
@@ -497,6 +508,7 @@ func _draw() -> void:
 	draw_polygon(PackedVector2Array([Vector2.ZERO, Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(0, size.y)]), PackedColorArray([Color(0.5, 0.6, 0.7, 0.04), Color(0.5, 0.6, 0.7, 0.04), Color(0, 0, 0, 0.25), Color(0, 0, 0, 0.25)]))
 	_draw_head()
 	_draw_tabs()
+	_draw_now()
 	match tab:
 		"sell": _draw_sell()
 		"buy": _draw_buy()
@@ -544,12 +556,46 @@ func _draw_tabs() -> void:
 	var ir := Rect2(_ink_x, TAB_Y + TAB_H - 3.0, 180.0, 3.0)
 	draw_rect(ir.grow_individual(0, 4, 0, 0), Color(UiSkin.ACCENT, 0.12))
 	draw_rect(ir, UiSkin.ACCENT)
-	_text(w("Tab 换页", "TAB: NEXT PAGE"), Vector2(size.x - PAD - 300.0, TAB_Y + 28.0), 12, Pal.ink(0.35), font_b, 300.0, HORIZONTAL_ALIGNMENT_RIGHT)
 	draw_line(Vector2(PAD, TAB_Y + TAB_H), Vector2(size.x - PAD, TAB_Y + TAB_H), Pal.ink(0.1), 1.0)
 
 
 func _body_top() -> float:
-	return TAB_Y + TAB_H + 20.0
+	return TAB_Y + TAB_H + 20.0 + NOW_H + 16.0
+
+
+const NOW_H := 52.0
+const ConsoleKit = preload("res://scripts/console_kit.gd")
+
+
+# 132 号: the line under the tabs — whether this page has anything worth doing now
+func now_of() -> Array:
+	match tab:
+		"orders":
+			var cs := _cards()
+			for o in cs:
+				if str(o.state) == "open" and HallMarket.have_of(str(o.cat), str(o.kind)) >= float(o.n) - 0.0005:
+					var base := HallMarket.want_base(str(o.cat), str(o.kind)) * float(o.n)
+					return [true, w("%s要的%s，仓库有，接下就能交，比市价多 %s", "%s WANTS %s: IN STORE, IT CAN GO NOW, %s OVER MARKET") % [str(o.client), HallMarket.want_name(o), Pal.money(maxf(0.0, float(o.price) - base))]]
+			if cs.any(func(o): return str(o.state) == "open"):
+				return [false, w("订单要的货仓库还没有", "THE ORDERS WANT WHAT IS NOT IN STORE")]
+			if not cs.is_empty():
+				return [false, w("订单都在路上", "THE ORDERS ARE ON THEIR WAY")]
+			return [false, w("没有新订单", "NO ORDERS NOW")]
+		"sell":
+			if not _units.is_empty():
+				return [true, w("仓库有 %d 样能挂，最贵的约 %s", "%d THINGS IN STORE TO LIST, THE DEAREST ~%s") % [_units.size(), Pal.money(float(_units[0].market))]]
+			return [false, w("仓库没有能卖的", "NOTHING IN STORE TO SELL")]
+		"buy":
+			var need := _repair_need()
+			if not need.is_empty():
+				return [true, str(need.values()[0])]
+			return [false, w("修缮不缺东西", "THE MENDING LACKS NOTHING")]
+	return [false, ""]
+
+
+func _draw_now() -> void:
+	var n := now_of()
+	ConsoleKit.draw_now(self, Rect2(PAD, TAB_Y + TAB_H + 16.0, size.x - PAD * 2.0, NOW_H), bool(n[0]), str(n[1]))
 
 
 func _swap_k() -> Array:
@@ -736,7 +782,7 @@ func _draw_listings(r: Rect2) -> void:
 		var s: Dictionary = sold[sold.size() - 1]
 		_text(w("最近成交：%s %s（到账 %s）", "LAST SALE: %s %s (%s PAID)") % [str(s.name), Pal.money(float(s.price)), Pal.money(float(s.cash))], Vector2(r.position.x + 200.0, r.position.y + 26), 13, Pal.ink(0.5), font_b, r.size.x - 200.0)
 	if ls.is_empty():
-		_text(w("还没有挂单：在上面挑一件，按 Enter 一键挂单", "NOTHING LISTED: PICK ONE ABOVE, ENTER TO LIST"), r.position + Vector2(0, 62), 13, Pal.ink(0.42), font_b)
+		_text(w("还没挂单。挑一件，按 Enter。", "NOTHING LISTED: PICK ONE ABOVE, ENTER TO LIST"), r.position + Vector2(0, 62), 13, Pal.ink(0.42), font_b)
 		return
 	var cw := (r.size.x - 24.0) / 3.0
 	for i in mini(ls.size(), 6):
@@ -842,53 +888,24 @@ func _repair_need() -> Dictionary:
 # ---------------------------------------------------------------- 订单
 
 func _draw_orders() -> void:
+	# 132 号 (sketch 1b): no rule strip, no empty slots — the cards by how much they want doing now,
+	# bigger words, the one key on the picked card; one line for the next order
 	var top := _body_top()
-	# the reputation: its level, how far to the next, what it brings
-	var lv := HallMarket.level()
-	var rr := Rect2(PAD, top, size.x - PAD * 2.0, 64.0)
-	_glass(rr)
-	_text(HallMarket.level_text(), rr.position + Vector2(20, 28), 18, Pal.ink(0.97), font_s)
-	_text(HallMarket.next_level_text(), rr.position + Vector2(20, 50), 12, Pal.ink(0.55), font_b)
-	var pr := Rect2(rr.position.x + 300.0, rr.position.y + 24.0, 320.0, 6.0)
-	var a0 := float(HallMarket.REP_AT[lv - 1])
-	var a1 := float(HallMarket.REP_AT[lv]) if lv < HallMarket.REP_AT.size() else a0 + 1.0
-	var pk := clampf((HallMarket.rep() - a0) / maxf(a1 - a0, 1.0), 0.0, 1.0) if lv < HallMarket.REP_AT.size() else 1.0
-	draw_rect(pr, Color(1, 1, 1, 0.07))
-	draw_rect(Rect2(pr.position, Vector2(pr.size.x * pk, pr.size.y)), UiSkin.ACCENT)
-	for i in 5:
-		var on := i < lv
-		draw_rect(Rect2(pr.position + Vector2(i * 22.0, 16.0), Vector2(16.0, 8.0)), UiSkin.ACCENT if on else Pal.ink(0.15))
-	_text(w("给价按下单时的信誉等级：1 级是市价的 130%%，每升一级多 4%%（现在 %d 级 · %d%%）· 等级越高订单越大 · 最多同时 8 张 · 过期不罚", "PRICE BY THE LEVEL WHEN POSTED: LEVEL 1 IS 130%% OF MARKET, +4%% A LEVEL (NOW %d · %d%%) · BIGGER ORDERS HIGHER UP · UP TO 8 · NO PENALTY") % [lv, roundi(HallMarket.order_k(lv) * 100.0)],
-		rr.position + Vector2(660, 38), 13, Pal.ink(0.6), font_b, rr.size.x - 680.0)
 	var cards := _cards()
-	var gy := rr.end.y + 16.0
-	var cw := (size.x - PAD * 2.0 - 3 * 16.0) / 4.0
-	var ch := (size.y - gy - 80.0 - 16.0) / 2.0
-	for i in 8:
-		var cx := PAD + (i % 4) * (cw + 16.0)
-		var cy := gy + (i / 4) * (ch + 16.0)
+	var n := cards.size()
+	var per := 4
+	var cw := (size.x - PAD * 2.0 - (per - 1) * 16.0) / per
+	var rows := maxi(1, ceili(n / float(per)))
+	var ch := minf(430.0, (size.y - top - 130.0 - (rows - 1) * 16.0) / rows)
+	for i in n:
+		var cx := PAD + (i % per) * (cw + 16.0)
+		var cy := top + (i / per) * (ch + 16.0)
 		var rs := _rise(i)
-		var r := Rect2(cx, cy + float(rs[0]), cw, ch)
-		if i < cards.size():
-			_order_card(r, cards[i], float(rs[1]))
-		else:
-			_empty_card(r, float(rs[1]), i == cards.size())
-
-
-func _empty_card(r: Rect2, a: float, next: bool) -> void:
-	var dash := 10.0
-	var pts := [[r.position, Vector2(r.end.x, r.position.y)], [Vector2(r.end.x, r.position.y), r.end], [r.end, Vector2(r.position.x, r.end.y)], [Vector2(r.position.x, r.end.y), r.position]]
-	for e in pts:
-		var a_: Vector2 = e[0]
-		var b_: Vector2 = e[1]
-		var L := a_.distance_to(b_)
-		var d := 0.0
-		while d < L:
-			draw_line(a_.lerp(b_, d / L), a_.lerp(b_, minf(d + dash * 0.6, L) / L), Pal.ink(0.12 * a), 1.0)
-			d += dash
-	if next:
-		var s := maxf(0.0, float(HallMarket.data().get("next_order", 0.0)) - HallMarket.clock())
-		_text(w("等新订单 · 约 %d 秒", "NEXT ORDER IN ~%d s") % int(ceil(s)), Vector2(r.position.x, r.get_center().y + 6.0), 14, Pal.ink(0.35 * a), font_b, r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+		_order_card(Rect2(cx, cy + float(rs[0]), cw, ch), cards[i], float(rs[1]))
+	var ny := top + rows * (ch + 16.0) + 20.0 if n > 0 else top + 40.0
+	var s0 := maxf(0.0, float(HallMarket.data().get("next_order", 0.0)) - HallMarket.clock())
+	var nl := (w("新订单约 %d 秒后到", "NEXT ORDER IN ~%d s") % int(ceil(s0))) if n < HallMarket.MAX_ORDERS else w("订单满了：最多 %d 张", "FULL: UP TO %d ORDERS") % HallMarket.MAX_ORDERS
+	_text(nl, Vector2(PAD, ny), 20, Pal.ink(0.5), font_b)
 
 
 func _order_card(r: Rect2, o: Dictionary, a: float) -> void:
@@ -899,60 +916,50 @@ func _order_card(r: Rect2, o: Dictionary, a: float) -> void:
 	var hv := float(_hov.get(id, 0.0))
 	var st := str(o.state)
 	var lit := st in ["taken", "rail", "ship"]
-	draw_rect(r, Color(0.06, 0.07, 0.08, 0.8 * a))
+	draw_rect(r, Color(0.06, 0.07, 0.08, 0.85 * a))
 	draw_texture_rect(CodexFx.rows_tex(), r, true, Color(1, 1, 1, 0.02 * a))
-	draw_rect(r, Color(UiSkin.ACCENT, (0.9 if on else 0.35 + 0.3 * hv) * a) if on or lit else Pal.ink((0.16 + 0.2 * hv) * a), false, 1.5 if on else 1.0)
+	draw_rect(r, Color(UiSkin.ACCENT, (0.95 if on else 0.35 + 0.3 * hv) * a) if on else Pal.ink((0.16 + 0.2 * hv) * a), false, 2.0 if on else 1.0)
 	if lit:
-		draw_rect(Rect2(r.position, Vector2(r.size.x, 3)), Color(UiSkin.ACCENT, a))
-	var x := r.position.x + 18.0
-	var y := r.position.y + 30.0
-	_text(str(o.client), Vector2(x, y), 16, Pal.ink(0.96 * a), font_s, r.size.x - 130.0)
-	# the client's reputation level when it was posted: a small badge
-	var badge := Rect2(r.end.x - 108.0, r.position.y + 12.0, 92.0, 24.0)
-	draw_rect(badge, Color(UiSkin.ACCENT, 0.14 * a))
-	draw_rect(badge, Color(UiSkin.ACCENT, 0.6 * a), false, 1.0)
-	_text(w("信誉 %d 级", "REP %d") % int(o.lv), badge.position + Vector2(0, 17), 12, Pal.ink(0.92 * a), font_b, badge.size.x, HORIZONTAL_ALIGNMENT_CENTER)
-	y += 16.0
+		draw_rect(Rect2(r.position, Vector2(r.size.x, 3)), Color(UiSkin.DATA, 0.8 * a))
+	var x := r.position.x + 22.0
+	var y := r.position.y + 36.0
+	_text(str(o.client), Vector2(x, y), 20, Pal.ink(0.6 * a), font_b, r.size.x - 44.0)
+	y += 14.0
 	var rp := HallMarket.rep_piece(str(o.kind)) if str(o.cat) == "equip" else ["", "", 0.0]
 	_thumb(Rect2(Vector2(x, y), Vector2(64, 64)), str(o.cat), str(rp[0]), str(rp[1]), str(o.kind), a)
-	_text(HallMarket.want_name(o), Vector2(x + 78, y + 24), 17, Pal.ink(0.95 * a), font_s, r.size.x - 110.0)
+	_text(HallMarket.want_name(o), Vector2(x + 80, y + 40), 26, Pal.ink(0.97 * a), font_s, r.size.x - 120.0)
+	y += 120.0
+	_text(Pal.money(float(o.price)), Vector2(x, y), 40, Pal.ink(0.97 * a), font_s)
 	var base := HallMarket.want_base(str(o.cat), str(o.kind)) * float(o.n)
-	_text(w("市价约 %s", "MARKET ~%s") % Pal.money(base), Vector2(x + 78, y + 46), 12, Pal.ink(0.5 * a), font_b)
-	y += 104.0
-	_text(Pal.money(float(o.price)), Vector2(x, y), 28, Pal.ink(0.97 * a), font_s)
-	_text(w("市价的 %d%% · 信誉 %d 级价", "%d%% OF MARKET · LEVEL %d PRICE") % [roundi(float(o.price) / maxf(base, 1.0) * 100.0), int(o.lv)], Vector2(x + 170.0, y - 4.0), 12, Color(UiSkin.ACCENT, 0.85 * a), font_b)
-	y += 26.0
+	_text(w("市价 %s", "MARKET %s") % Pal.money(base), Vector2(x + font_s.get_string_size(Pal.money(float(o.price)), HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x + 16.0, y - 4.0), 18, Pal.ink(0.55 * a), font_b)
+	y += 40.0
 	if st == "open":
 		var have := HallMarket.have_of(str(o.cat), str(o.kind))
 		var ok := have >= float(o.n) - 0.0005
 		var hs := (w("仓库有 %.1f / %.0f t", "IN STORE %.1f / %.0f t") % [have, float(o.n)]) if str(o.cat) == "raw" else (w("仓库有 %d / %d 台", "IN STORE %d / %d") % [int(have), int(o.n)])
-		_text(hs + (w(" · 可以马上交", " · CAN GO AT ONCE") if ok else ""), Vector2(x, y), 13, (Color(UiSkin.ACCENT, 0.9 * a) if ok else Pal.ink(0.6 * a)), font_b, r.size.x - 36.0)
-		# the time left, a line that shortens
+		_text(hs, Vector2(x, y), 20, Color(Hmi.ok_col(), a) if ok else Pal.ink(0.65 * a), font_b, r.size.x - 44.0)
 		var left := float(o.due) - HallMarket.clock()
 		var life := float(o.due) - float(o.at)
-		var tl := Rect2(x, y + 14.0, r.size.x - 36.0, 3.0)
+		var mins := HallMarket.mins_left(o)
+		_text(w("还剩 %d 分钟 · 过期这单就没了", "%d MIN LEFT · LAPSED, IT IS GONE") % mins, Vector2(x, y + 34.0), 18, Color(UiSkin.ACCENT, a) if mins <= 3 else Pal.ink(0.55 * a), font_b, r.size.x - 44.0)
+		var tl := Rect2(x, y + 48.0, r.size.x - 44.0, 6.0)
 		draw_rect(tl, Color(1, 1, 1, 0.06 * a))
-		draw_rect(Rect2(tl.position, Vector2(tl.size.x * clampf(left / maxf(life, 1.0), 0.0, 1.0), 3.0)), Pal.ink(0.5 * a) if left > 180.0 else Pal.heat(a, 1.1))
-		_text(w("还有 %d 分钟 · 过期不罚", "%d MIN LEFT · NO PENALTY") % HallMarket.mins_left(o), Vector2(x, y + 34.0), 11, Pal.ink(0.45 * a), font_b)
-		if not ok:
-			# no stock: the plain ways out
+		draw_rect(Rect2(tl.position, Vector2(tl.size.x * clampf(left / maxf(life, 1.0), 0.0, 1.0), 6.0)), Color(UiSkin.ACCENT, a) if mins <= 3 else Pal.ink(0.5 * a))
+		if not ok and not on:
 			var ways := HallMarket.short_ways(o)
-			for i in ways.size():
-				_text(str(ways[i]), Vector2(x, y + 60.0 + i * 18.0), 12, Pal.ink((0.82 if i == 0 else 0.62) * a), font_b, r.size.x - 36.0)
+			if not ways.is_empty():
+				_text(str(ways[0]), Vector2(x, y + 84.0), 16, Pal.ink(0.6 * a), font_b, r.size.x - 44.0)
 	else:
-		_pipeline(Rect2(x, y - 6.0, r.size.x - 36.0, 52.0), o, a)
-		if st == "taken":
-			var ways := HallMarket.short_ways(o)
-			for i in ways.size():
-				_text(str(ways[i]), Vector2(x, y + 82.0 + i * 18.0), 12, Pal.ink((0.82 if i == 0 else 0.62) * a), font_b, r.size.x - 36.0)
+		_pipeline(Rect2(x, y - 6.0, r.size.x - 44.0, 52.0), o, a)
+		if not on:
+			_text(w("不用管，到账会通知", "NOTHING TO DO: YOU WILL BE TOLD"), Vector2(x, y + 82.0), 16, Pal.ink(0.5 * a), font_b)
 	if on and st in ["open", "taken"]:
 		var bl := w("接单  [Enter]", "TAKE  [Enter]") if st == "open" else w("退单", "GIVE BACK")
 		var note := w("接下这张订单：仓库自动备货，备齐后货运火车送到贸易港，客户来取", "Take it: the stores make it up, the train takes it to the trade port, the client collects") if st == "open" else w("退掉这张订单：备好的货放回仓库，没有罚款", "Give it back: the goods go back to the stores, no penalty")
-		_key("take", Rect2(x, r.end.y - 62.0, r.size.x - 36.0, 46.0), bl, note, "", st == "open")
-		# 128 号 第 4 段: cast steel the warehouse is short of — one key puts a batch first in the queue
+		_key("take", Rect2(x, r.end.y - 70.0, r.size.x - 44.0, 54.0), bl, note, "", st == "open")
 		if str(o.cat) == "raw" and ProcessLine.mould_of_key(str(o.kind)) != "" and HallMarket.have_of("raw", str(o.kind)) + ProcessLine.for_order_t(str(o.id)) < float(o.n) - float(o.get("got", 0.0)) - 0.05:
-			var why := "" if ProcessLine.first_done() or not ProcessLine.LEGACY_DESKS else w("第一炉先到加工区炉台亲手炼一次", "MAKE THE FIRST HEAT BY HAND AT THE FURNACE DESK FIRST")
-			_key("plan", Rect2(x, r.end.y - 114.0, r.size.x - 36.0, 44.0), w("为这单排产 · %s模，插到队列最前", "PLAN FOR THIS ORDER · %s MOULD, FIRST IN THE QUEUE") % ProcessLine.mould_name(ProcessLine.mould_of_key(str(o.kind))), w("把仓库里的钢锭排进加工队列最前面，炼成这张订单要的%s", "Puts ingots first in the processing queue, cast as the order wants") % StoreBook.raw_name(str(o.kind)), why)
+			var why := "" if ProcessLine.first_done() or not ProcessLine.LEGACY_DESKS else w("第一炉先去炉台亲手炼一次", "MAKE THE FIRST HEAT BY HAND FIRST")
+			_key("plan", Rect2(x, r.end.y - 122.0, r.size.x - 44.0, 44.0), w("为这单排产 · %s模", "PLAN FOR THIS ORDER · %s") % ProcessLine.mould_name(ProcessLine.mould_of_key(str(o.kind))), w("把仓库里的钢锭排进加工队列最前面，炼成这张订单要的%s", "Puts ingots first in the processing queue, cast as the order wants") % StoreBook.raw_name(str(o.kind)), why)
 
 
 # a taken order's way: 备货 → 火车 → 客户飞船 → 到账, the step it is on lit
@@ -989,7 +996,7 @@ func _draw_foot() -> void:
 		draw_rect(Rect2(r.position.x, r.end.y - 2.0, r.size.x * clampf(_msg_t / 4.0, 0.0, 1.0), 2.0), Color(UiSkin.DATA, 0.6 * k))
 		_text(message, r.position + Vector2(24, 26), 16, Pal.ink(0.97 * k), font_b)
 	else:
-		_text(w("Enter 做这一页的主操作 · Esc 退一步 · Tab 换页", "ENTER: THIS PAGE'S ACTION · ESC: BACK · TAB: NEXT PAGE"), Vector2(PAD, y), 13, Pal.ink(0.35), font_b)
+		_text({"sell": w("Enter 挂单 · Esc 关闭", "ENTER: LIST · ESC: CLOSE"), "buy": w("Enter 买下 · Esc 关闭", "ENTER: BUY · ESC: CLOSE"), "orders": w("Enter 接单 · Esc 关闭", "ENTER: TAKE · ESC: CLOSE")}.get(tab, ""), Vector2(PAD, y), 16, Pal.ink(0.4), font_b)
 
 
 # 人性化 规则 4: a key's plain note after 0.4 s by the pointer; a shut one says why

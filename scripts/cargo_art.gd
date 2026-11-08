@@ -501,7 +501,7 @@ func hover_items(game) -> Array:
 	for i in W.trucks.size():
 		var tr: Dictionary = W.trucks[i]
 		add.call([Rect2(float(tr.x) - 1.8, minf(float(tr.fork) - 1.4, FLOOR - 3.4), 3.8, FLOOR - minf(float(tr.fork) - 1.4, FLOOR - 3.4))], w("前移式叉车 FL-%d" % (i + 1), "REACH TRUCK FL-%d" % (i + 1)),
-			w("从地面舱口开到对应货架下，门架三级伸缩把货叉升到那一层，取货或上架后降下开回。出库和送料要等它把货搬到舱口。缺电时开得慢。", "Drives from the floor hatch to under its row, telescopes its mast up to the shelf, picks or puts away, lowers and comes back. Sales and the furnace's feed wait for it to bring goods to the hatch; short of power it crawls."),
+			w("从地面舱口开到对应货架下，门架三级伸缩把货叉升到那一层，取货或上架后降下开回。出库和送料要等它把货搬到舱口。%s时开得慢。" % Grid.short_label(0).get_slice("—", 0), "Drives from the floor hatch to under its row, telescopes its mast up to the shelf, picks or puts away, lowers and comes back. Sales and the furnace's feed wait for it to bring goods to the hatch; short of power it crawls."),
 			W.truck_state(i), w("货运区升到 1 级有两台叉车，2 级开得更快。", "Stage 1 of the cargo district gives two trucks, stage 2 faster ones."))
 	add.call([Rect2(W.cx - 1.6, 1.6, 3.2, maxf(1.6, W.hook - 0.8))], w("堆垛吊车", "STACKER CRANE"),
 		w("库存有变化时，从舱口把货吊上对应的货架（或从货架吊下），吊具随起停轻轻摆动。", "When the stock changes it lifts the goods from the hatch up to their row (or down from it), the spreader swinging a little as it starts and stops."),

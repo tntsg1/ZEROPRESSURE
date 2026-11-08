@@ -14,6 +14,7 @@ const CV = preload("res://scripts/collision_view.gd")
 const DIR := "res://tests/out/collision_audit/"
 const B := 4                       # px: the comparison grid
 var report := ""
+var layer_diffs := {}
 var only := ""                      # -- <key> to shoot one place
 
 
@@ -143,6 +144,7 @@ func _run() -> void:
 	await _spawn()
 	await _frames(40)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(DIR))
+	_static_layers()
 	CV.ensure(g)
 	report = "# 碰撞自动比对（tests/collision_audit.gd）\n红=亮线但附近没有碰撞；蓝=有碰撞但附近没有任何画面。坐标为截图像素和所在区的区内米数。\n\n"
 	var places := _places()
@@ -166,13 +168,22 @@ func _run() -> void:
 		var found := _compare(off, z)
 		var diff: Image = found[0]
 		diff.save_png(ProjectSettings.globalize_path(DIR + str(pl[0]) + "_diff.png"))
-		report += "## %s %s（缩放 %.3f）\n" % [pl[0], pl[1], z] + str(found[1]) + "\n"
+		report += "## %s %s（缩放 %.3f）\n" % [pl[0], pl[1], z] + str(found[1])
+		# 第 6 段追加: the drone's collision against the pieces' (FreeBody.MASK), point by point
+		var lay := _layers(off, z)
+		(lay[0] as Image).save_png(ProjectSettings.globalize_path(DIR + str(pl[0]) + "_layers.png"))
+		report += str(lay[1]) + "\n"
+		layer_diffs[str(pl[0])] = int(lay[2])
 		CV.on = false
 	_ui(true)
+	await _gate_field()
 	var f := FileAccess.open(ProjectSettings.globalize_path(DIR + "auto_report.md"), FileAccess.WRITE)
 	f.store_string(report)
 	f.close()
 	check(not places.is_empty(), "%d places shot" % places.size())
+	# solid to one and not the other, apart from the drone-only gallery and moving things: none
+	for k in layer_diffs:
+		check(int(layer_diffs[k]) == 0, "%s: no structure solid to the pieces only or the drone only (%d patches)" % [k, int(layer_diffs[k])])
 	g.queue_free()
 	await _frames(4)
 	print("COLLISION AUDIT %s (%d checks, %d failed)" % ["PASS" if fails == 0 else "FAIL", checks, fails])
@@ -369,3 +380,133 @@ func _components(m: PackedByteArray, gw: int, gh: int) -> Array:
 						stack.append(nj)
 		out.append({"n": n, "r": r, "at": i})
 	return out
+
+
+# 第 6 段追加 (user: "零件会撞上，无人机却直接穿过去"): every still structure in the port is solid to the
+# drone and to the pieces alike. The processing district's gallery is the one structure solid to the
+# drone only, on purpose (the trains and the freight trolley run on through it, scripts/process_gallery.gd)
+const DRONE_ONLY := ["GalleryWalls"]
+func _static_layers() -> void:
+	var dm: int = int(g.drone.collision_mask)
+	var pm: int = FreeBody.MASK
+	var bad: Array = []
+	var n := 0
+	for b in root.find_children("*", "StaticBody2D", true, false):
+		if int(b.collision_layer) == 0 or not b.is_inside_tree():
+			continue
+		n += 1
+		var to_drone: bool = (int(b.collision_layer) & dm) != 0
+		var to_pieces: bool = (int(b.collision_layer) & pm) != 0
+		if to_drone and to_pieces:
+			continue
+		if str(b.name) in DRONE_ONLY and to_drone:
+			continue
+		bad.append("%s (层 %d)" % [str(b.get_path()).trim_prefix("/root/"), int(b.collision_layer)])
+	check(n > 0 and bad.is_empty(), "%d still structures, each solid to the drone and the pieces alike%s" % [n, (": " + ", ".join(bad)) if not bad.is_empty() else ""])
+
+
+# the drone's collision (its own mask) against the pieces' (FreeBody.MASK), on the B-px grid: orange where
+# only a piece is stopped, magenta where only the drone is; moving bodies (the cutter drone, the work
+# boat) and the drone-only gallery are told apart
+func _layers(img: Image, z: float) -> Array:
+	var w := img.get_width()
+	var h := img.get_height()
+	var k := float(w) / 1920.0
+	var gw := w / B
+	var gh := h / B
+	var space: PhysicsDirectSpaceState2D = g.get_world_2d().direct_space_state
+	var qd := PhysicsPointQueryParameters2D.new()
+	qd.collision_mask = int(g.drone.collision_mask)
+	qd.exclude = [g.drone.get_rid()]
+	var qp := PhysicsPointQueryParameters2D.new()
+	qp.collision_mask = FreeBody.MASK
+	qp.exclude = [g.drone.get_rid()]
+	var inv := g.get_viewport().get_canvas_transform().affine_inverse()
+	var only_p := PackedByteArray()
+	only_p.resize(gw * gh)
+	var only_d := PackedByteArray()
+	only_d.resize(gw * gh)
+	var who := {}
+	var expected := 0
+	for by in gh:
+		for bx in gw:
+			var wp := inv * (Vector2((bx + 0.5) * B, (by + 0.5) * B) / k)
+			qd.position = wp
+			qp.position = wp
+			var hd: Array = space.intersect_point(qd, 1)
+			var hp: Array = space.intersect_point(qp, 4)
+			var i := by * gw + bx
+			if hd.is_empty() and not hp.is_empty():
+				var c = hp[0].collider
+				if c is RigidBody2D or c is CharacterBody2D:
+					expected += 1
+					continue
+				only_p[i] = 1
+				who[i] = c
+			elif not hd.is_empty() and hp.is_empty():
+				var c2 = hd[0].collider
+				if c2 != null and str(c2.name) in DRONE_ONLY:
+					expected += 1
+					continue
+				only_d[i] = 1
+				who[i] = c2
+	var od: PackedByteArray = img.get_data().duplicate()
+	for i in od.size() / 4:
+		od[i * 4] = od[i * 4] / 3
+		od[i * 4 + 1] = od[i * 4 + 1] / 3
+		od[i * 4 + 2] = od[i * 4 + 2] / 3
+	var out := Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, od)
+	for by in gh:
+		for bx in gw:
+			var i := by * gw + bx
+			if only_p[i]:
+				out.fill_rect(Rect2i(bx * B, by * B, B, B), Color(1.0, 0.55, 0.1))
+			elif only_d[i]:
+				out.fill_rect(Rect2i(bx * B, by * B, B, B), Color(1.0, 0.2, 0.9))
+	var lines := ""
+	var patches := 0
+	for kind in [["橙 只挡零件、无人机穿过", only_p], ["品红 只挡无人机、零件穿过", only_d]]:
+		for cp in _components(kind[1], gw, gh):
+			if cp.n < 3:
+				continue
+			patches += 1
+			var o = who.get(int(cp.at), null)
+			lines += "- %s：像素 (%d, %d) %d 格 · %s\n" % [kind[0], int((cp.r.get_center().x + 0.5) * B), int((cp.r.get_center().y + 0.5) * B), cp.n, (str(o.get_path()).trim_prefix("/root/") + "（层 %d）" % int(o.collision_layer)) if o != null and is_instance_valid(o) else "?"]
+	if lines == "":
+		lines = "- 无人机与零件的碰撞一致（会动的东西 %d 格、观察廊另计）\n" % expected
+	return [out, lines, patches]
+
+
+# 第 6 段追加: the berth's gate. A loose piece flung up through it is held by the tractor field at the
+# rail's top (it does not drift out into the corridor); the drone flies out through it to the port.
+func _gate_field() -> void:
+	var M := Geom.M
+	var gate: Rect2 = g.dock.port_gate()
+	var top := (Dock.RAIL_Y - 0.6) * M
+	var at := Vector2(gate.get_center().x * M, (Dock.RAIL_Y + 2.0) * M)
+	var h := Vector2(14, 10)
+	g.world.add_piece("plate", PackedVector2Array([at - h, at + Vector2(h.x, -h.y), at + h, at + Vector2(-h.x, h.y)]), {"mat": "steel", "mass": 0.2})
+	g.world.dirty_links = true
+	await _frames(4)
+	var b = null
+	var bd := INF
+	for c in g.world.bodies:
+		if is_instance_valid(c) and c.global_position.distance_to(g.world.to_global(at)) < bd:
+			bd = c.global_position.distance_to(g.world.to_global(at))
+			b = c
+	top = g.world.to_global(Vector2(0, top)).y
+	if b != null and is_instance_valid(b):
+		b.linear_velocity = Vector2(0, -2.5 * M)
+	var highest := INF
+	for i in 300:
+		await _frames(1)
+		if b != null and is_instance_valid(b):
+			highest = minf(highest, b.global_position.y)
+	check(b != null and highest > top - 1.5 * M and b.global_position.y > top - 0.5 * M, "a piece drifting up through the gate at 2.5 m/s is held at the dashed curtain (highest %.1f m over it, now %.1f m, %.1f m/s)" % [(top - highest) / M, (top - b.global_position.y) / M if b != null else 0.0, b.linear_velocity.length() / M if b != null else 0.0])
+	g.drone.global_position = g.world.to_global(at)
+	g.drone.linear_velocity = Vector2.ZERO
+	await _frames(2)
+	for i in 120:
+		g.drone.linear_velocity = Vector2(0, -6.0 * M)
+		await _frames(1)
+	check(g.drone.global_position.y < top - 3.0 * M, "the drone flies out through the gate (%.1f m over the rail's top)" % ((top - g.drone.global_position.y) / M))

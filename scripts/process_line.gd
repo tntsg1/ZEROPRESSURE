@@ -190,7 +190,7 @@ static func queue_ingots(t: float, use := {}, mould := "") -> Dictionary:
 		return {"ok": false, "reason": w("加工区还没修好", "THE PROCESSING DISTRICT IS NOT MENDED")}
 	# 128 号 第 4 段 收尾 (2026-11-07): the first heat too goes through the queue (the old desks: by hand first)
 	if not first_done() and LEGACY_DESKS:
-		return {"ok": false, "reason": w("第一炉要在加工区炉台亲手炼一次，之后才能一键排产", "THE FIRST HEAT IS MADE BY HAND AT THE FURNACE DESK")}
+		return {"ok": false, "reason": w("第一炉先去炉台亲手炼一次。", "THE FIRST HEAT IS MADE BY HAND AT THE FURNACE DESK")}
 	var have := float(StoreBook.raw_stock().get(Exchange.INGOT, 0.0)) - queued_t(Exchange.INGOT)
 	t = minf(t, have)
 	if t < ProcessQueue.HEAT_MIN:

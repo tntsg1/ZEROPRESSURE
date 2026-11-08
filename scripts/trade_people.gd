@@ -267,7 +267,7 @@ static func advance(dt: float) -> Array:
 		if here().size() < MAX_HERE:
 			var v := arrive()
 			lines.append("L_visit_" + str(v.temper))
-			said.append(w("%s开船来了（%s）。到贸易区业务终端看看他要什么。", "%s HAS COME IN (%s).") % [card_name(v), temper_name(str(v.temper))])
+			said.append(w("%s来了（%s）。去贸易港终端谈。", "%s HAS COME IN (%s).") % [card_name(v), temper_name(str(v.temper))])
 	for v in d.list:
 		if str(v.state) == "arriving":
 			v.t = float(v.t) + dt

@@ -259,10 +259,33 @@ txt = rd("scripts/txt.gd")
 for m in re.finditer(r'^\t"((?:ex|rc|as)_[a-z0-9_]+)": \["((?:[^"\\]|\\.)*)", "((?:[^"\\]|\\.)*)"\]', txt, re.M):
     entry("txt." + m.group(1), m.group(2).replace('\\"', '"'), m.group(3).replace('\\"', '"'), "提示文字", "", "")
 
+# 6 the situation cards (132 号, scripts/guide_cards.gd): a title and three lines each, shown once
+section("六、情境讲解卡：第一次遇到某件事时暂停弹出的卡（标题 + 最多 3 行；{n} {who} {client} {m} 由游戏填）")
+gc = rd("scripts/guide_cards.gd")
+WHEN = {"zone_power": "第一次进动力区", "zone_trade": "第一次进贸易港", "zone_process": "第一次进加工区", "zone_cargo": "第一次进货运区",
+        "zone_tug": "第一次进拖船站", "zone_ring": "第一次进中央转运环", "first_strip": "第一单开工", "first_equip": "第一次拆下整件设备",
+        "store_full": "仓库第一次用到八成", "first_listing": "修好贸易港后第一次挂单", "power_short": "第一次电力不足",
+        "order_due": "订单第一次快到期", "first_mould": "第一次换模", "first_trip": "发电机第一次超载跳闸",
+        "console_trade": "第一次打开贸易港终端", "console_hall": "第一次打开交易行", "console_queue": "第一次打开加工队列",
+        "console_gas": "第一次打开加工区业务终端", "console_heat": "第一次打开炉台", "console_mill": "第一次打开轧机"}
+cid = None
+n = 0
+for ln in gc.split("\n"):
+    m = re.match(r'^\t"([a-z_]+)": \{"t": \["((?:[^"\\]|\\.)*)", "((?:[^"\\]|\\.)*)"\]', ln)
+    if m:
+        cid = m.group(1)
+        n = 0
+        entry("G_%s_t" % cid, m.group(2), m.group(3), "讲解卡标题", WHEN.get(cid, ""), "一行")
+        continue
+    m = re.match(r'^\t\t\["((?:[^"\\]|\\.)*)", "((?:[^"\\]|\\.)*)"\]', ln)
+    if m and cid:
+        n += 1
+        entry("G_%s_%d" % (cid, n), m.group(1), m.group(2), "讲解卡第 %d 行" % n, WHEN.get(cid, ""), "一句")
+
 # ids the author wrote that the game no longer knows: kept at the end, not lost
 lost = [k for k in old if k not in used]
 if lost:
-    section("六、游戏里已经不用的编号")
+    section("七、游戏里已经不用的编号")
     for k in lost:
         entry(k, old[k][0], old[k][1], on=False)
 

@@ -10,7 +10,7 @@ var cap_n := 0
 var cap_title := ""
 var cap_sub := ""
 var cap_t := 0.0
-const N := 8
+const N := 9
 
 
 func _initialize() -> void:
@@ -113,34 +113,39 @@ func _run() -> void:
 	CV.on = true
 	await _hold(2.4)
 	# berth: the truss right of the gate is drawn, nothing stops the drone there
-	_beat(2, "船坞 B1：闸口右边的顶梁", "和左段一样画成亮桁架，左段有碰撞，右段能穿过")
+	_beat(2, "船坞：闸口右边的顶梁补上了", "和左段一样画成亮桁架，现在整条都挡")
 	await _glide(berth.position + Vector2(berth.size.x * 0.72, berth.size.y * 0.2), _zoom_for(berth) * 1.6, 1.4, home)
 	await _hold(2.0)
 	# the corridor up to the ring and the ring
-	_beat(3, "中央环 H1：外墙对得上", "内圈转盘和核心画得最亮，却整片能穿过")
+	_beat(3, "中央环：核心补上碰撞", "滑环圆盘挡住；转盘和轨道是俯视地面，照常飞过")
 	var hub := Rect2(c - Vector2.ONE * (PortArt.HUB_R + 4.0) * m, Vector2.ONE * (PortArt.HUB_R + 4.0) * 2.0 * m)
 	await _glide(hub.get_center(), _zoom_for(hub), 2.0, c + Vector2(0, -20.0) * m)
 	await _hold(1.6)
 	# power: old machine blocks that the new art no longer draws, the lines before the battery berth
-	_beat(4, "动力区：机器外壳基本对得上", "顶上白色蒸汽总管、竖管是管线，画得太亮（应调暗）")
+	_beat(4, "动力区：主控屏、空机位补碰撞", "空机位 C 画成实的；蒸汽总管等管线调暗变细；地板抬到画线位置")
 	var pb := PortStructure.box("power").grow(4.0 * m)
 	await _glide(pb.get_center(), _zoom_for(pb), 2.0, _inside("power"))
 	await _hold(2.2)
-	_beat(5, "动力区 P1/P2：电池泊位", "泊位框架亮实线却能穿过（应补）；下面的第二条灰线没有碰撞（应调暗）")
+	_beat(5, "动力区：电池泊位", "泊位底板和三根立柱补上碰撞；前面那条散热管调暗")
 	await _glide(_z("power", Vector2(46.0, 1.0)), _zoom_for(pb) * 2.4, 1.2)
 	await _hold(1.8)
 	# tug
-	_beat(6, "拖船站 T1/T2", "左边龙门架、甲板上停的拖船：亮实线都能穿过")
+	_beat(6, "拖船站：龙门架、停着的拖船", "龙门架腿和横梁、甲板立柱、导轨补碰撞；拖船在家才挡，出航就让开")
 	var tb := PortStructure.box("tug").grow(4.0 * m)
 	await _glide(tb.get_center(), _zoom_for(tb), 2.0, _inside("tug"))
 	await _hold(2.0)
 	# cargo
-	_beat(7, "货运区 C1", "左货架的碰撞块盖住了火车轨道：画面上的通道其实是墙")
+	_beat(7, "货运区：货架让出火车轨道", "货架碰撞按画面重做，轨道那一段空出来；屋顶桁架、看板补碰撞")
 	var cb := PortStructure.box("cargo").grow(4.0 * m)
 	await _glide(cb.get_center(), _zoom_for(cb), 2.0, _inside("cargo"))
 	await _hold(2.0)
+	# trade
+	_beat(8, "贸易港：中层走台、大屏补上", "走台、立柱、传送线、称重显示、报价大屏都挡了")
+	var rb := PortStructure.box("trade").grow(4.0 * m)
+	await _glide(rb.get_center(), _zoom_for(rb), 2.0, _inside("trade"))
+	await _hold(1.6)
 	# process, then home
-	_beat(8, "加工区 X1/X2 → 回船坞", "观察廊（品红）对得上；电弧炉、轧机整台能穿过")
+	_beat(9, "加工区 → 回船坞", "电弧炉、压块机、轧机补碰撞；观察廊和上方走廊照常能飞")
 	var xb := PortStructure.box("process").grow(4.0 * m)
 	await _glide(xb.get_center(), _zoom_for(xb), 2.0, _inside("process"))
 	await _hold(1.8)

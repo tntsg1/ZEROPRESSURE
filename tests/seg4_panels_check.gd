@@ -50,7 +50,8 @@ func _run() -> void:
 	await _frames(40)
 	var q = g.console_ui
 	check(q != null and q._btns.has("one") and q._btns.has("store") and q._open().is_empty(), "empty: 排一炉 [Enter] and 去仓库挑别的")
-	check(q.BG.a >= 1.0 and q._rect().size.x >= q.size.x * 0.5 - 1.0, "a solid dark half of the screen (%.0f of %.0f px)" % [q._rect().size.x, q.size.x])
+	# 132 号 (user 2026-11-07): the side pages 730 px at most, the works stay in view
+	check(q.BG.a >= 1.0 and q._rect().size.x <= 730.0 and q._rect().size.x >= 640.0, "a solid dark side pane, 730 px at most (%.0f of %.0f px)" % [q._rect().size.x, q.size.x])
 	await _hover(q._btns["close"])
 	check(_close_tips().is_empty(), "no native 关闭 tooltip with the pointer on the close key (%s)" % str(_close_tips()))
 	BenchFx.shot_mouse = Vector2.INF
@@ -64,7 +65,7 @@ func _run() -> void:
 	for i in 60 * 6:
 		await _frames(1)
 	await _frames(20)
-	check(q._btns.has("auto") and q._btns.has("one") and q._btns.keys().filter(func(k): return str(k).begins_with("row:")).size() == 3, "batches: three cards, the switch, 再排一炉")
+	check(q._btns.has("more") and q._btns.has("one") and q._btns.keys().filter(func(k): return str(k).begins_with("row:")).size() == 3, "batches: three cards, 再排一炉, the switch folded under 更多 (132 号)")
 	await _shot("7b_queue_list")
 	var lots: Array = ProcessQueue.open_entries().map(func(e): return str(e.lot))
 	q.test_drag(lots[2], 1)
@@ -84,17 +85,15 @@ func _run() -> void:
 	GasLine.receive({"o2": 52.0, "n2": 174.0}, "S09-001")
 	GasLine.data().o2.ind = 420.0
 	GasLine.data().lox.kg = 3600.0
-	GasLine.new_caller()
 	g.open_district("process")
 	await _frames(40)
 	var d = g.console_ui
-	check(d != null and d.tanks != null and d.next_key != null and d.call_box != null, "the console: tanks, the next step, the passing ship")
+	# 132 号 (user: "燃料外运也删了"): no passing ship's order on the console any more
+	check(d != null and d.tanks != null and d.next_key != null and d.get("call_box") == null, "the console: the tanks and the next step, no passing ship")
 	check(d.next_key.visible and not d.next_key.disabled and d.next_key.text.begins_with("开始分离"), "the next step's one key: 开始分离 (%s)" % d.next_key.text)
 	check(not d.more_box.visible and d.gas_box.get_child_count() > 4, "the rest folded under 更多, every control still built (%d)" % d.gas_box.get_child_count())
-	var texts: Array = d.call_box.find_children("*", "Button", true, false).map(func(b): return str(b.text))
-	check(texts.has("接下") and texts.has("不接"), "the passing ship's order: 接下 / 不接 (%s)" % str(texts))
 	var pane = d.get_node("Pane")
-	check(pane.size.x >= d.size.x * 0.5 - 40.0 and (pane.get_theme_stylebox("panel") as StyleBoxFlat).bg_color.a >= 1.0, "a solid dark half of the screen (%.0f px)" % pane.size.x)
+	check(pane.size.x <= 731.0 and (pane.get_theme_stylebox("panel") as StyleBoxFlat).bg_color.a >= 1.0, "a solid dark side pane, 730 px at most (%.0f px)" % pane.size.x)
 	for b in d.find_children("*", "Button", true, false):
 		if str(b.text).begins_with("关闭"):
 			await _hover(b.get_global_rect())
@@ -107,7 +106,7 @@ func _run() -> void:
 	await _frames(30)
 	var all: Array = d.more_box.find_children("*", "Button", true, false).map(func(b): return str(b.text))
 	var autos: int = d.gas_box.find_children("*", "CheckButton", true, false).size()
-	check(d.more_box.visible and autos == 4, "更多: the four automation switches (%d)" % autos)
+	check(d.more_box.visible and autos == 2, "更多: two automation switches, separate and liquefy (supply and feed buying gone) (%d)" % autos)
 	for want in ["外购混合气", "液化", "生命支持检测", "放空剩余气", "处置污染剩余"]:
 		check(all.any(func(t): return t.begins_with(want)), "更多: %s" % want)
 	await _shot("7d_biz_more")

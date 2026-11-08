@@ -6,7 +6,7 @@ extends CanvasLayer
 
 signal closed
 
-const ROWS := ["vol_master", "vol_music", "vol_sfx", "quality", "window", "anim", "reduce", "ui_scale", "calm", "film", "slowmo", "lang", "context", "codex_cards", "playtest", "keys_row", "back"]
+const ROWS := ["vol_master", "vol_music", "vol_sfx", "quality", "window", "anim", "reduce", "ui_scale", "calm", "film", "slowmo", "lang", "context", "codex_cards", "guide_cards", "playtest", "keys_row", "back"]
 
 var testing := false
 var is_open := false
@@ -52,7 +52,7 @@ func close() -> void:
 
 func _row_rect(i: int) -> Rect2:
 	var s := c.size
-	return Rect2(s.x * 0.5 - 300, s.y * 0.5 - 360 + i * 48, 600, 44)
+	return Rect2(s.x * 0.5 - 300, s.y * 0.5 - 360 + i * 46, 600, 42)
 
 
 func _key_rect(i: int) -> Rect2:
@@ -161,6 +161,8 @@ func change(row: String, dir: int) -> void:
 			Txt.context = not Txt.context
 		"codex_cards":
 			Txt.codex_cards = not Txt.codex_cards
+		"guide_cards":
+			Txt.guide_cards = not Txt.guide_cards
 		"playtest":
 			Txt.playtest = not Txt.playtest
 		"window":
@@ -201,6 +203,8 @@ func value(row: String) -> String:
 			return Txt.t("s_on") if Txt.context else Txt.t("s_off")
 		"codex_cards":
 			return Txt.t("s_on") if Txt.codex_cards else Txt.t("s_off")
+		"guide_cards":
+			return Txt.t("s_on") if Txt.guide_cards else Txt.t("s_off")
 		"playtest":
 			return Txt.t("s_on") if Txt.playtest else Txt.t("s_off")
 		"window":

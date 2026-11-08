@@ -43,7 +43,7 @@ func _init() -> void:
 	max_contacts_reported = 4
 	continuous_cd = RigidBody2D.CCD_MODE_CAST_SHAPE
 	collision_layer = 2
-	collision_mask = 1 | 4 | World.STATIC_LAYER | 16
+	collision_mask = 1 | 4 | World.STATIC_LAYER | 16 | 32
 	z_index = 5
 	z_as_relative = false
 	var pm := PhysicsMaterial.new()

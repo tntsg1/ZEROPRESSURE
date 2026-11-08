@@ -245,26 +245,27 @@ func _pipe(p, pts: PackedVector2Array, wm: float, col: Color, lod: int) -> void:
 func _pipes(p, stage: int, lod: int) -> void:
 	var on := stage >= 1
 	var pa := paths(stage)
-	var steam := _ink(0.62) if on else _ink(0.22)
-	var feed := Pal.tint(Pal.AIR, 0.5, 1.0) if on else _ink(0.2)
-	var warm := Pal.heat(0.24, 0.8)
-	var cool := Pal.tint(Pal.AIR, 0.32, 1.0)
+	# 128 号 第 6 段: pipes are not solid: dim and thin (the steam main read as a wall under the roof)
+	var steam := _ink(0.34) if on else _ink(0.18)
+	var feed := Pal.tint(Pal.AIR, 0.3, 1.0) if on else _ink(0.16)
+	var warm := Pal.heat(0.16, 0.7)
+	var cool := Pal.tint(Pal.AIR, 0.22, 1.0)
 	for pl in pa.rad_out:
-		_pipe(p, pl, 0.34, warm, lod)
+		_pipe(p, pl, 0.22, warm, lod)
 	for pl in pa.rad_back:
-		_pipe(p, pl, 0.38, cool, lod)
+		_pipe(p, pl, 0.24, cool, lod)
 	for pl in pa.cond:
-		_pipe(p, pl, 0.32, feed, lod)
+		_pipe(p, pl, 0.22, feed, lod)
 	for pl in pa.feed:
-		_pipe(p, pl, 0.3, feed, lod)
+		_pipe(p, pl, 0.2, feed, lod)
 	# the feed pumps' risers into the header
 	for i in 3:
-		_pipe(p, PackedVector2Array([Vector2(FW_C[i] + 0.8, 24.0), Vector2(FW_C[i] + 0.8, FEED_Y)]), 0.26, feed, lod)
-		_pipe(p, PackedVector2Array([Vector2(FW_C[i] + 0.8, TRENCH[1]), Vector2(FW_C[i] + 0.8, 25.7)]), 0.22, feed, lod)
+		_pipe(p, PackedVector2Array([Vector2(FW_C[i] + 0.8, 24.0), Vector2(FW_C[i] + 0.8, FEED_Y)]), 0.18, feed, lod)
+		_pipe(p, PackedVector2Array([Vector2(FW_C[i] + 0.8, TRENCH[1]), Vector2(FW_C[i] + 0.8, 25.7)]), 0.16, feed, lod)
 	for pl in pa.steam:
-		_pipe(p, pl, 0.5, steam, lod)
+		_pipe(p, pl, 0.3, steam, lod)
 	if pa.steam.is_empty():
-		_pipe(p, PackedVector2Array([Vector2(BAY_X[0] + SX, STEAM_Y), Vector2(VALVE_X, STEAM_Y), Vector2(VALVE_X, TY), Vector2(38.6, TY)]), 0.5, steam, lod)
+		_pipe(p, PackedVector2Array([Vector2(BAY_X[0] + SX, STEAM_Y), Vector2(VALVE_X, STEAM_Y), Vector2(VALVE_X, TY), Vector2(38.6, TY)]), 0.3, steam, lod)
 	# the radiator pumps' discharges
 	_pipe(p, PackedVector2Array([Vector2(RP_C[1], 25.9), Vector2(RP_C[1], 24.6), Vector2(RP_C[1] - 0.75, 24.6), Vector2(RP_C[1] - 0.75, 19.3), Vector2(RP_C[0] - 0.75, 19.3)]), 0.34, cool, lod)
 	# the generator's bus duct to its incomer, the shore cable down the right wall
@@ -306,6 +307,9 @@ func _bay(p, i: int, stage: int, lod: int) -> void:
 			p.line(Vector2(bx + BAY_W - 0.4, y), Vector2(bx + BAY_W - 0.05, y), Color(0.13, 0.135, 0.14), 0.04)
 			y += 1.5
 	if i == 2 and stage < 2:
+		# 128 号 第 6 段: the empty bay is a closed shielded room (solid): a light fill, a bright edge
+		p.rect(shell.grow(-0.45), Color(0.075, 0.079, 0.088))
+		p.rect(shell, _ink(0.7), false, 0.12)
 		_empty_bay(p, bx, lod)
 		return
 	var edge := _ink(0.78) if live else _ink(0.45)
@@ -589,7 +593,7 @@ func moving(ci: CanvasItem, t: float, stage: int, lod: int) -> void:
 	for pl in pa.cold:
 		_dots(ci, pl, W.flow[0] * 3.0, step, Pal.heat(0.6, 1.1), 0.12)
 	for pl in pa.steam:
-		_dots(ci, pl, W.flow[1] * 5.0, step * 1.4, _ink(0.95), 0.15)
+		_dots(ci, pl, W.flow[1] * 5.0, step * 1.4, _ink(0.55), 0.09)
 	if W.flow[1] > 0.0 and W.units > 0:
 		for pl in pa.feed:
 			_dots(ci, pl, W.flow[1] * 2.5, step, Pal.tint(Pal.AIR, 0.95, 1.3), 0.11)
@@ -869,7 +873,7 @@ func hover_items(stage: int) -> Array:
 			(w("不用操作：棒位自动跟着全港用电走。", "Nothing to do: the rods follow the port's load by themselves.") if i < n else w("修好动力区（第 1 期）就会启动。", "Mending the power district (stage 1) starts it.")))
 	add.call([Rect2(PLATES.turbine[0], Vector2(PLATES.turbine[1], 0.9)), Rect2(36.4, 2.9, 21.6, DECK.y - 2.9)], w("汽轮发电机", "TURBINE-GENERATOR"),
 		w("蒸汽经主汽门、调节阀进高压缸、低压缸推动转子，带发电机发电。负荷一加上，转速和频率先往下掉，调节阀开大补上，几秒后回到 50 Hz。", "Steam through the stop and governor valves drives the HP and LP casings and the generator. A load put on drops the speed and frequency until the governor valve opens to match; in a few seconds it is back at 50 Hz."),
-		W.turbine_state(), w("在业务终端的动力控制屏可以给电弧炉设功率上限、排电不够时的先后顺序。", "The power control screen at the business console sets the furnace's cap and who comes first when short."))
+		W.turbine_state(), w("在业务终端的动力控制屏可以给电弧炉设功率上限、排%s时的先后顺序。" % Grid.short_label(0).get_slice("—", 0), "The power control screen at the business console sets the furnace's cap and who comes first when short."))
 	add.call([COND], w("冷凝器", "CONDENSER"),
 		w("把汽轮机排出的蒸汽冷成水，再由给水泵送回蒸汽发生器。它的热由散热回路带到外面的散热板排到太空。", "Turns the turbine's exhaust back into water for the feed pumps; its heat goes by the radiator loop to the radiators outside, out into space."),
 		[w("%.0f °C" % W.t_cond, "%.0f °C" % W.t_cond), "ok" if W.units > 0 else "off"], w("不用操作。", "Nothing to do."))
@@ -885,7 +889,7 @@ func hover_items(stage: int) -> Array:
 	add.call([Rect2(PLATES.switch[0], Vector2(PLATES.switch[1], 0.9)), Rect2(SG_X, SG_Y.x, CUB * W.FEEDERS.size(), SG_Y.y - SG_Y.x)], w("配电柜", "SWITCHGEAR"),
 		w("全港的电从这里分出去：发电机和电池泊位的电进来，再每区一条线送出去。哪个区开始用电，它的开关就合上（I），表针指着它现在用的电。", "Where the port's power is shared out: the units' incomer, the shore incomer, then a feeder for each district. A district starting to draw closes its breaker (I); its ammeter shows what it draws."),
 		[w("全港在用 %.1f · 自家发 %.1f 兆瓦" % [W.own + W.shore, W.own], "BUS %.1f MW · OWN %.1f · SHORE %.1f" % [W.own + W.shore, W.own, W.shore]), "ok"],
-		w("电不够时谁先用：业务终端 → 动力控制屏里调顺序，发电机不够时到供电屏买电池块。", "Who comes first when short: the business console's power control screen, where the supply line is chosen too."))
+		w("%s时谁先用：业务终端 → 动力控制屏里调顺序，发电机不够时到供电屏买电池块。" % Grid.short_label(0).get_slice("—", 0), "Who comes first when short: the business console's power control screen, where the supply line is chosen too."))
 	add.call([Rect2(SCREEN.position - Vector2(0.25, 0.25), SCREEN.size + Vector2(0.5, 0.5))], w("主控屏", "MAIN CONTROL SCREEN"),
 		w("整座电站的读数：输出 / 容量、频率、堆热功率、蒸汽、冷凝器、散热板、电池，以及最近几次自动切换。", "The plant in figures: out against capacity, frequency, reactor heat, steam, condenser, radiators, shore power, and the last automatic changeovers."),
 		[w("%.1f / %.0f MW" % [W.own, W.cap], "%.1f / %.0f MW" % [W.own, W.cap]), "ok" if stage >= 1 else "warn"], w("详细控制在下面的业务终端（按 B 附近打开）。", "The controls are at the business console below."))

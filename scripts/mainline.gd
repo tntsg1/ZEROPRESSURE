@@ -19,7 +19,7 @@ const NAMES := {
 	"trade": ["回收站只给六成", "THE RECYCLER PAYS SIXTY PER CENT"],
 	"process": ["钢锭攒够了", "ENOUGH INGOTS"],
 	"cargo": ["仓库快满了", "THE STORES ARE NEARLY FULL"],
-	"power": ["电不够用了", "SHORT OF POWER"],
+	"power": ["电力不足", "UNDERPOWERED"],
 	"tug": ["船太大，拖不动", "TOO BIG TO TOW"],
 	"berth88": ["船坞放不下了", "THE BERTH IS TOO SHORT"],
 	"ring": ["让中央转运环重新转起来", "GET THE TRANSFER RING TURNING AGAIN"],
@@ -154,7 +154,7 @@ static func trigger_text(id: String) -> String:
 		"trade": return w("船坞修好以后", "Once the berth is mended")
 		"process": return w("仓库里钢锭攒到 %.0f 吨时", "When %.0f t of ingots are in store") % INGOT_T
 		"cargo": return w("仓库用到八成时", "When the stores are 80 % full")
-		"power": return w("第一次因为缺电，炉子或叉车变慢时", "The first time the furnace or the forklifts slow for want of power")
+		"power": return w("第一次电力不足（功率低于 100%）时", "The first time the power falls under 100 %")
 		"tug": return w("星图扫到超过 %d m 的船时", "When the star map finds a hulk over %d m") % int(TugYard.MAX_LEN[0])
 		"berth88": return w("扫到超过 %d m、船坞放不下的船时", "When a hulk over %d m turns up, too long for the berth") % int(Dock.STANDARD)
 		"ring": return w("前面几区都修好以后", "Once the districts before it are mended")

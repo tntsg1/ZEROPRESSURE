@@ -154,10 +154,8 @@ static func _grid(game) -> Dictionary:
 		w("自家能发 %.0f · 已分出去 %.1f · 还空着 %.1f 兆瓦", "WE MAKE %.0f · GIVEN OUT %.1f · FREE %.1f MW") % [Grid.capacity(), Grid.reserved(game), Grid.headroom(game)],
 		w("动力区 %d / 2 期 · 大设备 %d / %d 有电", "POWER DISTRICT %d / 2 · BIG MACHINES %d / %d POWERED") % [stage, powered, Port.POWER_ITEMS.size()],
 	]
-	if Grid.shore_mw(game) > 0.0:
-		lines.insert(1, w("外购电 %.1f 兆瓦", "BOUGHT %.1f MW") % Grid.shore_mw(game))
 	if waits != "":
-		lines.push_front(w("电弧炉电不够，熔得慢", "THE FURNACE IS SHORT OF POWER"))
+		lines.push_front(Grid.short_label(Grid.pct(game, "process")) + w("：电弧炉", ": THE FURNACE"))
 	if due > 0.005:
 		lines.push_front(w("待缴电费 %s", "POWER DUE %s") % Pal.money(due))
 	var lamp := "danger" if due > 0.005 else ("warn" if waits != "" or Grid.headroom(game) < 1.0 else "ok")
@@ -239,7 +237,7 @@ static func decisions(game = null) -> Array:
 	var heat: Dictionary = d.get("industrial_heat", {})
 	var power_wait := Grid.wait_text(game)
 	if power_wait != "":
-		out.append({"level": TODO, "title": w("炉次 %s 电不够，熔得慢", "HEAT %s IS SHORT OF POWER") % str(heat.get("id", "")),
+		out.append({"level": TODO, "title": w("炉次 %s ", "HEAT %s ") % str(heat.get("id", "")) + Grid.short_label(Grid.pct(game, "process")),
 			"why": power_wait, "go": "route:port:power"})
 	elif str(heat.get("state", "")) == "processing" and not HeatAuto.on():
 		out.append({"level": TODO, "title": w("炉次 %s 等你到炉台", "HEAT %s NEEDS YOU AT THE FURNACE") % str(heat.get("id", "")),

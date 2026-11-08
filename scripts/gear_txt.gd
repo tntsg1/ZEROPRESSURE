@@ -138,7 +138,7 @@ const S := {
 	"fa_gas_line": ["气体线（净化分离 · 压缩）", "GAS LINE (PURIFY · SEPARATE · COMPRESS)"],
 	"fa_gas_line_d": ["回收的混合气在加工区净化、分离成氧和氮；拆船抽回的气不再当场折现，而是成批入库。", "Recovered mixed gas is purified and split into oxygen and nitrogen; a ship's gas is kept as a batch, not cashed."],
 	"fa_lox_tank": ["液氧冷箱与储罐", "LIQUEFIER AND LOX TANK"],
-	"fa_lox_tank_d": ["把氧液化存进 20 吨低温储罐，卖给过路货船；储罐一直漏热，冷箱要有电。", "Liquefies oxygen into a 20 t cryogenic tank for passing freighters; the tank leaks heat, the cold box needs power."],
+	"fa_lox_tank_d": ["把氧液化存进 20 吨低温储罐，去交易行卖；储罐一直漏热，冷箱要有电。", "Liquefies oxygen into a 20 t cryogenic tank to sell on the exchange; the tank leaks heat, the cold box needs power."],
 	"rp_lights": ["照明与配电", "LIGHTING & POWER"],
 	"rp_lights_d": ["船坞一半的灯是灭的，牵引场也弱。修好：两盏泛光灯全亮、甲板灯全开、边缘牵引场恢复。", "Half the berth's lamps are dead and the tractor field is weak. Repaired: both floodlights, every deck lamp, the field at full strength."],
 	"rp_net_fix": ["碎屑网", "DEBRIS NET"],

@@ -23,6 +23,7 @@ static var calm := false              # no screen shake, flashes or hit-stops
 static var film := true               # 91 号: film grain and the colour fringe (scripts/look.gd)
 static var slowmo_on := true          # 91 号: the slow-motion moment when a big piece comes free
 static var codex_cards := true        # a card the first time something new is met (scripts/codex.gd)
+static var guide_cards := true        # 132 号: the paused card the first time something happens (scripts/guide_cards.gd)
 static var playtest := false          # 108 号: the playtest recorder (scripts/playtest.gd), off by default
 # animation intensity (UI animation, 2026-10-17): "full" (glow, particles,
 # trails), "lite" (the motion without particles, afterimages or big glows),
@@ -2851,6 +2852,7 @@ static func load_settings(testing: bool) -> void:
 		fullscreen = cf.get_value("video", "fullscreen", false)
 		calm = cf.get_value("video", "calm", false)
 		codex_cards = cf.get_value("ui", "codex_cards", true)
+		guide_cards = cf.get_value("ui", "guide_cards", true)
 		playtest = cf.get_value("ui", "playtest", Demo.on())
 		anim = cf.get_value("video", "anim", "full")
 		if not anim in ANIM_LEVELS:
@@ -2884,6 +2886,7 @@ static func save_settings(testing: bool) -> void:
 	cf.set_value("video", "fullscreen", fullscreen)
 	cf.set_value("video", "calm", calm)
 	cf.set_value("ui", "codex_cards", codex_cards)
+	cf.set_value("ui", "guide_cards", guide_cards)
 	cf.set_value("ui", "playtest", playtest)
 	cf.set_value("video", "anim", anim)
 	cf.set_value("video", "reduce_motion", reduce_motion)

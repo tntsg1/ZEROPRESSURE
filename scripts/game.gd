@@ -151,6 +151,7 @@ var material_recovery_value := 0.0 # retained value counts as recovery, never ca
 var structure_t := 0.0          # metal through the furnace this job, tonnes (structure for repairs)
 var freight = null              # 130 号: the freight trains (scripts/freight_view.gd)
 var client_ships = null         # 128 号 第 2 段: the order board's clients' ships
+var top_rail                    # 128 号 第 6 段: the berth's drone tow rail under the boom
 var console_ui: Control = null  # the terminal page open over the berth
 var order_review: Control = null
 var order_review_deferred := false
@@ -265,6 +266,10 @@ func _ready() -> void:
 	dock.game = self
 	dock.world = world
 	add_child(dock)
+	# 128 号 第 6 段: the berth's top rail (scripts/top_rail.gd)
+	top_rail = preload("res://scripts/top_rail.gd").new()
+	top_rail.game = self
+	dock.add_child(top_rail)
 	add_child(world)
 	if start_ship != "":
 		ship_id = start_ship

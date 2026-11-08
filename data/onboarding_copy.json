@@ -8,7 +8,7 @@
         "Where the ingots come from"
       ],
       "body": [
-        "拆船时，船壳、甲板这些废料掉进船坞熔炉，炼成钢锭。\n\n结算时在回收整理页把钢锭拖进右边“我的仓库”，它就进了货运区仓库（A1 排）。按 F3 打开公司仓库，能看到现在有多少吨。\n\n交易行里也能买钢锭（等级 1 黑色炉料）。",
+        "拆船时，船壳、甲板这些废料掉进船坞熔炉，炼成钢锭。\n\n结算时把钢锭拖进“我的仓库”。F3 看有多少吨。\n\n交易行里也能买钢锭（等级 1 黑色炉料）。",
         "Scrap from the hull goes into the berth furnace and comes out as ingots. Keep them at settlement and they go to the cargo warehouse (row A1); F3 shows how many tonnes. The exchange sells ingots too."
       ]
     },
@@ -19,7 +19,7 @@
         "Send the ingots to the furnace"
       ],
       "body": [
-        "加工区要先修好一期。\n\n在引导卡上按「送料到炉口」，或者到加工区炉台按 E，填好这一炉的吨数（0.25～2 吨），点「把仓库炉料送到炉口」。\n\n叉车从货架取料、吊轨车运到炉口，大约 20 秒。在哪按都行：你飞过去的路上，料也在走。",
+        "加工区要先修好一期。\n\n在引导卡上按「送料到炉口」，或者到加工区炉台按 E，填好这一炉的吨数（0.25～2 吨），点「把仓库炉料送到炉口」。\n\n料自己送过去，大约 20 秒。在哪按都行。",
         "The processing district must be mended first. Press Send the feed on the guide card, or at the furnace desk set 0.25–2 t and send it. The forklift and the rail trolley bring it in about 20 s; it travels while you fly over."
       ]
     },
@@ -30,18 +30,18 @@
         "Strike the arcs"
       ],
       "body": [
-        "料到炉口后，在炉台按「通电熔化」：自动装炉、起弧，温度自己控制，不用调功率。\n\n熔得多快，看电弧炉分到多少电。炉台写着“实际在用多少、分到多少”，还有大约多久能出钢。\n\n动力区没修时，全港只有一台旧主机，约 6 兆瓦，电弧炉只能分到 3～4 兆瓦（满功率 24），一炉 2 吨要十几分钟。",
+        "料到了，按「通电熔化」。温度它自己管。\n\n熔得多快，看炉台上的功率百分比，旁边写着大约多久能出钢。\n\n动力区没修时，全港只有一台旧主机，约 6 兆瓦，电弧炉功率只有 15% 左右，一炉 2 吨要十几分钟。",
         "At the desk, Strike the arcs: it charges, strikes and holds the temperature by itself. How fast depends on the power it gets; the desk shows what it draws, what it is given and how long is left. With the power district unmended the port has about 6 MW, and the furnace gets 3–4 of its 24 MW: a 2 t heat takes over ten minutes."
       ]
     },
     {
       "id": "M04",
       "title": [
-        "电不够怎么办",
+        "电力不足怎么办",
         "Short of power"
       ],
       "body": [
-        "有三个办法，各有代价：\n\n· 买外购电补上：快，但比自家发的电贵 5 倍；\n· 在动力区控制屏把加工区排到拆船区前面：炉子快了，拆船的激光和传送带会变慢；\n· 修动力区：一期能发 30 兆瓦，从此都够用。\n\n拆船时，船坞熔炉排在前面会把电拿走，电弧炉可能停下来降温；拆完再回来，它会接着熔。",
+        "三条路：\n\n· 买块电池顶着；\n· 在供电屏把加工区排到拆船区前面，拆船现场功率会降；\n· 修动力区：一期能发 30 兆瓦，从此够用。\n\n拆船时，船坞熔炉排在前面会把电拿走，电弧炉功率掉到 0% 就停下降温；拆完再回来，它接着熔。",
         "Three ways, each with a price: buy power (five times dearer than our own), move processing ahead of salvage at the power control screen (salvage slows), or mend the power district (30 MW at stage 1). While you strip a ship the berth furnace comes first and the arc furnace may stop and cool; it carries on afterwards."
       ]
     },
@@ -63,7 +63,7 @@
         "Billets cool and go to the warehouse"
       ],
       "body": [
-        "出钢后炉里空了，不再通电，炉温会往下掉，这是正常的。\n\n钢坯在铸造线上冷却两三分钟，凉了吊轨车把它运回仓库。完成时会弹出“本次加工完成”，写着得了多少吨、放在哪一排；按 F3 在公司仓库的“加工成品”里也能看到。\n\n注意：轧机开着“连续轧”时，钢坯一入库就会被轧成钢板。",
+        "出完钢炉子空了，温度往下掉。\n\n钢坯凉两三分钟，吊轨车运回仓库。完成时弹出“本次加工完成”，写着多少吨、放在哪一排。\n\n连续轧开着的话，钢坯一入库就直接轧成钢板。",
         "After tapping the furnace is empty and draws nothing; its temperature falls, as it should. The billets cool on the line for two or three minutes and the trolley takes them home. A card says how many tonnes and which row; F3 shows them under Products. With the mill rolling on, billet is rolled into plate as soon as it comes in."
       ]
     },
@@ -116,7 +116,7 @@
       "NEXT: wait for the feed at the furnace, then strike the arcs."
     ],
     "heat.processing": [
-      "下一步：按「通电熔化」——炉盖合上、电极落下起弧，功率自动控制。化完、温度够了按「测温取样」，探头收回后按「倾炉出钢」。",
+      "按「通电熔化」。化完了测温，探头收回再出钢。",
       "NEXT: strike the arcs — the roof closes, the electrodes come down, power runs itself. Melted and hot: sample, then tap once the probe is up."
     ],
     "heat.returning": [
@@ -128,7 +128,7 @@
       "THIS HEAT IS BACK IN STOCK. Arrange delivery under Industrial Clients."
     ],
     "heat.success": [
-      "已开始。看炉口和机器人，等原料送到后再装炉。",
+      "开始了。料到了再装炉。",
       "STARTED. Wait for the robot to bring feed before charging."
     ],
     "sort.send_feed": [

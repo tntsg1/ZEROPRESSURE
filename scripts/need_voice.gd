@@ -35,14 +35,15 @@ func w(zh: String, en: String) -> String:
 
 
 func _ready() -> void:
+	live = game
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	font = Fonts.get_font("Medium")
 	font_b = Fonts.get_font("SemiBold")
 	go_b = _button(w("带我去", "TAKE ME"), _go)
 	ok_b = _button(w("知道了", "GOT IT"), fold)
 	BenchFx.primary(go_b)
-	BenchFx.note(go_b, w("打开这一步要用的页面，或者带你去要去的地方", "Open what this step needs, or lead you there"))
-	BenchFx.note(ok_b, w("收起卡片，左上角主线条接着说这一步", "Fold the card; the strip keeps saying the step"))
+	BenchFx.note(go_b, w("去做这一步", "Open what this step needs, or lead you there"))
+	BenchFx.note(ok_b, w("收起，左上角还会提醒", "Fold the card; the strip keeps saying the step"))
 
 
 func _button(s: String, f: Callable) -> Button:
@@ -190,34 +191,42 @@ static func _w(zh: String, en: String) -> String:
 	return zh if Txt.zh else en
 
 
+# 132 号 (user 2026-11-07): "电力不足—功率 xx%", the port's figure while a game runs
+static var live = null
+static func _power_head() -> String:
+	if live != null and is_instance_valid(live):
+		return Grid.short_label(Grid.pct(live))
+	return _w("电力不足", "UNDERPOWERED")
+
+
 static func card_of(id: String) -> Dictionary:
 	match id:
 		"lights": return {"title": _w("先修船坞的照明", "MEND THE BERTH'S LIGHTS FIRST"),
-			"why": _w("船坞的照明坏了：暗处看不清读数，切割也慢。这是船坞自己的设备，先修它。", "The berth's lights are out: readings are hard to see in the dark and cutting is slow. It is the berth's own gear: mend it first."),
+			"why": _w("照明坏了。暗处看不清读数，切得也慢。先修它。", "The berth's lights are out: readings are hard to see in the dark and cutting is slow. It is the berth's own gear: mend it first."),
 			"opens": [_w("照明恢复：读数看得清，切割变快", "Lights back: clear readings, faster cutting")]}
 		"furnace": return {"title": _w("修熔炉和接碎料的网", "MEND THE FURNACE AND THE DEBRIS NET"),
-			"why": _w("现在拆下来的碎料一大半漏掉了。熔炉和接碎料的网修好，碎料就能接住、炼成钢锭。", "Most of the scrap cut loose is lost now. With the furnace and the net mended it is caught and melted into ingots."),
+			"why": _w("碎料一大半漏掉了。修好熔炉和网，碎料接住，炼成钢锭。", "Most of the scrap cut loose is lost now. With the furnace and the net mended it is caught and melted into ingots."),
 			"opens": [_w("碎料接住，炼成钢锭进仓库", "Scrap caught and melted into ingots for the stores")]}
 		"trade": return {"title": _w("贸易港能修了", "THE TRADE PORT CAN BE MENDED"),
-			"why": _w("船坞修好了，可值钱的东西现在只能卖给回收站，只给市价的六成。修好贸易港，同样的东西能按市价卖。", "The berth is mended, but the recycler pays sixty per cent of market. With the trade port the same goods sell at market."),
-			"opens": [_w("交易行：按市价卖，也能买零件和钢材（即将开放）", "Exchange: sell at market, buy parts and steel (opening soon)"), _w("订单板：客户点名要货，给市价的 130%（即将开放）", "Order board: clients name goods at 130 % of market (opening soon)")]}
+			"why": _w("东西现在只能卖回收站，打六折。修好贸易港，按市价卖。", "The berth is mended, but the recycler pays sixty per cent of market. With the trade port the same goods sell at market."),
+			"opens": [_w("交易行：按市价买卖", "Exchange: sell at market, buy parts and steel (opening soon)"), _w("订单板：点名要货，给 130%", "Order board: clients name goods at 130 % of market (opening soon)")]}
 		"process": return {"title": _w("钢锭够炼一炉了", "ENOUGH INGOTS FOR A HEAT"),
-			"why": _w("仓库里钢锭攒到 2 吨了。钢锭炼成钢坯更值钱，也是以后订单要的东西。", "Two tonnes of ingots are in store. Melted into billets they are worth more, and orders will ask for them."),
-			"opens": [_w("加工区炉台：第一炉手把手带你炼，之后一键", "The furnace desk: the first heat by the hand, then one click")]}
+			"why": _w("钢锭攒够 2 吨了。炼成钢坯更值钱，订单也要。", "Two tonnes of ingots are in store. Melted into billets they are worth more, and orders will ask for them."),
+			"opens": [_w("加工区炉台：第一炉自己炼一次，以后排队就行", "The furnace desk: the first heat by the hand, then one click")]}
 		"cargo": return {"title": _w("仓库快满了", "THE STORES ARE NEARLY FULL"),
 			"why": _w("仓库用到八成了，再拆一艘可能放不下。修好货运区，仓库变大。", "The stores are 80 % full; the next haul may not fit. The cargo district makes them bigger."),
 			"opens": [_w("仓库 8×32 → 8×48 格", "Stores 8×32 → 8×48 cells")]}
-		"power": return {"title": _w("电不够用了", "SHORT OF POWER"),
-			"why": _w("刚才因为缺电，干活变慢了。拆船现场先用电，港区排在后面。修好动力区，自家发电。", "Work just slowed for want of power: the strip comes first, the port after. The power district makes your own."),
-			"opens": [_w("自家发电，炉子和叉车不再因缺电变慢", "Your own power: no more slowdowns")]}
+		"power": return {"title": _power_head(),
+			"why": _power_head() + _w("。拆船现场先用电，港区排后面。修好动力区。", "Work just slowed for want of power: the strip comes first, the port after. The power district makes your own."),
+			"opens": [_w("自家发电，功率回到 100%", "Your own power: back to 100 %")]}
 		"tug": return {"title": _w("这艘船太大，拖不动", "TOO BIG TO TOW"),
 			"why": _w("星图扫到一艘超过 44 m 的船，租来的拖船拖不动。修好拖船站，自家拖船就能拖。", "The star map found a hulk over 44 m; the rented tug cannot tow it. The tug station's own tugs can."),
 			"opens": [_w("自家拖船，能拖超过 44 m 的船", "Your own tugs: hulks over 44 m")]}
 		"berth88": return {"title": _w("船坞放不下了", "THE BERTH IS TOO SHORT"),
-			"why": _w("发现了一艘超过 50 m 的船。可以先拆小船、卖货攒钱，再把船坞扩到 88 m，接更大的船。", "You've found a ship over 50 m. Strip smaller ships and sell the haul to fund an 88 m berth for larger jobs."),
+			"why": _w("找到一艘 50 米以上的船，船坞放不下。先拆小船攒钱，再扩到 88 米。", "You've found a ship over 50 m. Strip smaller ships and sell the haul to fund an 88 m berth for larger jobs."),
 			"opens": [_w("船坞 88 m，能拆更大的船", "An 88 m berth for bigger hulks")]}
 		"ring": return {"title": _w("让中央转运环重新转起来", "GET THE TRANSFER RING TURNING"),
-			"why": _w("各区都修好了，它们之间靠中央转运环连起来。", "The districts are mended; the transfer ring ties them together."),
+			"why": _w("各区都修好了。剩中央转运环。", "The districts are mended; the transfer ring ties them together."),
 			"opens": [_w("中央转运环转起来", "The ring turning again")]}
 	return {"title": Mainline.name_of(id), "why": "", "opens": []}
 

@@ -13,6 +13,8 @@ const LIST_X := 60.0
 const LIST_W := 470.0
 const ROW_H := 30.0
 const DET_X := 590.0
+const GuideCards = preload("res://scripts/guide_cards.gd")
+const ARGS := {"n": "xx", "who": "", "client": "", "m": "3"}
 
 var font: Font
 var font_b: Font
@@ -70,6 +72,9 @@ func focus(id: String) -> void:
 
 # the entries listed now: met ones first in the book's order, unmet after
 func rows() -> Array:
+	# 132 号: the last tab — the situation cards seen so far, shown again on Enter
+	if _guide_tab():
+		return GuideCards.seen_ids()
 	var all: Array = Codex.ids(Codex.CATS[cat])
 	if only_ship and ship != "":
 		var mine := _ship_set()
@@ -100,6 +105,24 @@ func _ship_set() -> Dictionary:
 	return _mine
 
 
+func _guide_tab() -> bool:
+	return cat == Codex.CATS.size()
+
+
+func _ncat() -> int:
+	return Codex.CATS.size() + 1
+
+
+func _replay_rect() -> Rect2:
+	return Rect2(DET_X, 190.0 + 360.0, 260.0, 58.0)
+
+
+func replay() -> void:
+	var id := chosen()
+	if _guide_tab() and id != "" and not GuideCards.showing():
+		GuideCards.show(null, id, ARGS, true, self)
+
+
 func chosen() -> String:
 	var l := rows()
 	return l[sel] if sel >= 0 and sel < l.size() else ""
@@ -126,7 +149,7 @@ func _process(dt: float) -> void:
 		if _row_rect(i).has_point(m) and _list_rect().has_point(m):
 			hover_row = i
 	hover_tab = -1
-	for i in Codex.CATS.size():
+	for i in _ncat():
 		if _tab_rect(i).has_point(m):
 			hover_tab = i
 	hover_filter = ship != "" and _filter_rect().has_point(m)
@@ -142,6 +165,8 @@ func _input(ev: InputEvent) -> void:
 		match ev.physical_keycode:
 			KEY_ESCAPE:
 				close()
+			KEY_ENTER, KEY_KP_ENTER:
+				replay()
 			KEY_LEFT, KEY_A:
 				_set_cat(cat - 1)
 			KEY_RIGHT, KEY_D:
@@ -168,6 +193,8 @@ func _input(ev: InputEvent) -> void:
 			MOUSE_BUTTON_LEFT:
 				if hover_close:
 					close()
+				elif _guide_tab() and _replay_rect().has_point(m):
+					replay()
 				elif hover_tab >= 0:
 					_set_cat(hover_tab)
 				elif hover_filter:
@@ -195,7 +222,7 @@ func _input(ev: InputEvent) -> void:
 
 
 func _set_cat(i: int) -> void:
-	cat = posmod(i, Codex.CATS.size())
+	cat = posmod(i, _ncat())
 	sel = 0
 	scroll = 0.0
 	det_scroll = 0.0
@@ -263,13 +290,13 @@ func _draw() -> void:
 	draw_line(cr.position + Vector2(9, 9), cr.end - Vector2(9, 9), Pal.ink(ca), 2.0, true)
 	draw_line(Vector2(cr.end.x - 9, cr.position.y + 9), Vector2(cr.position.x + 9, cr.end.y - 9), Pal.ink(ca), 2.0, true)
 	# kinds, each with its progress
-	for i in Codex.CATS.size():
+	for i in _ncat():
 		var r := _tab_rect(i)
 		var on := i == cat
-		var n := Codex.count(Codex.CATS[i])
+		var n: Vector2i = Codex.count(Codex.CATS[i]) if i < Codex.CATS.size() else Vector2i(GuideCards.seen_ids().size(), GuideCards.CARDS.size())
 		draw_rect(r, Color(0.07, 0.074, 0.084, 1.0) if on else (Color(0.05, 0.053, 0.06, 1.0) if hover_tab == i else Color(0, 0, 0, 0)))
 		draw_rect(Rect2(r.position.x, r.end.y - 3, r.size.x, 3), Pal.heat(1.0, 1.1) if on else Pal.ink(0.12))
-		UI.text(self, font_b, Txt.t("cxu_cat_" + Codex.CATS[i]), r.position + Vector2(14, 30), 18, Pal.ink(0.95 if on else 0.6))
+		UI.text(self, font_b, Txt.t("cxu_cat_" + (Codex.CATS[i] if i < Codex.CATS.size() else "guide")), r.position + Vector2(14, 30), 18, Pal.ink(0.95 if on else 0.6))
 		UI.text(self, font, "%d / %d" % [n.x, n.y], Vector2(r.end.x - 12, r.position.y + 30), 14, Pal.ink(0.75 if on else 0.4), 1)
 	# this ship / everything
 	if ship != "":
@@ -306,6 +333,12 @@ func _list() -> void:
 		if r.end.y < lr.position.y or r.position.y > lr.end.y:
 			continue
 		var id: String = l[i]
+		if _guide_tab():
+			if i == sel:
+				draw_rect(r, Color(0.09, 0.094, 0.105, 1.0))
+				draw_rect(Rect2(r.position, Vector2(3, r.size.y)), Pal.heat(1.0, 1.1))
+			UI.text(self, font, GuideCards.title(id, ARGS), r.position + Vector2(16, 20), 15, Pal.ink(0.95 if i == sel else 0.75))
+			continue
 		var met := Codex.seen(id)
 		var on := i == sel
 		if on:
@@ -334,6 +367,16 @@ func _detail() -> void:
 	var top := 190.0
 	draw_rect(Rect2(x - 20, top, w + 40, size.y - top - 70.0), Color(0.03, 0.032, 0.037, 1.0))
 	if id == "":
+		return
+	if _guide_tab():
+		UI.text(self, font_b, GuideCards.title(id, ARGS), Vector2(x, top + 60), 30, Pal.ink(0.95))
+		var yy := top + 120.0
+		for s in GuideCards.lines(id, ARGS):
+			UI.text(self, font, str(s), Vector2(x, yy), 20, Pal.ink(0.8))
+			yy += 40.0
+		var rr := _replay_rect()
+		draw_rect(rr, UiSkin.ACCENT)
+		UI.text(self, font_b, Txt.t("cxu_replay"), rr.position + Vector2(rr.size.x * 0.5, 38), 20, Color(0.08, 0.06, 0.05), 0)
 		return
 	var e: Dictionary = CodexData.E[id]
 	var art_box := Rect2(x, top + 24, 420, 300)

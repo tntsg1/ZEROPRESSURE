@@ -75,9 +75,9 @@ func _auto_power() -> void:
 func ask_shore() -> Dictionary:
 	var batch := heat()
 	if batch.is_empty() or str(batch.get("state","")) != "processing" or batch.get("shore_asked",false) or batch.get("grid",{}).get("free",false):
-		return {"ok":false,"reason":"现在不用买外购电"}
+		return {"ok":false,"reason":"现在不需要"}
 	if str(Grid.ctl().line) == "own_only":
-		return {"ok":false,"reason":"动力控制屏设成了“只用自家发的电”，不能买外购电"}
+		return {"ok":false,"reason":"供电屏设成了只用自家发的电"}
 	batch.shore_asked = true
 	if not checkpoint(): return {"ok":false,"reason":"保存失败"}
 	return {"ok":true}
@@ -147,10 +147,10 @@ func info() -> Dictionary:
 		if used <= 0.05:
 			var why2 := Grid.wait_text(game)
 			if why2 == "":
-				why2 = _w("电网现在没分给电弧炉电。","The grid gives the furnace nothing now.")
-			return {"key":"starved","n":5,"title":_w("没在加热：电弧炉没分到电","NOT HEATING: NO POWER FOR THE FURNACE"),"text":_w("%d °C，温度在降。%s","%d °C and falling. %s") % [int(f.T),why2],"press":"shore" if _shore_ok() else "","eta":-1.0}
+				why2 = Grid.short_label(0) + _w("。","." )
+			return {"key":"starved","n":5,"title":_w("没在加热：","NOT HEATING: ") + Grid.short_label(0),"text":_w("%d °C，温度在降。%s","%d °C and falling. %s") % [int(f.T),why2],"press":"","eta":-1.0}
 		var eta2 := _melt_left()
-		var line := _w("实际在用 %.1f MW（分到 %.1f / %.0f MW）· 未熔 %.2f t · 出钢要 %d °C 以上，别超过 1710 °C","DRAWING %.1f MW (GIVEN %.1f / %.0f MW) · %.2f t UNMELTED · TAP AT %d °C+, NOT OVER 1710 °C") % [used,given,Grid.furnace_cap(),float(f.m_s)+float(f.bunker),int(SmelterModel.T_TAP)]
+		var line := _w("功率 %d%% · 未熔 %.2f t · 出钢要 %d °C 以上，别超过 1710 °C","POWER %d%% · %.2f t UNMELTED · TAP AT %d °C+, NOT OVER 1710 °C") % [mini(100, int(floor(given / maxf(Grid.furnace_cap(), 0.001) * 100.0 + 0.5))),float(f.m_s)+float(f.bunker),int(SmelterModel.T_TAP)]
 		if eta2 > 0.0:
 			line += _w(" · 约 %s 后能出钢"," · ready to tap in about %s") % _span(eta2)
 		var short := Grid.wait_text(game)
@@ -561,7 +561,13 @@ func _adopt() -> bool:
 		var location: Array = heat().transport.get("at",[at.x,at.y])
 		at = Vector2(float(location[0]),float(location[1]))
 		var side := Geom.M*sqrt(_transport_mass())
-		if not Loads.clear_spawn(get_world_2d().direct_space_state,at,Vector2.ONE*side):
+		# 128 号 第 6 段: the billets come off the casting line inside what the art draws solid there
+		# (PortStructure.solids): the trolley's loads are let through it, so their spot is free of it too
+		var ex: Array[RID] = []
+		var ps = game.get("port_structure")
+		if ps != null and is_instance_valid(ps) and ps.get("solids") != null:
+			ex.append(ps.solids.get_rid())
+		if not Loads.clear_spawn(get_world_2d().direct_space_state,at,Vector2.ONE*side,ex):
 			waiting = "等待装卸位"
 			return false
 		p = game.world.add_piece("cargo",Geom.rect_poly(Rect2(at-Vector2.ONE*side*0.5,Vector2.ONE*side)),{"key":key,"mass":_transport_mass(),"cls":"equip","scope":false,"value":0.0,"label":"FEED" if heat().state == "raw_transport" else "BILLET"})
@@ -843,8 +849,8 @@ func _process(dt: float) -> void:
 	elif batch.state == "processing" and batch.get("grid",{}).is_empty(): waiting = "等电：" + Grid.wait_text(game)
 	# 125 号: short of power only while there is a charge to heat (not while the billets cool)
 	elif batch.state == "processing" and Grid.wait_text(game) != "" and float(furnace().m_s)+float(furnace().m_l)+float(furnace().bunker) > 0.000001: waiting = Grid.wait_text(game)
-	elif batch.state == "processing" and float(furnace().m_s)+float(furnace().m_l)+float(furnace().bunker) <= 0.000001 and (waiting.begins_with("电不够") or waiting.begins_with("SHORT")): waiting = ""
-	elif waiting == "电费余额不足，已停止新增供电" or waiting.begins_with("等电：") or waiting.begins_with("电不够"): waiting = ""
+	elif batch.state == "processing" and float(furnace().m_s)+float(furnace().m_l)+float(furnace().bunker) <= 0.000001 and Grid.is_short_text(waiting): waiting = ""
+	elif waiting == "电费余额不足，已停止新增供电" or Grid.is_short_text(waiting): waiting = ""
 	if batch.state == "processing":
 		if furnace().manual_shipped_t >= float(batch.quantity)-0.000001 and furnace().phase == "hold":
 			batch.quality = furnace().quality_certificate()
@@ -926,6 +932,12 @@ func _physics_process(dt: float) -> void:
 		if robot is PhysicsBody2D and body is PhysicsBody2D:
 			robot.add_collision_exception_with(body)
 			body.add_collision_exception_with(robot)
+			# 128 号 第 6 段: the trolley runs its own overhead rail through the racks' tops and past the
+			# mill: what the districts' art draws solid (PortStructure.solids) does not stop it or its load
+			var ps = game.get("port_structure")
+			if ps != null and is_instance_valid(ps) and ps.get("solids") != null:
+				robot.add_collision_exception_with(ps.solids)
+				body.add_collision_exception_with(ps.solids)
 		while budget > 0.001 and index < path.size():
 			var delta: Vector2 = (path[index]-body.global_position).limit_length(minf(budget,0.5*Geom.M))
 			if robot.test_move(robot.global_transform,delta) or not Loads.move(body,delta):

@@ -341,6 +341,36 @@ static func groups_now(game) -> Dictionary:
 	return out
 
 
+# 132 号 (user 2026-11-07): short of power is said one way only — "电力不足—功率 xx%", xx what is
+# given over what is asked (the whole port, or one group); 100 when nothing is short
+static func pct(game, group := "") -> int:
+	if game == null or not is_instance_valid(game):
+		return 100
+	var gn := groups_now(game)
+	var want := 0.0
+	var got := 0.0
+	for g in gn:
+		if group != "" and str(g) != group:
+			continue
+		want += float(gn[g].want)
+		got += float(gn[g].own) + float(gn[g].shore)
+	if want <= 0.001 or got >= want - 0.001:
+		return 100
+	return clampi(int(floor(got / want * 100.0)), 0, 99)
+
+
+# a status line that says the furnace or a machine waits for power (the old words and the new)
+static func is_short_text(s: String) -> bool:
+	for pre in ["电力不足", "UNDERPOWERED", "电不够", "SHORT", "等电"]:
+		if s.begins_with(pre):
+			return true
+	return false
+
+
+static func short_label(p: int) -> String:
+	return w("电力不足—功率 %d%%", "UNDERPOWERED — %d%% POWER") % p
+
+
 # every load on the bus now: [{id, name, group, rated, mw (drawing now), own, shore, k, state}]
 # state: "base" | "run" | "short" (given less than half of what it asks) | "idle"
 static func loads(game) -> Array:
@@ -450,7 +480,7 @@ static func short_text(game, id: String, group: String = "process") -> String:
 	for g in o.slice(0, maxi(0, o.find(group))):
 		if float(gn.get(g, {}).get("own", 0.0)) + float(gn.get(g, {}).get("shore", 0.0)) > 0.05:
 			ahead.append(group_name(g))
-	var why := w("供电 %d%%：动力区只发 %.0f MW", "POWER %d%%: THE PLANT MAKES %.0f MW") % [int(kk * 100.0), capacity()]
+	var why := short_label(int(kk * 100.0))
 	if not ahead.is_empty():
 		why += w("，排在%s之后", ", AFTER %s") % "、".join(ahead)
 	return why
@@ -469,8 +499,8 @@ static func verdict(game) -> Dictionary:
 	if not short.is_empty():
 		var who := PackedStringArray()
 		for s in short:
-			who.append(w("%s只拿到 %d%%", "%s gets %d%%") % s)
-		return {"ok": false, "t": w("电不够：", "SHORT OF POWER: ") + "、".join(who) + w("，干活变慢", ", working slower"), "how": short_fix()}
+			who.append(w("%s %d%%", "%s %d%%") % s)
+		return {"ok": false, "t": short_label(pct(game)) + w("：", ": ") + "、".join(who), "how": short_fix()}
 	if headroom(game) < 1.0:
 		return {"ok": true, "t": w("电刚好够用：再开大设备就不够了", "JUST ENOUGH: ONE MORE BIG MACHINE AND IT RUNS SHORT"), "how": ""}
 	return {"ok": true, "t": w("电够用：在用 %.1f，自家能发 %.0f 兆瓦", "ENOUGH POWER: %.1f IN USE OF %.0f MW") % [reserved(game) + shore_mw(game), capacity()], "how": ""}
@@ -485,7 +515,7 @@ static func bought_x() -> float:
 static func short_fix() -> String:
 	if PowerSupply5.ENABLED:
 		return w("修动力区，或在供电屏把加工区往前拖、买一块电池", "Mend the power district, or drag processing up / buy a battery block at the power screen")
-	return w("修动力区，或在动力控制屏把加工区往前调、买外购电", "Mend the power district, or move processing up / take shore power at the power control screen")
+	return w("修动力区，或在供电屏把加工区往前拖", "Mend the power district, or drag processing up at the power screen")
 
 
 static func wait_text(game) -> String:
@@ -508,8 +538,8 @@ static func wait_text(game) -> String:
 	for g in o.slice(0, o.find("process")):
 		if float(gn.get(g, {}).get("own", 0.0)) > 0.05:
 			ahead.append(group_name(g))
-	var why := w("电不够：电弧炉只分到 %.1f / %.0f MW", "SHORT OF POWER: THE FURNACE GETS %.1f / %.0f MW") % [given, furnace_cap()]
+	var why := short_label(int(floor(given / maxf(furnace_cap(), 0.001) * 100.0))) + w("：电弧炉", ": THE FURNACE")
 	if not ahead.is_empty():
 		why += w("，排在%s之后", ", AFTER %s") % "、".join(ahead)
-	why += w("。修动力区、在供电屏把加工区往前拖，或买一块电池。", ". MEND THE POWER DISTRICT, DRAG PROCESSING UP, OR BUY A BATTERY BLOCK.") if PowerSupply5.ENABLED else w("。修动力区、在控制屏把加工区往前调，或买外购电。", ". MEND THE POWER DISTRICT, MOVE PROCESSING UP, OR TAKE SHORE POWER.")
+	why += w("。修动力区、在供电屏把加工区往前拖，或买一块电池。", ". MEND THE POWER DISTRICT, DRAG PROCESSING UP, OR BUY A BATTERY BLOCK.") if PowerSupply5.ENABLED else w("。修动力区，或在供电屏把加工区往前拖。", ". MEND THE POWER DISTRICT, OR DRAG PROCESSING UP.")
 	return why

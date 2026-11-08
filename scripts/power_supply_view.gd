@@ -570,7 +570,10 @@ func _level(r: Rect2, k: float, col: Color) -> void:
 func _valve(at: Vector2, open: bool) -> void:
 	var m := M()
 	var h := 0.32 * m
-	draw_colored_polygon(PackedVector2Array([at + Vector2(-h, -h * 0.6), at + Vector2(h, h * 0.6), at + Vector2(h, -h * 0.6), at + Vector2(-h, h * 0.6)]), Pal.tint(Pal.FLUID, 0.95, 1.4) if open else _ink(0.55))
+	# the bow-tie valve symbol: two triangles meeting at the stem (one crossed quad cannot be triangulated)
+	var vc := Pal.tint(Pal.FLUID, 0.95, 1.4) if open else _ink(0.55)
+	draw_colored_polygon(PackedVector2Array([at + Vector2(-h, -h * 0.6), at, at + Vector2(-h, h * 0.6)]), vc)
+	draw_colored_polygon(PackedVector2Array([at + Vector2(h, -h * 0.6), at + Vector2(h, h * 0.6), at]), vc)
 	_thin(at, at + Vector2(0, -0.45) * m, 0.7, 0.06)
 	draw_line(at + Vector2(-0.25, -0.45) * m, at + Vector2(0.25, -0.45) * m, _ink(0.8), maxf(1.0, 0.07 * m))
 

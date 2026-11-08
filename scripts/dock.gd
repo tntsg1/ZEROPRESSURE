@@ -389,6 +389,10 @@ func _bounds() -> void:
 		segs.pop_back()
 		segs.append([Vector2(TOWER_X,RAIL_Y) * M,Vector2(gate.position.x,RAIL_Y) * M])
 		segs.append([Vector2(gate.end.x,RAIL_Y) * M,Vector2(ARM_X1,RAIL_Y) * M])
+	# 128 号 第 6 段: the slim girder the equipment rail runs on past the boom is drawn as truss: solid
+	var gx1 := equip_rail_x1() + 2.6
+	if gx1 > ARM_X1 + 0.2:
+		segs.append([Vector2(ARM_X1, RAIL_Y - 0.2) * M, Vector2(gx1, RAIL_Y - 0.2) * M])
 	for s in segs:
 		var cs := CollisionShape2D.new()
 		var sh := SegmentShape2D.new()
@@ -547,7 +551,7 @@ func _physics_process(dt: float) -> void:
 	var reserved: bool = Career.plant_reserved(game)
 	var reach_max := maxf(FIELD, SCRAP_FIELD) * Geom.M
 	var M := Geom.M
-	var inner := Rect2((BOUNDS.position + Vector2(0.0, 2.0)) * M, (BOUNDS.size - Vector2(2.5, 2.0)) * M)
+	var inner := field_rect()
 	var trough_near := (TROUGH_Y - 12.0) * M
 	var has_buffer: bool = game.has_upgrade("buffer")
 	var zps: Array = []
@@ -617,8 +621,10 @@ func _physics_process(dt: float) -> void:
 		# the tractor field eases strays back in over the open edges
 		var pull := Vector2.ZERO if inner.has_point(com) else field_pull(com)
 		if pull != Vector2.ZERO:
-			b.apply_central_impulse(pull * b.mass * step)
-			b.linear_velocity *= exp(-0.8 * step)
+			# 128 号 第 6 段追加: the pull and the damping as one impulse. Setting linear_velocity right
+			# after an impulse wrote back the velocity from before it, so the field only ever slowed a
+			# stray down and never brought it back: it hung over the gate as if it had hit something
+			b.apply_central_impulse((pull * step + b.linear_velocity * (exp(-0.8 * step) - 1.0)) * b.mass)
 		# A gripped rail-arm load belongs to its assigned mouth until release.
 		# Other receivers must not steal it while the arm passes their fields.
 		var arm_receiver: String = str(b.get_meta("arm_receiver","")) if b.has_meta("arm_receiver") else ""
@@ -803,10 +809,41 @@ func _process_inner(dt: float) -> void:
 		add_node.queue_redraw()
 
 
-# acceleration the field gives at a point (zero well inside the berth)
-func field_pull(p: Vector2) -> Vector2:
+# 128 号 第 6 段追加 (user: "零件会撞上，无人机却直接穿过去"): the tractor field's box, px. Its top was
+# 3 m over the rail, out in the port corridor past the gate, so a loose piece drifting out of the gate
+# stopped in mid-air among the corridor's tram stop while the drone flew on (in the port the drone keeps
+# the port's own bounds, scripts/port_access.gd). Now it stands at the rail's top: the field holds the
+# pieces in the berth at the gate and over the open right end, drawn there as a dashed curtain
+# (draw_field_curtain), plainly not a wall: it stops pieces only.
+static func field_rect() -> Rect2:
 	var M := Geom.M
-	var inner := Rect2((BOUNDS.position + Vector2(0.0, 2.0)) * M, (BOUNDS.size - Vector2(2.5, 2.0)) * M)
+	var top := RAIL_Y - 0.6
+	return Rect2(Vector2(BOUNDS.position.x, top) * M, Vector2(BOUNDS.size.x - 2.5, BOUNDS.end.y - top) * M)
+
+
+# acceleration the field gives at a point (zero well inside the berth)
+# the field's open edges, where only it holds the pieces: a dashed, faint curtain (never a solid line)
+func _field_curtain(fr: Rect2, M: float) -> void:
+	var col := Pal.tint(Pal.AIR, 0.32, 1.2)
+	var edges: Array = []
+	if port_open():
+		var gate := port_gate()
+		edges.append([Vector2(gate.position.x * M, fr.position.y), Vector2(gate.end.x * M, fr.position.y)])
+	var gx1 := (equip_rail_x1() + 2.6) * M
+	if gx1 < fr.end.x:
+		edges.append([Vector2(maxf(gx1, ARM_X1 * M), fr.position.y), Vector2(fr.end.x, fr.position.y)])
+	edges.append([Vector2(fr.end.x, fr.position.y), Vector2(fr.end.x, FLOOR_Y * M)])
+	for e in edges:
+		var a: Vector2 = e[0]
+		var b: Vector2 = e[1]
+		var n := int(a.distance_to(b) / (0.8 * M))
+		for i in n:
+			if i % 2 == 0:
+				_ab.draw_line(a.lerp(b, float(i) / n), a.lerp(b, float(i + 1) / n), col, 1.6)
+
+
+func field_pull(p: Vector2) -> Vector2:
+	var inner := field_rect()
 	if inner.has_point(p):
 		return Vector2.ZERO
 	var c := inner.get_center()
@@ -816,7 +853,10 @@ func field_pull(p: Vector2) -> Vector2:
 		field_glow.append([q, 1.0])
 	# the run-down berth: the field is weak until the power is repaired
 	var weak := 1.0 if game == null or game.has_upgrade("lights") else 0.5
-	return ((q - p).normalized() * (60.0 + depth * 1.6) + (c - p).normalized() * 10.0) * weak
+	# 128 号 第 6 段追加: over the top edge (the gate, the open end past the girder) it holds hard, so a
+	# piece stops at the dashed curtain instead of drifting metres out into the corridor
+	var hard := 4.0 if p.y < inner.position.y else 1.0
+	return ((q - p).normalized() * (60.0 + depth * 1.6) * hard + (c - p).normalized() * 10.0) * weak
 
 
 # scrap: nothing whole to save and nothing dangerous in it
@@ -2464,8 +2504,9 @@ func _draw_add_body() -> void:
 	for bp in [Vector2(ARM_X1, RAIL_Y - 0.3), Vector2(FLOOR_X1, FLOOR_Y + 0.3)]:
 		_ab.draw_texture_rect(tex, Rect2(bp * M - Vector2(18, 18), Vector2(36, 36)), false, Pal.heat(0.25 + 0.6 * blink, 1.8))
 		FastDraw.circle(_ab, bp * M, 2.5, Pal.heat(0.6 + 0.4 * blink, 2.0))
-	var fr := Rect2((BOUNDS.position + Vector2(0.0, 2.0)) * M, (BOUNDS.size - Vector2(2.5, 2.0)) * M)
+	var fr := field_rect()
 	var fb := 0.5 + 0.5 * sin(t * 1.3 + 1.0)
+	_field_curtain(fr, M)
 	for cp in [fr.position, Vector2(fr.end.x, fr.position.y), Vector2(fr.end.x, fr.end.y)]:
 		_ab.draw_texture_rect(tex, Rect2(cp - Vector2(12, 12), Vector2(24, 24)), false, Pal.ink(0.12 + 0.2 * fb, 1.3))
 	# the field lights up where something leans on it
