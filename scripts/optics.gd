@@ -326,7 +326,8 @@ func on_freed(b) -> void:
 func _draw() -> void:
 	if not active():
 		return
-	_draw_tags()
+	if game.ship_id != "sp_precise":
+		_draw_tags()
 	if cover <= 0.0:
 		return
 	var cv: Dictionary = cfg.get("cover", {})

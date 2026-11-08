@@ -24,7 +24,7 @@ static func w(zh: String, en: String) -> String:
 static func item_name(key: String) -> String:
 	var item := key.split(":")[0]
 	var grade := key.split(":")[1] if key.find(":") >= 0 else "0"
-	var names := {"mixed_metal": ["未分选金属", "MIXED METAL"], "ferrous_scrap": ["黑色炉料", "FERROUS SCRAP"], "nonferrous_mix": ["有色混合", "NONFERROUS MIX"], "steel_billet": ["钢坯", "STEEL BILLET"], "steel_plate": ["钢板", "STEEL PLATE"], "steel_section": ["型材", "STEEL SECTIONS"]}
+	var names := {"mixed_metal": ["未分选金属", "MIXED METAL"], "ferrous_scrap": ["黑色炉料", "FERROUS SCRAP"], "nonferrous_mix": ["有色混合", "NONFERROUS MIX"], "steel_billet": ["方坯", "STEEL BILLET"], "steel_slab": ["板坯", "STEEL SLAB"], "steel_small": ["小锭", "SMALL INGOT"], "steel_plate": ["钢板", "STEEL PLATE"], "steel_section": ["型材", "STEEL SECTIONS"]}
 	# 64 号: the grade-1 ferrous feed is the berth's cast ingot, called so
 	if key == Exchange.INGOT and Exchange.INGOTS:
 		return w("钢锭", "STEEL INGOT")

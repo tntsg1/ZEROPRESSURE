@@ -7,7 +7,7 @@ extends CanvasLayer
 
 const SHOW_S := 5.2
 const W := 520.0
-const H := 150.0
+const H := 132.0
 
 var item := ""                  # its name and tag
 var value := 0.0
@@ -76,14 +76,11 @@ func _draw_card() -> void:
 		c.draw_rect(Rect2(Vector2(x - 40.0, r.position.y), Vector2(40.0, H)), Color(1, 1, 1, 0.05 * a * (1.0 - sw)))
 	var x0 := r.position.x + 24.0
 	c.draw_string(font, Vector2(x0, r.position.y + 30.0), w("第一件回收", "FIRST RECOVERY"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(acc, 0.95 * a))
-	c.draw_string(font, Vector2(r.end.x - 24.0 - 140.0, r.position.y + 30.0), "BERTH 07 · %s" % Time.get_time_string_from_system().substr(0, 5), HORIZONTAL_ALIGNMENT_RIGHT, 140.0, 12, Color(Pal.ink(0.45), a))
 	c.draw_string(font_b, Vector2(x0, r.position.y + 62.0), item, HORIZONTAL_ALIGNMENT_LEFT, W - 48.0, 20, Color(Pal.ink(0.96), a))
 	# the money rolls up to its value
 	var roll := Pal.ease_out(clampf((t - 0.4) / 1.1, 0.0, 1.0))
 	var shown := "+" + Pal.money(snappedf(value * roll, 1.0))
 	c.draw_string(font_b, Vector2(x0, r.position.y + 112.0), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, 40, Color(money, a))
-	var where := w("完好 · 回收站现场收购，现金已到账", "WHOLE · BOUGHT ON THE SPOT, CASH IN THE ACCOUNT")
-	c.draw_string(font, Vector2(x0, r.position.y + 136.0), where, HORIZONTAL_ALIGNMENT_LEFT, W - 48.0, 13, Color(Pal.ink(0.6), a))
 	# the stamp comes down once the money is in
 	var st := clampf((t - 1.5) / 0.18, 0.0, 1.0)
 	if st > 0.0:

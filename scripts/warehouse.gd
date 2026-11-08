@@ -41,7 +41,7 @@ static func use_of(key: String) -> String:
 		return "scrap"
 	if item == "nonferrous_mix":
 		return "nonferrous"
-	if item == "steel_billet":
+	if item in ["steel_billet", "steel_slab", "steel_small"]:
 		return "billet"
 	if item in ["steel_section", "steel_plate"]:
 		return "stock"

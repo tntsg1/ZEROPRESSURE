@@ -1136,15 +1136,6 @@ func _draw_overlay_body(ov) -> void:
 			FastDraw.polyline(ov, cl, Pal.ink(0.6), 1.0, true)
 
 
-# 91 号 Q4: a small note in the scene, shown near the cursor (a CanvasBatch hands it to Look);
-# drawn plainly when something else draws this part (the tow traffic draws the tug itself)
-func _note(ci, f: Font, pos: Vector2, text: String, align: int = HORIZONTAL_ALIGNMENT_LEFT, width: float = -1.0, size: int = 12, col: Color = Color.WHITE) -> void:
-	if ci.has_method("note"):
-		ci.note(f, pos, text, align, width, size, col)
-	else:
-		ci.draw_string(f, pos, text, align, width, size, col)
-
-
 func _draw_static() -> void:
 	var ci = CanvasBatch.new(static_node)
 	ci.width_k = depth_fx.mid_width() if depth_fx != null else 1.0
@@ -1303,7 +1294,6 @@ func _draw_static_body(ci) -> void:
 		FastDraw.arc(ci, mp + Vector2(0, -5), 7.0, 0.0, TAU, 16, Pal.ink(0.55), 1.4, true)
 		for sp in 3:
 			ci.draw_line(mp + Vector2(0, -5), mp + Vector2(0, -5) + Vector2.from_angle(TAU * sp / 3.0) * 7.0, Pal.ink(0.35), 1.0)
-		_note(ci, font, mp + Vector2(18, 0), game.txt("dk_mast"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.45))
 		if pump2:
 			# the high-flow pump: a second, bigger housing with an impeller ring
 			ci.draw_rect(Rect2(mp + Vector2(12, -18), Vector2(22, 22)), Color(0.07, 0.073, 0.082))
@@ -2084,7 +2074,7 @@ func _mouth(id: String, ci) -> void:
 				FastDraw.circle(ci, a1, 5.0, Color(0.05, 0.053, 0.06))
 				FastDraw.arc(ci, a1, 5.0, 0.0, TAU, 14, col, 1.6, true)
 				ci.draw_line(c + side * s * hw * 0.5, c + side * s * throat_w * 0.6 - f * depth * 0.9, Pal.ink(0.25), 1.2)
-			_equip_detail(id, c, f, side, lip, throat_w, depth, st, ci)
+			_equip_detail(c, f, side, lip, throat_w, depth, st, ci)
 		"metal":
 			# a grate across the throat, glowing with what melts below
 			var gy := c - f * depth * 0.62
@@ -2115,7 +2105,7 @@ func _sign_batched(id: String, node: Node2D) -> void:
 	var c: Vector2 = zpos(id)
 	var f: Vector2 = ZONES[id].face
 	var lip: float = ZONES[id].w * 0.5 * Geom.M + 26.0
-	_sign(id, c, f, Vector2(-f.y, f.x), lip, zone_state[id], cb)
+	_sign(id, c, f, lip, zone_state[id], cb)
 	cb.flush()
 
 
@@ -2153,7 +2143,12 @@ func _step_sign(id: String, live: bool, signature: Array, dt: float) -> void:
 
 # where the sign stands before it steps aside (world)
 func _sign_rect(id: String, c: Vector2, f: Vector2, lip: float) -> Rect2:
-	var sz := Vector2(350 if id == "equip_bulk" else 262, 66)
+	var width := 240.0
+	if id == "equip_bulk":
+		width = 286.0
+	elif id == "equip2":
+		width = 62.0
+	var sz := Vector2(width, 42.0)
 	# beside the mouth, on the side with room (the hazard bay is at the berth's end)
 	# the hazard bay sits at the berth's end: its sign goes straight above it
 	var above := id in ["hazard", "equip_bulk"]
@@ -2161,14 +2156,13 @@ func _sign_rect(id: String, c: Vector2, f: Vector2, lip: float) -> Rect2:
 	return Rect2(at, sz)
 
 
-# the sign beside a mouth: an icon, the name, what goes in, and a status lamp
-func _sign(id: String, c: Vector2, f: Vector2, side: Vector2, lip: float, st: Dictionary, ci) -> void:
+# The two equipment mouths share a name. The second keeps its own icon and lamp.
+func _sign(id: String, c: Vector2, f: Vector2, lip: float, st: Dictionary, ci) -> void:
 	if not _sign_shown():
 		return
 	var above := id in ["hazard", "equip_bulk"]
 	var r := _sign_rect(id, c, f, lip)
 	r.position += sign_off.get(id, Vector2.ZERO)
-	var sz := r.size
 	ci.draw_rect(r, Color(0.035, 0.037, 0.042, 0.94))
 	ci.draw_rect(Rect2(r.position, Vector2(4, r.size.y)), zone_col(id, 0.95, 1.1))
 	ci.draw_rect(r, zone_col(id, 0.35), false, 1.0)
@@ -2176,23 +2170,17 @@ func _sign(id: String, c: Vector2, f: Vector2, side: Vector2, lip: float, st: Di
 		ci.draw_line(Vector2(r.get_center().x, r.end.y), c - Vector2(0, 26), zone_col(id, 0.35), 1.0)
 	else:
 		ci.draw_line(Vector2(r.position.x, r.get_center().y), c + Vector2(lip + 8.0, 0), zone_col(id, 0.35), 1.0)
-	_icon(id, r.position + Vector2(30, 33), ci)
-	var label := "zone_equip_bulk" if id == "equip_bulk" else "zone_"+kind(id)
-	ci.draw_string(font_b, r.position + Vector2(58, 28), game.txt(label), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Pal.ink(0.95))
-	var description := "zone_equip_side_d" if id == "equip_bulk" and f == Vector2.LEFT else label+"_d"
-	ci.draw_string(font, r.position + Vector2(58, 50), ("%.1f m · " % ZONES[id].w if id == "equip_bulk" else "")+game.txt(description), HORIZONTAL_ALIGNMENT_LEFT, sz.x - 66, 13, Pal.ink(0.6))
+	_icon(id, r.position + Vector2(24, r.size.y * 0.5), ci)
+	if id != "equip2":
+		var label := "zone_equip_bulk" if id == "equip_bulk" else "zone_" + kind(id)
+		ci.draw_string(font_b, r.position + Vector2(48, 27), game.txt(label), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 74.0, 18, Pal.ink(0.95))
 	# status
-	var key := "dk_ready"
 	var lc := Pal.tint(Pal.FLUID, 0.9, 1.3)
 	if st.reject > 0.0:
-		key = "dk_refused"
 		lc = Pal.heat(0.6 + 0.4 * sin(t * 18.0), 1.5)
 	elif st.eat > 0.0 or st.busy > 0.0:
-		key = "dk_taking"
 		lc = Pal.ink(0.6 + 0.4 * sin(t * 12.0), 1.4)
-	var sw := font.get_string_size(game.txt(key), HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-	FastDraw.circle(ci, Vector2(r.end.x - 14, r.position.y + 14), 4.0, lc)
-	ci.draw_string(font, Vector2(r.end.x - 24 - sw, r.position.y + 18), game.txt(key), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.6))
+	FastDraw.circle(ci, Vector2(r.end.x - 14, r.get_center().y), 4.0, lc)
 
 
 func _icon(id: String, p: Vector2, ci) -> void:
@@ -2562,13 +2550,11 @@ func _draw_furnace_text() -> void:
 
 # under the furnace mouth's sign: the melt and the bunker at a glance
 func _furnace_strip(ci) -> void:
-	if not ZONES.has("metal"):
+	if not ZONES.has("metal") or not _sign_shown():
 		return
-	var M := Geom.M
-	var c: Vector2 = zpos("metal")
-	var lip: float = ZONES.metal.w * 0.5 * M + 26.0
-	var at: Vector2 = c + Vector2(lip + 40.0, -33.0) + ZONES.metal.face * 1.2 * M
-	var r := Rect2(at + Vector2(0, 70), Vector2(262, 22))
+	var sign := _sign_rect("metal", zpos("metal"), ZONES.metal.face, ZONES.metal.w * 0.5 * Geom.M + 26.0)
+	var at := sign.position + Vector2(0, sign.size.y + 4) + (sign_off.get("metal", Vector2.ZERO) as Vector2)
+	var r := Rect2(at, Vector2(sign.size.x, 22))
 	ci.draw_rect(r, Color(0.035, 0.037, 0.042, 0.9))
 	ci.draw_rect(Rect2(r.position, Vector2(4, r.size.y)), Smelter.glow_col(smelter.T))
 	var s := Txt.t("fu_quick") % [int(round(smelter.T)), smelter.bunker + smelter.yard, Txt.t(smelter.state_key())]
@@ -2583,7 +2569,7 @@ func _furnace_strip(ci) -> void:
 # damage you can't see), a weighing platform on four load cells in the throat, and
 # above it the lift shaft up through the boom to the shuttle that takes it to the
 # freighter; the trolley runs a rack on the rail, fed by a cable drag chain.
-func _equip_detail(id: String, c: Vector2, f: Vector2, side: Vector2, lip: float, throat_w: float, depth: float, st: Dictionary, ci) -> void:
+func _equip_detail(c: Vector2, f: Vector2, side: Vector2, lip: float, throat_w: float, depth: float, st: Dictionary, ci) -> void:
 	var M := Geom.M
 	var col := Pal.ink(0.6)
 	var on: bool = st.eat > 0.0 or st.busy > 0.0
@@ -2647,16 +2633,6 @@ func _equip_detail(id: String, c: Vector2, f: Vector2, side: Vector2, lip: float
 		chain.append(Vector2(mid_x, anchor.y + 5.0) + Vector2(cos(a), sin(a)) * 5.0 * Vector2(-1, 1))
 	chain.append(Vector2(c.x, anchor.y + 10.0))
 	FastDraw.polyline(ci, chain, Pal.ink(0.3), 2.0)
-	# the labels, when close enough to read
-	var za: float = clampf((game.cam_zoom() - 0.8) / 0.3, 0.0, 1.0) if game != null else 0.0
-	if za > 0.01:
-		var lc2 := Pal.ink(0.55 * za)
-		_note(ci, font, e1 - side * 14.0 + Vector2(0, -2), Txt.t("eq_scan"), HORIZONTAL_ALIGNMENT_RIGHT if side.x > 0 else HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
-		_note(ci, font, Vector2(c.x + lip + 16.0, wp.y + 28.0), Txt.t("eq_weigh"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
-		_note(ci, font, g1 + Vector2(6, 12), Txt.t("eq_ground"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
-		_note(ci, font, Vector2(c.x + throat_w * 0.5 + 6.0, top.y + 14.0), Txt.t("eq_lift"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
-		_note(ci, font, c + side * (lip + 16.0) + f * 40.0, Txt.t("eq_bag"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
-		_note(ci, font, Vector2(c.x - 1.5 * M - 150.0, ry - 10.0), Txt.t("eq_rack"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc2)
 
 
 # ---------------------------------------------------------------- the debris net's works
@@ -2722,7 +2698,7 @@ func _net_detail(ci, fixed: bool = false) -> void:
 	# the tractor emitters on the ring's ends
 	for e in [bowl[0], bowl[16]]:
 		FastDraw.circle(ci, e, 5.0, Color(0.08, 0.083, 0.095))
-	# the chute through the floor, the baler's box, the belt to the furnace, the labels
+	# the chute through the floor, the baler's box and the belt to the furnace
 	var bowl_b := nc + Vector2(0, 60.0)
 	var bx0s := (NET.x - 1.2) * M
 	var bx1s := (NET.x + 1.2) * M
@@ -2734,10 +2710,6 @@ func _net_detail(ci, fixed: bool = false) -> void:
 	ci.draw_rect(Rect2(Vector2(bx0s, by0s), Vector2(bx1s - bx0s, by1s - by0s)), Pal.ink(0.55), false, 1.4)
 	ci.draw_rect(Rect2(Vector2(bx0s - 1.6 * M, (by0s + by1s) * 0.5 - 8.0), Vector2(0.7 * M, 16.0)), Color(0.08, 0.083, 0.095))
 	ci.draw_line(Vector2(bx1s, (F + 0.8) * M + 8.0), Vector2((metal_home - 0.5) * M, (F + 0.8) * M + 8.0), Pal.ink(0.3), 1.2)
-	var lc0 := Pal.ink(0.5)
-	_note(ci, font, bowl[16] + Vector2(10, -6), Txt.t("net_mesh"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc0)
-	_note(ci, font, bowl[16] + Vector2(10, 8), Txt.t("net_ring"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc0)
-	_note(ci, font, bowl[0] + Vector2(-110, -6), Txt.t("net_emit"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, lc0)
 
 
 # the net's moving parts: the load reading, the dump gate, the baler's ram, the bale on its belt

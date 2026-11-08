@@ -59,6 +59,34 @@ const PLANS := {
 		],
 		"plate": Vector2(30.0, 13.6),
 	},
+	# 128 号 第 4 段: the processing district lights up from its door along the gallery
+	# (scripts/process_gallery.gd), then the hall: the cabinet by the door, the tray along the
+	# gallery's ceiling to its end wall, up into the hall and along under the roof
+	"process": {
+		# 128 号 第 4 段 (方案 A 改): the cabinet by the arrival lane; the power runs up the wall to the gallery,
+		# along under its walkway to the far wall (the walkway's lamps light from the door inwards), up to the
+		# roof's lamps, and down the far wall to the hall's floor
+		"cabinet": Vector2(58.6, 18.4),
+		"trays": [
+			[Vector2(58.6, 18.4), Vector2(58.6, 8.2), Vector2(1.2, 8.2)],
+			[Vector2(1.2, 8.2), Vector2(1.2, 1.5), Vector2(58.6, 1.5)],
+			[Vector2(1.2, 8.2), Vector2(1.2, 26.2), Vector2(40.6, 26.2)],
+		],
+		"lamps": [Vector2(55.5, 7.3), Vector2(52.5, 7.3), Vector2(49.5, 7.3), Vector2(46.5, 7.3), Vector2(43.5, 7.3), Vector2(40.5, 7.3), Vector2(37.5, 7.3),
+			Vector2(34.5, 7.3), Vector2(31.5, 7.3), Vector2(28.5, 7.3), Vector2(25.5, 7.3), Vector2(22.5, 7.3), Vector2(19.5, 7.3), Vector2(16.5, 7.3),
+			Vector2(13.5, 7.3), Vector2(10.5, 7.3), Vector2(7.5, 7.3), Vector2(4.5, 7.3), Vector2(1.5, 7.3),
+			Vector2(6, 1.7), Vector2(18, 1.7), Vector2(30, 1.7), Vector2(42, 1.7), Vector2(54, 1.7)],
+		"emergency": [Vector2(1.2, 1.4), Vector2(58.8, 1.4), Vector2(58.8, 16.9), Vector2(37.2, 9.4)],
+		"screens": [Rect2(14.05, 4.8, 1.9, 1.15), Rect2(21.45, 4.8, 1.9, 1.15), Rect2(33.15, 4.8, 1.9, 1.15), Rect2(49.65, 4.8, 1.9, 1.15), Rect2(55.05, 4.8, 1.9, 1.15)],
+		"machines": [
+			["console", Vector2(56.0, 6.2), "业务终端", "BUSINESS CONSOLE", "term", Rect2(54.7, 4.4, 2.6, 3.0)],
+			["mill", Vector2(52.8, 21.8), "轧机", "MILL", "roll_lock", Rect2(42.8, 18.4, 16.4, 7.0)],
+			["press", Vector2(34.1, 24.0), "打包压块机", "BALER", "clank", Rect2(31.8, 19.9, 4.6, 6.9)],
+			["crane", Vector2(9.5, 9.6), "行车", "HALL CRANE", "winch_brake", Rect2(7.5, 8.4, 4.0, 2.4)],
+			["furnace", Vector2(16.0, 20.0), "电弧炉", "ARC FURNACE", "switch", Rect2(12.0, 15.0, 9.0, 11.0)],
+		],
+		"plate": Vector2(46.0, 10.2),
+	},
 }
 
 var zone := "trade"

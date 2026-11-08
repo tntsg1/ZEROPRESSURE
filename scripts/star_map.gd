@@ -101,15 +101,22 @@ func _ready() -> void:
 	tab_find = Button.new()
 	tab_find.text = w("找船", "FIND HULKS")
 	tab_find.toggle_mode = true
-	tab_find.custom_minimum_size = Vector2(200, 40)
+	tab_find.custom_minimum_size.y = 40
+	tab_find.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tab_find.pressed.connect(func(): set_mode("find"))
 	tab_ships = Button.new()
 	tab_ships.text = w("航运", "SHIPPING")
 	tab_ships.toggle_mode = true
-	tab_ships.custom_minimum_size = Vector2(200, 40)
+	tab_ships.custom_minimum_size.y = 40
+	tab_ships.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tab_ships.pressed.connect(func(): set_mode("ships"))
 	tabs.add_child(tab_find)
 	tabs.add_child(tab_ships)
+	var market_b := _btn(w("二手船市", "HULK MARKET"), ShipMarket.open() and game != null, _open_hulk_market, 40)
+	market_b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if market_b.disabled:
+		market_b.tooltip_text = w("修好贸易港后开放", "OPENS ONCE THE TRADE PORT IS MENDED")
+	tabs.add_child(market_b)
 	# the chosen tab's line slides across under it
 	_tab_ink = Control.new()
 	_tab_ink.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -907,6 +914,14 @@ func _map_input(event: InputEvent) -> void:
 		_detail()
 
 
+func _open_hulk_market() -> void:
+	if game == null or not ShipMarket.open():
+		return
+	var g = game
+	close()
+	g.open_ship_market.call_deferred()
+
+
 func close() -> void:
 	if on_close.is_valid():
 		on_close.call()
@@ -1055,12 +1070,6 @@ func _fill_find() -> void:
 			var sb := _action(_btn((w("重新扫描 · %s（约 %d 秒）", "SWEEP AGAIN · %s (~%d s)") if not Scan.sector(sel_sector).is_empty() else w("扫描 · %s（约 %d 秒）", "SWEEP · %s (~%d s)")) % [Orbits.name_of(Orbits.station(sel_sector)), int(Scan.SWEEP_S)] if why == "" else why, why == "", func(): Scan.sweep(sel_sector); _sig_key = ""; _fill(), 42))
 			find_box.add_child(sb)
 			_tour_parts.sweep = sb
-		# the find-ships page skips here when it has no hulk to show: the hulk market stays a click away
-		if ShipMarket.open() and game != null:
-			find_box.add_child(_btn(w("或者去二手船市直接买一艘 →", "OR BUY ONE AT THE HULK MARKET →"), true, func():
-				var g = game
-				close()
-				g.open_ship_market.call_deferred(), 34))
 		# the signals of that sector, each saying where it stands; a hulk found is its own tug button
 		var sigs := Scan.signals(sel_sector)
 		if not sigs.is_empty():
@@ -1108,7 +1117,7 @@ func _fill_find() -> void:
 				var ss := ScanStatus.new(_done_line() if an == "" else "")
 				find_box.add_child(ss)
 				_tour_parts.sigs.append(ss)
-			elif sel_sig != "" and not Scan.sig_of(sel_sig).get("known", false):
+			if an == "" and sel_sig != "" and not Scan.sig_of(sel_sig).get("known", false):
 				var why2 := Scan.analyze_block(sel_sig)
 				find_box.add_child(_gap(6))
 				var ab := _action(_btn(w("分析 %s 的电磁特征（约 %d 秒）", "ANALYSE %s (~%d s)") % [sel_sig, int(Scan.ANALYZE_S)] if why2 == "" else why2, why2 == "", func(): Scan.analyze(sel_sig); _sig_key = ""; _fill(), 42))

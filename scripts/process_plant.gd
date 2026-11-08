@@ -42,7 +42,8 @@ static func box_m() -> Rect2:
 
 static func axis() -> Vector2:
 	var b := box_m()
-	return Vector2(b.position.x + 16.0, b.position.y + 8.0)
+	# 128 号 第 4 段: the furnace bay stands lower, under the observation gallery (process_works.BAY_DY)
+	return Vector2(b.position.x + 16.0, b.position.y + 8.0 + preload("res://scripts/process_works.gd").BAY_DY)
 
 
 # the overhead rail from the works to the warehouse yard, world px (Q32): in from the
@@ -153,7 +154,8 @@ func _process(dt: float) -> void:
 		scrapline.step(dt)
 	var hot: bool = _heat_on() or float(smelter.T) > 40.0
 	var sorting: bool = scrapline.company_mode or scrapline.in_process_mass() > 0.0 or scrapline.busy() > 0
-	var running: bool = hot or sorting
+	# 128 号 第 4 段: the seat empties and fills again while the crane changes the block
+	var running: bool = hot or sorting or ProcessLine.changing() or preload("res://scripts/process_works.gd").mould_step()
 	var seen := _seen()
 	if seen and (sorting or absf(game.cam_zoom() - _line_z) > 0.001 or _line_idle < 2):
 		_line_idle = 0 if sorting else _line_idle + 1
@@ -214,7 +216,8 @@ func _draw_shapes() -> void:
 
 
 func _draw_line_shapes() -> void:
-	if not _seen():
+	# 128 号 第 4 段: the sorting line is gone from the hall (only the old desks' tests bring it back)
+	if not _seen() or not ProcessLine.LEGACY_DESKS:
 		return
 	var z: float = game.cam_zoom() if game != null else 1.0
 	var tx := func(k: String) -> String: return Txt.t(k)
@@ -232,7 +235,7 @@ func _draw_texts() -> void:
 	if not _seen():
 		return
 	var z: float = game.cam_zoom() if game != null else 1.0
-	if z >= 0.5:
+	if z >= 0.5 and ProcessLine.LEGACY_DESKS:
 		var fb := font_b
 		# a world-size name: far in it would shrink under a few pixels (and to 0, which the engine refuses)
 		if int(13.0 / maxf(z, 0.3)) >= 4:
@@ -241,7 +244,8 @@ func _draw_texts() -> void:
 	var cb = CanvasBatch.new(texts)
 	cb.no_shapes = true
 	smelter.draw(cb, F, X, font, font_b, z, tx)
-	scrapline.draw(cb, F, X, font, font_b, z, tx)
+	if ProcessLine.LEGACY_DESKS:
+		scrapline.draw(cb, F, X, font, font_b, z, tx)
 	cb.flush()
 
 

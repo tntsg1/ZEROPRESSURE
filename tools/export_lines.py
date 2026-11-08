@@ -57,8 +57,9 @@ for row in md.split("\n"):
 
 copy = json.loads(rd("data/copy.json"))
 copy.pop("_note", None)
-chapters = ["opening", "lights", "furnace", "trade", "steel", "industry", "berth88", "power_tug", "ring", "ark"]
-chapter_zh = ["拆完开局三艘漂流船", "修好照明与配电", "修好熔炉主火和碎屑网", "修好贸易港，开始做买卖", "拿到第一笔钢坯货款", "修好加工区、货运区", "船坞扩到 88 m", "修好动力区、拖船站", "转运环重启", "远航者"]
+# 128 号 第 3 段: the chapters as scripts/mainline.gd has them now (the old ids keep their lines in the file)
+chapters = ["opening", "lights", "furnace", "trade", "process", "cargo", "power", "tug", "berth88", "ring", "ark"]
+chapter_zh = ["第一艘船", "船坞太暗了（修照明）", "碎料白白漏掉（修熔炉和接碎料的网）", "回收站只给六成（修贸易港）", "钢锭攒够了（修加工区、炼第一炉）", "仓库快满了（修货运区）", "电不够用了（修动力区）", "船太大，拖不动（修拖船站）", "船坞放不下了（扩到 88 m）", "让中央转运环重新转起来", "远航者"]
 repairs = ["lights", "net_fix", "furnace_main", "hauler", "port2", "mouth_rail", "buffer", "zones", "net05", "hauler2", "arm", "crane", "berth88", "berth120", "berth200", "berth620"]
 zones = ["power", "salvage", "process", "tug", "trade", "cargo", "ring"]
 traps = ["wrong_valve", "fake_stop", "hidden_tank", "live_cargo", "welded_hatch", "rerouted_line", "second_source", "hidden_damage", "explosive_cargo", "fire_system",

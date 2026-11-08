@@ -307,6 +307,8 @@ func _do(st: Dictionary) -> void:
 					await _do({"done": sub, "target": st.get("target", {}), "tools": st.get("tools", []), "warp": st.get("warp", false)})
 			"free":
 				await _free(str(a))
+			"joints_left":
+				pass # The same step's free operation removes the fixings.
 			"recovered":
 				var ex: Array = st.get("exit", [])
 				_say("%s delivered %s" % [a[0], await _haul(str(a[0]), str(a[1]), 60.0, Vector2(ex[0], ex[1]) if ex.size() == 2 else Vector2.ZERO, float(st.get("lane", -4.0)))])
@@ -362,8 +364,15 @@ func _run() -> void:
 				continue
 			if OS.get_cmdline_user_args().has("steps"):
 				_say("step %s/%s" % [l.id, sid])
+			if family == "precise" and sid == "cut" and OS.get_cmdline_user_args().has("weld-retry"):
+				await _check_precision_welds()
 			await _do(st)
 			await _until(func(): return tut.step().get("id", "") != sid or tut.lesson_i != li or tut.done, 20.0)
+			if family == "precise" and sid == "ins" and OS.get_cmdline_user_args().has("weld-retry"):
+				var delivered: bool = tut.step().get("id", "") == "locks" and tut.recovered.get("INS", "") == "equip"
+				print("PRECISION WELD RETRY ", "PASS" if delivered else "FAIL")
+				quit(0 if delivered else 1)
+				return
 			if tut.step().get("id", "") == sid and tut.lesson_i == li and not tut.done:
 				_say("stuck at %s/%s" % [l.id, sid])
 				_report()
@@ -373,6 +382,34 @@ func _run() -> void:
 	await _frames(120)
 	_report()
 	finished = true
+
+
+func _check_precision_welds() -> void:
+	var tut = game.tutorial
+	var ins = game.world.tag("INS")
+	var center := _center(ins)
+	var points: PackedVector2Array = tut.weld_targets()
+	assert(points.size() == 2 and points[0].x > center.x and points[1].x > center.x)
+	if DisplayServer.get_name() != "headless":
+		game.cam_override = center
+		game.zoom_override = 1.45
+		await _frames(40)
+		preload("res://tests/cap.gd").save(root, "res://tests/out/precise_welds.png")
+		game.cam_override = null
+		game.zoom_override = -1.0
+	await _tool(2)
+	await _fly(center + _m(0.0, -1.1), 0.4)
+	await _click(center)
+	assert(ins.intact and tut.weld_targets().size() == 2)
+	_say("aiming at the instrument center leaves it intact and both welds attached")
+	# An older save may already be on the delivery step with the instrument destroyed.
+	game.world.remove_piece(ins)
+	tut.step_i += 1
+	await _frames(4)
+	var restored = game.world.tag("INS")
+	assert(restored != null and restored.intact and restored.id != ins.id)
+	assert(tut.step().id == "cut" and tut.weld_targets().size() == 2 and game.optics.cover_down() > 0.5)
+	_say("missing instrument at delivery is restored, with both welds and the cover still down")
 
 
 func _report() -> void:

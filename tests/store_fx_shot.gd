@@ -35,10 +35,11 @@ func _ms(n: int) -> Array:
 	return [sum / n, ts[int(n * 0.95)], ts[n - 1]]
 
 
-func _click(ui, at: Vector2, button := MOUSE_BUTTON_LEFT, pressed := true) -> void:
+func _click(ui, at: Vector2, button := MOUSE_BUTTON_LEFT, pressed := true, ctrl := false) -> void:
 	var ev := InputEventMouseButton.new()
 	ev.button_index = button
 	ev.pressed = pressed
+	ev.ctrl_pressed = ctrl
 	ev.position = at
 	ev.global_position = at
 	ui._gui_input(ev)
@@ -47,6 +48,37 @@ func _click(ui, at: Vector2, button := MOUSE_BUTTON_LEFT, pressed := true) -> vo
 func _centre(ui, id: String) -> Vector2:
 	var r: Rect2 = ui.unit_rect(id)
 	return ui._grid_rect().position + r.get_center()
+
+
+func _check_box_edges(ui) -> void:
+	var raw := ""
+	var equipment: Array[String] = []
+	for it in ui.items:
+		if it.cat == "raw":
+			raw = str(it.id)
+		elif it.cat == "equip":
+			equipment.append(str(it.id))
+	check(raw != "" and equipment.size() >= 2, "box test has raw goods and equipment")
+	if raw == "" or equipment.size() < 2:
+		return
+	var old_layout: Dictionary = ui.lay
+	var old_scroll: float = ui.scroll
+	var old_kind: String = ui.kind
+	var grid: Rect2 = ui._grid_rect()
+	var below := ceili(grid.size.y / float(ui.cell()))
+	ui.lay = {raw: [0, 0, 0], equipment[0]: [4, 0, 0], equipment[1]: [0, below, 0]}
+	ui.scroll = 0.0
+	ui.kind = "raw"
+	var touched: Rect2 = ui._drawn_rect(equipment[0])
+	var from := grid.position + Vector2(touched.position.x, 1)
+	var to := grid.position + Vector2(1, (below + 1) * ui.cell())
+	_click(ui, from, MOUSE_BUTTON_LEFT, true, true)
+	_click(ui, to, MOUSE_BUTTON_LEFT, false)
+	check(ui._multi.size() == 2 and ui._multi.has(raw) and ui._multi.has(equipment[0]), "reverse Ctrl box picks a fully enclosed item and the edge of dimmed equipment, skipping offscreen goods")
+	ui._multi.clear()
+	ui.lay = old_layout
+	ui.scroll = old_scroll
+	ui.kind = old_kind
 
 
 func _run() -> void:
@@ -82,6 +114,7 @@ func _run() -> void:
 		worst = maxf(worst, (Time.get_ticks_usec() - a) / 1000.0)
 	var ui = g.console_ui
 	check(ui != null and ui.get_script() == preload("res://scripts/company_store.gd"), "the stores open")
+	_check_box_edges(ui)
 	var tiers := {}
 	for it in ui.items:
 		tiers[ui.tier_of(it)] = true

@@ -102,8 +102,8 @@
 			"id": "SP_L1",
 			"mode": "lockstep",
 			"title": {
-				"zh": "预紧的折叠臂：能量、锁、结构",
-				"en": "A PRELOADED ARM: ENERGY, LOCKS, STRUCTURE"
+				"zh": "拆除预紧折叠臂",
+				"en": "DISMANTLE THE PRELOADED ARM"
 			},
 			"done_flag": "SP_L1_COMPLETE",
 			"guard": {
@@ -170,8 +170,8 @@
 				{
 					"id": "bleed",
 					"text": {
-						"zh": "① 能量：软管接 G-ACC，蓄能器泄到 30 kPa 以下（5）",
-						"en": "① ENERGY: HOSE ON G-ACC, THE ACCUMULATOR BELOW 30 kPa (5)"
+						"zh": "① 泄压：连接 G-ACC，将蓄能器压力降至 30 kPa 以下。（5）",
+						"en": "① BLEED: CONNECT G-ACC; REDUCE PRESSURE BELOW 30 kPa. (5)"
 					},
 					"tools": [
 						1,
@@ -192,8 +192,8 @@
 				{
 					"id": "pins",
 					"text": {
-						"zh": "② 锁：拔掉两根锁销 PIN-1、PIN-2（4）",
-						"en": "② LOCKS: PULL BOTH PINS, PIN-1 AND PIN-2 (4)"
+						"zh": "② 拔销：拆下两根锁销 PIN-1、PIN-2。（4）",
+						"en": "② PINS: REMOVE BOTH LOCKING PINS, PIN-1 AND PIN-2. (4)"
 					},
 					"tools": [
 						1,
@@ -220,8 +220,8 @@
 				{
 					"id": "pivot",
 					"text": {
-						"zh": "③ 结构：最后拆枢轴 PIV-1（4）",
-						"en": "③ STRUCTURE: THE PIVOT PIV-1 LAST (4)"
+						"zh": "③ 拆解：最后拆除枢轴 PIV-1。（4）",
+						"en": "③ DISMANTLE: REMOVE THE PIVOT PIV-1 LAST. (4)"
 					},
 					"tools": [
 						1,

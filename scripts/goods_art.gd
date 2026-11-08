@@ -79,7 +79,7 @@ static func draw(ci, r: Rect2, item: String, grade: int) -> void:
 			else:
 				_bale(ci, r, grade)
 		"nonferrous_mix": _bag(ci, r)
-		"steel_billet": _billets(ci, r, grade)
+		"steel_billet", "steel_slab", "steel_small": _billets(ci, r, grade)
 		"steel_plate": _plates(ci, r)
 		"steel_section": _sections(ci, r)
 

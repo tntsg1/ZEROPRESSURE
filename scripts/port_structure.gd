@@ -92,6 +92,9 @@ static func consoles(zone: String) -> Array:
 	var p: Vector2 = d[0]
 	var n: Vector2 = d[1]
 	var tg := n.orthogonal()
+	# 128 号 第 4 段: the processing district's business terminal stands in its gallery
+	if zone == "process" and preload("res://scripts/process_gallery.gd").on():
+		return [preload("res://scripts/process_gallery.gd").term("business"), p + n * 5.0 * m - tg * 5.0 * m]
 	return [p + n * 5.0 * m + tg * 5.0 * m, p + n * 5.0 * m - tg * 5.0 * m]
 
 
@@ -134,6 +137,15 @@ func _ready() -> void:
 	walls.collision_layer = 4
 	walls.collision_mask = 0
 	add_child(walls)
+	# 128 号 第 4 段: the processing district's gallery, solid to the drone only (scripts/process_gallery.gd)
+	gallery_walls = StaticBody2D.new()
+	gallery_walls.name = "GalleryWalls"
+	gallery_walls.collision_layer = 16
+	gallery_walls.collision_mask = 0
+	add_child(gallery_walls)
+	if preload("res://scripts/process_gallery.gd").on():
+		for e in preload("res://scripts/process_gallery.gd").edges():
+			_seg_on(gallery_walls, e[0], e[1])
 	_build()
 	interiors = Interiors.new()
 	interiors.game = game
@@ -154,6 +166,17 @@ func _seg(a: Vector2, b: Vector2) -> void:
 	cs.position = (a + b) * 0.5
 	cs.rotation = (b - a).angle()
 	walls.add_child(cs)
+
+
+var gallery_walls: StaticBody2D
+func _seg_on(body: StaticBody2D, a: Vector2, b: Vector2) -> void:
+	var sh := RectangleShape2D.new()
+	sh.size = Vector2(a.distance_to(b) + 0.25 * M(), 0.5 * M())
+	var cs := CollisionShape2D.new()
+	cs.shape = sh
+	cs.position = (a + b) * 0.5
+	cs.rotation = (b - a).angle()
+	body.add_child(cs)
 
 
 func _rect(r: Rect2) -> void:

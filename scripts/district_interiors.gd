@@ -27,7 +27,7 @@ const SOLIDS := {
 	"power": [["turbine", Vector2(37.6, 6.2), Vector2(20.4, 6.4)], ["condenser", Vector2(43.0, 12.6), Vector2(6.6, 3.8)], ["fuelcell", Vector2(0.8, 19.6), Vector2(8.0, 7.2)],
 		["feedpumps", Vector2(10.0, 23.4), Vector2(10.4, 3.4)], ["radpumps", Vector2(54.4, 19.4), Vector2(5.2, 7.4)]],
 	"tug": [["fuel", Vector2(42.7, 12.4), Vector2(3.9, 14.4)], ["bins", Vector2(47.2, 19.4), Vector2(4.6, 7.4)]],
-	"process": [["baghouse", Vector2(31, 19), Vector2(8, 7.8)], ["transformer", Vector2(2, 20), Vector2(6, 6.8)]],
+	"process": [["baghouse", Vector2(30.6, 10.2), Vector2(6.1, 7.4)], ["transformer", Vector2(2, 20), Vector2(6, 6.8)]],
 	"trade": [],
 	"cargo": [["pallets", Vector2(53, 21), Vector2(5, 5.8)]],
 }
@@ -601,12 +601,12 @@ func _desk_items(zone: String) -> Array:
 			add.call(h.site(), "furnace", w("炉体操作台", "FURNACE DESK"), w("电弧炉的操作台：投炉、熔炼、出钢，看功率和电价。挡板后的观察窗随炉火发亮。", "The arc furnace's desk: charge, melt, tap; the power and its price. The viewing port glows with the fire."),
 				Ops.batch_state(b), w("飞到台前按 %s 打开炉体操作。", "At the desk press %s.") % use_key, "work" if str(b.get("state", "")) == "processing" else "ok")
 		var so = game.get("industrial_sort")
-		if so != null and is_instance_valid(so):
+		if ProcessLine.LEGACY_DESKS and so != null and is_instance_valid(so):
 			var b2: Dictionary = so.heat()
 			add.call(so.site(), "sort", w("分选台", "SORTING DESK"), w("分选线的操作台：把混合废料分成铁、有色和弃料。急停拉绳沿着线拉过去。", "The sorting line's desk: mixed scrap into iron, non-ferrous and reject. The stop cord runs along the line."),
 				Ops.batch_state(b2), w("飞到台前按 %s 打开分选操作。", "At the desk press %s.") % use_key, "work" if str(b2.get("state", "")) == "processing" else "ok")
 		var asy = game.get("industrial_assay")
-		if asy != null and is_instance_valid(asy):
+		if ProcessLine.LEGACY_DESKS and asy != null and is_instance_valid(asy):
 			add.call(asy.site(), "assay", w("化验位", "ASSAY BENCH"), w("光谱仪读出一批料的铁和杂质含量，转盘上是样品杯。化验过的料卖价更准。", "The spectrometer reads a lot's iron and impurity; the carousel holds the sample cups. An assayed lot sells at its true worth."),
 				(w("化验中", "READING") if asy.running() else w("有 %d 批可化验", "%d LOTS TO ASSAY") % asy.candidates().size()), w("飞到台前按 %s 打开化验。", "At the bench press %s.") % use_key, "work" if asy.running() else "ok")
 	elif zone == "":

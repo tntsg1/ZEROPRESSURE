@@ -32,11 +32,15 @@ static func _o() -> Vector2:
 	return PortStructure.box("process").position
 
 
+# the mill's own metres: 128 号 第 4 段 it stands under the freight spur (process_works.MILL_OFF over)
 static func at(local: Vector2) -> Vector2:
-	return _o() + local * PortStructure.M()
+	return _o() + (local + preload("res://scripts/process_works.gd").MILL_OFF) * PortStructure.M()
 
 
 static func pedestal() -> Vector2:
+	# 128 号 第 4 段: the mill's terminal is in the gallery
+	if preload("res://scripts/process_gallery.gd").on():
+		return preload("res://scripts/process_gallery.gd").term("mill")
 	return at(PEDESTAL)
 
 
@@ -69,7 +73,7 @@ func _process(dt: float) -> void:
 
 func _r(r: Rect2) -> Rect2:
 	var m := PortStructure.M()
-	return Rect2(_o() + r.position * m, r.size * m)
+	return Rect2(at(r.position), r.size * m)
 
 
 func _draw() -> void:
@@ -104,7 +108,7 @@ func _draw() -> void:
 	var pp := pedestal()
 	var near_now := near()
 	var lamp: Array = Mill.lamp(game)
-	var floor_m := (PortStructure.box("process").end.y - 1.2 * m - pp.y) / m
+	var floor_m := preload("res://scripts/console_art.gd").foot_at(pp)
 	var info := {"lines": [[Ops.w("轧机", "MILL"), Pal.tint(Pal.AIR, 0.95, 1.2)], [str(lamp[1]), Pal.ink(0.75)]], "bar": -1.0,
 		"lamp": {"run": "ok", "wait": "work", "short": "work", "idle": "idle", "off": "off"}.get(str(lamp[0]), "ok")}
 	preload("res://scripts/console_art.gd").draw(self, pp, floor_m, Ops.w("轧机操作台", "MILL PEDESTAL"), Ops.w("[%s] 打开轧机", "[%s] OPEN THE MILL") % Keys.label("use"), near_now, info, t)

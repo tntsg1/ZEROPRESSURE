@@ -103,7 +103,7 @@ static func _found_longer(m: float) -> bool:
 			return true
 	if Career.data.has("ship_market"):
 		for a in ShipMarket.data().assets:
-			if float(Market.type_of(str(a.get("ship", ""))).get("length", 0.0)) > m:
+			if float(Market.type_of(TugYard.ship_of(a)).get("length", 0.0)) > m:
 				return true
 	return false
 
@@ -214,25 +214,33 @@ static func _build_step(zone: String) -> Dictionary:
 	return {"text": w("修%s（%s期）还需要：%s。", "To mend the %s (part %s) you still need: %s.") % [Port.name_of(zone), Works.cn_num(Port.stage(zone) + 1) if Txt.zh else str(Port.stage(zone) + 1), Route.missing(node)], "go": "guide:build:" + zone}
 
 
-# 68 号: "strip another ship" — start the one at the berth, or the tug on its way, or sweep the belt
+# Start the ship at the berth, follow its tow, or look for the next one.
 static func _next_ship(why: String) -> Dictionary:
+	var lead := why + " " if why != "" else ""
 	if not Scan.ON:
-		return {"text": why, "go": "contracts"}
+		return {"title": w("找下一艘船", "FIND THE NEXT SHIP"), "text": lead + w("打开终端，查看能接的船。", "Open the terminal to see available ships."), "go": "contracts"}
 	for a in ShipMarket.data().assets if Career.data.has("ship_market") else []:
-		if str(a.state) == "arrived" or str(a.state) == "berth":
-			return {"text": why + w(" 船到港了：%s 开终端，在“找船”里开工。", " A hulk is home: %s, start it under Find Ships.") % Keys.label("terminal"), "go": "contracts"}
-	if not ShipMarket.on_the_way().is_empty():
-		return {"text": why + w(" 拖船在路上，约 %d 秒到港。", " The tug is on its way: about %d s.") % int(float(ShipMarket.on_the_way()[0].left_s)), "go": "wait"}
+		if str(a.state) in ["arrived", "berth", "held"]:
+			return {"title": w("船已到港", "SHIP IN PORT"), "text": lead + w("按 %s 打开终端，在“找船”里开工。", "Press %s to open the terminal and start under Find Ships.") % Keys.label("terminal"), "go": "contracts"}
+	var towing := ShipMarket.on_the_way()
+	if not towing.is_empty():
+		return {"title": w("拖船在路上", "TOW IN PROGRESS"), "text": lead + w("预计 %d 秒后到港。", "The ship arrives in about %d s.") % int(ceil(float(towing[0].left_s))), "go": "wait"}
 	if not Scan.found().is_empty():
-		return {"text": why + w(" 已找到船：%s 开星图，派拖船。", " A hulk is found: %s, send the tug.") % Keys.label("starmap"), "go": "scan"}
-	return {"text": why + w(" %s 开星图，扫描找船。", " %s: sweep for hulks.") % Keys.label("starmap"), "go": "scan"}
+		return {"title": w("星图上有船", "SHIP FOUND"), "text": lead + w("打开星图，查看船况和拖运条件。", "Open the star map to check the ship and its tow requirements."), "go": "scan"}
+	return {"title": w("找下一艘船", "FIND THE NEXT SHIP"), "text": lead + w("去星图扫描，或到二手船市挑一艘。", "Sweep the star map or pick a ship on the used market."), "go": "scan"}
 
 
 # 第 3 段: no chapter's need is up — strip another hulk (the next chapter starts on its own)
 static func waiting_step() -> Dictionary:
+	if next_open() == "":
+		return {}
 	if Works.busy():
-		return step(next_open())
-	return _next_ship(w("继续拆船。", "Strip another hulk."))
+		var st := step()
+		st.title = w("施工进度", "WORKS PROGRESS")
+		return st
+	if StoreBook.blocks_next_job():
+		return {"title": w("处理待入库货物", "HANDLE WAITING GOODS"), "text": w("腾出位置入库，或卖给回收站回款，再接下一艘。", "Make room in the stores or sell the goods to the recycler before taking another ship."), "go": "store"}
+	return _next_ship("")
 
 
 # the next step of the chapter: {text, go}
@@ -320,6 +328,9 @@ static func announce(radio) -> void:
 static func _cards_waiting() -> bool:
 	if not Career.active().is_empty() or not Career.story_job().is_empty():
 		return true
+	for a in Career.data.get("ship_market", {}).get("assets", []):
+		if str(a.get("state", "")) in ["arrived", "berth", "held"]:
+			return true
 	return not Career.data.get("offers", []).is_empty()
 
 
@@ -338,6 +349,8 @@ static func take_me(game, go: String) -> void:
 	elif go == "scan" or (go == "contracts" and Scan.ON and not _cards_waiting()):
 		# user 2026-10-26: "船市里面没有东西，直接跑到星图扫描里面"
 		game.open_star_map("find")
+	elif go == "store":
+		game.open_store()
 	elif go == "contracts":
 		game.open_console("terminal")
 		if game.console_ui != null:

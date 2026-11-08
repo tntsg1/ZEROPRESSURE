@@ -80,7 +80,9 @@ func feed(chapter: String, wait: bool, st: Dictionary) -> void:
 	if chapter != ch:
 		ch = chapter
 		var cards: Dictionary = Career.data.get("main_card", {})
-		if not wait and not cards.has(chapter) and chapter != "opening" and mode != "done":
+		if chapter == "" and mode == "card":
+			fold()
+		if chapter != "" and not wait and not cards.has(chapter) and chapter != "opening" and mode != "done":
 			cards[chapter] = true
 			Career.data.main_card = cards
 			Career.save()
@@ -154,9 +156,7 @@ func _panel(r: Rect2) -> void:
 
 
 func _head(at: Vector2, size_px := 14) -> void:
-	var s := w("第 %d 章 · %s", "CHAPTER %d · %s") % [Mainline.index(ch), Mainline.name_of(ch)]
-	if waiting:
-		s += w("（还没开始）", " (NOT YET)")
+	var s := str(step.get("title", "")) if waiting else w("第 %d 章 · %s", "CHAPTER %d · %s") % [Mainline.index(ch), Mainline.name_of(ch)]
 	draw_string(font_b, at, s, HORIZONTAL_ALIGNMENT_LEFT, WS - 150, size_px, Pal.heat(0.95, 1.3))
 
 
@@ -170,8 +170,6 @@ func _draw() -> void:
 
 
 func step_text() -> String:
-	if waiting:
-		return w("%s开始这一章。现在：", "This chapter starts %s. Now: ") % Mainline.trigger_text(ch) + str(step.get("text", ""))
 	return str(step.get("text", ""))
 
 
@@ -216,7 +214,7 @@ static func card_of(id: String) -> Dictionary:
 			"why": _w("星图扫到一艘超过 44 m 的船，租来的拖船拖不动。修好拖船站，自家拖船就能拖。", "The star map found a hulk over 44 m; the rented tug cannot tow it. The tug station's own tugs can."),
 			"opens": [_w("自家拖船，能拖超过 44 m 的船", "Your own tugs: hulks over 44 m")]}
 		"berth88": return {"title": _w("船坞放不下了", "THE BERTH IS TOO SHORT"),
-			"why": _w("扫到的船比船坞还长。把船坞扩到 88 m，才能接下来拆。", "The hulk found is longer than the berth. Extend it to 88 m to take it on."),
+			"why": _w("发现了一艘超过 50 m 的船。可以先拆小船、卖货攒钱，再把船坞扩到 88 m，接更大的船。", "You've found a ship over 50 m. Strip smaller ships and sell the haul to fund an 88 m berth for larger jobs."),
 			"opens": [_w("船坞 88 m，能拆更大的船", "An 88 m berth for bigger hulks")]}
 		"ring": return {"title": _w("让中央转运环重新转起来", "GET THE TRANSFER RING TURNING"),
 			"why": _w("各区都修好了，它们之间靠中央转运环连起来。", "The districts are mended; the transfer ring ties them together."),
@@ -308,7 +306,7 @@ func _rows() -> Array:
 		var sub := ""
 		match st:
 			"done": sub = Mainline.opens_text(id)
-			"now": sub = (w("现在：", "NOW: ") + str(step.get("text", ""))) if not waiting else Mainline.trigger_text(id)
+			"now": sub = str(step.get("text", ""))
 			"can": sub = w("需要已经出现，也可以先做：", "The need is here; can be done now: ") + Mainline.opens_text(id)
 			"next": sub = Mainline.trigger_text(id)
 		out.append({"id": id, "state": st, "sub": sub})
@@ -316,7 +314,7 @@ func _rows() -> Array:
 
 
 func _list() -> void:
-	draw_string(font_b, Vector2(22, 30), w("主线 · 船坞先修好，再一区一区开起来", "MAIN LINE · THE BERTH FIRST, THEN THE PORT"), HORIZONTAL_ALIGNMENT_LEFT, WS - 150, 15, Pal.heat(0.95, 1.3))
+	draw_string(font_b, Vector2(22, 30), w("拆船进度 · 全部章节", "SALVAGE PROGRESS · ALL CHAPTERS"), HORIZONTAL_ALIGNMENT_LEFT, WS - 150, 15, Pal.heat(0.95, 1.3))
 	draw_string(font, Vector2(WS - 220, 30), w("点一下收起", "CLICK TO CLOSE"), HORIZONTAL_ALIGNMENT_RIGHT, 200, 12, Pal.ink(0.45))
 	var y := 66.0
 	var i := 0

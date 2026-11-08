@@ -1,6 +1,6 @@
 class_name ShipMarket
 # The hulk market (design/…/01 §5–6, 33 号; G5.2). A third way to material besides taking a
-# client's job or a hulk the tug found: buy a scrapped ship. Eight listings that stay until
+# client's job or a hulk the tug found: buy a scrapped ship. Fifteen listings that stay until
 # bought or expired. Each is a real ship whose true condition is fixed when it is listed — its
 # traps (scripts/traps.gd), the very ones it will have in the berth. What the buyer sees:
 #   the seller's statement, by category — accurate, played down, left out, or (now and then)
@@ -18,7 +18,9 @@ class_name ShipMarket
 # and each agency's public record from the company's own stripped hulks (with a report to the
 # survey registry when a rating proved false).
 
-const LISTINGS := 8
+const LISTINGS := 15
+const SHOWCASE_LIMIT := 3
+const SHOWCASE_COOLDOWN := 900.0
 const STRUCTURE := ["welded_hatch", "hidden_damage", "hidden_tank", "explosive_cargo", "gate_jam", "jacket_loss", "bio_breach"]
 const AGENCIES := {
 	"bsi": {"name": ["环带船检所 BSI", "BELT SURVEY INSTITUTE"], "covers": ["structure", "systems"], "bias": 0.0},
@@ -65,33 +67,54 @@ static func trap_name(trap: String) -> String:
 
 # ---------------------------------------------------------------- listings
 
-# keep eight: expired ones go, new ones are drawn from the market's own seed
+# Expired listings make room for new ones. A deposit keeps its current quote valid.
 static func refresh() -> bool:
 	if not open():
 		return false
 	var d := data()
 	var now := Shipping.day()
-	var before: int = d.listings.size()
-	# a held quote keeps its listing until the hold runs out; then the deposit is the seller's
+	var changed := false
+	var kept: Array = []
+	var showcase_count := 0
+	# Count held showcases first so migration preserves active reservations.
 	for l in d.listings:
 		if l.has("hold") and float(l.hold.until) <= now:
 			l.erase("hold")
-			before = -1
+			changed = true
+		if l.has("showcase") and l.has("hold"):
+			showcase_count += 1
 	for l in d.listings:
-		if float(l.expires) <= now and not l.has("hold") and not l.has("showcase"):
+		if l.has("showcase"):
+			# Old saves used a near-infinite expiry for teaching hulls.
+			if float(l.expires) - float(l.listed) >= 1.0e8:
+				l.expires = now + LIFE.x
+				changed = true
+			if not l.has("hold"):
+				if float(l.expires) <= now or showcase_count >= SHOWCASE_LIMIT:
+					_delay_showcase(str(l.showcase), str(l.offer.ship), now)
+					changed = true
+					continue
+				showcase_count += 1
+		elif float(l.expires) <= now and not l.has("hold"):
 			_publish(l)
-	# 108 号: a showcase stays until it is bought
-	d.listings = d.listings.filter(func(l): return float(l.expires) > now or l.has("hold") or l.has("showcase"))
-	var changed: bool = d.listings.size() != before
-	var due := Methods.showcase_due()
-	if due != "":
+			changed = true
+			continue
+		kept.append(l)
+	d.listings = kept
+	while d.listings.size() < LISTINGS and showcase_count < SHOWCASE_LIMIT:
+		var due := Methods.showcase_due()
+		if due == "":
+			break
 		var sl := _showcase(due)
-		if not sl.is_empty():
+		if sl.is_empty():
+			_delay_showcase(due, Methods.showcase_ship(due), now)
+		else:
 			d.listings.push_front(sl)
 			var sh: Dictionary = Career.data.get("showcases", {})
 			sh[due] = "listed"
 			Career.data.showcases = sh
-			changed = true
+			showcase_count += 1
+		changed = true
 	var tries := 0
 	while d.listings.size() < LISTINGS and tries < 20:
 		tries += 1
@@ -103,14 +126,22 @@ static func refresh() -> bool:
 	return changed
 
 
-# 108 号 Q14 A: a ship laid out for a method just learned — its borrow job's arrangement, the
-# seller straight about it, a fair price; it stays listed until bought
+static func _delay_showcase(id: String, ship: String, now: float) -> void:
+	var sh: Dictionary = Career.data.get("showcases", {})
+	if sh.get(id, "") != "done":
+		sh[id] = {"ship": ship, "after": now + SHOWCASE_COOLDOWN}
+		Career.data.showcases = sh
+
+
+# A teaching hull uses the method's preset when its systems support it.
 static func _showcase(id: String) -> Dictionary:
 	var ship := Methods.showcase_ship(id)
 	if not Ship.available(ship):
 		return {}
 	var spec: Dictionary = Methods.SPEC.get(id, {})
-	var o := Career.fixed_offer(ship, int(spec.get("seed", 990001)) + 7, spec.get("traps", null))
+	var allowed := Traps.allowed(Ship.load_data(ship))
+	var traps: Array = spec.get("traps", [])
+	var o := Career.fixed_offer(ship, int(spec.get("seed", 990001)) + 7, traps.filter(func(trap): return trap in allowed))
 	if o.is_empty():
 		return {}
 	var d := data()
@@ -122,7 +153,7 @@ static func _showcase(id: String) -> Dictionary:
 	o.showcase = id
 	var ord := Scan.order()
 	var station: int = int(ord[0]) if not ord.is_empty() else 0
-	var traps: Array = o.get("traps", [])
+	traps = o.get("traps", [])
 	var statements: Array = []
 	for cat in ["structure", "systems"]:
 		var here: Array = traps.filter(func(t): return category(t) == cat)
@@ -131,7 +162,7 @@ static func _showcase(id: String) -> Dictionary:
 	var price := snappedf(float(o.value) * 0.42, 500.0)
 	return {"id": str(o.id), "offer": o, "station": station, "price": price, "statements": statements, "title": {"kind": ""},
 		"rating": {"score": 9, "agency": "bsi", "day": now - 30.0, "paid": false}, "inspected": {}, "listed": now,
-		"expires": now + 1.0e9, "floor": snappedf(price * 0.95, 100.0), "showcase": id}
+		"expires": now + LIFE.x, "floor": snappedf(price * 0.95, 100.0), "showcase": id}
 
 
 static func _make(seed: int) -> Dictionary:

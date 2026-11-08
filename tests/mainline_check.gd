@@ -59,7 +59,12 @@ func _run() -> void:
 	Career.data.port = {"salvage": 1, "trade": 1, "process": 1, "cargo": 1, "power": 1}
 	check(Mainline.chapter() == "tug", "then the tug station, a hulk over 44 m")
 	Career.data.port = {"salvage": 1, "trade": 1, "process": 1, "cargo": 1, "power": 1, "tug": 1}
-	Career.data.need_hit = {"berth88": 1}
+	Career.data.need_hit = {}
+	Career.data.offers = []
+	g.hud._main_c = {}
+	var idle: Dictionary = g.hud._main()
+	check(Mainline.next_open() == "berth88" and idle.chapter == "" and idle.step.go == "scan", "before a big ship is found, the HUD shows finding ships without a chapter number")
+	Career.data.offers = [{"id": "LONG", "ship": "ev55", "find": true}]
 	check(Mainline.chapter() == "berth88" and Mainline.step().go == "guide:repair:berth88", "then the berth to 88 m, a hulk too long for it")
 	Career.data.upgrades["berth88"] = true
 	check(Mainline.chapter() == "ring", "every district up: the transfer ring")

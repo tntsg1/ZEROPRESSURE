@@ -46,25 +46,124 @@ func tip_y() -> float:
 	return surface - 0.25
 
 
+# ---------------------------------------------------------------- 128 号 第 4 段 浇铸
+const CastArt = preload("res://scripts/cast_art.gd")
+const Works = preload("res://scripts/process_works.gd")
+const SEAT_DX := 2.95           # the seated block's left, from the axis (FILL_X + 0.3: the trumpet under the stream)
+const SEAT_DY := 5.5            # its top, below the line (F + DY)
+const ROLL_X0 := 5.4            # the roller line's start
+const STRIP_T := 900.0          # °C: the pieces are pushed out of the block once this cool
+var _strip_t0 := -1.0           # this object's clock when the pieces were pushed out (-1: still in)
+
+
+func piece_t() -> float:
+	return float(ProcessLine.SPEC.get(mould, ProcessLine.SPEC.billet).t)
+
+
+# a cavity in world metres (x from the axis's world x, y from the block's top)
+func _cav_world(k: int, m: String) -> Rect2:
+	var cav := CastArt.cavities(m)
+	var r: Rect2 = cav[k % cav.size()][0]
+	return Rect2(Vector2(X + SEAT_DX, 0.0) + r.position, r.size)
+
+
+func _cast_line(ci, F: float, lw: float, zoom: float) -> void:
+	var seat := str(Works.seat_m) if not Career.data.is_empty() else "billet"
+	var o := Vector2(X + SEAT_DX, F + SEAT_DY) * M
+	# the roller line: its bed, the rollers turning as the line indexes
+	_rect(ci, ROLL_X0 - 0.1, 5.9, LINE_X1 + 0.4, 6.35, F, Color(0.05, 0.052, 0.058), Pal.ink(0.55), lw)
+	var rx := ROLL_X0 + 0.15
+	while rx < LINE_X1 + 0.2:
+		var c := Vector2(X + rx, F + 5.92) * M
+		ci.draw_circle(c, 0.11 * M, Color(0.16, 0.165, 0.18))
+		ci.draw_arc(c, 0.11 * M, 0.0, TAU, 10, Pal.ink(0.45), lw)
+		ci.draw_line(c, c + Vector2.from_angle(line_off / 0.11) * 0.1 * M, Pal.ink(0.5), lw)
+		rx += 0.42
+	# the seat: a cradle with its locating pins, the spray header over it
+	_rect(ci, SEAT_DX - 0.5, 6.3, SEAT_DX + 2.4, 6.55, F, Color(0.075, 0.078, 0.088), Pal.ink(0.5), lw)
+	for px: float in [SEAT_DX + 0.3, SEAT_DX + 1.9]:
+		_rect(ci, px - 0.08, 6.18, px + 0.08, 6.3, F, Color(0.3, 0.24, 0.16), Pal.ink(0.4), lw)
+	var pipe := Color(0.35, 0.45, 0.55)
+	ci.draw_line(Vector2(X + SEAT_DX + 0.05, F + SEAT_DY - 0.45) * M, Vector2(X + SEAT_DX + 2.25, F + SEAT_DY - 0.45) * M, pipe, maxf(1.0, 0.06 * M))
+	ci.draw_line(Vector2(X + SEAT_DX + 2.25, F + SEAT_DY - 0.45) * M, Vector2(X + SEAT_DX + 2.25, F + SEAT_DY - 1.4) * M, pipe, maxf(1.0, 0.06 * M))
+	var k0 := 0.0
+	while k0 < 2.1:
+		ci.draw_line(Vector2(X + SEAT_DX + 0.15 + k0, F + SEAT_DY - 0.45) * M, Vector2(X + SEAT_DX + 0.15 + k0, F + SEAT_DY - 0.36) * M, pipe, maxf(1.0, 0.03 * M))
+		k0 += 0.3
+	# this heat's pieces, the first cast first
+	var n := CastArt.cavities(seat).size() if seat != "" else 1
+	var pt := piece_t()
+	var cooling := false
+	var coolest := 9999.0
+	for ig in ingots:
+		coolest = minf(coolest, float(ig[1]))
+	if ingots.is_empty() and cast_t <= 0.0:
+		_strip_t0 = -1.0
+	elif _strip_t0 < 0.0 and phase not in ["tilt", "pour"] and not ingots.is_empty() and coolest < STRIP_T:
+		_strip_t0 = t
+	var s := t - _strip_t0 if _strip_t0 >= 0.0 else -1.0
+	var lift := clampf(s / 0.6, 0.0, 1.0) * 0.55 if s >= 0.0 else 0.0
+	var slide := BenchFx.e_io(clampf((s - 0.6) / 1.0, 0.0, 1.0)) if s >= 0.0 else 0.0
+	var levels: Array = []
+	var temps: Array = []
+	if seat != "" and slide <= 0.0:
+		for k in n:
+			if k < ingots.size():
+				levels.append(clampf(float(ingots[k][2]) / pt, 0.0, 1.0))
+				temps.append(float(ingots[k][1]))
+				cooling = cooling or float(ingots[k][1]) > 300.0
+			elif k == ingots.size() and cast_t > 0.0:
+				levels.append(clampf(cast_t / pt, 0.0, 1.0))
+				temps.append(T - 60.0)
+			else:
+				levels.append(0.0)
+				temps.append(25.0)
+	if seat != "":
+		CastArt.trumpet(ci, o, M, 1.0 if phase == "pour" and gate > 0.2 else 0.0)
+		CastArt.block(ci, seat, o, M, levels, temps, lift, 2 if zoom >= 0.7 else (1 if zoom >= 0.4 else 0), 1.0, 1.0 if cooling and phase != "pour" and s < 0.0 else 0.0, t)
+	# out of the block: the pusher's plate drives them onto the rollers, then they go with the line
+	var count := ingots.size()
+	for k in count:
+		var ig: Array = ingots[k]
+		var on_roll := slide > 0.0 or k >= n or seat == ""
+		if not on_roll:
+			continue
+		var cw := _cav_world(k, seat if seat != "" else "billet")
+		var lv := clampf(float(ig[2]) / pt, 0.15, 1.0)
+		var hgt := cw.size.y * lv
+		var wd := cw.size.x
+		var base := X + ROLL_X0 + 0.12 + float(count - 1 - k) * (wd + 0.1)
+		var phys := X + FILL_X + line_off - float(ig[0]) - wd * 0.5
+		var to := maxf(base, phys)
+		var x0 := lerpf(cw.position.x, to, slide) if k < n and seat != "" else to
+		var y1 := lerpf(F + SEAT_DY + cw.end.y - lift, F + 5.81, slide) if k < n and seat != "" else F + 5.81
+		if x0 > X + LINE_X1 + 0.2:
+			continue
+		var pr := Rect2(Vector2(x0, y1 - hgt) * M, Vector2(wd, hgt) * M)
+		var tc := float(ig[1])
+		var col := glow_col(tc) if tc > 480.0 else Color(0.26, 0.26, 0.28).lerp(glow_col(480.0), clampf((tc - 200.0) / 280.0, 0.0, 1.0))
+		ci.draw_rect(pr, col)
+		ci.draw_rect(pr, Pal.ink(0.55), false, lw)
+		if tc < 520.0:
+			# the scale's dark skin along the top
+			ci.draw_line(pr.position + Vector2(0, 0.04 * M), pr.position + Vector2(pr.size.x, 0.04 * M), Pal.ink(0.3), lw)
+	# the pusher: its plate travels with the pieces and back, its rod out of the cylinder on the left
+	if s >= 0.0 and s < 2.4 and seat != "":
+		var px2 := X + SEAT_DX - 0.35 + 2.4 * slide * (1.0 - clampf((s - 1.6) / 0.8, 0.0, 1.0))
+		ci.draw_line(Vector2(X + SEAT_DX - 0.7, F + SEAT_DY + 0.15) * M, Vector2(px2 - 0.08, F + SEAT_DY + 0.15) * M, Color(0.6, 0.62, 0.66), maxf(1.0, 0.05 * M))
+		_rect(ci, px2 - 0.08, SEAT_DY - 0.1 + 0.55 * (1.0 - slide), px2, SEAT_DY + 0.45, F, Color(0.85, 0.62, 0.2), Pal.ink(0.6), lw)
+	# the lift at the line's end that takes them to the trolley
+	_rect(ci, LINE_X1 - 0.2, 5.0, LINE_X1 + 0.4, 5.9, F, Color(0.07, 0.072, 0.08), Pal.ink(0.45), lw)
+
+
 func draw(ci, F: float, mx: float, font: Font, font_b: Font, zoom: float, txt: Callable) -> void:
 	F += DY
 	var edge := Pal.ink(0.55)
 	var lw := 1.4 / maxf(zoom, 0.05)
 	var shapes: bool = not ci.no_shapes
 	if shapes:
-		# ---- the mould line to the right: moulds on a chain, the cast billets glowing as they cool
-		_rect(ci, LINE_X0 - 0.3, 5.9, LINE_X1 + 0.4, 6.35, F, Color(0.05, 0.052, 0.058), edge, lw)
-		var step := PITCH
-		var x := LINE_X0 + fposmod(line_off, step)
-		while x < LINE_X1:
-			_rect(ci, x, 5.55, x + step * 0.8, 5.9, F, Color(0.07, 0.072, 0.08), Pal.ink(0.3), lw)
-			x += step
-		for ig in ingots:
-			var ix: float = FILL_X + line_off - float(ig[0])
-			if ix < LINE_X0 or ix > LINE_X1:
-				continue
-			var hot := clampf((float(ig[1]) - 400.0) / 1200.0, 0.0, 1.0)
-			_rect(ci, ix - 0.3, 5.6, ix + 0.3, 5.88, F, Color(0.2, 0.2, 0.22).lerp(Color(1.0, 0.45, 0.15), hot), Pal.ink(0.5), lw)
+		# ---- 128 号 第 4 段: the mould block in its seat under the tap hole, the roller line to the right
+		_cast_line(ci, F, lw, zoom)
 		# ---- the vessel on its rockers (it tilts round the trunnion to tap)
 		var shell := [] if meshes else [body_pt(-SHELL_R, ROOF_Y + 0.2, F), body_pt(SHELL_R, ROOF_Y + 0.2, F), body_pt(SHELL_R, HEARTH_Y - 1.0, F), body_pt(SHELL_R - 0.7, HEARTH_Y, F), body_pt(-SHELL_R + 0.7, HEARTH_Y, F), body_pt(-SHELL_R, HEARTH_Y - 1.0, F)]
 		if not meshes:
@@ -125,7 +224,7 @@ func draw(ci, F: float, mx: float, font: Font, font_b: Font, zoom: float, txt: C
 		# the pour: from the tap hole down into the mould under it
 		if phase == "pour" and gate > 0.2:
 			var from := body_pt(SHELL_R + 0.1, HEARTH_Y, F)
-			ci.draw_line(from, Vector2(X + FILL_X, F + 5.6) * M, glow_col(T, 0.9), 0.22 * M)
+			ci.draw_line(from, Vector2(X + FILL_X + 0.05, F + 5.0) * M, glow_col(T, 0.9), 0.16 * M)
 		# the probe lance, coming in from the right over the roof
 		if dip > 0.01 or lance_phase != "idle":
 			var ly := ROOF_Y - 1.2 + 2.2 * dip
@@ -336,7 +435,7 @@ func draw_add(ci, F: float, tex: Texture2D) -> void:
 		var c2 := body_pt(0.0, HEARTH_Y - 1.0, F)
 		ci.draw_texture_rect(tex, Rect2(c2 - Vector2(2.2, 1.2) * M, Vector2(4.4, 2.4) * M), false, glow_col(T, 0.06 + 0.06 * clampf(m_l / CAP, 0.0, 1.0)))
 	if phase == "pour" and gate > 0.2:
-		var land := Vector2(X + FILL_X, F + 5.6) * M
+		var land := Vector2(X + SEAT_DX + 1.1, F + SEAT_DY + 0.3) * M
 		ci.draw_texture_rect(tex, Rect2(land - Vector2(1.0, 0.8) * M, Vector2(2.0, 1.6) * M), false, glow_col(T, 0.5 * gate))
 	for ig in ingots:
 		var it: float = ig[1]

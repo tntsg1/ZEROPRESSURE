@@ -75,33 +75,44 @@ const SPEC := {
 			[390000.0, [["检测最快", "Fastest probing"], ["读数距离 12 m", "Reading reach 12 m"]]]]},
 }
 # 108 号 Q14/Q6 (the outside review: a method learned should get a job that shows what it is for):
-# once a method is learned, the ship market lists one ship laid out for it, marked "试试新拆法";
-# taking it is the player's choice. The ship each one is shown on (the cutter: a type already
-# stripped, so its plan exists); the borrow job's own arrangement (seed, traps) where it has one
-const SHOWCASE := {"section": "gr7", "pump": "gr7", "field": "m14", "auto": "tw64", "probe": "fr26",
-	"crane": "m14", "prop": "cf90", "cutter": "", "precise": "ob90"}
+# The first showcase uses its original teaching hull. Later listings cycle through other
+# suitable hulls that fit the berth and can be towed. The cutter needs a matching saved plan.
+const SHOWCASE := {"section": ["gr7", "jd38"], "pump": ["gr7", "h22", "fr26"], "field": ["m14", "tw64", "gr7"],
+	"auto": ["tw64", "gr7", "m14"], "probe": ["fr26", "cl104", "ic120"], "crane": ["m14", "tw64", "hb86"],
+	"prop": ["cf90", "cl104", "pt34"], "precise": ["ob90", "dc84", "ev55", "qc30"]}
 
 
 static func showcase_ship(id: String) -> String:
+	var ships: Array = SHOWCASE.get(id, [])
 	if id == "cutter":
+		ships = []
 		var plans: Dictionary = Career.data.get("plans", {})
-		for h in Career.data.get("history", []).duplicate():
-			if plans.has(str(h.get("ship", ""))):
-				return str(h.ship)
-		return ""
-	return str(SHOWCASE.get(id, ""))
+		for h in Career.data.get("history", []):
+			var ship := str(h.get("ship", ""))
+			if plans.has(ship) and not ships.has(ship):
+				ships.append(ship)
+	var state = Career.data.get("showcases", {}).get(id, "")
+	var last := str(state.get("ship", "")) if state is Dictionary else ""
+	var start := ships.find(last) + 1
+	for i in ships.size():
+		var ship := str(ships[(start + i) % ships.size()])
+		if Market.fits(ship, Career.data) and TugYard.can_tow(ship):
+			return ship
+	return ""
 
 
-# the next learned method whose showcase has not been listed yet ("" = none)
+# The next learned method with an unfinished showcase ready to list.
 static func showcase_due() -> String:
 	if Career.data.is_empty():
 		return ""
 	var done: Dictionary = Career.data.get("showcases", {})
 	for id in ORDER:
-		if not learned(id) or done.has(id):
+		var state = done.get(id, "")
+		if not learned(id) or state in ["listed", "done"]:
 			continue
-		var ship := showcase_ship(id)
-		if ship != "" and Market.fits(ship, Career.data):
+		if state is Dictionary and float(state.get("after", 0.0)) > Shipping.day():
+			continue
+		if showcase_ship(id) != "":
 			return id
 	return ""
 

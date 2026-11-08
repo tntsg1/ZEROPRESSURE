@@ -123,6 +123,27 @@ static func _head(p, neck := true) -> void:
 static func _body(p, kind: String, foot: float) -> void:
 	var edge := Pal.ink(0.62)
 	match kind:
+		"rail":
+			# 128 号 第 4 段: a low console clamped to a walkway's front railing — the screen on a short neck,
+			# a sloped key desk, the bracket down to the walkway with two clamps round the rails, the cable
+			# along the toe board
+			_head(p)
+			_desk(p, -0.85, 0.85)
+			_keys(p, -0.6, 3)
+			p.rect(Rect2(-0.14, 0.85, 0.28, foot - 0.97), FACE)
+			p.line(Vector2(-0.14, 0.85), Vector2(-0.14, foot - 0.12), edge, 0.035)
+			p.line(Vector2(0.14, 0.85), Vector2(0.14, foot - 0.12), edge, 0.035)
+			for cy in [foot - 1.05, foot - 0.55]:
+				if cy > 0.9:
+					p.rect(Rect2(-0.32, cy - 0.07, 0.64, 0.14), FACE2)
+					p.rect(Rect2(-0.32, cy - 0.07, 0.64, 0.14), edge, false, 0.025)
+					p.bolt(Vector2(-0.22, cy), 0.03, Pal.ink(0.55))
+					p.bolt(Vector2(0.22, cy), 0.03, Pal.ink(0.55))
+			p.rect(Rect2(-0.55, foot - 0.12, 1.1, 0.12), FACE2)
+			p.rect(Rect2(-0.55, foot - 0.12, 1.1, 0.12), edge, false, 0.03)
+			var cable := PackedVector2Array([Vector2(0.14, 0.95), Vector2(0.3, foot - 0.4), Vector2(0.75, foot - 0.08)])
+			p.polyline(cable, Color(0.02, 0.022, 0.026), 0.1)
+			p.polyline(cable, Pal.tint(Pal.VOLT, 0.4, 1.0), 0.05)
 		"furnace":
 			_stand(p, 2.1, foot, 0.7)
 			_cabinet(p, Rect2(-1.3, 0.85, 2.6, 1.25))
@@ -252,6 +273,10 @@ static func _keys_row(p) -> void:
 # inside a district, else the berth's floor
 static func foot_at(at: Vector2) -> float:
 	var m := PortStructure.M()
+	# 128 号 第 4 段: in the processing district's gallery the terminals stand on its floor
+	var G = preload("res://scripts/process_gallery.gd")
+	if G.on() and G.inside(at):
+		return (PortStructure.box("process").position.y + G.FLOOR * m - at.y) / m
 	var zone := PortStructure.zone_at(at)
 	if zone != "" and zone != "ring":
 		return (PortStructure.box(zone).end.y - 1.2 * m - at.y) / m
@@ -261,6 +286,7 @@ static func foot_at(at: Vector2) -> float:
 # the extent a kind takes round its spot (m), for culling and its card
 static func extent(kind: String, foot: float) -> Rect2:
 	match kind:
+		"rail": return Rect2(-1.3, -1.9, 2.6, foot + 1.9)
 		"furnace": return Rect2(-2.0, -2.2, 4.4, foot + 2.2)
 		"sort": return Rect2(-1.6, -1.9, 6.4, foot + 1.9)
 		"assay": return Rect2(-2.1, -1.9, 4.6, foot + 1.9)
@@ -276,6 +302,10 @@ static func draw(ci: CanvasItem, at: Vector2, foot: float, title: String, hint: 
 	var px := m * z
 	var col := Pal.tint(Pal.AIR, 1.0, 1.3)
 	foot = clampf(foot, 1.2, 14.0)
+	# 128 号 第 4 段: on the processing district's walkway every console is a low one on its railing
+	if preload("res://scripts/process_gallery.gd").on() and preload("res://scripts/process_gallery.gd").inside(at):
+		kind = "rail"
+		foot = preload("res://scripts/process_gallery.gd").HEAD
 	var ext := extent(kind, foot)
 	# out of the view: nothing (and no name plate pinned to the view's edge)
 	var xf := ci.get_canvas_transform()
@@ -412,9 +442,10 @@ static func summary(zone: String, game) -> Dictionary:
 		"process":
 			var heat: Dictionary = Career.data.get("industrial_heat", {})
 			var hs := str(heat.get("state", ""))
-			var line := w("炉：空闲", "FURNACE IDLE") if hs == "" or hs in ["complete", "cancelled", "written_off"] else w("炉：%s", "FURNACE: %s") % hs
+			var phase := {"raw_transport": w("送料中", "FEEDING"), "raw_return": w("原料返仓", "RETURNING"), "processing": w("炼钢中", "MELTING"), "product_transport": w("钢坯返仓", "BILLETS OUT")}
+			var line := w("炉：空闲", "FURNACE IDLE") if hs == "" or hs in ["complete", "cancelled", "written_off"] else w("炉：%s", "FURNACE: %s") % str(phase.get(hs, w("工作中", "WORKING")))
 			return {"lines": [[line, hi], [(w("轧机：", "MILL: ") + str(Mill.lamp(game)[1])) if game != null else "", dim]], "bar": -1.0, "lamp": "work" if hs == "processing" else ("ok" if st >= 1 else "off"),
-				"use": w("加工区业务：分选与炉次，原料变成产品。轧机在它自己的操作台上开。", "The processing district's business: sorting and heats. The mill is run at its own pedestal."),
+				"use": w("加工区业务：炉次与加工队列，钢锭变成钢坯。轧机在它自己的操作台上开。", "The processing district's business: heats and the processing queue. The mill is run at its own console."),
 				"now": line, "can": w("飞到台前按 [%s] 打开。", "At the console press [%s].") % Keys.label("use")}
 		"ring":
 			var fixed := 0

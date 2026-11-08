@@ -102,8 +102,8 @@
 			"id": "SP_P1",
 			"mode": "lockstep",
 			"title": {
-				"zh": "主镜：防尘罩、促动器锁、外圈先拆",
-				"en": "THE MIRROR: COVER, LOCKS, OUTER RING FIRST"
+				"zh": "保护主镜",
+				"en": "PROTECT THE MIRROR"
 			},
 			"done_flag": "SP_P1_COMPLETE",
 			"guard": {
@@ -154,8 +154,8 @@
 				{
 					"id": "opt",
 					"text": {
-						"zh": "测量（1）：读主镜反射率 OPT",
-						"en": "MEASURE (1): THE MIRROR'S REFLECTANCE OPT"
+						"zh": "按 1，测反射率 OPT",
+						"en": "1 · MEASURE REFLECTANCE AT OPT"
 					},
 					"tools": [
 						1
@@ -176,8 +176,8 @@
 				{
 					"id": "cover",
 					"text": {
-						"zh": "① 放下防尘罩：CVR（4），等它完全落下",
-						"en": "① RUN THE DUST COVER DOWN: CVR (4), ALL THE WAY"
+						"zh": "按 4 拨 CVR，等防尘罩落到底",
+						"en": "4 · LOWER THE COVER FULLY AT CVR"
 					},
 					"tools": [
 						1,
@@ -199,8 +199,8 @@
 				{
 					"id": "cut",
 					"text": {
-						"zh": "② 激光（2）切开仪器 INS 和立柱之间的焊缝",
-						"en": "② LASER (2): CUT THE WELDS BETWEEN INSTRUMENT INS AND ITS POST"
+						"zh": "按 2，沿仪器右端亮点竖切",
+						"en": "2 · CUT VERTICALLY THROUGH THE LIT WELDS"
 					},
 					"tools": [
 						2,
@@ -208,10 +208,11 @@
 						4
 					],
 					"done": {
-						"free": "INS"
+						"free": "INS",
+						"joints_left": ["INS", "==", 0]
 					},
 					"target": {
-						"piece": "INS"
+						"welds": ["INS", "IP"]
 					}
 				},
 				{
@@ -228,7 +229,7 @@
 					"done": {
 						"recovered": [
 							"INS",
-							"any"
+							"equip"
 						]
 					},
 					"target": {
@@ -238,8 +239,8 @@
 				{
 					"id": "locks",
 					"text": {
-						"zh": "③ 锁住两圈促动器 LK-1、LK-2（4，控制柜要有电）",
-						"en": "③ LOCK BOTH RINGS: LK-1, LK-2 (4, CABINET POWERED)"
+						"zh": "控制柜通电时，按 4 锁 LK-1 和 LK-2",
+						"en": "4 · LOCK LK-1 AND LK-2 WITH POWER ON"
 					},
 					"tools": [
 						1,
@@ -269,8 +270,8 @@
 				{
 					"id": "outer",
 					"text": {
-						"zh": "④ 先拆外圈镜片 PM-2（4）",
-						"en": "④ THE OUTER SEGMENT PM-2 FIRST (4)"
+						"zh": "按 4，先卸外圈 PM-2",
+						"en": "4 · UNBOLT OUTER SEGMENT PM-2 FIRST"
 					},
 					"tools": [
 						3,
@@ -312,8 +313,8 @@
 				{
 					"id": "inner",
 					"text": {
-						"zh": "⑤ 再拆内圈 PM-1（4）",
-						"en": "⑤ THEN THE INNER PM-1 (4)"
+						"zh": "按 4，再卸内圈 PM-1",
+						"en": "4 · UNBOLT INNER SEGMENT PM-1"
 					},
 					"tools": [
 						3,

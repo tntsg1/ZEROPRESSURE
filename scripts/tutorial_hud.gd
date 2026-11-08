@@ -24,6 +24,7 @@ var stamp_t := -1.0
 var intro := 0                 # 44 号: a special course's "why and what" card: 0 not yet, 1 up, 2 read
 var intro_k := 0.0
 const OVERVIEW_RECT := Rect2(22,326,220,40)
+const PRECISION_CARD := Rect2(22, 22, 600, 114)
 var overview_button: Button
 
 
@@ -134,6 +135,9 @@ func _process(dt: float) -> void:
 		intro = 1
 	if intro == 1 and (game.tutorial.lesson_i > 1 or game.tutorial.step_i > 0 or game.tutorial.done):
 		intro = 2
+	if game.tutorial.special() == "precise":
+		overview_button.position.y = PRECISION_CARD.end.y + 8.0
+		overview_button.visible = game.state == "play" and intro != 1 and not game.tutorial.done
 	intro_k = Pal.damp(intro_k, 1.0 if intro == 1 else 0.0, 10.0, dt)
 	choice_k = Pal.damp(choice_k, 1.0 if game.tutorial.choice_open() else 0.0, 14.0, dt)
 	if game.tools.denied_t < 0.05:
@@ -189,6 +193,11 @@ func intro_lines() -> Array:
 	var name: String = Txt.t("cxu_cls_" + sp).split(" · ")[-1]
 	var out: Array = []
 	var then := Game.course_then
+	if sp == "precise":
+		out.append(_w("保护镜面，按亮点切开仪器焊缝。", "Protect the mirror and cut the marked welds."))
+		if then in ["contract", "contract_loadout"]:
+			out.append(_w("完成训练后继续拆船。", "Resume salvage when training is complete."))
+		return out
 	if then in ["contract", "contract_loadout"] and Career.usable():
 		var ty: Dictionary = Market.type_of(str(Career.active().get("ship", "")))
 		var ship_name: String = (ty.name[0] if Txt.zh else ty.name[1]) if ty.has("name") else str(Career.active().get("ship", ""))
@@ -238,6 +247,16 @@ const CARD := Rect2(22, 22, 700, 290)
 
 func _task_list() -> void:
 	var tut := game.tutorial
+	if tut.special() == "precise":
+		var r := PRECISION_CARD
+		var at := r.position + Vector2(20, 30)
+		c.draw_rect(r, Color(0.03, 0.034, 0.042, 0.95))
+		c.draw_rect(Rect2(r.position + Vector2(0, 10), Vector2(4, r.size.y - 20)), Pal.heat(0.95, 1.2))
+		var head := tut.text(tut.lesson().get("title", ""))
+		_text(head if head != "" else _w("精密件训练", "PRECISION TRAINING"), at, 16, Pal.ink(0.75), font_b)
+		var instruction := game.txt("tut_done") if tut.done else tut.text(tut.step().get("text", ""))
+		c.draw_multiline_string(font_b, at + Vector2(0, 34), instruction, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 40, 22, 2, Pal.ink(0.98))
+		return
 	var x := CARD.position.x + 22.0
 	var y := CARD.position.y + 30.0
 	c.draw_rect(CARD, Color(0.03, 0.034, 0.042, 0.95))
@@ -248,8 +267,17 @@ func _task_list() -> void:
 	var ls: Array = tut.lessons()
 	var li: int = mini(tut.lesson_i, ls.size() - 1)
 	var l: Dictionary = ls[li] if li >= 0 else {}
-	var head: String = game.txt("tut_lesson") % li + "  " + tut.text(l.get("title", "")) if li > 0 else tut.text(l.get("title", ""))
+	var cryo_safety: bool = Txt.zh and str(l.get("id", "")) == "SP_C1"
+	var separator := "｜" if cryo_safety else "  "
+	var head: String = game.txt("tut_lesson") % li + separator + tut.text(l.get("title", "")) if li > 0 else tut.text(l.get("title", ""))
 	_text(head, Vector2(x, y + 36), 28, Pal.ink(0.97), font_b)
+	var step_id := str(tut.step().get("id", ""))
+	if not tut.done and cryo_safety and step_id in ["kpa", "valve", "thaw"]:
+		_safety_steps(tut, l, x, y, ["kpa", "valve", "thaw"], ["测量罐内压力", "检查安全阀", "解冻安全阀"], "操作提醒：只加热安全阀，不要关闭冷头。")
+		return
+	if not tut.done and str(l.get("id", "")) == "SP_L1" and step_id in ["bleed", "pins", "pivot"]:
+		_safety_steps(tut, l, x, y, ["bleed", "pins", "pivot"], [_w("泄压", "BLEED"), _w("解除锁销", "REMOVE THE PINS"), _w("拆除枢轴", "REMOVE THE PIVOT")], _w("操作提醒：先泄压，再拔销。锁销没有全部拆除前，不要切割枢轴。", "BLEED FIRST, THEN PULL BOTH PINS BEFORE CUTTING THE PIVOT."))
+		return
 	# lessons as a row of marks
 	for i in range(1, ls.size()):
 		var mx := x + (i - 1) * 26.0
@@ -287,6 +315,30 @@ func _task_list() -> void:
 		_text(game.txt("tut_q"), Vector2(x, OVERVIEW_RECT.end.y + 28), 16, Pal.ink(0.55 + 0.25 * sin(t * 3.0)))
 
 
+# Keep related safety operations together, using the actual tutorial step for progress.
+func _safety_steps(tut: Tutorial, lesson: Dictionary, x: float, y: float, ids: Array, titles: Array, reminder: String) -> void:
+	var current := ids.find(str(tut.step().get("id", "")))
+	_text(_w("当前步骤：", "CURRENT STEP: ") + str(titles[current]), Vector2(x, y + 75), 18, Pal.heat(0.95, 1.1), font_b)
+	var steps: Array = lesson.get("steps", [])
+	for i in ids.size():
+		var row: Dictionary = {}
+		for st in steps:
+			if str(st.get("id", "")) == ids[i]:
+				row = st
+				break
+		if row.is_empty():
+			continue
+		var yy := y + 111.0 + i * 31.0
+		if i < current:
+			_tick(Vector2(x + 2.0, yy - 12.0), 1.0, 0.85)
+		elif i == current:
+			c.draw_rect(Rect2(x, yy - 18.0, 4.0, 23.0), Pal.heat(1.0, 1.0))
+		_text(tut.text(row.text), Vector2(x + 20.0, yy), 17, Pal.ink(0.98 if i == current else 0.72), font_b if i == current else font)
+	_text(reminder, Vector2(x, y + 223.0), 15, Pal.heat(0.9, 1.15), font)
+	if tut.hint_level >= 1:
+		_text(game.txt("tut_q"), Vector2(x, OVERVIEW_RECT.end.y + 28), 16, Pal.ink(0.55 + 0.25 * sin(t * 3.0)))
+
+
 func _tick(p: Vector2, k: float, a: float) -> void:
 	var pts := [p + Vector2(0, 6), p + Vector2(4, 10), p + Vector2(11, 1)]
 	if k <= 0.0:
@@ -305,9 +357,18 @@ func _marker(s: Vector2) -> void:
 	if wp == Vector2.INF:
 		return
 	var sp: Vector2 = game.hud.to_screen(wp)
-	var inside := Rect2(Vector2(40, 40), s - Vector2(80, 80)).has_point(sp)
+	var view := Rect2(Vector2(40, 40), s - Vector2(80, 80))
+	var inside := view.has_point(sp)
 	var strong := tut.hint_level >= 2
 	if inside:
+		if tut.step().get("target", {}).has("welds"):
+			for point in tut.weld_targets():
+				var p: Vector2 = game.hud.to_screen(point)
+				if view.has_point(p):
+					c.draw_circle(p, 4.0, Color(0.05, 0.035, 0.02))
+					c.draw_circle(p, 2.4, Pal.heat(1.0, 1.5))
+					c.draw_line(p + Vector2(5, 0), p + Vector2(15, 0), Pal.heat(1.0, 1.3), 2.0, true)
+			return
 		var period := 1.2 if not strong else 0.6
 		var ph := fposmod(t, period) / period
 		var rr := lerpf(10.0, 46.0 if not strong else 70.0, Pal.ease_out(ph))

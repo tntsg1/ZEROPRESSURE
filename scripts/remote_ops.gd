@@ -8,8 +8,12 @@ class_name RemoteOps
 # the mill, carrying goods) stays on site.
 
 # 126 号: the company's stores (everything on one page) with F3, from the start
-const KINDS := ["store", "rack", "grid", "queue"]
-const KEYS := {"store": KEY_F3, "rack": KEY_F4, "grid": KEY_F5, "queue": KEY_F6}
+# 128 号 第 4 段 (2026-11-07): the processing queue is not among them — it opens at the furnace console (E)
+# and from the stores' note when ingots are queued
+const KINDS := ["store", "rack", "grid"]
+# 128 号 第 4 段 (2026-11-07): the processing queue has no key of its own — its button on every terminal and
+# the processing district's consoles open it
+const KEYS := {"store": KEY_F3, "rack": KEY_F4, "grid": KEY_F5}
 
 
 # 128 号: the parts rack is in the stores page now (its equipment and parts filters): F4 opens the stores
@@ -26,12 +30,12 @@ static func name_of(kind: String) -> String:
 		"store": return w("仓库", "STORES")
 		"rack": return w("零件架", "PARTS RACK")
 		"grid": return w("电网调度", "GRID DISPATCH")
-		"queue": return w("加工排队", "PROCESSING QUEUE")
+		"queue": return w("加工队列", "PROCESSING QUEUE")
 	return kind
 
 
 static func key_label(kind: String) -> String:
-	return OS.get_keycode_string(KEYS.get(kind, KEY_NONE))
+	return OS.get_keycode_string(KEYS[kind]) if KEYS.has(kind) else ""
 
 
 static func _walked(zone: String) -> bool:
@@ -49,7 +53,7 @@ static func ok(kind: String) -> bool:
 		"store": return StoreBook.counter_seen()
 		"rack": return StoreBook.counter_seen() if StoreBook.live() else Career.data.get("seen", {}).has("rack_used")
 		"grid": return _walked("power")
-		"queue": return _walked("process")
+		"queue": return _walked("process") or ProcessLine.first_done()
 	return false
 
 
@@ -61,7 +65,7 @@ static func why(kind: String) -> String:
 		"store": return w("第一次先飞到船坞的仓库柜台按 E，之后在哪都能按 F3", "FLY TO THE STORES COUNTER IN THE BERTH AND PRESS E ONCE; THEN F3 WORKS ANYWHERE")
 		"rack": return w("先到船坞的零件架前用一次（E）", "USE THE RACK IN THE BERTH ONCE FIRST (E)")
 		"grid": return w("动力区导览走过以后才能远程调度", "WALK THE POWER DISTRICT FIRST")
-		"queue": return w("加工区导览走过以后才能远程排队", "WALK THE PROCESSING DISTRICT FIRST")
+		"queue": return w("加工队列在加工区炉体控制台按 E 打开，或在仓库排产后点提示上的“查看加工队列”", "THE QUEUE OPENS AT THE FURNACE CONSOLE (E) OR FROM THE STORES' NOTE")
 	return ""
 
 

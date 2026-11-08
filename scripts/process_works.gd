@@ -16,7 +16,13 @@ const STAND_X := 4.2          # the basket's stand, on the platform over the tra
 const STAND_LUG := 5.05       # the basket's lugs when it sits on the stand
 const CHUTE_X := 19.0         # the furnace's side charging chute
 const CHUTE_LUG := 9.55
-const PARK_X := 28.0
+const PARK_X := 9.5            # 128 号 第 4 段: parked over the gap between the basket's stand and the mast
+# 128 号 第 4 段 (方案 A 改): the hall re-laid under the observation gallery. The furnace bay (the furnace,
+# its line, the crane on its runway, the basket's stand, the mould rack) keeps its own metres and stands
+# BAY_DY lower in the hall; the mill keeps its own and stands MILL_OFF over, under the freight spur.
+# Everything here (the crane, the particles) is in the bay's own metres except the mill's (in its own).
+const BAY_DY := 7.0
+const MILL_OFF := Vector2(4.0, 13.0)
 const HOOK_UP := 4.0          # the hook drawn up, empty
 const CARRY := 4.6            # … carrying (the basket's bottom clears the line at 8 m)
 const BASKET_H := 2.35        # m from the lugs to the basket's bottom
@@ -27,6 +33,24 @@ const A_H := 2.2
 const DOOR_V := 1.6           # the reheating furnace's door, /s and /s²
 const DOOR_A := 6.0
 
+# 128 号 第 4 段 换模: the mould blocks (scripts/process_line.gd, scripts/cast_art.gd) — one in the seat under
+# the tap hole, the others on the wall rack right of the line; the crane swaps them on a short spreader
+const SEAT := Vector2(18.95, 16.15)      # the seated block's top-left
+const SEAT_HOOK := 15.4                  # the hook over it (the spreader and slings take 0.75 m)
+const RACK_X := [21.6, 23.9, 26.2]       # the rack's three slots, each block's left
+const RACK_TOP := 12.9                   # a racked block's top
+const RACK_HOOK := 12.15
+const CARRY_M := 11.3                    # the hook while a block is carried over the others
+const CLEAR_M := 11.9                    # the bare spreader over the racked blocks' lugs
+const V_XM := 11.0                       # m/s, m/s² the crane travels and hoists on a mould change (≤ 10 s in all)
+const A_XM := 10.0
+const V_HM := 10.0
+const A_HM := 13.0
+static var seat_m := "billet"            # what is in the seat, on the hook, in each rack slot (drawn)
+static var hook_m := ""
+static var rack_m: Array = ["slab", "small", ""]
+static var _m_from := -1                 # the rack slot the new block comes from
+static var _m_into := -1                 # the empty slot the old one goes into
 # the crane
 static var x := PARK_X
 static var vx := 0.0
@@ -115,7 +139,7 @@ static func furnace_x(game) -> float:
 
 static func line_y(game) -> float:
 	var p = game.get("plant") if game != null else null
-	return float(p.F) - PortStructure.box("process").position.y / Geom.M if p != null else 8.0
+	return float(p.F) - PortStructure.box("process").position.y / Geom.M - BAY_DY if p != null else 8.0
 
 
 static func _drive(cur: float, vel: float, to: float, vmax: float, acc: float, dt: float) -> Array:
@@ -138,16 +162,101 @@ static func _go(s: String) -> void:
 
 
 # the crane's job: a list of steps, each setting targets and waiting for them
+static func mould_step() -> bool:
+	return step.begins_with("m_")
+
+
 static func _crane(game, dt: float) -> void:
 	var f = furnace(game)
 	var want: bool = f != null and float(f.bunker) > 0.02 and Port.stage("process") >= 1
 	step_t += dt
+	if not mould_step() and not Career.data.is_empty():
+		# between changes the blocks are where the books say
+		seat_m = ProcessLine.line_mould()
+		rack_m = ProcessLine.casting().get("rack", ["slab", "small", ""]).duplicate()
+		hook_m = ""
 	match step:
 		"park":
 			x_to = PARK_X
 			hook_to = HOOK_UP
-			if want and _at():
+			if not want and ProcessLine.changing() and not Career.data.is_empty():
+				_m_into = rack_m.find("")
+				_m_from = rack_m.find(ProcessLine.change_to())
+				if _m_into >= 0 and _m_from >= 0:
+					_go("m_go_seat")
+			elif want and _at():
 				_go("to_stand")
+		# ---- 换模: seat → empty slot, the wanted block → seat
+		"m_go_seat":
+			x_to = SEAT.x + 1.1
+			hook_to = CARRY_M
+			if absf(x - x_to) < 0.3:
+				_go("m_down_seat")
+		"m_down_seat":
+			hook_to = SEAT_HOOK
+			if _at():
+				_go("m_latch_seat")
+		"m_latch_seat":
+			if step_t > 0.25:
+				hook_m = seat_m
+				seat_m = ""
+				events.append(["clamp", Vector2(SEAT.x + 1.1, SEAT.y) + Vector2(0.0, BAY_DY)])
+				_go("m_up1")
+		"m_up1":
+			hook_to = CARRY_M
+			if hook < CARRY_M + 1.2:
+				x_to = float(RACK_X[_m_into]) + 1.1
+			if _at():
+				_go("m_down_rack")
+		"m_down_rack":
+			hook_to = RACK_HOOK
+			if _at():
+				_go("m_rel1")
+		"m_rel1":
+			if step_t > 0.2:
+				rack_m[_m_into] = hook_m
+				hook_m = ""
+				events.append(["clank", Vector2(float(RACK_X[_m_into]) + 1.1, RACK_TOP + 0.8) + Vector2(0.0, BAY_DY)])
+				_go("m_up2")
+		"m_up2":
+			hook_to = CLEAR_M
+			if hook < CLEAR_M + 0.3:
+				x_to = float(RACK_X[_m_from]) + 1.1
+			if _at():
+				_go("m_down_new")
+		"m_down_new":
+			hook_to = RACK_HOOK
+			if _at():
+				_go("m_latch_new")
+		"m_latch_new":
+			if step_t > 0.25:
+				hook_m = str(rack_m[_m_from])
+				rack_m[_m_from] = ""
+				events.append(["clamp", Vector2(float(RACK_X[_m_from]) + 1.1, RACK_TOP) + Vector2(0.0, BAY_DY)])
+				_go("m_up3")
+		"m_up3":
+			hook_to = CARRY_M
+			if hook < CARRY_M + 1.2:
+				x_to = SEAT.x + 1.1
+			if _at():
+				_go("m_down_seat2")
+		"m_down_seat2":
+			hook_to = SEAT_HOOK
+			if _at():
+				_go("m_rel2")
+		"m_rel2":
+			if step_t > 0.2:
+				seat_m = hook_m
+				hook_m = ""
+				events.append(["clank", Vector2(SEAT.x + 1.1, SEAT.y + 0.8) + Vector2(0.0, BAY_DY)])
+				ProcessLine.crane_done = true
+				_go("m_home")
+		"m_home":
+			hook_to = HOOK_UP
+			if hook < CARRY_M:
+				x_to = PARK_X
+			if _at():
+				_go("park")
 		"to_stand":
 			hook_to = HOOK_UP
 			if hook == HOOK_UP:
@@ -162,7 +271,7 @@ static func _crane(game, dt: float) -> void:
 			if step_t > 0.6:
 				basket = "hook"
 				basket_fill = 1.0
-				events.append(["clamp", Vector2(STAND_X, STAND_LUG)])
+				events.append(["clamp", Vector2(STAND_X, STAND_LUG) + Vector2(0.0, BAY_DY)])
 				_go("lift")
 		"lift":
 			hook_to = CARRY
@@ -198,7 +307,7 @@ static func _crane(game, dt: float) -> void:
 		"release":
 			if step_t > 0.5:
 				basket = "stand"
-				events.append(["clank", Vector2(STAND_X, STAND_LUG + BASKET_H)])
+				events.append(["clank", Vector2(STAND_X, STAND_LUG + BASKET_H) + Vector2(0.0, BAY_DY)])
 				_go("home")
 		"home":
 			hook_to = HOOK_UP
@@ -207,17 +316,18 @@ static func _crane(game, dt: float) -> void:
 			if _at():
 				_go("park")
 	var was := vx
-	var r := _drive(x, vx, x_to, V_X, A_X, dt)
+	var fast := mould_step()
+	var r := _drive(x, vx, x_to, V_XM if fast else V_X, A_XM if fast else A_X, dt)
 	x = r[0]
 	vx = r[1]
-	var r2 := _drive(hook, vh, hook_to, V_H, A_H, dt)
+	var r2 := _drive(hook, vh, hook_to, V_HM if fast else V_H, A_HM if fast else A_H, dt)
 	hook = r2[0]
 	vh = r2[1]
 	wheel += vx * dt / 0.35
 	drum += vh * dt / 0.45
 	# the load on its ropes: a damped pendulum the trolley's acceleration swings
 	var ax := (vx - was) / maxf(dt, 1e-4)
-	var length := maxf(0.8, hook - RAIL_Y + (1.2 if basket == "hook" else 0.4))
+	var length := maxf(0.8, hook - RAIL_Y + (1.2 if basket == "hook" or hook_m != "" else 0.4))
 	vsway += (-9.8 / length * sin(sway) - ax / length * cos(sway) - 0.9 * vsway) * dt
 	sway = clampf(sway + vsway * dt, -0.12, 0.12)
 
@@ -226,6 +336,7 @@ static func tick(game, dt: float) -> void:
 	t += dt
 	var f = furnace(game)
 	_crane(game, dt)
+	preload("res://scripts/bale_press.gd").tick(dt)
 	# the furnace's arcs and its helpers
 	var on: bool = Port.stage("process") >= 1
 	var arcs: bool = f != null and float(f.power) > 0.5 and str(f.phase) not in ["tilt", "pour", "back"]
@@ -271,7 +382,7 @@ static func tick(game, dt: float) -> void:
 		door_to = 1.0
 		push_to = 1.0 if door > 0.85 else 0.0
 	if state == "roll" and _job_was != "roll":
-		events.append(["door", Vector2(41.0, 9.0)])
+		events.append(["door", Vector2(41.0, 9.0) + MILL_OFF])
 	_job_was = state
 	var rd := _drive(door, vdoor, door_to, DOOR_V, DOOR_A, dt)
 	door = rd[0]
@@ -286,7 +397,7 @@ static func tick(game, dt: float) -> void:
 	var head := lerpf(43.4 + 2.4, 55.4 - 0.3, p)
 	var spray_to := 1.0 if state == "roll" and head > 45.6 and head < 48.6 else 0.0
 	if spray_to > 0.5 and spray < 0.5:
-		events.append(["hiss", Vector2(46.9, 9.4)])
+		events.append(["hiss", Vector2(46.9, 9.4) + MILL_OFF])
 	spray = move_toward(spray, spray_to, dt * 5.0)
 	_steam_acc += dt * (22.0 * spray + (3.0 if state == "roll" else 0.0))
 	while _steam_acc >= 1.0:
@@ -323,6 +434,8 @@ static func _particles(list: Array, dt: float, g: float, drag: float) -> void:
 
 # ---------------------------------------------------------------- what each machine is doing (plates, cards)
 static func crane_state() -> Array:
+	if mould_step():
+		return [w("换模中", "changing the mould"), "work"]
 	match step:
 		"park": return [w("停车位待命", "parked"), "ok"]
 		"to_stand", "pick", "latch": return [w("去取料篮", "fetching the basket"), "work"]

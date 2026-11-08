@@ -24,6 +24,7 @@ const SHOP := [
 	["intel", "item", 6000.0, "it_intel", "it_intel_d"],
 ]
 const FITTED := 4
+const DRONE_UPGRADES := 3
 # now → after, per upgrade: [label key, now, after, now 0..1, after 0..1] ("sh_" values are Txt keys)
 const STATS := {
 	"scan_kit": [["sh_cond", "sh_none", "sh_shown", 0.0, 1.0], ["sh_hidden", "sh_unseen", "sh_found", 0.0, 1.0]],
@@ -56,10 +57,11 @@ const REQUIRES := {"hauler2": "hauler", "berth120": "berth88", "berth200": "bert
 # of apps; on site the same device, opened by its key or at the berth's
 # computer, with what can't be used there locked and the reason written on it.
 const HOME := -1
+const DRONE_PAGE := 8
 # [the page it opens, its name] in tile order; keys 1–4 open them
 # 53 号 (player 2026-10-25): radio, ledger, supplies and tools & techniques taken off, "no use"
 # user 2026-10-26: "把训练舱先关掉…这是主线必练的" — no training page; the courses come with the ships
-const APPS := [[0, "app_contracts"], [1, "app_equip"], [5, "app_route"]]
+const APPS := [[0, "app_contracts"], [1, "app_equip"], [5, "app_route"], [DRONE_PAGE, "app_drone"]]
 const ON_SITE := [3, 4, 5, 6]     # what works in the middle of a job
 # what berth management will offer later, named in one line
 const LATER := ["fa_scan"]
@@ -77,6 +79,7 @@ var hover := -1
 var hover_tab := -1
 var hover_go := false
 var hover_next := false      # 61 号: the home's "take me" on the next step
+var _next_action := false
 var flash := 0.0
 var msg := ""
 var msg_t := 9.0
@@ -205,6 +208,8 @@ func _note_text(k: String) -> String:
 			return Ops.w("船坞：报修坏了的设备、看扩建计划", "The berth: report what is broken, see the expansion plans")
 		"app5":
 			return Ops.w("学会新的拆法、规划港区建设", "Learn new ways to strip, plan the port's building")
+		"app8":
+			return Ops.w("查看和安装 R-02 的工具升级", "View and fit tool upgrades for R-02")
 		"go0":
 			if not next_job.is_empty():
 				return Ops.w("去船坞开工已接下的这一单（Enter）", "Start the job already taken, at the berth (Enter)")
@@ -356,7 +361,7 @@ func _ready() -> void:
 	for kind in RemoteOps.kinds():
 		var rb := Button.new()
 		rb.name = "Remote_" + kind
-		rb.text = "%s [%s]" % [RemoteOps.name_of(kind), RemoteOps.key_label(kind)]
+		rb.text = "%s [%s]" % [RemoteOps.name_of(kind), RemoteOps.key_label(kind)] if RemoteOps.key_label(kind) != "" else RemoteOps.name_of(kind)
 		rb.custom_minimum_size = Vector2(200, 52)
 		rb.add_theme_font_override("font", Fonts.get_font("Medium"))
 		rb.add_theme_font_size_override("font_size", 16)
@@ -505,6 +510,7 @@ func items() -> Array:
 		4: return _supply_items()
 		5: return [] # The growth desk uses native, clipped and focusable controls.
 		7: return _training_rows()
+		DRONE_PAGE: return SHOP.slice(0, DRONE_UPGRADES)
 	return []
 
 
@@ -546,6 +552,8 @@ func _app_of(page: int) -> int:
 
 
 func _locked(page: int) -> bool:
+	if page == DRONE_PAGE and not Career.data.get("market", false):
+		return true
 	if page != HOME and Onboard.locks(page):
 		return true
 	return overlay and not between and page != HOME and not page in ON_SITE
@@ -590,7 +598,8 @@ func _goals() -> Array:
 
 # the main line's step, from the terminal (28 号 Q18): the contracts here; a guide on site
 func _take_main() -> void:
-	var st := Mainline.step()
+	var ch := Mainline.chapter()
+	var st := Mainline.waiting_step() if ch == "" else Mainline.step(ch)
 	var go := str(st.get("go", "wait"))
 	# nothing on the find-ships page to act on: straight to the star map's sweep (user 2026-10-26)
 	if (go == "scan" or (go == "contracts" and Scan.ON and not Mainline._cards_waiting())) and game_ref != null:
@@ -599,7 +608,7 @@ func _take_main() -> void:
 		gm.open_star_map.call_deferred("find")
 	elif go == "contracts":
 		set_tab(0)
-	elif go.begins_with("guide:") and game_ref != null:
+	elif (go == "store" or go.begins_with("guide:")) and game_ref != null:
 		var g = game_ref
 		close()
 		Mainline.take_me.call_deferred(g, go)
@@ -672,6 +681,9 @@ func _lock_reason(page: int) -> String:
 	match page:
 		0: return Txt.t("tm_lock_contracts")
 		1: return Txt.t("tm_lock_equip")
+		DRONE_PAGE:
+			if not Career.data.get("market", false):
+				return Ops.w("拆完第一艘船后开放", "OPENS AFTER YOUR FIRST SHIP")
 	return Txt.t("tm_lock_between")
 
 
@@ -768,7 +780,7 @@ func _process(dt: float) -> void:
 		for i in _ops_decs.size():
 			if _dec_rect(i).has_point(m):
 				hover_dec = i
-		hover_next = _next_go_rect().has_point(m) and Mainline.chapter() != "" and not _walk_quiet()
+		hover_next = _next_action and _next_go_rect().has_point(m) and not _walk_quiet()
 	hover_goal = -1
 	if boot_t >= BOOT_T:
 		for i in (Route.MAX_PINS if Onboarding.shown("rep") and not _walk_quiet() else 0):
@@ -1030,7 +1042,7 @@ func close() -> void:
 
 
 func set_tab(i: int) -> void:
-	i = clampi(i, HOME, 7)
+	i = clampi(i, HOME, DRONE_PAGE)
 	if i == HOME:
 		berth_view = null
 	# 62 号: the finds' trip home is quoted again from today when their page opens (the planets move)
@@ -1238,6 +1250,10 @@ func act() -> void:
 			route_panel.purchase()
 		7:
 			_training_act(sel)
+		DRONE_PAGE:
+			var upgrades := items()
+			if sel >= 0 and sel < upgrades.size():
+				buy(upgrades[sel])
 
 
 # the training page: replay the base course, take a special course, open the codex
@@ -1340,7 +1356,14 @@ func take(i: int) -> void:
 		return
 	# 128 号: a haul still waiting to be stored holds the next job back (a tug sent for a find is no job)
 	if StoreBook.blocks_next_job() and not offers()[i].get("find", false) and not offers()[i].get("queued", false):
-		_refuse(StoreBook.blocked_text())
+		if game_ref != null and is_instance_valid(game_ref) and on_close.is_valid():
+			var gm = game_ref
+			var waiting: Array = StoreBook.inbox()
+			var pick := "i:" + str(waiting[0].uid)
+			on_close.call()
+			gm.open_store("all", pick)
+		else:
+			_refuse(StoreBook.blocked_text())
 		return
 	leave_from = _item_rect(i)
 	leave_offer = offers()[i].duplicate(true)
@@ -1643,6 +1666,8 @@ func _item_rect(i: int) -> Rect2:
 			if i < FITTED:
 				return _callout(i)
 			return _facility_rect(i - FITTED)
+		DRONE_PAGE:
+			return _callout(i)
 		2:
 			return _finance_rect()
 		4:
@@ -1729,6 +1754,7 @@ func _next_go_rect() -> Rect2:
 
 
 func _next_step_card(a: float) -> void:
+	_next_action = false
 	var k := Pal.ease_out(clampf((deal_t - 0.02) / 0.3, 0.0, 1.0)) * a
 	if k <= 0.0:
 		return
@@ -1743,16 +1769,18 @@ func _next_step_card(a: float) -> void:
 	r.position.y += (1.0 - k) * 20.0
 	Hmi.raised(self, r, k)
 	var ch := Mainline.chapter()
-	if ch == "":
+	var st := Mainline.waiting_step() if ch == "" else Mainline.step(ch)
+	if st.is_empty():
 		_text(Ops.w("眼下的事都做完了。", "Everything in hand is done."), r.position + Vector2(34, r.size.y * 0.5 + 10), 26, Pal.ink(0.9 * k), font_s)
 		return
 	_text(Ops.w("下一步", "NEXT"), r.position + Vector2(34, 42), 16, Color(UiSkin.ACCENT, 0.95 * k), font_b)
-	_text(Ops.w("第 %d 章 · %s", "CHAPTER %d · %s") % [Mainline.index(ch), Mainline.name_of(ch)], r.position + Vector2(110, 42), 16, Pal.ink(0.6 * k), font_b)
-	var st := Mainline.step(ch)
+	var head := str(st.get("title", "")) if ch == "" else Ops.w("第 %d 章 · %s", "CHAPTER %d · %s") % [Mainline.index(ch), Mainline.name_of(ch)]
+	_text(head, r.position + Vector2(110, 42), 16, Pal.ink(0.6 * k), font_b)
 	var words := str(st.get("text", ""))
 	_next_two = font_s.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x > r.size.x - 320
 	draw_multiline_string(font_s, r.position + Vector2(34, 86), words, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 320, 26, 2, Pal.ink(0.97 * k), TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_GRAPHEME_BOUND)
-	if str(st.get("go", "wait")) != "wait":
+	_next_action = str(st.get("go", "")) not in ["", "wait"]
+	if _next_action:
 		var g := _next_go_rect()
 		g.position.y += (1.0 - k) * 20.0
 		Hmi.push(self, font_s, g, Ops.w("带我去", "TAKE ME"), true, 1.0 if hover_next else 0.0, k, t, 0.0, "", "")
@@ -1845,7 +1873,7 @@ func _onboard_welcome(s: Vector2, a: float) -> void:
 		_text(lines[i], Vector2(r.position.x + 40, y + 56 + i * 34), 18, Pal.ink((0.85 if i != 1 else 1.0) * k), font_b if i == 1 else font)
 
 
-# the home screen's keys: one row of eight
+# the home screen's apps share one row
 func _tile_rect(i: int) -> Rect2:
 	var area := _home_area()
 	var gap := 14.0
@@ -1907,6 +1935,8 @@ func _left_rect() -> Rect2:
 
 func _schematic_rect() -> Rect2:
 	var l := _left_rect()
+	if tab == DRONE_PAGE:
+		return l
 	return Rect2(l.position, Vector2(l.size.x, l.size.y - 196))
 
 
@@ -1978,7 +2008,7 @@ func _go_rect() -> Rect2:
 			var n := float(_market_cols())
 			var w := (s.x - 120 - (n - 1.0) * 30) / n
 			return Rect2(go_x.x, s.y - 122, w, 62)
-		1, 4:
+		1, 4, DRONE_PAGE:
 			var r := _detail_rect()
 			return Rect2(r.position.x + 32, r.end.y - 100, r.size.x - 64, 68)
 		2:
@@ -2079,6 +2109,8 @@ func _page(s: Vector2, a: float, with_focus: bool) -> void:
 			_radio_page(s, a)
 		7:
 			_training_page(s, a)
+		DRONE_PAGE:
+			_shop(s, a)
 	if with_focus:
 		_focus_frame(a)
 	_walk_mark(a)
@@ -2089,7 +2121,7 @@ func _has_focus() -> bool:
 	if leaving >= 0.0:
 		return false
 	match tab:
-		HOME, 1, 4, 5:
+		HOME, 1, 4, 5, DRONE_PAGE:
 			return not items().is_empty()
 		0:
 			return next_job.is_empty() and not offers().is_empty()
@@ -2277,16 +2309,17 @@ func _goal_strip(ka: float) -> void:
 	var gs := _goals()
 	# the main line takes the first place (28 号 Q17); the career's own goals follow
 	var main := Mainline.chapter()
+	var st := Mainline.waiting_step() if main == "" else Mainline.step(main)
 	var off := 0
-	if main != "":
+	if not st.is_empty():
 		off = 1
 		var g0 := _goal_rect(0)
 		if hover_goal == 0:
 			draw_rect(g0.grow(-3), Pal.ink(0.05 * ka))
 		Hmi.lamp(self, Vector2(g0.position.x + 8, g0.get_center().y), Pal.heat(ka, 1.5), true, ka, 5.0)
-		var nm := Ops.w("主线 %d · %s", "MAIN %d · %s") % [Mainline.index(main), Mainline.name_of(main)]
+		var nm := str(st.get("title", "")) if main == "" else Ops.w("主线 %d · %s", "MAIN %d · %s") % [Mainline.index(main), Mainline.name_of(main)]
 		draw_string(font_s, Vector2(g0.position.x + 22, g0.position.y + 22), nm, HORIZONTAL_ALIGNMENT_LEFT, g0.size.x - 40, 15, Pal.ink(0.95 * ka))
-		draw_string(font_b, Vector2(g0.position.x + 22, g0.position.y + 39), str(Mainline.step(main).text), HORIZONTAL_ALIGNMENT_LEFT, g0.size.x - 40, 12, Pal.heat(0.9 * ka, 1.2))
+		draw_string(font_b, Vector2(g0.position.x + 22, g0.position.y + 39), str(st.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, g0.size.x - 40, 12, Pal.heat(0.9 * ka, 1.2))
 	if gs.is_empty():
 		if off == 0:
 			_text(Txt.t("rt_all_done"), Vector2(r.position.x + 132, r.position.y + 29), 15, Pal.tint(Pal.FLUID, 0.9 * ka, 1.1), font_b)
@@ -2321,7 +2354,7 @@ func _goal_strip(ka: float) -> void:
 # a goal in the header clicked: its node on the route page (a skill: the skill book)
 func _open_goal(i: int) -> void:
 	var gs := _goals()
-	if Mainline.chapter() != "":
+	if Mainline.chapter() != "" or not Mainline.waiting_step().is_empty():
 		if i == 0:
 			_take_main()
 			return
@@ -2669,7 +2702,7 @@ func _shop(_s: Vector2, a: float) -> void:
 	Hmi.raised(self, pr, ka)
 	Hmi.screen(self, sr, ka, true)
 	_schematic(sr, ka)
-	for i in FITTED:
+	for i in DRONE_UPGRADES:
 		_callout_box(i, ka)
 	# how to read the lamps
 	var ly := sr.position.y + 30
@@ -2679,12 +2712,6 @@ func _shop(_s: Vector2, a: float) -> void:
 		Hmi.lamp(self, Vector2(lx, ly - 5), kk[0], true, ka, 6.0)
 		_text(kk[1], Vector2(lx + 16, ly), 14, Pal.ink(0.7 * ka), font_b)
 		lx += 120
-	# the berth's facilities: a grid under the drawing
-	var g := _grid_rect()
-	Hmi.plate(self, font_s, Rect2(g.position.x, g.position.y, 440, 30), Txt.t("tm_facilities"), 15, ka)
-	var eq := _equip_items()
-	for k in range(FITTED, eq.size()):
-		_fac_cell(k, eq[k], ka)
 	_detail(a)
 
 
@@ -2721,8 +2748,8 @@ func _schematic(sr: Rect2, a: float) -> void:
 	DArt.tint = Color(1, 1, 1)
 	draw_set_transform_matrix(Transform2D.IDENTITY)
 	_text("R-02", c + Vector2(-22, R + 40), 18, Pal.tint(Pal.AIR, 0.85 * a, 1.2), font_s)
-	# the four fitted upgrades
-	for i in FITTED:
+	# The three tool upgrades on the drone page.
+	for i in DRONE_UPGRADES:
 		var id: String = SHOP[i][0]
 		var have: bool = d.upgrades.has(id)
 		var it: float = install.get(id, -1.0)
@@ -3117,6 +3144,9 @@ func _bottom(s: Vector2, a: float) -> void:
 			# 61 号: a ship with something not trained for is taken all the same; a plain note says so
 			if not Codex.missing(str(o.ship)).is_empty():
 				note = Ops.w("这艘船有%s，没练过。点“开工拆”会先带你去练这几门专项（必练），练完直接回来拆它。", "This ship has %s, not trained for: start stripping takes you through those courses first (required), then straight back to it.") % Codex.untrained_text(str(o.ship))
+			if StoreBook.blocks_next_job() and not o.get("find", false) and not o.get("queued", false) and game_ref != null:
+				label = Ops.w("先处理待入库", "HANDLE WAITING GOODS") + "   Enter"
+				note = Ops.w("点这里打开仓库并选中待入库货物；可以出售，或腾出位置后入库。", "OPEN THE STORES AND SELECT THE WAITING GOODS; SELL THEM OR MAKE ROOM TO STORE THEM.")
 			# user 2026-10-26: the button lit while the yard was full, the refusal flashed by — "I can't
 			# tow it, what's going on?": greyed, with the reason and what to do next on it
 			if o.get("find", false):
@@ -3129,7 +3159,7 @@ func _bottom(s: Vector2, a: float) -> void:
 					var way := ShipMarket.on_the_way()
 					if TugYard.full() and not way.is_empty():
 						note += Ops.w("。路上那艘约 %d 秒到港，到了在这里点“开工拆”。", ". The one on its way docks in ~%d s; then start stripping it here.") % int(float(way[0].left_s))
-		1, 4:
+		1, 4, DRONE_PAGE:
 			var list := items()
 			var it: Array = list[sel] if sel < list.size() else []
 			if it.is_empty():
@@ -3426,7 +3456,7 @@ func _home(s: Vector2, a: float) -> void:
 		var r := _dec_rect(i)
 		r.position.x += (1.0 - k) * 18.0
 		OpsSkin.draw_decision(self, f, r, _ops_decs[i], k, 1.0 if i == hover_dec else 0.0, r.size.y < 54.0)
-	# the eight pages: one row of keys
+	# the home apps: one row of keys
 	for i in APPS.size():
 		var page: int = APPS[i][0]
 		var r := _tile_rect(i)
@@ -3485,6 +3515,9 @@ func _home(s: Vector2, a: float) -> void:
 				lamp = Hmi.ok_col()
 			7:
 				line = Txt.t("tm_tile_training")
+			DRONE_PAGE:
+				var fitted := SHOP.slice(0, DRONE_UPGRADES).filter(func(it): return d.upgrades.has(it[0])).size()
+				line = Ops.w("工具升级已安装 %d/%d", "TOOL UPGRADES FITTED %d/%d") % [fitted, DRONE_UPGRADES]
 		Hmi.lamp(self, Vector2(r.end.x - 16, sc.end.y + 20), lamp if not locked else Pal.ink(0.3), not locked, k, 5.0)
 		draw_string(font_s, Vector2(r.position.x + 12, sc.end.y + 26), "%d  %s" % [i + 1, Txt.t(APPS[i][1])], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 40, 18, Pal.ink((0.98 if not locked else 0.45) * k))
 		var foot := (Txt.t("tm_locked") + _lock_reason(page)) if locked else line
@@ -3668,6 +3701,9 @@ func _app_icon(page: int, c: Vector2, a: float, scale_k: float = 1.0) -> void:
 		7:
 			draw_rect(Rect2(c + Vector2(-60, -30), Vector2(120, 60)), col, false, 2.0)
 			draw_circle(c, 10.0, col)
+		DRONE_PAGE:
+			draw_polyline(PackedVector2Array([c + Vector2(-65, 0), c + Vector2(-28, -34), c + Vector2(48, -34), c + Vector2(65, 0), c + Vector2(48, 34), c + Vector2(-28, 34), c + Vector2(-65, 0)]), col, 3.0, true)
+			draw_arc(c, 15.0, 0.0, TAU, 24, col, 2.0, true)
 	draw_set_transform(_page_off)
 
 

@@ -21,6 +21,9 @@ const CATALOG := {
 	"ferrous_scrap":{"name":"钢锭", "grades":[1,0]},
 	"nonferrous_mix":{"name":"混合有色金属", "grades":[0]},
 	"steel_billet":{"name":"结构钢坯", "grades":[0,1,2]},
+	# 128 号 第 4 段: the other two moulds' products (scripts/process_line.gd)
+	"steel_slab":{"name":"板坯", "grades":[0,1,2]},
+	"steel_small":{"name":"小锭", "grades":[0,1,2]},
 	# 74 号: the rolling mill's products, also sold by merchants
 	"steel_plate":{"name":"钢板", "grades":[1]},
 	"steel_section":{"name":"型材", "grades":[1]},
@@ -348,7 +351,9 @@ const PORT_AUTHORITY := "port_authority"
 const BUYBACK_K := 0.7
 const REF_PRICE := {"mixed_metal:0": 140.0, "ferrous_scrap:0": 150.0, "ferrous_scrap:1": INGOT_PRICE, "nonferrous_mix:0": 700.0,
 	"steel_billet:0": 400.0, "steel_billet:1": BILLET_PRICE, "steel_billet:2": 650.0,
-	"steel_plate:1": 750.0, "steel_section:1": 720.0}
+	"steel_plate:1": 750.0, "steel_section:1": 720.0,
+	"steel_slab:0": 420.0, "steel_slab:1": BILLET_PRICE + 30.0, "steel_slab:2": 680.0,
+	"steel_small:0": 430.0, "steel_small:1": BILLET_PRICE + 50.0, "steel_small:2": 700.0}
 static func ref_price(key: String) -> float:
 	return float(REF_PRICE.get(key, 300.0))
 static func buyback_price(key: String) -> float:

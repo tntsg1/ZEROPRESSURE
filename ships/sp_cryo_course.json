@@ -112,7 +112,7 @@
 			"id": "SP_C1",
 			"mode": "lockstep",
 			"title": {
-				"zh": "冻住的安全阀：边制冷边抽",
+				"zh": "安全阀结冰：冷却与抽取",
 				"en": "A FROZEN RELIEF: DRAW IT DOWN COLD"
 			},
 			"done_flag": "SP_C1_COMPLETE",
@@ -157,7 +157,7 @@
 				{
 					"id": "kpa",
 					"text": {
-						"zh": "测量（1）：读罐压 TP-1（它自己在升）",
+						"zh": "① 测压：读取 TP-1 的罐内压力，确认压力是否持续上升。",
 						"en": "MEASURE (1): TANK PRESSURE TP-1 (IT CLIMBS BY ITSELF)"
 					},
 					"tools": [
@@ -179,7 +179,7 @@
 				{
 					"id": "valve",
 					"text": {
-						"zh": "测量（1）：读安全阀温度 VT-1",
+						"zh": "② 测温：测量安全阀 VT-1 的温度。",
 						"en": "MEASURE (1): RELIEF VALVE TEMPERATURE VT-1"
 					},
 					"tools": [
@@ -200,7 +200,7 @@
 				{
 					"id": "thaw",
 					"text": {
-						"zh": "阀冻住了：打开安全阀加热 RVH-1（4），冷头保持供电",
+						"zh": "③ 解冻：安全阀已结冰。启动加热器 RVH-1（按 4），保持冷头供电。",
 						"en": "FROZEN: VALVE HEATER RVH-1 ON (4); CRYOCOOLER STAYS POWERED"
 					},
 					"tools": [

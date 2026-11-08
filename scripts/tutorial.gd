@@ -151,6 +151,8 @@ func _process(dt: float) -> void:
 		bp_seen = true
 	if not done:
 		var st := step()
+		if _restore_precision_instrument(str(st.get("id", ""))):
+			return
 		if not st.is_empty() and _check(st.done):
 			_complete_step()
 		_stuck()
@@ -462,9 +464,27 @@ func progress() -> void:
 
 
 # where the step wants the player to look (px), or INF
+func weld_targets() -> PackedVector2Array:
+	var tags: Array = step().get("target", {}).get("welds", [])
+	var points := PackedVector2Array()
+	if tags.size() != 2:
+		return points
+	var a = _piece(str(tags[0]))
+	var b = _piece(str(tags[1]))
+	if a == null or b == null:
+		return points
+	for j in game.world.joints_of(a):
+		if j.type == "weld" and (j.a == b.id or j.b == b.id):
+			points.append(game.world.joint_world(j))
+	return points
+
+
 func target_pos() -> Vector2:
 	var tg: Dictionary = step().get("target", {})
 	var w = game.world
+	if tg.has("welds"):
+		var points := weld_targets()
+		return points[0] if not points.is_empty() else Vector2.INF
 	if tg.has("piece"):
 		var ps := _pieces_of(tg.piece)
 		if not ps.is_empty():
@@ -498,6 +518,10 @@ func target_pos() -> Vector2:
 func interlock(p) -> bool:
 	if p == null or done:
 		return false
+	var welds: Array = step().get("target", {}).get("welds", [])
+	if game.tools.tool == 2 and not welds.is_empty() and p.tag == welds[0]:
+		game.say_text("沿右端的亮点切。" if Txt.zh else "CUT THROUGH THE LIT WELDS.", game.tools.aim)
+		return true
 	var g: Dictionary = lesson().get("guard", {})
 	if g.is_empty() or guard_used.get(lesson().id, false):
 		return false
@@ -514,6 +538,34 @@ func interlock(p) -> bool:
 	game.say("interlock", game.world.frame(p) * Geom.centroid(p.poly))
 	game.sfx.play("deny")
 	game.hud.white_flash(0.08)
+	return true
+
+
+# Repair old attempts as well as live damage, before the step can advance on a missing part.
+func _restore_precision_instrument(step_id: String) -> bool:
+	if lesson().get("id", "") != "SP_P1" or step_id not in ["cut", "ins"] or reset_at >= 0.0:
+		return false
+	if step_id == "ins" and recovered.get("INS", "") == "equip":
+		return false
+	var ins = _piece("INS")
+	var damaged: bool = ins == null or not ins.intact
+	var covered: bool = game.optics.cover_down() > 0.5
+	var attached_again: bool = step_id == "ins" and ins != null and not game.world.joints_of(ins).is_empty()
+	if not damaged and not attached_again and (step_id == "ins" or covered):
+		return false
+	game.tools.probe_stop()
+	if damaged:
+		reset_props(["INS", "IP"])
+	recovered.erase("INS")
+	var retry := "cut" if covered else "cover"
+	for i in lesson().steps.size():
+		if lesson().steps[i].id == retry:
+			step_i = i
+			break
+	_enter_step()
+	if damaged:
+		game.say_text("仪器已复位。" if Txt.zh else "INSTRUMENT RESET.", target_pos())
+	SaveGame.save(game)
 	return true
 
 

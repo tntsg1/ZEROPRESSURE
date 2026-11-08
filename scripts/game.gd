@@ -113,6 +113,7 @@ var tram                    # the rail shuttle through the corridors (scripts/tr
 var exchange_logistics
 var industrial_heat
 var plant                    # the processing district's own works (scripts/process_plant.gd, 30 号)
+var process_gallery          # 128 号 第 4 段: its observation gallery and terminals (scripts/process_gallery.gd)
 var freight_pier             # the freight pier and the shipping clock (scripts/freight_pier.gd, 31 号)
 var gas_works = null         # 76 号: the gas line outside the processing district (scripts/gas_works.gd)
 var trade_hall               # the three companies' counters and the quote board (scripts/trade_hall.gd, 38 号)
@@ -842,6 +843,9 @@ func _ready() -> void:
 		plant = preload("res://scripts/process_plant.gd").new()
 		plant.game = self
 		add_child(plant)
+		process_gallery = preload("res://scripts/process_gallery.gd").new()
+		process_gallery.game = self
+		add_child(process_gallery)
 		industrial_heat = preload("res://scripts/industrial_heat.gd").new()
 		industrial_heat.game = self
 		industrial_heat.restore_field(data.get("industrial_cargo",{}))
@@ -853,6 +857,9 @@ func _ready() -> void:
 		industrial_assay = preload("res://scripts/industrial_assay.gd").new()
 		industrial_assay.game = self
 		add_child(industrial_assay)
+		# 128 号 第 4 段: no assay any more, and the sorting runs inside a batch — their desks are gone
+		industrial_assay.visible = ProcessLine.LEGACY_DESKS
+		industrial_sort.visible = ProcessLine.LEGACY_DESKS
 		if in_berth():
 			plant.catch_up.call_deferred()
 		guide = Guide.new()
@@ -966,6 +973,12 @@ func _process(dt: float) -> void:
 				if str(e.kind) != "new" and hud != null:
 					hud.show_hint(str(e.text))
 			HallMarket.events.clear()
+			# 128 号 第 4 段: the baler works its jobs in real time; the processing line's notes
+			ProcessLine.tick_press(rdt)
+			for e in ProcessLine.events:
+				if hud != null:
+					hud.show_hint(str(e.text))
+			ProcessLine.events.clear()
 		# the end is checked when something is delivered; once a second as well, for a
 		# last piece that went some other way (and for a contract loaded with nothing left)
 		done_t += rdt
@@ -1313,11 +1326,18 @@ func _unhandled_input(ev: InputEvent) -> void:
 					pass
 				elif tram != null and state == "play" and tram.phase in ["", "return"] and tram.near_station() != "":
 					open_transit("tram", tram.near_station())
+				elif process_gallery != null and state == "play" and process_gallery.near() != "":
+					process_gallery.use(process_gallery.near())
 				elif industrial_heat != null and state == "play" and industrial_heat.near():
-					open_heat()
-				elif industrial_assay != null and state == "play" and industrial_assay.near() and (industrial_sort == null or not industrial_sort.near() or drone.global_position.distance_to(industrial_assay.site()) < drone.global_position.distance_to(industrial_sort.site())):
+					# 128 号 第 4 段: after the first heat by hand the desk is the processing queue
+					var hand: bool = str(Career.data.get("industrial_heat", {}).get("state", "")) not in ["", "complete", "cancelled", "written_off"] and str(Career.data.get("industrial_heat", {}).get("queue", "")) == ""
+					if ProcessLine.first_done() and not ProcessLine.LEGACY_DESKS and not hand:
+						open_queue_panel()
+					else:
+						open_heat()
+				elif ProcessLine.LEGACY_DESKS and industrial_assay != null and state == "play" and industrial_assay.near() and (industrial_sort == null or not industrial_sort.near() or drone.global_position.distance_to(industrial_assay.site()) < drone.global_position.distance_to(industrial_sort.site())):
 					open_assay()
-				elif industrial_sort != null and state == "play" and industrial_sort.near():
+				elif ProcessLine.LEGACY_DESKS and industrial_sort != null and state == "play" and industrial_sort.near():
 					open_sort()
 				elif trade_hall != null and state == "play" and trade_hall.near_counter() != "":
 					open_exchange("company:" + trade_hall.near_counter())
@@ -1547,11 +1567,15 @@ func open_store_settle() -> void:
 	panel.settle = true
 	panel.on_close = func():
 		disposal_ui = null
+		_cover_world(false)
 		layer.queue_free()
 		leave()
 	disposal_ui = panel
+	_cover_world(true)
 	layer.add_child(panel)
 	panel.open_kind("raw")
+	if StoreBook.blocks_next_job():
+		panel.select("i:" + str(StoreBook.inbox()[0].uid))
 	sfx.play("menu")
 
 
@@ -1890,7 +1914,7 @@ func open_queue_panel() -> void:
 	layer.layer = 60
 	layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(layer)
-	var panel = preload("res://scripts/queue_panel.gd").new()
+	var panel = preload("res://scripts/process_queue_panel.gd").new()
 	panel.game = self
 	panel.on_close = func():
 		console_ui = null
@@ -1923,6 +1947,9 @@ func open_store(kind := "all", pick := "") -> void:
 	panel.open_kind(kind)
 	if pick != "":
 		panel.select(pick)
+	elif kind == "all" and StoreBook.blocks_next_job():
+		var waiting: Array = StoreBook.inbox()
+		panel.select("i:" + str(waiting[0].uid))
 	sfx.play("menu")
 
 
@@ -3442,19 +3469,35 @@ func _good_in(p, zone: String, cat: String) -> void:
 	var v := piece_value(p, zone)
 	if v <= 0.5:
 		return
-	goods_in.append({"cat": cat, "tag": str(p.tag), "nk": str(p.name_key), "cond": snappedf(clampf(float(p.cond), 0.0, 1.0), 0.01), "value": snappedf(v, 1.0), "mass": snappedf(float(p.mass), 0.01)})
+	var gd := {"cat": cat, "tag": str(p.tag), "nk": str(p.name_key), "cond": snappedf(clampf(float(p.cond), 0.0, 1.0), 0.01), "value": snappedf(v, 1.0), "mass": snappedf(float(p.mass), 0.01)}
+	gd.merge(vessel_left(p))
+	goods_in.append(gd)
 	goods_value += snappedf(v, 1.0)
 
 
-func _first_receipt(b, zone: String) -> void:
+# 128 号 第 4 段: what a pressure vessel still holds as it leaves the ship (the baler's probe reads it)
+func vessel_left(p) -> Dictionary:
+	if sys == null or p == null or sys.contents_of(p) == "":
+		return {}
+	var out := {"vessel": true, "gas_kpa": 0.0, "liq_m3": 0.0}
+	var gv: String = sys.tank_vol(p)
+	if gv != "":
+		out.gas_kpa = snappedf(sys.P(gv), 1.0)
+	var fv: String = sys.fluid_in_piece(p)
+	if fv != "":
+		out.liq_m3 = snappedf(float(sys.fvol[fv].amount), 0.001)
+	return out
+
+
+func _first_receipt(b, zone: String) -> bool:
 	if not career() or not Career.usable() or Career.data.get("seen", {}).has("first_receipt"):
-		return
+		return false
 	var best = null
 	for p in b.pieces:
 		if p.cls == "equip" and p.intact and (best == null or float(p.value) > float(best.value)):
 			best = p
 	if best == null:
-		return
+		return false
 	var seen: Dictionary = Career.data.get("seen", {})
 	seen["first_receipt"] = true
 	Career.data.seen = seen
@@ -3479,6 +3522,7 @@ func _first_receipt(b, zone: String) -> void:
 	r.value = pay
 	add_child(r)
 	sfx.play("receipt", Vector2.INF, 1.0)
+	return true
 
 
 # a named piece of the contract is past saving: say so now, not at the settlement
@@ -3524,13 +3568,15 @@ func on_ore_in(v: float) -> void:
 	_ore_due = 0.0
 
 
-func gain(kind: String, amount: float, at: Vector2, label: String) -> void:
+func gain(kind: String, amount: float, at: Vector2, label: String, receipt_shown := false) -> void:
 	match kind:
 		"equip": income_equip += amount
 		"metal": income_metal += amount
 		"hazard": income_hazard += amount
-	fx.number(at, "+" + Pal.money(amount), Pal.ink(1.0, 1.5), 26 if amount > 3000 else 20)
-	feed.push_front([label, amount, 0.0])
+	if not receipt_shown:
+		fx.number(at, "+" + Pal.money(amount), Pal.ink(1.0, 1.5), 26 if amount > 3000 else 20)
+	if kind != "equip":
+		feed.push_front([label, amount, 0.0])
 	hud.fly_credits(at, amount)
 
 
@@ -3666,7 +3712,9 @@ func on_swallowed(b, mouth: String) -> void:
 				if cls == "" and p.scope and p.cls == "equip" and p.intact:
 					_good_in(p, zone, "equip")
 				if cls != "" and p.scope:
-					parts_in.append(Repair.part_of(p, cls, ship_id, str(job.get("id", ""))))
+					var pin: Dictionary = Repair.part_of(p, cls, ship_id, str(job.get("id", "")))
+					pin.merge(vessel_left(p))
+					parts_in.append(pin)
 					parts_value += piece_value(p, zone)
 					say("rp_part_in", at + Vector2(0, -60), p.tag)
 					if not hints_seen.has("rp_part"):
@@ -3696,6 +3744,7 @@ func on_swallowed(b, mouth: String) -> void:
 	# the work plan learns where this went (G4): by the operator's hand or on their mark
 	if plan != null:
 		plan.on_haul(b, zone, b.get_meta("hauled", false) or b.get_meta("manual_mark", false))
+	var receipt_shown := false
 	if b.get_meta("arm_drop", -1.0) >= 0.0 or not b.get_meta("hauled", false):
 		# the arm brought it, or it drifted in on the mouth's own pull: nobody's hands
 		log_op("arm_haul")
@@ -3703,7 +3752,7 @@ func on_swallowed(b, mouth: String) -> void:
 		log_op("deliver_hazard")
 	elif b.pieces.any(func(p): return p.cls == "equip" and p.intact):
 		log_op("deliver_equip")
-		_first_receipt(b, zone)
+		receipt_shown = _first_receipt(b, zone)
 	else:
 		log_op("haul_scrap")
 	if zone == "metal" and b.pieces.any(func(p): return p.cls == "equip" and p.intact):
@@ -3718,7 +3767,7 @@ func on_swallowed(b, mouth: String) -> void:
 		for p in b.pieces:
 			if p.kind == "ore":
 				income_ore += piece_value(p, zone)
-	gain("equip" if zone == "equip" else ("hazard" if zone == "hazard" else "metal"), v, at, label)
+	gain(zone, v, at, label, zone == "equip" and receipt_shown)
 	var col := Pal.heat(1.0, 2.2) if zone == "metal" else (Pal.tint(Pal.FLUID, 0.9, 1.4) if zone == "hazard" else Pal.ink(0.9, 1.5))
 	fx.flash(Dock.zpos(mouth), 140.0, 0.5, col)
 	fx.ring(Dock.zpos(mouth), 20.0, 140.0, 0.5, col, 2.0)

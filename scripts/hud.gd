@@ -1507,23 +1507,19 @@ func _main() -> Dictionary:
 		if game != null and Career.usable():
 			Mainline.watch(game)
 		var ch := Mainline.chapter()
-		# 128 号 第 3 段: no chapter's need is up yet — the next one waits, the strip says what starts
-		# it and to strip another hulk meanwhile
-		var wait := false
-		if ch == "":
-			ch = Mainline.next_open()
-			wait = ch != "" and ch != "ark"
-			if not wait:
-				ch = ""
+		# Until a chapter starts, the strip shows the current ship or warehouse task.
+		var wait := ch == "" and Mainline.next_open() != ""
 		var st: Dictionary = {}
-		if ch != "":
-			st = Mainline.step(ch) if not wait else Mainline.waiting_step()
+		if wait:
+			st = Mainline.waiting_step()
+		elif ch != "":
+			st = Mainline.step(ch)
 		_main_c = {"chapter": ch, "wait": wait, "step": st}
 	return _main_c
 
 
 func _main_on() -> bool:
-	return game != null and not game.coach_on() and not game.walk_on() and not game.store_guide_on() and not _guide_on() and game.career() and not game.training and game.exam == null and game.in_berth() and game.state == "play" and not game.port_view and _main().chapter != "" and Career.usable()
+	return game != null and not game.coach_on() and not game.walk_on() and not game.store_guide_on() and not _guide_on() and game.career() and not game.training and game.exam == null and game.in_berth() and game.state == "play" and not game.port_view and Career.usable() and not _main().step.is_empty()
 
 
 # 128 号 第 3 段 §十二: the one voice (scripts/need_voice.gd) and its one target mark
@@ -1603,7 +1599,8 @@ func _main_line(s: Vector2) -> void:
 	var r := _main_rect()
 	UI.panel(c, r, 0.9)
 	c.draw_rect(Rect2(r.position + Vector2(8, 10), Vector2(3, r.size.y - 20)), UiSkin.ACCENT)
-	_text(Ops.w("主线 · 第 %d 章｜%s", "MAIN LINE · CHAPTER %d | %s") % [Mainline.index(id), Mainline.name_of(id)], r.position + Vector2(16, 24), 14, Pal.heat(0.95, 1.3), font_b, -1)
+	var head := str(_main().step.get("title", "")) if id == "" else Ops.w("主线 · 第 %d 章｜%s", "MAIN LINE · CHAPTER %d | %s") % [Mainline.index(id), Mainline.name_of(id)]
+	_text(head, r.position + Vector2(16, 24), 14, Pal.heat(0.95, 1.3), font_b, -1)
 	c.draw_multiline_string(font, r.position + Vector2(16, 50), str(_main().step.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 130.0, 15, 2, Pal.ink(0.9))
 
 

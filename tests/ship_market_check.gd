@@ -30,7 +30,7 @@ func _run() -> void:
 	await _spawn()
 	await _frames(90)
 	var d := ShipMarket.data()
-	check(d.listings.size() == ShipMarket.LISTINGS, "eight listings (%d)" % d.listings.size())
+	check(d.listings.size() == ShipMarket.LISTINGS, "fifteen listings (%d)" % d.listings.size())
 	var ids: Array = d.listings.map(func(l): return str(l.id))
 	await _frames(70)
 	check(ShipMarket.data().listings.map(func(l): return str(l.id)) == ids, "they stay put while nobody buys")

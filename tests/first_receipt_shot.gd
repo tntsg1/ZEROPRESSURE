@@ -50,6 +50,7 @@ func _run() -> void:
 	await _deliver("WINCH-T")
 	var rs := _receipts()
 	check(rs.size() == 1 and Career.data.seen.has("first_receipt"), "the first whole machine in: a receipt")
+	check(g.feed.is_empty() and g.fx.numbers.is_empty(), "the first receipt is the only per-item amount on screen")
 	if rs.size() == 1:
 		var r = rs[0]
 		check(str(r.item).contains("WINCH-T") and float(r.value) > 1000.0, "it names the winch and what was paid (%s, %s)" % [r.item, Pal.money(float(r.value))])
@@ -68,5 +69,6 @@ func _run() -> void:
 	check(_receipts().is_empty(), "it goes by itself")
 	await _deliver("NAV-T")
 	check(_receipts().is_empty(), "the second machine: no receipt")
+	check(g.feed.is_empty() and g.fx.numbers.size() == 1, "later equipment shows one price beside the receiver")
 	print("FIRST RECEIPT %s (%d checks, %d failed)" % ["PASS" if fails == 0 else "FAIL", checks, fails])
 	quit(fails)

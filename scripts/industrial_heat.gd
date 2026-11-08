@@ -86,7 +86,10 @@ func _furnace_x() -> float:
 	if plant() != null: return plant().X
 	return game.dock.furnace_x if is_finite(game.dock.furnace_x) else Dock.metal_home
 const ConsoleArt = preload("res://scripts/console_art.gd")
-func site() -> Vector2: return Vector2(_furnace_x()-4.0,_floor()+2.8)*Geom.M
+func site() -> Vector2:
+	# 128 号 第 4 段: the furnace's terminal is in the gallery (the company's works only)
+	if plant() != null and preload("res://scripts/process_gallery.gd").on(): return preload("res://scripts/process_gallery.gd").term("furnace")
+	return Vector2(_furnace_x()-4.0,_floor()+2.8)*Geom.M
 
 
 # 125/126 号 (user 2026-11-04: "引导文字和机器画面应当说的是同一件事"): where the heat really is, in
@@ -114,6 +117,11 @@ func info() -> Dictionary:
 		"processing":
 			pass
 		_:
+			# 128 号 第 4 段: after the first heat the furnace works the queue by itself
+			if ProcessLine.first_done() and not ProcessLine.LEGACY_DESKS:
+				if ProcessLine.changing():
+					return {"key":"idle","n":1,"title":_w("换模中，还要约 %d 秒","CHANGING THE MOULD, ~%d s") % int(ceil(ProcessLine.change_left())),"text":"","press":"","eta":ProcessLine.change_left()}
+				return {"key":"idle","n":1,"title":_w("空闲：加工队列有批次就自己开炉","IDLE: IT STARTS BY ITSELF WHEN THE QUEUE HAS A BATCH"),"text":"","press":"","eta":-1.0}
 			return {"key":"idle","n":1,"title":_w("填好吨数，按『把仓库炉料送到炉口』","SET THE TONNES AND SEND THE FEED"),"text":"","press":"send","eta":-1.0}
 	var charge := float(f.m_s)+float(f.m_l)+float(f.bunker)
 	if str(f.phase) in ["tilt","pour","back"]:
@@ -162,12 +170,15 @@ func _w(zh: String, en: String) -> String: return zh if Txt.zh else en
 
 # 126 号 (user: "本次加工完成：获得 X 吨钢坯，已放入仓库。【查看仓库】"): what the heat came to, and where it
 # is — and if the mill takes it on at once (rolling on, or a kept batch's plate), said so
-func _result_card(t: float, grade: int, queued: bool) -> void:
+func _result_card(t: float, grade: int, queued: bool, mould := "billet") -> void:
 	if game == null or game.get("hud") == null or game.get("testing") and not Game.cine_in_tests:
 		return
-	var key := Exchange.lot_key("steel_billet",grade)
-	var row := Warehouse.row_for(key)
-	var body := _w("获得 %.2f 吨钢坯（等级 %d），已放进货运区仓库 %s 排。", "%.2f t of billet (grade %d), in the cargo warehouse, row %s.") % [t,grade,Warehouse.ROWS[row]]
+	var key := ProcessLine.product_key(mould,grade)
+	# 128 号 第 4 段: a batch the queue ran says so in one line (no card for every heat)
+	if queued and ProcessLine.first_done():
+		ProcessLine.events.append({"text":_w("出钢入库：%.2f t %s（等级 %d）· %s","CAST AND STORED: %.2f t %s (GRADE %d) · %s") % [t,ProcessLine.mould_name(mould),grade,ProcessLine.use_text(heat())],"bad":false})
+		return
+	var body := _w("获得 %.2f 吨%s（等级 %d），已放进仓库。以后在仓库里点钢锭“炼成钢坯”，炉子会按加工队列自己炼。", "%.2f t of %s (grade %d), in the stores. From now on pick ingots in the stores and press 'cast': the furnace works the queue by itself.") % [t,ProcessLine.mould_name(mould),grade]
 	if bool(Mill.cfg().get("loop",false)):
 		body += _w("
 轧机开着“连续轧”：它会接着把这批钢坯轧成%s。要留着卖钢坯，去轧机操作台关掉连续轧。", "
@@ -341,7 +352,9 @@ func begin(quantity: float, remote := false) -> Dictionary:
 	actor.stock[key] = float(actor.stock[key])-quantity
 	var identity := Exchange._id(state,"HEAT")
 	Career.data.industrial_heat = {"id":identity,"state":"raw_transport","quantity":quantity,"source_lots":slices,"furnace":furnace().manual_snapshot(),"transport":{},"electric_paid_j":0.0,"energy_cost":0.0,"created":float(state.clock),"drill":Drill.active()}
+	Career.data.industrial_heat.mould = ProcessLine.line_mould()
 	if not queued.is_empty():
+		Career.data.industrial_heat.use = queued.get("use",{}).duplicate(true)
 		Career.data.industrial_heat.through = true
 		Career.data.industrial_heat.queue = str(queued.lot)
 		Career.data.industrial_heat.ship = str(queued.get("ship",""))
@@ -667,11 +680,13 @@ func _receive() -> bool:
 		batch.quality = quality
 		var output_grade := int(quality.grade)
 		var identity := str(batch.id)+":PRODUCT"
-		var key := Exchange.lot_key("steel_billet",output_grade)
+		# 128 号 第 4 段: the mould it was cast in names the product (方坯 / 板坯 / 小锭)
+		var item := ProcessLine.item_of(str(batch.get("mould","billet")))
+		var key := Exchange.lot_key(item,output_grade)
 		actor.lots[identity] = {"id":identity,"key":key,"available":float(batch.quantity),"total":float(batch.quantity),"origin":"manufactured","parents":batch.source_lots.duplicate(true)}
 		actor.stock[key] = float(actor.stock.get(key,0.0))+float(batch.quantity)
-		state.sources[identity] = {"quantity":float(batch.quantity),"item":"steel_billet","grade":output_grade}
-		Career.data.material_batches.append({"id":identity,"mass_t":float(batch.quantity),"material":"steel_billet","grade":output_grade,"state":"product_received","storage":"exchange","heat_id":str(batch.id),"quality":quality.duplicate(true)})
+		state.sources[identity] = {"quantity":float(batch.quantity),"item":item,"grade":output_grade}
+		Career.data.material_batches.append({"id":identity,"mass_t":float(batch.quantity),"material":"steel_billet","form":item,"grade":output_grade,"state":"product_received","storage":"exchange","heat_id":str(batch.id),"quality":quality.duplicate(true)})
 		batch.state = "complete"
 		batch.completed = float(state.clock)
 		if str(batch.get("queue","")) != "":
@@ -679,7 +694,7 @@ func _receive() -> bool:
 			actor.lots[identity].ship = str(batch.get("ship",""))
 		# 39 号: the arc furnace's tapped heats, toward its first automation
 		if plant() != null: Career.data.heat_count = int(Career.data.get("heat_count",0))+1
-		_result_card(float(batch.quantity),output_grade,str(batch.get("queue","")) != "")
+		_result_card(float(batch.quantity),output_grade,str(batch.get("queue","")) != "",str(batch.get("mould","billet")))
 	batch.furnace = furnace().manual_snapshot()
 	batch.receipt = {"key":str(body.pieces[0].key),"mass_t":body.total_mass(),"receiver":str(receiver.name)}
 	batch.transport = {}
@@ -762,6 +777,8 @@ func _process(dt: float) -> void:
 	intake.global_position = Vector2(_furnace_x(),_floor()+furnace().DY+0.8)*Geom.M
 	var batch := heat()
 	# 106 号: the next kept batch, once the furnace is free
+	ProcessLine.tick_change(dt)
+	furnace().mould = ProcessLine.line_mould()
 	_queue_t -= dt
 	if _queue_t <= 0.0:
 		_queue_t = 2.0
@@ -845,8 +862,18 @@ func _queue_next() -> bool:
 	if float(heat().get("energy_debt",0.0)) > 0.000001 or furnace().phase in ["tilt","pour","back"]: return false
 	var e := ProcessQueue.next_melt()
 	if e.is_empty(): return false
+	# 128 号 第 4 段: a batch for another mould waits for the crane to change the block in the seat
+	if ProcessLine.changing(): return false
+	var want := str(e.get("mould","billet"))
+	if want != ProcessLine.line_mould():
+		if furnace().ingots.is_empty() and float(furnace().cast_t) <= 0.0:
+			ProcessLine.start_change(want)
+			Career.save()
+		return false
 	var actor: Dictionary = Career.data.get("exchange",{}).get("actors",{}).get("company",{})
 	var have := float(actor.get("lots",{}).get(str(e.lot),{}).get("available",0.0))
+	if str(e.get("key","")) != "":
+		have = float(actor.get("stock",{}).get(str(e.key),0.0))
 	var q := minf(ProcessQueue.HEAT_T,minf(float(e.t)-float(e.melted),have))
 	if q < ProcessQueue.HEAT_MIN:
 		# the rest of the lot went elsewhere (sold on the exchange, or used): nothing more to melt
@@ -934,7 +961,9 @@ func _draw_desk(ci: CanvasItem) -> void:
 	var live := ship != "" and not str(b.get("state", "")) in ["complete", "cancelled", "written_off"]
 	if live:
 		info.lines[1][0] = Methods.ship_label(ship) + " · " + str(info.lines[1][0])
-	ConsoleArt.draw(ci, at, ConsoleArt.foot_at(at), Ops.w("炉体操作台", "FURNACE DESK"), Ops.w("[%s] 炉体操作", "[%s] FURNACE CONTROLS") % Keys.label("use"), near(), info, Time.get_ticks_msec() * 0.001, "furnace")
+	# 128 号 第 4 段: after the first heat by hand the desk opens the processing queue
+	var desk_key := Ops.w("[%s] 加工队列", "[%s] PROCESSING QUEUE") if ProcessLine.first_done() and not ProcessLine.LEGACY_DESKS else Ops.w("[%s] 炉体操作", "[%s] FURNACE CONTROLS")
+	ConsoleArt.draw(ci, at, ConsoleArt.foot_at(at), Ops.w("炉体操作台", "FURNACE DESK"), desk_key % Keys.label("use"), near(), info, Time.get_ticks_msec() * 0.001, "furnace")
 	if not live:
 		return
 	var tag := "%s · %.1f t" % [Methods.ship_label(ship), float(b.get("quantity", 0.0))]

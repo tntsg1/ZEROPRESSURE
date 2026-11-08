@@ -283,6 +283,12 @@ func _press(id: String) -> void:
 		ord_sel = id.substr(2)
 	elif id == "take":
 		take_order()
+	elif id == "plan":
+		var r := ProcessLine.plan_for_order(ord_sel)
+		if not r.ok:
+			_say(str(r.reason), true)
+		else:
+			_say(w("为这单排产：钢锭 %.1f t → %s，排在加工队列第 1 位", "PLANNED: %.1f t → %s, FIRST IN THE QUEUE") % [float(r.entry.t), ProcessLine.mould_name(str(r.entry.mould))])
 
 
 # ---------------------------------------------------------------- input
@@ -299,6 +305,18 @@ func _set_from_slider(x: float) -> void:
 	price_k = snappedf(lerpf(0.8, 1.3, f), 0.005)
 
 
+# The selected order's action sits inside its card: hit the action first.
+func _hit_button(pos: Vector2) -> String:
+	if tab == "orders" and _btns.has("take") and (_btns["take"] as Rect2).has_point(pos):
+		return "take"
+	if tab == "orders" and _btns.has("plan") and (_btns["plan"] as Rect2).has_point(pos):
+		return "plan"
+	for id in _btns:
+		if id != "slider" and (_btns[id] as Rect2).has_point(pos):
+			return str(id)
+	return ""
+
+
 func _gui_input(ev: InputEvent) -> void:
 	if ev is InputEventMouseButton:
 		if ev.pressed and ev.button_index in [MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP] and scroll.has(tab):
@@ -310,10 +328,9 @@ func _gui_input(ev: InputEvent) -> void:
 				_drag = true
 				_set_from_slider(ev.position.x)
 			else:
-				for id in _btns:
-					if id != "slider" and (_btns[id] as Rect2).has_point(ev.position):
-						_press(str(id))
-						break
+				var hit := _hit_button(ev.position)
+				if hit != "":
+					_press(hit)
 		accept_event()
 	elif ev is InputEventMouseMotion and _drag:
 		_set_from_slider(ev.position.x)
@@ -351,10 +368,7 @@ func _process(dt: float) -> void:
 		_units_t = 0.0
 		_refresh()
 	var m := get_local_mouse_position()
-	var h := ""
-	for id in _btns:
-		if id != "slider" and (_btns[id] as Rect2).has_point(m):
-			h = str(id)
+	var h := _hit_button(m)
 	if h != hover:
 		hover = h
 		_hover_t = 0.0
@@ -935,6 +949,10 @@ func _order_card(r: Rect2, o: Dictionary, a: float) -> void:
 		var bl := w("接单  [Enter]", "TAKE  [Enter]") if st == "open" else w("退单", "GIVE BACK")
 		var note := w("接下这张订单：仓库自动备货，备齐后货运火车送到贸易港，客户来取", "Take it: the stores make it up, the train takes it to the trade port, the client collects") if st == "open" else w("退掉这张订单：备好的货放回仓库，没有罚款", "Give it back: the goods go back to the stores, no penalty")
 		_key("take", Rect2(x, r.end.y - 62.0, r.size.x - 36.0, 46.0), bl, note, "", st == "open")
+		# 128 号 第 4 段: cast steel the warehouse is short of — one key puts a batch first in the queue
+		if str(o.cat) == "raw" and ProcessLine.mould_of_key(str(o.kind)) != "" and HallMarket.have_of("raw", str(o.kind)) + ProcessLine.for_order_t(str(o.id)) < float(o.n) - float(o.get("got", 0.0)) - 0.05:
+			var why := "" if ProcessLine.first_done() else w("第一炉先到加工区炉台亲手炼一次", "MAKE THE FIRST HEAT BY HAND AT THE FURNACE DESK FIRST")
+			_key("plan", Rect2(x, r.end.y - 114.0, r.size.x - 36.0, 44.0), w("为这单排产 · %s模，插到队列最前", "PLAN FOR THIS ORDER · %s MOULD, FIRST IN THE QUEUE") % ProcessLine.mould_name(ProcessLine.mould_of_key(str(o.kind))), w("把仓库里的钢锭排进加工队列最前面，炼成这张订单要的%s", "Puts ingots first in the processing queue, cast as the order wants") % StoreBook.raw_name(str(o.kind)), why)
 
 
 # a taken order's way: 备货 → 火车 → 客户飞船 → 到账, the step it is on lit

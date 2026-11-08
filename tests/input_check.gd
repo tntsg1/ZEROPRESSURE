@@ -9,6 +9,8 @@ var game
 var frame := 0
 var bot := {"skip_intro": true, "skip_contract": true, "aim": Vector2.ZERO, "lmb": false, "move": Vector2.ZERO}
 var steps: Array = []
+var heard_cut_loop := false
+var laser_audio_ok := false
 
 
 func _initialize() -> void:
@@ -24,6 +26,9 @@ func _initialize() -> void:
 		[8, func(): bot.aim = Vector2(12.4, 1.2) * M],
 		[30, func(): print("laser warned at C-01: ", not game.tools.warn.is_empty() and game.world.pieces.get(game.tools.warn.piece) == game.world.tag("C-01"))],
 		[60, func(): bot.lmb = false; print("one stroke on, C-01 intact: ", game.world.tag("C-01").intact, " (cut into it: scrap)")],
+		[65, func():
+			laser_audio_ok = heard_cut_loop and _cut_audio_level() <= 0.0001 and not game.sfx.last_play.has("laser_start")
+			print("laser audio follows the press and stops on release: ", laser_audio_ok)],
 		# wrench the four locks of C-03
 		[70, func(): game.tools.set_tool(4); _park(Vector2(20.6, 0.6))],
 		[72, func(): _press_joint("C-03", 0)],
@@ -77,7 +82,15 @@ func _press_joint(t: String, i: int) -> void:
 
 func _process(_dt: float) -> bool:
 	frame += 1
+	if frame > 5 and frame < 60 and _cut_audio_level() > 0.001:
+		heard_cut_loop = true
 	for s in steps:
 		if s[0] == frame:
 			s[1].call()
-	return frame > 525
+	if frame > 525:
+		quit(0 if laser_audio_ok else 1)
+	return false
+
+
+func _cut_audio_level() -> float:
+	return maxf(game.sfx.loop_level.get("cut_loop", 0.0), game.sfx.loop_level.get("laser_heavy_loop", 0.0))

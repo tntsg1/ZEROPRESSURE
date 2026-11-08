@@ -21,8 +21,46 @@ static func entries() -> Array:
 
 static func add(lot: String, ship: String, job: String, t: float) -> void:
 	var q: Array = Career.data.get("process_queue", [])
-	q.append({"lot": lot, "ship": ship, "job": job, "t": snappedf(t, 0.001), "melted": 0.0, "rolled": 0.0})
+	q.append({"lot": lot, "ship": ship, "job": job, "t": snappedf(t, 0.001), "melted": 0.0, "rolled": 0.0, "use": {"kind": "keep"}, "mould": "billet", "added": _clock()})
 	Career.data.process_queue = q
+
+
+# 128 号 第 4 段: a batch from the warehouse ("炼成钢坯" / an order card): no lot of its own — the heat
+# takes the company's free ingots — with its use (order / sell / keep) and its mould
+static func add_job(key: String, t: float, use: Dictionary, mould: String) -> Dictionary:
+	var q: Array = Career.data.get("process_queue", [])
+	var n := int(Career.data.get("pq_seq", 0)) + 1
+	Career.data.pq_seq = n
+	var e := {"lot": "PQ%d" % n, "key": key, "ship": "", "job": "", "t": snappedf(t, 0.001), "melted": 0.0, "rolled": 0.0, "use": use, "mould": mould, "added": _clock()}
+	q.append(e)
+	Career.data.process_queue = q
+	return e
+
+
+static func _clock() -> float:
+	return float(Time.get_ticks_msec()) / 1000.0 + float(Career.data.get("pq_seq", 0)) * 0.001
+
+
+static func open_entries() -> Array:
+	return entries().filter(func(e): return not finished(e))
+
+
+# 128 号 第 4 段: drag a batch to place `to` among those still to do
+static func move_to(lot: String, to: int) -> int:
+	var q: Array = Career.data.get("process_queue", [])
+	var open: Array = q.filter(func(e): return not finished(e))
+	var e := _entry(lot)
+	var at := open.find(e)
+	if at < 0:
+		return -1
+	to = clampi(to, 0, open.size() - 1)
+	if to == at:
+		return to
+	open.remove_at(at)
+	open.insert(to, e)
+	var done: Array = q.filter(func(x): return finished(x))
+	Career.data.process_queue = done + open
+	return to
 
 
 # the first entry with ingot still to melt
@@ -57,6 +95,8 @@ static func move(lot: String, dir: int) -> int:
 static func tag(e: Dictionary) -> String:
 	if e.is_empty():
 		return ""
+	if str(e.get("ship", "")) == "":
+		return w("钢锭 %.1f t", "INGOT %.1f t") % float(e.get("t", 0.0))
 	return "%s · %.1f t" % [Methods.ship_label(str(e.get("ship", ""))), float(e.get("t", 0.0))]
 
 
@@ -80,7 +120,8 @@ static func tapped(lot: String, t: float, grade: int) -> void:
 	if e.is_empty():
 		return
 	e.billet = snappedf(float(e.get("billet", 0.0)) + t, 0.001)
-	if grade == 1:
+	# 128 号 第 4 段: only square billet feeds the mill; a batch kept from the warehouse is not rolled
+	if grade == 1 and str(e.get("mould", "billet")) == "billet" and str(e.get("key", "")) == "":
 		e.billet1 = snappedf(float(e.get("billet1", 0.0)) + t, 0.001)
 
 

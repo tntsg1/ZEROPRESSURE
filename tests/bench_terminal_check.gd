@@ -63,6 +63,13 @@ func _run() -> void:
 	var nk := "go%d" % page
 	check(term._note_key == nk and term._note_text(nk) != "", "on the page's own key: what it does (%s: %s)" % [term._note_key, term._note_text(nk)])
 	Cap.save(root, "res://tests/out/bench_terminal_note_go.png")
+	term._open_app(3)
+	await _wait_s(0.6)
+	check(term.tab == term.DRONE_PAGE and term.items().size() == 3 and term._go_live and term._go_rect().has_area(), "the fourth app shows three drone upgrades and its buy button")
+	Cap.save(root, "res://tests/out/bench_terminal_drone.png")
+	var funds := float(Career.data.money)
+	term.act()
+	check(Career.data.upgrades.has("scan_kit") and is_equal_approx(float(Career.data.money), funds - 24000.0), "buying the scanner installs and charges for the existing upgrade")
 	term.queue_free()
 	await _wait_s(0.2)
 	# the interface scale

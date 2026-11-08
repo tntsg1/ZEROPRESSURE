@@ -35,6 +35,9 @@ var scroll := 0.0
 var items: Array = []                 # StoreBook.units()
 var lay := {}                         # id -> [x, y, rot]
 var inbox: Array = []
+var _inbox_first := 0
+var _raw_bundles := {}
+var _inbox_keep := {}
 var message := ""
 var _msg_t := 0.0
 var _msg_bad := false
@@ -47,6 +50,9 @@ var font: Font
 var font_b: Font
 var font_s: Font
 var _sig := ""
+var _items_by_id := {}
+var _totals_cache := {}
+var _counts_cache := {}
 # dragging: the unit, where on it it was taken (cells), its turn
 var _press_id := ""
 var _press_at := Vector2.ZERO
@@ -62,6 +68,9 @@ var grid_view: Control
 var grid_fx: Control
 var _grid_sig := ""
 var overlay: Control
+var quantity_key := ""
+var quantity := 1
+var quantity_drag := false
 
 
 class Layer extends Control:
@@ -125,6 +134,11 @@ func select(id: String) -> void:
 	if id.begins_with("m:"):
 		id = "r:" + id.substr(2) + ":0"
 	sel = id
+	var selected := _item(id)
+	var key := str(selected.get("key", "")) if str(selected.get("cat", "")) == "raw" and not selected.get("inbox", false) else ""
+	if key != quantity_key:
+		quantity_key = key
+		quantity = 1
 	_confirm = ""
 	_keep_in_view()
 
@@ -150,6 +164,32 @@ func build() -> void:
 	for it in items:
 		if not lay.has(str(it.id)):
 			inbox.append(it)
+	_items_by_id.clear()
+	_raw_bundles.clear()
+	_inbox_keep.clear()
+	_counts_cache = {"all": items.size()}
+	var rec := 0.0
+	var market := 0.0
+	var used := 0
+	for it in items:
+		var id := str(it.id)
+		_items_by_id[id] = it
+		var cat := str(it.cat)
+		if cat == "raw" and id.begins_with("r:"):
+			var key := str(it.key)
+			if not _raw_bundles.has(key):
+				_raw_bundles[key] = []
+			_raw_bundles[key].append(it)
+		_counts_cache[cat] = int(_counts_cache.get(cat, 0)) + 1
+		rec += float(it.recycle)
+		market += float(it.market)
+		if lay.has(id):
+			used += int(it.cells)
+	for it in inbox:
+		_items_by_id[str(it.id)] = it
+	for bundles in _raw_bundles.values():
+		bundles.reverse()
+	_totals_cache = {"recycle": rec, "market": market, "used": used}
 	_sig = _signature()
 	if sel != "" and _item(sel).is_empty():
 		sel = ""
@@ -183,19 +223,13 @@ func shown() -> Array:
 
 
 func count(k: String) -> int:
-	return items.filter(func(it): return k == "all" or str(it.cat) == k).size()
+	return int(_counts_cache.get(k, 0))
 
 
 func _item(id: String) -> Dictionary:
 	if id == "steel":
 		return steel_item()
-	for it in items:
-		if str(it.id) == id:
-			return it
-	for it in inbox:
-		if str(it.id) == id:
-			return it
-	return {}
+	return _items_by_id.get(id, {})
 
 
 # 128 号 第 1 段审查后用户定 B: the repair steel is not in the grid; it lies in its own slot (the
@@ -262,8 +296,6 @@ func list_sel() -> void:
 		_say_later = [done, BenchFx.now() + 0.45]
 	else:
 		_say(done)
-	if game != null and is_instance_valid(game) and game.get("sfx") != null:
-		game.sfx.play("receipt", Vector2.INF, 0.8)
 	var was := sel
 	build()
 	if _item(was).is_empty():
@@ -285,8 +317,6 @@ func order_sel() -> void:
 		_say(str(r.reason), true)
 		return
 	_say(w("接了 %s 的订单（%s）：仓库自动备货，火车送到贸易港，客户来取", "TOOK %s'S ORDER (%s): THE STORES MAKE IT UP, THE TRAIN TAKES IT TO THE TRADE PORT") % [str(of.client), str(of.want)])
-	if game != null and is_instance_valid(game) and game.get("sfx") != null:
-		game.sfx.play("receipt", Vector2.INF, 0.8)
 	build()
 
 
@@ -306,7 +336,7 @@ func _to_hall(tab: String, pick: String) -> void:
 func listed_of(it: Dictionary) -> float:
 	if str(it.get("cat", "")) != "raw" or it.get("inbox", false):
 		return 0.0
-	return StoreBook.listed_t(str(it.key))
+	return StoreBook.listed_t(str(it.get("key", "")))
 
 
 # ---------------------------------------------------------------- what a thing is
@@ -334,7 +364,9 @@ func use_of(it: Dictionary) -> String:
 		"steel":
 			return w("修船坞和港区用的钢板，按吨记。修港区时从这里扣，不能卖。", "Plate for the berth's and the port's works, by the tonne. The works take from it; it is not for sale.")
 		"raw":
-			match Warehouse.use_of(str(it.key)):
+			if it.get("good", {}).get("bale", false):
+				return w("打包压块机压出来的压块（原来是：%s）。占格少，卖价比压之前略高。", "A bale off the baler (it was: %s). Fewer cells, a little dearer than before.") % str(it.good.get("from", ""))
+			match Warehouse.use_of(str(it.get("key", ""))):
 				"ingot":
 					return w("熔炉把碎料炼成的钢锭，一捆 2 吨。可以卖；修好加工区以后，还能炼成钢坯卖更高的价。", "The furnace's ingots, 2 t a bundle. They sell; once the processing district is mended they melt into billet, which sells higher.")
 				"billet":
@@ -397,6 +429,13 @@ func can_keep(it: Dictionary) -> bool:
 		return false
 	if not it.get("inbox", false):
 		return true
+	var id := str(it.id)
+	if not _inbox_keep.has(id):
+		_inbox_keep[id] = _can_admit(it)
+	return bool(_inbox_keep[id])
+
+
+func _can_admit(it: Dictionary) -> bool:
 	var occ := StoreBook._occ_of(lay, items)
 	if str(it.cat) == "raw":
 		var have := float(StoreBook.raw_stock().get(str(it.key), 0.0))
@@ -407,6 +446,83 @@ func can_keep(it: Dictionary) -> bool:
 
 
 # ---------------------------------------------------------------- doing it
+
+func _quantity_available() -> bool:
+	var it := _item(sel)
+	return _multi.is_empty() and str(it.get("cat", "")) == "raw" and str(it.get("id", "")).begins_with("r:") and not it.get("inbox", false)
+
+
+# Take the highest numbered bundles first so removing one cannot renumber another selected bundle.
+func _quantity_units() -> Array:
+	return _raw_bundles.get(str(_item(sel).get("key", "")), [])
+
+
+func _quantity_chosen() -> Array:
+	var units := _quantity_units()
+	var count := clampi(quantity, 0, units.size())
+	if count == 0:
+		return []
+	# The clicked bundle is always included; fill the rest from the end, then
+	# keep descending order when removing them so the indices remain stable.
+	var selected := _item(sel)
+	var chosen: Array = [selected]
+	for unit in units:
+		if chosen.size() >= count:
+			break
+		if str(unit.id) != sel:
+			chosen.append(unit)
+	chosen.sort_custom(func(a, b): return int(str(a.id).get_slice(":", str(a.id).get_slice_count(":") - 1)) > int(str(b.id).get_slice(":", str(b.id).get_slice_count(":") - 1)))
+	return chosen
+
+
+func _set_quantity(x: float) -> void:
+	if not _btns.has("quantity"):
+		return
+	var r: Rect2 = _btns["quantity"]
+	var lo := r.position.x + 16.0
+	var hi := r.end.x - 16.0
+	var maximum := _quantity_units().size()
+	quantity = clampi(roundi(clampf((x - lo) / maxf(hi - lo, 1.0), 0.0, 1.0) * maximum), 0, maximum)
+	queue_redraw()
+
+
+func sell_quantity(to_trade: bool) -> void:
+	var chosen := _quantity_chosen()
+	if chosen.is_empty():
+		_say(w("先用滑条选择要卖的数量", "CHOOSE A QUANTITY FIRST"), true)
+		return
+	if to_trade and not trade_open():
+		_say(StoreBook.exchange_shut_text(), true)
+		return
+	var n := 0
+	var total := 0.0
+	var tonnes := 0.0
+	var reason := ""
+	var cells := 0
+	var ids := chosen.map(func(it): return str(it.id))
+	var result := HallMarket.list_raw_bundles(ids) if to_trade else StoreBook.sell_raw_bundles(ids)
+	if result.ok:
+		n = chosen.size()
+		tonnes = float(result.tonnes)
+		total = float(result.net if to_trade else result.cash)
+		cells = int(result.get("cells", 0))
+	else:
+		reason = str(result.reason)
+	if n > 0:
+		if not to_trade:
+			sold_n += n
+			if game != null and is_instance_valid(game) and game.has_method("recycle_show"):
+				game.recycle_show("raw", cells)
+	build()
+	quantity = 1
+	if _item(sel).is_empty():
+		var vis := shown()
+		sel = str(vis[0].id) if not vis.is_empty() else ""
+	var msg := (w("已挂单 %d 捆（%.1f 吨），成交后预计到账 %s（扣 5%%）", "LISTED %d BUNDLES (%.1f t), %s AFTER SALE (LESS 5%%)") if to_trade else w("已卖出 %d 捆（%.1f 吨），到账 %s", "SOLD %d BUNDLES (%.1f t), PAID %s")) % [n, tonnes, Pal.money(total)]
+	if reason != "":
+		msg += w("；剩余 %d 捆未处理：", "; %d NOT PROCESSED: ") % (chosen.size() - n) + reason
+	_say(msg, reason != "")
+
 
 func sell_sel() -> void:
 	var it := _item(sel)
@@ -633,6 +749,10 @@ func _inbox_rect() -> Rect2:
 	return _inbox_area()
 
 
+func _inbox_page_size() -> int:
+	return maxi(1, floori((_inbox_rect().size.y - 142.0) / 82.0))
+
+
 func _scroll_max() -> float:
 	return maxf(0.0, cell() * StoreBook.rows() - _grid_rect().size.y)
 
@@ -758,19 +878,27 @@ func _layout() -> void:
 	if _inbox_on():
 		var ir := _inbox_rect()
 		_btns["keep_all"] = Rect2(ir.position.x + 14, ir.position.y + 76, ir.size.x - 28, 40)
-		for i in inbox.size():
-			var r := Rect2(ir.position.x + 14, ir.position.y + 130 + i * 82.0, ir.size.x - 28, 74)
-			if r.end.y > ir.end.y - 8:
-				break
+		var page_size := _inbox_page_size()
+		_inbox_first = clampi(_inbox_first, 0, maxi(0, inbox.size() - page_size))
+		for i in range(_inbox_first, mini(inbox.size(), _inbox_first + page_size)):
+			var r := Rect2(ir.position.x + 14, ir.position.y + 130 + (i - _inbox_first) * 82.0, ir.size.x - 28, 74)
 			_rects[inbox[i].id] = r
 	var dr := _detail_rect()
 	var bx := dr.position.x + 20.0
 	var bw := dr.size.x - 40.0
 	_btns["sell"] = Rect2(bx, dr.end.y - 236.0, bw, 56.0)
-	_btns["keep"] = Rect2(bx, dr.end.y - 172.0, bw, 46.0)
-	_btns["trade"] = Rect2(bx, dr.end.y - 116.0, (bw - 12.0) * 0.5, 50.0)
-	_btns["order"] = Rect2(bx + (bw + 12.0) * 0.5, dr.end.y - 116.0, (bw - 12.0) * 0.5, 50.0)
+	if _multi.is_empty() and work_kind(_item(sel)) != "":
+		_btns["work"] = Rect2(bx, dr.end.y - 296.0, bw, 50.0)
+	if _quantity_available():
+		_btns["quantity"] = Rect2(bx, dr.end.y - 172.0, bw, 46.0)
+	else:
+		_btns["keep"] = Rect2(bx, dr.end.y - 172.0, bw, 46.0)
+	_btns["trade"] = Rect2(bx, dr.end.y - 116.0, bw if not _multi.is_empty() else (bw - 12.0) * 0.5, 50.0)
+	if _multi.is_empty():
+		_btns["order"] = Rect2(bx + (bw + 12.0) * 0.5, dr.end.y - 116.0, (bw - 12.0) * 0.5, 50.0)
 	_btns["close"] = Rect2(size.x - PAD - 150.0, 40.0, 150.0, 44.0)
+	if _queue_link_t > 0.0:
+		_btns["queue_link"] = Rect2(gr.end.x - 200.0, size.y - 46.0, 200.0, 36.0)
 
 
 func _keep_in_view() -> void:
@@ -812,6 +940,10 @@ func _process(dt: float) -> void:
 		_say(str(_say_later[0]))
 		_say_later = []
 	_msg_t = maxf(0.0, _msg_t - dt)
+	if _queue_link_t > 0.0:
+		_queue_link_t = maxf(0.0, _queue_link_t - dt)
+		if _queue_link_t <= 0.0:
+			_layout()
 	if _confirm != "":
 		_confirm_t -= dt
 		if _confirm_t <= 0.0:
@@ -929,7 +1061,18 @@ func _drop(page_pos: Vector2) -> void:
 
 
 func _gui_input(ev: InputEvent) -> void:
+	if ev is InputEventMouseMotion and quantity_drag:
+		_set_quantity(ev.position.x)
+		accept_event()
+		return
 	if ev is InputEventMouseButton:
+		if ev.pressed and ev.button_index in [MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP] and _inbox_rect().has_point(ev.position):
+			var direction := 1 if ev.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1
+			_inbox_first = clampi(_inbox_first + direction, 0, maxi(0, inbox.size() - _inbox_page_size()))
+			_layout()
+			queue_redraw()
+			accept_event()
+			return
 		# 2026-11-04: the wheel throws the grid (inertia); with reduced motion it steps
 		if ev.pressed and ev.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			if BenchFx.on():
@@ -941,7 +1084,7 @@ func _gui_input(ev: InputEvent) -> void:
 				_vel -= WHEEL * 7.0
 			else:
 				scroll = clampf(scroll - WHEEL, 0.0, _scroll_max())
-		elif ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT and trade_open() and _btns.has("trade") and (_btns["trade"] as Rect2).has_point(ev.position) and sel != "" and listed_of(_item(sel)) <= 0.004:
+		elif ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT and _multi.is_empty() and trade_open() and _btns.has("trade") and (_btns["trade"] as Rect2).has_point(ev.position) and sel != "" and listed_of(_item(sel)) <= 0.004:
 			# 128 号 第 2 段: right on the exchange's key — its price curve, to set one's own price
 			_to_hall("sell", sel)
 		elif ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
@@ -961,10 +1104,15 @@ func _gui_input(ev: InputEvent) -> void:
 		elif ev.button_index == MOUSE_BUTTON_LEFT:
 			_layout()
 			if not ev.pressed:
+				if quantity_drag:
+					_set_quantity(ev.position.x)
+					quantity_drag = false
+					accept_event()
+					return
 				if _marq_on:
 					_marq_on = false
 					_marq_to = ev.position
-					if _marq_from.distance_to(_marq_to) > 6.0:
+					if _marq_from.distance_to(_marq_to) > 3.0:
 						_box_pick()
 					elif _ctrl_press != "":
 						_toggle_multi(_ctrl_press)
@@ -989,11 +1137,12 @@ func _gui_input(ev: InputEvent) -> void:
 			if BenchFx.on() and _grid_rect().has_point(ev.position):
 				_ripples.append([ev.position, BenchFx.now()])
 			# Ctrl: a box from here (or, if the pointer does not move, the thing under it in or out)
-			if _ctrl() and not _guide_on() and _grid_rect().has_point(ev.position):
+			if (ev.ctrl_pressed or ev.meta_pressed or _test_ctrl) and not _guide_on() and _grid_rect().has_point(ev.position):
 				_marq_on = true
 				_marq_from = ev.position
 				_marq_to = ev.position
 				_ctrl_press = _unit_at(ev.position)
+				_vel = 0.0
 				accept_event()
 				return
 			if not _multi.is_empty():
@@ -1005,6 +1154,11 @@ func _gui_input(ev: InputEvent) -> void:
 					_multi = {}
 			for b in _btns:
 				if (_btns[b] as Rect2).has_point(ev.position):
+					if b == "quantity":
+						quantity_drag = true
+						_set_quantity(ev.position.x)
+						accept_event()
+						return
 					_press(str(b))
 					accept_event()
 					return
@@ -1022,11 +1176,21 @@ func _gui_input(ev: InputEvent) -> void:
 
 
 func _press(b: String) -> void:
+	if b == "queue_link":
+		# the stores close and the queue opens on the batch just added (its Enter brings the stores back)
+		if _queue_link_t > 0.0 and game != null and is_instance_valid(game):
+			var g = game
+			_queue_link_t = 0.0
+			_close()
+			g.get_tree().create_timer(0.5).timeout.connect(_open_queue_on.bind(g))
+		return
 	if b.begins_with("f:"):
 		open_kind(b.substr(2))
 	elif b == "sell":
 		if not _multi.is_empty():
 			sell_multi()
+		elif _quantity_available():
+			sell_quantity(false)
 		else:
 			sell_sel()
 	elif b == "keep":
@@ -1036,8 +1200,12 @@ func _press(b: String) -> void:
 			keep_sel()
 	elif b == "keep_all":
 		keep_all()
+	elif b == "work":
+		work_sel()
 	elif b == "tidy":
 		tidy()
+	elif b == "trade" and not _multi.is_empty():
+		list_multi()
 	elif b == "trade" and listed_of(_item(sel)) > 0.004:
 		var r := StoreBook.withdraw_key(str(_item(sel).key))
 		if r.ok:
@@ -1045,6 +1213,8 @@ func _press(b: String) -> void:
 			build()
 		else:
 			_say(str(r.reason), true)
+	elif b == "trade" and trade_open() and _quantity_available():
+		sell_quantity(true)
 	elif b == "trade" and trade_open():
 		list_sel()
 	elif b == "order" and trade_open():
@@ -1078,12 +1248,11 @@ func _unhandled_input(ev: InputEvent) -> void:
 			else:
 				_close()
 		KEY_ENTER, KEY_KP_ENTER:
-			if not _multi.is_empty():
-				sell_multi()
-			else:
-				sell_sel()
+			_press("sell")
 		KEY_K:
 			keep_sel()
+		KEY_P:
+			work_sel()
 		KEY_R:
 			turn()
 		KEY_T:
@@ -1136,11 +1305,13 @@ func _draw() -> void:
 func _draw_head() -> void:
 	draw_rect(Rect2(PAD, 40, 4, 34), UiSkin.ACCENT)
 	_text(w("公司仓库", "COMPANY STORES"), Vector2(PAD + 16, 70), 32, Pal.ink(0.97), font_s)
-	var s := StoreBook.totals()
-	_text(StoreBook.summary_line(), Vector2(PAD + 16, 104), 18, Pal.ink(0.9), font_b)
+	var s := _totals_cache
+	var cap := StoreBook.cap()
+	var summary := w("仓库总值 %s（回收价）/ %s（市价） · 已用 %d/%d 格", "STORES WORTH %s (RECYCLING) / %s (MARKET) · %d/%d CELLS USED") % [Pal.money(float(s.get("recycle", 0.0))), Pal.money(float(s.get("market", 0.0))), int(s.get("used", 0)), cap]
+	_text(summary, Vector2(PAD + 16, 104), 18, Pal.ink(0.9), font_b)
 	var sx := PAD + 560.0
 	var sw := 260.0
-	var k := clampf(float(s.used) / maxf(1.0, float(s.cap)), 0.0, 1.0)
+	var k := clampf(float(s.get("used", 0)) / maxf(1.0, float(cap)), 0.0, 1.0)
 	draw_rect(Rect2(sx, 96, sw, 6), Color(1, 1, 1, 0.07))
 	draw_rect(Rect2(sx, 96, sw * k, 6), Pal.ink(0.6) if k < 0.9 else Pal.heat(1.0, 1.1))
 	_text(w("资金", "CASH"), Vector2(size.x - PAD - 180.0 - 220.0, 58), 13, Pal.ink(0.5), font_b, 200.0, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -1302,11 +1473,6 @@ func _draw_one(ci: CanvasItem, it: Dictionary, id: String) -> void:
 	if hk > 0.0:
 		_spot(ci, ur, hk)
 		ci.draw_rect(ur, Color(UiSkin.ACCENT, 0.55 * hk), false, 1.5)
-	# chosen with Ctrl: an ice-blue frame and a tick
-	if _multi.has(id):
-		ci.draw_rect(ur.grow(1.0), Color(UiSkin.DATA, 0.95), false, 2.0)
-		ci.draw_rect(Rect2(ur.position + Vector2(ur.size.x - 16, 4), Vector2(12, 12)), Color(UiSkin.DATA, 0.9))
-		ci.draw_polyline(PackedVector2Array([ur.position + Vector2(ur.size.x - 13, 10), ur.position + Vector2(ur.size.x - 10.5, 13), ur.position + Vector2(ur.size.x - 6, 7)]), Color(0.02, 0.03, 0.04), 1.6)
 	# 落位 / 整理到位: its cells flash ice blue for a moment — under the filter's veil, so what the
 	# filter leaves out stays at about 28 % while it lands too
 	var la := _land_k(id)
@@ -1315,6 +1481,11 @@ func _draw_one(ci: CanvasItem, it: Dictionary, id: String) -> void:
 		ci.draw_rect(_rest_rect(id).grow(-1.0), Color(UiSkin.DATA, 0.08 * la))
 	if dk > 0.0:
 		ci.draw_rect(_rest_rect(id).grow(1.0).merge(ur.grow(1.0)), Color(0.026, 0.03, 0.036, DIM_VEIL * dk))
+	# The check and frame stay visible even on goods dimmed by the filter.
+	if _multi.has(id):
+		ci.draw_rect(ur.grow(1.0), Color(UiSkin.DATA, 0.95), false, 2.0)
+		ci.draw_rect(Rect2(ur.position + Vector2(ur.size.x - 16, 4), Vector2(12, 12)), Color(UiSkin.DATA, 0.9))
+		ci.draw_polyline(PackedVector2Array([ur.position + Vector2(ur.size.x - 13, 10), ur.position + Vector2(ur.size.x - 10.5, 13), ur.position + Vector2(ur.size.x - 6, 7)]), Color(0.02, 0.03, 0.04), 1.6)
 
 
 # the chosen unit's frame: traced round from its top-left corner, then a soft accent glow
@@ -1444,6 +1615,9 @@ func _unit(ci: CanvasItem, it: Dictionary, r: Rect2, rot: int, dim: bool, alpha 
 # a box of spares, a tank
 func _picture(ci: CanvasItem, it: Dictionary, r: Rect2, rot: int, alpha := 1.0) -> void:
 	var cat := str(it.cat)
+	if it.get("good", {}).get("bale", false):
+		_bale(ci, r, alpha, str(it.id))
+		return
 	if cat == "steel":
 		_plates(ci, r, float(it.get("t", 0.0)), alpha)
 		return
@@ -1480,6 +1654,25 @@ func _picture(ci: CanvasItem, it: Dictionary, r: Rect2, rot: int, alpha := 1.0) 
 	if str(lk.art) != "":
 		Art.draw(ci, str(lk.art), sz, null, font)
 	ci.draw_set_transform_matrix(_xf)
+
+
+# 128 号 第 4 段: a bale — a crushed block, its folds showing, three straps round it
+func _bale(ci: CanvasItem, r: Rect2, alpha: float, id: String) -> void:
+	var c := r.get_center()
+	var s := minf(r.size.x, r.size.y) * 0.62
+	var b := Rect2(c - Vector2(s, s * 0.82) * 0.5, Vector2(s, s * 0.82))
+	ci.draw_rect(b, Color(0.2, 0.2, 0.215, alpha))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(id)
+	for k in 16:
+		var p := b.position + Vector2(rng.randf() * b.size.x, rng.randf() * b.size.y)
+		var d := Vector2.from_angle(rng.randf_range(-0.7, 0.7)) * rng.randf_range(0.15, 0.4) * s
+		var q := Vector2(clampf(p.x + d.x, b.position.x, b.end.x), clampf(p.y + d.y, b.position.y, b.end.y))
+		ci.draw_line(p, q, Pal.ink(0.32 * alpha), 1.0)
+	ci.draw_rect(b, Pal.ink(0.7 * alpha), false, 1.2)
+	for k in 3:
+		var x := b.position.x + b.size.x * (0.2 + 0.3 * k)
+		ci.draw_line(Vector2(x, b.position.y - 1.0), Vector2(x, b.end.y + 1.0), Color(0.78, 0.78, 0.84, 0.9 * alpha), 2.0)
 
 
 func _bundle(ci: CanvasItem, r: Rect2, alpha: float) -> void:
@@ -1626,7 +1819,7 @@ func _draw_inbox() -> void:
 		_text(sz, r.position + Vector2(76, 46), 12, Pal.ink(0.6 * fade), font_b, r.size.x - 84.0)
 		_text(w("回收 %s", "RECYCLE %s") % Pal.money(recycle_of(it)), r.position + Vector2(76, 66), 12, Pal.ink(0.6 * fade), font_b, r.size.x - 84.0)
 	if shown_n < inbox.size():
-		_text(w("↓ 还有 %d 样", "↓ %d MORE") % (inbox.size() - shown_n), Vector2(ir.position.x + 14, ir.end.y - 12), 12, Pal.ink(0.5), font_b)
+		_text(w("滚轮浏览  %d–%d / %d", "SCROLL  %d–%d / %d") % [_inbox_first + 1, _inbox_first + shown_n, inbox.size()], Vector2(ir.position.x + 14, ir.end.y - 12), 12, Pal.ink(0.6), font_b)
 
 
 func _draw_detail() -> void:
@@ -1684,26 +1877,61 @@ func _draw_detail() -> void:
 		y += 26.0
 		_text(w("拖动挪位置，R 转向，右键更多操作", "Drag to move · R turns · right-click for more"), Vector2(x, y), 12, Pal.ink(0.45), font_b, wd)
 	var sb: Rect2 = _btns["sell"]
-	var ok := can_sell(it)
+	var use_qty := _quantity_available()
+	var bundles := _quantity_units() if use_qty else []
+	var qty_count := clampi(quantity, 0, bundles.size())
+	var qty_recycle := 0.0
+	var qty_trade := 0.0
+	var qty_tonnes := 0.0
+	if qty_count > 0:
+		# Only the highest-numbered bundle may be partial; the rest share the same price and mass.
+		var partial: Dictionary = bundles[0]
+		var regular: Dictionary = bundles[1] if bundles.size() > 1 else partial
+		var includes_partial := qty_count > 1 or str(partial.id) == sel
+		var full_count := qty_count - int(includes_partial)
+		qty_recycle = full_count * recycle_of(regular)
+		qty_trade = full_count * maxf(0.0, trade_net(regular))
+		qty_tonnes = full_count * float(regular.t)
+		if includes_partial:
+			qty_recycle += recycle_of(partial)
+			qty_trade += maxf(0.0, trade_net(partial))
+			qty_tonnes += float(partial.t)
+	var ok := can_sell(it) and (not use_qty or qty_count > 0)
 	var arm := _confirm == str(it.id)
 	var lit := _lit(guide_btn == "sell")
 	draw_rect(sb, Color(UiSkin.ACCENT, (0.38 if arm else (0.26 if hover_btn == "sell" else 0.15)) + 0.12 * lit) if ok else Color(1, 1, 1, 0.03))
 	draw_rect(sb, Color(UiSkin.ACCENT, 0.95 if ok else 0.25), false, 1.2 + 1.2 * lit)
 	var sl := ""
-	if not ok:
+	if use_qty and qty_count == 0:
+		sl = w("先选择出售数量", "CHOOSE A QUANTITY")
+	elif not ok:
 		sl = w("挂牌中，不能卖", "LISTED") if it.has("part") and it.part.has("listed") else w("不能卖", "NOT FOR SALE")
 	elif arm:
 		sl = w("再按一次确认：卖给回收站 %s", "PRESS AGAIN: SELL FOR %s") % Pal.money(recycle_of(it))
 	else:
-		sl = w("卖给回收站  %s  [Enter]", "SELL TO RECYCLING  %s  [Enter]") % Pal.money(recycle_of(it))
+		sl = w("卖给回收站  %s  [Enter]", "SELL TO RECYCLING  %s  [Enter]") % Pal.money(qty_recycle if use_qty else recycle_of(it))
 	_text(sl, sb.position + Vector2(0, 26), 17, Pal.ink(0.97 if ok else 0.45), font_s, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	if ok:
 		_text(w("立刻到账，市价的 6 成", "PAID AT ONCE, 60% OF MARKET"), sb.position + Vector2(0, 46), 12, Pal.ink(0.6), font_b, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
-	var kb: Rect2 = _btns["keep"]
-	var kok := can_keep(it)
-	draw_rect(kb, Color(1, 1, 1, 0.08 if hover_btn == "keep" and kok else 0.035))
-	draw_rect(kb, Pal.ink(0.55 if kok else 0.2), false, 1.0)
-	_text(keep_label(it), kb.position + Vector2(0, 29), 15, Pal.ink(0.9 if kok else 0.45), font_b, kb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	_draw_work(it)
+	if use_qty:
+		var qr: Rect2 = _btns["quantity"]
+		var maximum := bundles.size()
+		quantity = qty_count
+		_text(w("出售数量：%d / %d 捆  ·  %.1f 吨", "QUANTITY: %d / %d BUNDLES · %.1f t") % [quantity, maximum, qty_tonnes], qr.position + Vector2(0, 13), 14, Pal.ink(0.9), font_b, qr.size.x)
+		var left := qr.position.x + 16.0
+		var right := qr.end.x - 16.0
+		var yy := qr.position.y + 32.0
+		draw_line(Vector2(left, yy), Vector2(right, yy), Pal.ink(0.35), 4.0)
+		var handle := lerpf(left, right, float(quantity) / maxf(float(maximum), 1.0))
+		draw_line(Vector2(left, yy), Vector2(handle, yy), UiSkin.ACCENT, 4.0)
+		draw_circle(Vector2(handle, yy), 7.0, UiSkin.ACCENT)
+	else:
+		var kb: Rect2 = _btns["keep"]
+		var kok := can_keep(it)
+		draw_rect(kb, Color(1, 1, 1, 0.08 if hover_btn == "keep" and kok else 0.035))
+		draw_rect(kb, Pal.ink(0.55 if kok else 0.2), false, 1.0)
+		_text(keep_label(it), kb.position + Vector2(0, 29), 15, Pal.ink(0.9 if kok else 0.45), font_b, kb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	var held := listed_of(it)
 	if held > 0.004:
 		# a listing holds some of these: withdrawn right here, never on another page
@@ -1725,7 +1953,7 @@ func _draw_detail() -> void:
 			var top := ""
 			var sub := ""
 			if b == "trade":
-				top = w("交易行  约 %s", "EXCHANGE ~%s") % Pal.money(trade_net(it))
+				top = w("交易行  约 %s", "EXCHANGE ~%s") % Pal.money(qty_trade if use_qty else trade_net(it))
 				sub = w("%s · 右键自己定价", "%s · RIGHT: OWN PRICE") % HallMarket.vs_avg_text(HallMarket.kind_of(it))
 			elif not of.is_empty():
 				top = w("订单  %s", "ORDER  %s") % Pal.money(float(of.price))
@@ -1742,6 +1970,118 @@ func _draw_detail() -> void:
 		var top := ((w("交易行  约 %s", "EXCHANGE ~%s") if b == "trade" else w("订单  约 %s", "ORDER ~%s")) % Pal.money(price)) if mk > 0.0 else (w("交易行", "EXCHANGE") if b == "trade" else w("订单", "ORDERS"))
 		_text(top, r.position + Vector2(0, 22), 14, Pal.ink(0.5), font_b, r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 		_text(StoreBook.exchange_shut_text() if not trade_open() else w("不能卖", "NOT FOR SALE"), r.position + Vector2(0, 41), 11, Pal.ink(0.38), font_b, r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+
+
+# ---------------------------------------------------------------- 128 号 第 4 段: 炼成钢坯 / 压块
+
+# what the processing district can do with it: "cast" (ingots → the queue), "bale" (to the press), ""
+func work_kind(it: Dictionary) -> String:
+	if it.is_empty() or it.get("inbox", false) or it.get("steel", false) or Port.stage("process") < 1:
+		return ""
+	var id := str(it.get("id", ""))
+	if id.begins_with("r:") and str(it.get("key", "")) == StoreBook.Exchange.INGOT:
+		return "cast"
+	if id.begins_with("r:") and str(it.get("key", "")) in ProcessLine.LOOSE:
+		return "bale"
+	if (id.begins_with("g:") and not it.good.get("bale", false) and str(it.good.get("fluid", "")) == "") or id.begins_with("p:"):
+		return "bale"
+	return ""
+
+
+# {label, sub, why (why it cannot now, ""), note}
+func work_state(it: Dictionary) -> Dictionary:
+	match work_kind(it):
+		"cast":
+			var t := _cast_t(it)
+			var free := float(StoreBook.raw_stock().get(StoreBook.Exchange.INGOT, 0.0)) - ProcessLine.queued_t(StoreBook.Exchange.INGOT)
+			var why := ""
+			if not ProcessLine.first_done():
+				why = w("第一炉先到加工区炉台亲手炼一次（主线会带你去），之后在这里一键排产", "MAKE THE FIRST HEAT BY HAND AT THE FURNACE DESK; AFTER THAT IT IS ONE KEY HERE")
+			elif free < ProcessQueue.HEAT_MIN:
+				why = w("仓库里的钢锭都已经排进加工队列了", "ALL THE INGOTS ARE QUEUED ALREADY")
+			var g := ProcessLine.guess_use(t)
+			return {"label": w("炼成钢坯  %.1f t  [P]", "CAST INTO STEEL  %.1f t  [P]") % minf(t, maxf(free, 0.0)), "sub": w("排进加工队列 · %s · %s", "INTO THE QUEUE · %s · %s") % [ProcessLine.mould_name(str(g.mould)), ProcessLine.use_text({"use": g.use})], "why": why,
+				"note": w("炉子按加工队列自己炼：叉车和吊轨车送料、熔化、浇进模具、冷却、运回仓库。用途和模具可以在加工队列里改：排好后点提示上的“查看加工队列”，或到加工区炉体控制台按 E", "The furnace works the queue by itself. Change the use and the mould in the queue: the note's 'see the queue' key, or E at the furnace console")}
+		"bale":
+			var ok := ProcessLine.pressable(it)
+			var cells := ProcessLine.bale_cells(ProcessLine.mass_of(it))
+			var sub := w("压块约 %s · 占 %d 格（现在 %d 格）", "BALE ~%s · %d CELL (NOW %d)") % [Pal.money(ProcessLine.bale_value(it)), cells.x * cells.y, int(it.get("cells", 1))]
+			if it.has("part") and Disposal.wanted().has(str(it.part.uid)):
+				sub = w("修缮用得上，压了就没了 · ", "A REPAIR NEEDS IT · ") + sub
+			return {"label": w("压块  [P]", "BALE IT  [P]"), "sub": sub, "why": str(ok.why),
+				"note": w("送去加工区的打包压块机：压成方块回仓库，占格少、卖价略高。压力容器里还有气体或液体的，压机会拒收退回", "To the baler: back as a block, fewer cells, a little dearer. A vessel with gas or liquid left in it is sent back")}
+	return {}
+
+
+# t the cast key takes: the bundles the quantity slider chose, else the bundle picked
+func _cast_t(it: Dictionary) -> float:
+	if _quantity_available():
+		var s := 0.0
+		for u in _quantity_chosen():
+			s += float(u.get("t", 0.0))
+		if s > 0.0:
+			return s
+	return float(it.get("t", 0.0))
+
+
+func work_sel() -> void:
+	var it := _item(sel)
+	var ws := work_state(it)
+	if ws.is_empty():
+		return
+	if str(ws.why) != "":
+		_say(str(ws.why), true)
+		return
+	if work_kind(it) == "cast":
+		var r := ProcessLine.queue_ingots(_cast_t(it))
+		if not r.ok:
+			_say(str(r.reason), true)
+			return
+		var e: Dictionary = r.entry
+		_say(w("排进加工队列第 %d 批：钢锭 %.1f t → %s · %s", "QUEUED AS BATCH %d: %.1f t → %s · %s") % [int(r.place), float(e.t), ProcessLine.mould_name(str(e.mould)), ProcessLine.use_text(e)])
+		_msg_t = 6.0
+		_queue_link_t = 6.0
+		build()
+		return
+	var r2 := ProcessLine.send_to_press(str(it.id))
+	if not r2.ok:
+		_say(str(r2.reason), true)
+		return
+	_say(w("送去压块：%s · 压机第 %d 个 · 约 %d 秒后压块回仓库", "TO THE BALER: %s · NUMBER %d · BACK IN ~%d s") % [str(r2.name), int(r2.place), int(ProcessLine.press_total({}) * int(r2.place))])
+	build()
+	var vis := shown()
+	sel = str(vis[0].id) if not vis.is_empty() else ""
+
+
+var _work_hover_t := 0.0
+func _draw_work(it: Dictionary) -> void:
+	if not _btns.has("work"):
+		return
+	var ws := work_state(it)
+	if ws.is_empty():
+		return
+	var r: Rect2 = _btns["work"]
+	var shut := str(ws.why) != ""
+	var hv: bool = hover_btn == "work"
+	var acc := UiSkin.DATA
+	draw_rect(r, Color(acc, (0.16 if hv else 0.08)) if not shut else Color(1, 1, 1, 0.025))
+	draw_rect(r, Color(acc, 0.85 if hv else 0.55) if not shut else Pal.ink(0.18), false, 1.2)
+	_text(str(ws.label), r.position + Vector2(0, 22), 15, Pal.ink(0.45 if shut else 0.96), font_s, r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(str(ws.why) if shut else str(ws.sub), r.position + Vector2(12, 41), 11, Pal.ink(0.42 if shut else 0.62), font_b, r.size.x - 24.0, HORIZONTAL_ALIGNMENT_CENTER)
+	if hv and BenchFx.now() - _work_hover_t >= BenchFx.NOTE_S:
+		_work_note = str(ws.note) + ("\n" + str(ws.why) if shut else "")
+	elif not hv:
+		_work_hover_t = BenchFx.now()
+		_work_note = ""
+
+
+var _work_note := ""
+static func _open_queue_on(g) -> void:
+	if is_instance_valid(g):
+		g.open_queue_panel()
+
+
+var _queue_link_t := 0.0   # 128 号 第 4 段: s the "查看加工队列" key stays on the note after a batch is queued
 
 
 func _para(s: String, x: float, y: float, wd: float, col: Color) -> float:
@@ -1777,6 +2117,14 @@ func _draw_foot() -> void:
 		var lw := font_b.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
 		draw_rect(Rect2(PAD + sx, y + 8.0, lw * clampf(_msg_t / 3.5, 0.0, 1.0), 2.0), Color(UiSkin.DATA if not _msg_bad else UiSkin.ACCENT, 0.7))
 	_text(line, Vector2(PAD + sx, y), 15, col, font_b)
+	if _queue_link_t > 0.0 and _btns.has("queue_link"):
+		var qr: Rect2 = _btns["queue_link"]
+		var hv: bool = hover_btn == "queue_link"
+		var k := clampf(_queue_link_t / 0.3, 0.0, 1.0)
+		draw_rect(qr, Color(UiSkin.ACCENT, (0.3 if hv else 0.16) * k))
+		draw_rect(qr, Color(UiSkin.ACCENT, 0.9 * k), false, 1.2)
+		draw_rect(Rect2(qr.position.x, qr.end.y - 2.0, qr.size.x * clampf(_queue_link_t / 6.0, 0.0, 1.0), 2.0), Color(UiSkin.ACCENT, 0.8 * k))
+		_text(w("查看加工队列", "SEE THE QUEUE"), qr.position + Vector2(0, 24), 15, Pal.ink(0.97 * k), font_s, qr.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 # the pointer on the page; screenshots use BenchFx.shot_mouse (the real pointer is never moved)
@@ -2027,7 +2375,7 @@ func _draw_over(ci: CanvasItem) -> void:
 		ci.draw_arc(rp[0], 3.0 + 16.0 * q, 0, TAU, 24, Color(1, 1, 1, 0.35 * (1.0 - q)), 1.0, true)
 	# the Ctrl box
 	if _marq_on:
-		var mr := Rect2(_marq_from, Vector2.ZERO).expand(_marq_to)
+		var mr := _box_rect()
 		ci.draw_rect(mr, Color(UiSkin.DATA, 0.08))
 		_ants(ci, mr)
 	# the small card for what the pointer rests on
@@ -2035,6 +2383,8 @@ func _draw_over(ci: CanvasItem) -> void:
 		_draw_tip(ci, _item(_tip_id), _tip_t - TIP_S)
 	if not _menu.is_empty():
 		_draw_menu(ci)
+	if _work_note != "" and _menu.is_empty() and drag_id == "":
+		BenchFx.draw_note(ci, _work_note, _mouse(), size)
 
 
 # the box's edge: a faint line all round, eight bright dashes chasing along it
@@ -2109,6 +2459,8 @@ func _open_menu(id: String, at: Vector2) -> void:
 		rows.append(["price", w("看价格曲线，自己定价…", "PRICE CURVE, SET MY OWN PRICE…")])
 	if can_keep(it):
 		rows.append(["keep", keep_label(it)])
+	if work_kind(it) != "" and str(work_state(it).why) == "":
+		rows.append(["work", str(work_state(it).label)])
 	if not it.get("inbox", false) and not it.get("steel", false) and lay.has(id) and int(it.w) != int(it.h):
 		rows.append(["turn", w("转向  [R]", "TURN  [R]")])
 	if rows.is_empty():
@@ -2155,6 +2507,7 @@ func _menu_pick(i: int) -> void:
 	match str(row[0]):
 		"sell": sell_sel()
 		"keep": keep_sel()
+		"work": work_sel()
 		"turn": turn()
 		"trade": list_sel()
 		"price": _to_hall("sell", id)
@@ -2162,23 +2515,24 @@ func _menu_pick(i: int) -> void:
 
 # ---------------------------------------------------------------- Ctrl: box and pick many
 
-func _ctrl() -> bool:
-	return Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_META) or _test_ctrl
-
-
 var _test_ctrl := false        # tests hold Ctrl this way (no real key is pressed)
 
 
+func _box_rect() -> Rect2:
+	return Rect2(_marq_from, Vector2.ZERO).expand(_marq_to).intersection(_grid_rect())
+
+
 func _box_pick() -> void:
-	var mr := Rect2(_marq_from, Vector2.ZERO).expand(_marq_to)
-	var gp := _grid_rect().position
+	var grid := _grid_rect()
+	var mr := _box_rect()
+	mr.position -= grid.position
+	var visible_grid := Rect2(Vector2.ZERO, grid.size)
 	for it in items:
 		var id := str(it.id)
-		if not lay.has(id) or not _matches(it):
+		if not lay.has(id) or id == drag_id:
 			continue
-		var ur := unit_rect(id)
-		ur.position += gp
-		if ur.intersects(mr):
+		var ur := _drawn_rect(id).intersection(visible_grid)
+		if ur.has_area() and ur.intersects(mr, true):
 			_multi[id] = true
 	_after_multi()
 
@@ -2262,6 +2616,54 @@ func sell_multi() -> void:
 	build()
 
 
+# List indexed stacks from the highest index down: removing one renumbers later stacks.
+func list_multi() -> void:
+	if not trade_open():
+		_say(StoreBook.exchange_shut_text(), true)
+		return
+	var ids: Array = _multi.keys()
+	ids.sort_custom(func(a, b):
+		var aa := str(a)
+		var bb := str(b)
+		var ap := aa.get_slice(":", 0)
+		var bp := bb.get_slice(":", 0)
+		if ap in ["r", "s"] and bp == ap:
+			var abase := aa.substr(0, aa.rfind(":"))
+			var bbase := bb.substr(0, bb.rfind(":"))
+			if abase == bbase:
+				return int(aa.get_slice(":", aa.get_slice_count(":") - 1)) > int(bb.get_slice(":", bb.get_slice_count(":") - 1))
+			return abase < bbase
+		return aa < bb)
+	var n := 0
+	var net := 0.0
+	var failed := 0
+	var reason := ""
+	for id in ids:
+		var it := _item(str(id))
+		if it.is_empty() or not can_sell(it):
+			failed += 1
+			if reason == "":
+				reason = w("部分物品不能挂单", "SOME ITEMS CANNOT BE LISTED")
+			continue
+		var result := HallMarket.list(str(id))
+		if not result.ok:
+			failed += 1
+			if reason == "":
+				reason = str(result.get("reason", ""))
+			continue
+		n += 1
+		net += float(result.net)
+	_multi = {}
+	build()
+	if n == 0:
+		_say(w("没有挂单成功：", "NOTHING LISTED: ") + reason, true)
+		return
+	var msg := w("已挂单 %d 件 · 成交后预计到账 %s（扣 5%%）", "LISTED %d · %s EXPECTED AFTER SALE (LESS 5%%)") % [n, Pal.money(net)]
+	if failed > 0:
+		msg += w(" · %d 件未挂单：", " · %d NOT LISTED: ") % failed + reason
+	_say(msg, failed > 0)
+
+
 func keep_multi() -> void:
 	var n := _multi.size()
 	_multi = {}
@@ -2295,6 +2697,12 @@ func _draw_multi_detail(dr: Rect2) -> void:
 	draw_rect(kb, Color(1, 1, 1, 0.08 if hover_btn == "keep" else 0.035))
 	draw_rect(kb, Pal.ink(0.55), false, 1.0)
 	_text(w("全部留着", "KEEP THEM ALL"), kb.position + Vector2(0, 29), 15, Pal.ink(0.9), font_b, kb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	var tb: Rect2 = _btns["trade"]
+	var open := trade_open()
+	draw_rect(tb, Color(UiSkin.DATA, 0.2 if hover_btn == "trade" and open else 0.1 if open else 0.03))
+	draw_rect(tb, Pal.ink(0.7 if open else 0.25), false, 1.0)
+	_text(w("一键挂到交易行", "LIST ALL ON THE EXCHANGE") if open else StoreBook.exchange_shut_text(), tb.position + Vector2(0, 21), 16, Pal.ink(0.95 if open else 0.45), font_s, tb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(w("按市价挂单 · 成交后到账，扣 5%", "MARKET PRICE · PAID AFTER SALE, LESS 5%"), tb.position + Vector2(0, 41), 12, Pal.ink(0.6 if open else 0.35), font_b, tb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 # ---------------------------------------------------------------- the details' new parts

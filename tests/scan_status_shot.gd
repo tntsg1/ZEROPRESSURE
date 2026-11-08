@@ -62,22 +62,28 @@ func _run() -> void:
 	var st: Array = sm.find_box.find_children("*", "", true, false).filter(func(c): return c.get_script() != null and c.has_method("_bar"))
 	check(st.size() == 1 and "分析信号" in str(st[0].lbl.text), "one status line under the list: %s" % (str(st[0].lbl.text) if not st.is_empty() else "-"))
 	Cap.save(root, "res://tests/out/scan_status_busy_zh.png")
-	# done: the result on the status line, then the analyse button back
+	# Done: retain the result while immediately offering the selected next signal.
 	Scan.advance(Scan.ANALYZE_S)
 	sm._fill()
 	await _frames(10)
 	st = sm.find_box.find_children("*", "", true, false).filter(func(c): return c.get_script() != null and c.has_method("_bar"))
 	check(st.size() == 1 and "分析完成" in str(st[0].lbl.text), "done: the status line says what it found: %s" % (str(st[0].lbl.text) if not st.is_empty() else "-"))
+	var immediate: Array = sm.find_box.find_children("*", "Button", true, false).filter(func(b): return "电磁特征" in str(b.text) and not b.disabled)
+	check(sigs.size() < 2 or (immediate.size() == 1 and str(immediate[0].text).contains(str(sigs[1].id))), "next signal can be analysed immediately while the result is visible")
 	Cap.save(root, "res://tests/out/scan_status_done_zh.png")
+	if not immediate.is_empty():
+		immediate[0].pressed.emit()
+		check(Scan.busy() and str(Scan.data().job.sig) == str(sigs[1].id), "clicking immediately starts the next analysis")
+		Scan.data().job = {}
 	sm._done_until = 0
 	sm._fill()
 	await _frames(6)
 	var back: Array = sm.find_box.find_children("*", "Button", true, false).filter(func(b): return "电磁特征" in str(b.text) and not b.disabled)
-	check(sigs.size() < 2 or back.size() == 1, "a few seconds on, the analyse button is back for the picked signal")
+	check(sigs.size() < 2 or back.size() == 1, "the next signal's analyse button remains after the result fades")
 	# user 2026-10-28: the analyse button is an action, not one more signal: drawn apart from the rows
 	if not back.is_empty():
 		# 107 号 Q6 A: a hulk's row is its tug button (an action itself): compare with a plain signal row
-		var row: Button = _rows(sm).filter(func(b): return str(b.name).begins_with("Sig_"))[0]
+		var row: Button = _rows(sm).filter(func(b): return "未知信号" in str(b.text))[0]
 		var sa: StyleBox = back[0].get_theme_stylebox("normal")
 		var sr: StyleBox = row.get_theme_stylebox("normal")
 		check(sa is StyleBoxFlat and sr is StyleBoxFlat and not (sa as StyleBoxFlat).bg_color.is_equal_approx((sr as StyleBoxFlat).bg_color), "the analyse button is filled apart from the signal rows")

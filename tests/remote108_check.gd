@@ -66,7 +66,7 @@ func _run() -> void:
 	g.open_console("terminal")
 	await _frames(30)
 	var box = g.console_ui.remote_box
-	check(box != null and box.visible and box.get_child_count() == 3, "the terminal's foot has the three remote jobs")
+	check(box != null and box.visible and box.get_child_count() == RemoteOps.kinds().size(), "the terminal's foot has its remote jobs (%d)" % box.get_child_count())
 	var locked := 0
 	for b in box.get_children():
 		if b.disabled and str(b.tooltip_text) != "":
@@ -88,32 +88,16 @@ func _run() -> void:
 	await _key(KEY_F5)
 	check(_ui_path() == "power_panel.gd", "F5: the grid's dispatch on the power screen (%s)" % _ui_path())
 	await _close_ui()
-	# ---- the queue: three batches, the last to the front
+	# ---- 128 号 第 4 段 (2026-11-07): the processing queue opens only at the furnace console (E) and from the
+	# stores' note — F6 opens nothing, the terminal has no button for it (tests/seg4_sketch.gd covers both ways in)
 	for i in 3:
 		ProcessQueue.add("lot%d" % i, ["gr7", "tw64", "m14"][i], "J-%d" % i, 6.0 + i)
 	await _key(KEY_F6)
-	check(_ui_path() == "queue_panel.gd", "F6: the processing queue (%s)" % _ui_path())
-	var qp = g.console_ui
-	await _frames(6)
-	check(qp.list.get_child_count() == 3, "three batches listed in order")
-	qp._move(2, -99)
-	await _frames(4)
-	check(_lots() == ["lot2", "lot0", "lot1"], "the last to the front: %s" % str(_lots()))
-	check(ProcessQueue.next_melt().lot == "lot2", "and the furnace takes it next")
-	qp.sel = 0
-	qp._move(0, 1)
-	check(_lots() == ["lot0", "lot2", "lot1"], "down one: %s" % str(_lots()))
-	Cap.save(root, "res://tests/out/remote108_queue_zh.png")
-	await _close_ui()
-	# ---- from the terminal: its button folds the terminal and opens the panel
+	check(g.console_ui == null, "F6: nothing opens (%s)" % _ui_path())
 	g.open_console("terminal")
 	await _frames(30)
-	var qb: Button = g.console_ui.remote_box.get_node("Remote_queue")
-	check(not qb.disabled, "unlocked at the terminal too")
+	check(not g.console_ui.remote_box.has_node("Remote_queue"), "no queue button at the terminal")
 	Cap.save(root, "res://tests/out/remote108_terminal_zh.png")
-	qb.pressed.emit()
-	await _frames(10)
-	check(_ui_path() == "queue_panel.gd", "the terminal's button opens the queue (%s)" % _ui_path())
 	await _close_ui()
 	# ---- an old career that walked the whole round
 	Career.data.seen.erase("walk_power")

@@ -68,6 +68,12 @@ var cast_t := 0.0            # t poured into the mould at the fill station
 var lining := 118.0          # mm working lining left
 var heat_no := 312
 var ingot_no := 0
+var mould := "billet"         # 128 号 第 4 段: the mould block in the seat (scripts/process_line.gd)
+
+
+# t a piece is: the berth's moulds are 1 t ingots; the arc furnace's block says (scripts/arc_furnace.gd)
+func piece_t() -> float:
+	return INGOT
 var condensate := 0.0        # kg of metal vapour on the trap
 var pressure := 0.002        # Pa in the furnace chamber
 var flare_t := 0.0
@@ -364,9 +370,9 @@ func _manual_step(dt: float) -> void:
 			tapped_j += out*1000.0*(C_S*(T_LIQ-20.0)+L_FUS+C_L*(T-T_LIQ))
 			m_l -= out
 			cast_t += out
-			if cast_t >= INGOT:
-				cast_t -= INGOT
-				ingots.append([line_goal,T-60.0,INGOT])
+			if cast_t >= piece_t():
+				cast_t -= piece_t()
+				ingots.append([line_goal,T-60.0,piece_t()])
 				line_goal += PITCH
 			if m_l <= 0.000001:
 				# the part mould at the end; a rounding crumb (3 t poured as 3.0000001) goes into the

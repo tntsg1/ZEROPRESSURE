@@ -135,12 +135,14 @@ func _ready() -> void:
 	detail = VBoxContainer.new()
 	detail.add_theme_constant_override("separation", 8)
 	detail_win.add_child(detail)
-	ShipMarket.refresh()
+	if ShipMarket.refresh():
+		Career.save()
 	_fill()
 
 
 func _signature() -> String:
-	return "%d/%d/%s" % [ShipMarket.data().listings.size(), ShipMarket.data().assets.size(), str(ShipMarket.data().assets.map(func(a): return str(a.state) + str(a.has("resale"))))]
+	var listings: Array = ShipMarket.data().listings.map(func(l): return str(l.id))
+	return "%s/%d/%s" % [str(listings), ShipMarket.data().assets.size(), str(ShipMarket.data().assets.map(func(a): return str(a.state) + str(a.has("resale"))))]
 
 
 func _process(dt: float) -> void:
@@ -150,6 +152,9 @@ func _process(dt: float) -> void:
 		_t = 0.0
 		if _signature() != _stamp:
 			_fill()
+			if detail_win.visible and ShipMarket.listing(chosen).is_empty():
+				detail_win.visible = false
+				msg.text = w("这艘船已下架。", "THIS SHIP IS NO LONGER LISTED.")
 
 
 func _cat(c: String) -> void:

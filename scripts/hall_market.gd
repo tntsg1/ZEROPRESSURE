@@ -40,7 +40,7 @@ const REP_AT := [0, 3, 8, 15, 25]          # reputation points for each level (d
 const HIST_S := 1800.0                     # the price curve: the last half hour
 # the kinds the board asks for and the exchange sells: what the one-key mending names, the raw goods
 const KINDS := ["p_battery", "p_nav", "p_generator", "p_swb", "p_pump", "p_radiator", "p_compressor", "p_winch", "p_engine", "p_rcs", "p_fueltank"]
-const RAWS := ["ferrous_scrap:1", "steel_billet:1"]
+const RAWS := ["ferrous_scrap:1", "steel_billet:1", "steel_slab:1", "steel_small:1"]
 const STEEL := "repair_steel"
 static var ON := true          # tests of the older exchange switch it off
 static var events: Array = []  # [{kind: "sold"/"done"/"new"/"gone", text}] drained by the HUD
@@ -238,7 +238,45 @@ static func list(id: String, price := -1.0) -> Dictionary:
 		return {"ok": false, "reason": StoreBook.exchange_closed_text()}
 	var before := Career.data
 	Career.data = before.duplicate(true)
-	var u := {}
+	var result := _list_unit(id, price)
+	if not result.ok or not Career.save():
+		Career.data = before
+		return result if not result.ok else {"ok": false, "reason": w("保存失败", "SAVE FAILED")}
+	return result
+
+
+# One transaction for the quantity slider. It keeps one listing per bundle.
+static func list_raw_bundles(ids: Array) -> Dictionary:
+	if not open():
+		return {"ok": false, "reason": StoreBook.exchange_closed_text()}
+	var before := Career.data
+	Career.data = before.duplicate(true)
+	var by_id := {}
+	for unit in StoreBook.units():
+		if str(unit.id).begins_with("r:"):
+			by_id[str(unit.id)] = unit
+	var total := 0.0
+	var tonnes := 0.0
+	for id in ids:
+		var unit: Dictionary = by_id.get(id, {})
+		if unit.is_empty():
+			Career.data = before
+			return {"ok": false, "reason": w("这件东西现在不能挂单", "THIS CANNOT BE LISTED NOW")}
+		by_id.erase(id)
+		var result := _list_unit(str(id), -1.0, unit)
+		if not result.ok:
+			Career.data = before
+			return result
+		total += float(result.net)
+		tonnes += float(result.tonnes)
+	if not Career.save():
+		Career.data = before
+		return {"ok": false, "reason": w("保存失败", "SAVE FAILED")}
+	return {"ok": true, "net": total, "tonnes": tonnes}
+
+
+static func _list_unit(id: String, price: float, known_raw: Dictionary = {}) -> Dictionary:
+	var u := known_raw
 	var pl := {}
 	if id.begins_with("i:"):
 		var ib: Array = Career.data.get("inbox", [])
@@ -252,11 +290,11 @@ static func list(id: String, price := -1.0) -> Dictionary:
 				ib.erase(it)
 		Career.data.inbox = ib
 	else:
-		u = _unit(id)
+		if u.is_empty():
+			u = _unit(id)
 		if not u.is_empty():
 			pl = _take(u)
 	if u.is_empty() or pl.is_empty() or float(u.get("market", 0.0)) <= 0.0:
-		Career.data = before
 		return {"ok": false, "reason": w("这件东西现在不能挂单", "THIS CANNOT BE LISTED NOW")}
 	var mkt := market_now(u)
 	if price < 0.0:
@@ -268,10 +306,7 @@ static func list(id: String, price := -1.0) -> Dictionary:
 	var ls: Array = data().listings
 	ls.append(lst)
 	data().listings = ls
-	if not Career.save():
-		Career.data = before
-		return {"ok": false, "reason": w("保存失败", "SAVE FAILED")}
-	return {"ok": true, "name": str(u.name), "price": price, "net": net(price), "secs": fill_secs(price, mkt), "id": str(lst.id)}
+	return {"ok": true, "name": str(u.name), "price": price, "net": net(price), "secs": fill_secs(price, mkt), "id": str(lst.id), "tonnes": float(pl.get("t", 0.0))}
 
 
 # what a listing's thing is worth at market now
@@ -475,7 +510,7 @@ static func short_ways(o: Dictionary) -> Array:
 	if str(o.cat) == "raw":
 		if kind == Exchange.INGOT:
 			return [w("钢锭不够：拆船时熔炉把碎料炼成钢锭，带回来就入库", "SHORT OF INGOTS: THE BERTH'S FURNACE CASTS THEM FROM THE SCRAP"), w("交易行不卖钢锭，只能自己攒", "THE EXCHANGE SELLS NONE: YOUR OWN ONLY")]
-		return [w("钢坯不够：在加工区把钢锭炼成钢坯", "SHORT OF BILLETS: MELT INGOTS IN THE PROCESSING DISTRICT"), w("交易行不卖钢坯，只能自己炼", "THE EXCHANGE SELLS NONE: YOUR OWN ONLY")]
+		return [w("%s不够：订单卡上点“为这单排产”，或在仓库点钢锭“炼成钢坯”", "SHORT: PRESS 'PLAN FOR THIS ORDER' ON THE CARD, OR CAST INGOTS IN THE STORES") % StoreBook.raw_name(kind), w("交易行不卖，只能自己炼", "THE EXCHANGE SELLS NONE: YOUR OWN ONLY")]
 	var lack := maxi(1, int(round(float(o.n) - have_of("equip", kind))))
 	var each := buy_each(kind)
 	var gain := float(o.price) / maxf(float(o.n), 1.0) - each

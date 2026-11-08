@@ -43,7 +43,7 @@ func _init() -> void:
 	max_contacts_reported = 4
 	continuous_cd = RigidBody2D.CCD_MODE_CAST_SHAPE
 	collision_layer = 2
-	collision_mask = 1 | 4 | World.STATIC_LAYER
+	collision_mask = 1 | 4 | World.STATIC_LAYER | 16
 	z_index = 5
 	z_as_relative = false
 	var pm := PhysicsMaterial.new()
@@ -143,7 +143,7 @@ func leave() -> bool:
 	d.global_position = global_position + Vector2(0, -(WID * 0.5 + 1.2) * Geom.M)
 	d.linear_velocity = linear_velocity
 	d.collision_layer = 2
-	d.collision_mask = 1 | 4 | World.STATIC_LAYER
+	d.collision_mask = 1 | 4 | World.STATIC_LAYER | 16
 	d.visible = true
 	route = []
 	if pad != "":

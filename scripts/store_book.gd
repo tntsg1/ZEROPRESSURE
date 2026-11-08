@@ -396,8 +396,15 @@ static func _part_unit(p: Dictionary, id: String) -> Dictionary:
 
 static func _good_unit(gd: Dictionary, id: String) -> Dictionary:
 	var c := cells_of(str(gd.get("ship", "")), str(gd.get("tag", "")), float(gd.get("mass", 0.5))) if str(gd.get("fluid", "")) == "" else Vector2i(1, 2)
-	return {"id": id, "cat": str(gd.get("cat", "equip")), "name": good_name(gd), "qty": w("1 件", "1 PC"), "w": c.x, "h": c.y,
+	# 128 号 第 4 段: a bale from the press takes a cell (two when it weighs over 2 t)
+	if gd.get("bale", false):
+		c = Vector2i(int(gd.get("w", 1)), int(gd.get("h", 1)))
+	var u := {"id": id, "cat": str(gd.get("cat", "equip")), "name": good_name(gd), "qty": w("1 件", "1 PC"), "w": c.x, "h": c.y,
 		"market": snappedf(float(gd.get("value", 0.0)), 1.0), "good": gd, "ship": str(gd.get("ship", "")), "tag": str(gd.get("tag", "")), "day": float(gd.get("day", -1.0))}
+	if gd.get("bale", false):
+		u.t = float(gd.get("mass", 0.0))
+		u.qty = "%.1f t" % float(u.t)
+	return u
 
 
 # every thing in the warehouse, one unit a placeable thing: a raw bundle, a machine, a box of spares
@@ -787,8 +794,51 @@ static func sell(id: String) -> Dictionary:
 		return {"ok": false, "reason": "off"}
 	var before := Career.data
 	Career.data = before.duplicate(true)
+	var result := _sell_unit(id)
+	if not result.ok or not Career.save():
+		Career.data = before
+		return result if not result.ok else {"ok": false, "reason": w("保存失败", "SAVE FAILED")}
+	return result
+
+
+# The quantity slider supplies bundles of one material, highest index first.
+static func sell_raw_bundles(ids: Array) -> Dictionary:
+	if not live() or ids.is_empty():
+		return {"ok": false, "reason": "off"}
+	var before := Career.data
+	Career.data = before.duplicate(true)
+	var by_id := {}
+	var stock := units()
+	layout(stock)
+	for unit in stock:
+		if str(unit.id).begins_with("r:"):
+			by_id[str(unit.id)] = unit
 	var cash := 0.0
-	var e := {}
+	var tonnes := 0.0
+	var cells := 0
+	for id in ids:
+		var unit: Dictionary = by_id.get(id, {})
+		if unit.is_empty():
+			Career.data = before
+			return {"ok": false, "reason": w("没有这件东西", "NOT FOUND")}
+		by_id.erase(id)
+		var result := _sell_unit(str(id), unit)
+		if not result.ok:
+			Career.data = before
+			return result
+		cash += float(result.cash)
+		tonnes += float(result.tonnes)
+		cells += int(result.cells)
+	if not Career.save():
+		Career.data = before
+		return {"ok": false, "reason": w("保存失败", "SAVE FAILED")}
+	return {"ok": true, "cash": cash, "tonnes": tonnes, "cells": cells}
+
+
+static func _sell_unit(id: String, known_raw: Dictionary = {}) -> Dictionary:
+	var cash := 0.0
+	var tonnes := 0.0
+	var e := known_raw
 	if id.begins_with("i:"):
 		var ib: Array = Career.data.get("inbox", [])
 		for it in ib.duplicate():
@@ -798,26 +848,26 @@ static func sell(id: String) -> Dictionary:
 				ib.erase(it)
 		Career.data.inbox = ib
 	else:
-		var us := units()
-		layout(us)
-		for x in us:
-			if str(x.id) == id:
-				e = x
 		if e.is_empty():
-			Career.data = before
+			var us := units()
+			layout(us)
+			for x in us:
+				if str(x.id) == id:
+					e = x
+					break
+		if e.is_empty():
 			return {"ok": false, "reason": w("没有这件东西", "NOT FOUND")}
 		match id.substr(0, 2):
 			"r:":
 				var got := _take_raw(str(e.key), float(e.t))
 				if got <= EPS:
-					Career.data = before
 					var why := w("这批被挂单占着：先按下面的“撤下挂单”", "HELD BY A LISTING: WITHDRAW IT BELOW FIRST") if listed_t(str(e.key)) > EPS else w("这批货暂时取不出来", "THESE GOODS CANNOT BE TAKEN OUT NOW")
 					return {"ok": false, "reason": why}
+				tonnes = got
 				cash = recycle(raw_price(str(e.key)) * got)
 				_close_up("r:" + str(e.key) + ":", int(id.get_slice(":", id.get_slice_count(":") - 1)))
 			"p:":
 				if e.part.has("listed"):
-					Career.data = before
 					return {"ok": false, "reason": w("挂牌中，先撤下来", "LISTED: WITHDRAW IT FIRST")}
 				Career.data.parts = Career.data.get("parts", []).filter(func(p): return str(p.uid) != str(e.part.uid))
 				cash = float(e.recycle)
@@ -830,7 +880,6 @@ static func sell(id: String) -> Dictionary:
 				cash = float(e.recycle)
 				_close_up("s:" + str(e.stack[0].get("nk", "")) + ":", int(id.get_slice(":", id.get_slice_count(":") - 1)))
 	if e.is_empty():
-		Career.data = before
 		return {"ok": false, "reason": w("没有这件东西", "NOT FOUND")}
 	Career.data.money = float(Career.data.get("money", 0.0)) + cash
 	if Career.data.get("exchange", {}).get("actors", {}).has(Exchange.PLAYER):
@@ -839,10 +888,7 @@ static func sell(id: String) -> Dictionary:
 	st.n = int(st.get("n", 0)) + 1
 	st.cash = float(st.get("cash", 0.0)) + cash
 	Career.data.recycled = st
-	if not Career.save():
-		Career.data = before
-		return {"ok": false, "reason": w("保存失败", "SAVE FAILED")}
-	return {"ok": true, "cash": cash, "name": str(e.name), "cat": str(e.get("cat", "")), "cells": int(e.get("cells", 1))}
+	return {"ok": true, "cash": cash, "name": str(e.name), "cat": str(e.get("cat", "")), "cells": int(e.get("cells", 1)), "tonnes": tonnes}
 
 
 # bundle / box i of a kind is gone: the ones after it are numbered one less, and keep their places

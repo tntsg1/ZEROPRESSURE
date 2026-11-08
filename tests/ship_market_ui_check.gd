@@ -27,15 +27,28 @@ func _run() -> void:
 	Career.data.money = 5000000.0
 	Career.data.port = {"salvage": 1, "trade": 1}
 	Career.data.drill = {"granted": true, "done": true}
+	Career.data.seen = {"starmap_tour": true}
 	Career.data.offers = []
 	Career.save()
 	await _spawn()
 	await _frames(90)
-	g.open_ship_market()
+	g.open_star_map("find")
+	await _frames(8)
+	var nav = g.console_ui
+	var market: Button
+	for b in nav.tab_find.get_parent().get_children():
+		if b is Button and b.text == "二手船市":
+			market = b
+	check(market != null and not market.disabled and market.get_parent() == nav.tab_ships.get_parent(), "the star map's market is beside Find and Shipping")
+	if market == null:
+		quit(1)
+		return
+	Cap.save(root, "res://tests/out/star_map_market_entry_zh.png")
+	market.pressed.emit()
 	await _frames(8)
 	var ui = g.console_ui
 	var n: int = ShipMarket.data().listings.size()
-	check(ui != null and _cards(ui).size() == n, "one card with a ship picture per listing (%d)" % n)
+	check(ui != null and n == 15 and _cards(ui).size() == n, "the market opens with fifteen cards (%d)" % n)
 	var outlined := true
 	for c in _cards(ui):
 		outlined = outlined and not ShipThumb.shape_of(c.offer).outline.is_empty()

@@ -611,7 +611,7 @@ func _finish_alight() -> void:
 	d.global_position = alight_at(at) if at != "" else position_px + Vector2(0, -2.4 * Geom.M)
 	d.linear_velocity = Vector2.ZERO
 	d.collision_layer = 2
-	d.collision_mask = 1 | 4 | World.STATIC_LAYER
+	d.collision_mask = 1 | 4 | World.STATIC_LAYER | 16
 	d.visible = true
 
 
