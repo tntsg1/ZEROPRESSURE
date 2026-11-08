@@ -153,6 +153,11 @@ func _ready() -> void:
 	hub = preload("res://scripts/hub_view.gd").new()
 	hub.game = game
 	add_child(hub)
+	# 128 号 第 5 段 (草图): batteries, overload, the cryo run (scripts/power_supply_view.gd)
+	power5 = preload("res://scripts/power_supply_view.gd").new()
+	power5.game = game
+	add_child(power5)
+var power5
 
 
 # a wall from a to b: a thin solid slab (a zero-width segment lets a fast drone slip through)

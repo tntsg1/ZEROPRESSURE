@@ -94,10 +94,17 @@ class SingleLine extends Control:
 			draw_string(font, gc + Vector2(30, -4), "%.1f MW" % float(r.per), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.tint(Pal.FLUID, 0.95, 1.2))
 		# the shore line at the right end
 		var sx := x1 - 60.0
-		var shore_on: bool = float(r.shore) > 0.01
-		draw_line(Vector2(sx, 20), Vector2(sx, bus_y), Pal.heat(0.8, 1.1) if shore_on else Pal.ink(0.3), 2.0)
-		_breaker(Vector2(sx, (20.0 + bus_y) * 0.5), shore_on)
-		draw_string(font, Vector2(sx - 150, 36), panel.w("外购电 %.1f / %.0f", "BOUGHT %.1f / %.0f") % [float(r.shore), Grid.SHORE_MAX], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.heat(0.9, 1.1) if shore_on else Pal.ink(0.5))
+		if panel.PS5.ENABLED:
+			# 128 号 第 5 段: the battery berth in the shore line's place
+			var bon: bool = panel.PS5.battery_mw() > 0.0
+			draw_line(Vector2(sx, 20), Vector2(sx, bus_y), Pal.tint(Pal.VOLT, 0.9, 1.2) if bon else Pal.ink(0.3), 2.0)
+			_breaker(Vector2(sx, (20.0 + bus_y) * 0.5), bon)
+			draw_string(font, Vector2(sx - 170, 36), panel.w("电池泊位 %.1f 兆瓦时", "BATTERIES %.1f MWh") % panel.PS5.left_mwh(), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.tint(Pal.VOLT, 0.9, 1.2) if bon else Pal.ink(0.5))
+		var shore_on: bool = float(r.shore) > 0.01 and not panel.PS5.ENABLED
+		if not panel.PS5.ENABLED:
+			draw_line(Vector2(sx, 20), Vector2(sx, bus_y), Pal.heat(0.8, 1.1) if shore_on else Pal.ink(0.3), 2.0)
+			_breaker(Vector2(sx, (20.0 + bus_y) * 0.5), shore_on)
+			draw_string(font, Vector2(sx - 150, 36), panel.w("外购电 %.1f / %.0f", "BOUGHT %.1f / %.0f") % [float(r.shore), Grid.SHORE_MAX], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.heat(0.9, 1.1) if shore_on else Pal.ink(0.5))
 		# the feeders below the bus
 		var feeders := [["base", panel.w("基础用电", "BASE")], ["heat", panel.w("电弧炉", "ARC FURNACE")], ["sort", panel.w("分选线", "SORTING")], ["trolley", panel.w("吊轨车", "TROLLEY")], ["crane", panel.w("码头吊车", "PIER CRANE")], ["tram", panel.w("接驳车", "SHUTTLE")], ["berth_furnace", panel.w("船坞熔炉", "BERTH FURNACE")]]
 		var step := (x1 - x0) / feeders.size()
@@ -373,7 +380,11 @@ class SupplyCard extends Control:
 		# the legend
 		var ly := r.end.y + 34.0
 		var lx := pad
-		for it in [[Pal.tint(Pal.FLUID, 0.8, 1.15), panel.w("自有 %.0f MW", "OWN %.0f MW") % o, Pal.ink(0.65)], [UiSkin.ACCENT, panel.w("外购 %.0f MW", "BOUGHT %.0f MW") % b, UiSkin.ACCENT if b > 0.05 else Pal.ink(0.65)]]:
+		var legend := [[Pal.tint(Pal.FLUID, 0.8, 1.15), panel.w("自有 %.0f MW", "OWN %.0f MW") % o, Pal.ink(0.65)], [UiSkin.ACCENT, panel.w("外购 %.0f MW", "BOUGHT %.0f MW") % b, UiSkin.ACCENT if b > 0.05 else Pal.ink(0.65)]]
+		if panel.PS5.ENABLED:
+			var bn: float = panel.PS5.batt_now
+			legend[1] = [Pal.tint(Pal.VOLT, 0.9, 1.3), panel.w("其中电池 %.1f MW", "OF IT BATTERIES %.1f MW") % bn, Pal.tint(Pal.VOLT, 0.9, 1.3) if bn > 0.05 else Pal.ink(0.65)]
+		for it in legend:
 			draw_rect(Rect2(lx, ly - 10, 9, 9), it[0])
 			draw_string(fr, Vector2(lx + 15, ly), it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, it[2])
 			lx += 30.0 + fr.get_string_size(it[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
@@ -472,6 +483,7 @@ class GroupCard extends Control:
 	var want := 0.0
 	var short := false
 	var panel
+	var lifted := false
 	var _got := BenchFx.Roll.new(0.0)
 	var _want := BenchFx.Roll.new(0.0)
 	func _init() -> void:
@@ -504,6 +516,13 @@ class GroupCard extends Control:
 		var fr := Fonts.get_font("Regular")
 		var fm := Fonts.get_font("Medium")
 		draw_line(Vector2(0, size.y - 1), Vector2(size.x, size.y - 1), Color(1, 1, 1, 0.06), 1.0)
+		# 128 号 第 5 段: the grip (drag the row), and the row lifted while it is dragged
+		if lifted:
+			draw_rect(Rect2(Vector2(-12, 2), Vector2(size.x + 12, size.y - 4)), Color(UiSkin.ACCENT, 0.12))
+			draw_rect(Rect2(Vector2(-12, 2), Vector2(3, size.y - 4)), UiSkin.ACCENT)
+		for gy in 3:
+			for gx in 2:
+				draw_circle(Vector2(size.x - 100 + gx * 7, size.y * 0.5 - 7 + gy * 7), 1.6, Pal.ink(0.6 if lifted else 0.3))
 		draw_string(fb, Vector2(0, 28), title, HORIZONTAL_ALIGNMENT_LEFT, size.x * ROW_X[1] - 20, 17, Pal.ink(0.96))
 		var st := state()
 		var x := 0.0
@@ -641,6 +660,12 @@ func _ready() -> void:
 		# 2026-11-04 (人性化 规则 2): spending takes effect at once, no confirm; a note says what happened
 		_set_line("auto" if str(Grid.ctl().line) == "auto_shore" else "auto_shore"))
 	keys.add_child(shore_key)
+	# 128 号 第 5 段 (草图): the battery order card replaces the bought-power switch; the sets' overload
+	if PS5.ENABLED:
+		shore_key.visible = false
+		supply5 = preload("res://scripts/power_supply_ui.gd").new()
+		supply5.panel = self
+		column.add_child(supply5)
 	# 2. supply against demand | the verdict and its ways out
 	var row2 := HBoxContainer.new()
 	row2.add_theme_constant_override("separation", 18)
@@ -681,9 +706,15 @@ func _ready() -> void:
 	tv.add_child(ch)
 	order_box = VBoxContainer.new()
 	order_box.add_theme_constant_override("separation", 0)
+	# 128 号 第 5 段: a row is dragged up or down to change who gets power first (no confirm, a done note)
+	order_box.mouse_filter = Control.MOUSE_FILTER_STOP
+	order_box.gui_input.connect(_order_drag)
 	tv.add_child(order_box)
 	# 4. the rule
-	column.add_child(RuleNote.new(w("调度规则：先满足基础用电，再按顺序给部门分配；外购电打开时可额外提供最多 %.0f MW。", "THE RULE: THE BASE LOAD FIRST, THEN EACH DISTRICT IN ORDER; WITH BOUGHT POWER ON, UP TO %.0f MW MORE.") % Grid.SHORE_MAX))
+	if PS5.ENABLED:
+		column.add_child(RuleNote.new(w("调度规则：先满足基础用电，再按顺序给部门分配；发电机不够的部分由电池泊位里的电池补上。", "THE RULE: THE BASE LOAD FIRST, THEN EACH DISTRICT IN ORDER; THE BATTERIES IN THE BERTH MAKE UP WHAT THE SETS CANNOT.")))
+	else:
+		column.add_child(RuleNote.new(w("调度规则：先满足基础用电，再按顺序给部门分配；外购电打开时可额外提供最多 %.0f MW。", "THE RULE: THE BASE LOAD FIRST, THEN EACH DISTRICT IN ORDER; WITH BOUGHT POWER ON, UP TO %.0f MW MORE.") % Grid.SHORE_MAX))
 	msg = _label("", 15)
 	msg.add_theme_color_override("font_color", Pal.tint(Pal.AIR, 0.9, 1.2))
 	column.add_child(msg)
@@ -708,6 +739,8 @@ func _ready() -> void:
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_theme_constant_override("separation", 8)
 	hands.add_child(left)
+	# 128 号 第 5 段 (用户定): no bought power any more; the three-way choice goes
+	left.visible = not PS5.ENABLED
 	_section(left, w("电不够时怎么办", "WHEN IT RUNS SHORT"))
 	var group := ButtonGroup.new()
 	var opts := [
@@ -928,7 +961,10 @@ func _refresh() -> void:
 			banner.sub = Grid.wait_text(game).split("。")[0]
 	banner.queue_redraw()
 	var heat2: Dictionary = Career.data.get("industrial_heat", {})
-	bus_text.text = w("全港在用 %.1f 兆瓦 · 自家发 %.1f / %.0f · 还空着 %.1f · 外购电 %.1f · 频率 %.2f Hz · 电价：自家发 $%.0f、外购 $%.0f（每兆瓦时）", "IN USE %.1f MW · OURS %.1f / %.0f · FREE %.1f · BOUGHT %.1f · %.2f Hz · PRICE: OURS $%.0f, BOUGHT $%.0f PER MWh") % [float(r.total), float(r.own), float(r.cap), float(r.spare), float(r.shore), float(r.hz), Grid.OWN_PRICE, Grid.SHORE_PRICE]
+	if PS5.ENABLED:
+		bus_text.text = w("全港在用 %.1f 兆瓦 · 发电机加电池能给 %.1f · 还空着 %.1f · 其中电池 %.1f · 频率 %.2f Hz", "IN USE %.1f MW · SETS AND BATTERIES %.1f · FREE %.1f · BATTERIES %.1f · %.2f Hz") % [float(r.total), float(r.cap), float(r.spare), PS5.batt_now, float(r.hz)]
+	else:
+		bus_text.text = w("全港在用 %.1f 兆瓦 · 自家发 %.1f / %.0f · 还空着 %.1f · 外购电 %.1f · 频率 %.2f Hz · 电价：自家发 $%.0f、外购 $%.0f（每兆瓦时）", "IN USE %.1f MW · OURS %.1f / %.0f · FREE %.1f · BOUGHT %.1f · %.2f Hz · PRICE: OURS $%.0f, BOUGHT $%.0f PER MWh") % [float(r.total), float(r.own), float(r.cap), float(r.spare), float(r.shore), float(r.hz), Grid.OWN_PRICE, Grid.SHORE_PRICE]
 	if not heat2.is_empty() and str(heat2.get("state", "")) == "processing":
 		bus_text.text += w(" · 这一炉的电价 $%.0f", " · THIS HEAT $%.0f") % Grid.price(heat2)
 	_fill_fixes(banner.ok)
@@ -943,7 +979,11 @@ func _refresh() -> void:
 func _fill_fixes(ok: bool) -> void:
 	var acts: Array = []
 	if not ok:
-		if str(Grid.ctl().line) != "auto_shore":
+		if PS5.ENABLED and PS5.can_order("m").ok:
+			acts.append([w("订一块中块电池", "ORDER A MEDIUM BLOCK"), func():
+				var r := PS5.order("m")
+				BenchFx.say(msg, str(r.get("note", r.get("reason", "")))), w("立刻下单：$%s，约 %d 秒后送到电池泊位，多 %.0f 兆瓦", "Orders at once") % [PS5._money(float(PS5.SIZES.m.price)), int(PS5.SIZES.m.eta), float(PS5.SIZES.m.mw)]])
+		elif not PS5.ENABLED and str(Grid.ctl().line) != "auto_shore":
 			acts.append([w("接入外购电", "BUY POWER"), func(): _set_line("auto_shore"), w("立刻接入：电不够时自动买外购电补上，按 $%.0f/MWh 计", "At once: bought power fills the gap, at $%.0f/MWh") % Grid.SHORE_PRICE])
 		var furnace := false
 		for d in Grid.demands(game):
@@ -1015,6 +1055,7 @@ func _fill_order() -> void:
 		card.panel = self
 		card.place = i + 1
 		card.title = Grid.group_name(g)
+		card.set_meta("group", g)
 		card.set_values(float(rows[i][1]), float(rows[i][2]), float(rows[i][2]) > 0.0 and float(rows[i][1]) < float(rows[i][2]) * 0.5, str(rows[i][3]))
 		_cards.append(card)
 		var keys := HBoxContainer.new()
@@ -1039,6 +1080,73 @@ func _fill_order() -> void:
 			keys.add_child(b)
 		order_box.add_child(card)
 	_sync_controls()
+
+
+# ---------------------------------------------------------------- 128 号 第 5 段: dragging the order
+const PS5 = preload("res://scripts/power_supply.gd")
+var supply5
+var drag_i := -1                 # the row being dragged (its place now), -1 none
+var _drag_from := -1
+
+
+func _row_at(y: float) -> int:
+	for i in _cards.size():
+		var c: Control = _cards[i]
+		if is_instance_valid(c) and y < c.position.y + c.size.y:
+			return i
+	return _cards.size() - 1
+
+
+func _order_drag(ev: InputEvent) -> void:
+	if ev is InputEventMouseButton and ev.button_index == MOUSE_BUTTON_LEFT:
+		if ev.pressed:
+			drag_begin(_row_at(ev.position.y))
+		else:
+			drag_end()
+		accept_event()
+	elif ev is InputEventMouseMotion and drag_i >= 0:
+		drag_to(_row_at(ev.position.y))
+
+
+func drag_begin(i: int) -> void:
+	if i < 0 or i >= _cards.size():
+		return
+	drag_i = i
+	_drag_from = i
+	_cards[i].lifted = true
+	_cards[i].queue_redraw()
+
+
+# the row follows the pointer: the others make room at once
+func drag_to(j: int) -> void:
+	if drag_i < 0:
+		return
+	j = clampi(j, 0, _cards.size() - 1)
+	if j == drag_i:
+		return
+	var c = _cards[drag_i]
+	_cards.remove_at(drag_i)
+	_cards.insert(j, c)
+	order_box.move_child(c, j)
+	drag_i = j
+	for k in _cards.size():
+		_cards[k].place = k + 1
+		_cards[k].queue_redraw()
+
+
+func drag_end() -> void:
+	if drag_i < 0:
+		return
+	var c = _cards[drag_i]
+	c.lifted = false
+	c.queue_redraw()
+	var moved := drag_i != _drag_from
+	drag_i = -1
+	if not moved:
+		return
+	var o: Array = _cards.map(func(cd): return str(cd.get_meta("group")))
+	_order_sig = str(o)
+	_apply("order", o, w("用电顺序已改：", "ORDER NOW: ") + " → ".join(o.map(func(g): return Grid.group_name(str(g)))) + w(" · 电不够时排在后面的先变慢", " · SHORT, THE LAST SLOW DOWN FIRST"))
 
 
 func _process(dt: float) -> void:

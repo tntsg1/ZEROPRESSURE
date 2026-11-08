@@ -55,7 +55,11 @@ static func w(zh: String, en: String) -> String:
 
 
 static func capacity() -> float:
+	# 128 号 第 5 段: the sets (overload, trips), the fuel cells' second stack and the batteries
+	if PowerSupply5.on():
+		return PowerSupply5.capacity()
 	return CAPACITY[clampi(Port.stage("power"), 0, 2)]
+const PowerSupply5 = preload("res://scripts/power_supply.gd")
 
 
 # ---------------------------------------------------------------- the operator's hand (48 号, Q38)
@@ -239,6 +243,9 @@ static func add_load_source(n) -> void:
 
 # the shore line, for whom: "auto_shore" everyone; "auto" only a heat that asked at its desk
 static func shore_for(group: String) -> bool:
+	# 128 号 第 5 段: bought power comes as battery blocks now; no shore line
+	if PowerSupply5.ENABLED:
+		return false
 	var line := str(ctl().line)
 	if line == "auto_shore":
 		return true
@@ -476,6 +483,8 @@ static func bought_x() -> float:
 
 # what can be done about it, in a line (the control screen's own three ways)
 static func short_fix() -> String:
+	if PowerSupply5.ENABLED:
+		return w("修动力区，或在供电屏把加工区往前拖、买一块电池", "Mend the power district, or drag processing up / buy a battery block at the power screen")
 	return w("修动力区，或在动力控制屏把加工区往前调、买外购电", "Mend the power district, or move processing up / take shore power at the power control screen")
 
 
@@ -502,5 +511,5 @@ static func wait_text(game) -> String:
 	var why := w("电不够：电弧炉只分到 %.1f / %.0f MW", "SHORT OF POWER: THE FURNACE GETS %.1f / %.0f MW") % [given, furnace_cap()]
 	if not ahead.is_empty():
 		why += w("，排在%s之后", ", AFTER %s") % "、".join(ahead)
-	why += w("。修动力区、在控制屏把加工区往前调，或买外购电。", ". MEND THE POWER DISTRICT, MOVE PROCESSING UP, OR TAKE SHORE POWER.")
+	why += w("。修动力区、在供电屏把加工区往前拖，或买一块电池。", ". MEND THE POWER DISTRICT, DRAG PROCESSING UP, OR BUY A BATTERY BLOCK.") if PowerSupply5.ENABLED else w("。修动力区、在控制屏把加工区往前调，或买外购电。", ". MEND THE POWER DISTRICT, MOVE PROCESSING UP, OR TAKE SHORE POWER.")
 	return why

@@ -59,13 +59,15 @@ func _run() -> void:
 	check(decs.any(func(o): return str(o.title).find("电不够") >= 0), "the home screen lists the furnace short of power")
 	var cell: Dictionary = Ops._grid(g)
 	check(str(cell.lamp) == "warn" and str(cell.value).ends_with("6 MW"), "the grid cell reads the real bus (%s, %s)" % [cell.value, cell.lamp])
-	# the shore line tops it up
-	check(g.industrial_heat.ask_shore().ok, "asked for shore power at the desk")
+	# 128 号 第 5 段: no shore line any more (the desk offers none); a battery block in the berth makes it up
+	check(g.industrial_heat.ask_shore().ok, "the old desk call still answers (it sets a flag the grid no longer uses)")
+	var P5 = preload("res://scripts/power_supply.gd")
+	P5.d().slots[0] = {"size": "s", "left": 1.5, "t": 0.0}
 	await _frames(6)
 	h = Career.data.industrial_heat
-	check(is_equal_approx(float(h.grid.own), 4.0) and is_equal_approx(float(h.grid.shore), 12.0) and is_equal_approx(g.plant.smelter.manual_supply_mw, 16.0), "4 MW own + 12 MW shore = 16 MW")
-	check(is_equal_approx(Grid.price(h), (4.0 * Grid.OWN_PRICE + 12.0 * Grid.SHORE_PRICE) / 16.0), "billed by share ($%.0f/MWh)" % Grid.price(h))
-	check(not g.industrial_heat.ask_shore().ok, "asked once is enough")
+	check(is_equal_approx(float(h.grid.get("shore", 0.0)), 0.0) and is_equal_approx(g.plant.smelter.manual_supply_mw, 8.0), "a small battery block: 4 + 4 = 8 MW, no shore (%.1f MW)" % g.plant.smelter.manual_supply_mw)
+	check(is_equal_approx(Grid.price(h), Grid.OWN_PRICE), "billed at the own price: the block was paid for when ordered ($%.0f/MWh)" % Grid.price(h))
+	P5.d().slots[0] = {}
 	# stage 1: full power on its own
 	Career.data.port["power"] = 1
 	_heat("processing")

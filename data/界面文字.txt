@@ -11,7 +11,7 @@
 #
 # 已停用的功能（梁工、关掉的剧情层、取消的耗材）、开发者面板、只打印到日志的字不在这里。
 #
-# 本文件共 8940 条。
+# 本文件共 9001 条。
 
 ============================================================
 # 一、标题、菜单与设置（116 条）
@@ -11240,7 +11240,7 @@
 英：TOWS UP TO %s
 
 ============================================================
-# 九、港区：各区现场与面板（668 条）
+# 九、港区：各区现场与面板（707 条）
 # 船坞空着时飞出去的港区：中央环、动力区、拖船站、货运区、贸易港、加工区。
 # 每区有业务终端（按 E）、区里的机器（轧机、货架、收货台、柜台）、接驳车。
 # 字要说明：这个区为公司做什么、现在能做什么、修好以后会怎样。
@@ -11614,12 +11614,12 @@
 英：LOAD %d%% · %s
 
 [console_art:summary:3]
-中：岸电 %.1f MW
-英：SHORE %.1f MW
+中：电池 %.1f MW
+英：BATTERIES %.1f MW
 
 [console_art:summary:4]
-中：岸电 未用
-英：SHORE OFF
+中：电池 未用
+英：BATTERIES IDLE
 
 [console_art:summary:5]
 中：动力区业务：看全港发电和用电，打开动力控制屏（单线图、仪表、电不够时谁先用、供电线路）。
@@ -12302,48 +12302,180 @@
 英：GIVEN OUT
 
 [district_panel:_fill:8]
+中：电池泊位剩电
+英：BATTERY BERTH LEFT
+
+[district_panel:_fill:10]
 中：外购电（比自家发贵 %d 倍）
 英：BOUGHT POWER (%dx DEARER)
 
-[district_panel:_fill:16]
+[district_panel:_fill:18]
 中：可修（有港电）
 英：CAN REPAIR (GRID UP)
 
-[district_panel:_fill:17]
+[district_panel:_fill:19]
 中：等动力区 1 阶
 英：WAITS FOR STAGE 1
 
-[district_panel:_fill:23]
+[district_panel:_fill:25]
 中：设备售价系数
 英：EQUIPMENT PRICE FACTOR
 
-[district_panel:_fill:24]
+[district_panel:_fill:26]
 中：市场合同：%d 张
 英：MARKET OFFERS: %d
 
-[district_panel:_fill:25]
+[district_panel:_fill:27]
 中：我的挂单：%d 张 · 托管现金 %s
 英：MY ORDERS: %d · CASH %s
 
-[district_panel:_fill:26]
+[district_panel:_fill:28]
 中：仓库空着。
 英：THE WAREHOUSE IS EMPTY.
 
-[district_panel:_fill:27]
+[district_panel:_fill:29]
 中：未评级原料批次：%d
 英：UNGRADED BATCHES: %d
 
-[district_panel:_fill:28]
+[district_panel:_fill:30]
 中：出场部署槽：%d
 英：DEPLOY SLOTS: %d
 
-[district_panel:_fill:29]
+[district_panel:_fill:31]
 中：叉车 %d 台 · 搬运中 %d 趟
 英：FORKLIFTS %d · %d MOVES
 
-[district_panel:_fill:35]
+[district_panel:_fill:37]
 中：在手合同：
 英：CONTRACT IN HAND: 
+
+[district_panel:_process_layout:1]
+中：加工区 · 气体
+英：PROCESSING · GAS
+
+[district_panel:_process_layout:2]
+中：回收的气分离、液化，卖给过路船
+英：Recovered gas separated, liquefied, sold to passing ships
+
+[district_panel:_process_layout:4]
+中：更多 ▸  自动化 4 项 · 外购混合气 · 检测 · 放空 · 本区修复
+英：MORE ▸  AUTOMATION · BUY GAS · TEST · VENT · MENDING
+
+[district_panel:_process_layout:6]
+中：更多 ▸  自动化 4 项 · 外购混合气 · 检测 · 放空 · 本区修复
+英：MORE ▸  AUTOMATION · BUY GAS · TEST · VENT · MENDING
+
+[district_panel:_process_layout:7]
+中：展开或收起：自动化、外购混合气、生命支持检测、放空、处置污染、本区修复、轧机
+英：Show or hide the rest: automation, buying gas, the test, venting, disposal, mending, the mill
+
+[district_panel:_process_layout:10]
+中：轧机在观察廊上有自己的控制台：飞到它上面按 %s，选配方、开轧。
+英：The mill has its own console on the gallery: press %s at it to pick a recipe and roll.
+
+[district_panel:_process_layout:11]
+中：气体线 · 回收 → 分离 → 液氧 → 补给
+英：GAS LINE · RECOVER → SEPARATE → LOX → SUPPLY
+
+[district_panel:_process_layout:12]
+中：关闭 [Esc]
+英：CLOSE [Esc]
+
+[district_panel:_fill_next:1]
+中：气体线还没修
+英：NO GAS LINE YET
+
+[district_panel:_fill_next:2]
+中：在船坞终端“修缮”里修“气体线”（要加工区和动力区各 1 阶）。没修之前，拆船抽回的气在结算时折现。
+英：Build it under the berth terminal's repairs (processing and power at stage 1). Until then a ship's gas is cashed at settlement.
+
+[district_panel:_fill_next:4]
+中：机器在跑，不用守着。
+英：It runs by itself.
+
+[district_panel:_fill_next:6]
+中：等这一步做完
+英：WAIT FOR IT
+
+[district_panel:_fill_next:8]
+中：%.0f kg · 氧 %d%% · %s\n约 %d 秒
+英：%.0f kg · O₂ %d%% · %s\n~%d s
+
+[district_panel:_fill_next:11]
+中： · 还有 %d 批等着
+英： · %d MORE WAITING
+
+[district_panel:_fill_next:13]
+中：开始分离。
+英：SEPARATING.
+
+[district_panel:_fill_next:14]
+中：液化 %.0f kg 气态氧
+英：LIQUEFY %.0f kg OF OXYGEN
+
+[district_panel:_fill_next:15]
+中：进液氧储罐（还能装 %.0f kg）· 约 %d 秒
+英：Into the LOX tank (%.0f kg of room) · ~%d s
+
+[district_panel:_fill_next:17]
+中：开始液化。
+英：LIQUEFYING.
+
+[district_panel:_fill_next:18]
+中：没有要处理的气
+英：NOTHING TO PROCESS
+
+[district_panel:_fill_next:19]
+中：拆船时用气液回收（5）把舱里的气抽回来，回港就是一批混合气；也可以在“更多”里外购混合气。
+英：Recover a ship's gas with the gas recovery tool (5): it comes home as a batch. Or buy mixed gas under MORE.
+
+[district_panel:_fill_next:20]
+中：这一步要做的事
+英：This step
+
+[district_panel:_fill_call:1]
+中：现在没有过路船要补给。
+英：NO PASSING SHIP IS ASKING NOW.
+
+[district_panel:_fill_call:2]
+中：约 %d 秒后到港
+英：IN ~%d s
+
+[district_panel:_fill_call:3]
+中：靠泊中 · 已装 %.0f / %.0f kg
+英：ALONGSIDE · %.0f / %.0f kg
+
+[district_panel:_fill_call:4]
+中：过路船 %s · %s
+英：PASSING SHIP %s · %s
+
+[district_panel:_fill_call:5]
+中：要 %.0f kg %s · $%.2f/kg
+英：WANTS %.0f kg %s · $%.2f/kg
+
+[district_panel:_fill_call:6]
+中：现有 %.0f kg%s · %s
+英：%.0f kg ON HAND%s · %s
+
+[district_panel:_fill_call:9]
+中：要一次交满
+英：ALL AT ONCE
+
+[district_panel:_fill_call:11]
+中：已预留产品和码头泊位。
+英：RESERVED.
+
+[district_panel:_fill_call:12]
+中：接下并预留产品和码头泊位
+英：Take it: the product and a berth are reserved
+
+[district_panel:_fill_call:15]
+中：取消（扣 5%）
+英：CANCEL (5%)
+
+[district_panel:_fill_call:17]
+中：还有 %d 条在“更多”里
+英：%d MORE UNDER MORE
 
 ------------------------------------------------------------
 # 【货运码头（freight_pier.gd）】
@@ -12614,6 +12746,10 @@
 英：ENOUGH POWER: %.1f IN USE OF %.0f MW
 
 [grid:short_fix:1]
+中：修动力区，或在供电屏把加工区往前拖、买一块电池
+英：Mend the power district, or drag processing up / buy a battery block at the power screen
+
+[grid:short_fix:2]
 中：修动力区，或在动力控制屏把加工区往前调、买外购电
 英：Mend the power district, or move processing up / take shore power at the power control screen
 
@@ -12630,6 +12766,10 @@
 英：, AFTER %s
 
 [grid:wait_text:4]
+中：。修动力区、在供电屏把加工区往前拖，或买一块电池。
+英：. MEND THE POWER DISTRICT, DRAG PROCESSING UP, OR BUY A BATTERY BLOCK.
+
+[grid:wait_text:5]
 中：。修动力区、在控制屏把加工区往前调，或买外购电。
 英：. MEND THE POWER DISTRICT, MOVE PROCESSING UP, OR TAKE SHORE POWER.
 
@@ -12894,10 +13034,14 @@
 ------------------------------------------------------------
 
 [power_panel:readings:2]
+中：电池泊位 %.1f 兆瓦时
+英：BATTERIES %.1f MWh
+
+[power_panel:readings:3]
 中：外购电 %.1f / %.0f
 英：BOUGHT %.1f / %.0f
 
-[power_panel:readings:10]
+[power_panel:readings:11]
 中：最高 %.1f MW
 英：PEAK %.1f MW
 
@@ -12918,18 +13062,22 @@
 英：BOUGHT %.0f MW
 
 [power_panel:_f:7]
+中：其中电池 %.1f MW
+英：OF IT BATTERIES %.1f MW
+
+[power_panel:_f:8]
 中：基础用电 %.0f MW
 英：BASE LOAD %.0f MW
 
-[power_panel:_f:8]
+[power_panel:_f:9]
 中：部门 / 当前工作
 英：DISTRICT / AT WORK
 
-[power_panel:_f:12]
+[power_panel:_f:13]
 中：现在不用电
 英：NOT USING POWER
 
-[power_panel:_f:15]
+[power_panel:_f:16]
 中：电不够：只拿到 %d%%
 英：SHORT: %d%%
 
@@ -12962,94 +13110,98 @@
 英：TOP COMES FIRST · BASE LOAD ALWAYS FIRST
 
 [power_panel:_ready:9]
+中：调度规则：先满足基础用电，再按顺序给部门分配；发电机不够的部分由电池泊位里的电池补上。
+英：THE RULE: THE BASE LOAD FIRST, THEN EACH DISTRICT IN ORDER; THE BATTERIES IN THE BERTH MAKE UP WHAT THE SETS CANNOT.
+
+[power_panel:_ready:10]
 中：调度规则：先满足基础用电，再按顺序给部门分配；外购电打开时可额外提供最多 %.0f MW。
 英：THE RULE: THE BASE LOAD FIRST, THEN EACH DISTRICT IN ORDER; WITH BOUGHT POWER ON, UP TO %.0f MW MORE.
 
-[power_panel:_ready:10]
+[power_panel:_ready:11]
 中：详细 · 供电图与仪表 ▾
 英：DETAILS · LINE DRAWING AND GAUGES ▾
 
-[power_panel:_ready:11]
+[power_panel:_ready:12]
 中：电不够时怎么办
 英：WHEN IT RUNS SHORT
 
-[power_panel:_ready:12]
+[power_panel:_ready:13]
 中：等着，需要时再买
 英：WAIT; BUY WHEN ASKED
 
-[power_panel:_ready:13]
+[power_panel:_ready:14]
 中：排在后面的先变慢；炼钢急用时在炉台点“买外购电”
 英：The last in line slow down; buy power at the furnace when a heat needs it
 
-[power_panel:_ready:14]
+[power_panel:_ready:15]
 中：只用自家发的电
 英：OUR OWN POWER ONLY
 
-[power_panel:_ready:15]
+[power_panel:_ready:16]
 中：一分钱不多花，电不够就慢慢干
 英：Not a cent more; short, the work just goes slower
 
-[power_panel:_ready:16]
+[power_panel:_ready:17]
 中：不够就自动买外购电
 英：BUY POWER WHEN SHORT
 
-[power_panel:_ready:17]
+[power_panel:_ready:18]
 中：谁也不变慢，但外购电贵 %d 倍
 英：Nobody slows down, but bought power costs %dx
 
-[power_panel:_ready:19]
+[power_panel:_ready:20]
 中：把四个区的用电顺序改回默认：拆船区、货运区、加工区、拖船站
 英：Put the four districts back in the default order
 
-[power_panel:_ready:20]
+[power_panel:_ready:21]
 中：现在就是默认顺序
 英：Already the default order
 
-[power_panel:_ready:21]
+[power_panel:_ready:22]
 中：恢复默认顺序（拆船区 → 货运区 → 加工区 → 拖船站）
 英：DEFAULT ORDER
 
-[power_panel:_ready:22]
+[power_panel:_ready:23]
 中：恢复默认顺序？
 英：BACK TO THE DEFAULT ORDER?
 
-[power_panel:_ready:25]
+[power_panel:_ready:26]
 中：详细 · 供电图与仪表 ▴
 英：DETAILS · LINE DRAWING AND GAUGES ▴
 
-[power_panel:_ready:26]
+[power_panel:_ready:27]
 中：详细 · 供电图与仪表 ▾
 英：DETAILS · LINE DRAWING AND GAUGES ▾
 
-[power_panel:_ready:27]
+[power_panel:_ready:28]
 中：关掉供电控制屏，回到现场（Esc）
 英：Close the power screen and go back on site (Esc)
 
-[power_panel:_ready:28]
+[power_panel:_ready:29]
 中：电弧炉恢复申请电，正在炼的这炉继续升温
 英：The arc furnace asks for power again; the heat warms up again
 
-[power_panel:_ready:29]
+[power_panel:_ready:30]
 中：电弧炉立刻停下等电（正在炼的这炉也停），电先给别的区
 英：The furnace stops at once (the heat in it too); the rest get the power first
 
-[power_panel:_ready:30]
+[power_panel:_ready:31]
 中：电不够时自动买外购电补上，按 $%.0f/MWh 计；再点一次断开
 英：Buy power automatically when short, at $%.0f/MWh; press again to stop
 
-[power_panel:_ready:31]
+[power_panel:_ready:32]
 中：展开或收起：供电图、发电机仪表、电不够时怎么办、电弧炉功率上限
 英：Show or hide the line drawing, the gauges, when it runs short and the furnace's cap
 
-[power_panel:_ready:32]
+[power_panel:_ready:33]
 中：电不够时排在后面的先变慢；需要时到炉台买外购电
 英：Short, the last in line slow down; buy at the furnace when needed
 
-[power_panel:_ready:33]
+[power_panel:_ready:34]
 中：只用自家发的电，一分钱不多花，电不够就慢慢干
 英：Only our own power; short, the work just goes slower
 
-[power_panel:_ready:34]
+[power_panel:_ready:35]
 中：电不够时自动买外购电，谁也不变慢，但外购电贵 %d 倍
 英：Buy power when short; nobody slows down, but it costs %dx
 
@@ -13090,10 +13242,14 @@
 英：ASKED %.1f MW, AVAILABLE %.1f MW, %.1f MW SHORT.
 
 [power_panel:_refresh:3]
+中：全港在用 %.1f 兆瓦 · 发电机加电池能给 %.1f · 还空着 %.1f · 其中电池 %.1f · 频率 %.2f Hz
+英：IN USE %.1f MW · SETS AND BATTERIES %.1f · FREE %.1f · BATTERIES %.1f · %.2f Hz
+
+[power_panel:_refresh:4]
 中：全港在用 %.1f 兆瓦 · 自家发 %.1f / %.0f · 还空着 %.1f · 外购电 %.1f · 频率 %.2f Hz · 电价：自家发 $%.0f、外购 $%.0f（每兆瓦时）
 英：IN USE %.1f MW · OURS %.1f / %.0f · FREE %.1f · BOUGHT %.1f · %.2f Hz · PRICE: OURS $%.0f, BOUGHT $%.0f PER MWh
 
-[power_panel:_refresh:4]
+[power_panel:_refresh:5]
 中： · 这一炉的电价 $%.0f
 英： · THIS HEAT $%.0f
 
@@ -13175,8 +13331,8 @@
 英：TURBINE-GENERATOR
 
 [power_station_art:_plates:8]
-中：全港在用 %.1f · 自家发 %.1f · 外购 %.1f
-英：IN USE %.1f · OURS %.1f · BOUGHT %.1f
+中：全港在用 %.1f · 其中电池 %.1f
+英：IN USE %.1f · BATTERIES %.1f
 
 [power_station_art:still:1]
 中：屏蔽墙 · 混凝土 1.2 m
@@ -13259,12 +13415,12 @@
 英：RADIATORS %.0f °C · %.0f MW OUT
 
 [power_station_art:_screen:13]
-中：岸电 %.1f MW
-英：SHORE %.1f MW
+中：电池 %.1f MW
+英：BATTERIES %.1f MW
 
 [power_station_art:_screen:14]
-中：岸电 未用
-英：SHORE OFF
+中：电池 未用
+英：BATTERIES IDLE
 
 [power_station_art:_screen:17]
 中：%d 分钟前 · %s
@@ -13355,19 +13511,19 @@
 英：Nothing to do. Outside, the redder the radiators, the more heat goes out.
 
 [power_station_art:hover_items:25]
-中：全港的电从这里分出去：自家发的电和外购电进来，再每区一条线送出去。哪个区开始用电，它的开关就合上（I），表针指着它现在用的电。
+中：全港的电从这里分出去：发电机和电池泊位的电进来，再每区一条线送出去。哪个区开始用电，它的开关就合上（I），表针指着它现在用的电。
 英：Where the port's power is shared out: the units' incomer, the shore incomer, then a feeder for each district. A district starting to draw closes its breaker (I); its ammeter shows what it draws.
 
 [power_station_art:hover_items:26]
-中：全港在用 %.1f · 自家发 %.1f · 外购 %.1f 兆瓦
+中：全港在用 %.1f · 自家发 %.1f 兆瓦
 英：BUS %.1f MW · OWN %.1f · SHORE %.1f
 
 [power_station_art:hover_items:27]
-中：电不够时谁先用：业务终端 → 动力控制屏里调顺序，或设成不够时自动买外购电。
+中：电不够时谁先用：业务终端 → 动力控制屏里调顺序，发电机不够时到供电屏买电池块。
 英：Who comes first when short: the business console's power control screen, where the supply line is chosen too.
 
 [power_station_art:hover_items:29]
-中：整座电站的读数：输出 / 容量、频率、堆热功率、蒸汽、冷凝器、散热板、外购电，以及最近几次自动切换。
+中：整座电站的读数：输出 / 容量、频率、堆热功率、蒸汽、冷凝器、散热板、电池，以及最近几次自动切换。
 英：The plant in figures: out against capacity, frequency, reactor heat, steam, condenser, radiators, shore power, and the last automatic changeovers.
 
 [power_station_art:hover_items:30]
@@ -14104,7 +14260,7 @@
 英：%s %s · PICK ~%d s
 
 ============================================================
-# 十、交易行、炉台与加工（445 条）
+# 十、交易行、炉台与加工（446 条）
 # 交易行（买入、出售、记录、航运、船市）、货物物流、炉台（电弧炉一炉钢）、分选台、化验台、自动出钢、订单结算。
 # 字要让玩家算得清账：价格、吨数、等级、多久到货。
 ============================================================
@@ -14998,62 +15154,66 @@
 英：ON SITE · AUTOMATIC POWER\nOur own power; bought power when short (%dx dearer)
 
 [heat_panel:_ready:3]
+中：现场操作 · 功率自动\n用自家发的电；不够时到供电屏买电池块
+英：ON SITE · AUTOMATIC POWER\nOur own power; short, buy a battery block at the power screen
+
+[heat_panel:_ready:4]
 中：钢锭 / 吨
 英：INGOTS / t
 
-[heat_panel:_ready:4]
+[heat_panel:_ready:5]
 中：去电网调度
 英：TO THE POWER CONTROL SCREEN
 
-[heat_panel:_ready:8]
+[heat_panel:_ready:9]
 中：展开或收起：自动装置、撤回、报损、手动功率
 英：Show or hide the auto sampler, returning, writing off, manual power
 
-[heat_panel:_ready:9]
+[heat_panel:_ready:10]
 中：炉台的下一步，按当前炉况来（Enter）
 英：The furnace's next step, as it stands now (Enter)
 
-[heat_panel:_ready:10]
+[heat_panel:_ready:11]
 中：关掉炉台，去供电控制屏调电
 英：Close the desk and go to the power control screen
 
-[heat_panel:_ready:11]
+[heat_panel:_ready:12]
 中：给炉子装自动装置：自己测温、自己出钢（%s）
 英：INSTALL AUTO SAMPLE-AND-TAP (%s)
 
-[heat_panel:_ready:12]
+[heat_panel:_ready:13]
 中：装好了：以后到温自己测温、出钢。
 英：INSTALLED: IT SAMPLES AND TAPS BY ITSELF.
 
-[heat_panel:_ready:13]
+[heat_panel:_ready:14]
 中：花钱给炉子装自动装置：到温后它自己测温、自己出钢，立刻生效
 英：Pay to fit the auto sampler: at heat it samples and taps by itself
 
-[heat_panel:_ready:14]
+[heat_panel:_ready:15]
 中：撤回未投炉批次
 英：RETURN UNCHARGED FEED
 
-[heat_panel:_ready:15]
+[heat_panel:_ready:16]
 中：还没投进炉子的这批钢锭退回仓库
 英：Send the feed not yet charged back to the store
 
-[heat_panel:_ready:16]
+[heat_panel:_ready:17]
 中：报损弃置本批货物（无退款）
 英：WRITE OFF CARGO / NO REFUND
 
-[heat_panel:_ready:17]
+[heat_panel:_ready:18]
 中：这批货直接报废扔掉，钱不退；只在炉子出故障救不回来时用
 英：Scrap this batch for nothing; only when the heat cannot be saved
 
-[heat_panel:_ready:18]
+[heat_panel:_ready:19]
 中：手动功率 / %
 英：MANUAL POWER / %
 
-[heat_panel:_ready:19]
+[heat_panel:_ready:20]
 中：停机并复位
 英：STOP / RETURN
 
-[heat_panel:_ready:20]
+[heat_panel:_ready:21]
 中：关闭 [Esc]
 英：CLOSE [Esc]
 
@@ -27656,7 +27816,7 @@
 英：
 
 ============================================================
-# 十四、其他（644 条）
+# 十四、其他（657 条）
 # 没归到上面各章的零散文字。
 ============================================================
 
@@ -29553,8 +29713,8 @@
 英：NO SUCH BLOCK
 
 [power_supply:can_order:2]
-中：电池泊位都占着：等一块用完再订
-英：BOTH SLOTS IN USE: ORDER WHEN ONE RUNS OUT
+中：电池泊位都占着：等一块用完、空壳运走再订
+英：BOTH SLOTS IN USE: ORDER ONCE A SHELL HAS GONE
 
 [power_supply:can_order:3]
 中：钱不够：要 $%s
@@ -29579,6 +29739,22 @@
 [power_supply:_auto:1]
 中：电快用完了，已自动再订一块：
 英：LOW: ANOTHER ORDERED: 
+
+[power_supply:cryo_status:1]
+中：运送中：液氢 %.0f kg、液氧 %.0f kg（%.1f 兆瓦时）
+英：ON ITS WAY: %.0f kg LH2, %.0f kg LOX (%.1f MWh)
+
+[power_supply:cryo_status:2]
+中：燃料电池储罐满了
+英：THE FUEL CELLS' TANK IS FULL
+
+[power_supply:cryo_status:3]
+中：没有库存，不送：液氢 %.0f kg（拖船站拆下的液氢罐）· 液氧 %.0f kg（加工区气体线）
+英：NO STOCK, NO RUN: %.0f kg LH2 (TANKS FROM THE TUG STATION) · %.0f kg LOX (THE GAS LINE)
+
+[power_supply:cryo_status:4]
+中：库存：液氢 %.0f kg · 液氧 %.0f kg · 储罐低于一半时自动送一趟
+英：STOCK: %.0f kg LH2 · %.0f kg LOX · A RUN GOES BELOW HALF
 
 [power_supply:_tick_cryo:1]
 中：液氢液氧已灌进燃料电池：第二组电堆 +%.0f 兆瓦
@@ -29672,13 +29848,17 @@
 中： · 超载中，热量在涨
 英： · OVERLOADED, HEATING
 
+[power_supply_ui:sync:12]
+中：燃料电池第二组电堆：储罐 %.1f / %.0f 兆瓦时 · 
+英：FUEL CELLS' STACK 2: TANK %.1f / %.0f MWh · 
+
 ------------------------------------------------------------
 # 【power_supply_view.gd（power_supply_view.gd）】
 ------------------------------------------------------------
 
 [power_supply_view:_ship:1]
-中：外星系货运 CB-7
-英：INTERSYSTEM FREIGHT CB-7
+中：外星系货运
+英：FREIGHT
 
 [power_supply_view:_cryo_fixed:1]
 中：低温灌装台 · 液氢 / 液氧
@@ -29968,81 +30148,109 @@
 中：关掉队列，回到现场
 英：Close the queue
 
-[process_queue_panel:_draw:4]
+[process_queue_panel:_state_line:1]
+中：电弧炉空闲
+英：FURNACE IDLE
+
+[process_queue_panel:_state_line:3]
 中：换模中：%s模 → %s模，还要约 %d 秒
 英：CHANGING THE MOULD: %s → %s, ~%d s
 
-[process_queue_panel:_draw:8]
-中：%s模在座上 · 架上：%s
-英：%s MOULD IN THE SEAT · ON THE RACK: %s
+[process_queue_panel:_state_line:4]
+中： · 座上%s模 · 架上：%s
+英： · %s MOULD IN THE SEAT · RACK: %s
 
-[process_queue_panel:_draw:9]
-中：开着时：订单批次按截止先后排在最前，其余在后，同模具的连着炼，少换模
-英：On: order batches by their deadlines first, the rest after, the same mould together
+[process_queue_panel:_draw_empty:4]
+中：队列是空的。仓库里有 %.1f t 钢锭可以炼。
+英：THE QUEUE IS EMPTY. %.1f t OF INGOT IN STORE.
 
-[process_queue_panel:_draw:10]
-中：按订单截止时间自动排
-英：AUTO BY DEADLINE
+[process_queue_panel:_draw_empty:5]
+中：队列是空的，仓库里也没有没排上的钢锭：再拆一艘船，碎料会炼成钢锭。
+英：THE QUEUE IS EMPTY AND NO INGOTS ARE FREE: STRIP ANOTHER SHIP, ITS SCRAP BECOMES INGOTS.
 
-[process_queue_panel:_draw:11]
+[process_queue_panel:_draw_empty:6]
 中：排一炉：钢锭 %.1f t  [Enter]
 英：QUEUE A HEAT: %.1f t  [Enter]
 
-[process_queue_panel:_draw:12]
+[process_queue_panel:_draw_empty:7]
 中：把仓库里还没排上的钢锭排一炉，炉子按队列自己炼
 英：Queue a heat of the ingots in store; the furnace works the queue by itself
 
-[process_queue_panel:_draw:14]
+[process_queue_panel:_draw_empty:8]
+中：去仓库挑别的
+英：PICK OTHERS IN STORE
+
+[process_queue_panel:_draw_empty:9]
 中：在仓库里点钢锭“炼成钢坯”，可以挑吨数
 英：In the stores, ingots → 'cast', any tonnage
 
-[process_queue_panel:_draw:15]
-中：去仓库选钢锭  [Enter]
-英：PICK INGOTS IN STORE  [Enter]
+[process_queue_panel:_draw_empty:10]
+中：去仓库看看  [Enter]
+英：TO THE STORES  [Enter]
 
-[process_queue_panel:_draw:16]
-中：在仓库里点钢锭“炼成钢坯”就排进来
+[process_queue_panel:_draw_empty:11]
+中：仓库里点钢锭“炼成钢坯”就排进来
 英：In the stores, ingots → 'cast' adds a batch
 
-[process_queue_panel:_draw:17]
-中：炼钢 · 拖动排序，点用途和模具可以换
-英：MELTING · DRAG TO ORDER, CLICK USE OR MOULD TO CHANGE
+[process_queue_panel:_draw_list:1]
+中：换模 %s → %s · 停炉约 %d 秒
+英：MOULD CHANGE %s → %s · ~%d s STANDING
 
-[process_queue_panel:_draw:18]
-中：队列是空的。到仓库里点钢锭，选“炼成钢坯”。
-英：THE QUEUE IS EMPTY. IN THE STORES PICK INGOTS → 'CAST'.
+[process_queue_panel:_draw_list:2]
+中：开着时：订单批次按截止先后排在最前，其余在后，同模具的连着炼，少换模
+英：On: order batches by their deadlines first, the rest after, the same mould together
 
-[process_queue_panel:_draw:19]
-中：换模：%s模 → %s模 · 炉子停约 %d 秒
-英：MOULD CHANGE: %s → %s · ~%d s STANDING
+[process_queue_panel:_draw_list:3]
+中：按订单截止时间自动排
+英：AUTO BY DEADLINE
 
-[process_queue_panel:_draw:20]
-中：打包压块机 · 在仓库里选散料或整件点“压块”就排进来
-英：BALER · PICK LOOSE GOODS OR A MACHINE IN STORE → 'BALE'
+[process_queue_panel:_draw_list:4]
+中：再排一炉：钢锭 %.1f t  [Enter]
+英：ONE MORE HEAT: %.1f t  [Enter]
+
+[process_queue_panel:_draw_list:5]
+中：把仓库里还没排上的钢锭再排一炉
+英：Queue another heat of the ingots in store
+
+[process_queue_panel:_draw_list:7]
+中：在仓库里点钢锭“炼成钢坯”，可以挑吨数
+英：In the stores, ingots → 'cast', any tonnage
+
+[process_queue_panel:_draw_list:8]
+中：去仓库挑别的  [Enter]
+英：PICK OTHERS IN STORE  [Enter]
+
+[process_queue_panel:_draw_list:9]
+中：仓库里没有没排上的钢锭了；在仓库里可以看别的
+英：No free ingots left; see the stores
 
 [process_queue_panel:_row:1]
 中：按住拖动来改顺序
 英：Hold and drag to reorder
 
 [process_queue_panel:_row:2]
-中：钢锭 %.1f t → %s
-英：INGOT %.1f t → %s
+中：钢锭 %.1f t →
+英：INGOT %.1f t →
 
 [process_queue_panel:_row:3]
-中：。点一下换
-英：. Click to change
+中：。点一下换模具
+英：. Click to change the mould
 
 [process_queue_panel:_row:4]
 中：订单点名要这种，跟着订单走
 英：THE ORDER NAMES THIS MOULD
 
-[process_queue_panel:_row:6]
+[process_queue_panel:_row:5]
 中：这批炼来干什么：留着 / 卖 / 给哪张订单。点一下换
 英：What it is for: keep / sell / an order. Click to change
 
+[process_queue_panel:_row:6]
+中：炉里 · 还剩约 %d 秒
+英：IN THE FURNACE · ~%d s LEFT
+
 [process_queue_panel:_row:7]
-中：炉里 · 约 %d 秒
-英：IN THE FURNACE · ~%d s
+中：炉里 · 正在炼
+英：IN THE FURNACE
 
 [process_queue_panel:_row:8]
 中：约 %d 秒后
@@ -30053,14 +30261,10 @@
 英：IN ~%d MIN
 
 [process_queue_panel:_row:10]
-中：还剩 %.1f t
-英：%.1f t LEFT
-
-[process_queue_panel:_row:11]
 中：炉里正在炼这批
 英：THE FURNACE IS ON IT
 
-[process_queue_panel:_row:12]
+[process_queue_panel:_row:11]
 中：撤下这批（钢锭留在仓库）
 英：Take it off (the ingots stay in store)
 
@@ -30080,17 +30284,25 @@
 中：推出，回仓库
 英：OUT, TO STORES
 
-[process_queue_panel:_draw_press:10]
-中：压块 %.1f t · 约 %s · 占 %d 格
-英：BALE %.1f t · ~%s · %d CELL
+[process_queue_panel:_draw_press:9]
+中：压块机空闲
+英：THE BALER IS IDLE
 
-[process_queue_panel:_draw_press:12]
-中：没有等着压的
-英：NOTHING WAITING
+[process_queue_panel:_draw_press:10]
+中：压块机：%s · %s
+英：BALER: %s · %s
+
+[process_queue_panel:_draw_press:11]
+中： · 还有 %d 件等着
+英： · %d WAITING
 
 [process_queue_panel:_draw_foot:1]
-中：拖动行排序 · 点开关自动排 · Enter 去仓库加料 · Esc 关闭
-英：DRAG ROWS · CLICK THE SWITCH TO AUTO-ORDER · ENTER ADD FROM STORE · ESC CLOSE
+中：拖动卡片排序 · 点模具或用途可以换 · Enter 排一炉 · Esc 关闭
+英：DRAG CARDS TO ORDER · CLICK THE MOULD OR USE TO CHANGE · ENTER QUEUES A HEAT · ESC CLOSES
+
+[process_queue_panel:_draw_foot:2]
+中：Enter 排一炉 · Esc 关闭
+英：ENTER QUEUES A HEAT · ESC CLOSES
 
 ------------------------------------------------------------
 # 【repair_bill.gd（repair_bill.gd）】
@@ -30333,7 +30545,7 @@
 英：STORES LINE · FROM BERTH 07
 
 ============================================================
-# 十五、短标签（四个字以内的按钮、栏目名、单位）（1697 条）
+# 十五、短标签（四个字以内的按钮、栏目名、单位）（1705 条）
 # 同样的字在很多界面出现时只列一次，「# 在」写了出现在哪些界面、共几处；改这里一条，所有这些地方一起改。
 # 这些字要短：按钮和栏目的宽度是按现在的字数排的，多一两个字可能放不下（合并后会跑超框检查）。
 ============================================================
@@ -30724,7 +30936,7 @@
 英：KEPT AS RAW MATERIAL
 
 [short:84]
-# 在：结算与收尾、成长与建设的条件、拆船时的屏幕、need_voice.gd、船坞终端（5 处）
+# 在：结算与收尾、成长与建设的条件、各区业务终端、拆船时的屏幕、need_voice.gd、船坞终端（6 处）
 中：下一步
 英：NEXT
 
@@ -34249,7 +34461,7 @@
 英：%d PARTS
 
 [short:743]
-# 在：各区业务终端、港区现场导览（2 处）
+# 在：各区业务终端、港区现场导览（3 处）
 中：本区修复
 英：MEND THIS DISTRICT
 
@@ -34264,7 +34476,7 @@
 英：DETAILS ▴
 
 [short:744]
-# 在：各区业务终端、轧机面板、港区现场导览、轧机状态（4 处）
+# 在：各区业务终端、轧机面板、港区现场导览、轧机状态（5 处）
 中：轧机
 英：ROLLING MILL
 
@@ -34289,12 +34501,12 @@
 英：TAKE IT
 
 [short:749]
-# 在：各区业务终端（3 处）
+# 在：各区业务终端（4 处）
 中：不接
 英：DECLINE
 
 [short:750]
-# 在：各区业务终端（3 处）
+# 在：各区业务终端（4 处）
 中：没接。
 英：DECLINED.
 
@@ -34304,7 +34516,7 @@
 英：SET.
 
 [short:752]
-# 在：各区业务终端（1 处）
+# 在：各区业务终端（2 处）
 中：正在：
 英：NOW: 
 
@@ -34314,12 +34526,12 @@
 英：SENT FOR TESTING.
 
 [short:754]
-# 在：各区业务终端（1 处）
+# 在：各区业务终端（2 处）
 中：可分批
 英：PARTIAL OK
 
 [short:755]
-# 在：各区业务终端（1 处）
+# 在：各区业务终端（2 处）
 中：取消了。
 英：CANCELLED.
 
@@ -34367,6 +34579,11 @@
 # 在：各区业务终端（1 处）
 中：还空着
 英：STILL FREE
+
+[short:1762]
+# 在：各区业务终端（1 处）
+中：兆瓦时
+英：MWh
 
 [short:1539]
 # 在：各区业务终端（1 处）
@@ -34454,7 +34671,7 @@
 英：NEXT: 
 
 [short:783]
-# 在：各区业务终端、气体线、运营面板、process_gallery.gd、process_queue_panel.gd、轧机状态（9 处）
+# 在：各区业务终端、气体线、运营面板、process_gallery.gd、轧机状态（8 处）
 中：空闲
 英：IDLE
 
@@ -34492,6 +34709,66 @@
 # 在：各区业务终端（1 处）
 中：已报损
 英：
+
+[short:920]
+# 在：各区业务终端、炉台、分选台（5 处）
+中：更多 ▾
+英：MORE ▾
+
+[short:1763]
+# 在：各区业务终端（1 处）
+中：气态氧
+英：GAS O₂
+
+[short:845]
+# 在：各区业务终端、气体线、power_supply_view.gd（3 处）
+中：液氧
+英：LOX
+
+[short:1764]
+# 在：各区业务终端（1 处）
+中：液氢
+英：LH₂
+
+[short:1765]
+# 在：各区业务终端（1 处）
+中：进行中
+英：RUNNING
+
+[short:1766]
+# 在：各区业务终端（1 处）
+中：分离 %s
+英：SEPARATE %s
+
+[short:1767]
+# 在：各区业务终端（1 处）
+中：污染 %.1f%%
+英：TAINT %.1f%%
+
+[short:1768]
+# 在：各区业务终端（1 处）
+中：无污染
+英：CLEAN
+
+[short:1769]
+# 在：各区业务终端（1 处）
+中：开始分离
+英：SEPARATE
+
+[short:1770]
+# 在：各区业务终端（1 处）
+中：液化
+英：LIQUEFY
+
+[short:1771]
+# 在：各区业务终端（1 处）
+中：，不够
+英：, SHORT
+
+[short:1772]
+# 在：各区业务终端（1 处）
+中：接下
+英：TAKE
 
 [short:1626]
 # 在：district_revive.gd（1 处）
@@ -34897,11 +35174,6 @@
 # 在：气体线（1 处）
 中：液化冷箱
 英：LIQUEFIER
-
-[short:845]
-# 在：气体线、power_supply_view.gd（2 处）
-中：液氧
-英：LOX
 
 [short:846]
 # 在：气体线（1 处）
@@ -35542,11 +35814,6 @@
 # 在：炉台（1 处）
 中：操作失败
 英：
-
-[short:920]
-# 在：炉台、分选台（4 处）
-中：更多 ▾
-英：MORE ▾
 
 [short:921]
 # 在：炉台、分选台（2 处）
@@ -36984,7 +37251,7 @@
 英：END THE TOUR
 
 [short:1203]
-# 在：港区现场导览、动力区控制屏（3 处）
+# 在：港区现场导览、动力区控制屏、process_queue_panel.gd（4 处）
 中：电弧炉
 英：ARC FURNACE
 
@@ -37228,10 +37495,10 @@
 中：机组进线
 英：UNITS
 
-[short:1226]
+[short:1773]
 # 在：动力区现场（1 处）
-中：岸电进线
-英：SHORE
+中：电池进线
+英：BATTERIES
 
 [short:1227]
 # 在：动力区现场（1 处）
@@ -37403,25 +37670,25 @@
 中：加工队列
 英：PROCESSING QUEUE
 
-[short:1747]
+[short:1774]
 # 在：process_queue_panel.gd（1 处）
-中：电弧炉
-英：FURNACE
+中：电弧炉：
+英：FURNACE: 
 
-[short:1748]
+[short:1775]
 # 在：process_queue_panel.gd（1 处）
-中：模具
-英：MOULD
+中：钢锭
+英：INGOT
 
-[short:1749]
+[short:1776]
 # 在：process_queue_panel.gd（1 处）
-中：去仓库选
+中：钢坯
+英：BILLET
+
+[short:1777]
+# 在：process_queue_panel.gd（1 处）
+中：去仓库挑
 英：PICK IN STORE
-
-[short:1750]
-# 在：process_queue_panel.gd（1 处）
-中：模
-英：
 
 [short:1751]
 # 在：process_queue_panel.gd（1 处）
@@ -37442,21 +37709,6 @@
 # 在：process_queue_panel.gd（1 处）
 中：打包带
 英：STRAPPING
-
-[short:1755]
-# 在：process_queue_panel.gd（1 处）
-中：压机空闲
-英：THE PRESS IS IDLE
-
-[short:1756]
-# 在：process_queue_panel.gd（1 处）
-中：里面还有%s
-英：%s INSIDE
-
-[short:1757]
-# 在：process_queue_panel.gd（1 处）
-中：等着压：
-英：WAITING: 
 
 [short:1758]
 # 在：加工区的运行状态（1 处）

@@ -56,7 +56,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var column := OpsSkin.pane(self, Pal.heat(1.0, 1.4), 420.0)
 	plate = OpsSkin.Plate.new("EAF-3", words("电弧炉 · 炉台","ARC FURNACE · DESK"), words("现场操作 · 功率自动
-用自家发的电；不够时可买外购电（贵 %d 倍）" % int(Grid.bought_x()),"ON SITE · AUTOMATIC POWER\nOur own power; bought power when short (%dx dearer)" % int(Grid.bought_x())), Pal.heat(1.0, 1.4))
+用自家发的电；不够时可买外购电（贵 %d 倍）" % int(Grid.bought_x()),"ON SITE · AUTOMATIC POWER\nOur own power; bought power when short (%dx dearer)" % int(Grid.bought_x())) if not preload("res://scripts/power_supply.gd").ENABLED else words("现场操作 · 功率自动\n用自家发的电；不够时到供电屏买电池块","ON SITE · AUTOMATIC POWER\nOur own power; short, buy a battery block at the power screen"), Pal.heat(1.0, 1.4))
 	column.add_child(plate)
 	readout = OpsSkin.as_screen(label("", 17))
 	readout.custom_minimum_size.y = 120
@@ -176,7 +176,7 @@ func _next() -> Array:
 			if not heat.get("auto",false) and (float(f.manual_power) < 0.5 or (float(f.bunker) > 0.0001 and not bool(f.manual_feed))):
 				return [GuideCopy.text("heat.melt"), func(): show_result(service.start_melt())]
 			# 70 号: short of power, it melts slowly — the shore line can make up the rest
-			if Grid.wait_text(service.game) != "" and not heat.get("shore_asked",false) and str(Grid.ctl().line) != "own_only":
+			if Grid.wait_text(service.game) != "" and not heat.get("shore_asked",false) and str(Grid.ctl().line) != "own_only" and not preload("res://scripts/power_supply.gd").ENABLED:
 				return [words("电不够：买外购电补上（贵 %d 倍）" % int(Grid.bought_x()),"SHORT: BUY POWER (%dx DEARER)" % int(Grid.bought_x())), func(): show_result(service.ask_shore())]
 			if float(f.m_s) > 0.000001 or float(f.bunker) > 0.000001 or float(f.T) < SmelterModel.T_TAP:
 				return [words("熔化中 · %d °C" % int(f.T),"MELTING · %d °C" % int(f.T)), Callable()]

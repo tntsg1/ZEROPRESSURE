@@ -194,6 +194,9 @@ This was a batch kept at settlement: the mill rolls it into plate next.")
 
 
 func _shore_ok() -> bool:
+	# 128 号 第 5 段: no shore line (batteries from the power screen instead)
+	if preload("res://scripts/power_supply.gd").ENABLED:
+		return false
 	var h := heat()
 	return not h.get("shore_asked",false) and str(Grid.ctl().line) != "own_only" and not h.get("grid",{}).get("free",false)
 

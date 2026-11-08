@@ -131,7 +131,7 @@ func _plates(stage: int) -> Array:
 	out.append([PLATES.fc[0], PLATES.fc[1], w("燃料电池", "FUEL CELLS"), W.fc_state()])
 	out.append([PLATES.feed[0], PLATES.feed[1], w("给水泵", "FEED PUMPS"), W.feed_state()])
 	out.append([PLATES.rad[0], PLATES.rad[1], w("散热泵", "RAD PUMPS"), W.rad_state()])
-	out.append([PLATES.switch[0], PLATES.switch[1], w("配电柜", "SWITCHGEAR"), [w("全港在用 %.1f · 自家发 %.1f · 外购 %.1f", "IN USE %.1f · OURS %.1f · BOUGHT %.1f") % [W.own + W.shore, W.own, W.shore], "ok"]])
+	out.append([PLATES.switch[0], PLATES.switch[1], w("配电柜", "SWITCHGEAR"), [w("全港在用 %.1f · 其中电池 %.1f", "IN USE %.1f · BATTERIES %.1f") % [W.own + W.shore, preload("res://scripts/power_supply.gd").batt_now], "ok"]])
 	# a changeover being shown: a plate by the machine, amber, put right by the automatics
 	if not W.fault.is_empty():
 		var fa := W.fault_at()
@@ -209,7 +209,7 @@ func still(ci: CanvasItem, stage: int, lod: int) -> void:
 		_text(ci, Vector2(FW_C[i] - 1.0, 23.4), "FW-%d" % (i + 1), 0.32, _ink(0.6))
 	for i in 2:
 		_text(ci, Vector2(RP_C[i] - 0.55, 20.75), "RP-%d" % (i + 1), 0.28, _ink(0.6))
-	var names := [["机组进线", "UNITS"], ["岸电进线", "SHORE"], ["基础·港心", "BASE"], ["拆船坞", "BERTH"], ["加工区", "PROCESS"], ["货运区", "CARGO"], ["拖船站", "TUG"]]
+	var names := [["机组进线", "UNITS"], ["电池进线", "BATTERIES"], ["基础·港心", "BASE"], ["拆船坞", "BERTH"], ["加工区", "PROCESS"], ["货运区", "CARGO"], ["拖船站", "TUG"]]
 	for i in W.FEEDERS.size():
 		var x := SG_X + i * CUB
 		_text(ci, Vector2(x + 0.12, SG_Y.x + 1.15), names[i][0] if Txt.zh else names[i][1], 0.3, _ink(0.85), HORIZONTAL_ALIGNMENT_LEFT, CUB - 0.2)
@@ -831,7 +831,7 @@ func _screen(ci: CanvasItem, t: float, stage: int) -> void:
 		_text(ci, Vector2(x, y + 3.05), w("堆热功率 %.0f MWt", "REACTOR HEAT %.0f MWt") % q, 0.34, Pal.heat(0.85, 1.1))
 		_text(ci, Vector2(x, y + 3.6), w("蒸汽 %.0f kg/s · 冷凝器 %.0f °C", "STEAM %.0f kg/s · COND %.0f °C") % [W.steam_kgs(), W.t_cond], 0.32, _ink(0.75))
 		_text(ci, Vector2(x, y + 4.1), w("散热板 %.0f °C · 排热 %.0f MW", "RADIATORS %.0f °C · %.0f MW OUT") % [W.rad_t, W.rejected()], 0.32, _ink(0.75))
-		_text(ci, Vector2(x, y + 4.65), w("岸电 %.1f MW", "SHORE %.1f MW") % W.shore if W.shore > 0.05 else w("岸电 未用", "SHORE OFF"), 0.34, Pal.heat(0.85, 1.1) if W.shore > 0.05 else dim)
+		_text(ci, Vector2(x, y + 4.65), w("电池 %.1f MW", "BATTERIES %.1f MW") % preload("res://scripts/power_supply.gd").batt_now if preload("res://scripts/power_supply.gd").batt_now > 0.05 else w("电池 未用", "BATTERIES IDLE"), 0.34, Pal.heat(0.85, 1.1) if W.shore > 0.05 else dim)
 		_text(ci, Vector2(x, y + 5.45), w("最近切换", "LAST CHANGEOVERS"), 0.3, dim)
 		var ly := y + 5.95
 		if W.log.is_empty():
@@ -883,10 +883,10 @@ func hover_items(stage: int) -> Array:
 		w("推动散热回路：把冷凝器的热送到两侧吊臂上的散热板。太空里没有空气和水，热只能辐射出去。", "Drive the radiator loop: the condenser's heat out to the radiators on the booms. In vacuum heat can only be radiated away."),
 		W.rad_state(), w("不用操作。站外看散热板越红，排的热越多。", "Nothing to do. Outside, the redder the radiators, the more heat goes out."))
 	add.call([Rect2(PLATES.switch[0], Vector2(PLATES.switch[1], 0.9)), Rect2(SG_X, SG_Y.x, CUB * W.FEEDERS.size(), SG_Y.y - SG_Y.x)], w("配电柜", "SWITCHGEAR"),
-		w("全港的电从这里分出去：自家发的电和外购电进来，再每区一条线送出去。哪个区开始用电，它的开关就合上（I），表针指着它现在用的电。", "Where the port's power is shared out: the units' incomer, the shore incomer, then a feeder for each district. A district starting to draw closes its breaker (I); its ammeter shows what it draws."),
-		[w("全港在用 %.1f · 自家发 %.1f · 外购 %.1f 兆瓦" % [W.own + W.shore, W.own, W.shore], "BUS %.1f MW · OWN %.1f · SHORE %.1f" % [W.own + W.shore, W.own, W.shore]), "ok"],
-		w("电不够时谁先用：业务终端 → 动力控制屏里调顺序，或设成不够时自动买外购电。", "Who comes first when short: the business console's power control screen, where the supply line is chosen too."))
+		w("全港的电从这里分出去：发电机和电池泊位的电进来，再每区一条线送出去。哪个区开始用电，它的开关就合上（I），表针指着它现在用的电。", "Where the port's power is shared out: the units' incomer, the shore incomer, then a feeder for each district. A district starting to draw closes its breaker (I); its ammeter shows what it draws."),
+		[w("全港在用 %.1f · 自家发 %.1f 兆瓦" % [W.own + W.shore, W.own], "BUS %.1f MW · OWN %.1f · SHORE %.1f" % [W.own + W.shore, W.own, W.shore]), "ok"],
+		w("电不够时谁先用：业务终端 → 动力控制屏里调顺序，发电机不够时到供电屏买电池块。", "Who comes first when short: the business console's power control screen, where the supply line is chosen too."))
 	add.call([Rect2(SCREEN.position - Vector2(0.25, 0.25), SCREEN.size + Vector2(0.5, 0.5))], w("主控屏", "MAIN CONTROL SCREEN"),
-		w("整座电站的读数：输出 / 容量、频率、堆热功率、蒸汽、冷凝器、散热板、外购电，以及最近几次自动切换。", "The plant in figures: out against capacity, frequency, reactor heat, steam, condenser, radiators, shore power, and the last automatic changeovers."),
+		w("整座电站的读数：输出 / 容量、频率、堆热功率、蒸汽、冷凝器、散热板、电池，以及最近几次自动切换。", "The plant in figures: out against capacity, frequency, reactor heat, steam, condenser, radiators, shore power, and the last automatic changeovers."),
 		[w("%.1f / %.0f MW" % [W.own, W.cap], "%.1f / %.0f MW" % [W.own, W.cap]), "ok" if stage >= 1 else "warn"], w("详细控制在下面的业务终端（按 B 附近打开）。", "The controls are at the business console below."))
 	return out

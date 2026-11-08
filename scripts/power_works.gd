@@ -103,6 +103,9 @@ static func read(game) -> Dictionary:
 		var gr := str(l.group)
 		g[gr if g.has(gr) else "base"] = float(g.get(gr if g.has(gr) else "base", 0.0)) + mw
 	var sh := minf(Grid.shore_mw(game), total)
+	# 128 号 第 5 段: the battery berth's feed in the shore line's place (its incomer closes while it gives)
+	if preload("res://scripts/power_supply.gd").ENABLED:
+		sh = minf(preload("res://scripts/power_supply.gd").batt_now, total)
 	return {"stage": Port.stage("power"), "cap": Grid.capacity(), "own": maxf(0.0, total - sh), "shore": sh, "groups": g}
 
 
@@ -437,6 +440,9 @@ static func rejected() -> float:
 
 
 static func shore_state() -> Array:
+	if preload("res://scripts/power_supply.gd").ENABLED:
+		var P5 = preload("res://scripts/power_supply.gd")
+		return [w("电池泊位 %.1f 兆瓦时 · 在给 %.1f 兆瓦" % [P5.left_mwh(), shore], "BATTERY BERTH %.1f MWh · GIVING %.1f MW" % [P5.left_mwh(), shore]), "work" if shore > 0.05 else "ok"]
 	if umb <= 0.0 and shore <= 0.05:
 		return [w("收起 · 没买外购电", "STOWED · NO BOUGHT POWER"), "off"]
 	if umb < 1.0:

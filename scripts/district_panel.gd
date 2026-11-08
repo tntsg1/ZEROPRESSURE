@@ -38,6 +38,9 @@ func button(value: String, callback: Callable) -> Button:
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# 2026-11-07: the processing district's console, once mended, is its own simpler page
+	if _process_layout():
+		return
 	var accent := Pal.tint(Pal.AIR, 1.0, 1.2)
 	var column := OpsSkin.pane(self, accent, 520.0 if zone == "ring" else OpsSkin.W_PANE)
 	plate = OpsSkin.Plate.new(CODES.get(zone, "PORT"), "%s · %s" % [Port.name_of(zone), Txt.t("pt_console_business")], _subtitle(), accent)
@@ -211,7 +214,7 @@ func _fill_repair() -> void:
 		repair_box.add_child(b)
 		# what it lacks is the list above: the long why goes on the button's note (人性化 规则 4)
 		BenchFx.note(b, words("付钱修到下一阶，立刻开工；修好后本区多一阶的能力", "Pay and mend it to the next stage, starting now") if not with_parts else words("用零件抵一部分钱，修到下一阶，立刻开工", "Mend it to the next stage with parts and cash, starting now"), why)
-		if why == "" and not _primary_set:
+		if why == "" and not _primary_set and next_key == null:
 			_primary_set = true
 			BenchFx.primary(b)
 		if why != "" and not why.begins_with(words("还需要", "STILL NEEDS")) and why.length() <= 24:
@@ -260,9 +263,10 @@ func _fill_bill() -> void:
 	mb.disabled = why != ""
 	repair_box.add_child(mb)
 	BenchFx.note(mb, words("看明细再确认：自有的先用，缺的按市价买齐，施工队不收工钱", "See the bill first: own materials go first, the rest is bought at market, the crew is free"), why)
-	if why == "":
+	# (the processing console's main key is its next step: the mending under "更多" is not Enter's)
+	if why == "" and next_key == null:
 		BenchFx.primary(mb)
-	elif why.length() <= 30:
+	elif why.length() <= 30 and why != "":
 		repair_box.add_child(label("  " + why, 13))
 
 
@@ -568,6 +572,8 @@ func _process(dt: float) -> void:
 		_fill_people()
 	if gas_box != null:
 		_fill_gas()
+	if next_title != null:
+		_fill_next()
 	if biz_box != null:
 		_fill_biz()
 
@@ -597,7 +603,10 @@ func _fill() -> void:
 			det.append(["%s  %.0f %s" % [words("自家能发", "WE CAN MAKE"), Grid.capacity(), words("兆瓦", "MW")]])
 			det.append(["%s  %.1f %s" % [words("已经分出去", "GIVEN OUT"), Grid.reserved(game), words("兆瓦", "MW")]])
 			det.append(["%s  %.1f %s" % [words("还空着", "STILL FREE"), Grid.headroom(game), words("兆瓦", "MW")]])
-			det.append(["%s  %.1f / %.0f %s" % [words("外购电（比自家发贵 %d 倍）" % int(Grid.bought_x()), "BOUGHT POWER (%dx DEARER)" % int(Grid.bought_x())), Grid.shore_mw(game), Grid.SHORE_MAX, words("兆瓦", "MW")]])
+			if preload("res://scripts/power_supply.gd").ENABLED:
+				det.append(["%s  %.1f / %.1f %s" % [words("电池泊位剩电", "BATTERY BERTH LEFT"), preload("res://scripts/power_supply.gd").left_mwh(), preload("res://scripts/power_supply.gd").full_mwh(), words("兆瓦时", "MWh")]])
+			else:
+				det.append(["%s  %.1f / %.0f %s" % [words("外购电（比自家发贵 %d 倍）" % int(Grid.bought_x()), "BOUGHT POWER (%dx DEARER)" % int(Grid.bought_x())), Grid.shore_mw(game), Grid.SHORE_MAX, words("兆瓦", "MW")]])
 			for l in Grid.loads(game):
 				var st: String = {"base": words("一直先供", "ALWAYS FIRST"), "run": words("在用", "ON"), "short": words("电不够 %d%%" % int(float(l.k) * 100.0), "SHORT %d%%" % int(float(l.k) * 100.0)), "idle": words("没在用", "IDLE")}.get(str(l.state), "")
 				if l.get("free", false):
@@ -731,3 +740,282 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:
 		close()
 		get_viewport().set_input_as_handled()
+
+
+# ================================================================== 2026-11-07 加工区业务终端重做
+# (user: "这个 UI 重做，太难看了，太复杂了"; the design's 128 号 last entry, sketch 2 "仪表式"): the right half
+# of the screen, solid dark. Three things only: the three tanks (gaseous oxygen, LOX, LH2), the next step
+# with its one main key (Enter), the passing ship's order with take / decline. Everything else the console
+# did — the mending, the figures, the automation, buying mixed gas, the life-support test, venting,
+# disposing — is under "更多", the same controls as before.
+var tanks: Control
+var next_title: Label
+var next_sub: Label
+var next_key: Button
+var call_box: VBoxContainer
+var more_key: Button
+var more_box: VBoxContainer
+var _more_fold: BenchFx.Fold
+var _next_do := Callable()
+var _call_sig := ""
+
+
+func _process_layout() -> bool:
+	if zone != "process" or Port.stage("process") < 1:
+		return false
+	var accent := Pal.tint(Pal.AIR, 1.0, 1.2)
+	var half := maxf(640.0, get_viewport().get_visible_rect().size.x * 0.5 - 24.0)
+	var column := OpsSkin.pane(self, accent, half)
+	var pane := get_node_or_null("Pane") as PanelContainer
+	if pane != null:
+		var solid := UiSkin.solid(Color(0.043, 0.048, 0.057, 1.0), 14, 22.0)
+		solid.set_border_width_all(1)
+		solid.border_color = Color(1, 1, 1, 0.08)
+		solid.shadow_color = Color(0, 0, 0, 0.55)
+		solid.shadow_size = 24
+		pane.add_theme_stylebox_override("panel", solid)
+	column.add_theme_constant_override("separation", 16)
+	plate = OpsSkin.Plate.new(CODES.process, words("加工区 · 气体", "PROCESSING · GAS"), words("回收的气分离、液化，卖给过路船", "Recovered gas separated, liquefied, sold to passing ships"), accent)
+	column.add_child(plate)
+	# ---- the tanks and the next step, side by side
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 20)
+	column.add_child(row)
+	tanks = Control.new()
+	tanks.custom_minimum_size = Vector2(minf(400.0, half * 0.44), 330)
+	tanks.draw.connect(_draw_tanks)
+	row.add_child(tanks)
+	var card := PanelContainer.new()
+	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	card.add_theme_stylebox_override("panel", _card_box())
+	row.add_child(card)
+	var cv := VBoxContainer.new()
+	cv.add_theme_constant_override("separation", 8)
+	card.add_child(cv)
+	var nl := label(words("下一步", "NEXT"), 14)
+	nl.modulate = Color(1, 1, 1, 0.55)
+	cv.add_child(nl)
+	next_title = label("", 26)
+	cv.add_child(next_title)
+	next_sub = label("", 16)
+	next_sub.modulate = Color(1, 1, 1, 0.7)
+	cv.add_child(next_sub)
+	var spacer := Control.new()
+	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	cv.add_child(spacer)
+	next_key = button("", func():
+		if _next_do.is_valid():
+			_next_do.call())
+	next_key.custom_minimum_size.y = 58
+	next_key.add_theme_font_size_override("font_size", 19)
+	# the one main key: solid orange, dark words (sketch 2)
+	for st in ["normal", "hover", "pressed", "focus"]:
+		var kb := UiSkin.solid(UiSkin.ACCENT.lightened(0.1) if st == "hover" else (UiSkin.ACCENT.darkened(0.12) if st == "pressed" else UiSkin.ACCENT), 8, 12.0)
+		next_key.add_theme_stylebox_override(st, kb)
+	var dis := UiSkin.solid(Color(1, 1, 1, 0.05), 8, 12.0)
+	next_key.add_theme_stylebox_override("disabled", dis)
+	for fc in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		next_key.add_theme_color_override(fc, Color(0.08, 0.06, 0.05))
+	next_key.add_theme_color_override("font_disabled_color", Pal.ink(0.45))
+	cv.add_child(next_key)
+	BenchFx.primary(next_key)
+	# ---- the passing ship's order
+	var cc := PanelContainer.new()
+	cc.add_theme_stylebox_override("panel", _card_box())
+	column.add_child(cc)
+	call_box = VBoxContainer.new()
+	call_box.add_theme_constant_override("separation", 6)
+	cc.add_child(call_box)
+	# ---- 更多: everything else, as it was
+	more_key = button(words("更多 ▸  自动化 4 项 · 外购混合气 · 检测 · 放空 · 本区修复", "MORE ▸  AUTOMATION · BUY GAS · TEST · VENT · MENDING"), func(): _more_fold.set_open(not _more_fold.open))
+	more_key.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	column.add_child(more_key)
+	more_box = VBoxContainer.new()
+	more_box.add_theme_constant_override("separation", 10)
+	more_box.visible = false
+	column.add_child(more_box)
+	_more_fold = BenchFx.fold(more_box)
+	_more_fold.on_toggle = func(open: bool): more_key.text = (words("更多 ▾", "MORE ▾") if open else words("更多 ▸  自动化 4 项 · 外购混合气 · 检测 · 放空 · 本区修复", "MORE ▸  AUTOMATION · BUY GAS · TEST · VENT · MENDING"))
+	BenchFx.note(more_key, words("展开或收起：自动化、外购混合气、生命支持检测、放空、处置污染、本区修复、轧机", "Show or hide the rest: automation, buying gas, the test, venting, disposal, mending, the mill"))
+	stage_box = OpsSkin.Readout.new()
+	more_box.add_child(stage_box)
+	more_box.add_child(OpsSkin.Section.new(words("本区修复", "MEND THIS DISTRICT")))
+	repair_box = VBoxContainer.new()
+	more_box.add_child(repair_box)
+	_fill_repair()
+	readout = OpsSkin.Readout.new()
+	more_box.add_child(readout)
+	body = label("", 15)
+	body.visible = false
+	more_box.add_child(body)
+	more_box.add_child(OpsSkin.Section.new(words("轧机", "ROLLING MILL")))
+	more_box.add_child(label(words("轧机在观察廊上有自己的控制台：飞到它上面按 %s，选配方、开轧。", "The mill has its own console on the gallery: press %s at it to pick a recipe and roll.") % Keys.label("use"), 15))
+	more_box.add_child(OpsSkin.Section.new(words("气体线 · 回收 → 分离 → 液氧 → 补给", "GAS LINE · RECOVER → SEPARATE → LOX → SUPPLY")))
+	gas_box = VBoxContainer.new()
+	more_box.add_child(gas_box)
+	_fill_gas()
+	message = label("", 15)
+	column.add_child(message)
+	column.add_child(button(words("关闭 [Esc]", "CLOSE [Esc]"), close))
+	_fill()
+	_fill_next()
+	return true
+
+
+func _card_box() -> StyleBoxFlat:
+	var b := UiSkin.solid(Color(0.075, 0.085, 0.1, 1.0), 10, 20.0)
+	return b
+
+
+# the three tanks: a capsule each, its fill, its name and figure under it
+func _draw_tanks() -> void:
+	var d: Dictionary = GasLine.data() if GasLine.built() else {}
+	var o2 := float(d.get("o2", {}).get("ind", 0.0)) + float(d.get("o2", {}).get("ok", 0.0)) + float(d.get("o2", {}).get("ls", 0.0))
+	var lox := float(d.get("lox", {}).get("kg", 0.0))
+	var lh2 := float(Career.data.get("gas", {}).get("lh2", {}).get("kg", 0.0))
+	var items := [[words("气态氧", "GAS O₂"), o2, maxf(5000.0, o2 * 1.25), Pal.tint(Pal.AIR, 0.9, 1.3)], [words("液氧", "LOX"), lox, GasLine.TANK_CAP, Pal.tint(Pal.FLUID, 0.95, 1.3)], [words("液氢", "LH₂"), lh2, 8000.0, Color(0.75, 0.85, 1.0)]]
+	var f := Fonts.get_font("Medium")
+	var fb := Fonts.get_font("SemiBold")
+	var sz := tanks.size
+	var tw := minf(70.0, sz.x / 3.0 - 40.0)
+	var th := sz.y - 96.0
+	for i in 3:
+		var cx := sz.x * (i + 0.5) / 3.0
+		var r := Rect2(cx - tw * 0.5, 12.0, tw, th)
+		var k := clampf(float(items[i][1]) / float(items[i][2]), 0.0, 1.0)
+		var col: Color = items[i][3]
+		# the capsule: two half circles and the walls, its fill from the bottom
+		var rad := tw * 0.5
+		var fill_top := r.end.y - (th) * k
+		if k > 0.001:
+			var pts := PackedVector2Array()
+			for s in 13:
+				var a := PI * s / 12.0
+				pts.append(Vector2(cx + cos(a) * rad, r.end.y - rad + sin(a) * rad))
+			pts.append(Vector2(cx - rad, maxf(fill_top, r.position.y + rad)))
+			pts.append(Vector2(cx + rad, maxf(fill_top, r.position.y + rad)))
+			tanks.draw_colored_polygon(pts, Color(col, 0.55))
+			tanks.draw_line(Vector2(cx - rad + 2, maxf(fill_top, r.position.y + rad)), Vector2(cx + rad - 2, maxf(fill_top, r.position.y + rad)), Color(col, 0.95), 2.0)
+		else:
+			# empty: a thin pool of light on the bottom
+			tanks.draw_line(Vector2(cx - rad * 0.6, r.end.y - 6), Vector2(cx + rad * 0.6, r.end.y - 6), Color(col, 0.7), 4.0)
+		tanks.draw_arc(Vector2(cx, r.position.y + rad), rad, PI, TAU, 18, Pal.ink(0.45), 1.5)
+		tanks.draw_arc(Vector2(cx, r.end.y - rad), rad, 0.0, PI, 18, Pal.ink(0.45), 1.5)
+		tanks.draw_line(Vector2(cx - rad, r.position.y + rad), Vector2(cx - rad, r.end.y - rad), Pal.ink(0.45), 1.5)
+		tanks.draw_line(Vector2(cx + rad, r.position.y + rad), Vector2(cx + rad, r.end.y - rad), Pal.ink(0.45), 1.5)
+		var kg := float(items[i][1])
+		var fig := ("%.0f kg" % kg) if kg < 1000.0 else ("%.1f t" % (kg / 1000.0))
+		tanks.draw_string(f, Vector2(cx - 70, r.end.y + 34), str(items[i][0]), HORIZONTAL_ALIGNMENT_CENTER, 140, 15, Pal.ink(0.6))
+		tanks.draw_string(fb, Vector2(cx - 70, r.end.y + 62), fig, HORIZONTAL_ALIGNMENT_CENTER, 140, 20, Pal.ink(0.95))
+
+
+# what to do next, and the one key that does it
+func _fill_next() -> void:
+	if next_title == null:
+		return
+	if tanks != null:
+		tanks.queue_redraw()
+	_next_do = Callable()
+	var title := ""
+	var sub := ""
+	var key := ""
+	var why := ""
+	if not GasLine.built():
+		title = words("气体线还没修", "NO GAS LINE YET")
+		sub = words("在船坞终端“修缮”里修“气体线”（要加工区和动力区各 1 阶）。没修之前，拆船抽回的气在结算时折现。", "Build it under the berth terminal's repairs (processing and power at stage 1). Until then a ship's gas is cashed at settlement.")
+	else:
+		var d := GasLine.data()
+		var raw: Array = d.batches.filter(func(b): return str(b.state) == "raw")
+		if not d.job.is_empty() or not d.get("liq", {}).is_empty():
+			title = words("正在：", "NOW: ") + GasLine.job_text()
+			sub = words("机器在跑，不用守着。", "It runs by itself.")
+			key = words("进行中", "RUNNING")
+			why = words("等这一步做完", "WAIT FOR IT")
+		elif not raw.is_empty():
+			var b: Dictionary = raw[0]
+			var m := GasLine.mass(b)
+			var a := GasLine.assess(b)
+			title = words("分离 %s", "SEPARATE %s") % str(b.id)
+			sub = words("%.0f kg · 氧 %d%% · %s\n约 %d 秒", "%.0f kg · O₂ %d%% · %s\n~%d s") % [m, int(100.0 * float(b.kg.get("o2", 0.0)) / maxf(m, 0.001)), (words("污染 %.1f%%", "TAINT %.1f%%") % (a.taint * 100.0)) if a.taint > 0.0005 else words("无污染", "CLEAN"), int(ceil(m / 1000.0 * GasLine.SEP_S_PER_T))]
+			if raw.size() > 1:
+				sub += words(" · 还有 %d 批等着", " · %d MORE WAITING") % (raw.size() - 1)
+			key = words("开始分离", "SEPARATE")
+			why = GasLine.sep_block(str(b.id))
+			var bid := str(b.id)
+			_next_do = func(): _gas_do(GasLine.separate(bid), words("开始分离。", "SEPARATING.")); _fill_next()
+		elif GasLine.o2_free() >= 1.0:
+			var kg := minf(1000.0, GasLine.o2_free())
+			title = words("液化 %.0f kg 气态氧", "LIQUEFY %.0f kg OF OXYGEN") % kg
+			sub = words("进液氧储罐（还能装 %.0f kg）· 约 %d 秒", "Into the LOX tank (%.0f kg of room) · ~%d s") % [GasLine.space(), int(ceil(kg / 1000.0 * GasLine.LIQ_S_PER_T))]
+			key = words("液化", "LIQUEFY")
+			why = GasLine.liq_block(kg)
+			_next_do = func(): _gas_do(GasLine.liquefy(kg), words("开始液化。", "LIQUEFYING.")); _fill_next()
+		else:
+			title = words("没有要处理的气", "NOTHING TO PROCESS")
+			sub = words("拆船时用气液回收（5）把舱里的气抽回来，回港就是一批混合气；也可以在“更多”里外购混合气。", "Recover a ship's gas with the gas recovery tool (5): it comes home as a batch. Or buy mixed gas under MORE.")
+	next_title.text = title
+	next_sub.text = sub
+	next_key.visible = key != ""
+	next_key.text = key
+	next_key.disabled = why != ""
+	BenchFx.note(next_key, words("这一步要做的事", "This step"), why)
+	_fill_call()
+
+
+# the passing ship that asks now: what it wants, take or decline
+func _fill_call() -> void:
+	if call_box == null:
+		return
+	var d: Dictionary = GasLine.data() if GasLine.built() else {}
+	var c: Dictionary = {}
+	var more := 0
+	for x in d.get("callers", []):
+		if str(x.state) in ["offered", "accepted", "docked"]:
+			if c.is_empty():
+				c = x
+			else:
+				more += 1
+	var sig := str([c.get("id", ""), c.get("state", ""), int(float(c.get("got", 0.0))), more, GasLine.accept_block(str(c.get("id", ""))) if not c.is_empty() else ""])
+	if sig == _call_sig:
+		return
+	_call_sig = sig
+	for n in call_box.get_children():
+		n.queue_free()
+	if c.is_empty():
+		var l := label(words("现在没有过路船要补给。", "NO PASSING SHIP IS ASKING NOW."), 16)
+		l.modulate = Color(1, 1, 1, 0.55)
+		call_box.add_child(l)
+		return
+	var cid := str(c.id)
+	var when := (words("约 %d 秒后到港", "IN ~%d s") % ceili(float(c.eta) - float(c.t))) if str(c.state) != "docked" else words("靠泊中 · 已装 %.0f / %.0f kg", "ALONGSIDE · %.0f / %.0f kg") % [float(c.got), float(c.reserved)]
+	var head := label(words("过路船 %s · %s", "PASSING SHIP %s · %s") % [str(c.ship), when], 14)
+	head.modulate = Color(1, 1, 1, 0.6)
+	call_box.add_child(head)
+	var line := HBoxContainer.new()
+	line.add_theme_constant_override("separation", 14)
+	call_box.add_child(line)
+	var tv := VBoxContainer.new()
+	tv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	line.add_child(tv)
+	tv.add_child(label(words("要 %.0f kg %s · $%.2f/kg", "WANTS %.0f kg %s · $%.2f/kg") % [float(c.kg), GasLine.want_name(str(c.want)), float(c.price)], 20))
+	var have := GasLine.have(c)
+	var hl := label(words("现有 %.0f kg%s · %s", "%.0f kg ON HAND%s · %s") % [have, words("，不够", ", SHORT") if have + 0.5 < float(c.kg) else "", words("可分批", "PARTIAL OK") if c.partial else words("要一次交满", "ALL AT ONCE")], 14)
+	hl.modulate = Hmi.warn_col() if have + 0.5 < float(c.kg) else Color(1, 1, 1, 0.6)
+	tv.add_child(hl)
+	if str(c.state) == "offered":
+		var why := GasLine.accept_block(cid)
+		var tk := button(words("接下", "TAKE"), func(): _gas_do(GasLine.accept(cid), words("已预留产品和码头泊位。", "RESERVED.")); _call_sig = ""; _fill_next())
+		tk.custom_minimum_size.x = 110
+		tk.disabled = why != ""
+		BenchFx.note(tk, words("接下并预留产品和码头泊位", "Take it: the product and a berth are reserved"), why)
+		line.add_child(tk)
+		var no := button(words("不接", "DECLINE"), func(): _gas_do(GasLine.decline(cid), words("没接。", "DECLINED.")); _call_sig = ""; _fill_next())
+		no.custom_minimum_size.x = 110
+		line.add_child(no)
+	elif str(c.state) == "accepted":
+		var cn := button(words("取消（扣 5%）", "CANCEL (5%)"), func(): _gas_do(GasLine.decline(cid), words("取消了。", "CANCELLED.")); _call_sig = ""; _fill_next())
+		line.add_child(cn)
+	if more > 0:
+		var ml := label(words("还有 %d 条在“更多”里", "%d MORE UNDER MORE") % more, 13)
+		ml.modulate = Color(1, 1, 1, 0.5)
+		call_box.add_child(ml)

@@ -86,16 +86,17 @@ func _run() -> void:
 	Cap.save(root, "res://tests/out/bench_humane_why.png")
 	BenchFx.shot_mouse = Vector2.INF
 	await _wait_s(0.2)
-	# 规则 2: bought power at once, no confirm, a note of what it does and costs
-	ui.shore_key.pressed.emit()
+	# 规则 2: a battery block ordered at once (128 号 第 5 段: in the bought-power switch's place), no confirm,
+	# a note of what it does and costs
+	var P5 = preload("res://scripts/power_supply.gd")
+	var n0: int = P5.pending().size()
+	ui.supply5.order_keys["s"].pressed.emit()
 	await _wait_s(0.3)
-	check(str(Grid.ctl().line) == "auto_shore", "bought power on at once")
+	check(P5.pending().size() == n0 + 1, "a small block ordered at once")
 	check(not ui.confirm.visible, "no confirm box")
-	check(ui.msg.text.contains("已接入外购电") and ui.msg.text.contains("$300"), "the note says what and what it costs (%s)" % ui.msg.text)
+	check(ui.msg.text.contains("已下单") and ui.msg.text.contains("$900"), "the note says what and what it costs (%s)" % ui.msg.text)
 	Cap.save(root, "res://tests/out/bench_humane_shore.png")
-	ui.shore_key.pressed.emit()
-	await _wait_s(0.2)
-	check(str(Grid.ctl().line) == "auto", "and off again at once")
+	P5.d().orders = []
 	# 规则 6: short of power, Enter presses the breathing way out, which carries its key
 	var fakes: Array = []
 	for gp in [["salvage", 3.0], ["process", 5.0]]:
@@ -116,8 +117,8 @@ func _run() -> void:
 	ev.pressed = true
 	root.push_input(ev)
 	await _wait_s(0.3)
-	check(str(Grid.ctl().line) == "auto_shore", "Enter took the first way out (buy power)")
-	Grid.set_ctl("line", "auto")
+	check(P5.pending().size() == 1 and str(P5.pending()[0].size) == "m", "Enter took the first way out (order a medium block)")
+	P5.d().orders = []
 	for f in fakes:
 		Grid.extra_loads.erase(f)
 		f.queue_free()

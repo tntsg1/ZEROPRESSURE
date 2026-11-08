@@ -2773,889 +2773,889 @@
 "zh": "接着上次的港区导览 · %d / %d",
 "en": "THE PORT ON FOOT, CONTINUED · %d / %d",
 "file": "port_walk.gd",
-"line": 469,
+"line": 470,
 "func": "_fill",
-"en_line": 469
+"en_line": 470
 },
 "port_walk:_fill:2": {
 "zh": "港区现场导览 · %d / %d",
 "en": "THE PORT ON FOOT · %d / %d",
 "file": "port_walk.gd",
-"line": 469,
+"line": 470,
 "func": "_fill",
-"en_line": 469
+"en_line": 470
 },
 "port_walk:_fill:3": {
 "zh": "%s现场导览 · %d / %d",
 "en": "THE %s ON FOOT · %d / %d",
 "file": "port_walk.gd",
-"line": 471,
+"line": 472,
 "func": "_fill",
-"en_line": 471
+"en_line": 472
 },
 "port_walk:_fill:4": {
 "zh": "%s现场导览 · 先出坞，到中央环",
 "en": "THE %s ON FOOT · OUT TO THE RING FIRST",
 "file": "port_walk.gd",
-"line": 473,
+"line": 474,
 "func": "_fill",
-"en_line": 473
+"en_line": 474
 },
 "port_walk:_fill:5": {
 "zh": "接着上次的港区导览 · 先回到%s（第 %d / %d 步）",
 "en": "THE PORT ON FOOT · BACK TO THE %s FIRST (STEP %d OF %d)",
 "file": "port_walk.gd",
-"line": 476,
+"line": 477,
 "func": "_fill",
-"en_line": 476
+"en_line": 477
 },
 "port_walk:_fill:6": {
 "zh": "%s工程台：飞到亮圈，按 %s",
 "en": "%s DESK: TO THE LIT RING, PRESS %s",
 "file": "port_walk.gd",
-"line": 482,
+"line": 483,
 "func": "_fill",
-"en_line": 482
+"en_line": 483
 },
 "port_walk:_fill:7": {
 "zh": "%s业务终端：飞到亮圈，按 %s",
 "en": "%s CONSOLE: TO THE LIT RING, PRESS %s",
 "file": "port_walk.gd",
-"line": 484,
+"line": 485,
 "func": "_fill",
-"en_line": 484
+"en_line": 485
 },
 "port_walk:_fill:8": {
 "zh": "点“动力区控制屏”",
 "en": "CLICK 'POWER CONTROL SCREEN'",
 "file": "port_walk.gd",
-"line": 486,
+"line": 487,
 "func": "_fill",
-"en_line": 486
+"en_line": 487
 },
 "port_walk:_fill:9": {
 "zh": "在动力区业务终端里（按 %s 打开）",
 "en": "In the power console (%s opens it)",
 "file": "port_walk.gd",
-"line": 487,
+"line": 488,
 "func": "_fill",
-"en_line": 487
+"en_line": 488
 },
 "port_walk:_fill:10": {
 "zh": "点“打开交易行”",
 "en": "CLICK 'OPEN THE EXCHANGE'",
 "file": "port_walk.gd",
-"line": 489,
+"line": 490,
 "func": "_fill",
-"en_line": 489
+"en_line": 490
 },
 "port_walk:_fill:11": {
 "zh": "在贸易港业务终端里（按 %s 打开）；平时任何地方按 F8 也行",
 "en": "In the trade console (%s opens it); F8 anywhere too",
 "file": "port_walk.gd",
-"line": 490,
+"line": 491,
 "func": "_fill",
-"en_line": 490
+"en_line": 491
 },
 "port_walk:_fill:12": {
 "zh": "飞到左边货架口，按 %s 打开仓库",
 "en": "FLY TO THE LEFT RACK AND PRESS %s TO OPEN THE STORES",
 "file": "port_walk.gd",
-"line": 492,
+"line": 493,
 "func": "_fill",
-"en_line": 492
+"en_line": 493
 },
 "port_walk:_fill:13": {
 "zh": "两个货架口都能打开同一个公司仓库，看看拆回来的东西。",
 "en": "Both racks open the same company stores, where the recovered goods are kept.",
 "file": "port_walk.gd",
-"line": 493,
+"line": 494,
 "func": "_fill",
-"en_line": 493
+"en_line": 494
 },
 "port_walk:_fill:14": {
 "zh": "轧机操作台：飞到亮圈，按 %s",
 "en": "THE MILL'S PEDESTAL: TO THE LIT RING, PRESS %s",
 "file": "port_walk.gd",
-"line": 495,
+"line": 496,
 "func": "_fill",
-"en_line": 495
+"en_line": 496
 },
 "port_walk:_fill:15": {
 "zh": "轧机就站在区里：钢坯从左边进，钢板 / 型材从右边出",
 "en": "The mill stands here: billet in on the left, plate out on the right",
 "file": "port_walk.gd",
-"line": 496,
+"line": 497,
 "func": "_fill",
-"en_line": 496
+"en_line": 497
 },
 "port_walk:_fill:16": {
 "zh": "往上飞到观察廊上方的走廊",
 "en": "UP INTO THE CORRIDOR OVER THE GALLERY",
 "file": "port_walk.gd",
-"line": 498,
+"line": 499,
 "func": "_fill",
-"en_line": 498
+"en_line": 499
 },
 "port_walk:_fill:17": {
 "zh": "机器都在廊道下面干活；终端是栏杆上的矮控制台，飞到哪台上面往下看就是哪台",
 "en": "The machines work under the gallery; their consoles stand on its railing, each over its machine",
 "file": "port_walk.gd",
-"line": 499,
+"line": 500,
 "func": "_fill",
-"en_line": 499
+"en_line": 500
 },
 "port_walk:_fill:18": {
 "zh": "飞到最左边的炉体控制台，按 %s",
 "en": "TO THE FURNACE CONSOLE AT THE FAR LEFT, PRESS %s",
 "file": "port_walk.gd",
-"line": 501,
+"line": 502,
 "func": "_fill",
-"en_line": 501
+"en_line": 502
 },
 "port_walk:_fill:19": {
 "zh": "炉体控制台打开加工队列：炼什么、先炼哪批都在这里排",
 "en": "It opens the processing queue: what is melted, which batch first",
 "file": "port_walk.gd",
-"line": 502,
+"line": 503,
 "func": "_fill",
-"en_line": 502
+"en_line": 503
 },
 "port_walk:_fill:20": {
 "zh": "按『排一炉』（或按 Enter）",
 "en": "PRESS 'QUEUE A HEAT' (OR ENTER)",
 "file": "port_walk.gd",
-"line": 504,
+"line": 505,
 "func": "_fill",
-"en_line": 504
+"en_line": 505
 },
 "port_walk:_fill:21": {
 "zh": "把仓库里的钢锭排一炉，炉子按队列自己开炉、熔化、浇铸",
 "en": "A heat of the ingots in store; the furnace starts, melts and casts by itself",
 "file": "port_walk.gd",
-"line": 505,
+"line": 506,
 "func": "_fill",
-"en_line": 505
+"en_line": 506
 },
 "port_walk:_fill:22": {
 "zh": "加工队列 · 按『排一炉』（或按 Enter）",
 "en": "THE QUEUE · PRESS 'QUEUE A HEAT' (OR ENTER)",
 "file": "port_walk.gd",
-"line": 507,
+"line": 508,
 "func": "_fill",
-"en_line": 507
+"en_line": 508
 },
 "port_walk:_fill:23": {
 "zh": "回到炉体控制台按 %s，再按『排一炉』",
 "en": "BACK TO THE FURNACE CONSOLE: %s, THEN 'QUEUE A HEAT'",
 "file": "port_walk.gd",
-"line": 509,
+"line": 510,
 "func": "_fill",
-"en_line": 509
+"en_line": 510
 },
 "port_walk:_fill:25": {
 "zh": "叉车和吊轨车把钢锭送到炉口，电弧炉起弧熔化，再出钢浇进模具；不用按什么，面板关掉也行",
 "en": "The forklift and the trolley bring the ingots, the arcs melt them, the melt is cast; nothing to press",
 "file": "port_walk.gd",
-"line": 513,
+"line": 514,
 "func": "_fill",
-"en_line": 513
+"en_line": 514
 },
 "port_walk:_fill:26": {
 "zh": "出坞：沿青色箭头往上飞",
 "en": "OUT: UP ALONG THE CYAN ARROWS",
 "file": "port_walk.gd",
-"line": 515,
+"line": 516,
 "func": "_fill",
-"en_line": 515
+"en_line": 516
 },
 "port_walk:_fill:27": {
 "zh": "船坞空着时，顶上这道门通向整个港区",
 "en": "With the berth empty, this gate opens on the port",
 "file": "port_walk.gd",
-"line": 516,
+"line": 517,
 "func": "_fill",
-"en_line": 516
+"en_line": 517
 },
 "port_walk:_fill:28": {
 "zh": "沿走廊飞进中央转运环",
 "en": "UP THE CORRIDOR INTO THE RING",
 "file": "port_walk.gd",
-"line": 518,
+"line": 519,
 "func": "_fill",
-"en_line": 518
+"en_line": 519
 },
 "port_walk:_fill:29": {
 "zh": "港的中心，六条走廊通六个区",
 "en": "The port's heart: six corridors, six districts",
 "file": "port_walk.gd",
-"line": 519,
+"line": 520,
 "func": "_fill",
-"en_line": 519
+"en_line": 520
 },
 "port_walk:_fill:30": {
 "zh": "飞到中央环的接驳站",
 "en": "TO THE SHUTTLE STOP",
 "file": "port_walk.gd",
-"line": 521,
+"line": 522,
 "func": "_fill",
-"en_line": 521
+"en_line": 522
 },
 "port_walk:_fill:31": {
 "zh": "出坞：飞到闸门外的拆船区接驳站",
 "en": "OUT: TO THE BERTH'S SHUTTLE STOP BY THE GATE",
 "file": "port_walk.gd",
-"line": 524,
+"line": 525,
 "func": "_fill",
-"en_line": 524
+"en_line": 525
 },
 "port_walk:_fill:32": {
 "zh": "坐接驳车去各区最省事；想自己沿走廊飞也可以",
 "en": "The shuttle is the easy way round; flying the corridors is up to you",
 "file": "port_walk.gd",
-"line": 525,
+"line": 526,
 "func": "_fill",
-"en_line": 525
+"en_line": 526
 },
 "port_walk:_fill:33": {
 "zh": "接驳车走走廊和中央环，不撞墙，约 10 秒到任何区",
 "en": "The shuttle runs every corridor: no walls, ~10 s anywhere",
 "file": "port_walk.gd",
-"line": 526,
+"line": 527,
 "func": "_fill",
-"en_line": 526
+"en_line": 527
 },
 "port_walk:_fill:34": {
 "zh": "坐车去%s：站台按 %s，点“%s”",
 "en": "RIDE TO THE %s: %s AT THE STOP, CLICK '%s'",
 "file": "port_walk.gd",
-"line": 528,
+"line": 529,
 "func": "_fill",
-"en_line": 528
+"en_line": 529
 },
 "port_walk:_fill:35": {
 "zh": "车不在这站会先开过来接你",
 "en": "If the car is elsewhere it comes for you first",
 "file": "port_walk.gd",
-"line": 529,
+"line": 530,
 "func": "_fill",
-"en_line": 529
+"en_line": 530
 },
 "port_walk:_fill:37": {
 "zh": "什么都不用按，到站自己下车",
 "en": "Nothing to press; you step off at the stop",
 "file": "port_walk.gd",
-"line": 532,
+"line": 533,
 "func": "_fill",
-"en_line": 532
+"en_line": 533
 },
 "port_walk:_fill:38": {
 "zh": "下车往下，穿过闸门回七号船坞",
 "en": "DOWN THROUGH THE GATE TO BERTH 07",
 "file": "port_walk.gd",
-"line": 534,
+"line": 535,
 "func": "_fill",
-"en_line": 534
+"en_line": 535
 },
 "port_walk:_fill:39": {
 "zh": "以后进出港区：拆船区站上车，下车就是船坞",
 "en": "In and out of the port: the stop in the gate is the berth's own",
 "file": "port_walk.gd",
-"line": 535,
+"line": 536,
 "func": "_fill",
-"en_line": 535
+"en_line": 536
 },
 "port_walk:_fill:40": {
 "zh": "按 %s 打开终端，点“船坞”",
 "en": "PRESS %s, OPEN 'BERTH'",
 "file": "port_walk.gd",
-"line": 537,
+"line": 538,
 "func": "_fill",
-"en_line": 537
+"en_line": 538
 },
 "port_walk:_fill:41": {
 "zh": "看看船坞哪些设施坏了、修好有什么用",
 "en": "See what in the berth is broken, and what mending it does",
 "file": "port_walk.gd",
-"line": 538,
+"line": 539,
 "func": "_fill",
-"en_line": 538
+"en_line": 539
 },
 "port_walk:_fill:42": {
 "zh": "船坞 · 设施",
 "en": "BERTH · FACILITIES",
 "file": "port_walk.gd",
-"line": 540,
+"line": 541,
 "func": "_fill",
-"en_line": 540
+"en_line": 541
 },
 "port_walk:_fill:43": {
 "zh": "标红的设施是坏的：修好照明看得清、修好熔炉收得多。修要零件和钱，零件从拆下的设备里来。看完按 Esc 关掉",
 "en": "Red is broken: lights let you see, the furnace pays more. Mending takes parts and money; parts come from the machines you strip. Esc closes",
 "file": "port_walk.gd",
-"line": 541,
+"line": 542,
 "func": "_fill",
-"en_line": 541
+"en_line": 542
 },
 "port_walk:_fill:45": {
 "zh": "拆船赚钱 → 到各区修港 → 港修好了拆得更快、卖得更贵",
 "en": "Strip for money → mend the districts → faster, better paid",
 "file": "port_walk.gd",
-"line": 544,
+"line": 545,
 "func": "_fill",
-"en_line": 544
+"en_line": 545
 },
 "port_walk:_fill:50": {
 "zh": "看高亮框：点一下或按空格看下一条（还有 %d 条）",
 "en": "THE FRAMED PART: CLICK OR SPACE FOR THE NEXT (%d LEFT)",
 "file": "port_walk.gd",
-"line": 548,
+"line": 549,
 "func": "_fill",
-"en_line": 548
+"en_line": 549
 },
 "port_walk:_fill:51": {
 "zh": "看完了：按 Esc 关掉",
 "en": "DONE: PRESS ESC TO CLOSE",
 "file": "port_walk.gd",
-"line": 548,
+"line": 549,
 "func": "_fill",
-"en_line": 548
+"en_line": 549
 },
 "port_walk:_fill:52": {
 "zh": "找不到？跟着无人机旁的箭头飞",
 "en": "CAN'T FIND IT? FOLLOW THE ARROW BY THE DRONE",
 "file": "port_walk.gd",
-"line": 552,
+"line": 553,
 "func": "_fill",
-"en_line": 552
+"en_line": 553
 },
 "port_walk:_callouts:2": {
 "zh": "看完按 Esc 或点这里关掉",
 "en": "Esc or this closes it",
 "file": "port_walk.gd",
-"line": 569,
+"line": 570,
 "func": "_callouts",
-"en_line": 569
+"en_line": 570
 },
 "port_walk:_callouts:4": {
 "zh": "修下一期要的东西，打勾的是够了",
 "en": "What the next stage takes; ticked when you have it",
 "file": "port_walk.gd",
-"line": 571,
+"line": 572,
 "func": "_callouts",
-"en_line": 571
+"en_line": 572
 },
 "port_walk:_callouts:6": {
 "zh": "用仓库里的零件和钢锭修，花钱少",
 "en": "Parts and ingots from stock: cheaper",
 "file": "port_walk.gd",
-"line": 572,
+"line": 573,
 "func": "_callouts",
-"en_line": 572
+"en_line": 573
 },
 "port_walk:_callouts:8": {
 "zh": "不用材料，花钱多",
 "en": "No materials: dearer",
 "file": "port_walk.gd",
-"line": 573,
+"line": 574,
 "func": "_callouts",
-"en_line": 573
+"en_line": 574
 },
 "port_walk:_callouts:9": {
 "zh": "本区第几期、下一期还缺什么",
 "en": "This district's stage and what the next lacks",
 "file": "port_walk.gd",
-"line": 576,
+"line": 577,
 "func": "_callouts",
-"en_line": 576
+"en_line": 577
 },
 "port_walk:_callouts:10": {
 "zh": "七个区一眼看完：几期、能用什么",
 "en": "All seven districts at a glance",
 "file": "port_walk.gd",
-"line": 577,
+"line": 578,
 "func": "_callouts",
-"en_line": 577
+"en_line": 578
 },
 "port_walk:_callouts:12": {
 "zh": "打开合同与建设的大终端",
 "en": "The big terminal: contracts and works",
 "file": "port_walk.gd",
-"line": 578,
+"line": 579,
 "func": "_callouts",
-"en_line": 578
+"en_line": 579
 },
 "port_walk:_callouts:13": {
 "zh": "本区第几期、下一期还缺什么",
 "en": "This district's stage and what the next lacks",
 "file": "port_walk.gd",
-"line": 580,
+"line": 581,
 "func": "_callouts",
-"en_line": 580
+"en_line": 581
 },
 "port_walk:_callouts:14": {
 "zh": "全港发电、用电，谁在用",
 "en": "The port's power: made, used, by whom",
 "file": "port_walk.gd",
-"line": 581,
+"line": 582,
 "func": "_callouts",
-"en_line": 581
+"en_line": 582
 },
 "port_walk:_callouts:15": {
 "zh": "动力区控制屏",
 "en": "POWER CONTROL",
 "file": "port_walk.gd",
-"line": 582,
+"line": 583,
 "func": "_callouts",
-"en_line": 582
+"en_line": 583
 },
 "port_walk:_callouts:16": {
 "zh": "下一步点它，进控制屏",
 "en": "Click it next: the control screen",
 "file": "port_walk.gd",
-"line": 582,
+"line": 583,
 "func": "_callouts",
-"en_line": 582
+"en_line": 583
 },
 "port_walk:_callouts:17": {
 "zh": "本区第几期、下一期还缺什么",
 "en": "This district's stage and what the next lacks",
 "file": "port_walk.gd",
-"line": 584,
+"line": 585,
 "func": "_callouts",
-"en_line": 584
+"en_line": 585
 },
 "port_walk:_callouts:18": {
 "zh": "拖船泊位、能拖多长的船",
 "en": "The tug berths, the longest ship they take",
 "file": "port_walk.gd",
-"line": 585,
+"line": 586,
 "func": "_callouts",
-"en_line": 585
+"en_line": 586
 },
 "port_walk:_callouts:20": {
 "zh": "替别人拖货：不拆船也赚钱",
 "en": "Tow for others: money without a ship",
 "file": "port_walk.gd",
-"line": 586,
+"line": 587,
 "func": "_callouts",
-"en_line": 586
+"en_line": 587
 },
 "port_walk:_callouts:21": {
 "zh": "本区第几期、下一期还缺什么",
 "en": "This district's stage and what the next lacks",
 "file": "port_walk.gd",
-"line": 588,
+"line": 589,
 "func": "_callouts",
-"en_line": 588
+"en_line": 589
 },
 "port_walk:_callouts:22": {
 "zh": "库存、在途、叉车",
 "en": "Stock, transit, forklifts",
 "file": "port_walk.gd",
-"line": 589,
+"line": 590,
 "func": "_callouts",
-"en_line": 589
+"en_line": 590
 },
 "port_walk:_callouts:23": {
 "zh": "第三方仓储",
 "en": "THIRD-PARTY",
 "file": "port_walk.gd",
-"line": 590,
+"line": 591,
 "func": "_callouts",
-"en_line": 590
+"en_line": 591
 },
 "port_walk:_callouts:24": {
 "zh": "替别人存货收租金",
 "en": "Store others' goods for rent",
 "file": "port_walk.gd",
-"line": 590,
+"line": 591,
 "func": "_callouts",
-"en_line": 590
+"en_line": 591
 },
 "port_walk:_callouts:25": {
 "zh": "左边货架 A1",
 "en": "Racks A1",
 "file": "port_walk.gd",
-"line": 591,
+"line": 592,
 "func": "_callouts",
-"en_line": 591
+"en_line": 592
 },
 "port_walk:_callouts:26": {
 "zh": "货架在区里两侧，到货架下按 E；客户货箱在收货台，自己搬",
 "en": "The racks are at the racks; clients' crates on the counter, carried by you",
 "file": "port_walk.gd",
-"line": 591,
+"line": 592,
 "func": "_callouts",
-"en_line": 591
+"en_line": 592
 },
 "port_walk:_callouts:27": {
 "zh": "本区第几期、下一期还缺什么",
 "en": "This district's stage and what the next lacks",
 "file": "port_walk.gd",
-"line": 593,
+"line": 594,
 "func": "_callouts",
-"en_line": 593
+"en_line": 594
 },
 "port_walk:_callouts:28": {
 "zh": "上门的客人",
 "en": "AT THE PIER",
 "file": "port_walk.gd",
-"line": 594,
+"line": 595,
 "func": "_callouts",
-"en_line": 594
+"en_line": 595
 },
 "port_walk:_callouts:29": {
 "zh": "码头边想买卖东西的小船",
 "en": "Little ships at the pier, buying and selling",
 "file": "port_walk.gd",
-"line": 594,
+"line": 595,
 "func": "_callouts",
-"en_line": 594
+"en_line": 595
 },
 "port_walk:_callouts:31": {
 "zh": "三家公司长期收什么、给什么价",
 "en": "What the three companies keep buying",
 "file": "port_walk.gd",
-"line": 595,
+"line": 596,
 "func": "_callouts",
-"en_line": 595
+"en_line": 596
 },
 "port_walk:_callouts:32": {
 "zh": "打开交易行",
 "en": "OPEN THE EXCHANGE",
 "file": "port_walk.gd",
-"line": 596,
+"line": 597,
 "func": "_callouts",
-"en_line": 596
+"en_line": 597
 },
 "port_walk:_callouts:33": {
 "zh": "下一步点它，进交易行",
 "en": "Click it next: the exchange",
 "file": "port_walk.gd",
-"line": 596,
+"line": 597,
 "func": "_callouts",
-"en_line": 596
+"en_line": 597
 },
 "port_walk:_callouts:34": {
 "zh": "本区第几期、下一期还缺什么",
 "en": "This district's stage and what the next lacks",
 "file": "port_walk.gd",
-"line": 598,
+"line": 599,
 "func": "_callouts",
-"en_line": 598
+"en_line": 599
 },
 "port_walk:_callouts:35": {
 "zh": "轧机在本区中部",
 "en": "The mill stands",
 "file": "port_walk.gd",
-"line": 599,
+"line": 600,
 "func": "_callouts",
-"en_line": 599
+"en_line": 600
 },
 "port_walk:_callouts:36": {
 "zh": "轧机不在这里开：飞到轧机操作台",
 "en": "The mill is run at the mill: fly to its pedestal",
 "file": "port_walk.gd",
-"line": 599,
+"line": 600,
 "func": "_callouts",
-"en_line": 599
+"en_line": 600
 },
 "port_walk:_callouts:38": {
 "zh": "抽回来的气做成液氧卖",
 "en": "Recovered air made into LOX to sell",
 "file": "port_walk.gd",
-"line": 600,
+"line": 601,
 "func": "_callouts",
-"en_line": 600
+"en_line": 601
 },
 "port_walk:_callouts:39": {
 "zh": "单线图：电从机组到每条线路",
 "en": "The lines: from the sets to every feeder",
 "file": "port_walk.gd",
-"line": 602,
+"line": 603,
 "func": "_callouts",
-"en_line": 602
+"en_line": 603
 },
 "port_walk:_callouts:40": {
 "zh": "每台机组的出力、转速、冷却",
 "en": "Each set: output, speed, coolant",
 "file": "port_walk.gd",
-"line": 603,
+"line": 604,
 "func": "_callouts",
-"en_line": 603
+"en_line": 604
 },
 "port_walk:_callouts:41": {
 "zh": "最近 5 分钟用电 vs 容量",
 "en": "Five minutes of load against capacity",
 "file": "port_walk.gd",
-"line": 604,
+"line": 605,
 "func": "_callouts",
-"en_line": 604
+"en_line": 605
 },
 "port_walk:_callouts:42": {
 "zh": "熔炉最多能用多少电",
 "en": "How much the furnace may draw",
 "file": "port_walk.gd",
-"line": 605,
+"line": 606,
 "func": "_callouts",
-"en_line": 605
+"en_line": 606
 },
 "port_walk:_callouts:43": {
 "zh": "电不够时谁先用",
 "en": "Who comes first when power is short",
 "file": "port_walk.gd",
-"line": 606,
+"line": 607,
 "func": "_callouts",
-"en_line": 606
+"en_line": 607
 },
 "port_walk:_callouts:44": {
 "zh": "配方：点一块，下一次就轧它",
 "en": "Recipe: pick one, the next pass rolls it",
 "file": "port_walk.gd",
-"line": 608,
+"line": 609,
 "func": "_callouts",
-"en_line": 608
+"en_line": 609
 },
 "port_walk:_callouts:45": {
 "zh": "进料：仓库里的钢坯，每次 1 t",
 "en": "In: billet in stock, a tonne a pass",
 "file": "port_walk.gd",
-"line": 609,
+"line": 610,
 "func": "_callouts",
-"en_line": 609
+"en_line": 610
 },
 "port_walk:_callouts:46": {
 "zh": "这一次轧到哪了、还剩几秒",
 "en": "This pass: how far, how long",
 "file": "port_walk.gd",
-"line": 610,
+"line": 611,
 "func": "_callouts",
-"en_line": 610
+"en_line": 611
 },
 "port_walk:_callouts:47": {
 "zh": "出料：轧好的进仓库",
 "en": "Out: rolled goods go to the warehouse",
 "file": "port_walk.gd",
-"line": 611,
+"line": 612,
 "func": "_callouts",
-"en_line": 611
+"en_line": 612
 },
 "port_walk:_callouts:48": {
 "zh": "状态灯：在轧 / 等钢坯 / 缺电，原因写在这",
 "en": "The lamp: rolling, waiting or short, and why",
 "file": "port_walk.gd",
-"line": 612,
+"line": 613,
 "func": "_callouts",
-"en_line": 612
+"en_line": 613
 },
 "port_walk:_callouts:49": {
 "zh": "连续轧：有钢坯就一直轧",
 "en": "Roll on: keeps rolling while there is billet",
 "file": "port_walk.gd",
-"line": 613,
+"line": 614,
 "func": "_callouts",
-"en_line": 613
+"en_line": 614
 },
 "port_walk:_callouts:50": {
 "zh": "这里展示公司物品，导览结束后可点击查看详情。",
 "en": "Company goods are here; select one for details after the tour.",
 "file": "port_walk.gd",
-"line": 616,
+"line": 617,
 "func": "_callouts",
-"en_line": 616
+"en_line": 617
 },
 "port_walk:_callouts:51": {
 "zh": "上方分类可以筛选原料、设备等物品。",
 "en": "Use the categories above to filter materials and equipment.",
 "file": "port_walk.gd",
-"line": 617,
+"line": 618,
 "func": "_callouts",
-"en_line": 617
+"en_line": 618
 },
 "port_walk:_callouts:52": {
 "zh": "看完按 Esc 或点这里关闭，继续导览。",
 "en": "Press Esc or close here to continue the tour.",
 "file": "port_walk.gd",
-"line": 618,
+"line": 619,
 "func": "_callouts",
-"en_line": 618
+"en_line": 619
 },
 "port_walk:_callouts:53": {
 "zh": "这一边的四排：放什么、上面有什么",
 "en": "This side's four rows: their use, what is on them",
 "file": "port_walk.gd",
-"line": 619,
+"line": 620,
 "func": "_callouts",
-"en_line": 619
+"en_line": 620
 },
 "port_walk:_callouts:55": {
 "zh": "这一排现在放着的货和吨数",
 "en": "What is on the row now, in tonnes",
 "file": "port_walk.gd",
-"line": 620,
+"line": 621,
 "func": "_callouts",
-"en_line": 620
+"en_line": 621
 },
 "port_walk:_callouts:57": {
 "zh": "买原料和钢材",
 "en": "Buy feed and steel",
 "file": "port_walk.gd",
-"line": 622,
+"line": 623,
 "func": "_callouts",
-"en_line": 622
+"en_line": 623
 },
 "port_walk:_callouts:59": {
 "zh": "卖钢锭、气体、拆下的设备",
 "en": "Sell ingots, gases, stripped machines",
 "file": "port_walk.gd",
-"line": 623,
+"line": 624,
 "func": "_callouts",
-"en_line": 623
+"en_line": 624
 },
 "port_walk:_callouts:61": {
 "zh": "每一笔买卖和挂单",
 "en": "Every trade and listing",
 "file": "port_walk.gd",
-"line": 624,
+"line": 625,
 "func": "_callouts",
-"en_line": 624
+"en_line": 625
 },
 "port_walk:_callouts:63": {
 "zh": "在路上的货",
 "en": "Goods on their way",
 "file": "port_walk.gd",
-"line": 625,
+"line": 626,
 "func": "_callouts",
-"en_line": 625
+"en_line": 626
 },
 "port_walk:_callouts:65": {
 "zh": "买二手船来拆",
 "en": "Buy hulks to strip",
 "file": "port_walk.gd",
-"line": 626,
+"line": 627,
 "func": "_callouts",
-"en_line": 626
+"en_line": 627
 },
 "port_walk:_callouts:67": {
 "zh": "用仓库里的零件和钢锭修，花钱少",
 "en": "Parts and ingots from stock: cheaper",
 "file": "port_walk.gd",
-"line": 628,
+"line": 629,
 "func": "_callouts",
-"en_line": 628
+"en_line": 629
 },
 "port_walk:_callouts:69": {
 "zh": "不用材料，花钱多",
 "en": "No materials: dearer",
 "file": "port_walk.gd",
-"line": 629,
+"line": 630,
 "func": "_callouts",
-"en_line": 629
+"en_line": 630
 },
 "port_walk:_draw_overlay:1": {
 "zh": "点一下 / 空格：下一条",
 "en": "CLICK / SPACE: NEXT",
 "file": "port_walk.gd",
-"line": 711,
+"line": 712,
 "func": "_draw_overlay",
-"en_line": 711
+"en_line": 712
 },
 "port_walk:_done_line:1": {
 "zh": "%s工程台用过了：修这个区就来这里",
 "en": "%s desk done: this is where the district is mended",
 "file": "port_walk.gd",
-"line": 803,
+"line": 804,
 "func": "_done_line",
-"en_line": 803
+"en_line": 804
 },
 "port_walk:_done_line:3": {
 "zh": "上了观察廊：沿这条走廊能直飞过全场",
 "en": "On the gallery: this corridor runs the whole hall",
 "file": "port_walk.gd",
-"line": 805,
+"line": 806,
 "func": "_done_line",
-"en_line": 805
+"en_line": 806
 },
 "port_walk:_done_line:4": {
 "zh": "加工队列开了：以后在这里排产",
 "en": "The queue is open: this is where the work is ordered",
 "file": "port_walk.gd",
-"line": 806,
+"line": 807,
 "func": "_done_line",
-"en_line": 806
+"en_line": 807
 },
 "port_walk:_done_line:5": {
 "zh": "排上了：炉子会自己开炉",
 "en": "Queued: the furnace starts by itself",
 "file": "port_walk.gd",
-"line": 807,
+"line": 808,
 "func": "_done_line",
-"en_line": 807
+"en_line": 808
 },
 "port_walk:_done_line:6": {
 "zh": "炉子在熔化了：出钢后钢坯自己回仓库",
 "en": "Melting: the billets go back to the stores by themselves",
 "file": "port_walk.gd",
-"line": 808,
+"line": 809,
 "func": "_done_line",
-"en_line": 808
+"en_line": 809
 },
 "port_walk:_done_line:8": {
 "zh": "出坞了：船坞空着时从这道门进出港区",
 "en": "Out: with the berth empty, this gate is the way into the port",
 "file": "port_walk.gd",
-"line": 810,
+"line": 811,
 "func": "_done_line",
-"en_line": 810
+"en_line": 811
 },
 "port_walk:_done_line:9": {
 "zh": "到中央环了",
 "en": "In the ring",
 "file": "port_walk.gd",
-"line": 811,
+"line": 812,
 "func": "_done_line",
-"en_line": 811
+"en_line": 812
 },
 "port_walk:_done_line:10": {
 "zh": "这就是站台：按 %s 叫车",
 "en": "This is a stop: %s calls the car",
 "file": "port_walk.gd",
-"line": 812,
+"line": 813,
 "func": "_done_line",
-"en_line": 812
+"en_line": 813
 },
 "port_walk:_done_line:11": {
 "zh": "到中央转运环了：中间是转盘，六条走廊通六个区",
 "en": "At the ring: the carousel in the middle, six corridors out",
 "file": "port_walk.gd",
-"line": 816,
+"line": 817,
 "func": "_done_line",
-"en_line": 816
+"en_line": 817
 },
 "port_walk:_done_line:12": {
 "zh": "到%s了：站就在区门里，业务终端在旁边",
 "en": "At the %s: the stop is inside the door, the console beside it",
 "file": "port_walk.gd",
-"line": 817,
+"line": 818,
 "func": "_done_line",
-"en_line": 817
+"en_line": 818
 },
 "port_walk:_done_line:13": {
 "zh": "回到船坞了",
 "en": "Back in the berth",
 "file": "port_walk.gd",
-"line": 818,
+"line": 819,
 "func": "_done_line",
-"en_line": 818
+"en_line": 819
 },
 "port_walk:_done_line:14": {
 "zh": "船坞的修缮在终端“船坞”页",
 "en": "The berth's repairs are on the terminal's BERTH page",
 "file": "port_walk.gd",
-"line": 819,
+"line": 820,
 "func": "_done_line",
-"en_line": 819
+"en_line": 820
 },
 "txt:end_warn": {
 "zh": "确认要结束？剩下的结构会按废料处理，收益比你自己拆低。",
@@ -11707,41 +11707,41 @@
 "zh": "轧机轧好一吨，送回仓库了。",
 "en": "THE MILL ROLLED A TONNE: BACK ON THE RACKS.",
 "file": "game.gd",
-"line": 1027,
+"line": 1028,
 "func": "_process",
-"en_line": 1027
+"en_line": 1028
 },
 "game:_process:2": {
 "zh": "拖船充满电了：%s",
 "en": "TUGS CHARGED: %s",
 "file": "game.gd",
-"line": 1030,
+"line": 1031,
 "func": "_process",
-"en_line": 1030
+"en_line": 1031
 },
 "game:_process:3": {
 "zh": "挂牌的光帆卷卖出了：%s",
 "en": "LISTED SAIL ROLLS SOLD: %s",
 "file": "game.gd",
-"line": 1034,
+"line": 1035,
 "func": "_process",
-"en_line": 1034
+"en_line": 1035
 },
 "game:start_port_walk:1": {
 "zh": "船坞空着时才能出去走港区：先把这艘船拆完。",
 "en": "The port opens only on an empty berth: finish this ship first.",
 "file": "game.gd",
-"line": 1773,
+"line": 1774,
 "func": "start_port_walk",
-"en_line": 1773
+"en_line": 1774
 },
 "game:open_tools_text:1": {
 "zh": "飞行，先不用工具",
 "en": "flying, no tool yet",
 "file": "game.gd",
-"line": 1835,
+"line": 1836,
 "func": "open_tools_text",
-"en_line": 1835
+"en_line": 1836
 },
 "growth:顶层:8": {
 "zh": "承受的所有伤害；越低越耐用。",
@@ -19388,16 +19388,16 @@
 "en_line": 415
 },
 "console_art:summary:3": {
-"zh": "岸电 %.1f MW",
-"en": "SHORE %.1f MW",
+"zh": "电池 %.1f MW",
+"en": "BATTERIES %.1f MW",
 "file": "console_art.gd",
 "line": 416,
 "func": "summary",
 "en_line": 416
 },
 "console_art:summary:4": {
-"zh": "岸电 未用",
-"en": "SHORE OFF",
+"zh": "电池 未用",
+"en": "BATTERIES IDLE",
 "file": "console_art.gd",
 "line": 416,
 "func": "summary",
@@ -19879,343 +19879,343 @@
 "zh": "展开或收起动力区的详细数字",
 "en": "Show or hide the power district's figures",
 "file": "district_panel.gd",
-"line": 75,
+"line": 78,
 "func": "_ready",
-"en_line": 75
+"en_line": 78
 },
 "district_panel:_ready:8": {
 "zh": "轧机在本区中部（排烟管右边）：飞到它下面的操作台按 %s，选配方、开轧。",
 "en": "The mill stands mid-district, right of the flue: press %s at its pedestal to pick a recipe and roll.",
 "file": "district_panel.gd",
-"line": 84,
+"line": 87,
 "func": "_ready",
-"en_line": 84
+"en_line": 87
 },
 "district_panel:_ready:9": {
 "zh": "气体线 · 回收 → 分离 → 液氧 → 补给",
 "en": "GAS LINE · RECOVER → SEPARATE → LOX → SUPPLY",
 "file": "district_panel.gd",
-"line": 87,
+"line": 90,
 "func": "_ready",
-"en_line": 87
+"en_line": 90
 },
 "district_panel:_ready:11": {
 "zh": "第三方仓储",
 "en": "THIRD-PARTY STORAGE",
 "file": "district_panel.gd",
-"line": 93,
+"line": 96,
 "func": "_ready",
-"en_line": 93
+"en_line": 96
 },
 "district_panel:_ready:12": {
 "zh": "上门的客人",
 "en": "AT THE PIER",
 "file": "district_panel.gd",
-"line": 99,
+"line": 102,
 "func": "_ready",
-"en_line": 99
+"en_line": 102
 },
 "district_panel:_ready:13": {
 "zh": "三大公司的长期合同",
 "en": "THE COMPANIES' STANDING CONTRACTS",
 "file": "district_panel.gd",
-"line": 102,
+"line": 105,
 "func": "_ready",
-"en_line": 102
+"en_line": 105
 },
 "district_panel:_ready:15": {
 "zh": "在船坞的仓库终端或货架口按 %s，或在哪都按 F3，打开的都是同一个仓库。货物自动上架。",
 "en": "%s at the berth's stores terminal or a rack, or F3 anywhere: the same stores page. Goods are put away by themselves.",
 "file": "district_panel.gd",
-"line": 110,
+"line": 113,
 "func": "_ready",
-"en_line": 110
+"en_line": 113
 },
 "district_panel:_ready:17": {
 "zh": "货架口按 %s 开（左边货架 A1–A4，右边 B1–B4）",
 "en": "Racks A1–A4 left, B1–B4 right: %s at a rack's mouth",
 "file": "district_panel.gd",
-"line": 113,
+"line": 116,
 "func": "_ready",
-"en_line": 113
+"en_line": 116
 },
 "district_panel:_ready:18": {
 "zh": "飞到货架下面的货架口按 %s，只开那一边。客户的货箱在舱口左边的收货台。",
 "en": "%s at a rack's mouth opens that side only. Clients' crates come to the counter left of the hatch.",
 "file": "district_panel.gd",
-"line": 114,
+"line": 117,
 "func": "_ready",
-"en_line": 114
+"en_line": 117
 },
 "district_panel:_ready:19": {
 "zh": "关闭 [Esc]",
 "en": "CLOSE [Esc]",
 "file": "district_panel.gd",
-"line": 119,
+"line": 122,
 "func": "_ready",
-"en_line": 119
+"en_line": 122
 },
 "district_panel:_subtitle:1": {
 "zh": "全港供电 · 高耗能设施的电源",
 "en": "GRID POWER FOR THE HEAVY FACILITIES",
 "file": "district_panel.gd",
-"line": 125,
+"line": 128,
 "func": "_subtitle",
-"en_line": 125
+"en_line": 128
 },
 "district_panel:_subtitle:2": {
 "zh": "拖船调度 · 大船进港",
 "en": "TUG DISPATCH · BIG SHIPS IN",
 "file": "district_panel.gd",
-"line": 126,
+"line": 129,
 "func": "_subtitle",
-"en_line": 126
+"en_line": 129
 },
 "district_panel:_subtitle:3": {
 "zh": "分选与炉次 · 原料变产品",
 "en": "SORTING AND HEATS · RAW TO PRODUCT",
 "file": "district_panel.gd",
-"line": 127,
+"line": 130,
 "func": "_subtitle",
-"en_line": 127
+"en_line": 130
 },
 "district_panel:_subtitle:4": {
 "zh": "交易行与客户 · 买入卖出",
 "en": "EXCHANGE AND CLIENTS · BUY AND SELL",
 "file": "district_panel.gd",
-"line": 128,
+"line": 131,
 "func": "_subtitle",
-"en_line": 128
+"en_line": 131
 },
 "district_panel:_subtitle:5": {
 "zh": "公司仓库 · 库存与在途",
 "en": "COMPANY WAREHOUSE · STOCK AND TRANSIT",
 "file": "district_panel.gd",
-"line": 129,
+"line": 132,
 "func": "_subtitle",
-"en_line": 129
+"en_line": 132
 },
 "district_panel:_subtitle:6": {
 "zh": "港口总览 · 七区、现金、待办",
 "en": "PORT OVERVIEW · DISTRICTS, CASH, TO DO",
 "file": "district_panel.gd",
-"line": 130,
+"line": 133,
 "func": "_subtitle",
-"en_line": 130
+"en_line": 133
 },
 "district_panel:_actions:1": {
 "zh": "打开交易行 · 买入 / 出售",
 "en": "OPEN THE EXCHANGE · BUY / SELL",
 "file": "district_panel.gd",
-"line": 138,
+"line": 141,
 "func": "_actions",
-"en_line": 138
+"en_line": 141
 },
 "district_panel:_actions:2": {
 "zh": "关掉这里，打开交易行：买原料、卖产品",
 "en": "Close this and open the exchange: buy feed, sell products",
 "file": "district_panel.gd",
-"line": 138,
+"line": 141,
 "func": "_actions",
-"en_line": 138
+"en_line": 141
 },
 "district_panel:_actions:3": {
 "zh": "动力区控制屏 · 单线图 / 仪表 / 手动调度",
 "en": "POWER CONTROL SCREEN · LINES / GAUGES / DISPATCH",
 "file": "district_panel.gd",
-"line": 144,
+"line": 147,
 "func": "_actions",
-"en_line": 144
+"en_line": 147
 },
 "district_panel:_actions:4": {
 "zh": "关掉这里，打开供电控制屏：看谁在用电、排顺序、暂停电弧炉、买外购电",
 "en": "Close this and open the power screen: who uses power, the order, the furnace, bought power",
 "file": "district_panel.gd",
-"line": 144,
+"line": 147,
 "func": "_actions",
-"en_line": 144
+"en_line": 147
 },
 "district_panel:_actions:5": {
 "zh": "船坞终端（合同与建设）",
 "en": "BERTH TERMINAL (CONTRACTS AND WORKS)",
 "file": "district_panel.gd",
-"line": 146,
+"line": 149,
 "func": "_actions",
-"en_line": 146
+"en_line": 149
 },
 "district_panel:_actions:6": {
 "zh": "关掉这里，打开船坞终端：找船接单、报修、建设",
 "en": "Close this and open the berth terminal: ships, contracts, repairs, building",
 "file": "district_panel.gd",
-"line": 146,
+"line": 149,
 "func": "_actions",
-"en_line": 146
+"en_line": 149
 },
 "district_panel:_fill_repair:1": {
 "zh": "两期都修好了。",
 "en": "BOTH STAGES DONE.",
 "file": "district_panel.gd",
-"line": 184,
+"line": 187,
 "func": "_fill_repair",
-"en_line": 184
+"en_line": 187
 },
 "district_panel:_fill_repair:2": {
 "zh": "付钱修到下一阶，立刻开工；修好后本区多一阶的能力",
 "en": "Pay and mend it to the next stage, starting now",
 "file": "district_panel.gd",
-"line": 213,
+"line": 216,
 "func": "_fill_repair",
-"en_line": 213
+"en_line": 216
 },
 "district_panel:_fill_repair:3": {
 "zh": "用零件抵一部分钱，修到下一阶，立刻开工",
 "en": "Mend it to the next stage with parts and cash, starting now",
 "file": "district_panel.gd",
-"line": 213,
+"line": 216,
 "func": "_fill_repair",
-"en_line": 213
+"en_line": 216
 },
 "district_panel:_fill_bill:1": {
 "zh": "两期都修好了。",
 "en": "BOTH STAGES DONE.",
 "file": "district_panel.gd",
-"line": 234,
+"line": 237,
 "func": "_fill_bill",
-"en_line": 234
+"en_line": 237
 },
 "district_panel:_fill_bill:2": {
 "zh": "  · 缺的按市价买",
 "en": "  · the rest bought",
 "file": "district_panel.gd",
-"line": 238,
+"line": 241,
 "func": "_fill_bill",
-"en_line": 238
+"en_line": 241
 },
 "district_panel:_fill_bill:4": {
 "zh": "修 %s期  ·  要买 %s",
 "en": "MEND STAGE %d  ·  BUY %s",
 "file": "district_panel.gd",
-"line": 256,
+"line": 259,
 "func": "_fill_bill",
-"en_line": 256
+"en_line": 259
 },
 "district_panel:_fill_bill:5": {
 "zh": "修 %s期  ·  仓库里都有",
 "en": "MEND STAGE %d  ·  ALL IN STORE",
 "file": "district_panel.gd",
-"line": 258,
+"line": 261,
 "func": "_fill_bill",
-"en_line": 258
+"en_line": 261
 },
 "district_panel:_fill_bill:6": {
 "zh": "看明细再确认：自有的先用，缺的按市价买齐，施工队不收工钱",
 "en": "See the bill first: own materials go first, the rest is bought at market, the crew is free",
 "file": "district_panel.gd",
-"line": 262,
+"line": 265,
 "func": "_fill_bill",
-"en_line": 262
+"en_line": 265
 },
 "district_panel:_fill_biz:1": {
 "zh": "要有自家拖船（拖船站 1 阶）才能接外运。",
 "en": "NEEDS A COMPANY TUG (TUG STATION STAGE 1).",
 "file": "district_panel.gd",
-"line": 312,
+"line": 316,
 "func": "_fill_biz",
-"en_line": 312
+"en_line": 316
 },
 "district_panel:_fill_biz:2": {
 "zh": "货运区修好（1 阶）才能替别人存货。",
 "en": "NEEDS THE CARGO DISTRICT (STAGE 1).",
 "file": "district_panel.gd",
-"line": 315,
+"line": 319,
 "func": "_fill_biz",
-"en_line": 315
+"en_line": 319
 },
 "district_panel:_fill_biz:3": {
 "zh": "现在没有新单（隔几分钟会来一张，最多三张）。",
 "en": "NO OFFERS NOW (ONE EVERY FEW MINUTES, THREE AT MOST).",
 "file": "district_panel.gd",
-"line": 319,
+"line": 323,
 "func": "_fill_biz",
-"en_line": 319
+"en_line": 323
 },
 "district_panel:_fill_biz:4": {
 "zh": "%s · %s：%s → %s，%.0f t，约 %d 秒往返 · 运费 %s · 推进剂 %s · 预计净赚 %s%s",
 "en": "%s · %s: %s → %s, %.0f t, ~%d s · FEE %s · PROPELLANT %s · NET ~%s%s",
 "file": "district_panel.gd",
-"line": 324,
+"line": 328,
 "func": "_fill_biz",
-"en_line": 324
+"en_line": 328
 },
 "district_panel:_fill_biz:5": {
 "zh": "（站内储罐抵 %s）",
 "en": " (TANK PAYS %s)",
 "file": "district_panel.gd",
-"line": 324,
+"line": 328,
 "func": "_fill_biz",
-"en_line": 324
+"en_line": 328
 },
 "district_panel:_fill_biz:6": {
 "zh": "（这单不赚钱）",
 "en": " (A LOSS)",
 "file": "district_panel.gd",
-"line": 324,
+"line": 328,
 "func": "_fill_biz",
-"en_line": 324
+"en_line": 328
 },
 "district_panel:_fill_biz:8": {
 "zh": "拖船出发了。",
 "en": "THE TUG IS OFF.",
 "file": "district_panel.gd",
-"line": 326,
+"line": 330,
 "func": "_fill_biz",
-"en_line": 326
+"en_line": 330
 },
 "district_panel:_fill_biz:11": {
 "zh": "%s · %s：%.0f t %s，%d 期，每期 %s，装卸费 %s · 一共 %s",
 "en": "%s · %s: %.0f t, %d PERIODS AT %s, HANDLING %s · %s IN ALL",
 "file": "district_panel.gd",
-"line": 330,
+"line": 334,
 "func": "_fill_biz",
-"en_line": 330
+"en_line": 334
 },
 "district_panel:_fill_biz:13": {
 "zh": "货到了，叉车上架。",
 "en": "IN: THE FORKLIFT PUTS IT AWAY.",
 "file": "district_panel.gd",
-"line": 332,
+"line": 336,
 "func": "_fill_biz",
-"en_line": 332
+"en_line": 336
 },
 "district_panel:_fill_biz:14": {
 "zh": "货箱从舱口升到收货台了（舱口左边）：飞过去按 %s 吊起，搬到亮着的货架口再按 %s 放下。全部上架才开始计租。",
 "en": "THE CRATES ARE ON THE COUNTER LEFT OF THE HATCH: %s LIFTS ONE, %s AT THE LIT RACK SETS IT DOWN. RENT STARTS ONCE ALL ARE UP.",
 "file": "district_panel.gd",
-"line": 332,
+"line": 336,
 "func": "_fill_biz",
-"en_line": 332
+"en_line": 336
 },
 "district_panel:_fill_biz:17": {
 "zh": "进行中 %s · %s 出航 · 还剩约 %d 秒回港",
 "en": "RUNNING %s · %s AWAY · ~%d s",
 "file": "district_panel.gd",
-"line": 337,
+"line": 341,
 "func": "_fill_biz",
-"en_line": 337
+"en_line": 341
 },
 "district_panel:_fill_biz:18": {
 "zh": "寄存 %s · %s %.0f t · %s 排 · %s",
 "en": "STORED %s · %.0f t · ROW %s · %s",
 "file": "district_panel.gd",
-"line": 343,
+"line": 347,
 "func": "_fill_biz",
-"en_line": 343
+"en_line": 347
 },
 "district_panel:_fill_biz:19": {
 "zh": "收货台上还有 %d 箱等你搬（没上架不计租）",
 "en": "",
 "file": "district_panel.gd",
-"line": 343,
+"line": 347,
 "func": "_fill_biz",
 "en_line": 0
 },
@@ -20223,7 +20223,7 @@
 "zh": "叉车上架中",
 "en": "",
 "file": "district_panel.gd",
-"line": 343,
+"line": 347,
 "func": "_fill_biz",
 "en_line": 0
 },
@@ -20231,7 +20231,7 @@
 "zh": "还剩 %d 期",
 "en": "",
 "file": "district_panel.gd",
-"line": 343,
+"line": 347,
 "func": "_fill_biz",
 "en_line": 0
 },
@@ -20239,7 +20239,7 @@
 "zh": "到期，叉车取货中",
 "en": "",
 "file": "district_panel.gd",
-"line": 343,
+"line": 347,
 "func": "_fill_biz",
 "en_line": 0
 },
@@ -20247,569 +20247,833 @@
 "zh": "自动接外运：预计净赚 ≥ %s，同时最多 %d 单%s",
 "en": "AUTO-TAKE: NET ≥ %s, UP TO %d%s",
 "file": "district_panel.gd",
-"line": 349,
+"line": 353,
 "func": "_fill_biz",
-"en_line": 349
+"en_line": 353
 },
 "district_panel:_fill_biz:24": {
 "zh": "，留一艘拖船给自己",
 "en": ", ONE TUG KEPT",
 "file": "district_panel.gd",
-"line": 349,
+"line": 353,
 "func": "_fill_biz",
-"en_line": 349
+"en_line": 353
 },
 "district_panel:_fill_biz:25": {
 "zh": "自动接寄存：每期 ≥ %s，同时最多 %d 批，留 %.0f t 空位",
 "en": "AUTO-TAKE: ≥ %s A PERIOD, UP TO %d LOTS, %.0f t FREE",
 "file": "district_panel.gd",
-"line": 349,
+"line": 353,
 "func": "_fill_biz",
-"en_line": 349
+"en_line": 353
 },
 "district_panel:_fill_biz:27": {
 "zh": "叉车代搬（客户货由叉车上架，不用自己搬）",
 "en": "FORKLIFTS CARRY (CLIENTS' CRATES PUT AWAY FOR YOU)",
 "file": "district_panel.gd",
-"line": 357,
+"line": 361,
 "func": "_fill_biz",
-"en_line": 357
+"en_line": 361
 },
 "district_panel:_fill_biz:28": {
 "zh": "以后的客户货由叉车上架。",
 "en": "FORKLIFTS PUT AWAY FROM NOW.",
 "file": "district_panel.gd",
-"line": 359,
+"line": 363,
 "func": "_fill_biz",
-"en_line": 359
+"en_line": 363
 },
 "district_panel:_fill_biz:29": {
 "zh": "以后的客户货卸在收货台，你来搬。",
 "en": "CRATES COME TO THE COUNTER FOR YOU.",
 "file": "district_panel.gd",
-"line": 359,
+"line": 363,
 "func": "_fill_biz",
-"en_line": 359
+"en_line": 363
 },
 "district_panel:_fill_biz:30": {
 "zh": "停止接新单（在做的照常做完）",
 "en": "NO NEW WORK (RUNNING ONES FINISH)",
 "file": "district_panel.gd",
-"line": 362,
+"line": 366,
 "func": "_fill_biz",
-"en_line": 362
+"en_line": 366
 },
 "district_panel:_fill_biz:32": {
 "zh": "自动接单永远不会：买船、借钱、超出货架容量、在钱不够付成本时接单。",
 "en": "IT NEVER BUYS SHIPS, BORROWS, OVERFILLS THE RACKS, OR TAKES WORK IT CANNOT PAY FOR.",
 "file": "district_panel.gd",
-"line": 366,
+"line": 370,
 "func": "_fill_biz",
-"en_line": 366
+"en_line": 370
 },
 "district_panel:_fill_gas:1": {
 "zh": "气体线没修。在终端“修缮”里修“气体线”（要加工区和动力区各 1 阶）。没修之前，拆船抽回的气照旧在结算时折现。",
 "en": "NO GAS LINE: BUILD IT UNDER REPAIRS. UNTIL THEN A SHIP'S GAS IS CASHED AT SETTLEMENT.",
 "file": "district_panel.gd",
-"line": 400,
+"line": 404,
 "func": "_fill_gas",
-"en_line": 400
+"en_line": 404
 },
 "district_panel:_fill_gas:3": {
 "zh": " · 生命支持检测中",
 "en": " · TESTING",
 "file": "district_panel.gd",
-"line": 403,
+"line": 407,
 "func": "_fill_gas",
-"en_line": 403
+"en_line": 407
 },
 "district_panel:_fill_gas:4": {
 "zh": "%s · %s · %.0f kg · 氧 %d%% · 污染 %.1f%%%s",
 "en": "%s · %s · %.0f kg · O₂ %d%% · TAINT %.1f%%%s",
 "file": "district_panel.gd",
-"line": 410,
+"line": 414,
 "func": "_fill_gas",
-"en_line": 410
+"en_line": 414
 },
 "district_panel:_fill_gas:5": {
 "zh": " · 含氢（燃料危险）",
 "en": " · HYDROGEN",
 "file": "district_panel.gd",
-"line": 410,
+"line": 414,
 "func": "_fill_gas",
-"en_line": 410
+"en_line": 414
 },
 "district_panel:_fill_gas:6": {
 "zh": "分离这一批",
 "en": "SEPARATE IT",
 "file": "district_panel.gd",
-"line": 414,
+"line": 418,
 "func": "_fill_gas",
-"en_line": 414
+"en_line": 418
 },
 "district_panel:_fill_gas:7": {
 "zh": "开始分离。",
 "en": "SEPARATING.",
 "file": "district_panel.gd",
-"line": 414,
+"line": 418,
 "func": "_fill_gas",
-"en_line": 414
+"en_line": 418
 },
 "district_panel:_fill_gas:8": {
 "zh": "受控处置（%s）",
 "en": "DISPOSE (%s)",
 "file": "district_panel.gd",
-"line": 418,
+"line": 422,
 "func": "_fill_gas",
-"en_line": 418
+"en_line": 422
 },
 "district_panel:_fill_gas:9": {
 "zh": "已交受控处置。",
 "en": "DISPOSED.",
 "file": "district_panel.gd",
-"line": 418,
+"line": 422,
 "func": "_fill_gas",
-"en_line": 418
+"en_line": 422
 },
 "district_panel:_fill_gas:10": {
 "zh": "外购混合气 2 t（%s）",
 "en": "BUY 2 t MIXED GAS (%s)",
 "file": "district_panel.gd",
-"line": 420,
+"line": 424,
 "func": "_fill_gas",
-"en_line": 420
+"en_line": 424
 },
 "district_panel:_fill_gas:11": {
 "zh": "已下单，约 60 秒后到。",
 "en": "ORDERED: IN ~60 s.",
 "file": "district_panel.gd",
-"line": 420,
+"line": 424,
 "func": "_fill_gas",
-"en_line": 420
+"en_line": 424
 },
 "district_panel:_fill_gas:12": {
 "zh": "液化 1 t",
 "en": "LIQUEFY 1 t",
 "file": "district_panel.gd",
-"line": 421,
+"line": 425,
 "func": "_fill_gas",
-"en_line": 421
+"en_line": 425
 },
 "district_panel:_fill_gas:13": {
 "zh": "开始液化。",
 "en": "LIQUEFYING.",
 "file": "district_panel.gd",
-"line": 421,
+"line": 425,
 "func": "_fill_gas",
-"en_line": 421
+"en_line": 425
 },
 "district_panel:_fill_gas:14": {
 "zh": "生命支持检测（%s）",
 "en": "LIFE-SUPPORT TEST (%s)",
 "file": "district_panel.gd",
-"line": 422,
+"line": 426,
 "func": "_fill_gas",
-"en_line": 422
+"en_line": 426
 },
 "district_panel:_fill_gas:16": {
 "zh": "放空剩余气",
 "en": "VENT RESIDUE",
 "file": "district_panel.gd",
-"line": 425,
+"line": 429,
 "func": "_fill_gas",
-"en_line": 425
+"en_line": 429
 },
 "district_panel:_fill_gas:17": {
 "zh": "剩余气已放空（记录在案）。",
 "en": "RESIDUE VENTED (LOGGED).",
 "file": "district_panel.gd",
-"line": 425,
+"line": 429,
 "func": "_fill_gas",
-"en_line": 425
+"en_line": 429
 },
 "district_panel:_fill_gas:18": {
 "zh": "处置污染剩余",
 "en": "DISPOSE TAINTED",
 "file": "district_panel.gd",
-"line": 426,
+"line": 430,
 "func": "_fill_gas",
-"en_line": 426
+"en_line": 430
 },
 "district_panel:_fill_gas:19": {
 "zh": "已交受控处置。",
 "en": "DISPOSED.",
 "file": "district_panel.gd",
-"line": 426,
+"line": 430,
 "func": "_fill_gas",
-"en_line": 426
+"en_line": 430
 },
 "district_panel:_fill_gas:20": {
 "zh": "过路船补给",
 "en": "PASSING SHIPS",
 "file": "district_panel.gd",
-"line": 431,
+"line": 435,
 "func": "_fill_gas",
-"en_line": 431
+"en_line": 435
 },
 "district_panel:_fill_gas:21": {
 "zh": "约 %d 秒后到港",
 "en": "IN ~%d s",
 "file": "district_panel.gd",
-"line": 438,
+"line": 442,
 "func": "_fill_gas",
-"en_line": 438
+"en_line": 442
 },
 "district_panel:_fill_gas:22": {
 "zh": "靠泊中 · 已装 %.0f / %.0f kg · 还能停 %d 秒",
 "en": "ALONGSIDE · %.0f / %.0f kg · %d s LEFT",
 "file": "district_panel.gd",
-"line": 438,
+"line": 442,
 "func": "_fill_gas",
-"en_line": 438
+"en_line": 442
 },
 "district_panel:_fill_gas:24": {
 "zh": "要一次交满",
 "en": "ALL OR PENALTY",
 "file": "district_panel.gd",
-"line": 439,
+"line": 443,
 "func": "_fill_gas",
-"en_line": 439
+"en_line": 443
 },
 "district_panel:_fill_gas:25": {
 "zh": "接下并预留",
 "en": "TAKE AND RESERVE",
 "file": "district_panel.gd",
-"line": 442,
+"line": 446,
 "func": "_fill_gas",
-"en_line": 442
+"en_line": 446
 },
 "district_panel:_fill_gas:26": {
 "zh": "已预留产品和码头泊位。",
 "en": "RESERVED.",
 "file": "district_panel.gd",
-"line": 442,
+"line": 446,
 "func": "_fill_gas",
-"en_line": 442
+"en_line": 446
 },
 "district_panel:_fill_gas:29": {
 "zh": "取消（扣订单额 5%）",
 "en": "CANCEL (5% OF THE ORDER)",
 "file": "district_panel.gd",
-"line": 446,
+"line": 450,
 "func": "_fill_gas",
-"en_line": 446
+"en_line": 450
 },
 "district_panel:_fill_gas:31": {
 "zh": "现在没有船申请补给。",
 "en": "NO SHIP IS ASKING.",
 "file": "district_panel.gd",
-"line": 448,
+"line": 452,
 "func": "_fill_gas",
-"en_line": 448
+"en_line": 452
 },
 "district_panel:_fill_gas:32": {
 "zh": "自动化（只在你定的范围内做）",
 "en": "AUTOMATION (WITHIN YOUR BOUNDS)",
 "file": "district_panel.gd",
-"line": 450,
+"line": 454,
 "func": "_fill_gas",
-"en_line": 450
+"en_line": 454
 },
 "district_panel:_fill_gas:33": {
 "zh": "标准混合气自动分离（异常批次暂停等你）",
 "en": "SEPARATE STANDARD BATCHES (ODD ONES WAIT)",
 "file": "district_panel.gd",
-"line": 451,
+"line": 455,
 "func": "_fill_gas",
-"en_line": 451
+"en_line": 455
 },
 "district_panel:_fill_gas:34": {
 "zh": "自动液化（至少留 %.0f kg 气态氧，储罐留一成余量）",
 "en": "LIQUEFY (KEEP %.0f kg OF GAS, 10%% OF THE TANK FREE)",
 "file": "district_panel.gd",
-"line": 451,
+"line": 455,
 "func": "_fill_gas",
-"en_line": 451
+"en_line": 455
 },
 "district_panel:_fill_gas:35": {
 "zh": "自动接补给单（单价 ≥ $%.2f/kg，同时最多 %d 单，至少留 %.0f kg 液氧）",
 "en": "TAKE SUPPLY ORDERS (≥ $%.2f/kg, UP TO %d, KEEP %.0f kg LOX)",
 "file": "district_panel.gd",
-"line": 451,
+"line": 455,
 "func": "_fill_gas",
-"en_line": 451
+"en_line": 455
 },
 "district_panel:_fill_gas:36": {
 "zh": "自动进混合气（只补客户要的缺口，单价 ≤ $%.0f/t，每次 %.0f t，现金不低于 %s）",
 "en": "BUY FEED (ONLY THE SHORTFALL, ≤ $%.0f/t, %.0f t, CASH ≥ %s)",
 "file": "district_panel.gd",
-"line": 451,
+"line": 455,
 "func": "_fill_gas",
-"en_line": 451
+"en_line": 455
 },
 "district_panel:_fill_people:1": {
 "zh": "现在没有客人。贸易区开着时，隔一阵就会有独立商人或个体船主开船来。",
 "en": "NOBODY AT THE PIER. MERCHANTS AND OWNER-OPERATORS COME BY NOW AND THEN.",
 "file": "district_panel.gd",
-"line": 482,
+"line": 486,
 "func": "_fill_people",
-"en_line": 482
+"en_line": 486
 },
 "district_panel:_fill_people:2": {
 "zh": "正在靠泊……",
 "en": "COMING ALONGSIDE…",
 "file": "district_panel.gd",
-"line": 488,
+"line": 492,
 "func": "_fill_people",
-"en_line": 488
+"en_line": 492
 },
 "district_panel:_fill_people:4": {
 "zh": "小幅还价 5%",
 "en": "ASK 5%",
 "file": "district_panel.gd",
-"line": 494,
+"line": 498,
 "func": "_fill_people",
-"en_line": 494
+"en_line": 498
 },
 "district_panel:_fill_people:5": {
 "zh": "中幅 12%",
 "en": "ASK 12%",
 "file": "district_panel.gd",
-"line": 494,
+"line": 498,
 "func": "_fill_people",
-"en_line": 494
+"en_line": 498
 },
 "district_panel:_fill_people:6": {
 "zh": "狠砍 25%",
 "en": "ASK 25%",
 "file": "district_panel.gd",
-"line": 494,
+"line": 498,
 "func": "_fill_people",
-"en_line": 494
+"en_line": 498
 },
 "district_panel:_fill_people:8": {
 "zh": "按他开的价立刻成交",
 "en": "Deal at his price, now",
 "file": "district_panel.gd",
-"line": 499,
+"line": 503,
 "func": "_fill_people",
-"en_line": 499
+"en_line": 503
 },
 "district_panel:_fill_people:9": {
 "zh": "还价 5%：按他的脾气，答应、回个中间价或走人；砍得少，最容易答应",
 "en": "Ask 5%: by his temper he agrees, meets you halfway or leaves; the smallest ask is likeliest",
 "file": "district_panel.gd",
-"line": 500,
+"line": 504,
 "func": "_fill_people",
-"en_line": 500
+"en_line": 504
 },
 "district_panel:_fill_people:10": {
 "zh": "还价 12%：按他的脾气，答应、回个中间价或走人",
 "en": "Ask 12%: by his temper he agrees, meets you halfway or leaves",
 "file": "district_panel.gd",
-"line": 501,
+"line": 505,
 "func": "_fill_people",
-"en_line": 501
+"en_line": 505
 },
 "district_panel:_fill_people:11": {
 "zh": "还价 25%：砍得最狠，最容易被拒，他可能直接走人",
 "en": "Ask 25%: the hardest ask, likeliest refused; he may just leave",
 "file": "district_panel.gd",
-"line": 502,
+"line": 506,
 "func": "_fill_people",
-"en_line": 502
+"en_line": 506
 },
 "district_panel:_fill_people:12": {
 "zh": "不做这笔，让他走",
 "en": "No deal: send him away",
 "file": "district_panel.gd",
-"line": 503,
+"line": 507,
 "func": "_fill_people",
-"en_line": 503
+"en_line": 507
 },
 "district_panel:_fill_people:14": {
 "zh": "执行中：每次 %.1f t %s，$%.0f/t · 第 %d / %d 次 · 下次还剩 %d 秒 · 仓库现有 %.1f t%s",
 "en": "RUNNING: %.1f t OF %s AT $%.0f/t · %d / %d · NEXT IN %d s · %.1f t IN STOCK%s",
 "file": "district_panel.gd",
-"line": 522,
+"line": 526,
 "func": "_fill_people",
-"en_line": 522
+"en_line": 526
 },
 "district_panel:_fill_people:15": {
 "zh": "（不够！）",
 "en": " (SHORT!)",
 "file": "district_panel.gd",
-"line": 522,
+"line": 526,
 "func": "_fill_people",
-"en_line": 522
+"en_line": 526
 },
 "district_panel:_fill_people:16": {
 "zh": "退掉这份合同（还没开始交货，不扣信誉）",
 "en": "HAND IT BACK (NO DELIVERY YET)",
 "file": "district_panel.gd",
-"line": 524,
+"line": 528,
 "func": "_fill_people",
-"en_line": 524
+"en_line": 528
 },
 "district_panel:_fill_people:17": {
 "zh": "立刻退掉：还没交过货，所以不扣信誉",
 "en": "Hand it back now: nothing delivered yet, so no reputation lost",
 "file": "district_panel.gd",
-"line": 525,
+"line": 529,
 "func": "_fill_people",
-"en_line": 525
+"en_line": 529
 },
 "district_panel:_fill_people:18": {
 "zh": "给你的合同：每 10 分钟交 %.1f t %s，$%.0f/t，一共 %d 次",
 "en": "OFFER: %.1f t OF %s EVERY 10 MIN AT $%.0f/t, %d TIMES",
 "file": "district_panel.gd",
-"line": 529,
+"line": 533,
 "func": "_fill_people",
-"en_line": 529
+"en_line": 533
 },
 "district_panel:_fill_people:20": {
 "zh": "立刻接下这份长期合同：按上面的量和价按期交货，守约涨信誉",
 "en": "Take this standing contract now: deliver the amount above on time; keeping it raises reputation",
 "file": "district_panel.gd",
-"line": 531,
+"line": 535,
 "func": "_fill_people",
-"en_line": 531
+"en_line": 535
 },
 "district_panel:_fill_people:21": {
 "zh": "信誉太低，这家暂时不给合同。",
 "en": "REPUTATION TOO LOW: NO CONTRACT FOR NOW.",
 "file": "district_panel.gd",
-"line": 534,
+"line": 538,
 "func": "_fill_people",
-"en_line": 534
+"en_line": 538
 },
 "district_panel:_say_deal:1": {
 "zh": "他摇头，回了个中间价 $%.0f/t。接受或拒绝。",
 "en": "HE MEETS YOU HALFWAY AT $%.0f/t.",
 "file": "district_panel.gd",
-"line": 542,
+"line": 546,
 "func": "_say_deal",
-"en_line": 542
+"en_line": 546
 },
 "district_panel:_say_deal:2": {
 "zh": "他不干，开船走了。",
 "en": "HE SAID NO AND LEFT.",
 "file": "district_panel.gd",
-"line": 544,
+"line": 548,
 "func": "_say_deal",
-"en_line": 544
+"en_line": 548
 },
 "district_panel:_say_deal:3": {
 "zh": "成交：$%.0f/t，共 %s。",
 "en": "DONE: $%.0f/t, %s IN ALL.",
 "file": "district_panel.gd",
-"line": 546,
+"line": 550,
 "func": "_say_deal",
-"en_line": 546
+"en_line": 550
 },
 "district_panel:_stage_line:1": {
 "zh": "下一阶段：",
 "en": "NEXT STAGE: ",
 "file": "district_panel.gd",
-"line": 580,
+"line": 586,
 "func": "_stage_line",
-"en_line": 580
+"en_line": 586
 },
 "district_panel:_fill:4": {
 "zh": "已经分出去",
 "en": "GIVEN OUT",
 "file": "district_panel.gd",
-"line": 598,
+"line": 604,
 "func": "_fill",
-"en_line": 598
+"en_line": 604
 },
 "district_panel:_fill:8": {
+"zh": "电池泊位剩电",
+"en": "BATTERY BERTH LEFT",
+"file": "district_panel.gd",
+"line": 607,
+"func": "_fill",
+"en_line": 607
+},
+"district_panel:_fill:10": {
 "zh": "外购电（比自家发贵 %d 倍）",
 "en": "BOUGHT POWER (%dx DEARER)",
 "file": "district_panel.gd",
-"line": 600,
+"line": 609,
 "func": "_fill",
-"en_line": 600
+"en_line": 609
 },
-"district_panel:_fill:16": {
+"district_panel:_fill:18": {
 "zh": "可修（有港电）",
 "en": "CAN REPAIR (GRID UP)",
 "file": "district_panel.gd",
-"line": 611,
+"line": 620,
 "func": "_fill",
-"en_line": 611
+"en_line": 620
 },
-"district_panel:_fill:17": {
+"district_panel:_fill:19": {
 "zh": "等动力区 1 阶",
 "en": "WAITS FOR STAGE 1",
 "file": "district_panel.gd",
-"line": 611,
+"line": 620,
 "func": "_fill",
-"en_line": 611
-},
-"district_panel:_fill:23": {
-"zh": "设备售价系数",
-"en": "EQUIPMENT PRICE FACTOR",
-"file": "district_panel.gd",
-"line": 624,
-"func": "_fill",
-"en_line": 624
-},
-"district_panel:_fill:24": {
-"zh": "市场合同：%d 张",
-"en": "MARKET OFFERS: %d",
-"file": "district_panel.gd",
-"line": 625,
-"func": "_fill",
-"en_line": 625
+"en_line": 620
 },
 "district_panel:_fill:25": {
-"zh": "我的挂单：%d 张 · 托管现金 %s",
-"en": "MY ORDERS: %d · CASH %s",
+"zh": "设备售价系数",
+"en": "EQUIPMENT PRICE FACTOR",
 "file": "district_panel.gd",
 "line": 633,
 "func": "_fill",
 "en_line": 633
 },
 "district_panel:_fill:26": {
-"zh": "仓库空着。",
-"en": "THE WAREHOUSE IS EMPTY.",
+"zh": "市场合同：%d 张",
+"en": "MARKET OFFERS: %d",
+"file": "district_panel.gd",
+"line": 634,
+"func": "_fill",
+"en_line": 634
+},
+"district_panel:_fill:27": {
+"zh": "我的挂单：%d 张 · 托管现金 %s",
+"en": "MY ORDERS: %d · CASH %s",
 "file": "district_panel.gd",
 "line": 642,
 "func": "_fill",
 "en_line": 642
 },
-"district_panel:_fill:27": {
-"zh": "未评级原料批次：%d",
-"en": "UNGRADED BATCHES: %d",
-"file": "district_panel.gd",
-"line": 650,
-"func": "_fill",
-"en_line": 650
-},
 "district_panel:_fill:28": {
-"zh": "出场部署槽：%d",
-"en": "DEPLOY SLOTS: %d",
+"zh": "仓库空着。",
+"en": "THE WAREHOUSE IS EMPTY.",
 "file": "district_panel.gd",
 "line": 651,
 "func": "_fill",
 "en_line": 651
 },
 "district_panel:_fill:29": {
+"zh": "未评级原料批次：%d",
+"en": "UNGRADED BATCHES: %d",
+"file": "district_panel.gd",
+"line": 659,
+"func": "_fill",
+"en_line": 659
+},
+"district_panel:_fill:30": {
+"zh": "出场部署槽：%d",
+"en": "DEPLOY SLOTS: %d",
+"file": "district_panel.gd",
+"line": 660,
+"func": "_fill",
+"en_line": 660
+},
+"district_panel:_fill:31": {
 "zh": "叉车 %d 台 · 搬运中 %d 趟",
 "en": "FORKLIFTS %d · %d MOVES",
-"file": "district_panel.gd",
-"line": 654,
-"func": "_fill",
-"en_line": 654
-},
-"district_panel:_fill:35": {
-"zh": "在手合同：",
-"en": "CONTRACT IN HAND: ",
 "file": "district_panel.gd",
 "line": 663,
 "func": "_fill",
 "en_line": 663
+},
+"district_panel:_fill:37": {
+"zh": "在手合同：",
+"en": "CONTRACT IN HAND: ",
+"file": "district_panel.gd",
+"line": 672,
+"func": "_fill",
+"en_line": 672
+},
+"district_panel:_process_layout:1": {
+"zh": "加工区 · 气体",
+"en": "PROCESSING · GAS",
+"file": "district_panel.gd",
+"line": 778,
+"func": "_process_layout",
+"en_line": 778
+},
+"district_panel:_process_layout:2": {
+"zh": "回收的气分离、液化，卖给过路船",
+"en": "Recovered gas separated, liquefied, sold to passing ships",
+"file": "district_panel.gd",
+"line": 778,
+"func": "_process_layout",
+"en_line": 778
+},
+"district_panel:_process_layout:4": {
+"zh": "更多 ▸  自动化 4 项 · 外购混合气 · 检测 · 放空 · 本区修复",
+"en": "MORE ▸  AUTOMATION · BUY GAS · TEST · VENT · MENDING",
+"file": "district_panel.gd",
+"line": 830,
+"func": "_process_layout",
+"en_line": 830
+},
+"district_panel:_process_layout:6": {
+"zh": "更多 ▸  自动化 4 项 · 外购混合气 · 检测 · 放空 · 本区修复",
+"en": "MORE ▸  AUTOMATION · BUY GAS · TEST · VENT · MENDING",
+"file": "district_panel.gd",
+"line": 838,
+"func": "_process_layout",
+"en_line": 838
+},
+"district_panel:_process_layout:7": {
+"zh": "展开或收起：自动化、外购混合气、生命支持检测、放空、处置污染、本区修复、轧机",
+"en": "Show or hide the rest: automation, buying gas, the test, venting, disposal, mending, the mill",
+"file": "district_panel.gd",
+"line": 839,
+"func": "_process_layout",
+"en_line": 839
+},
+"district_panel:_process_layout:10": {
+"zh": "轧机在观察廊上有自己的控制台：飞到它上面按 %s，选配方、开轧。",
+"en": "The mill has its own console on the gallery: press %s at it to pick a recipe and roll.",
+"file": "district_panel.gd",
+"line": 852,
+"func": "_process_layout",
+"en_line": 852
+},
+"district_panel:_process_layout:11": {
+"zh": "气体线 · 回收 → 分离 → 液氧 → 补给",
+"en": "GAS LINE · RECOVER → SEPARATE → LOX → SUPPLY",
+"file": "district_panel.gd",
+"line": 853,
+"func": "_process_layout",
+"en_line": 853
+},
+"district_panel:_process_layout:12": {
+"zh": "关闭 [Esc]",
+"en": "CLOSE [Esc]",
+"file": "district_panel.gd",
+"line": 859,
+"func": "_process_layout",
+"en_line": 859
+},
+"district_panel:_fill_next:1": {
+"zh": "气体线还没修",
+"en": "NO GAS LINE YET",
+"file": "district_panel.gd",
+"line": 924,
+"func": "_fill_next",
+"en_line": 924
+},
+"district_panel:_fill_next:2": {
+"zh": "在船坞终端“修缮”里修“气体线”（要加工区和动力区各 1 阶）。没修之前，拆船抽回的气在结算时折现。",
+"en": "Build it under the berth terminal's repairs (processing and power at stage 1). Until then a ship's gas is cashed at settlement.",
+"file": "district_panel.gd",
+"line": 925,
+"func": "_fill_next",
+"en_line": 925
+},
+"district_panel:_fill_next:4": {
+"zh": "机器在跑，不用守着。",
+"en": "It runs by itself.",
+"file": "district_panel.gd",
+"line": 931,
+"func": "_fill_next",
+"en_line": 931
+},
+"district_panel:_fill_next:6": {
+"zh": "等这一步做完",
+"en": "WAIT FOR IT",
+"file": "district_panel.gd",
+"line": 933,
+"func": "_fill_next",
+"en_line": 933
+},
+"district_panel:_fill_next:8": {
+"zh": "%.0f kg · 氧 %d%% · %s\\n约 %d 秒",
+"en": "%.0f kg · O₂ %d%% · %s\\n~%d s",
+"file": "district_panel.gd",
+"line": 939,
+"func": "_fill_next",
+"en_line": 939
+},
+"district_panel:_fill_next:11": {
+"zh": " · 还有 %d 批等着",
+"en": " · %d MORE WAITING",
+"file": "district_panel.gd",
+"line": 941,
+"func": "_fill_next",
+"en_line": 941
+},
+"district_panel:_fill_next:13": {
+"zh": "开始分离。",
+"en": "SEPARATING.",
+"file": "district_panel.gd",
+"line": 945,
+"func": "_fill_next",
+"en_line": 945
+},
+"district_panel:_fill_next:14": {
+"zh": "液化 %.0f kg 气态氧",
+"en": "LIQUEFY %.0f kg OF OXYGEN",
+"file": "district_panel.gd",
+"line": 948,
+"func": "_fill_next",
+"en_line": 948
+},
+"district_panel:_fill_next:15": {
+"zh": "进液氧储罐（还能装 %.0f kg）· 约 %d 秒",
+"en": "Into the LOX tank (%.0f kg of room) · ~%d s",
+"file": "district_panel.gd",
+"line": 949,
+"func": "_fill_next",
+"en_line": 949
+},
+"district_panel:_fill_next:17": {
+"zh": "开始液化。",
+"en": "LIQUEFYING.",
+"file": "district_panel.gd",
+"line": 952,
+"func": "_fill_next",
+"en_line": 952
+},
+"district_panel:_fill_next:18": {
+"zh": "没有要处理的气",
+"en": "NOTHING TO PROCESS",
+"file": "district_panel.gd",
+"line": 954,
+"func": "_fill_next",
+"en_line": 954
+},
+"district_panel:_fill_next:19": {
+"zh": "拆船时用气液回收（5）把舱里的气抽回来，回港就是一批混合气；也可以在“更多”里外购混合气。",
+"en": "Recover a ship's gas with the gas recovery tool (5): it comes home as a batch. Or buy mixed gas under MORE.",
+"file": "district_panel.gd",
+"line": 955,
+"func": "_fill_next",
+"en_line": 955
+},
+"district_panel:_fill_next:20": {
+"zh": "这一步要做的事",
+"en": "This step",
+"file": "district_panel.gd",
+"line": 961,
+"func": "_fill_next",
+"en_line": 961
+},
+"district_panel:_fill_call:1": {
+"zh": "现在没有过路船要补给。",
+"en": "NO PASSING SHIP IS ASKING NOW.",
+"file": "district_panel.gd",
+"line": 985,
+"func": "_fill_call",
+"en_line": 985
+},
+"district_panel:_fill_call:2": {
+"zh": "约 %d 秒后到港",
+"en": "IN ~%d s",
+"file": "district_panel.gd",
+"line": 990,
+"func": "_fill_call",
+"en_line": 990
+},
+"district_panel:_fill_call:3": {
+"zh": "靠泊中 · 已装 %.0f / %.0f kg",
+"en": "ALONGSIDE · %.0f / %.0f kg",
+"file": "district_panel.gd",
+"line": 990,
+"func": "_fill_call",
+"en_line": 990
+},
+"district_panel:_fill_call:4": {
+"zh": "过路船 %s · %s",
+"en": "PASSING SHIP %s · %s",
+"file": "district_panel.gd",
+"line": 991,
+"func": "_fill_call",
+"en_line": 991
+},
+"district_panel:_fill_call:5": {
+"zh": "要 %.0f kg %s · $%.2f/kg",
+"en": "WANTS %.0f kg %s · $%.2f/kg",
+"file": "district_panel.gd",
+"line": 1000,
+"func": "_fill_call",
+"en_line": 1000
+},
+"district_panel:_fill_call:6": {
+"zh": "现有 %.0f kg%s · %s",
+"en": "%.0f kg ON HAND%s · %s",
+"file": "district_panel.gd",
+"line": 1002,
+"func": "_fill_call",
+"en_line": 1002
+},
+"district_panel:_fill_call:9": {
+"zh": "要一次交满",
+"en": "ALL AT ONCE",
+"file": "district_panel.gd",
+"line": 1002,
+"func": "_fill_call",
+"en_line": 1002
+},
+"district_panel:_fill_call:11": {
+"zh": "已预留产品和码头泊位。",
+"en": "RESERVED.",
+"file": "district_panel.gd",
+"line": 1007,
+"func": "_fill_call",
+"en_line": 1007
+},
+"district_panel:_fill_call:12": {
+"zh": "接下并预留产品和码头泊位",
+"en": "Take it: the product and a berth are reserved",
+"file": "district_panel.gd",
+"line": 1010,
+"func": "_fill_call",
+"en_line": 1010
+},
+"district_panel:_fill_call:15": {
+"zh": "取消（扣 5%）",
+"en": "CANCEL (5%)",
+"file": "district_panel.gd",
+"line": 1016,
+"func": "_fill_call",
+"en_line": 1016
+},
+"district_panel:_fill_call:17": {
+"zh": "还有 %d 条在“更多”里",
+"en": "%d MORE UNDER MORE",
+"file": "district_panel.gd",
+"line": 1019,
+"func": "_fill_call",
+"en_line": 1019
 },
 "freight_pier:_receive:1": {
 "zh": "货已入库：%s %.2f t",
@@ -21271,81 +21535,97 @@
 "zh": "供电 %d%%：动力区只发 %.0f MW",
 "en": "POWER %d%%: THE PLANT MAKES %.0f MW",
 "file": "grid.gd",
-"line": 450,
+"line": 453,
 "func": "short_text",
-"en_line": 450
+"en_line": 453
 },
 "grid:short_text:2": {
 "zh": "，排在%s之后",
 "en": ", AFTER %s",
 "file": "grid.gd",
-"line": 452,
+"line": 455,
 "func": "short_text",
-"en_line": 452
+"en_line": 455
 },
 "grid:verdict:3": {
 "zh": "，干活变慢",
 "en": ", working slower",
 "file": "grid.gd",
-"line": 470,
+"line": 473,
 "func": "verdict",
-"en_line": 470
+"en_line": 473
 },
 "grid:verdict:4": {
 "zh": "电刚好够用：再开大设备就不够了",
 "en": "JUST ENOUGH: ONE MORE BIG MACHINE AND IT RUNS SHORT",
 "file": "grid.gd",
-"line": 472,
+"line": 475,
 "func": "verdict",
-"en_line": 472
+"en_line": 475
 },
 "grid:verdict:5": {
 "zh": "电够用：在用 %.1f，自家能发 %.0f 兆瓦",
 "en": "ENOUGH POWER: %.1f IN USE OF %.0f MW",
 "file": "grid.gd",
-"line": 473,
+"line": 476,
 "func": "verdict",
-"en_line": 473
+"en_line": 476
 },
 "grid:short_fix:1": {
+"zh": "修动力区，或在供电屏把加工区往前拖、买一块电池",
+"en": "Mend the power district, or drag processing up / buy a battery block at the power screen",
+"file": "grid.gd",
+"line": 487,
+"func": "short_fix",
+"en_line": 487
+},
+"grid:short_fix:2": {
 "zh": "修动力区，或在动力控制屏把加工区往前调、买外购电",
 "en": "Mend the power district, or move processing up / take shore power at the power control screen",
 "file": "grid.gd",
-"line": 483,
+"line": 488,
 "func": "short_fix",
-"en_line": 483
+"en_line": 488
 },
 "grid:wait_text:1": {
 "zh": "电弧炉已在供电屏暂停：正在炼的这炉停下等电",
 "en": "THE FURNACE IS PAUSED AT THE POWER SCREEN: THE HEAT WAITS",
 "file": "grid.gd",
-"line": 491,
+"line": 496,
 "func": "wait_text",
-"en_line": 491
+"en_line": 496
 },
 "grid:wait_text:2": {
 "zh": "电不够：电弧炉只分到 %.1f / %.0f MW",
 "en": "SHORT OF POWER: THE FURNACE GETS %.1f / %.0f MW",
 "file": "grid.gd",
-"line": 506,
+"line": 511,
 "func": "wait_text",
-"en_line": 506
+"en_line": 511
 },
 "grid:wait_text:3": {
 "zh": "，排在%s之后",
 "en": ", AFTER %s",
 "file": "grid.gd",
-"line": 508,
+"line": 513,
 "func": "wait_text",
-"en_line": 508
+"en_line": 513
 },
 "grid:wait_text:4": {
+"zh": "。修动力区、在供电屏把加工区往前拖，或买一块电池。",
+"en": ". MEND THE POWER DISTRICT, DRAG PROCESSING UP, OR BUY A BATTERY BLOCK.",
+"file": "grid.gd",
+"line": 514,
+"func": "wait_text",
+"en_line": 514
+},
+"grid:wait_text:5": {
 "zh": "。修动力区、在控制屏把加工区往前调，或买外购电。",
 "en": ". MEND THE POWER DISTRICT, MOVE PROCESSING UP, OR TAKE SHORE POWER.",
 "file": "grid.gd",
-"line": 509,
+"line": 514,
 "func": "wait_text",
-"en_line": 509
+"en_line": 514
 },
 "hub_art:plates:5": {
 "zh": "转盘 停转",
@@ -21759,9 +22039,9 @@
 "zh": "零件库 · %d 件",
 "en": "PARTS STORE · %d",
 "file": "port_art.gd",
-"line": 935,
+"line": 943,
 "func": "_salvage",
-"en_line": 935
+"en_line": 943
 },
 "port_structure:half:1": {
 "zh": "反应堆 A",
@@ -21788,548 +22068,580 @@
 "en_line": 51
 },
 "power_panel:readings:2": {
+"zh": "电池泊位 %.1f 兆瓦时",
+"en": "BATTERIES %.1f MWh",
+"file": "power_panel.gd",
+"line": 102,
+"func": "readings",
+"en_line": 102
+},
+"power_panel:readings:3": {
 "zh": "外购电 %.1f / %.0f",
 "en": "BOUGHT %.1f / %.0f",
 "file": "power_panel.gd",
-"line": 100,
+"line": 107,
 "func": "readings",
-"en_line": 100
+"en_line": 107
 },
-"power_panel:readings:10": {
+"power_panel:readings:11": {
 "zh": "最高 %.1f MW",
 "en": "PEAK %.1f MW",
 "file": "power_panel.gd",
-"line": 220,
+"line": 227,
 "func": "readings",
-"en_line": 220
+"en_line": 227
 },
 "power_panel:_f:1": {
 "zh": "港口供电控制屏",
 "en": "PORT POWER CONTROL",
 "file": "power_panel.gd",
-"line": 264,
+"line": 271,
 "func": "_f",
-"en_line": 264
+"en_line": 271
 },
 "power_panel:_f:2": {
 "zh": "控制台已连接",
 "en": "CONSOLE ONLINE",
 "file": "power_panel.gd",
-"line": 265,
+"line": 272,
 "func": "_f",
-"en_line": 265
+"en_line": 272
 },
 "power_panel:_f:5": {
 "zh": "自有 %.0f MW",
 "en": "OWN %.0f MW",
 "file": "power_panel.gd",
-"line": 376,
+"line": 383,
 "func": "_f",
-"en_line": 376
+"en_line": 383
 },
 "power_panel:_f:6": {
 "zh": "外购 %.0f MW",
 "en": "BOUGHT %.0f MW",
 "file": "power_panel.gd",
-"line": 376,
+"line": 383,
 "func": "_f",
-"en_line": 376
+"en_line": 383
 },
 "power_panel:_f:7": {
+"zh": "其中电池 %.1f MW",
+"en": "OF IT BATTERIES %.1f MW",
+"file": "power_panel.gd",
+"line": 386,
+"func": "_f",
+"en_line": 386
+},
+"power_panel:_f:8": {
 "zh": "基础用电 %.0f MW",
 "en": "BASE LOAD %.0f MW",
 "file": "power_panel.gd",
-"line": 380,
+"line": 391,
 "func": "_f",
-"en_line": 380
+"en_line": 391
 },
-"power_panel:_f:8": {
+"power_panel:_f:9": {
 "zh": "部门 / 当前工作",
 "en": "DISTRICT / AT WORK",
 "file": "power_panel.gd",
-"line": 459,
+"line": 470,
 "func": "_f",
-"en_line": 459
+"en_line": 470
 },
-"power_panel:_f:12": {
+"power_panel:_f:13": {
 "zh": "现在不用电",
 "en": "NOT USING POWER",
 "file": "power_panel.gd",
-"line": 497,
+"line": 508,
 "func": "_f",
-"en_line": 497
+"en_line": 508
 },
-"power_panel:_f:15": {
+"power_panel:_f:16": {
 "zh": "电不够：只拿到 %d%%",
 "en": "SHORT: %d%%",
 "file": "power_panel.gd",
-"line": 502,
+"line": 513,
 "func": "_f",
-"en_line": 502
+"en_line": 513
 },
 "power_panel:_ready:1": {
 "zh": "关闭 [Esc]",
 "en": "CLOSE [Esc]",
 "file": "power_panel.gd",
-"line": 594,
+"line": 605,
 "func": "_ready",
-"en_line": 594
+"en_line": 605
 },
 "power_panel:_ready:3": {
 "zh": "一张工作台看懂供需、来源和优先级。",
 "en": "Supply, demand, sources and order on one desk.",
 "file": "power_panel.gd",
-"line": 623,
+"line": 634,
 "func": "_ready",
-"en_line": 623
+"en_line": 634
 },
 "power_panel:_ready:4": {
 "zh": "电弧炉工作",
 "en": "FURNACE ON",
 "file": "power_panel.gd",
-"line": 630,
+"line": 641,
 "func": "_ready",
-"en_line": 630
+"en_line": 641
 },
 "power_panel:_ready:5": {
 "zh": "电弧炉暂停",
 "en": "FURNACE PAUSED",
 "file": "power_panel.gd",
-"line": 632,
+"line": 643,
 "func": "_ready",
-"en_line": 632
+"en_line": 643
 },
 "power_panel:_ready:6": {
 "zh": "接入外购电",
 "en": "BUY POWER",
 "file": "power_panel.gd",
-"line": 643,
+"line": 654,
 "func": "_ready",
-"en_line": 643
+"en_line": 654
 },
 "power_panel:_ready:7": {
 "zh": "部门分配明细",
 "en": "WHO GETS WHAT",
 "file": "power_panel.gd",
-"line": 686,
+"line": 697,
 "func": "_ready",
-"en_line": 686
+"en_line": 697
 },
 "power_panel:_ready:8": {
 "zh": "顺序由上到下 · 基础设施始终优先",
 "en": "TOP COMES FIRST · BASE LOAD ALWAYS FIRST",
 "file": "power_panel.gd",
-"line": 690,
+"line": 701,
 "func": "_ready",
-"en_line": 690
+"en_line": 701
 },
 "power_panel:_ready:9": {
+"zh": "调度规则：先满足基础用电，再按顺序给部门分配；发电机不够的部分由电池泊位里的电池补上。",
+"en": "THE RULE: THE BASE LOAD FIRST, THEN EACH DISTRICT IN ORDER; THE BATTERIES IN THE BERTH MAKE UP WHAT THE SETS CANNOT.",
+"file": "power_panel.gd",
+"line": 715,
+"func": "_ready",
+"en_line": 715
+},
+"power_panel:_ready:10": {
 "zh": "调度规则：先满足基础用电，再按顺序给部门分配；外购电打开时可额外提供最多 %.0f MW。",
 "en": "THE RULE: THE BASE LOAD FIRST, THEN EACH DISTRICT IN ORDER; WITH BOUGHT POWER ON, UP TO %.0f MW MORE.",
 "file": "power_panel.gd",
-"line": 703,
+"line": 717,
 "func": "_ready",
-"en_line": 703
+"en_line": 717
 },
-"power_panel:_ready:10": {
+"power_panel:_ready:11": {
 "zh": "详细 · 供电图与仪表 ▾",
 "en": "DETAILS · LINE DRAWING AND GAUGES ▾",
 "file": "power_panel.gd",
-"line": 709,
+"line": 723,
 "func": "_ready",
-"en_line": 709
+"en_line": 723
 },
-"power_panel:_ready:11": {
+"power_panel:_ready:12": {
 "zh": "电不够时怎么办",
 "en": "WHEN IT RUNS SHORT",
 "file": "power_panel.gd",
-"line": 728,
+"line": 744,
 "func": "_ready",
-"en_line": 728
+"en_line": 744
 },
-"power_panel:_ready:12": {
+"power_panel:_ready:13": {
 "zh": "等着，需要时再买",
 "en": "WAIT; BUY WHEN ASKED",
 "file": "power_panel.gd",
-"line": 731,
+"line": 747,
 "func": "_ready",
-"en_line": 731
+"en_line": 747
 },
-"power_panel:_ready:13": {
+"power_panel:_ready:14": {
 "zh": "排在后面的先变慢；炼钢急用时在炉台点“买外购电”",
 "en": "The last in line slow down; buy power at the furnace when a heat needs it",
 "file": "power_panel.gd",
-"line": 731,
+"line": 747,
 "func": "_ready",
-"en_line": 731
+"en_line": 747
 },
-"power_panel:_ready:14": {
+"power_panel:_ready:15": {
 "zh": "只用自家发的电",
 "en": "OUR OWN POWER ONLY",
 "file": "power_panel.gd",
-"line": 732,
+"line": 748,
 "func": "_ready",
-"en_line": 732
+"en_line": 748
 },
-"power_panel:_ready:15": {
+"power_panel:_ready:16": {
 "zh": "一分钱不多花，电不够就慢慢干",
 "en": "Not a cent more; short, the work just goes slower",
 "file": "power_panel.gd",
-"line": 732,
+"line": 748,
 "func": "_ready",
-"en_line": 732
+"en_line": 748
 },
-"power_panel:_ready:16": {
+"power_panel:_ready:17": {
 "zh": "不够就自动买外购电",
 "en": "BUY POWER WHEN SHORT",
 "file": "power_panel.gd",
-"line": 733,
+"line": 749,
 "func": "_ready",
-"en_line": 733
+"en_line": 749
 },
-"power_panel:_ready:17": {
+"power_panel:_ready:18": {
 "zh": "谁也不变慢，但外购电贵 %d 倍",
 "en": "Nobody slows down, but bought power costs %dx",
 "file": "power_panel.gd",
-"line": 733,
+"line": 749,
 "func": "_ready",
-"en_line": 733
+"en_line": 749
 },
-"power_panel:_ready:19": {
+"power_panel:_ready:20": {
 "zh": "把四个区的用电顺序改回默认：拆船区、货运区、加工区、拖船站",
 "en": "Put the four districts back in the default order",
 "file": "power_panel.gd",
-"line": 765,
+"line": 781,
 "func": "_ready",
-"en_line": 765
+"en_line": 781
 },
-"power_panel:_ready:20": {
+"power_panel:_ready:21": {
 "zh": "现在就是默认顺序",
 "en": "Already the default order",
 "file": "power_panel.gd",
-"line": 765,
+"line": 781,
 "func": "_ready",
-"en_line": 765
+"en_line": 781
 },
-"power_panel:_ready:21": {
+"power_panel:_ready:22": {
 "zh": "恢复默认顺序（拆船区 → 货运区 → 加工区 → 拖船站）",
 "en": "DEFAULT ORDER",
 "file": "power_panel.gd",
-"line": 766,
+"line": 782,
 "func": "_ready",
-"en_line": 766
+"en_line": 782
 },
-"power_panel:_ready:22": {
+"power_panel:_ready:23": {
 "zh": "恢复默认顺序？",
 "en": "BACK TO THE DEFAULT ORDER?",
 "file": "power_panel.gd",
-"line": 767,
+"line": 783,
 "func": "_ready",
-"en_line": 767
+"en_line": 783
 },
-"power_panel:_ready:25": {
+"power_panel:_ready:26": {
 "zh": "详细 · 供电图与仪表 ▴",
 "en": "DETAILS · LINE DRAWING AND GAUGES ▴",
 "file": "power_panel.gd",
-"line": 803,
+"line": 819,
 "func": "_ready",
-"en_line": 803
+"en_line": 819
 },
-"power_panel:_ready:26": {
+"power_panel:_ready:27": {
 "zh": "详细 · 供电图与仪表 ▾",
 "en": "DETAILS · LINE DRAWING AND GAUGES ▾",
 "file": "power_panel.gd",
-"line": 803,
+"line": 819,
 "func": "_ready",
-"en_line": 803
+"en_line": 819
 },
-"power_panel:_ready:27": {
+"power_panel:_ready:28": {
 "zh": "关掉供电控制屏，回到现场（Esc）",
 "en": "Close the power screen and go back on site (Esc)",
 "file": "power_panel.gd",
-"line": 808,
+"line": 824,
 "func": "_ready",
-"en_line": 808
+"en_line": 824
 },
-"power_panel:_ready:28": {
+"power_panel:_ready:29": {
 "zh": "电弧炉恢复申请电，正在炼的这炉继续升温",
 "en": "The arc furnace asks for power again; the heat warms up again",
 "file": "power_panel.gd",
-"line": 809,
+"line": 825,
 "func": "_ready",
-"en_line": 809
+"en_line": 825
 },
-"power_panel:_ready:29": {
+"power_panel:_ready:30": {
 "zh": "电弧炉立刻停下等电（正在炼的这炉也停），电先给别的区",
 "en": "The furnace stops at once (the heat in it too); the rest get the power first",
 "file": "power_panel.gd",
-"line": 810,
+"line": 826,
 "func": "_ready",
-"en_line": 810
+"en_line": 826
 },
-"power_panel:_ready:30": {
+"power_panel:_ready:31": {
 "zh": "电不够时自动买外购电补上，按 $%.0f/MWh 计；再点一次断开",
 "en": "Buy power automatically when short, at $%.0f/MWh; press again to stop",
 "file": "power_panel.gd",
-"line": 811,
+"line": 827,
 "func": "_ready",
-"en_line": 811
+"en_line": 827
 },
-"power_panel:_ready:31": {
+"power_panel:_ready:32": {
 "zh": "展开或收起：供电图、发电机仪表、电不够时怎么办、电弧炉功率上限",
 "en": "Show or hide the line drawing, the gauges, when it runs short and the furnace's cap",
 "file": "power_panel.gd",
-"line": 812,
+"line": 828,
 "func": "_ready",
-"en_line": 812
+"en_line": 828
 },
-"power_panel:_ready:32": {
+"power_panel:_ready:33": {
 "zh": "电不够时排在后面的先变慢；需要时到炉台买外购电",
 "en": "Short, the last in line slow down; buy at the furnace when needed",
 "file": "power_panel.gd",
-"line": 814,
+"line": 830,
 "func": "_ready",
-"en_line": 814
+"en_line": 830
 },
-"power_panel:_ready:33": {
+"power_panel:_ready:34": {
 "zh": "只用自家发的电，一分钱不多花，电不够就慢慢干",
 "en": "Only our own power; short, the work just goes slower",
 "file": "power_panel.gd",
-"line": 814,
+"line": 830,
 "func": "_ready",
-"en_line": 814
+"en_line": 830
 },
-"power_panel:_ready:34": {
+"power_panel:_ready:35": {
 "zh": "电不够时自动买外购电，谁也不变慢，但外购电贵 %d 倍",
 "en": "Buy power when short; nobody slows down, but it costs %dx",
 "file": "power_panel.gd",
-"line": 814,
+"line": 830,
 "func": "_ready",
-"en_line": 814
+"en_line": 830
 },
 "power_panel:_cap_text:1": {
 "zh": "功率上限 %.0f / %.0f 兆瓦 · 调低能把电让给别处，但炉子熔得慢",
 "en": "POWER CAP %.0f / %.0f MW · LOWER GIVES POWER TO THE REST, THE HEAT GOES SLOWER",
 "file": "power_panel.gd",
-"line": 825,
+"line": 841,
 "func": "_cap_text",
-"en_line": 825
+"en_line": 841
 },
 "power_panel:_set_furnace:1": {
 "zh": "电弧炉已暂停 · 正在炼的这炉停下等电，电先给别的区",
 "en": "FURNACE PAUSED · THE HEAT WAITS; THE POWER GOES TO THE REST",
 "file": "power_panel.gd",
-"line": 839,
+"line": 855,
 "func": "_set_furnace",
-"en_line": 839
+"en_line": 855
 },
 "power_panel:_set_furnace:2": {
 "zh": "电弧炉恢复工作 · 正在炼的这炉继续升温",
 "en": "FURNACE ON · THE HEAT WARMS UP AGAIN",
 "file": "power_panel.gd",
-"line": 839,
+"line": 855,
 "func": "_set_furnace",
-"en_line": 839
+"en_line": 855
 },
 "power_panel:_set_line:1": {
 "zh": "已接入外购电 · 不够时自动买，按 $%.0f/MWh 计",
 "en": "BOUGHT POWER ON · BOUGHT WHEN SHORT AT $%.0f/MWh",
 "file": "power_panel.gd",
-"line": 846,
+"line": 862,
 "func": "_set_line",
-"en_line": 846
+"en_line": 862
 },
 "power_panel:_set_line:2": {
 "zh": "已断开外购电 · 不够时排在后面的先变慢，需要时再买",
 "en": "BOUGHT POWER OFF · SHORT, THE LAST IN LINE SLOW DOWN",
 "file": "power_panel.gd",
-"line": 847,
+"line": 863,
 "func": "_set_line",
-"en_line": 847
+"en_line": 863
 },
 "power_panel:_set_line:3": {
 "zh": "只用自家发的电 · 一分钱不多花，按 $%.0f/MWh 计",
 "en": "OUR OWN POWER ONLY · AT $%.0f/MWh",
 "file": "power_panel.gd",
-"line": 848,
+"line": 864,
 "func": "_set_line",
-"en_line": 848
+"en_line": 864
 },
 "power_panel:_rebuild_gauges:3": {
 "zh": "G%d 冷却液",
 "en": "G%d COOLANT",
 "file": "power_panel.gd",
-"line": 885,
+"line": 901,
 "func": "_rebuild_gauges",
-"en_line": 885
+"en_line": 901
 },
 "power_panel:_refresh:1": {
 "zh": "电力不足：%s受到影响",
 "en": "SHORT OF POWER: %s HIT",
 "file": "power_panel.gd",
-"line": 936,
+"line": 952,
 "func": "_refresh",
-"en_line": 936
+"en_line": 952
 },
 "power_panel:_refresh:2": {
 "zh": "目前总需求 %.1f MW，可用 %.1f MW，还差 %.1f MW。",
 "en": "ASKED %.1f MW, AVAILABLE %.1f MW, %.1f MW SHORT.",
 "file": "power_panel.gd",
-"line": 937,
+"line": 953,
 "func": "_refresh",
-"en_line": 937
+"en_line": 953
 },
 "power_panel:_refresh:3": {
+"zh": "全港在用 %.1f 兆瓦 · 发电机加电池能给 %.1f · 还空着 %.1f · 其中电池 %.1f · 频率 %.2f Hz",
+"en": "IN USE %.1f MW · SETS AND BATTERIES %.1f · FREE %.1f · BATTERIES %.1f · %.2f Hz",
+"file": "power_panel.gd",
+"line": 965,
+"func": "_refresh",
+"en_line": 965
+},
+"power_panel:_refresh:4": {
 "zh": "全港在用 %.1f 兆瓦 · 自家发 %.1f / %.0f · 还空着 %.1f · 外购电 %.1f · 频率 %.2f Hz · 电价：自家发 $%.0f、外购 $%.0f（每兆瓦时）",
 "en": "IN USE %.1f MW · OURS %.1f / %.0f · FREE %.1f · BOUGHT %.1f · %.2f Hz · PRICE: OURS $%.0f, BOUGHT $%.0f PER MWh",
 "file": "power_panel.gd",
-"line": 948,
+"line": 967,
 "func": "_refresh",
-"en_line": 948
+"en_line": 967
 },
-"power_panel:_refresh:4": {
+"power_panel:_refresh:5": {
 "zh": " · 这一炉的电价 $%.0f",
 "en": " · THIS HEAT $%.0f",
 "file": "power_panel.gd",
-"line": 950,
+"line": 969,
 "func": "_refresh",
-"en_line": 950
+"en_line": 969
 },
 "power_panel:_fill_fixes:1": {
 "zh": "订一块中块电池",
 "en": "ORDER A MEDIUM BLOCK",
 "file": "power_panel.gd",
-"line": 964,
+"line": 983,
 "func": "_fill_fixes",
-"en_line": 964
+"en_line": 983
 },
 "power_panel:_fill_fixes:2": {
 "zh": "立刻下单：$%s，约 %d 秒后送到电池泊位，多 %.0f 兆瓦",
 "en": "Orders at once",
 "file": "power_panel.gd",
-"line": 966,
+"line": 985,
 "func": "_fill_fixes",
-"en_line": 966
+"en_line": 985
 },
 "power_panel:_fill_fixes:3": {
 "zh": "接入外购电",
 "en": "BUY POWER",
 "file": "power_panel.gd",
-"line": 968,
+"line": 987,
 "func": "_fill_fixes",
-"en_line": 968
+"en_line": 987
 },
 "power_panel:_fill_fixes:4": {
 "zh": "立刻接入：电不够时自动买外购电补上，按 $%.0f/MWh 计",
 "en": "At once: bought power fills the gap, at $%.0f/MWh",
 "file": "power_panel.gd",
-"line": 968,
+"line": 987,
 "func": "_fill_fixes",
-"en_line": 968
+"en_line": 987
 },
 "power_panel:_fill_fixes:5": {
 "zh": "暂停电弧炉",
 "en": "PAUSE THE FURNACE",
 "file": "power_panel.gd",
-"line": 974,
+"line": 993,
 "func": "_fill_fixes",
-"en_line": 974
+"en_line": 993
 },
 "power_panel:_fill_fixes:6": {
 "zh": "电弧炉立刻停下等电（正在炼的这炉也停），它那份电先给别的区",
 "en": "The furnace stops at once (the heat in it too); its share goes to the rest",
 "file": "power_panel.gd",
-"line": 974,
+"line": 993,
 "func": "_fill_fixes",
-"en_line": 974
+"en_line": 993
 },
 "power_panel:_fill_fixes:7": {
 "zh": "去修动力区（多发电）",
 "en": "MEND THE POWER DISTRICT",
 "file": "power_panel.gd",
-"line": 976,
+"line": 995,
 "func": "_fill_fixes",
-"en_line": 976
+"en_line": 995
 },
 "power_panel:_fill_fixes:8": {
 "zh": "关掉这里，去动力区操作台修发电机组；修好能多发电",
 "en": "Go to the power district's console and mend the sets; more power when mended",
 "file": "power_panel.gd",
-"line": 979,
+"line": 998,
 "func": "_fill_fixes",
-"en_line": 979
+"en_line": 998
 },
 "power_panel:_fill_order:3": {
 "zh": "往前调一位：电不够时比后面的区先拿到电",
 "en": "Up one: gets power before those below when short",
 "file": "power_panel.gd",
-"line": 1056,
+"line": 1075,
 "func": "_fill_order",
-"en_line": 1056
+"en_line": 1075
 },
 "power_panel:_fill_order:4": {
 "zh": "往后调一位：电不够时先让给前面的区",
 "en": "Down one: gives way to those above when short",
 "file": "power_panel.gd",
-"line": 1056,
+"line": 1075,
 "func": "_fill_order",
-"en_line": 1056
+"en_line": 1075
 },
 "power_panel:_fill_order:5": {
 "zh": "已经排在第一",
 "en": "Already first",
 "file": "power_panel.gd",
-"line": 1056,
+"line": 1075,
 "func": "_fill_order",
-"en_line": 1056
+"en_line": 1075
 },
 "power_panel:_fill_order:6": {
 "zh": "已经排在最后",
 "en": "Already last",
 "file": "power_panel.gd",
-"line": 1056,
+"line": 1075,
 "func": "_fill_order",
-"en_line": 1056
+"en_line": 1075
 },
 "power_panel:_fill_order:7": {
 "zh": "把「%s」%s？之后电不够时，排在后面的先变慢。",
 "en": "MOVE %s %s?",
 "file": "power_panel.gd",
-"line": 1060,
+"line": 1079,
 "func": "_fill_order",
-"en_line": 1060
+"en_line": 1079
 },
 "power_panel:_fill_order:8": {
 "zh": "往前调一位",
 "en": "UP",
 "file": "power_panel.gd",
-"line": 1060,
+"line": 1079,
 "func": "_fill_order",
-"en_line": 1060
+"en_line": 1079
 },
 "power_panel:_fill_order:9": {
 "zh": "往后调一位",
 "en": "DOWN",
 "file": "power_panel.gd",
-"line": 1060,
+"line": 1079,
 "func": "_fill_order",
-"en_line": 1060
+"en_line": 1079
 },
 "power_panel:drag_end:1": {
 "zh": "用电顺序已改：",
 "en": "ORDER NOW: ",
 "file": "power_panel.gd",
-"line": 1130,
+"line": 1149,
 "func": "drag_end",
-"en_line": 1130
+"en_line": 1149
 },
 "power_panel:drag_end:2": {
 "zh": " · 电不够时排在后面的先变慢",
 "en": " · SHORT, THE LAST SLOW DOWN FIRST",
 "file": "power_panel.gd",
-"line": 1130,
+"line": 1149,
 "func": "drag_end",
-"en_line": 1130
+"en_line": 1149
 },
 "power_station_art:_plates:3": {
 "zh": "汽轮发电机",
@@ -22340,8 +22652,8 @@
 "en_line": 130
 },
 "power_station_art:_plates:8": {
-"zh": "全港在用 %.1f · 自家发 %.1f · 外购 %.1f",
-"en": "IN USE %.1f · OURS %.1f · BOUGHT %.1f",
+"zh": "全港在用 %.1f · 其中电池 %.1f",
+"en": "IN USE %.1f · BATTERIES %.1f",
 "file": "power_station_art.gd",
 "line": 134,
 "func": "_plates",
@@ -22508,16 +22820,16 @@
 "en_line": 833
 },
 "power_station_art:_screen:13": {
-"zh": "岸电 %.1f MW",
-"en": "SHORE %.1f MW",
+"zh": "电池 %.1f MW",
+"en": "BATTERIES %.1f MW",
 "file": "power_station_art.gd",
 "line": 834,
 "func": "_screen",
 "en_line": 834
 },
 "power_station_art:_screen:14": {
-"zh": "岸电 未用",
-"en": "SHORE OFF",
+"zh": "电池 未用",
+"en": "BATTERIES IDLE",
 "file": "power_station_art.gd",
 "line": 834,
 "func": "_screen",
@@ -22700,7 +23012,7 @@
 "en_line": 884
 },
 "power_station_art:hover_items:25": {
-"zh": "全港的电从这里分出去：自家发的电和外购电进来，再每区一条线送出去。哪个区开始用电，它的开关就合上（I），表针指着它现在用的电。",
+"zh": "全港的电从这里分出去：发电机和电池泊位的电进来，再每区一条线送出去。哪个区开始用电，它的开关就合上（I），表针指着它现在用的电。",
 "en": "Where the port's power is shared out: the units' incomer, the shore incomer, then a feeder for each district. A district starting to draw closes its breaker (I); its ammeter shows what it draws.",
 "file": "power_station_art.gd",
 "line": 886,
@@ -22708,7 +23020,7 @@
 "en_line": 886
 },
 "power_station_art:hover_items:26": {
-"zh": "全港在用 %.1f · 自家发 %.1f · 外购 %.1f 兆瓦",
+"zh": "全港在用 %.1f · 自家发 %.1f 兆瓦",
 "en": "BUS %.1f MW · OWN %.1f · SHORE %.1f",
 "file": "power_station_art.gd",
 "line": 887,
@@ -22716,7 +23028,7 @@
 "en_line": 887
 },
 "power_station_art:hover_items:27": {
-"zh": "电不够时谁先用：业务终端 → 动力控制屏里调顺序，或设成不够时自动买外购电。",
+"zh": "电不够时谁先用：业务终端 → 动力控制屏里调顺序，发电机不够时到供电屏买电池块。",
 "en": "Who comes first when short: the business console's power control screen, where the supply line is chosen too.",
 "file": "power_station_art.gd",
 "line": 888,
@@ -22724,7 +23036,7 @@
 "en_line": 888
 },
 "power_station_art:hover_items:29": {
-"zh": "整座电站的读数：输出 / 容量、频率、堆热功率、蒸汽、冷凝器、散热板、外购电，以及最近几次自动切换。",
+"zh": "整座电站的读数：输出 / 容量、频率、堆热功率、蒸汽、冷凝器、散热板、电池，以及最近几次自动切换。",
 "en": "The plant in figures: out against capacity, frequency, reactor heat, steam, condenser, radiators, shore power, and the last automatic changeovers.",
 "file": "power_station_art.gd",
 "line": 890,
@@ -22743,7 +23055,7 @@
 "zh": "给水泵 %s 振动偏高 · 自动启动备用泵 %s",
 "en": "",
 "file": "power_works.gd",
-"line": 375,
+"line": 378,
 "func": "fault_text",
 "en_line": 0
 },
@@ -22751,7 +23063,7 @@
 "zh": "给水泵 %s → %s 切换完成 · 供电不受影响",
 "en": "",
 "file": "power_works.gd",
-"line": 376,
+"line": 379,
 "func": "fault_text",
 "en_line": 0
 },
@@ -22759,23 +23071,23 @@
 "zh": "调节阀卡涩 · 频率下跌",
 "en": "GOVERNOR VALVE STICKING · FREQUENCY FALLING",
 "file": "power_works.gd",
-"line": 379,
+"line": 382,
 "func": "fault_text",
-"en_line": 379
+"en_line": 382
 },
 "power_works:fault_text:4": {
 "zh": "调节阀卡涩 1.4 s 后自动冲开 · 频率已恢复",
 "en": "GOVERNOR VALVE FREED AFTER 1.4 s · FREQUENCY BACK",
 "file": "power_works.gd",
-"line": 380,
+"line": 383,
 "func": "fault_text",
-"en_line": 380
+"en_line": 383
 },
 "power_works:fault_text:5": {
 "zh": "散热泵 %s 振动偏高 · 自动切到 %s",
 "en": "",
 "file": "power_works.gd",
-"line": 384,
+"line": 387,
 "func": "fault_text",
 "en_line": 0
 },
@@ -22783,7 +23095,7 @@
 "zh": "散热泵 %s → %s 切换完成 · 散热板温度短暂升高",
 "en": "",
 "file": "power_works.gd",
-"line": 385,
+"line": 388,
 "func": "fault_text",
 "en_line": 0
 },
@@ -22791,23 +23103,23 @@
 "zh": "空机位 · 第 2 期装第 3 套",
 "en": "EMPTY BAY · UNIT 3 AT STAGE 2",
 "file": "power_works.gd",
-"line": 393,
+"line": 396,
 "func": "unit_state",
-"en_line": 393
+"en_line": 396
 },
 "power_works:unit_state:2": {
 "zh": "停堆 · 冷态",
 "en": "SHUT DOWN · COLD",
 "file": "power_works.gd",
-"line": 394,
+"line": 397,
 "func": "unit_state",
-"en_line": 394
+"en_line": 397
 },
 "power_works:unit_state:3": {
 "zh": "%.0f MWt · 棒位 %d%% · %.0f / %.0f °C",
 "en": "",
 "file": "power_works.gd",
-"line": 395,
+"line": 398,
 "func": "unit_state",
 "en_line": 0
 },
@@ -22815,47 +23127,47 @@
 "zh": "停机 · 0 rpm",
 "en": "STOPPED · 0 rpm",
 "file": "power_works.gd",
-"line": 400,
+"line": 403,
 "func": "turbine_state",
-"en_line": 400
+"en_line": 403
 },
 "power_works:turbine_state:2": {
 "zh": "%d rpm · %.2f Hz · 阀位 %d%% · %.1f MW",
 "en": "%d rpm · %.2f Hz · VALVE %d%% · %.1f MW",
 "file": "power_works.gd",
-"line": 402,
+"line": 405,
 "func": "turbine_state",
-"en_line": 402
+"en_line": 405
 },
 "power_works:fc_state:1": {
 "zh": "备用 · 主机组带载",
 "en": "STANDBY · THE UNITS CARRY THE PORT",
 "file": "power_works.gd",
-"line": 407,
+"line": 410,
 "func": "fc_state",
-"en_line": 407
+"en_line": 410
 },
 "power_works:fc_state:2": {
 "zh": "应急供电 %.1f / 6 MW",
 "en": "EMERGENCY SUPPLY %.1f / 6 MW",
 "file": "power_works.gd",
-"line": 408,
+"line": 411,
 "func": "fc_state",
-"en_line": 408
+"en_line": 411
 },
 "power_works:feed_state:1": {
 "zh": "停 · 没有蒸汽",
 "en": "STOPPED · NO STEAM",
 "file": "power_works.gd",
-"line": 413,
+"line": 416,
 "func": "feed_state",
-"en_line": 413
+"en_line": 416
 },
 "power_works:feed_state:2": {
 "zh": "运行 %s + %s · 备用 %s · %.0f kg/s",
 "en": "",
 "file": "power_works.gd",
-"line": 416,
+"line": 419,
 "func": "feed_state",
 "en_line": 0
 },
@@ -22863,7 +23175,7 @@
 "zh": "运行 %s · 散热板 %.0f °C · 排热 %.0f MW",
 "en": "",
 "file": "power_works.gd",
-"line": 422,
+"line": 425,
 "func": "rad_state",
 "en_line": 0
 },
@@ -25764,6 +26076,14 @@
 "en_line": 59
 },
 "heat_panel:_ready:3": {
+"zh": "现场操作 · 功率自动\\n用自家发的电；不够时到供电屏买电池块",
+"en": "ON SITE · AUTOMATIC POWER\\nOur own power; short, buy a battery block at the power screen",
+"file": "heat_panel.gd",
+"line": 59,
+"func": "_ready",
+"en_line": 59
+},
+"heat_panel:_ready:4": {
 "zh": "钢锭 / 吨",
 "en": "INGOTS / t",
 "file": "heat_panel.gd",
@@ -25771,7 +26091,7 @@
 "func": "_ready",
 "en_line": 67
 },
-"heat_panel:_ready:4": {
+"heat_panel:_ready:5": {
 "zh": "去电网调度",
 "en": "TO THE POWER CONTROL SCREEN",
 "file": "heat_panel.gd",
@@ -25779,7 +26099,7 @@
 "func": "_ready",
 "en_line": 89
 },
-"heat_panel:_ready:8": {
+"heat_panel:_ready:9": {
 "zh": "展开或收起：自动装置、撤回、报损、手动功率",
 "en": "Show or hide the auto sampler, returning, writing off, manual power",
 "file": "heat_panel.gd",
@@ -25787,7 +26107,7 @@
 "func": "_ready",
 "en_line": 103
 },
-"heat_panel:_ready:9": {
+"heat_panel:_ready:10": {
 "zh": "炉台的下一步，按当前炉况来（Enter）",
 "en": "The furnace's next step, as it stands now (Enter)",
 "file": "heat_panel.gd",
@@ -25795,7 +26115,7 @@
 "func": "_ready",
 "en_line": 105
 },
-"heat_panel:_ready:10": {
+"heat_panel:_ready:11": {
 "zh": "关掉炉台，去供电控制屏调电",
 "en": "Close the desk and go to the power control screen",
 "file": "heat_panel.gd",
@@ -25803,7 +26123,7 @@
 "func": "_ready",
 "en_line": 106
 },
-"heat_panel:_ready:11": {
+"heat_panel:_ready:12": {
 "zh": "给炉子装自动装置：自己测温、自己出钢（%s）",
 "en": "INSTALL AUTO SAMPLE-AND-TAP (%s)",
 "file": "heat_panel.gd",
@@ -25811,7 +26131,7 @@
 "func": "_ready",
 "en_line": 107
 },
-"heat_panel:_ready:12": {
+"heat_panel:_ready:13": {
 "zh": "装好了：以后到温自己测温、出钢。",
 "en": "INSTALLED: IT SAMPLES AND TAPS BY ITSELF.",
 "file": "heat_panel.gd",
@@ -25819,7 +26139,7 @@
 "func": "_ready",
 "en_line": 110
 },
-"heat_panel:_ready:13": {
+"heat_panel:_ready:14": {
 "zh": "花钱给炉子装自动装置：到温后它自己测温、自己出钢，立刻生效",
 "en": "Pay to fit the auto sampler: at heat it samples and taps by itself",
 "file": "heat_panel.gd",
@@ -25827,7 +26147,7 @@
 "func": "_ready",
 "en_line": 112
 },
-"heat_panel:_ready:14": {
+"heat_panel:_ready:15": {
 "zh": "撤回未投炉批次",
 "en": "RETURN UNCHARGED FEED",
 "file": "heat_panel.gd",
@@ -25835,7 +26155,7 @@
 "func": "_ready",
 "en_line": 113
 },
-"heat_panel:_ready:15": {
+"heat_panel:_ready:16": {
 "zh": "还没投进炉子的这批钢锭退回仓库",
 "en": "Send the feed not yet charged back to the store",
 "file": "heat_panel.gd",
@@ -25843,7 +26163,7 @@
 "func": "_ready",
 "en_line": 114
 },
-"heat_panel:_ready:16": {
+"heat_panel:_ready:17": {
 "zh": "报损弃置本批货物（无退款）",
 "en": "WRITE OFF CARGO / NO REFUND",
 "file": "heat_panel.gd",
@@ -25851,7 +26171,7 @@
 "func": "_ready",
 "en_line": 116
 },
-"heat_panel:_ready:17": {
+"heat_panel:_ready:18": {
 "zh": "这批货直接报废扔掉，钱不退；只在炉子出故障救不回来时用",
 "en": "Scrap this batch for nothing; only when the heat cannot be saved",
 "file": "heat_panel.gd",
@@ -25859,7 +26179,7 @@
 "func": "_ready",
 "en_line": 117
 },
-"heat_panel:_ready:18": {
+"heat_panel:_ready:19": {
 "zh": "手动功率 / %",
 "en": "MANUAL POWER / %",
 "file": "heat_panel.gd",
@@ -25867,7 +26187,7 @@
 "func": "_ready",
 "en_line": 120
 },
-"heat_panel:_ready:19": {
+"heat_panel:_ready:20": {
 "zh": "停机并复位",
 "en": "STOP / RETURN",
 "file": "heat_panel.gd",
@@ -25875,7 +26195,7 @@
 "func": "_ready",
 "en_line": 134
 },
-"heat_panel:_ready:20": {
+"heat_panel:_ready:21": {
 "zh": "关闭 [Esc]",
 "en": "CLOSE [Esc]",
 "file": "heat_panel.gd",
@@ -26471,7 +26791,7 @@
 "zh": "炉体存档校验失败，请保留现场并恢复有效备份",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 277,
+"line": 280,
 "func": "_ready",
 "en_line": 0
 },
@@ -26479,7 +26799,7 @@
 "zh": "成品阶段与炉体出料凭证不一致，请保留现场",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 280,
+"line": 283,
 "func": "_ready",
 "en_line": 0
 },
@@ -26487,7 +26807,7 @@
 "zh": "未投料阶段与炉体物料凭证不一致，请保留现场",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 283,
+"line": 286,
 "func": "_ready",
 "en_line": 0
 },
@@ -26495,7 +26815,7 @@
 "zh": "请先结清历史炉次待缴电费，不能用新炉次覆盖欠款",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 306,
+"line": 309,
 "func": "begin",
 "en_line": 0
 },
@@ -26503,7 +26823,7 @@
 "zh": "请先结清上一炉待缴电费，不能用新炉次覆盖欠款",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 307,
+"line": 310,
 "func": "begin",
 "en_line": 0
 },
@@ -26511,7 +26831,7 @@
 "zh": "请先结束当前作业，等设备空闲后，到炉台开炉。",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 310,
+"line": 313,
 "func": "begin",
 "en_line": 0
 },
@@ -26519,7 +26839,7 @@
 "zh": "请先修复加工区基础设施",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 311,
+"line": 314,
 "func": "begin",
 "en_line": 0
 },
@@ -26527,7 +26847,7 @@
 "zh": "首期单炉范围 0.25–2 t",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 312,
+"line": 315,
 "func": "begin",
 "en_line": 0
 },
@@ -26535,7 +26855,7 @@
 "zh": "等待旧金属完成输送与交接",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 315,
+"line": 318,
 "func": "begin",
 "en_line": 0
 },
@@ -26543,7 +26863,7 @@
 "zh": "等待上一批拆船料通过设备",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 317,
+"line": 320,
 "func": "begin",
 "en_line": 0
 },
@@ -26551,7 +26871,7 @@
 "zh": "仓库只有 %.2f 吨钢锭：把数量改成 %.2f 吨以下再送。",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 336,
+"line": 339,
 "func": "begin",
 "en_line": 0
 },
@@ -26559,7 +26879,7 @@
 "zh": "仓库里没有钢锭了。再拆一艘船，碎料会在熔炉里炼成钢锭进仓库。",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 337,
+"line": 340,
 "func": "begin",
 "en_line": 0
 },
@@ -26567,7 +26887,7 @@
 "zh": "炉料来源记录不完整",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 347,
+"line": 350,
 "func": "begin",
 "en_line": 0
 },
@@ -26575,7 +26895,7 @@
 "zh": "上一炉尚未清空设备",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 352,
+"line": 355,
 "func": "begin",
 "en_line": 0
 },
@@ -26583,7 +26903,7 @@
 "zh": "保存失败，未启动炉次",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 369,
+"line": 372,
 "func": "begin",
 "en_line": 0
 },
@@ -26591,7 +26911,7 @@
 "zh": "关键工序必须在炉旁操作",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 375,
+"line": 378,
 "func": "command",
 "en_line": 0
 },
@@ -26599,7 +26919,7 @@
 "zh": "等待原料实际入炉",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 376,
+"line": 379,
 "func": "command",
 "en_line": 0
 },
@@ -26607,7 +26927,7 @@
 "zh": "保存失败，操作未提交",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 387,
+"line": 390,
 "func": "command",
 "en_line": 0
 },
@@ -26615,7 +26935,7 @@
 "zh": "请在炉旁撤回批次",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 392,
+"line": 395,
 "func": "cancel",
 "en_line": 0
 },
@@ -26623,7 +26943,7 @@
 "zh": "已投炉材料不能退回冷料；可停机保料或完成出钢",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 393,
+"line": 396,
 "func": "cancel",
 "en_line": 0
 },
@@ -26631,7 +26951,7 @@
 "zh": "货物缺失，需要先处理现场异常",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 394,
+"line": 397,
 "func": "cancel",
 "en_line": 0
 },
@@ -26639,7 +26959,7 @@
 "zh": "炉料来源记录不一致，撤回未提交",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 396,
+"line": 399,
 "func": "cancel",
 "en_line": 0
 },
@@ -26647,7 +26967,7 @@
 "zh": "货物缺失或受损，请先检查现场",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 401,
+"line": 404,
 "func": "cancel",
 "en_line": 0
 },
@@ -26655,7 +26975,7 @@
 "zh": "保存失败，撤回未提交",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 428,
+"line": 431,
 "func": "cancel",
 "en_line": 0
 },
@@ -26663,7 +26983,7 @@
 "zh": "只能在现场报损运输中的本批货物",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 461,
+"line": 464,
 "func": "write_off",
 "en_line": 0
 },
@@ -26671,7 +26991,7 @@
 "zh": "货物尚未交给搬运机构，可免费撤回，无需报损",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 463,
+"line": 466,
 "func": "write_off",
 "en_line": 0
 },
@@ -26679,7 +26999,7 @@
 "zh": "原料损失来源记录不一致",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 470,
+"line": 473,
 "func": "write_off",
 "en_line": 0
 },
@@ -26687,7 +27007,7 @@
 "zh": "原料损失账目不一致",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 475,
+"line": 478,
 "func": "write_off",
 "en_line": 0
 },
@@ -26695,7 +27015,7 @@
 "zh": "保存失败，报损未提交",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 486,
+"line": 489,
 "func": "write_off",
 "en_line": 0
 },
@@ -26703,7 +27023,7 @@
 "zh": "本批已报损，无退款；遗留实物需现场清理",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 498,
+"line": 501,
 "func": "write_off",
 "en_line": 0
 },
@@ -26711,7 +27031,7 @@
 "zh": "等待装卸位",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 545,
+"line": 548,
 "func": "_adopt",
 "en_line": 0
 },
@@ -26719,7 +27039,7 @@
 "zh": "等待装卸位",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 562,
+"line": 565,
 "func": "_adopt",
 "en_line": 0
 },
@@ -26727,7 +27047,7 @@
 "zh": "搬运机构等待通道",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 622,
+"line": 625,
 "func": "_move_empty",
 "en_line": 0
 },
@@ -26735,7 +27055,7 @@
 "zh": "返仓来源记录不一致，未增加库存",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 662,
+"line": 665,
 "func": "_receive",
 "en_line": 0
 },
@@ -26743,7 +27063,7 @@
 "zh": "炉体出料记录尚未满足本批次验收",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 672,
+"line": 675,
 "func": "_receive",
 "en_line": 0
 },
@@ -26751,7 +27071,7 @@
 "zh": "待结清本炉电费后验收入库",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 676,
+"line": 679,
 "func": "_receive",
 "en_line": 0
 },
@@ -26759,7 +27079,7 @@
 "zh": "保存失败，货物暂存",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 712,
+"line": 715,
 "func": "_receive",
 "en_line": 0
 },
@@ -26767,7 +27087,7 @@
 "zh": "历史炉次账本格式错误，请保留存档",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 729,
+"line": 732,
 "func": "historical_debt",
 "en_line": 0
 },
@@ -26775,7 +27095,7 @@
 "zh": "历史炉次账本格式错误，请保留存档",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 731,
+"line": 734,
 "func": "historical_debt",
 "en_line": 0
 },
@@ -26783,7 +27103,7 @@
 "zh": "历史炉次欠费格式错误，请保留存档",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 733,
+"line": 736,
 "func": "historical_debt",
 "en_line": 0
 },
@@ -26791,7 +27111,7 @@
 "zh": "历史炉次欠费记录无效，请保留存档",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 737,
+"line": 740,
 "func": "historical_debt",
 "en_line": 0
 },
@@ -26799,7 +27119,7 @@
 "zh": "同一历史炉次的欠费记录冲突，请保留存档核查",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 740,
+"line": 743,
 "func": "historical_debt",
 "en_line": 0
 },
@@ -26807,7 +27127,7 @@
 "zh": "历史炉次电费待缴，可先完成其他业务筹款",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 753,
+"line": 756,
 "func": "_pay_history",
 "en_line": 0
 },
@@ -26815,7 +27135,7 @@
 "zh": "历史电费结算保存失败，未扣款",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 769,
+"line": 772,
 "func": "_pay_history",
 "en_line": 0
 },
@@ -26823,7 +27143,7 @@
 "zh": "历史炉次电费待缴，可先完成其他业务筹款",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 771,
+"line": 774,
 "func": "_pay_history",
 "en_line": 0
 },
@@ -26831,7 +27151,7 @@
 "zh": "电费余额不足，已停止新增供电",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 839,
+"line": 842,
 "func": "_process",
 "en_line": 0
 },
@@ -26839,7 +27159,7 @@
 "zh": "电费余额不足，已停止新增供电",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 844,
+"line": 847,
 "func": "_process",
 "en_line": 0
 },
@@ -26847,7 +27167,7 @@
 "zh": "保存失败，请保留现场",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 855,
+"line": 858,
 "func": "_process",
 "en_line": 0
 },
@@ -26855,7 +27175,7 @@
 "zh": "等待装卸位",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 898,
+"line": 901,
 "func": "_physics_process",
 "en_line": 0
 },
@@ -26863,7 +27183,7 @@
 "zh": "货物缺失，等待现场处理",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 899,
+"line": 902,
 "func": "_physics_process",
 "en_line": 0
 },
@@ -26871,7 +27191,7 @@
 "zh": "货物受损，等待重新验收",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 909,
+"line": 912,
 "func": "_physics_process",
 "en_line": 0
 },
@@ -26879,7 +27199,7 @@
 "zh": "等待仓库接收通道",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 915,
+"line": 918,
 "func": "_physics_process",
 "en_line": 0
 },
@@ -26887,7 +27207,7 @@
 "zh": "搬运通道受阻，请检查现场",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 929,
+"line": 932,
 "func": "_physics_process",
 "en_line": 0
 },
@@ -26895,25 +27215,25 @@
 "zh": "[%s] 加工队列",
 "en": "[%s] PROCESSING QUEUE",
 "file": "industrial_heat.gd",
-"line": 981,
+"line": 984,
 "func": "_draw_desk",
-"en_line": 981
+"en_line": 984
 },
 "industrial_heat:_draw_desk:3": {
 "zh": "[%s] 炉体操作",
 "en": "[%s] FURNACE CONTROLS",
 "file": "industrial_heat.gd",
-"line": 981,
+"line": 984,
 "func": "_draw_desk",
-"en_line": 981
+"en_line": 984
 },
 "industrial_heat:_draw_desk:4": {
 "zh": "炉体操作台",
 "en": "FURNACE DESK",
 "file": "industrial_heat.gd",
-"line": 982,
+"line": 985,
 "func": "_draw_desk",
-"en_line": 982
+"en_line": 985
 },
 "industrial_sort:_ready:1": {
 "zh": "分选设备存档校验失败，保留现场与账本",
@@ -49345,401 +49665,441 @@
 "zh": "汽轮发电机",
 "en": "TURBINE-GENERATOR",
 "file": "power_supply.gd",
-"line": 97,
+"line": 124,
 "func": "gen_name",
-"en_line": 97
+"en_line": 124
 },
 "power_supply:gen_name:2": {
 "zh": "燃料电池组",
 "en": "FUEL-CELL SET",
 "file": "power_supply.gd",
-"line": 97,
+"line": 124,
 "func": "gen_name",
-"en_line": 97
+"en_line": 124
 },
 "power_supply:set_over:1": {
 "zh": "没有这台发电机",
 "en": "NO SUCH SET",
 "file": "power_supply.gd",
-"line": 138,
+"line": 165,
 "func": "set_over",
-"en_line": 138
+"en_line": 165
 },
 "power_supply:set_over:2": {
 "zh": "%s已过热停机，先用维护工具修好",
 "en": "%s TRIPPED; MEND IT WITH THE WRENCH FIRST",
 "file": "power_supply.gd",
-"line": 140,
+"line": 167,
 "func": "set_over",
-"en_line": 140
+"en_line": 167
 },
 "power_supply:set_over:3": {
 "zh": "%s超载 +%d%% · 热量会上升，满了强制停机",
 "en": "%s OVERLOAD +%d%% · IT HEATS; FULL, IT TRIPS",
 "file": "power_supply.gd",
-"line": 143,
+"line": 170,
 "func": "set_over",
-"en_line": 143
+"en_line": 170
 },
 "power_supply:set_over:4": {
 "zh": "%s回到额定 · 慢慢散热",
 "en": "%s BACK TO RATED · COOLING",
 "file": "power_supply.gd",
-"line": 143,
+"line": 170,
 "func": "set_over",
-"en_line": 143
+"en_line": 170
 },
 "power_supply:can_order:1": {
 "zh": "没有这种电池",
 "en": "NO SUCH BLOCK",
 "file": "power_supply.gd",
-"line": 187,
+"line": 223,
 "func": "can_order",
-"en_line": 187
+"en_line": 223
 },
 "power_supply:can_order:2": {
-"zh": "电池泊位都占着：等一块用完再订",
-"en": "BOTH SLOTS IN USE: ORDER WHEN ONE RUNS OUT",
+"zh": "电池泊位都占着：等一块用完、空壳运走再订",
+"en": "BOTH SLOTS IN USE: ORDER ONCE A SHELL HAS GONE",
 "file": "power_supply.gd",
-"line": 189,
+"line": 225,
 "func": "can_order",
-"en_line": 189
+"en_line": 225
 },
 "power_supply:can_order:3": {
 "zh": "钱不够：要 $%s",
 "en": "NOT ENOUGH MONEY: $%s",
 "file": "power_supply.gd",
-"line": 191,
+"line": 227,
 "func": "can_order",
-"en_line": 191
+"en_line": 227
 },
 "power_supply:order:1": {
 "zh": "已下单：%s电池 %.1f 兆瓦时 · $%s · 约 %d 秒后到港，吊到电池泊位 %s",
 "en": "ORDERED: %s BLOCK %.1f MWh · $%s · IN ABOUT %d s, TO BERTH SLOT %s",
 "file": "power_supply.gd",
-"line": 211,
+"line": 247,
 "func": "order",
-"en_line": 211
+"en_line": 247
 },
 "power_supply:_tick_orders:1": {
 "zh": "电池已接入：%s %.1f 兆瓦时 · 泊位 %s · 总线可多用 %.0f 兆瓦",
 "en": "BLOCK IN: %s %.1f MWh · SLOT %s · %.0f MW MORE ON THE BUS",
 "file": "power_supply.gd",
-"line": 346,
+"line": 403,
 "func": "_tick_orders",
-"en_line": 346
+"en_line": 403
 },
 "power_supply:_drain:1": {
 "zh": "电池 %s 用完了：空壳等送货飞船吊走",
 "en": "SLOT %s SPENT: THE SHELL WAITS FOR A SHIP",
 "file": "power_supply.gd",
-"line": 374,
+"line": 432,
 "func": "_drain",
-"en_line": 374
+"en_line": 432
 },
 "power_supply:_drain:2": {
 "zh": "%s过热，强制停机！飞过去用维护工具（4）修一下才能重启",
 "en": "%s OVERHEATED AND TRIPPED: TAKE THE WRENCH (4) TO IT",
 "file": "power_supply.gd",
-"line": 393,
+"line": 451,
 "func": "_drain",
-"en_line": 393
+"en_line": 451
 },
 "power_supply:_auto:1": {
 "zh": "电快用完了，已自动再订一块：",
 "en": "LOW: ANOTHER ORDERED: ",
 "file": "power_supply.gd",
-"line": 403,
+"line": 461,
 "func": "_auto",
-"en_line": 403
+"en_line": 461
+},
+"power_supply:cryo_status:1": {
+"zh": "运送中：液氢 %.0f kg、液氧 %.0f kg（%.1f 兆瓦时）",
+"en": "ON ITS WAY: %.0f kg LH2, %.0f kg LOX (%.1f MWh)",
+"file": "power_supply.gd",
+"line": 628,
+"func": "cryo_status",
+"en_line": 628
+},
+"power_supply:cryo_status:2": {
+"zh": "燃料电池储罐满了",
+"en": "THE FUEL CELLS' TANK IS FULL",
+"file": "power_supply.gd",
+"line": 632,
+"func": "cryo_status",
+"en_line": 632
+},
+"power_supply:cryo_status:3": {
+"zh": "没有库存，不送：液氢 %.0f kg（拖船站拆下的液氢罐）· 液氧 %.0f kg（加工区气体线）",
+"en": "NO STOCK, NO RUN: %.0f kg LH2 (TANKS FROM THE TUG STATION) · %.0f kg LOX (THE GAS LINE)",
+"file": "power_supply.gd",
+"line": 633,
+"func": "cryo_status",
+"en_line": 633
+},
+"power_supply:cryo_status:4": {
+"zh": "库存：液氢 %.0f kg · 液氧 %.0f kg · 储罐低于一半时自动送一趟",
+"en": "STOCK: %.0f kg LH2 · %.0f kg LOX · A RUN GOES BELOW HALF",
+"file": "power_supply.gd",
+"line": 634,
+"func": "cryo_status",
+"en_line": 634
 },
 "power_supply:_tick_cryo:1": {
 "zh": "液氢液氧已灌进燃料电池：第二组电堆 +%.0f 兆瓦",
 "en": "LH2 AND LOX IN: THE SECOND STACK +%.0f MW",
 "file": "power_supply.gd",
-"line": 559,
+"line": 697,
 "func": "_tick_cryo",
-"en_line": 559
+"en_line": 697
 },
 "power_supply:tick:1": {
 "zh": "%s修好了，已重启",
 "en": "%s MENDED AND RUNNING",
 "file": "power_supply.gd",
-"line": 585,
+"line": 727,
 "func": "tick",
-"en_line": 585
+"en_line": 727
 },
 "power_supply_ui:_ready:2": {
 "zh": "外星系送货飞船送到电池泊位，吊装后接进全港总线",
 "en": "A ship brings it from another system to the battery berth",
 "file": "power_supply_ui.gd",
-"line": 73,
+"line": 76,
 "func": "_ready",
-"en_line": 73
+"en_line": 76
 },
 "power_supply_ui:_ready:4": {
 "zh": "容量 %.1f 兆瓦时 · 最多 %.0f 兆瓦",
 "en": "%.1f MWh · UP TO %.0f MW",
 "file": "power_supply_ui.gd",
-"line": 95,
+"line": 98,
 "func": "_ready",
-"en_line": 95
+"en_line": 98
 },
 "power_supply_ui:_ready:5": {
 "zh": "满功率能撑 %d 分钟 · 约 %d 秒到港",
 "en": "%d min AT FULL · IN ABOUT %d s",
 "file": "power_supply_ui.gd",
-"line": 96,
+"line": 99,
 "func": "_ready",
-"en_line": 96
+"en_line": 99
 },
 "power_supply_ui:_ready:7": {
 "zh": "立刻下单（不用确认）：扣 $%s，送货飞船约 %d 秒后到电池泊位",
 "en": "Orders at once: $%s, the ship is at the berth in about %d s",
 "file": "power_supply_ui.gd",
-"line": 102,
+"line": 105,
 "func": "_ready",
-"en_line": 102
+"en_line": 105
 },
 "power_supply_ui:_ready:8": {
 "zh": "快用完时自动再订一块（按上次订的大小）",
 "en": "ORDER ANOTHER WHEN LOW (THE LAST SIZE)",
 "file": "power_supply_ui.gd",
-"line": 108,
+"line": 111,
 "func": "_ready",
-"en_line": 108
+"en_line": 111
 },
 "power_supply_ui:_ready:9": {
 "zh": "已打开：电池剩不到 %d%% 时自动再订一块%s",
 "en": "ON: ANOTHER IS ORDERED BELOW %d%%",
 "file": "power_supply_ui.gd",
-"line": 113,
+"line": 116,
 "func": "_ready",
-"en_line": 113
+"en_line": 116
 },
 "power_supply_ui:_ready:10": {
 "zh": "已关闭自动再订",
 "en": "AUTO ORDER OFF",
 "file": "power_supply_ui.gd",
-"line": 113,
+"line": 116,
 "func": "_ready",
-"en_line": 113
+"en_line": 116
 },
 "power_supply_ui:_ready:11": {
 "zh": "打开后，电池总量剩不到四分之一时，自动按上次的大小再订一块",
 "en": "When on, another block of the last size is ordered below a quarter left",
 "file": "power_supply_ui.gd",
-"line": 114,
+"line": 117,
 "func": "_ready",
-"en_line": 114
+"en_line": 117
 },
 "power_supply_ui:_ready:13": {
 "zh": "超载多发 %d%%，但会发热；热量满了强制停机，要飞过去用维护工具修一下才能重启。",
 "en": "Overload gives %d%% more but heats; full, it trips until the wrench mends it.",
 "file": "power_supply_ui.gd",
-"line": 125,
+"line": 128,
 "func": "_ready",
-"en_line": 125
+"en_line": 128
 },
 "power_supply_ui:_ready:15": {
 "zh": "超载：多发 %d%% 的电，热量条会涨，满了强制停机",
 "en": "Overload: %d%% more, heat rises; full, it trips",
 "file": "power_supply_ui.gd",
-"line": 144,
+"line": 147,
 "func": "_ready",
-"en_line": 144
+"en_line": 147
 },
 "power_supply_ui:sync:1": {
 "zh": "泊位 %s：空",
 "en": "SLOT %s: EMPTY",
 "file": "power_supply_ui.gd",
-"line": 179,
+"line": 186,
 "func": "sync",
-"en_line": 179
+"en_line": 186
 },
 "power_supply_ui:sync:2": {
 "zh": "泊位 %s：空壳待运走",
 "en": "SLOT %s: SPENT SHELL",
 "file": "power_supply_ui.gd",
-"line": 181,
+"line": 188,
 "func": "sync",
-"en_line": 181
+"en_line": 188
 },
 "power_supply_ui:sync:3": {
 "zh": "泊位 %s：%s %.1f / %.1f 兆瓦时",
 "en": "SLOT %s: %s %.1f / %.1f MWh",
 "file": "power_supply_ui.gd",
-"line": 183,
+"line": 190,
 "func": "sync",
-"en_line": 183
+"en_line": 190
 },
 "power_supply_ui:sync:4": {
 "zh": "空壳回收船 %d 秒后到",
 "en": "PICKUP IN %d s",
 "file": "power_supply_ui.gd",
-"line": 186,
+"line": 193,
 "func": "sync",
-"en_line": 186
+"en_line": 193
 },
 "power_supply_ui:sync:5": {
 "zh": "%s电池在路上 · %d 秒后到港",
 "en": "%s BLOCK ON ITS WAY · %d s",
 "file": "power_supply_ui.gd",
-"line": 188,
+"line": 195,
 "func": "sync",
-"en_line": 188
+"en_line": 195
 },
 "power_supply_ui:sync:6": {
 "zh": "%s电池正在吊装",
 "en": "%s BLOCK BEING LOWERED",
 "file": "power_supply_ui.gd",
-"line": 190,
+"line": 197,
 "func": "sync",
-"en_line": 190
+"en_line": 197
 },
 "power_supply_ui:sync:7": {
 "zh": "%s  %.1f / %.1f 兆瓦",
 "en": "%s  %.1f / %.1f MW",
 "file": "power_supply_ui.gd",
-"line": 205,
+"line": 212,
 "func": "sync",
-"en_line": 205
+"en_line": 212
 },
 "power_supply_ui:sync:8": {
 "zh": "（含第二组电堆 +%.0f）",
 "en": " (+%.0f STACK 2)",
 "file": "power_supply_ui.gd",
-"line": 205,
+"line": 212,
 "func": "sync",
-"en_line": 205
+"en_line": 212
 },
 "power_supply_ui:sync:9": {
 "zh": "过热停机 · 待修：飞到%s旁，用维护工具（4）按住修一下",
 "en": "TRIPPED · FLY TO IT AND HOLD THE WRENCH (4) ON IT",
 "file": "power_supply_ui.gd",
-"line": 209,
+"line": 216,
 "func": "sync",
-"en_line": 209
+"en_line": 216
 },
 "power_supply_ui:sync:11": {
 "zh": " · 超载中，热量在涨",
 "en": " · OVERLOADED, HEATING",
 "file": "power_supply_ui.gd",
-"line": 212,
+"line": 219,
 "func": "sync",
-"en_line": 212
+"en_line": 219
+},
+"power_supply_ui:sync:12": {
+"zh": "燃料电池第二组电堆：储罐 %.1f / %.0f 兆瓦时 · ",
+"en": "FUEL CELLS' STACK 2: TANK %.1f / %.0f MWh · ",
+"file": "power_supply_ui.gd",
+"line": 221,
+"func": "sync",
+"en_line": 221
 },
 "power_supply_view:_ship:1": {
-"zh": "外星系货运 CB-7",
-"en": "INTERSYSTEM FREIGHT CB-7",
+"zh": "外星系货运",
+"en": "FREIGHT",
 "file": "power_supply_view.gd",
-"line": 235,
+"line": 287,
 "func": "_ship",
-"en_line": 235
+"en_line": 287
 },
 "power_supply_view:_cryo_fixed:1": {
 "zh": "低温灌装台 · 液氢 / 液氧",
 "en": "CRYO FILL STAND · LH2 / LOX",
 "file": "power_supply_view.gd",
-"line": 289,
+"line": 397,
 "func": "_cryo_fixed",
-"en_line": 289
+"en_line": 397
 },
 "power_supply_view:_cryo_fixed:2": {
 "zh": "燃料电池加注口",
 "en": "FUEL-CELL FILL",
 "file": "power_supply_view.gd",
-"line": 297,
+"line": 405,
 "func": "_cryo_fixed",
-"en_line": 297
+"en_line": 405
 },
 "power_supply_view:_cryo_run:1": {
 "zh": "液氢 −253 °C",
 "en": "LH2 −253 °C",
 "file": "power_supply_view.gd",
-"line": 361,
+"line": 441,
 "func": "_cryo_run",
-"en_line": 361
+"en_line": 441
 },
 "power_supply_view:_cryo_words:1": {
 "zh": "灌装：管路预冷",
 "en": "FILL: PRECOOLING THE LINE",
 "file": "power_supply_view.gd",
-"line": 408,
+"line": 493,
 "func": "_cryo_words",
-"en_line": 408
+"en_line": 493
 },
 "power_supply_view:_cryo_words:2": {
 "zh": "灌装：开阀",
 "en": "FILL: VALVE OPEN",
 "file": "power_supply_view.gd",
-"line": 409,
+"line": 494,
 "func": "_cryo_words",
-"en_line": 409
+"en_line": 494
 },
 "power_supply_view:_cryo_words:3": {
 "zh": "关阀 · 断开软管",
 "en": "VALVE SHUT · HOSE OFF",
 "file": "power_supply_view.gd",
-"line": 410,
+"line": 495,
 "func": "_cryo_words",
-"en_line": 410
+"en_line": 495
 },
 "power_supply_view:_cryo_words:5": {
 "zh": "拖船运往动力区",
 "en": "TO THE POWER DISTRICT",
 "file": "power_supply_view.gd",
-"line": 412,
+"line": 497,
 "func": "_cryo_words",
-"en_line": 412
+"en_line": 497
 },
 "power_supply_view:_cryo_words:6": {
 "zh": "对接加注口",
 "en": "MATING THE FILL COUPLING",
 "file": "power_supply_view.gd",
-"line": 413,
+"line": 498,
 "func": "_cryo_words",
-"en_line": 413
+"en_line": 498
 },
 "power_supply_view:_cryo_words:7": {
 "zh": "加注：管路预冷",
 "en": "PRECOOLING THE LINE",
 "file": "power_supply_view.gd",
-"line": 414,
+"line": 499,
 "func": "_cryo_words",
-"en_line": 414
+"en_line": 499
 },
 "power_supply_view:_cryo_words:8": {
 "zh": "加注燃料电池储罐",
 "en": "FILLING THE FUEL CELLS",
 "file": "power_supply_view.gd",
-"line": 415,
+"line": 500,
 "func": "_cryo_words",
-"en_line": 415
+"en_line": 500
 },
 "power_supply_view:_cryo_words:9": {
 "zh": "关阀 · 断开软管",
 "en": "VALVE SHUT · HOSE OFF",
 "file": "power_supply_view.gd",
-"line": 416,
+"line": 501,
 "func": "_cryo_words",
-"en_line": 416
+"en_line": 501
 },
 "power_supply_view:_inside:3": {
 "zh": "过热停机 · 待修：用维护工具（4）按住修一下",
 "en": "TRIPPED · TAKE THE WRENCH (4) TO IT",
 "file": "power_supply_view.gd",
-"line": 506,
+"line": 609,
 "func": "_inside",
-"en_line": 506
+"en_line": 609
 },
 "power_supply_view:_inside:4": {
 "zh": "氢氧储罐 %d%% · 第二组电堆 %s",
 "en": "H2/O2 TANK %d%% · STACK 2 %s",
 "file": "power_supply_view.gd",
-"line": 513,
+"line": 616,
 "func": "_inside",
-"en_line": 513
+"en_line": 616
 },
 "process_gallery:use:1": {
 "zh": "换模中：还要 %d 秒",
@@ -49921,521 +50281,585 @@
 "zh": "这张订单不要钢坯",
 "en": "THIS ORDER WANTS NO CAST STEEL",
 "file": "process_line.gd",
-"line": 216,
+"line": 217,
 "func": "plan_for_order",
-"en_line": 216
+"en_line": 217
 },
 "process_line:plan_for_order:2": {
 "zh": "这单要的已经在仓库或队列里了",
 "en": "WHAT IT WANTS IS IN STORE OR QUEUED ALREADY",
 "file": "process_line.gd",
-"line": 219,
+"line": 220,
 "func": "plan_for_order",
-"en_line": 219
+"en_line": 220
 },
 "process_line:use_text:1": {
 "zh": "订单已结束 · 留着",
 "en": "ORDER GONE · KEEP",
 "file": "process_line.gd",
-"line": 235,
+"line": 236,
 "func": "use_text",
-"en_line": 235
+"en_line": 236
 },
 "process_line:use_text:2": {
 "zh": "订单 · %s · %d 分钟后截止",
 "en": "ORDER · %s · DUE IN %d MIN",
 "file": "process_line.gd",
-"line": 236,
+"line": 237,
 "func": "use_text",
-"en_line": 236
+"en_line": 237
 },
 "process_line:use_text:3": {
 "zh": "炼好挂到交易行卖",
 "en": "TO SELL ON THE EXCHANGE",
 "file": "process_line.gd",
-"line": 238,
+"line": 239,
 "func": "use_text",
-"en_line": 238
+"en_line": 239
 },
 "process_line:charged_text:1": {
 "zh": "气体 %d kPa",
 "en": "GAS %d kPa",
 "file": "process_line.gd",
-"line": 335,
+"line": 336,
 "func": "charged_text",
-"en_line": 335
+"en_line": 336
 },
 "process_line:charged_text:2": {
 "zh": "液体 %.2f m³",
 "en": "LIQUID %.2f m³",
 "file": "process_line.gd",
-"line": 337,
+"line": 338,
 "func": "charged_text",
-"en_line": 337
+"en_line": 338
 },
 "process_line:pressable:1": {
 "zh": "加工区修好后才能用压块机",
 "en": "THE PRESS IS IN THE PROCESSING DISTRICT: MEND IT FIRST",
 "file": "process_line.gd",
-"line": 346,
+"line": 347,
 "func": "pressable",
-"en_line": 346
+"en_line": 347
 },
 "process_line:pressable:2": {
 "zh": "先放进仓库",
 "en": "PUT IT AWAY FIRST",
 "file": "process_line.gd",
-"line": 348,
+"line": 349,
 "func": "pressable",
-"en_line": 348
+"en_line": 349
 },
 "process_line:pressable:3": {
 "zh": "钢锭、钢坯本来就是实心的，不用压",
 "en": "INGOTS AND BILLETS ARE SOLID ALREADY",
 "file": "process_line.gd",
-"line": 353,
+"line": 354,
 "func": "pressable",
-"en_line": 353
+"en_line": 354
 },
 "process_line:pressable:4": {
 "zh": "小零件不用压",
 "en": "SMALL SPARES ARE NOT PRESSED",
 "file": "process_line.gd",
-"line": 355,
+"line": 356,
 "func": "pressable",
-"en_line": 355
+"en_line": 356
 },
 "process_line:pressable:5": {
 "zh": "挂牌中，先撤下来",
 "en": "LISTED: WITHDRAW IT FIRST",
 "file": "process_line.gd",
-"line": 357,
+"line": 358,
 "func": "pressable",
-"en_line": 357
+"en_line": 358
 },
 "process_line:pressable:6": {
 "zh": "已经是压块了",
 "en": "IT IS A BALE ALREADY",
 "file": "process_line.gd",
-"line": 360,
+"line": 361,
 "func": "pressable",
-"en_line": 360
+"en_line": 361
 },
 "process_line:pressable:7": {
 "zh": "罐里是回收的气体液体，只能卖",
 "en": "RECOVERED GAS OR LIQUID: IT ONLY SELLS",
 "file": "process_line.gd",
-"line": 362,
+"line": 363,
 "func": "pressable",
-"en_line": 362
+"en_line": 363
 },
 "process_line:pressable:8": {
 "zh": "压机拒收过：里面还有%s。拆船时先用气液回收（5）抽干净再拆下来",
 "en": "THE PRESS SENT IT BACK: %s INSIDE. EMPTY IT WITH THE FLUID TOOL (5) BEFORE YOU CUT IT FREE",
 "file": "process_line.gd",
-"line": 364,
+"line": 365,
 "func": "pressable",
-"en_line": 364
+"en_line": 365
 },
 "process_line:pressable:9": {
 "zh": "压机拒收过：里面还有%s。拆船时先用气液回收（5）抽干净再拆下来",
 "en": "THE PRESS SENT IT BACK: %s INSIDE. EMPTY IT WITH THE FLUID TOOL (5) BEFORE YOU CUT IT FREE",
 "file": "process_line.gd",
-"line": 366,
+"line": 367,
 "func": "pressable",
-"en_line": 366
+"en_line": 367
 },
 "process_line:pressable:10": {
 "zh": "这件不能压",
 "en": "NOT FOR THE PRESS",
 "file": "process_line.gd",
-"line": 368,
+"line": 369,
 "func": "pressable",
-"en_line": 368
+"en_line": 369
 },
 "process_line:send_to_press:1": {
 "zh": "这件现在取不出来",
 "en": "IT CANNOT BE TAKEN OUT NOW",
 "file": "process_line.gd",
-"line": 399,
+"line": 400,
 "func": "send_to_press",
-"en_line": 399
+"en_line": 400
 },
 "process_line:_press_done:1": {
 "zh": "压机拒收：%s 里面还有%s，已退回仓库。拆船时先用气液回收（5）抽干净再拆下来，就能压块",
 "en": "THE PRESS SENT BACK %s: %s INSIDE. EMPTY IT WITH THE FLUID TOOL (5) BEFORE CUTTING IT FREE",
 "file": "process_line.gd",
-"line": 471,
+"line": 472,
 "func": "_press_done",
-"en_line": 471
+"en_line": 472
 },
 "process_line:_press_done:3": {
 "zh": "压块完成：%s → 压块 %.1f t，回到仓库%s · 约 %s",
 "en": "BALED: %s → %.1f t BALE, BACK IN STORE%s · ~%s",
 "file": "process_line.gd",
-"line": 493,
+"line": 494,
 "func": "_press_done",
-"en_line": 493
+"en_line": 494
 },
 "process_line:_press_done:4": {
 "zh": "，省出 %d 格",
 "en": ", %d CELLS FREED",
 "file": "process_line.gd",
-"line": 493,
+"line": 494,
 "func": "_press_done",
-"en_line": 493
+"en_line": 494
 },
 "process_queue_panel:cycle_use:1": {
 "zh": "第 %d 批改成：%s",
 "en": "BATCH %d IS NOW: %s",
 "file": "process_queue_panel.gd",
-"line": 122,
+"line": 123,
 "func": "cycle_use",
-"en_line": 122
+"en_line": 123
 },
 "process_queue_panel:cycle_mould:1": {
 "zh": "这批是订单要的，模具跟订单走：先把用途换掉",
 "en": "THIS BATCH IS FOR AN ORDER: ITS MOULD IS THE ORDER'S",
 "file": "process_queue_panel.gd",
-"line": 130,
+"line": 131,
 "func": "cycle_mould",
-"en_line": 130
+"en_line": 131
 },
 "process_queue_panel:cycle_mould:2": {
 "zh": "这批已经在炉里了，换不了模具",
 "en": "THIS BATCH IS IN THE FURNACE ALREADY",
 "file": "process_queue_panel.gd",
-"line": 133,
+"line": 134,
 "func": "cycle_mould",
-"en_line": 133
+"en_line": 134
 },
 "process_queue_panel:cycle_mould:3": {
 "zh": "第 %d 批改浇%s",
 "en": "BATCH %d NOW CASTS %s",
 "file": "process_queue_panel.gd",
-"line": 140,
+"line": 141,
 "func": "cycle_mould",
-"en_line": 140
+"en_line": 141
 },
 "process_queue_panel:drop_batch:1": {
 "zh": "炉里正在炼这批，等它炼完",
 "en": "THE FURNACE IS ON THIS BATCH",
 "file": "process_queue_panel.gd",
-"line": 148,
+"line": 149,
 "func": "drop_batch",
-"en_line": 148
+"en_line": 149
 },
 "process_queue_panel:drop_batch:2": {
 "zh": "撤下这批：钢锭留在仓库",
 "en": "BATCH TAKEN OFF: THE INGOTS STAY IN STORE",
 "file": "process_queue_panel.gd",
-"line": 154,
+"line": 155,
 "func": "drop_batch",
-"en_line": 154
+"en_line": 155
 },
 "process_queue_panel:toggle_auto:1": {
 "zh": "按订单截止时间自动排：开 · 订单批次按截止先后排在前面，同模具的连着炼",
 "en": "AUTO BY DEADLINE: ON",
 "file": "process_queue_panel.gd",
-"line": 159,
+"line": 160,
 "func": "toggle_auto",
-"en_line": 159
+"en_line": 160
 },
 "process_queue_panel:toggle_auto:2": {
 "zh": "自动排：关 · 拖动行来定顺序",
 "en": "AUTO: OFF · DRAG THE ROWS",
 "file": "process_queue_panel.gd",
-"line": 159,
+"line": 160,
 "func": "toggle_auto",
-"en_line": 159
+"en_line": 160
 },
 "process_queue_panel:_drop_drag:1": {
 "zh": "自己排了顺序：自动排已关",
 "en": "ORDER SET BY HAND: AUTO IS OFF",
 "file": "process_queue_panel.gd",
-"line": 178,
+"line": 179,
 "func": "_drop_drag",
-"en_line": 178
+"en_line": 179
 },
 "process_queue_panel:_drop_drag:2": {
 "zh": "排到第 %d 位",
 "en": "NOW NUMBER %d",
 "file": "process_queue_panel.gd",
-"line": 182,
+"line": 183,
 "func": "_drop_drag",
-"en_line": 182
+"en_line": 183
 },
 "process_queue_panel:queue_one:1": {
 "zh": "排进第 %d 批：钢锭 %.1f t → %s · %s · 炉子会自己开炉",
 "en": "BATCH %d: %.1f t → %s · %s · THE FURNACE STARTS BY ITSELF",
 "file": "process_queue_panel.gd",
-"line": 220,
+"line": 221,
 "func": "queue_one",
-"en_line": 220
+"en_line": 221
 },
 "process_queue_panel:_draw:2": {
 "zh": "关闭  [Esc]",
 "en": "CLOSE  [Esc]",
 "file": "process_queue_panel.gd",
-"line": 356,
+"line": 359,
 "func": "_draw",
-"en_line": 356
+"en_line": 359
 },
 "process_queue_panel:_draw:3": {
 "zh": "关掉队列，回到现场",
 "en": "Close the queue",
 "file": "process_queue_panel.gd",
-"line": 356,
+"line": 359,
 "func": "_draw",
-"en_line": 356
+"en_line": 359
 },
-"process_queue_panel:_draw:4": {
+"process_queue_panel:_state_line:1": {
+"zh": "电弧炉空闲",
+"en": "FURNACE IDLE",
+"file": "process_queue_panel.gd",
+"line": 384,
+"func": "_state_line",
+"en_line": 384
+},
+"process_queue_panel:_state_line:3": {
 "zh": "换模中：%s模 → %s模，还要约 %d 秒",
 "en": "CHANGING THE MOULD: %s → %s, ~%d s",
 "file": "process_queue_panel.gd",
-"line": 362,
-"func": "_draw",
-"en_line": 362
+"line": 388,
+"func": "_state_line",
+"en_line": 388
 },
-"process_queue_panel:_draw:8": {
-"zh": "%s模在座上 · 架上：%s",
-"en": "%s MOULD IN THE SEAT · ON THE RACK: %s",
+"process_queue_panel:_state_line:4": {
+"zh": " · 座上%s模 · 架上：%s",
+"en": " · %s MOULD IN THE SEAT · RACK: %s",
 "file": "process_queue_panel.gd",
-"line": 367,
-"func": "_draw",
-"en_line": 367
+"line": 389,
+"func": "_state_line",
+"en_line": 389
 },
-"process_queue_panel:_draw:9": {
-"zh": "开着时：订单批次按截止先后排在最前，其余在后，同模具的连着炼，少换模",
-"en": "On: order batches by their deadlines first, the rest after, the same mould together",
+"process_queue_panel:_draw_empty:4": {
+"zh": "队列是空的。仓库里有 %.1f t 钢锭可以炼。",
+"en": "THE QUEUE IS EMPTY. %.1f t OF INGOT IN STORE.",
 "file": "process_queue_panel.gd",
-"line": 374,
-"func": "_draw",
-"en_line": 374
+"line": 437,
+"func": "_draw_empty",
+"en_line": 437
 },
-"process_queue_panel:_draw:10": {
-"zh": "按订单截止时间自动排",
-"en": "AUTO BY DEADLINE",
+"process_queue_panel:_draw_empty:5": {
+"zh": "队列是空的，仓库里也没有没排上的钢锭：再拆一艘船，碎料会炼成钢锭。",
+"en": "THE QUEUE IS EMPTY AND NO INGOTS ARE FREE: STRIP ANOTHER SHIP, ITS SCRAP BECOMES INGOTS.",
 "file": "process_queue_panel.gd",
-"line": 382,
-"func": "_draw",
-"en_line": 382
+"line": 437,
+"func": "_draw_empty",
+"en_line": 437
 },
-"process_queue_panel:_draw:11": {
+"process_queue_panel:_draw_empty:6": {
 "zh": "排一炉：钢锭 %.1f t  [Enter]",
 "en": "QUEUE A HEAT: %.1f t  [Enter]",
 "file": "process_queue_panel.gd",
-"line": 384,
-"func": "_draw",
-"en_line": 384
+"line": 441,
+"func": "_draw_empty",
+"en_line": 441
 },
-"process_queue_panel:_draw:12": {
+"process_queue_panel:_draw_empty:7": {
 "zh": "把仓库里还没排上的钢锭排一炉，炉子按队列自己炼",
 "en": "Queue a heat of the ingots in store; the furnace works the queue by itself",
 "file": "process_queue_panel.gd",
-"line": 384,
-"func": "_draw",
-"en_line": 384
+"line": 441,
+"func": "_draw_empty",
+"en_line": 441
 },
-"process_queue_panel:_draw:14": {
+"process_queue_panel:_draw_empty:8": {
+"zh": "去仓库挑别的",
+"en": "PICK OTHERS IN STORE",
+"file": "process_queue_panel.gd",
+"line": 442,
+"func": "_draw_empty",
+"en_line": 442
+},
+"process_queue_panel:_draw_empty:9": {
 "zh": "在仓库里点钢锭“炼成钢坯”，可以挑吨数",
 "en": "In the stores, ingots → 'cast', any tonnage",
 "file": "process_queue_panel.gd",
-"line": 385,
-"func": "_draw",
-"en_line": 385
+"line": 442,
+"func": "_draw_empty",
+"en_line": 442
 },
-"process_queue_panel:_draw:15": {
-"zh": "去仓库选钢锭  [Enter]",
-"en": "PICK INGOTS IN STORE  [Enter]",
+"process_queue_panel:_draw_empty:10": {
+"zh": "去仓库看看  [Enter]",
+"en": "TO THE STORES  [Enter]",
 "file": "process_queue_panel.gd",
-"line": 387,
-"func": "_draw",
-"en_line": 387
+"line": 444,
+"func": "_draw_empty",
+"en_line": 444
 },
-"process_queue_panel:_draw:16": {
-"zh": "在仓库里点钢锭“炼成钢坯”就排进来",
+"process_queue_panel:_draw_empty:11": {
+"zh": "仓库里点钢锭“炼成钢坯”就排进来",
 "en": "In the stores, ingots → 'cast' adds a batch",
 "file": "process_queue_panel.gd",
-"line": 387,
-"func": "_draw",
-"en_line": 387
+"line": 444,
+"func": "_draw_empty",
+"en_line": 444
 },
-"process_queue_panel:_draw:17": {
-"zh": "炼钢 · 拖动排序，点用途和模具可以换",
-"en": "MELTING · DRAG TO ORDER, CLICK USE OR MOULD TO CHANGE",
+"process_queue_panel:_draw_list:1": {
+"zh": "换模 %s → %s · 停炉约 %d 秒",
+"en": "MOULD CHANGE %s → %s · ~%d s STANDING",
 "file": "process_queue_panel.gd",
-"line": 389,
-"func": "_draw",
-"en_line": 389
+"line": 470,
+"func": "_draw_list",
+"en_line": 470
 },
-"process_queue_panel:_draw:18": {
-"zh": "队列是空的。到仓库里点钢锭，选“炼成钢坯”。",
-"en": "THE QUEUE IS EMPTY. IN THE STORES PICK INGOTS → 'CAST'.",
+"process_queue_panel:_draw_list:2": {
+"zh": "开着时：订单批次按截止先后排在最前，其余在后，同模具的连着炼，少换模",
+"en": "On: order batches by their deadlines first, the rest after, the same mould together",
 "file": "process_queue_panel.gd",
-"line": 397,
-"func": "_draw",
-"en_line": 397
+"line": 484,
+"func": "_draw_list",
+"en_line": 484
 },
-"process_queue_panel:_draw:19": {
-"zh": "换模：%s模 → %s模 · 炉子停约 %d 秒",
-"en": "MOULD CHANGE: %s → %s · ~%d s STANDING",
+"process_queue_panel:_draw_list:3": {
+"zh": "按订单截止时间自动排",
+"en": "AUTO BY DEADLINE",
 "file": "process_queue_panel.gd",
-"line": 416,
-"func": "_draw",
-"en_line": 416
+"line": 489,
+"func": "_draw_list",
+"en_line": 489
 },
-"process_queue_panel:_draw:20": {
-"zh": "打包压块机 · 在仓库里选散料或整件点“压块”就排进来",
-"en": "BALER · PICK LOOSE GOODS OR A MACHINE IN STORE → 'BALE'",
+"process_queue_panel:_draw_list:4": {
+"zh": "再排一炉：钢锭 %.1f t  [Enter]",
+"en": "ONE MORE HEAT: %.1f t  [Enter]",
 "file": "process_queue_panel.gd",
-"line": 433,
-"func": "_draw",
-"en_line": 433
+"line": 497,
+"func": "_draw_list",
+"en_line": 497
+},
+"process_queue_panel:_draw_list:5": {
+"zh": "把仓库里还没排上的钢锭再排一炉",
+"en": "Queue another heat of the ingots in store",
+"file": "process_queue_panel.gd",
+"line": 497,
+"func": "_draw_list",
+"en_line": 497
+},
+"process_queue_panel:_draw_list:7": {
+"zh": "在仓库里点钢锭“炼成钢坯”，可以挑吨数",
+"en": "In the stores, ingots → 'cast', any tonnage",
+"file": "process_queue_panel.gd",
+"line": 498,
+"func": "_draw_list",
+"en_line": 498
+},
+"process_queue_panel:_draw_list:8": {
+"zh": "去仓库挑别的  [Enter]",
+"en": "PICK OTHERS IN STORE  [Enter]",
+"file": "process_queue_panel.gd",
+"line": 500,
+"func": "_draw_list",
+"en_line": 500
+},
+"process_queue_panel:_draw_list:9": {
+"zh": "仓库里没有没排上的钢锭了；在仓库里可以看别的",
+"en": "No free ingots left; see the stores",
+"file": "process_queue_panel.gd",
+"line": 500,
+"func": "_draw_list",
+"en_line": 500
 },
 "process_queue_panel:_row:1": {
 "zh": "按住拖动来改顺序",
 "en": "Hold and drag to reorder",
 "file": "process_queue_panel.gd",
-"line": 468,
+"line": 526,
 "func": "_row",
-"en_line": 468
+"en_line": 526
 },
 "process_queue_panel:_row:2": {
-"zh": "钢锭 %.1f t → %s",
-"en": "INGOT %.1f t → %s",
+"zh": "钢锭 %.1f t →",
+"en": "INGOT %.1f t →",
 "file": "process_queue_panel.gd",
-"line": 482,
+"line": 537,
 "func": "_row",
-"en_line": 482
+"en_line": 537
 },
 "process_queue_panel:_row:3": {
-"zh": "。点一下换",
-"en": ". Click to change",
+"zh": "。点一下换模具",
+"en": ". Click to change the mould",
 "file": "process_queue_panel.gd",
-"line": 489,
+"line": 545,
 "func": "_row",
-"en_line": 489
+"en_line": 545
 },
 "process_queue_panel:_row:4": {
 "zh": "订单点名要这种，跟着订单走",
 "en": "THE ORDER NAMES THIS MOULD",
 "file": "process_queue_panel.gd",
-"line": 489,
+"line": 545,
 "func": "_row",
-"en_line": 489
+"en_line": 545
 },
-"process_queue_panel:_row:6": {
+"process_queue_panel:_row:5": {
 "zh": "这批炼来干什么：留着 / 卖 / 给哪张订单。点一下换",
 "en": "What it is for: keep / sell / an order. Click to change",
 "file": "process_queue_panel.gd",
-"line": 500,
+"line": 560,
 "func": "_row",
-"en_line": 500
+"en_line": 560
+},
+"process_queue_panel:_row:6": {
+"zh": "炉里 · 还剩约 %d 秒",
+"en": "IN THE FURNACE · ~%d s LEFT",
+"file": "process_queue_panel.gd",
+"line": 567,
+"func": "_row",
+"en_line": 567
 },
 "process_queue_panel:_row:7": {
-"zh": "炉里 · 约 %d 秒",
-"en": "IN THE FURNACE · ~%d s",
+"zh": "炉里 · 正在炼",
+"en": "IN THE FURNACE",
 "file": "process_queue_panel.gd",
-"line": 514,
+"line": 567,
 "func": "_row",
-"en_line": 514
+"en_line": 567
 },
 "process_queue_panel:_row:8": {
 "zh": "约 %d 秒后",
 "en": "IN ~%d s",
 "file": "process_queue_panel.gd",
-"line": 514,
+"line": 567,
 "func": "_row",
-"en_line": 514
+"en_line": 567
 },
 "process_queue_panel:_row:9": {
 "zh": "约 %d 分钟后",
 "en": "IN ~%d MIN",
 "file": "process_queue_panel.gd",
-"line": 514,
+"line": 567,
 "func": "_row",
-"en_line": 514
+"en_line": 567
 },
 "process_queue_panel:_row:10": {
-"zh": "还剩 %.1f t",
-"en": "%.1f t LEFT",
-"file": "process_queue_panel.gd",
-"line": 516,
-"func": "_row",
-"en_line": 516
-},
-"process_queue_panel:_row:11": {
 "zh": "炉里正在炼这批",
 "en": "THE FURNACE IS ON IT",
 "file": "process_queue_panel.gd",
-"line": 519,
+"line": 577,
 "func": "_row",
-"en_line": 519
+"en_line": 577
 },
-"process_queue_panel:_row:12": {
+"process_queue_panel:_row:11": {
 "zh": "撤下这批（钢锭留在仓库）",
 "en": "Take it off (the ingots stay in store)",
 "file": "process_queue_panel.gd",
-"line": 521,
+"line": 579,
 "func": "_row",
-"en_line": 521
+"en_line": 579
 },
 "process_queue_panel:_draw_press:2": {
 "zh": "送到压力探头",
 "en": "TO THE PROBE",
 "file": "process_queue_panel.gd",
-"line": 535,
+"line": 594,
 "func": "_draw_press",
-"en_line": 535
+"en_line": 594
 },
 "process_queue_panel:_draw_press:3": {
 "zh": "压力探头检测",
 "en": "PROBING",
 "file": "process_queue_panel.gd",
-"line": 535,
+"line": 594,
 "func": "_draw_press",
-"en_line": 535
+"en_line": 594
 },
 "process_queue_panel:_draw_press:4": {
 "zh": "拒收，退回仓库",
 "en": "REJECTED, GOING BACK",
 "file": "process_queue_panel.gd",
-"line": 535,
+"line": 594,
 "func": "_draw_press",
-"en_line": 535
+"en_line": 594
 },
 "process_queue_panel:_draw_press:8": {
 "zh": "推出，回仓库",
 "en": "OUT, TO STORES",
 "file": "process_queue_panel.gd",
-"line": 536,
+"line": 595,
 "func": "_draw_press",
-"en_line": 536
+"en_line": 595
+},
+"process_queue_panel:_draw_press:9": {
+"zh": "压块机空闲",
+"en": "THE BALER IS IDLE",
+"file": "process_queue_panel.gd",
+"line": 597,
+"func": "_draw_press",
+"en_line": 597
 },
 "process_queue_panel:_draw_press:10": {
-"zh": "压块 %.1f t · 约 %s · 占 %d 格",
-"en": "BALE %.1f t · ~%s · %d CELL",
+"zh": "压块机：%s · %s",
+"en": "BALER: %s · %s",
 "file": "process_queue_panel.gd",
-"line": 552,
+"line": 601,
 "func": "_draw_press",
-"en_line": 552
+"en_line": 601
 },
-"process_queue_panel:_draw_press:12": {
-"zh": "没有等着压的",
-"en": "NOTHING WAITING",
+"process_queue_panel:_draw_press:11": {
+"zh": " · 还有 %d 件等着",
+"en": " · %d WAITING",
 "file": "process_queue_panel.gd",
-"line": 556,
+"line": 605,
 "func": "_draw_press",
-"en_line": 556
+"en_line": 605
 },
 "process_queue_panel:_draw_foot:1": {
-"zh": "拖动行排序 · 点开关自动排 · Enter 去仓库加料 · Esc 关闭",
-"en": "DRAG ROWS · CLICK THE SWITCH TO AUTO-ORDER · ENTER ADD FROM STORE · ESC CLOSE",
+"zh": "拖动卡片排序 · 点模具或用途可以换 · Enter 排一炉 · Esc 关闭",
+"en": "DRAG CARDS TO ORDER · CLICK THE MOULD OR USE TO CHANGE · ENTER QUEUES A HEAT · ESC CLOSES",
 "file": "process_queue_panel.gd",
-"line": 576,
+"line": 621,
 "func": "_draw_foot",
-"en_line": 576
+"en_line": 621
+},
+"process_queue_panel:_draw_foot:2": {
+"zh": "Enter 排一炉 · Esc 关闭",
+"en": "ENTER QUEUES A HEAT · ESC CLOSES",
+"file": "process_queue_panel.gd",
+"line": 621,
+"func": "_draw_foot",
+"en_line": 621
 },
 "repair_bill:line:1": {
 "zh": "自有 %d 件",
@@ -51452,9 +51876,9 @@
 "zh": "船坞终端",
 "en": "BERTH TERMINAL",
 "file": "port_walk.gd",
-"line": 578,
+"line": 579,
 "func": "_callouts",
-"en_line": 578
+"en_line": 579
 },
 "short:43": {
 "zh": "零压认证",
@@ -51936,7 +52360,7 @@
 "same": [
 "gear:e_gear_none",
 "txt:sh_none",
-"district_panel:_fill:36",
+"district_panel:_fill:38",
 "power_station_art:_screen:16",
 "title_terminal:_port_drawing:12"
 ]
@@ -51953,13 +52377,13 @@
 "file": "txt.gd",
 "line": 0
 },
-"district_panel:_fill:36": {
+"district_panel:_fill:38": {
 "zh": "无",
 "en": "NONE",
 "file": "district_panel.gd",
-"line": 663,
+"line": 672,
 "func": "_fill",
-"en_line": 663
+"en_line": 672
 },
 "power_station_art:_screen:16": {
 "zh": "无",
@@ -52087,6 +52511,7 @@
 "same": [
 "gear:e_retained_next",
 "txt:rt_goals",
+"district_panel:_process_layout:3",
 "hud:_asset_board:4",
 "need_voice:_done:4",
 "terminal:_next_step_card:3"
@@ -52103,6 +52528,14 @@
 "en": "NEXT",
 "file": "txt.gd",
 "line": 0
+},
+"district_panel:_process_layout:3": {
+"zh": "下一步",
+"en": "NEXT",
+"file": "district_panel.gd",
+"line": 795,
+"func": "_process_layout",
+"en_line": 795
 },
 "hud:_asset_board:4": {
 "zh": "下一步",
@@ -55605,7 +56038,7 @@
 "same": [
 "txt:t_slot_loan",
 "txt:tm_loan",
-"district_panel:_fill:34",
+"district_panel:_fill:36",
 "title_terminal:_port_drawing:8"
 ]
 },
@@ -55621,13 +56054,13 @@
 "file": "txt.gd",
 "line": 0
 },
-"district_panel:_fill:34": {
+"district_panel:_fill:36": {
 "zh": "贷款",
 "en": "LOAN",
 "file": "district_panel.gd",
-"line": 661,
+"line": 670,
 "func": "_fill",
-"en_line": 661
+"en_line": 670
 },
 "title_terminal:_port_drawing:8": {
 "zh": "贷款",
@@ -57711,9 +58144,9 @@
 "zh": "操作",
 "en": "CONTROLS",
 "file": "district_panel.gd",
-"line": 76,
+"line": 79,
 "func": "_ready",
-"en_line": 76
+"en_line": 79
 },
 "short:484": {
 "zh": "自拆留料",
@@ -58651,9 +59084,9 @@
 "zh": "修缮钢材",
 "en": "REPAIR STEEL",
 "file": "district_panel.gd",
-"line": 242,
+"line": 245,
 "func": "_fill_bill",
-"en_line": 242
+"en_line": 245
 },
 "hall_market:offers:2": {
 "zh": "修缮钢材",
@@ -58716,9 +59149,9 @@
 "zh": "公司仓库",
 "en": "COMPANY STORES",
 "file": "port_walk.gd",
-"line": 546,
+"line": 547,
 "func": "_fill",
-"en_line": 546
+"en_line": 547
 },
 "short:1645": {
 "zh": "第 %d 天",
@@ -58857,9 +59290,9 @@
 "zh": "交易行",
 "en": "EXCHANGE",
 "file": "port_walk.gd",
-"line": 546,
+"line": 547,
 "func": "_fill",
-"en_line": 546
+"en_line": 547
 },
 "short:1568": {
 "zh": "订单",
@@ -62409,9 +62842,9 @@
 "zh": "货架",
 "en": "RACKS",
 "file": "district_panel.gd",
-"line": 112,
+"line": 115,
 "func": "_ready",
-"en_line": 112
+"en_line": 115
 },
 "short:1488": {
 "zh": "零件架",
@@ -62931,6 +63364,7 @@
 "en": "MEND THIS DISTRICT",
 "same": [
 "district_panel:_ready:1",
+"district_panel:_process_layout:8",
 "port_walk:_callouts:3"
 ]
 },
@@ -62938,17 +63372,25 @@
 "zh": "本区修复",
 "en": "MEND THIS DISTRICT",
 "file": "district_panel.gd",
-"line": 50,
+"line": 53,
 "func": "_ready",
-"en_line": 50
+"en_line": 53
+},
+"district_panel:_process_layout:8": {
+"zh": "本区修复",
+"en": "MEND THIS DISTRICT",
+"file": "district_panel.gd",
+"line": 842,
+"func": "_process_layout",
+"en_line": 842
 },
 "port_walk:_callouts:3": {
 "zh": "本区修复",
 "en": "MEND THIS DISTRICT",
 "file": "port_walk.gd",
-"line": 571,
+"line": 572,
 "func": "_callouts",
-"en_line": 571
+"en_line": 572
 },
 "short:1533": {
 "zh": "详细 ▾",
@@ -62962,17 +63404,17 @@
 "zh": "详细 ▾",
 "en": "DETAILS ▾",
 "file": "district_panel.gd",
-"line": 67,
+"line": 70,
 "func": "_ready",
-"en_line": 67
+"en_line": 70
 },
 "district_panel:_ready:4": {
 "zh": "详细 ▾",
 "en": "DETAILS ▾",
 "file": "district_panel.gd",
-"line": 74,
+"line": 77,
 "func": "_ready",
-"en_line": 74
+"en_line": 77
 },
 "short:1534": {
 "zh": "详细 ▴",
@@ -62985,15 +63427,16 @@
 "zh": "详细 ▴",
 "en": "DETAILS ▴",
 "file": "district_panel.gd",
-"line": 74,
+"line": 77,
 "func": "_ready",
-"en_line": 74
+"en_line": 77
 },
 "short:744": {
 "zh": "轧机",
 "en": "ROLLING MILL",
 "same": [
 "district_panel:_ready:7",
+"district_panel:_process_layout:9",
 "mill_panel:_ready:1",
 "port_walk:_fill:49",
 "rolling_mill:grid_loads:1"
@@ -63003,9 +63446,17 @@
 "zh": "轧机",
 "en": "ROLLING MILL",
 "file": "district_panel.gd",
-"line": 83,
+"line": 86,
 "func": "_ready",
-"en_line": 83
+"en_line": 86
+},
+"district_panel:_process_layout:9": {
+"zh": "轧机",
+"en": "ROLLING MILL",
+"file": "district_panel.gd",
+"line": 851,
+"func": "_process_layout",
+"en_line": 851
 },
 "mill_panel:_ready:1": {
 "zh": "轧机",
@@ -63019,9 +63470,9 @@
 "zh": "轧机",
 "en": "ROLLING MILL",
 "file": "port_walk.gd",
-"line": 546,
+"line": 547,
 "func": "_fill",
-"en_line": 546
+"en_line": 547
 },
 "rolling_mill:grid_loads:1": {
 "zh": "轧机",
@@ -63043,17 +63494,17 @@
 "zh": "拖船外运",
 "en": "TUG CHARTERS",
 "file": "district_panel.gd",
-"line": 93,
+"line": 96,
 "func": "_ready",
-"en_line": 93
+"en_line": 96
 },
 "port_walk:_callouts:19": {
 "zh": "拖船外运",
 "en": "TUG CHARTERS",
 "file": "port_walk.gd",
-"line": 586,
+"line": 587,
 "func": "_callouts",
-"en_line": 586
+"en_line": 587
 },
 "short:1557": {
 "zh": "仓库",
@@ -63067,9 +63518,9 @@
 "zh": "仓库",
 "en": "STORES",
 "file": "district_panel.gd",
-"line": 109,
+"line": 112,
 "func": "_ready",
-"en_line": 109
+"en_line": 112
 },
 "remote_ops:name_of:1": {
 "zh": "仓库",
@@ -63090,9 +63541,9 @@
 "zh": "还需要",
 "en": "STILL NEEDS",
 "file": "district_panel.gd",
-"line": 217,
+"line": 220,
 "func": "_fill_repair",
-"en_line": 217
+"en_line": 220
 },
 "short:748": {
 "zh": "接这单",
@@ -63106,17 +63557,17 @@
 "zh": "接这单",
 "en": "TAKE IT",
 "file": "district_panel.gd",
-"line": 326,
+"line": 330,
 "func": "_fill_biz",
-"en_line": 326
+"en_line": 330
 },
 "district_panel:_fill_biz:12": {
 "zh": "接这单",
 "en": "TAKE IT",
 "file": "district_panel.gd",
-"line": 332,
+"line": 336,
 "func": "_fill_biz",
-"en_line": 332
+"en_line": 336
 },
 "short:749": {
 "zh": "不接",
@@ -63124,32 +63575,41 @@
 "same": [
 "district_panel:_fill_biz:9",
 "district_panel:_fill_biz:15",
-"district_panel:_fill_gas:27"
+"district_panel:_fill_gas:27",
+"district_panel:_fill_call:13"
 ]
 },
 "district_panel:_fill_biz:9": {
 "zh": "不接",
 "en": "DECLINE",
 "file": "district_panel.gd",
-"line": 326,
+"line": 330,
 "func": "_fill_biz",
-"en_line": 326
+"en_line": 330
 },
 "district_panel:_fill_biz:15": {
 "zh": "不接",
 "en": "DECLINE",
 "file": "district_panel.gd",
-"line": 332,
+"line": 336,
 "func": "_fill_biz",
-"en_line": 332
+"en_line": 336
 },
 "district_panel:_fill_gas:27": {
 "zh": "不接",
 "en": "DECLINE",
 "file": "district_panel.gd",
-"line": 442,
+"line": 446,
 "func": "_fill_gas",
-"en_line": 442
+"en_line": 446
+},
+"district_panel:_fill_call:13": {
+"zh": "不接",
+"en": "DECLINE",
+"file": "district_panel.gd",
+"line": 1012,
+"func": "_fill_call",
+"en_line": 1012
 },
 "short:750": {
 "zh": "没接。",
@@ -63157,32 +63617,41 @@
 "same": [
 "district_panel:_fill_biz:10",
 "district_panel:_fill_biz:16",
-"district_panel:_fill_gas:28"
+"district_panel:_fill_gas:28",
+"district_panel:_fill_call:14"
 ]
 },
 "district_panel:_fill_biz:10": {
 "zh": "没接。",
 "en": "DECLINED.",
 "file": "district_panel.gd",
-"line": 326,
+"line": 330,
 "func": "_fill_biz",
-"en_line": 326
+"en_line": 330
 },
 "district_panel:_fill_biz:16": {
 "zh": "没接。",
 "en": "DECLINED.",
 "file": "district_panel.gd",
-"line": 332,
+"line": 336,
 "func": "_fill_biz",
-"en_line": 332
+"en_line": 336
 },
 "district_panel:_fill_gas:28": {
 "zh": "没接。",
 "en": "DECLINED.",
 "file": "district_panel.gd",
-"line": 442,
+"line": 446,
 "func": "_fill_gas",
-"en_line": 442
+"en_line": 446
+},
+"district_panel:_fill_call:14": {
+"zh": "没接。",
+"en": "DECLINED.",
+"file": "district_panel.gd",
+"line": 1012,
+"func": "_fill_call",
+"en_line": 1012
 },
 "short:751": {
 "zh": "已设定。",
@@ -63197,40 +63666,49 @@
 "zh": "已设定。",
 "en": "SET.",
 "file": "district_panel.gd",
-"line": 351,
+"line": 355,
 "func": "_fill_biz",
-"en_line": 351
+"en_line": 355
 },
 "district_panel:_fill_biz:31": {
 "zh": "已设定。",
 "en": "SET.",
 "file": "district_panel.gd",
-"line": 364,
+"line": 368,
 "func": "_fill_biz",
-"en_line": 364
+"en_line": 368
 },
 "district_panel:_fill_gas:37": {
 "zh": "已设定。",
 "en": "SET.",
 "file": "district_panel.gd",
-"line": 458,
+"line": 462,
 "func": "_fill_gas",
-"en_line": 458
+"en_line": 462
 },
 "short:752": {
 "zh": "正在：",
 "en": "NOW: ",
 "same": [
-"district_panel:_fill_gas:2"
+"district_panel:_fill_gas:2",
+"district_panel:_fill_next:3"
 ]
 },
 "district_panel:_fill_gas:2": {
 "zh": "正在：",
 "en": "NOW: ",
 "file": "district_panel.gd",
-"line": 403,
+"line": 407,
 "func": "_fill_gas",
-"en_line": 403
+"en_line": 407
+},
+"district_panel:_fill_next:3": {
+"zh": "正在：",
+"en": "NOW: ",
+"file": "district_panel.gd",
+"line": 930,
+"func": "_fill_next",
+"en_line": 930
 },
 "short:753": {
 "zh": "送检了。",
@@ -63243,39 +63721,57 @@
 "zh": "送检了。",
 "en": "SENT FOR TESTING.",
 "file": "district_panel.gd",
-"line": 422,
+"line": 426,
 "func": "_fill_gas",
-"en_line": 422
+"en_line": 426
 },
 "short:754": {
 "zh": "可分批",
 "en": "PARTIAL OK",
 "same": [
-"district_panel:_fill_gas:23"
+"district_panel:_fill_gas:23",
+"district_panel:_fill_call:8"
 ]
 },
 "district_panel:_fill_gas:23": {
 "zh": "可分批",
 "en": "PARTIAL OK",
 "file": "district_panel.gd",
-"line": 439,
+"line": 443,
 "func": "_fill_gas",
-"en_line": 439
+"en_line": 443
+},
+"district_panel:_fill_call:8": {
+"zh": "可分批",
+"en": "PARTIAL OK",
+"file": "district_panel.gd",
+"line": 1002,
+"func": "_fill_call",
+"en_line": 1002
 },
 "short:755": {
 "zh": "取消了。",
 "en": "CANCELLED.",
 "same": [
-"district_panel:_fill_gas:30"
+"district_panel:_fill_gas:30",
+"district_panel:_fill_call:16"
 ]
 },
 "district_panel:_fill_gas:30": {
 "zh": "取消了。",
 "en": "CANCELLED.",
 "file": "district_panel.gd",
-"line": 446,
+"line": 450,
 "func": "_fill_gas",
-"en_line": 446
+"en_line": 450
+},
+"district_panel:_fill_call:16": {
+"zh": "取消了。",
+"en": "CANCELLED.",
+"file": "district_panel.gd",
+"line": 1016,
+"func": "_fill_call",
+"en_line": 1016
 },
 "short:756": {
 "zh": "接受",
@@ -63288,9 +63784,9 @@
 "zh": "接受",
 "en": "ACCEPT",
 "file": "district_panel.gd",
-"line": 492,
+"line": 496,
 "func": "_fill_people",
-"en_line": 492
+"en_line": 496
 },
 "short:757": {
 "zh": "拒绝",
@@ -63303,9 +63799,9 @@
 "zh": "拒绝",
 "en": "SEND AWAY",
 "file": "district_panel.gd",
-"line": 497,
+"line": 501,
 "func": "_fill_people",
-"en_line": 497
+"en_line": 501
 },
 "short:758": {
 "zh": "%s · 信誉 %d",
@@ -63318,9 +63814,9 @@
 "zh": "%s · 信誉 %d",
 "en": "%s · REPUTATION %d",
 "file": "district_panel.gd",
-"line": 517,
+"line": 521,
 "func": "_fill_people",
-"en_line": 517
+"en_line": 521
 },
 "short:759": {
 "zh": "接下",
@@ -63333,9 +63829,9 @@
 "zh": "接下",
 "en": "TAKE IT",
 "file": "district_panel.gd",
-"line": 530,
+"line": 534,
 "func": "_fill_people",
-"en_line": 530
+"en_line": 534
 },
 "short:760": {
 "zh": "好。",
@@ -63348,9 +63844,9 @@
 "zh": "好。",
 "en": "DONE.",
 "file": "district_panel.gd",
-"line": 548,
+"line": 552,
 "func": "_say_deal",
-"en_line": 548
+"en_line": 552
 },
 "short:1535": {
 "zh": "怎么办：",
@@ -63363,9 +63859,9 @@
 "zh": "怎么办：",
 "en": "WHAT TO DO: ",
 "file": "district_panel.gd",
-"line": 595,
+"line": 601,
 "func": "_fill",
-"en_line": 595
+"en_line": 601
 },
 "short:1536": {
 "zh": "自家能发",
@@ -63378,9 +63874,9 @@
 "zh": "自家能发",
 "en": "WE CAN MAKE",
 "file": "district_panel.gd",
-"line": 597,
+"line": 603,
 "func": "_fill",
-"en_line": 597
+"en_line": 603
 },
 "short:1537": {
 "zh": "兆瓦",
@@ -63389,40 +63885,40 @@
 "district_panel:_fill:3",
 "district_panel:_fill:5",
 "district_panel:_fill:7",
-"district_panel:_fill:9"
+"district_panel:_fill:11"
 ]
 },
 "district_panel:_fill:3": {
 "zh": "兆瓦",
 "en": "MW",
 "file": "district_panel.gd",
-"line": 597,
+"line": 603,
 "func": "_fill",
-"en_line": 597
+"en_line": 603
 },
 "district_panel:_fill:5": {
 "zh": "兆瓦",
 "en": "MW",
 "file": "district_panel.gd",
-"line": 598,
+"line": 604,
 "func": "_fill",
-"en_line": 598
+"en_line": 604
 },
 "district_panel:_fill:7": {
 "zh": "兆瓦",
 "en": "MW",
 "file": "district_panel.gd",
-"line": 599,
+"line": 605,
 "func": "_fill",
-"en_line": 599
+"en_line": 605
 },
-"district_panel:_fill:9": {
+"district_panel:_fill:11": {
 "zh": "兆瓦",
 "en": "MW",
 "file": "district_panel.gd",
-"line": 600,
+"line": 609,
 "func": "_fill",
-"en_line": 600
+"en_line": 609
 },
 "short:1538": {
 "zh": "还空着",
@@ -63435,127 +63931,142 @@
 "zh": "还空着",
 "en": "STILL FREE",
 "file": "district_panel.gd",
-"line": 599,
+"line": 605,
 "func": "_fill",
-"en_line": 599
+"en_line": 605
+},
+"short:1762": {
+"zh": "兆瓦时",
+"en": "MWh",
+"same": [
+"district_panel:_fill:9"
+]
+},
+"district_panel:_fill:9": {
+"zh": "兆瓦时",
+"en": "MWh",
+"file": "district_panel.gd",
+"line": 607,
+"func": "_fill",
+"en_line": 607
 },
 "short:1539": {
 "zh": "一直先供",
 "en": "ALWAYS FIRST",
 "same": [
-"district_panel:_fill:10"
-]
-},
-"district_panel:_fill:10": {
-"zh": "一直先供",
-"en": "ALWAYS FIRST",
-"file": "district_panel.gd",
-"line": 602,
-"func": "_fill",
-"en_line": 602
-},
-"short:1540": {
-"zh": "在用",
-"en": "ON",
-"same": [
-"district_panel:_fill:11"
-]
-},
-"district_panel:_fill:11": {
-"zh": "在用",
-"en": "ON",
-"file": "district_panel.gd",
-"line": 602,
-"func": "_fill",
-"en_line": 602
-},
-"short:767": {
-"zh": "电不够 %d%%",
-"en": "SHORT %d%%",
-"same": [
 "district_panel:_fill:12"
 ]
 },
 "district_panel:_fill:12": {
-"zh": "电不够 %d%%",
-"en": "SHORT %d%%",
-"file": "district_panel.gd",
-"line": 602,
-"func": "_fill",
-"en_line": 602
-},
-"short:1541": {
-"zh": "没在用",
-"en": "IDLE",
-"same": [
-"district_panel:_fill:13"
-]
-},
-"district_panel:_fill:13": {
-"zh": "没在用",
-"en": "IDLE",
-"file": "district_panel.gd",
-"line": 602,
-"func": "_fill",
-"en_line": 602
-},
-"short:1542": {
-"zh": "免费供电",
-"en": "FREE SUPPLY",
-"same": [
-"district_panel:_fill:14"
-]
-},
-"district_panel:_fill:14": {
-"zh": "免费供电",
-"en": "FREE SUPPLY",
-"file": "district_panel.gd",
-"line": 604,
-"func": "_fill",
-"en_line": 604
-},
-"short:770": {
-"zh": "已建成",
-"en": "BUILT",
-"same": [
-"district_panel:_fill:15"
-]
-},
-"district_panel:_fill:15": {
-"zh": "已建成",
-"en": "BUILT",
+"zh": "一直先供",
+"en": "ALWAYS FIRST",
 "file": "district_panel.gd",
 "line": 611,
 "func": "_fill",
 "en_line": 611
 },
+"short:1540": {
+"zh": "在用",
+"en": "ON",
+"same": [
+"district_panel:_fill:13"
+]
+},
+"district_panel:_fill:13": {
+"zh": "在用",
+"en": "ON",
+"file": "district_panel.gd",
+"line": 611,
+"func": "_fill",
+"en_line": 611
+},
+"short:767": {
+"zh": "电不够 %d%%",
+"en": "SHORT %d%%",
+"same": [
+"district_panel:_fill:14"
+]
+},
+"district_panel:_fill:14": {
+"zh": "电不够 %d%%",
+"en": "SHORT %d%%",
+"file": "district_panel.gd",
+"line": 611,
+"func": "_fill",
+"en_line": 611
+},
+"short:1541": {
+"zh": "没在用",
+"en": "IDLE",
+"same": [
+"district_panel:_fill:15"
+]
+},
+"district_panel:_fill:15": {
+"zh": "没在用",
+"en": "IDLE",
+"file": "district_panel.gd",
+"line": 611,
+"func": "_fill",
+"en_line": 611
+},
+"short:1542": {
+"zh": "免费供电",
+"en": "FREE SUPPLY",
+"same": [
+"district_panel:_fill:16"
+]
+},
+"district_panel:_fill:16": {
+"zh": "免费供电",
+"en": "FREE SUPPLY",
+"file": "district_panel.gd",
+"line": 613,
+"func": "_fill",
+"en_line": 613
+},
+"short:770": {
+"zh": "已建成",
+"en": "BUILT",
+"same": [
+"district_panel:_fill:17"
+]
+},
+"district_panel:_fill:17": {
+"zh": "已建成",
+"en": "BUILT",
+"file": "district_panel.gd",
+"line": 620,
+"func": "_fill",
+"en_line": 620
+},
 "short:771": {
 "zh": "在路上",
 "en": "ON THE WAY",
 "same": [
-"district_panel:_fill:18"
+"district_panel:_fill:20"
 ]
 },
-"district_panel:_fill:18": {
+"district_panel:_fill:20": {
 "zh": "在路上",
 "en": "ON THE WAY",
 "file": "district_panel.gd",
-"line": 617,
+"line": 626,
 "func": "_fill",
-"en_line": 617
+"en_line": 626
 },
 "short:772": {
 "zh": "泊位 %d",
 "en": "",
 "same": [
-"district_panel:_fill:19"
+"district_panel:_fill:21"
 ]
 },
-"district_panel:_fill:19": {
+"district_panel:_fill:21": {
 "zh": "泊位 %d",
 "en": "",
 "file": "district_panel.gd",
-"line": 617,
+"line": 626,
 "func": "_fill",
 "en_line": 0
 },
@@ -63563,107 +64074,107 @@
 "zh": "扣在港口",
 "en": "HELD",
 "same": [
-"district_panel:_fill:20"
+"district_panel:_fill:22"
 ]
 },
-"district_panel:_fill:20": {
+"district_panel:_fill:22": {
 "zh": "扣在港口",
 "en": "HELD",
 "file": "district_panel.gd",
-"line": 617,
+"line": 626,
 "func": "_fill",
-"en_line": 617
+"en_line": 626
 },
 "short:775": {
 "zh": "分选批次",
 "en": "SORTING BATCH",
 "same": [
-"district_panel:_fill:21"
+"district_panel:_fill:23"
 ]
 },
-"district_panel:_fill:21": {
+"district_panel:_fill:23": {
 "zh": "分选批次",
 "en": "SORTING BATCH",
 "file": "district_panel.gd",
-"line": 619,
+"line": 628,
 "func": "_fill",
-"en_line": 619
+"en_line": 628
 },
 "short:776": {
 "zh": "炉次",
 "en": "HEAT",
 "same": [
-"district_panel:_fill:22"
+"district_panel:_fill:24"
 ]
 },
-"district_panel:_fill:22": {
+"district_panel:_fill:24": {
 "zh": "炉次",
 "en": "HEAT",
 "file": "district_panel.gd",
-"line": 619,
+"line": 628,
 "func": "_fill",
-"en_line": 619
+"en_line": 628
 },
 "short:777": {
 "zh": "%s %s  %d 秒",
 "en": "%s %s  %d s",
 "same": [
-"district_panel:_fill:30"
+"district_panel:_fill:32"
 ]
 },
-"district_panel:_fill:30": {
+"district_panel:_fill:32": {
 "zh": "%s %s  %d 秒",
 "en": "%s %s  %d s",
 "file": "district_panel.gd",
-"line": 656,
+"line": 665,
 "func": "_fill",
-"en_line": 656
+"en_line": 665
 },
 "short:778": {
 "zh": "上架",
 "en": "IN",
 "same": [
-"district_panel:_fill:31"
+"district_panel:_fill:33"
 ]
 },
-"district_panel:_fill:31": {
+"district_panel:_fill:33": {
 "zh": "上架",
 "en": "IN",
 "file": "district_panel.gd",
-"line": 656,
+"line": 665,
 "func": "_fill",
-"en_line": 656
+"en_line": 665
 },
 "short:779": {
 "zh": "出库",
 "en": "OUT",
 "same": [
-"district_panel:_fill:32"
+"district_panel:_fill:34"
 ]
 },
-"district_panel:_fill:32": {
+"district_panel:_fill:34": {
 "zh": "出库",
 "en": "OUT",
 "file": "district_panel.gd",
-"line": 656,
+"line": 665,
 "func": "_fill",
-"en_line": 656
+"en_line": 665
 },
 "short:780": {
 "zh": "现金",
 "en": "CASH",
 "same": [
-"district_panel:_fill:33",
+"district_panel:_fill:35",
 "title_terminal:_port_drawing:7"
 ]
 },
-"district_panel:_fill:33": {
+"district_panel:_fill:35": {
 "zh": "现金",
 "en": "CASH",
 "file": "district_panel.gd",
-"line": 661,
+"line": 670,
 "func": "_fill",
-"en_line": 661
+"en_line": 670
 },
 "title_terminal:_port_drawing:7": {
 "zh": "现金",
@@ -63677,16 +64188,16 @@
 "zh": "待办：",
 "en": "TO DO:",
 "same": [
-"district_panel:_fill:37"
+"district_panel:_fill:39"
 ]
 },
-"district_panel:_fill:37": {
+"district_panel:_fill:39": {
 "zh": "待办：",
 "en": "TO DO:",
 "file": "district_panel.gd",
-"line": 664,
+"line": 673,
 "func": "_fill",
-"en_line": 664
+"en_line": 673
 },
 "short:782": {
 "zh": "下一期：",
@@ -63699,9 +64210,9 @@
 "zh": "下一期：",
 "en": "NEXT: ",
 "file": "district_panel.gd",
-"line": 678,
+"line": 687,
 "func": "_show",
-"en_line": 678
+"en_line": 687
 },
 "short:783": {
 "zh": "空闲",
@@ -63714,7 +64225,6 @@
 "ops:batch_state:7",
 "ops:batch_state:8",
 "process_gallery:_press_line:1",
-"process_queue_panel:_draw:6",
 "rolling_mill:lamp:5"
 ]
 },
@@ -63722,9 +64232,9 @@
 "zh": "空闲",
 "en": "IDLE",
 "file": "district_panel.gd",
-"line": 704,
+"line": 713,
 "func": "_batch_state",
-"en_line": 704
+"en_line": 713
 },
 "gas_line:job_text:3": {
 "zh": "空闲",
@@ -63774,14 +64284,6 @@
 "func": "_press_line",
 "en_line": 231
 },
-"process_queue_panel:_draw:6": {
-"zh": "空闲",
-"en": "IDLE",
-"file": "process_queue_panel.gd",
-"line": 364,
-"func": "_draw",
-"en_line": 364
-},
 "rolling_mill:lamp:5": {
 "zh": "空闲",
 "en": "IDLE",
@@ -63801,7 +64303,7 @@
 "zh": "原料运输",
 "en": "",
 "file": "district_panel.gd",
-"line": 705,
+"line": 714,
 "func": "_batch_state",
 "en_line": 0
 },
@@ -63816,7 +64318,7 @@
 "zh": "原料返仓",
 "en": "",
 "file": "district_panel.gd",
-"line": 705,
+"line": 714,
 "func": "_batch_state",
 "en_line": 0
 },
@@ -63831,7 +64333,7 @@
 "zh": "进行中",
 "en": "",
 "file": "district_panel.gd",
-"line": 705,
+"line": 714,
 "func": "_batch_state",
 "en_line": 0
 },
@@ -63846,7 +64348,7 @@
 "zh": "产物返仓",
 "en": "",
 "file": "district_panel.gd",
-"line": 705,
+"line": 714,
 "func": "_batch_state",
 "en_line": 0
 },
@@ -63861,7 +64363,7 @@
 "zh": "已完成",
 "en": "",
 "file": "district_panel.gd",
-"line": 705,
+"line": 714,
 "func": "_batch_state",
 "en_line": 0
 },
@@ -63876,7 +64378,7 @@
 "zh": "已撤回",
 "en": "",
 "file": "district_panel.gd",
-"line": 705,
+"line": 714,
 "func": "_batch_state",
 "en_line": 0
 },
@@ -63891,9 +64393,243 @@
 "zh": "已报损",
 "en": "",
 "file": "district_panel.gd",
-"line": 705,
+"line": 714,
 "func": "_batch_state",
 "en_line": 0
+},
+"short:920": {
+"zh": "更多 ▾",
+"en": "MORE ▾",
+"same": [
+"district_panel:_process_layout:5",
+"heat_panel:_ready:6",
+"heat_panel:_ready:8",
+"sort_panel:_ready:4",
+"sort_panel:_ready:6"
+]
+},
+"district_panel:_process_layout:5": {
+"zh": "更多 ▾",
+"en": "MORE ▾",
+"file": "district_panel.gd",
+"line": 838,
+"func": "_process_layout",
+"en_line": 838
+},
+"heat_panel:_ready:6": {
+"zh": "更多 ▾",
+"en": "MORE ▾",
+"file": "heat_panel.gd",
+"line": 95,
+"func": "_ready",
+"en_line": 95
+},
+"heat_panel:_ready:8": {
+"zh": "更多 ▾",
+"en": "MORE ▾",
+"file": "heat_panel.gd",
+"line": 102,
+"func": "_ready",
+"en_line": 102
+},
+"sort_panel:_ready:4": {
+"zh": "更多 ▾",
+"en": "MORE ▾",
+"file": "sort_panel.gd",
+"line": 36,
+"func": "_ready",
+"en_line": 36
+},
+"sort_panel:_ready:6": {
+"zh": "更多 ▾",
+"en": "MORE ▾",
+"file": "sort_panel.gd",
+"line": 38,
+"func": "_ready",
+"en_line": 38
+},
+"short:1763": {
+"zh": "气态氧",
+"en": "GAS O₂",
+"same": [
+"district_panel:_draw_tanks:1"
+]
+},
+"district_panel:_draw_tanks:1": {
+"zh": "气态氧",
+"en": "GAS O₂",
+"file": "district_panel.gd",
+"line": 876,
+"func": "_draw_tanks",
+"en_line": 876
+},
+"short:845": {
+"zh": "液氧",
+"en": "LOX",
+"same": [
+"district_panel:_draw_tanks:2",
+"gas_line:want_name:1",
+"power_supply_view:_cryo_run:2"
+]
+},
+"district_panel:_draw_tanks:2": {
+"zh": "液氧",
+"en": "LOX",
+"file": "district_panel.gd",
+"line": 876,
+"func": "_draw_tanks",
+"en_line": 876
+},
+"gas_line:want_name:1": {
+"zh": "液氧",
+"en": "LOX",
+"file": "gas_line.gd",
+"line": 361,
+"func": "want_name",
+"en_line": 361
+},
+"power_supply_view:_cryo_run:2": {
+"zh": "液氧",
+"en": "LOX",
+"file": "power_supply_view.gd",
+"line": 454,
+"func": "_cryo_run",
+"en_line": 454
+},
+"short:1764": {
+"zh": "液氢",
+"en": "LH₂",
+"same": [
+"district_panel:_draw_tanks:3"
+]
+},
+"district_panel:_draw_tanks:3": {
+"zh": "液氢",
+"en": "LH₂",
+"file": "district_panel.gd",
+"line": 876,
+"func": "_draw_tanks",
+"en_line": 876
+},
+"short:1765": {
+"zh": "进行中",
+"en": "RUNNING",
+"same": [
+"district_panel:_fill_next:5"
+]
+},
+"district_panel:_fill_next:5": {
+"zh": "进行中",
+"en": "RUNNING",
+"file": "district_panel.gd",
+"line": 932,
+"func": "_fill_next",
+"en_line": 932
+},
+"short:1766": {
+"zh": "分离 %s",
+"en": "SEPARATE %s",
+"same": [
+"district_panel:_fill_next:7"
+]
+},
+"district_panel:_fill_next:7": {
+"zh": "分离 %s",
+"en": "SEPARATE %s",
+"file": "district_panel.gd",
+"line": 938,
+"func": "_fill_next",
+"en_line": 938
+},
+"short:1767": {
+"zh": "污染 %.1f%%",
+"en": "TAINT %.1f%%",
+"same": [
+"district_panel:_fill_next:9"
+]
+},
+"district_panel:_fill_next:9": {
+"zh": "污染 %.1f%%",
+"en": "TAINT %.1f%%",
+"file": "district_panel.gd",
+"line": 939,
+"func": "_fill_next",
+"en_line": 939
+},
+"short:1768": {
+"zh": "无污染",
+"en": "CLEAN",
+"same": [
+"district_panel:_fill_next:10"
+]
+},
+"district_panel:_fill_next:10": {
+"zh": "无污染",
+"en": "CLEAN",
+"file": "district_panel.gd",
+"line": 939,
+"func": "_fill_next",
+"en_line": 939
+},
+"short:1769": {
+"zh": "开始分离",
+"en": "SEPARATE",
+"same": [
+"district_panel:_fill_next:12"
+]
+},
+"district_panel:_fill_next:12": {
+"zh": "开始分离",
+"en": "SEPARATE",
+"file": "district_panel.gd",
+"line": 942,
+"func": "_fill_next",
+"en_line": 942
+},
+"short:1770": {
+"zh": "液化",
+"en": "LIQUEFY",
+"same": [
+"district_panel:_fill_next:16"
+]
+},
+"district_panel:_fill_next:16": {
+"zh": "液化",
+"en": "LIQUEFY",
+"file": "district_panel.gd",
+"line": 950,
+"func": "_fill_next",
+"en_line": 950
+},
+"short:1771": {
+"zh": "，不够",
+"en": ", SHORT",
+"same": [
+"district_panel:_fill_call:7"
+]
+},
+"district_panel:_fill_call:7": {
+"zh": "，不够",
+"en": ", SHORT",
+"file": "district_panel.gd",
+"line": 1002,
+"func": "_fill_call",
+"en_line": 1002
+},
+"short:1772": {
+"zh": "接下",
+"en": "TAKE",
+"same": [
+"district_panel:_fill_call:10"
+]
+},
+"district_panel:_fill_call:10": {
+"zh": "接下",
+"en": "TAKE",
+"file": "district_panel.gd",
+"line": 1007,
+"func": "_fill_call",
+"en_line": 1007
 },
 "short:1626": {
 "zh": "通风",
@@ -64131,9 +64867,9 @@
 "zh": "购买",
 "en": "BUY",
 "file": "port_walk.gd",
-"line": 622,
+"line": 623,
 "func": "_callouts",
-"en_line": 622
+"en_line": 623
 },
 "short:792": {
 "zh": "出售",
@@ -64155,9 +64891,9 @@
 "zh": "出售",
 "en": "SELL",
 "file": "port_walk.gd",
-"line": 623,
+"line": 624,
 "func": "_callouts",
-"en_line": 623
+"en_line": 624
 },
 "short:793": {
 "zh": "交易记录",
@@ -64179,9 +64915,9 @@
 "zh": "交易记录",
 "en": "RECORDS",
 "file": "port_walk.gd",
-"line": 624,
+"line": 625,
 "func": "_callouts",
-"en_line": 624
+"en_line": 625
 },
 "short:794": {
 "zh": "航运",
@@ -64204,9 +64940,9 @@
 "zh": "航运",
 "en": "SHIPPING",
 "file": "port_walk.gd",
-"line": 625,
+"line": 626,
 "func": "_callouts",
-"en_line": 625
+"en_line": 626
 },
 "star_map:_ready:4": {
 "zh": "航运",
@@ -64333,9 +65069,9 @@
 "zh": "关闭",
 "en": "CLOSE",
 "file": "port_walk.gd",
-"line": 569,
+"line": 570,
 "func": "_callouts",
-"en_line": 569
+"en_line": 570
 },
 "ship_market_panel:_detail:1": {
 "zh": "关闭",
@@ -64389,7 +65125,7 @@
 "en": "CANCEL",
 "same": [
 "exchange_panel:_build_purchase:3",
-"power_panel:_ready:24"
+"power_panel:_ready:25"
 ]
 },
 "exchange_panel:_build_purchase:3": {
@@ -64400,13 +65136,13 @@
 "func": "_build_purchase",
 "en_line": 408
 },
-"power_panel:_ready:24": {
+"power_panel:_ready:25": {
 "zh": "取消",
 "en": "CANCEL",
 "file": "power_panel.gd",
-"line": 787,
+"line": 803,
 "func": "_ready",
-"en_line": 787
+"en_line": 803
 },
 "short:803": {
 "zh": "恢复经营",
@@ -65269,9 +66005,9 @@
 "zh": "回收气体",
 "en": "RECOVERED GAS",
 "file": "game.gd",
-"line": 3014,
+"line": 3015,
 "func": "_goods_report",
-"en_line": 3014
+"en_line": 3015
 },
 "store_book:good_name:1": {
 "zh": "回收气体",
@@ -65293,9 +66029,9 @@
 "zh": "回收液体",
 "en": "RECOVERED LIQUIDS",
 "file": "game.gd",
-"line": 3017,
+"line": 3018,
 "func": "_goods_report",
-"en_line": 3017
+"en_line": 3018
 },
 "store_book:good_name:2": {
 "zh": "回收液体",
@@ -65388,30 +66124,6 @@
 "line": 336,
 "func": "grid_loads",
 "en_line": 336
-},
-"short:845": {
-"zh": "液氧",
-"en": "LOX",
-"same": [
-"gas_line:want_name:1",
-"power_supply_view:_cryo_run:2"
-]
-},
-"gas_line:want_name:1": {
-"zh": "液氧",
-"en": "LOX",
-"file": "gas_line.gd",
-"line": 361,
-"func": "want_name",
-"en_line": 361
-},
-"power_supply_view:_cryo_run:2": {
-"zh": "液氧",
-"en": "LOX",
-"file": "power_supply_view.gd",
-"line": 369,
-"func": "_cryo_run",
-"en_line": 369
 },
 "short:846": {
 "zh": "瓶装氧",
@@ -65598,7 +66310,7 @@
 "en": "BASE",
 "same": [
 "grid:group_name:1",
-"power_panel:readings:3"
+"power_panel:readings:4"
 ]
 },
 "grid:group_name:1": {
@@ -65609,13 +66321,13 @@
 "func": "group_name",
 "en_line": 90
 },
-"power_panel:readings:3": {
+"power_panel:readings:4": {
 "zh": "基础用电",
 "en": "BASE",
 "file": "power_panel.gd",
-"line": 102,
+"line": 109,
 "func": "readings",
-"en_line": 102
+"en_line": 109
 },
 "short:859": {
 "zh": "保存失败",
@@ -65704,17 +66416,17 @@
 "zh": "保存失败",
 "en": "SAVE FAILED",
 "file": "process_line.gd",
-"line": 208,
+"line": 209,
 "func": "queue_ingots",
-"en_line": 208
+"en_line": 209
 },
 "process_line:send_to_press:2": {
 "zh": "保存失败",
 "en": "SAVE FAILED",
 "file": "process_line.gd",
-"line": 411,
+"line": 412,
 "func": "send_to_press",
-"en_line": 411
+"en_line": 412
 },
 "rolling_mill:start:1": {
 "zh": "保存失败",
@@ -65892,7 +66604,7 @@
 "en": "PIER CRANE",
 "same": [
 "grid:demands:6",
-"power_panel:readings:7"
+"power_panel:readings:8"
 ]
 },
 "grid:demands:6": {
@@ -65903,13 +66615,13 @@
 "func": "demands",
 "en_line": 203
 },
-"power_panel:readings:7": {
+"power_panel:readings:8": {
 "zh": "码头吊车",
 "en": "PIER CRANE",
 "file": "power_panel.gd",
-"line": 102,
+"line": 109,
 "func": "readings",
-"en_line": 102
+"en_line": 109
 },
 "short:866": {
 "zh": "接驳车",
@@ -65917,7 +66629,7 @@
 "same": [
 "grid:demands:7",
 "guide:task_name:8",
-"power_panel:readings:8"
+"power_panel:readings:9"
 ]
 },
 "grid:demands:7": {
@@ -65936,20 +66648,20 @@
 "func": "task_name",
 "en_line": 578
 },
-"power_panel:readings:8": {
+"power_panel:readings:9": {
 "zh": "接驳车",
 "en": "SHUTTLE",
 "file": "power_panel.gd",
-"line": 102,
+"line": 109,
 "func": "readings",
-"en_line": 102
+"en_line": 109
 },
 "short:867": {
 "zh": "船坞熔炉",
 "en": "BERTH FURNACE",
 "same": [
 "grid:demands:10",
-"power_panel:readings:9"
+"power_panel:readings:10"
 ]
 },
 "grid:demands:10": {
@@ -65960,13 +66672,13 @@
 "func": "demands",
 "en_line": 219
 },
-"power_panel:readings:9": {
+"power_panel:readings:10": {
 "zh": "船坞熔炉",
 "en": "BERTH FURNACE",
 "file": "power_panel.gd",
-"line": 102,
+"line": 109,
 "func": "readings",
-"en_line": 102
+"en_line": 109
 },
 "short:868": {
 "zh": "%s 充电",
@@ -65994,9 +66706,9 @@
 "zh": "%s只拿到 %d%%",
 "en": "%s gets %d%%",
 "file": "grid.gd",
-"line": 469,
+"line": 472,
 "func": "verdict",
-"en_line": 469
+"en_line": 472
 },
 "short:1546": {
 "zh": "电不够：",
@@ -66009,9 +66721,9 @@
 "zh": "电不够：",
 "en": "SHORT OF POWER: ",
 "file": "grid.gd",
-"line": 470,
+"line": 473,
 "func": "verdict",
-"en_line": 470
+"en_line": 473
 },
 "short:869": {
 "zh": "无人机",
@@ -66555,9 +67267,9 @@
 "zh": "往下看：%s",
 "en": "LOOK DOWN: %s",
 "file": "port_walk.gd",
-"line": 512,
+"line": 513,
 "func": "_fill",
-"en_line": 512
+"en_line": 513
 },
 "short:902": {
 "zh": "购买",
@@ -67639,57 +68351,15 @@
 "func": "show_result",
 "en_line": 0
 },
-"short:920": {
-"zh": "更多 ▾",
-"en": "MORE ▾",
-"same": [
-"heat_panel:_ready:5",
-"heat_panel:_ready:7",
-"sort_panel:_ready:4",
-"sort_panel:_ready:6"
-]
-},
-"heat_panel:_ready:5": {
-"zh": "更多 ▾",
-"en": "MORE ▾",
-"file": "heat_panel.gd",
-"line": 95,
-"func": "_ready",
-"en_line": 95
-},
-"heat_panel:_ready:7": {
-"zh": "更多 ▾",
-"en": "MORE ▾",
-"file": "heat_panel.gd",
-"line": 102,
-"func": "_ready",
-"en_line": 102
-},
-"sort_panel:_ready:4": {
-"zh": "更多 ▾",
-"en": "MORE ▾",
-"file": "sort_panel.gd",
-"line": 36,
-"func": "_ready",
-"en_line": 36
-},
-"sort_panel:_ready:6": {
-"zh": "更多 ▾",
-"en": "MORE ▾",
-"file": "sort_panel.gd",
-"line": 38,
-"func": "_ready",
-"en_line": 38
-},
 "short:921": {
 "zh": "更多 ▴",
 "en": "MORE ▴",
 "same": [
-"heat_panel:_ready:6",
+"heat_panel:_ready:7",
 "sort_panel:_ready:5"
 ]
 },
-"heat_panel:_ready:6": {
+"heat_panel:_ready:7": {
 "zh": "更多 ▴",
 "en": "MORE ▴",
 "file": "heat_panel.gd",
@@ -67801,7 +68471,7 @@
 "zh": "电不够",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 843,
+"line": 846,
 "func": "_process",
 "en_line": 0
 },
@@ -67809,7 +68479,7 @@
 "zh": "电不够",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 844,
+"line": 847,
 "func": "_process",
 "en_line": 0
 },
@@ -68920,7 +69590,7 @@
 "zh": "等电：",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 840,
+"line": 843,
 "func": "_process",
 "en_line": 0
 },
@@ -68928,7 +69598,7 @@
 "zh": "等电：",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 844,
+"line": 847,
 "func": "_process",
 "en_line": 0
 },
@@ -68943,7 +69613,7 @@
 "zh": "%d 秒",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 202,
+"line": 205,
 "func": "_span",
 "en_line": 0
 },
@@ -68958,7 +69628,7 @@
 "zh": "%d 分钟",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 203,
+"line": 206,
 "func": "_span",
 "en_line": 0
 },
@@ -68973,7 +69643,7 @@
 "zh": "报损废料",
 "en": "",
 "file": "industrial_heat.gd",
-"line": 490,
+"line": 493,
 "func": "write_off",
 "en_line": 0
 },
@@ -68988,9 +69658,9 @@
 "zh": "没有炉次",
 "en": "NO HEAT",
 "file": "industrial_heat.gd",
-"line": 972,
+"line": 975,
 "func": "_draw_desk",
-"en_line": 972
+"en_line": 975
 },
 "short:986": {
 "zh": "报损弃料",
@@ -72001,9 +72671,9 @@
 "zh": "拖船门",
 "en": "TUG GATE",
 "file": "port_art.gd",
-"line": 697,
+"line": 705,
 "func": "_tug",
-"en_line": 697
+"en_line": 705
 },
 "tug_station_art:still:1": {
 "zh": "拖船门",
@@ -72025,9 +72695,9 @@
 "zh": "船坞口",
 "en": "MOUTH",
 "file": "port_art.gd",
-"line": 698,
+"line": 706,
 "func": "_tug",
-"en_line": 698
+"en_line": 706
 },
 "tug_station_art:moving:2": {
 "zh": "船坞口",
@@ -72279,8 +72949,9 @@
 "en": "ARC FURNACE",
 "same": [
 "port_walk:target_name:6",
-"power_panel:readings:4",
-"power_panel:_ready:18"
+"power_panel:readings:5",
+"power_panel:_ready:19",
+"process_queue_panel:_draw_empty:2"
 ]
 },
 "port_walk:target_name:6": {
@@ -72291,21 +72962,29 @@
 "func": "target_name",
 "en_line": 363
 },
-"power_panel:readings:4": {
+"power_panel:readings:5": {
 "zh": "电弧炉",
 "en": "ARC FURNACE",
 "file": "power_panel.gd",
-"line": 102,
+"line": 109,
 "func": "readings",
-"en_line": 102
+"en_line": 109
 },
-"power_panel:_ready:18": {
+"power_panel:_ready:19": {
 "zh": "电弧炉",
 "en": "ARC FURNACE",
 "file": "power_panel.gd",
-"line": 752,
+"line": 768,
 "func": "_ready",
-"en_line": 752
+"en_line": 768
+},
+"process_queue_panel:_draw_empty:2": {
+"zh": "电弧炉",
+"en": "ARC FURNACE",
+"file": "process_queue_panel.gd",
+"line": 433,
+"func": "_draw_empty",
+"en_line": 433
 },
 "short:1186": {
 "zh": "港区通道",
@@ -72348,9 +73027,9 @@
 "zh": "车上：去%s",
 "en": "ABOARD: TO THE %s",
 "file": "port_walk.gd",
-"line": 531,
+"line": 532,
 "func": "_fill",
-"en_line": 531
+"en_line": 532
 },
 "short:1189": {
 "zh": "导览完成",
@@ -72363,9 +73042,9 @@
 "zh": "导览完成",
 "en": "TOUR DONE",
 "file": "port_walk.gd",
-"line": 543,
+"line": 544,
 "func": "_fill",
-"en_line": 543
+"en_line": 544
 },
 "short:1190": {
 "zh": "控制屏",
@@ -72378,9 +73057,9 @@
 "zh": "控制屏",
 "en": "CONTROL SCREEN",
 "file": "port_walk.gd",
-"line": 546,
+"line": 547,
 "func": "_fill",
-"en_line": 546
+"en_line": 547
 },
 "short:1193": {
 "zh": "自己修",
@@ -72393,9 +73072,9 @@
 "zh": "自己修",
 "en": "MEND IT YOURSELF",
 "file": "port_walk.gd",
-"line": 572,
+"line": 573,
 "func": "_callouts",
-"en_line": 572
+"en_line": 573
 },
 "short:1194": {
 "zh": "请施工队",
@@ -72408,9 +73087,9 @@
 "zh": "请施工队",
 "en": "HIRE A CREW",
 "file": "port_walk.gd",
-"line": 573,
+"line": 574,
 "func": "_callouts",
-"en_line": 573
+"en_line": 574
 },
 "short:1195": {
 "zh": "三大公司",
@@ -72423,9 +73102,9 @@
 "zh": "三大公司",
 "en": "THE COMPANIES",
 "file": "port_walk.gd",
-"line": 595,
+"line": 596,
 "func": "_callouts",
-"en_line": 595
+"en_line": 596
 },
 "short:1196": {
 "zh": "气体线",
@@ -72438,9 +73117,9 @@
 "zh": "气体线",
 "en": "GAS LINE",
 "file": "port_walk.gd",
-"line": 600,
+"line": 601,
 "func": "_callouts",
-"en_line": 600
+"en_line": 601
 },
 "short:1197": {
 "zh": "上面：",
@@ -72453,9 +73132,9 @@
 "zh": "上面：",
 "en": "ON IT:",
 "file": "port_walk.gd",
-"line": 620,
+"line": 621,
 "func": "_callouts",
-"en_line": 620
+"en_line": 621
 },
 "short:1198": {
 "zh": "船市",
@@ -72468,9 +73147,9 @@
 "zh": "船市",
 "en": "HULK",
 "file": "port_walk.gd",
-"line": 626,
+"line": 627,
 "func": "_callouts",
-"en_line": 626
+"en_line": 627
 },
 "short:1199": {
 "zh": "自己修",
@@ -72483,9 +73162,9 @@
 "zh": "自己修",
 "en": "REPAIR IT YOURSELF",
 "file": "port_walk.gd",
-"line": 628,
+"line": 629,
 "func": "_callouts",
-"en_line": 628
+"en_line": 629
 },
 "short:1200": {
 "zh": "请施工队",
@@ -72498,9 +73177,9 @@
 "zh": "请施工队",
 "en": "HIRE",
 "file": "port_walk.gd",
-"line": 629,
+"line": 630,
 "func": "_callouts",
-"en_line": 629
+"en_line": 630
 },
 "short:1201": {
 "zh": "%s用过了",
@@ -72513,9 +73192,9 @@
 "zh": "%s用过了",
 "en": "%s done",
 "file": "port_walk.gd",
-"line": 804,
+"line": 805,
 "func": "_done_line",
-"en_line": 804
+"en_line": 805
 },
 "short:1202": {
 "zh": "%s看过了",
@@ -72528,9 +73207,9 @@
 "zh": "%s看过了",
 "en": "%s seen",
 "file": "port_walk.gd",
-"line": 809,
+"line": 810,
 "func": "_done_line",
-"en_line": 809
+"en_line": 810
 },
 "short:1549": {
 "zh": "全港总线",
@@ -72551,31 +73230,31 @@
 "zh": "分选线",
 "en": "SORTING",
 "same": [
-"power_panel:readings:5"
+"power_panel:readings:6"
 ]
 },
-"power_panel:readings:5": {
+"power_panel:readings:6": {
 "zh": "分选线",
 "en": "SORTING",
 "file": "power_panel.gd",
-"line": 102,
+"line": 109,
 "func": "readings",
-"en_line": 102
+"en_line": 109
 },
 "short:1205": {
 "zh": "吊轨车",
 "en": "TROLLEY",
 "same": [
-"power_panel:readings:6"
+"power_panel:readings:7"
 ]
 },
-"power_panel:readings:6": {
+"power_panel:readings:7": {
 "zh": "吊轨车",
 "en": "TROLLEY",
 "file": "power_panel.gd",
-"line": 102,
+"line": 109,
 "func": "readings",
-"en_line": 102
+"en_line": 109
 },
 "short:1592": {
 "zh": "可用供电",
@@ -72588,9 +73267,9 @@
 "zh": "可用供电",
 "en": "AVAILABLE",
 "file": "power_panel.gd",
-"line": 322,
+"line": 329,
 "func": "_f",
-"en_line": 322
+"en_line": 329
 },
 "short:1593": {
 "zh": "总需求",
@@ -72603,84 +73282,84 @@
 "zh": "总需求",
 "en": "ASKED",
 "file": "power_panel.gd",
-"line": 327,
+"line": 334,
 "func": "_f",
-"en_line": 327
+"en_line": 334
 },
 "short:1594": {
 "zh": "需要",
 "en": "ASKS",
 "same": [
-"power_panel:_f:9"
+"power_panel:_f:10"
 ]
 },
-"power_panel:_f:9": {
+"power_panel:_f:10": {
 "zh": "需要",
 "en": "ASKS",
 "file": "power_panel.gd",
-"line": 460,
+"line": 471,
 "func": "_f",
-"en_line": 460
+"en_line": 471
 },
 "short:1595": {
 "zh": "分到",
 "en": "GETS",
 "same": [
-"power_panel:_f:10"
+"power_panel:_f:11"
 ]
 },
-"power_panel:_f:10": {
+"power_panel:_f:11": {
 "zh": "分到",
 "en": "GETS",
 "file": "power_panel.gd",
-"line": 461,
+"line": 472,
 "func": "_f",
-"en_line": 461
+"en_line": 472
 },
 "short:1596": {
 "zh": "顺序",
 "en": "ORDER",
 "same": [
-"power_panel:_f:11"
+"power_panel:_f:12"
 ]
 },
-"power_panel:_f:11": {
+"power_panel:_f:12": {
 "zh": "顺序",
 "en": "ORDER",
 "file": "power_panel.gd",
-"line": 462,
+"line": 473,
 "func": "_f",
-"en_line": 462
+"en_line": 473
 },
 "short:1597": {
 "zh": "供电正常",
 "en": "POWERED",
 "same": [
-"power_panel:_f:13"
+"power_panel:_f:14"
 ]
 },
-"power_panel:_f:13": {
+"power_panel:_f:14": {
 "zh": "供电正常",
 "en": "POWERED",
 "file": "power_panel.gd",
-"line": 499,
+"line": 510,
 "func": "_f",
-"en_line": 499
+"en_line": 510
 },
 "short:1598": {
 "zh": "暂时无电",
 "en": "NO POWER FOR NOW",
 "same": [
-"power_panel:_f:14"
+"power_panel:_f:15"
 ]
 },
-"power_panel:_f:14": {
+"power_panel:_f:15": {
 "zh": "暂时无电",
 "en": "NO POWER FOR NOW",
 "file": "power_panel.gd",
-"line": 501,
+"line": 512,
 "func": "_f",
-"en_line": 501
+"en_line": 512
 },
 "short:1599": {
 "zh": "供电调度",
@@ -72693,24 +73372,24 @@
 "zh": "供电调度",
 "en": "POWER DISPATCH",
 "file": "power_panel.gd",
-"line": 620,
+"line": 631,
 "func": "_ready",
-"en_line": 620
+"en_line": 631
 },
 "short:1207": {
 "zh": "确认",
 "en": "CONFIRM",
 "same": [
-"power_panel:_ready:23"
+"power_panel:_ready:24"
 ]
 },
-"power_panel:_ready:23": {
+"power_panel:_ready:24": {
 "zh": "确认",
 "en": "CONFIRM",
 "file": "power_panel.gd",
-"line": 786,
+"line": 802,
 "func": "_ready",
-"en_line": 786
+"en_line": 802
 },
 "short:1208": {
 "zh": "已设定。",
@@ -72723,9 +73402,9 @@
 "zh": "已设定。",
 "en": "SET. ",
 "file": "power_panel.gd",
-"line": 860,
+"line": 876,
 "func": "_apply",
-"en_line": 860
+"en_line": 876
 },
 "short:1553": {
 "zh": "G%d 发电",
@@ -72738,9 +73417,9 @@
 "zh": "G%d 发电",
 "en": "G%d OUTPUT",
 "file": "power_panel.gd",
-"line": 885,
+"line": 901,
 "func": "_rebuild_gauges",
-"en_line": 885
+"en_line": 901
 },
 "short:1210": {
 "zh": "G%d 转速",
@@ -72753,9 +73432,9 @@
 "zh": "G%d 转速",
 "en": "G%d SPEED",
 "file": "power_panel.gd",
-"line": 885,
+"line": 901,
 "func": "_rebuild_gauges",
-"en_line": 885
+"en_line": 901
 },
 "short:1600": {
 "zh": "%s 等 %d 台",
@@ -72768,9 +73447,9 @@
 "zh": "%s 等 %d 台",
 "en": "%s +%d",
 "file": "power_panel.gd",
-"line": 1008,
+"line": 1027,
 "func": "_work_of",
-"en_line": 1008
+"en_line": 1027
 },
 "short:1555": {
 "zh": "往前一位",
@@ -72783,9 +73462,9 @@
 "zh": "往前一位",
 "en": "UP",
 "file": "power_panel.gd",
-"line": 1050,
+"line": 1069,
 "func": "_fill_order",
-"en_line": 1050
+"en_line": 1069
 },
 "short:1556": {
 "zh": "往后一位",
@@ -72798,9 +73477,9 @@
 "zh": "往后一位",
 "en": "DOWN",
 "file": "power_panel.gd",
-"line": 1050,
+"line": 1069,
 "func": "_fill_order",
-"en_line": 1050
+"en_line": 1069
 },
 "short:1211": {
 "zh": "反应堆 %s",
@@ -73036,16 +73715,16 @@
 "func": "still",
 "en_line": 212
 },
-"short:1226": {
-"zh": "岸电进线",
-"en": "SHORE",
+"short:1773": {
+"zh": "电池进线",
+"en": "BATTERIES",
 "same": [
 "power_station_art:still:21"
 ]
 },
 "power_station_art:still:21": {
-"zh": "岸电进线",
-"en": "SHORE",
+"zh": "电池进线",
+"en": "BATTERIES",
 "file": "power_station_art.gd",
 "line": 212,
 "func": "still",
@@ -73137,7 +73816,7 @@
 "zh": "小块",
 "en": "",
 "file": "power_supply.gd",
-"line": 21,
+"line": 26,
 "func": "顶层",
 "en_line": 0
 },
@@ -73152,7 +73831,7 @@
 "zh": "中块",
 "en": "",
 "file": "power_supply.gd",
-"line": 22,
+"line": 27,
 "func": "顶层",
 "en_line": 0
 },
@@ -73167,7 +73846,7 @@
 "zh": "大块",
 "en": "",
 "file": "power_supply.gd",
-"line": 23,
+"line": 28,
 "func": "顶层",
 "en_line": 0
 },
@@ -73182,9 +73861,9 @@
 "zh": "买电池块",
 "en": "BUY A BATTERY BLOCK",
 "file": "power_supply_ui.gd",
-"line": 70,
+"line": 73,
 "func": "_ready",
-"en_line": 70
+"en_line": 73
 },
 "short:1727": {
 "zh": "%s电池",
@@ -73197,9 +73876,9 @@
 "zh": "%s电池",
 "en": "%s BLOCK",
 "file": "power_supply_ui.gd",
-"line": 88,
+"line": 91,
 "func": "_ready",
-"en_line": 88
+"en_line": 91
 },
 "short:1728": {
 "zh": "下单",
@@ -73212,9 +73891,9 @@
 "zh": "下单",
 "en": "ORDER",
 "file": "power_supply_ui.gd",
-"line": 98,
+"line": 101,
 "func": "_ready",
-"en_line": 98
+"en_line": 101
 },
 "short:1729": {
 "zh": "发电机",
@@ -73227,9 +73906,9 @@
 "zh": "发电机",
 "en": "GENERATORS",
 "file": "power_supply_ui.gd",
-"line": 124,
+"line": 127,
 "func": "_ready",
-"en_line": 124
+"en_line": 127
 },
 "short:1730": {
 "zh": "超载",
@@ -73242,9 +73921,9 @@
 "zh": "超载",
 "en": "OVERLOAD",
 "file": "power_supply_ui.gd",
-"line": 136,
+"line": 139,
 "func": "_ready",
-"en_line": 136
+"en_line": 139
 },
 "short:1731": {
 "zh": "热量 %d%%",
@@ -73258,17 +73937,17 @@
 "zh": "热量 %d%%",
 "en": "HEAT %d%%",
 "file": "power_supply_ui.gd",
-"line": 212,
+"line": 219,
 "func": "sync",
-"en_line": 212
+"en_line": 219
 },
 "power_supply_view:_inside:2": {
 "zh": "热量 %d%%",
 "en": "HEAT %d%%",
 "file": "power_supply_view.gd",
-"line": 497,
+"line": 594,
 "func": "_inside",
-"en_line": 497
+"en_line": 594
 },
 "short:1732": {
 "zh": "电池泊位",
@@ -73281,9 +73960,9 @@
 "zh": "电池泊位",
 "en": "BATTERY BERTH",
 "file": "power_supply_view.gd",
-"line": 170,
+"line": 172,
 "func": "_berth",
-"en_line": 170
+"en_line": 172
 },
 "short:1733": {
 "zh": "空壳",
@@ -73296,9 +73975,9 @@
 "zh": "空壳",
 "en": "SPENT",
 "file": "power_supply_view.gd",
-"line": 200,
+"line": 202,
 "func": "_block",
-"en_line": 200
+"en_line": 202
 },
 "short:1734": {
 "zh": "起吊",
@@ -73311,9 +73990,9 @@
 "zh": "起吊",
 "en": "LIFT",
 "file": "power_supply_view.gd",
-"line": 411,
+"line": 496,
 "func": "_cryo_words",
-"en_line": 411
+"en_line": 496
 },
 "short:1735": {
 "zh": "空罐返回",
@@ -73326,9 +74005,9 @@
 "zh": "空罐返回",
 "en": "BACK EMPTY",
 "file": "power_supply_view.gd",
-"line": 417,
+"line": 502,
 "func": "_cryo_words",
-"en_line": 417
+"en_line": 502
 },
 "short:1736": {
 "zh": " · 超载",
@@ -73341,9 +74020,9 @@
 "zh": " · 超载",
 "en": " · OVERLOAD",
 "file": "power_supply_view.gd",
-"line": 489,
+"line": 586,
 "func": "_inside",
-"en_line": 489
+"en_line": 586
 },
 "short:1737": {
 "zh": "+%.0f 兆瓦",
@@ -73356,9 +74035,9 @@
 "zh": "+%.0f 兆瓦",
 "en": "+%.0f MW",
 "file": "power_supply_view.gd",
-"line": 513,
+"line": 616,
 "func": "_inside",
-"en_line": 513
+"en_line": 616
 },
 "short:1738": {
 "zh": "没燃料",
@@ -73371,9 +74050,9 @@
 "zh": "没燃料",
 "en": "NO FUEL",
 "file": "power_supply_view.gd",
-"line": 513,
+"line": 616,
 "func": "_inside",
-"en_line": 513
+"en_line": 616
 },
 "short:1232": {
 "zh": "未通电",
@@ -73581,9 +74260,9 @@
 "zh": "留在仓库",
 "en": "KEEP IN STORE",
 "file": "process_line.gd",
-"line": 239,
+"line": 240,
 "func": "use_text",
-"en_line": 239
+"en_line": 240
 },
 "short:1745": {
 "zh": "压块 · %s",
@@ -73596,9 +74275,9 @@
 "zh": "压块 · %s",
 "en": "BALE · %s",
 "file": "process_line.gd",
-"line": 475,
+"line": 476,
 "func": "_press_done",
-"en_line": 475
+"en_line": 476
 },
 "short:1746": {
 "zh": "加工队列",
@@ -73612,9 +74291,9 @@
 "zh": "加工队列",
 "en": "PROCESSING QUEUE",
 "file": "process_queue_panel.gd",
-"line": 355,
+"line": 358,
 "func": "_draw",
-"en_line": 355
+"en_line": 358
 },
 "remote_ops:name_of:4": {
 "zh": "加工队列",
@@ -73624,65 +74303,65 @@
 "func": "name_of",
 "en_line": 33
 },
-"short:1747": {
-"zh": "电弧炉",
-"en": "FURNACE",
+"short:1774": {
+"zh": "电弧炉：",
+"en": "FURNACE: ",
 "same": [
-"process_queue_panel:_draw:5"
+"process_queue_panel:_state_line:2"
 ]
 },
-"process_queue_panel:_draw:5": {
-"zh": "电弧炉",
-"en": "FURNACE",
+"process_queue_panel:_state_line:2": {
+"zh": "电弧炉：",
+"en": "FURNACE: ",
 "file": "process_queue_panel.gd",
-"line": 363,
-"func": "_draw",
-"en_line": 363
+"line": 386,
+"func": "_state_line",
+"en_line": 386
 },
-"short:1748": {
-"zh": "模具",
-"en": "MOULD",
+"short:1775": {
+"zh": "钢锭",
+"en": "INGOT",
 "same": [
-"process_queue_panel:_draw:7"
+"process_queue_panel:_draw_empty:1"
 ]
 },
-"process_queue_panel:_draw:7": {
-"zh": "模具",
-"en": "MOULD",
+"process_queue_panel:_draw_empty:1": {
+"zh": "钢锭",
+"en": "INGOT",
 "file": "process_queue_panel.gd",
-"line": 365,
-"func": "_draw",
-"en_line": 365
+"line": 433,
+"func": "_draw_empty",
+"en_line": 433
 },
-"short:1749": {
-"zh": "去仓库选",
+"short:1776": {
+"zh": "钢坯",
+"en": "BILLET",
+"same": [
+"process_queue_panel:_draw_empty:3"
+]
+},
+"process_queue_panel:_draw_empty:3": {
+"zh": "钢坯",
+"en": "BILLET",
+"file": "process_queue_panel.gd",
+"line": 433,
+"func": "_draw_empty",
+"en_line": 433
+},
+"short:1777": {
+"zh": "去仓库挑",
 "en": "PICK IN STORE",
 "same": [
-"process_queue_panel:_draw:13"
+"process_queue_panel:_draw_list:6"
 ]
 },
-"process_queue_panel:_draw:13": {
-"zh": "去仓库选",
+"process_queue_panel:_draw_list:6": {
+"zh": "去仓库挑",
 "en": "PICK IN STORE",
 "file": "process_queue_panel.gd",
-"line": 385,
-"func": "_draw",
-"en_line": 385
-},
-"short:1750": {
-"zh": "模",
-"en": "",
-"same": [
-"process_queue_panel:_row:5"
-]
-},
-"process_queue_panel:_row:5": {
-"zh": "模",
-"en": "",
-"file": "process_queue_panel.gd",
-"line": 496,
-"func": "_row",
-"en_line": 496
+"line": 498,
+"func": "_draw_list",
+"en_line": 498
 },
 "short:1751": {
 "zh": "送料",
@@ -73695,9 +74374,9 @@
 "zh": "送料",
 "en": "FEEDING",
 "file": "process_queue_panel.gd",
-"line": 535,
+"line": 594,
 "func": "_draw_press",
-"en_line": 535
+"en_line": 594
 },
 "short:1752": {
 "zh": "关料门",
@@ -73710,9 +74389,9 @@
 "zh": "关料门",
 "en": "SHUTTING",
 "file": "process_queue_panel.gd",
-"line": 535,
+"line": 594,
 "func": "_draw_press",
-"en_line": 535
+"en_line": 594
 },
 "short:1753": {
 "zh": "压制",
@@ -73725,9 +74404,9 @@
 "zh": "压制",
 "en": "PRESSING",
 "file": "process_queue_panel.gd",
-"line": 536,
+"line": 595,
 "func": "_draw_press",
-"en_line": 536
+"en_line": 595
 },
 "short:1754": {
 "zh": "打包带",
@@ -73740,54 +74419,9 @@
 "zh": "打包带",
 "en": "STRAPPING",
 "file": "process_queue_panel.gd",
-"line": 536,
+"line": 595,
 "func": "_draw_press",
-"en_line": 536
-},
-"short:1755": {
-"zh": "压机空闲",
-"en": "THE PRESS IS IDLE",
-"same": [
-"process_queue_panel:_draw_press:9"
-]
-},
-"process_queue_panel:_draw_press:9": {
-"zh": "压机空闲",
-"en": "THE PRESS IS IDLE",
-"file": "process_queue_panel.gd",
-"line": 541,
-"func": "_draw_press",
-"en_line": 541
-},
-"short:1756": {
-"zh": "里面还有%s",
-"en": "%s INSIDE",
-"same": [
-"process_queue_panel:_draw_press:11"
-]
-},
-"process_queue_panel:_draw_press:11": {
-"zh": "里面还有%s",
-"en": "%s INSIDE",
-"file": "process_queue_panel.gd",
-"line": 552,
-"func": "_draw_press",
-"en_line": 552
-},
-"short:1757": {
-"zh": "等着压：",
-"en": "WAITING: ",
-"same": [
-"process_queue_panel:_draw_press:13"
-]
-},
-"process_queue_panel:_draw_press:13": {
-"zh": "等着压：",
-"en": "WAITING: ",
-"file": "process_queue_panel.gd",
-"line": 561,
-"func": "_draw_press",
-"en_line": 561
+"en_line": 595
 },
 "short:1758": {
 "zh": "换模中",

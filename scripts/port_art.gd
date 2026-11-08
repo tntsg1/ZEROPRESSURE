@@ -592,6 +592,10 @@ static func _power(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: i
 			ci.draw_circle(bp + Vector2(0, -1.4 * M), 0.22 * M, Pal.tint(Pal.VOLT, 0.7, 1.0))
 	# 100 号 (Q6 C): the shore line's umbilical on the roof — stowed along it, swung up and plugged
 	# into the shore line's socket while the port draws shore power; the current down the line
+	# 128 号 第 5 段 (草图): bought power comes as battery blocks to the roof berth where the umbilical lay
+	if preload("res://scripts/power_supply.gd").ENABLED:
+		_power_fins(ci, r, M, lw, n, ink)
+		return
 	var root := r.position + Vector2(56.0, -0.4) * M
 	var sock := root + Vector2.from_angle(-PI * 0.42) * 9.0 * M
 	var far := sock + Vector2(34.0, -40.0) * M
@@ -618,6 +622,10 @@ static func _power(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: i
 			while d < L:
 				FastDraw.circle(cc, far.lerp(sock, d / L), 0.3 * M, Pal.tint(Pal.VOLT, 0.95, 1.4))
 				d += stp)
+	_power_fins(ci, r, M, lw, n, ink)
+
+
+static func _power_fins(ci, r: Rect2, M: float, lw: float, n: int, ink: float) -> void:
 	# radiator fins out the top, hatched; they glow faintly once the reactors run
 	for i in 5:
 		var fx := r.position.x + (6.0 + i * 11.0) * M

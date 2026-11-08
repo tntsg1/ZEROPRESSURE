@@ -413,7 +413,7 @@ static func summary(zone: String, game) -> Dictionary:
 	match zone:
 		"power":
 			return {"lines": [["%.1f / %.0f MW" % [PowerWorks.own, PowerWorks.cap], hi], [w("负荷 %d%% · %s", "LOAD %d%% · %s") % [int(PowerWorks.frac() * 100.0), ("%.2f Hz" % PowerWorks.hz) if PowerWorks.units > 0 else w("燃料电池", "FUEL CELLS")], dim],
-				[w("岸电 %.1f MW", "SHORE %.1f MW") % PowerWorks.shore if PowerWorks.shore > 0.05 else w("岸电 未用", "SHORE OFF"), dim]], "bar": PowerWorks.frac(), "lamp": "ok" if st >= 1 else "warn",
+				[w("电池 %.1f MW", "BATTERIES %.1f MW") % preload("res://scripts/power_supply.gd").batt_now if preload("res://scripts/power_supply.gd").batt_now > 0.05 else w("电池 未用", "BATTERIES IDLE"), dim]], "bar": PowerWorks.frac(), "lamp": "ok" if st >= 1 else "warn",
 				"use": w("动力区业务：看全港发电和用电，打开动力控制屏（单线图、仪表、电不够时谁先用、供电线路）。", "The power district's business: the port's power made and used, and the power control screen (lines, gauges, who comes first, the supply line)."),
 				"now": "%.1f / %.0f MW" % [PowerWorks.own, PowerWorks.cap], "can": w("飞到台前按 [%s] 打开。", "At the console press [%s].") % Keys.label("use")}
 		"trade":

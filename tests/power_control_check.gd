@@ -43,7 +43,8 @@ func _run() -> void:
 	Career.data.industrial_heat.shore_asked = false
 	Grid.set_ctl("line", "auto_shore")
 	var adm2 := Grid.alloc(g, "heat")
-	check(is_equal_approx(float(adm2.own), 4.0) and is_equal_approx(float(adm2.shore), 12.0), "own + shore automatically: the shore makes it up unasked (%s)" % str(adm2))
+	# 128 号 第 5 段: the shore line is gone (bought power comes as battery blocks): even set, none flows
+	check(is_equal_approx(float(adm2.own), 4.0) and is_equal_approx(float(adm2.shore), 0.0), "no shore line any more, whatever the old setting (%s)" % str(adm2))
 	Grid.set_ctl("line", "auto")
 	Career.data.industrial_heat = {}
 	# deferred
