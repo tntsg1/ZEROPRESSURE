@@ -11,7 +11,7 @@
 #
 # 已停用的功能（梁工、关掉的剧情层、取消的耗材）、开发者面板、只打印到日志的字不在这里。
 #
-# 本文件共 9001 条。
+# 本文件共 8932 条。
 
 ============================================================
 # 一、标题、菜单与设置（116 条）
@@ -1482,7 +1482,7 @@
 英：Turns the on-screen hints on or off.
 
 ============================================================
-# 四、新手：港区现场导览（153 条）
+# 四、新手：港区现场导览（150 条）
 # 第一艘船拆完、船坞空了以后，强制带玩家亲自出坞、坐接驳车跑一遍港区每个区，在每个面板上逐个框出部件讲用途。
 # 卡片上的字只写“去哪、按什么”（一行）；框选的短注释写“这个部件干什么用”（一句）。
 # “港区图卡”是暂停菜单里的速查卡（旧版导览）。
@@ -1898,163 +1898,151 @@
 中：拖船泊位、能拖多长的船
 英：The tug berths, the longest ship they take
 
-[port_walk:_callouts:20]
-中：替别人拖货：不拆船也赚钱
-英：Tow for others: money without a ship
-
-[port_walk:_callouts:21]
+[port_walk:_callouts:19]
 中：本区第几期、下一期还缺什么
 英：This district's stage and what the next lacks
 
-[port_walk:_callouts:22]
+[port_walk:_callouts:20]
 中：库存、在途、叉车
 英：Stock, transit, forklifts
 
-[port_walk:_callouts:23]
-中：第三方仓储
-英：THIRD-PARTY
-
-[port_walk:_callouts:24]
-中：替别人存货收租金
-英：Store others' goods for rent
-
-[port_walk:_callouts:25]
+[port_walk:_callouts:21]
 中：左边货架 A1
 英：Racks A1
 
-[port_walk:_callouts:26]
-中：货架在区里两侧，到货架下按 E；客户货箱在收货台，自己搬
-英：The racks are at the racks; clients' crates on the counter, carried by you
+[port_walk:_callouts:22]
+中：货架在区里两侧，到货架下按 E
+英：The racks are at the racks
 
-[port_walk:_callouts:27]
+[port_walk:_callouts:23]
 中：本区第几期、下一期还缺什么
 英：This district's stage and what the next lacks
 
-[port_walk:_callouts:28]
+[port_walk:_callouts:24]
 中：上门的客人
 英：AT THE PIER
 
-[port_walk:_callouts:29]
+[port_walk:_callouts:25]
 中：码头边想买卖东西的小船
 英：Little ships at the pier, buying and selling
 
-[port_walk:_callouts:31]
+[port_walk:_callouts:27]
 中：三家公司长期收什么、给什么价
 英：What the three companies keep buying
 
-[port_walk:_callouts:32]
+[port_walk:_callouts:28]
 中：打开交易行
 英：OPEN THE EXCHANGE
 
-[port_walk:_callouts:33]
+[port_walk:_callouts:29]
 中：下一步点它，进交易行
 英：Click it next: the exchange
 
-[port_walk:_callouts:34]
+[port_walk:_callouts:30]
 中：本区第几期、下一期还缺什么
 英：This district's stage and what the next lacks
 
-[port_walk:_callouts:35]
+[port_walk:_callouts:31]
 中：轧机在本区中部
 英：The mill stands
 
-[port_walk:_callouts:36]
+[port_walk:_callouts:32]
 中：轧机不在这里开：飞到轧机操作台
 英：The mill is run at the mill: fly to its pedestal
 
-[port_walk:_callouts:38]
+[port_walk:_callouts:34]
 中：抽回来的气做成液氧卖
 英：Recovered air made into LOX to sell
 
-[port_walk:_callouts:39]
+[port_walk:_callouts:35]
 中：单线图：电从机组到每条线路
 英：The lines: from the sets to every feeder
 
-[port_walk:_callouts:40]
+[port_walk:_callouts:36]
 中：每台机组的出力、转速、冷却
 英：Each set: output, speed, coolant
 
-[port_walk:_callouts:41]
+[port_walk:_callouts:37]
 中：最近 5 分钟用电 vs 容量
 英：Five minutes of load against capacity
 
-[port_walk:_callouts:42]
+[port_walk:_callouts:38]
 中：熔炉最多能用多少电
 英：How much the furnace may draw
 
-[port_walk:_callouts:43]
+[port_walk:_callouts:39]
 中：电不够时谁先用
 英：Who comes first when power is short
 
-[port_walk:_callouts:44]
+[port_walk:_callouts:40]
 中：配方：点一块，下一次就轧它
 英：Recipe: pick one, the next pass rolls it
 
-[port_walk:_callouts:45]
+[port_walk:_callouts:41]
 中：进料：仓库里的钢坯，每次 1 t
 英：In: billet in stock, a tonne a pass
 
-[port_walk:_callouts:46]
+[port_walk:_callouts:42]
 中：这一次轧到哪了、还剩几秒
 英：This pass: how far, how long
 
-[port_walk:_callouts:47]
+[port_walk:_callouts:43]
 中：出料：轧好的进仓库
 英：Out: rolled goods go to the warehouse
 
-[port_walk:_callouts:48]
+[port_walk:_callouts:44]
 中：状态灯：在轧 / 等钢坯 / 缺电，原因写在这
 英：The lamp: rolling, waiting or short, and why
 
-[port_walk:_callouts:49]
+[port_walk:_callouts:45]
 中：连续轧：有钢坯就一直轧
 英：Roll on: keeps rolling while there is billet
 
-[port_walk:_callouts:50]
+[port_walk:_callouts:46]
 中：这里展示公司物品，导览结束后可点击查看详情。
 英：Company goods are here; select one for details after the tour.
 
-[port_walk:_callouts:51]
+[port_walk:_callouts:47]
 中：上方分类可以筛选原料、设备等物品。
 英：Use the categories above to filter materials and equipment.
 
-[port_walk:_callouts:52]
+[port_walk:_callouts:48]
 中：看完按 Esc 或点这里关闭，继续导览。
 英：Press Esc or close here to continue the tour.
 
-[port_walk:_callouts:53]
+[port_walk:_callouts:49]
 中：这一边的四排：放什么、上面有什么
 英：This side's four rows: their use, what is on them
 
-[port_walk:_callouts:55]
+[port_walk:_callouts:51]
 中：这一排现在放着的货和吨数
 英：What is on the row now, in tonnes
 
-[port_walk:_callouts:57]
+[port_walk:_callouts:53]
 中：买原料和钢材
 英：Buy feed and steel
 
-[port_walk:_callouts:59]
+[port_walk:_callouts:55]
 中：卖钢锭、气体、拆下的设备
 英：Sell ingots, gases, stripped machines
 
-[port_walk:_callouts:61]
+[port_walk:_callouts:57]
 中：每一笔买卖和挂单
 英：Every trade and listing
 
-[port_walk:_callouts:63]
+[port_walk:_callouts:59]
 中：在路上的货
 英：Goods on their way
 
-[port_walk:_callouts:65]
+[port_walk:_callouts:61]
 中：买二手船来拆
 英：Buy hulks to strip
 
-[port_walk:_callouts:67]
+[port_walk:_callouts:63]
 中：用仓库里的零件和钢锭修，花钱少
 英：Parts and ingots from stock: cheaper
 
-[port_walk:_callouts:69]
+[port_walk:_callouts:65]
 中：不用材料，花钱多
 英：No materials: dearer
 
@@ -11240,9 +11228,9 @@
 英：TOWS UP TO %s
 
 ============================================================
-# 九、港区：各区现场与面板（707 条）
+# 九、港区：各区现场与面板（644 条）
 # 船坞空着时飞出去的港区：中央环、动力区、拖船站、货运区、贸易港、加工区。
-# 每区有业务终端（按 E）、区里的机器（轧机、货架、收货台、柜台）、接驳车。
+# 每区有业务终端（按 E）、区里的机器（轧机、货架、柜台）、接驳车。
 # 字要说明：这个区为公司做什么、现在能做什么、修好以后会怎样。
 ============================================================
 
@@ -11471,76 +11459,28 @@
 
 ------------------------------------------------------------
 # 【货运区地面（cargo_floor.gd）】
-# 出现在：收货台（客户货箱）、吊箱搬运、货架口（左 A / 右 B）的提示。
+# 出现在：货架口（左 A / 右 B）的提示。
 ------------------------------------------------------------
 
-[cargo_floor:use:1]
-中：放上 %s 排了。
-英：SET ON ROW %s.
-
-[cargo_floor:use:2]
-中：这批全部上架，开始计租。
-英： ALL UP: THE RENT STARTS.
-
-[cargo_floor:use:3]
-中：这批还有 %d 箱。
-英： %d MORE OF THIS LOT.
-
-[cargo_floor:use:4]
-中：这箱要放 %s 排（%s货架）。
-英：THIS ONE GOES ON ROW %s (%s RACK).
-
-[cargo_floor:use:7]
-中：放回收货台了。
-英：BACK ON THE COUNTER.
-
-[cargo_floor:use:8]
-中：飞到亮着的货架口再按 %s 放下。
-英：FLY TO THE LIT RACK MOUTH AND PRESS %s.
-
-[cargo_floor:use:9]
-中：吊起来了：%.0f t，送到 %s 排（%s货架口）。
-英：LIFTED: %.0f t FOR ROW %s (%s RACK MOUTH).
-
 [cargo_floor:_draw:1]
-中：[%s] 放下
-英：[%s] SET IT DOWN
-
-[cargo_floor:_draw:2]
 中：[%s] 打开仓库
 英：[%s] OPEN THE STORES
 
-[cargo_floor:_draw:3]
+[cargo_floor:_draw:2]
 中：[%s] 打开这一边的货架
 英：[%s] OPEN THIS SIDE'S RACKS
 
 [cargo_floor:_draw:4]
-中：这箱不放这边
-英：NOT THIS SIDE
-
-[cargo_floor:_draw:6]
 中：货架口 %s（%s）
 英：RACK MOUTH %s (%s)
 
-[cargo_floor:_draw:7]
+[cargo_floor:_draw:5]
 中：左边 A1–A4
 英：LEFT A1–A4
 
-[cargo_floor:_draw:8]
+[cargo_floor:_draw:6]
 中：右边 B1–B4
 英：RIGHT B1–B4
-
-[cargo_floor:_draw:9]
-中：收货台 · %d 箱
-英：RECEIVING COUNTER · %d CRATES
-
-[cargo_floor:_draw:10]
-中：收货台 · 没有货箱（在业务终端接寄存单）
-英：RECEIVING COUNTER · NO CRATES (TAKE STORAGE AT THE CONSOLE)
-
-[cargo_floor:_draw:11]
-中：[%s] 吊起这箱
-英：[%s] LIFT THIS CRATE
 
 ------------------------------------------------------------
 # 【货运区的运行状态（cargo_works.gd）】
@@ -11550,59 +11490,6 @@
 [cargo_works:truck_state:5]
 中：%s %s · %s · 剩 %d 秒
 英：%s %s · %s · %d s
-
-------------------------------------------------------------
-# 【拖船外运（charter.gd）】
-# 出现在：替别人拖货的单子。
-------------------------------------------------------------
-
-[charter:accept_block:1]
-中：这张单不在了
-英：GONE
-
-[charter:accept_block:2]
-中：已设为停止接新单
-英：NOT TAKING NEW WORK
-
-[charter:accept_block:3]
-中：没有待命且充满电的自家拖船
-英：NO COMPANY TUG READY AND CHARGED
-
-[charter:accept_block:4]
-中：留一艘拖船给自己用
-英：ONE TUG KEPT FOR OUR OWN TOWS
-
-[charter:accept_block:5]
-中：推进剂要 %s，钱不够
-英：PROPELLANT %s: NOT ENOUGH CASH
-
-[charter:advance:1]
-中：%s 想租拖船：%s → %s，%.0f t，运费 %s
-英：%s WANTS A TUG: %s → %s, %.0f t, %s
-
-[charter:advance:2]
-中：%s 跑完外运 %s 回港：收运费 %s
-英：%s BACK FROM %s: %s
-
-[charter:advance:3]
-中：%s 跑满 %d 趟，进厂检修 %d 秒（%s）
-英：%s INTO THE SHOP FOR %d s
-
-[charter:advance:4]
-中：自动接了外运 %s（预计净赚 %s）
-英：TOOK CHARTER %s (NET ~%s)
-
-[charter:status:1]
-中：外运进行中 %d 单
-英：%d CHARTERS RUNNING
-
-[charter:status:2]
-中：累计收入 %s · 成本 %s
-英：EARNED %s · SPENT %s
-
-[charter:status:3]
-中：%s 检修还剩 %d 秒
-英：%s IN THE SHOP %d s
 
 ------------------------------------------------------------
 # 【各区业务终端的屏幕（console_art.gd）】
@@ -11723,63 +11610,6 @@
 英：LOCKED OUT
 
 ------------------------------------------------------------
-# 【第三方仓储（depot.gd）】
-# 出现在：替别人存货：寄存单、上架、计租、提货的字。
-------------------------------------------------------------
-
-[depot:put:1]
-中：这箱货不在收货台
-英：NOT ON THE COUNTER
-
-[depot:accept_block:1]
-中：这张单不在了
-英：GONE
-
-[depot:accept_block:2]
-中：已设为停止接新单
-英：NOT TAKING NEW WORK
-
-[depot:accept_block:3]
-中：先在货运区把一排货架改成“客户货”
-英：GIVE A ROW TO CLIENTS' GOODS FIRST
-
-[depot:accept_block:4]
-中：客户货排放不下 %.0f t（每排 %.0f t，还空 %.1f t）
-英：NO ROOM FOR %.0f t
-
-[depot:accept_block:5]
-中：要留 %.0f t 空位
-英：%.0f t KEPT FREE
-
-[depot:advance:1]
-中：%s 想寄存 %.0f t %s，%d 期，每期 %s
-英：%s WANTS TO STORE %.0f t, %d PERIODS AT %s
-
-[depot:advance:2]
-中：%s 问：货怎么还在收货台上？（货运区收货台，按 E 吊起搬上 %s 排）
-英：%s ASKS WHY THEIR GOODS ARE STILL ON THE COUNTER
-
-[depot:advance:3]
-中：%s 的寄存到期，叉车去取货
-英：%s'S GOODS ARE DUE OUT
-
-[depot:advance:4]
-中：%s 提走了 %.0f t，收装卸费 %s
-英：%s COLLECTED %.0f t: HANDLING %s
-
-[depot:advance:5]
-中：自动接了寄存 %s
-英：TOOK STORAGE %s
-
-[depot:status:1]
-中：客户货 %d 批 · 客户货排空位 %.0f t · 累计收入 %s
-英：%d CLIENT LOTS · %.0f t FREE · EARNED %s
-
-[depot:status:2]
-中： · 收货台上 %d 箱等你搬
-英： · %d CRATES ON THE COUNTER
-
-------------------------------------------------------------
 # 【各区里的机器（district_interiors.gd）】
 # 出现在：各区里机器、货架、管线上的小标签。
 ------------------------------------------------------------
@@ -11874,7 +11704,7 @@
 
 ------------------------------------------------------------
 # 【各区业务终端（district_panel.gd）】
-# 出现在：在每个区按 E 打开的右侧面板：顶上是本区第几期和缺什么，“本区修复”两种修法，本区读数，本区能做的事（拖船外运、第三方仓储、上门客人、气体线……）。
+# 出现在：在每个区按 E 打开的右侧面板：顶上是本区第几期和缺什么，“本区修复”两种修法，本区读数，本区能做的事（上门客人、气体线……）。
 ------------------------------------------------------------
 
 [district_panel:_ready:5]
@@ -11889,31 +11719,27 @@
 中：气体线 · 回收 → 分离 → 液氧 → 补给
 英：GAS LINE · RECOVER → SEPARATE → LOX → SUPPLY
 
-[district_panel:_ready:11]
-中：第三方仓储
-英：THIRD-PARTY STORAGE
-
-[district_panel:_ready:12]
+[district_panel:_ready:10]
 中：上门的客人
 英：AT THE PIER
 
-[district_panel:_ready:13]
+[district_panel:_ready:11]
 中：三大公司的长期合同
 英：THE COMPANIES' STANDING CONTRACTS
 
-[district_panel:_ready:15]
+[district_panel:_ready:13]
 中：在船坞的仓库终端或货架口按 %s，或在哪都按 F3，打开的都是同一个仓库。货物自动上架。
 英：%s at the berth's stores terminal or a rack, or F3 anywhere: the same stores page. Goods are put away by themselves.
 
-[district_panel:_ready:17]
+[district_panel:_ready:15]
 中：货架口按 %s 开（左边货架 A1–A4，右边 B1–B4）
 英：Racks A1–A4 left, B1–B4 right: %s at a rack's mouth
 
-[district_panel:_ready:18]
-中：飞到货架下面的货架口按 %s，只开那一边。客户的货箱在舱口左边的收货台。
-英：%s at a rack's mouth opens that side only. Clients' crates come to the counter left of the hatch.
+[district_panel:_ready:16]
+中：飞到货架下面的货架口按 %s，只开那一边。
+英：%s at a rack's mouth opens that side only.
 
-[district_panel:_ready:19]
+[district_panel:_ready:17]
 中：关闭 [Esc]
 英：CLOSE [Esc]
 
@@ -11996,102 +11822,6 @@
 [district_panel:_fill_bill:6]
 中：看明细再确认：自有的先用，缺的按市价买齐，施工队不收工钱
 英：See the bill first: own materials go first, the rest is bought at market, the crew is free
-
-[district_panel:_fill_biz:1]
-中：要有自家拖船（拖船站 1 阶）才能接外运。
-英：NEEDS A COMPANY TUG (TUG STATION STAGE 1).
-
-[district_panel:_fill_biz:2]
-中：货运区修好（1 阶）才能替别人存货。
-英：NEEDS THE CARGO DISTRICT (STAGE 1).
-
-[district_panel:_fill_biz:3]
-中：现在没有新单（隔几分钟会来一张，最多三张）。
-英：NO OFFERS NOW (ONE EVERY FEW MINUTES, THREE AT MOST).
-
-[district_panel:_fill_biz:4]
-中：%s · %s：%s → %s，%.0f t，约 %d 秒往返 · 运费 %s · 推进剂 %s · 预计净赚 %s%s
-英：%s · %s: %s → %s, %.0f t, ~%d s · FEE %s · PROPELLANT %s · NET ~%s%s
-
-[district_panel:_fill_biz:5]
-中：（站内储罐抵 %s）
-英： (TANK PAYS %s)
-
-[district_panel:_fill_biz:6]
-中：（这单不赚钱）
-英： (A LOSS)
-
-[district_panel:_fill_biz:8]
-中：拖船出发了。
-英：THE TUG IS OFF.
-
-[district_panel:_fill_biz:11]
-中：%s · %s：%.0f t %s，%d 期，每期 %s，装卸费 %s · 一共 %s
-英：%s · %s: %.0f t, %d PERIODS AT %s, HANDLING %s · %s IN ALL
-
-[district_panel:_fill_biz:13]
-中：货到了，叉车上架。
-英：IN: THE FORKLIFT PUTS IT AWAY.
-
-[district_panel:_fill_biz:14]
-中：货箱从舱口升到收货台了（舱口左边）：飞过去按 %s 吊起，搬到亮着的货架口再按 %s 放下。全部上架才开始计租。
-英：THE CRATES ARE ON THE COUNTER LEFT OF THE HATCH: %s LIFTS ONE, %s AT THE LIT RACK SETS IT DOWN. RENT STARTS ONCE ALL ARE UP.
-
-[district_panel:_fill_biz:17]
-中：进行中 %s · %s 出航 · 还剩约 %d 秒回港
-英：RUNNING %s · %s AWAY · ~%d s
-
-[district_panel:_fill_biz:18]
-中：寄存 %s · %s %.0f t · %s 排 · %s
-英：STORED %s · %.0f t · ROW %s · %s
-
-[district_panel:_fill_biz:19]
-中：收货台上还有 %d 箱等你搬（没上架不计租）
-英：
-
-[district_panel:_fill_biz:20]
-中：叉车上架中
-英：
-
-[district_panel:_fill_biz:21]
-中：还剩 %d 期
-英：
-
-[district_panel:_fill_biz:22]
-中：到期，叉车取货中
-英：
-
-[district_panel:_fill_biz:23]
-中：自动接外运：预计净赚 ≥ %s，同时最多 %d 单%s
-英：AUTO-TAKE: NET ≥ %s, UP TO %d%s
-
-[district_panel:_fill_biz:24]
-中：，留一艘拖船给自己
-英：, ONE TUG KEPT
-
-[district_panel:_fill_biz:25]
-中：自动接寄存：每期 ≥ %s，同时最多 %d 批，留 %.0f t 空位
-英：AUTO-TAKE: ≥ %s A PERIOD, UP TO %d LOTS, %.0f t FREE
-
-[district_panel:_fill_biz:27]
-中：叉车代搬（客户货由叉车上架，不用自己搬）
-英：FORKLIFTS CARRY (CLIENTS' CRATES PUT AWAY FOR YOU)
-
-[district_panel:_fill_biz:28]
-中：以后的客户货由叉车上架。
-英：FORKLIFTS PUT AWAY FROM NOW.
-
-[district_panel:_fill_biz:29]
-中：以后的客户货卸在收货台，你来搬。
-英：CRATES COME TO THE COUNTER FOR YOU.
-
-[district_panel:_fill_biz:30]
-中：停止接新单（在做的照常做完）
-英：NO NEW WORK (RUNNING ONES FINISH)
-
-[district_panel:_fill_biz:32]
-中：自动接单永远不会：买船、借钱、超出货架容量、在钱不够付成本时接单。
-英：IT NEVER BUYS SHIPS, BORROWS, OVERFILLS THE RACKS, OR TAKES WORK IT CANNOT PAY FOR.
 
 [district_panel:_fill_gas:1]
 中：气体线没修。在终端“修缮”里修“气体线”（要加工区和动力区各 1 阶）。没修之前，拆船抽回的气照旧在结算时折现。
@@ -13824,10 +13554,6 @@
 中：选这一排货架放哪类货：立刻生效
 英：Choose what this row of racks holds: takes effect at once
 
-[shelf_panel:_fill:3]
-中：客户箱 %s %.0f t
-英：CLIENT CRATE %s %.0f t
-
 ------------------------------------------------------------
 # 【贸易港现场（trade_hall_art.gd）】
 # 出现在：贸易港里的报价大屏、柜台和来访商人说的话。
@@ -14102,7 +13828,7 @@
 英：A company tug's berth: in through the tug gate, the arm refuels it, the umbilical charges it, its aft pod is swapped through the deck hatch.
 
 [tug_station_art:hover_items:9]
-中：自家拖船满电待命时，买船拖运只收一半钱，也能接包机单（贸易港或终端）。
+中：自家拖船满电待命时，买船拖运只收一半钱。
 英：
 
 [tug_station_art:hover_items:10]
@@ -14130,8 +13856,8 @@
 英：Holds the monomethylhydrazine drawn off the hulks and refuels the tugs home. Toxic, flammable.
 
 [tug_station_art:hover_items:16]
-中：接包机单时推进剂先从这里扣（每 m³ 抵 %s），不够再花钱。
-英：A charter's propellant comes out of it first (%s a m³), cash only for the rest.
+中：不用操作；回港的拖船从这里加注。
+英：Nothing to do; the tugs home refuel from it.
 
 [tug_station_art:hover_items:18]
 中：拖船换下来的易损件：喷管、缆绳、电池模块、阀件。
@@ -27816,7 +27542,7 @@
 英：
 
 ============================================================
-# 十四、其他（657 条）
+# 十四、其他（658 条）
 # 没归到上面各章的零散文字。
 ============================================================
 
@@ -27855,6 +27581,14 @@
 [cast_art:block:3]
 中：小锭模 8×0.25t
 英：INGOT 8×0.25t
+
+------------------------------------------------------------
+# 【collision_view.gd（collision_view.gd）】
+------------------------------------------------------------
+
+[collision_view:_ready:1]
+中：显示碰撞（F12 工作台）\n青  港区墙 / 设备外壳\n品红  只挡无人机的墙\n琥珀  泊位里的船\n绿  零件 / 拖船 / 货箱等会动的东西
+英：
 
 ------------------------------------------------------------
 # 【company_store.gd（company_store.gd）】
@@ -30545,7 +30279,7 @@
 英：STORES LINE · FROM BERTH 07
 
 ============================================================
-# 十五、短标签（四个字以内的按钮、栏目名、单位）（1705 条）
+# 十五、短标签（四个字以内的按钮、栏目名、单位）（1701 条）
 # 同样的字在很多界面出现时只列一次，「# 在」写了出现在哪些界面、共几处；改这里一条，所有这些地方一起改。
 # 这些字要短：按钮和栏目的宽度是按现在的字数排的，多一两个字可能放不下（合并后会跑超框检查）。
 ============================================================
@@ -33090,16 +32824,6 @@
 中：仓储看板
 英：WAREHOUSE BOARD
 
-[short:514]
-# 在：货运区地面、货架面板（3 处）
-中：左边
-英：LEFT
-
-[short:515]
-# 在：货运区地面、货架面板（3 处）
-中：右边
-英：RIGHT
-
 [short:1562]
 # 在：货运区地面（1 处）
 中：仓库货架
@@ -33124,26 +32848,6 @@
 # 在：货运区的运行状态（1 处）
 中：上架
 英：putting away
-
-[short:520]
-# 在：拖船外运、第三方仓储、交易行后台（3 处）
-中：恒岳工业
-英：天衡物流
-
-[short:521]
-# 在：拖船外运、第三方仓储、交易行后台（3 处）
-中：天衡物流
-英：
-
-[short:522]
-# 在：拖船外运、第三方仓储、交易行后台（3 处）
-中：远岫工场
-英：
-
-[short:523]
-# 在：拖船外运、第三方仓储（2 处）
-中：独立商户
-英：
 
 [short:1656]
 # 在：客户小飞船（1 处）
@@ -34480,11 +34184,6 @@
 中：轧机
 英：ROLLING MILL
 
-[short:745]
-# 在：各区业务终端、港区现场导览（2 处）
-中：拖船外运
-英：TUG CHARTERS
-
 [short:1557]
 # 在：各区业务终端、远程调度（F4/F5/F6）（2 处）
 中：仓库
@@ -34494,26 +34193,6 @@
 # 在：各区业务终端（1 处）
 中：还需要
 英：STILL NEEDS
-
-[short:748]
-# 在：各区业务终端（2 处）
-中：接这单
-英：TAKE IT
-
-[short:749]
-# 在：各区业务终端（4 处）
-中：不接
-英：DECLINE
-
-[short:750]
-# 在：各区业务终端（4 处）
-中：没接。
-英：DECLINED.
-
-[short:751]
-# 在：各区业务终端（3 处）
-中：已设定。
-英：SET.
 
 [short:752]
 # 在：各区业务终端（2 处）
@@ -34530,10 +34209,25 @@
 中：可分批
 英：PARTIAL OK
 
+[short:749]
+# 在：各区业务终端（2 处）
+中：不接
+英：DECLINE
+
+[short:750]
+# 在：各区业务终端（2 处）
+中：没接。
+英：DECLINED.
+
 [short:755]
 # 在：各区业务终端（2 处）
 中：取消了。
 英：CANCELLED.
+
+[short:751]
+# 在：各区业务终端（1 处）
+中：已设定。
+英：SET.
 
 [short:756]
 # 在：各区业务终端（1 处）
@@ -36168,6 +35862,21 @@
 [short:979]
 # 在：交易行后台（1 处）
 中：本公司
+英：
+
+[short:520]
+# 在：交易行后台（1 处）
+中：恒岳工业
+英：天衡物流
+
+[short:521]
+# 在：交易行后台（1 处）
+中：天衡物流
+英：
+
+[short:522]
+# 在：交易行后台（1 处）
+中：远岫工场
 英：
 
 [short:980]
@@ -38085,6 +37794,16 @@
 中：%s货架 · %s
 英：%s RACKS · %s
 
+[short:514]
+# 在：货架面板（1 处）
+中：左边
+英：LEFT
+
+[short:515]
+# 在：货架面板（1 处）
+中：右边
+英：RIGHT
+
 [short:1304]
 # 在：货架面板（1 处）
 中：%s 改放%s。
@@ -38899,11 +38618,6 @@
 # 在：仓库（1 处）
 中：型材板材
 英：SECTIONS AND PLATE
-
-[short:1456]
-# 在：仓库（1 处）
-中：客户货
-英：CLIENTS' GOODS
 
 [short:1457]
 # 在：仓库（1 处）

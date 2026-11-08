@@ -212,6 +212,7 @@ static func load_or_new() -> Dictionary:
 		Consum.migrate()
 		Growth.refund_all()
 		Port.migrate()
+		_drop_old_services()
 		# 128 号: an old exchange's listings in a save whose trade port is not mended: withdrawn (backed up first)
 		if usable() and not d.is_empty():
 			StoreBook.free_old_orders()
@@ -223,6 +224,29 @@ static func load_or_new() -> Dictionary:
 			Codex.grant_veteran()
 			data["certs_checked"] = true
 	return data
+
+
+# 128 号 第 6 段 (user 2026-11-07): the third-party storage and the tug charters are deleted, code
+# and all; whatever an old save kept of them is dropped on load — the lots and offers, a tug out on
+# a charter (it is simply home), a forklift job for a client's goods, a row given to clients' goods
+static func _drop_old_services() -> void:
+	data.erase("depot")
+	data.erase("charter")
+	var last = data.get("tug_last", null)
+	if last is Dictionary:
+		for n in last.keys():
+			if str(last[n]) == "charter":
+				last[n] = "own"
+	var wh = data.get("wh", null)
+	if wh is Dictionary:
+		var rows = wh.get("rows", null)
+		if rows is Array:
+			for i in rows.size():
+				if str(rows[i]) == "client":
+					rows[i] = "misc"
+		var jobs = wh.get("jobs", null)
+		if jobs is Array:
+			wh.jobs = jobs.filter(func(j): return not (j is Dictionary and str(j.get("id", "")).begins_with("DEPOT")))
 
 
 # the drone modules of G1 were dropped (player 2026-10-21): whatever a career bought is paid back

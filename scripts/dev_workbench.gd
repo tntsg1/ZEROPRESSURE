@@ -228,6 +228,13 @@ func operations() -> void:
 		hub_w.demo = not hub_w.demo
 		hub_w._flow_scan = 0.0
 		refresh(), "dev_hub_demo", hub_w.demo)
+	# 128 号 第 6 段: every shape the drone can bump into, laid over the port (scripts/collision_view.gd)
+	var cv = preload("res://scripts/collision_view.gd")
+	action_card(grid, words("显示碰撞", "SHOW COLLISION"), words("无人机能撞到的所有形状叠一层彩色半透明轮廓：青色港区墙和设备，品红只挡无人机的墙，琥珀泊位里的船，绿色零件和会动的东西。拿来对照画面：亮线能不能撞。", "Every shape the drone can hit, in translucent colour: cyan port walls and machines, magenta drone-only walls, amber the berthed ship, green loose and moving things."), func():
+		cv.on = not cv.on
+		if cv.on and dev.game != null:
+			cv.ensure(dev.game)
+		refresh(), "dev_collision", cv.on)
 	var fw = preload("res://scripts/freight_works.gd")
 	action_card(grid, words("货运调度可视化", "FREIGHT BLOCKS VIEW"), words("在中央环轨道上画出每列货运火车占着的区段、载人车要的区段和停在信号前的车，自查调度用。", "Draws the track each freight train holds, the shuttle's wanted track and trains held at a signal, for checking the dispatching."), func():
 		fw.show_blocks = not fw.show_blocks

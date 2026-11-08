@@ -401,9 +401,6 @@ func _run() -> void:
 	var tx := _texts(g.console_ui)
 	check(not tx.contains("第三方仓储") and not tx.contains("接这单") and not tx.contains("停止接新单"), "the cargo terminal has no third-party storage")
 	await _shot("8_cargo_terminal")
-	for i in 400:
-		Depot.advance(1.0)
-	check(Depot.data().offers.is_empty(), "and no client offers come any more")
 	g.console_ui.close()
 	await _frames(5)
 	# ---- 用户 bug: an old exchange's listing held 5 t of plate in a save whose trade port is not mended

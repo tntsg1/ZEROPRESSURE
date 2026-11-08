@@ -205,6 +205,7 @@ func disable() -> void:
 	Txt.dev = false
 	god = false
 	instant_build = false
+	preload("res://scripts/collision_view.gd").on = false
 	preload("res://scripts/hub_works.gd").demo = false
 	xray = false
 	inspect = false

@@ -60,8 +60,6 @@ func _sig_now() -> String:
 	var st := _stock()
 	for k in st:
 		parts.append("%s=%.2f" % [str(k), float(st[k])])
-	for r in rows():
-		parts.append(str(Depot.row_crates(r).size()))
 	return ",".join(parts)
 
 
@@ -101,8 +99,6 @@ func _fill() -> void:
 		for k in st:
 			if float(st[k]) > 0.004 and Warehouse.row_for(str(k)) == i:
 				held.append("%s %.2f t" % [Ops.item_name(str(k)), float(st[k])])
-		for c in Depot.row_crates(i):
-			held.append(w("客户箱 %s %.0f t", "CLIENT CRATE %s %.0f t") % [str(c[1]), float(c[0])])
 		col.add_child(OpsSkin.label(w("上面：", "ON IT: ") + (("、" if Txt.zh else ", ").join(held) if not held.is_empty() else w("空着", "EMPTY")), 14, 0.75))
 		rows_box.add_child(card)
 

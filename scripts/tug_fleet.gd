@@ -35,12 +35,7 @@ static func away() -> Dictionary:
 			else:
 				towing.append(str(a.id))
 	towing.sort()
-	# 77 号: a tug on a charter is away as well
-	var chartered := Charter.away_tugs()
 	for i in count():
-		if chartered.has(NAMES[i]):
-			out[i] = str(chartered[NAMES[i]])
-			continue
 		if named.has(i):
 			out[i] = named[i]
 		elif not towing.is_empty():

@@ -1,8 +1,8 @@
 extends SceneTree
 # 96 号: the tug station's mouth pre-processes the hulk lying in it for real (Q11 B). A GR-7 in
 # yard berth 1 at stage 1: moored, its propellant drawn off by 40 %, the push frame set, the hull
-# scanned; the asset remembers the share, the station's tank holds what came off, a charter's
-# propellant is paid from the tank first, and the hulk's systems start with that much less fuel.
+# scanned; the asset remembers the share, the station's tank holds what came off,
+# and the hulk's systems start with that much less fuel.
 # A hulk too tall for the mouth waits outside and is drawn off nothing. Own test saves only.
 #   godot --headless --path . --fixed-fps 60 -s tests/tug_prep_check.gd
 const TW = preload("res://scripts/tug_works.gd")
@@ -53,11 +53,6 @@ func _run() -> void:
 	# the berth's systems start with that much less fuel
 	var fake := {"job": {"id": "P-1"}}
 	check(is_equal_approx(TugYard.drained_of(FakeGame.new(fake)), 0.4), "the stripping game sees the share drawn off")
-	# a charter's propellant from the tank first
-	var o := {"t": 10.0, "dv": 2.0, "fee": 9000.0}
-	var cost := Charter.prop_cost(o)
-	var by_tank := Charter.prop_from_tank(o)
-	check(by_tank > 0.0 and is_equal_approx(Charter.prop_cash(o), cost - by_tank), "a charter's propellant: %s from the tank, %s cash" % [Pal.money(by_tank), Pal.money(Charter.prop_cash(o))])
 	# too tall: waits outside, nothing drawn off
 	a.state = "stripped"
 	TW.reset()

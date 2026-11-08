@@ -1026,14 +1026,14 @@ func hover_items() -> Array:
 		add.call("t0%d" % (i + 1), [pr.call("t0%d" % (i + 1)), Rect2(bx - 6.2, W.DECK_Y - 5.6, 12.6, 5.6)], "T-0%d · %s" % [i + 1, TugFleet.NAMES[i] if i < TugFleet.count() else w("空", "FREE")],
 			w("自家拖船的泊位：从左墙上部的拖船门飞进来，接上加注臂补推进剂、接上充电线充电，尾部吊舱经甲板舱口换下去检修。", "A company tug's berth: in through the tug gate, the arm refuels it, the umbilical charges it, its aft pod is swapped through the deck hatch."),
 			W.berth_state(i),
-			w("自家拖船满电待命时，买船拖运只收一半钱，也能接包机单（贸易港或终端）。" if i < TugFleet.count() else "扩建拖船站（终端 → 成长与建设）多一艘拖船。",
-				"A charged company tug tows your hulks at half the fee and flies charters." if i < TugFleet.count() else "Build on the tug station (terminal → growth) for another tug."))
+			w("自家拖船满电待命时，买船拖运只收一半钱。" if i < TugFleet.count() else "扩建拖船站（终端 → 成长与建设）多一艘拖船。",
+				"A charged company tug tows your hulks at half the fee." if i < TugFleet.count() else "Build on the tug station (terminal → growth) for another tug."))
 	add.call("table", [pr.call("table"), Rect2(TABLE.x, TABLE_TOP - 2.6, TABLE.y - TABLE.x, 3.4)], w("吊舱检修台", "POD SERVICE TABLE"),
 		w("拖船回港时升降台把它的旧推进器吊舱换下来放到这里，探头沿喷管扫描检修，修好变成下一次的备用吊舱。", "When a tug comes home the lift swaps its worn thruster pod onto this table; the probe overhauls it into the next spare."),
 		W.table_state(), w("不用操作；没有备用吊舱时下一艘回港的拖船要等它修完。", "Nothing to do; with no spare ready the next tug home waits for the overhaul."))
 	add.call("tank", [pr.call("tank"), TANK], w("推进剂储罐（MMH）", "PROPELLANT TANK (MMH)"),
 		w("存放从废船抽出来的甲基肼，给回港的拖船加注。剧毒易燃。", "Holds the monomethylhydrazine drawn off the hulks and refuels the tugs home. Toxic, flammable."),
-		W.tank_state(), w("接包机单时推进剂先从这里扣（每 m³ 抵 %s），不够再花钱。" % Pal.money(TugYard.PROP_PRICE), "A charter's propellant comes out of it first (%s a m³), cash only for the rest." % Pal.money(TugYard.PROP_PRICE)))
+		W.tank_state(), w("不用操作；回港的拖船从这里加注。", "Nothing to do; the tugs home refuel from it."))
 	add.call("rack", [RACK], w("备件架", "SPARES RACK"),
 		w("拖船换下来的易损件：喷管、缆绳、电池模块、阀件。", "What a tug wears out: nozzle bells, cable, battery modules, valve blocks."),
 		[w("电池模块 %d 块 · 喷管 %d 个" % [8 if st >= 2 else 5, 2 if st >= 2 else 1], "%d BATTERY MODULES · %d NOZZLES" % [8 if st >= 2 else 5, 2 if st >= 2 else 1]), "ok" if st >= 1 else "off"],

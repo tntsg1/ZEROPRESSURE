@@ -107,7 +107,7 @@ var port_access
 var port_structure          # the port's walls, doors and consoles (scripts/port_structure.gd)
 var boat                    # the work boat outside the gate (scripts/workboat.gd)
 var boat_tow = null         # 87-6: its tow line (scripts/boat_tow.gd)
-var cargo_floor             # the cargo district's counter, crates and rack mouths (scripts/cargo_floor.gd, 85 号)
+var cargo_floor             # the cargo district's rack mouths (scripts/cargo_floor.gd, 85 号)
 var mill_line               # the rolling mill in the processing district (scripts/mill_line.gd, 85 号)
 var tram                    # the rail shuttle through the corridors (scripts/tram.gd)
 var exchange_logistics
@@ -600,10 +600,12 @@ func _ready() -> void:
 			mill_line = preload("res://scripts/mill_line.gd").new()
 			mill_line.game = self
 			add_child(mill_line)
-			# 85 号: the cargo district's receiving counter, crates and rack mouths
+			# 85 号: the cargo district's rack mouths
 			cargo_floor = preload("res://scripts/cargo_floor.gd").new()
 			cargo_floor.game = self
 			add_child(cargo_floor)
+			# 128 号 第 6 段: F12 → 显示碰撞 (scripts/collision_view.gd), idle while off
+			preload("res://scripts/collision_view.gd").ensure(self)
 			boat = WorkBoat.new()
 			boat.game = self
 			add_child(boat)
@@ -1014,10 +1016,6 @@ func _process(dt: float) -> void:
 			var lid: String = TradePeople.lines.pop_front()
 			if radio != null:
 				Copy.say(radio, lid, "client")
-		# 77 号: the tug charters and the third-party storage
-		var biz: Array = Charter.advance(dt) + Depot.advance(dt)
-		if not biz.is_empty() and hud != null:
-			hud.show_hint(str(biz[0]))
 		# 76 号: the gas line, the LOX tank, the passing ships
 		var gl: Array = GasLine.advance(self, dt)
 		if not gl.is_empty() and hud != null:

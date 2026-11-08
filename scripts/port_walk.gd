@@ -583,13 +583,11 @@ func _callouts() -> Array:
 				["b:" + w("动力区控制屏", "POWER CONTROL"), w("下一步点它，进控制屏", "Click it next: the control screen")]]
 		"console:tug":
 			return [["m:stage_box", w("本区第几期、下一期还缺什么", "This district's stage and what the next lacks")], fix[0], fix[1], fix[2],
-				["m:readout", w("拖船泊位、能拖多长的船", "The tug berths, the longest ship they take")],
-				["l:" + w("拖船外运", "TUG CHARTERS"), w("替别人拖货：不拆船也赚钱", "Tow for others: money without a ship")], close]
+				["m:readout", w("拖船泊位、能拖多长的船", "The tug berths, the longest ship they take")], close]
 		"console:cargo":
 			return [["m:stage_box", w("本区第几期、下一期还缺什么", "This district's stage and what the next lacks")], fix[0], fix[1], fix[2],
 				["m:readout", w("库存、在途、叉车", "Stock, transit, forklifts")],
-				["l:" + w("第三方仓储", "THIRD-PARTY"), w("替别人存货收租金", "Store others' goods for rent")],
-				["l:" + w("左边货架 A1", "Racks A1"), w("货架在区里两侧，到货架下按 E；客户货箱在收货台，自己搬", "The racks are at the racks; clients' crates on the counter, carried by you")], close]
+				["l:" + w("左边货架 A1", "Racks A1"), w("货架在区里两侧，到货架下按 E", "The racks are at the racks")], close]
 		"console:trade":
 			return [["m:stage_box", w("本区第几期、下一期还缺什么", "This district's stage and what the next lacks")], fix[0], fix[1], fix[2],
 				["l:" + w("上门的客人", "AT THE PIER"), w("码头边想买卖东西的小船", "Little ships at the pier, buying and selling")],

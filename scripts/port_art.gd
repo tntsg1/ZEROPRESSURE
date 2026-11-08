@@ -893,11 +893,11 @@ static func _trade(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: i
 			cc.draw_circle(Vector2(r.end.x + 1.2 * M, r.position.y + (lk.x - 0.6) * M), 0.45 * M, Pal.tint(Pal.FLUID, 0.9, 1.3) if used else (Pal.ink(0.3) if nn >= 1 else Pal.ink(0.1))))
 
 
-# 货运区: the depot, container stacks in rows, a gantry crane over them, a trolley running
+# 货运区: the warehouse, container stacks in rows, a gantry crane over them, a trolley running
 static func _cargo(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: int) -> void:
 	_block(ci, r, M, lw, t, n, 53)
 	# 43 号 (Q42: "no unrelated container loops"): no stand-in container yard or idle gantry here;
-	# the real stock is shown in the depot and at the cargo pier (scripts/freight_pier.gd)
+	# the real stock is shown in the warehouse and at the cargo pier (scripts/freight_pier.gd)
 
 
 # 船坞区: the player's berth sits in it (drawn by the dock itself); round it the district's

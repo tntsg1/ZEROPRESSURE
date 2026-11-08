@@ -91,12 +91,6 @@ func _ready() -> void:
 		gas_box = VBoxContainer.new()
 		column.add_child(gas_box)
 		_fill_gas()
-	# 77 号: the services that pay without a ship to strip — tug charters, third-party storage
-	if zone == "tug" or (zone == "cargo" and Depot.on()):
-		column.add_child(OpsSkin.Section.new(words("拖船外运", "TUG CHARTERS") if zone == "tug" else words("第三方仓储", "THIRD-PARTY STORAGE")))
-		biz_box = VBoxContainer.new()
-		column.add_child(biz_box)
-		_fill_biz()
 	# 75 号: who is at the pier, and the companies' standing contracts
 	if zone == "trade":
 		column.add_child(OpsSkin.Section.new(words("上门的客人", "AT THE PIER")))
@@ -114,7 +108,7 @@ func _ready() -> void:
 	elif zone == "cargo":
 		column.add_child(OpsSkin.Section.new(words("货架", "RACKS")))
 		var rk := label(words("货架口按 %s 开（左边货架 A1–A4，右边 B1–B4）", "Racks A1–A4 left, B1–B4 right: %s at a rack's mouth") % Keys.label("use"), 15)
-		rk.tooltip_text = words("飞到货架下面的货架口按 %s，只开那一边。客户的货箱在舱口左边的收货台。", "%s at a rack's mouth opens that side only. Clients' crates come to the counter left of the hatch.") % Keys.label("use")
+		rk.tooltip_text = words("飞到货架下面的货架口按 %s，只开那一边。", "%s at a rack's mouth opens that side only.") % Keys.label("use")
 		rk.mouse_filter = Control.MOUSE_FILTER_PASS
 		column.add_child(rk)
 	message = label("", 15)
@@ -291,83 +285,6 @@ func _order(with_parts: bool) -> void:
 		game.sfx.play("stamp", Vector2.INF, 0.9)
 	_repair_sig = ""
 	_fill_repair.call_deferred()
-
-
-var biz_box: VBoxContainer
-var _biz_sig := ""
-func _biz_do(r: Dictionary, ok_text: String) -> void:
-	BenchFx.say(message, ok_text if r.get("ok", true) else str(r.reason))
-	_biz_sig = ""
-	_fill_biz.call_deferred()
-
-
-func _fill_biz() -> void:
-	if biz_box == null:
-		return
-	var tug := zone == "tug"
-	var d: Dictionary = Charter.data() if tug else Depot.data()
-	var sig := str(d.offers.map(func(o): return o.id)) + str((d.jobs if tug else d.lots).map(func(j): return [j.id, int(float(j.get("left", 0)))])) + str(d.auto) + (TugYard.status() if tug else str(Depot.free_t()))
-	if sig == _biz_sig:
-		return
-	_biz_sig = sig
-	for c in biz_box.get_children():
-		c.queue_free()
-	if tug and not Charter.open():
-		biz_box.add_child(label(words("要有自家拖船（拖船站 1 阶）才能接外运。", "NEEDS A COMPANY TUG (TUG STATION STAGE 1)."), 14))
-		return
-	if not tug and not Depot.open():
-		biz_box.add_child(label(words("货运区修好（1 阶）才能替别人存货。", "NEEDS THE CARGO DISTRICT (STAGE 1)."), 14))
-		return
-	biz_box.add_child(label(Charter.status() if tug else Depot.status(), 14))
-	if d.offers.is_empty():
-		biz_box.add_child(label(words("现在没有新单（隔几分钟会来一张，最多三张）。", "NO OFFERS NOW (ONE EVERY FEW MINUTES, THREE AT MOST)."), 14))
-	for o in d.offers:
-		var oid := str(o.id)
-		if tug:
-			var n := Charter.net(o)
-			biz_box.add_child(label(words("%s · %s：%s → %s，%.0f t，约 %d 秒往返 · 运费 %s · 推进剂 %s · 预计净赚 %s%s", "%s · %s: %s → %s, %.0f t, ~%d s · FEE %s · PROPELLANT %s · NET ~%s%s") % [oid, str(o.client), Charter.where(int(o.from)), Charter.where(int(o.to)), float(o.t), int(float(o.secs)), Pal.money(float(o.fee)), Pal.money(Charter.prop_cost(o)) + (words("（站内储罐抵 %s）", " (TANK PAYS %s)") % Pal.money(Charter.prop_from_tank(o)) if Charter.prop_from_tank(o) > 0.0 else ""), Pal.money(n), words("（这单不赚钱）", " (A LOSS)") if n < 0.0 else ""], 14))
-			var why := Charter.accept_block(oid)
-			biz_box.add_child(_gas_row([[words("接这单", "TAKE IT"), func(): _biz_do(Charter.accept(oid), words("拖船出发了。", "THE TUG IS OFF.")), why == ""], [words("不接", "DECLINE"), func(): Charter.decline(oid); _biz_do({"ok": true}, words("没接。", "DECLINED."))]]))
-			if why != "":
-				biz_box.add_child(label("  " + why, 13))
-		else:
-			biz_box.add_child(label(words("%s · %s：%.0f t %s，%d 期，每期 %s，装卸费 %s · 一共 %s", "%s · %s: %.0f t, %d PERIODS AT %s, HANDLING %s · %s IN ALL") % ([oid, str(o.client), float(o.t), Ops.item_name(str(o.key)), int(o.periods), Pal.money(float(o.fee)), Pal.money(float(o.handling)), Pal.money(Depot.income(o))] if Txt.zh else [oid, str(o.client), float(o.t), int(o.periods), Pal.money(float(o.fee)), Pal.money(float(o.handling)), Pal.money(Depot.income(o))]), 14))
-			var why2 := Depot.accept_block(oid)
-			biz_box.add_child(_gas_row([[words("接这单", "TAKE IT"), func(): _biz_do(Depot.accept(oid), words("货到了，叉车上架。", "IN: THE FORKLIFT PUTS IT AWAY.") if Depot.fork_in() else words("货箱从舱口升到收货台了（舱口左边）：飞过去按 %s 吊起，搬到亮着的货架口再按 %s 放下。全部上架才开始计租。", "THE CRATES ARE ON THE COUNTER LEFT OF THE HATCH: %s LIFTS ONE, %s AT THE LIT RACK SETS IT DOWN. RENT STARTS ONCE ALL ARE UP.") % [Keys.label("use"), Keys.label("use")]), why2 == ""], [words("不接", "DECLINE"), func(): Depot.decline(oid); _biz_do({"ok": true}, words("没接。", "DECLINED."))]]))
-			if why2 != "":
-				biz_box.add_child(label("  " + why2, 13))
-	for j in (d.jobs if tug else d.lots):
-		if tug:
-			biz_box.add_child(label(words("进行中 %s · %s 出航 · 还剩约 %d 秒回港", "RUNNING %s · %s AWAY · ~%d s") % [str(j.id), str(j.tug), ceili(float(j.left))], 14))
-		else:
-			var crates_left := 0
-			for c in j.get("crates", []):
-				if str(c.at) == "dock":
-					crates_left += 1
-			biz_box.add_child(label(words("寄存 %s · %s %.0f t · %s 排 · %s", "STORED %s · %.0f t · ROW %s · %s") % ([str(j.id), str(j.client), float(j.t), Warehouse.ROWS[int(j.row)], {"dock": "收货台上还有 %d 箱等你搬（没上架不计租）" % crates_left, "in": "叉车上架中", "stored": "还剩 %d 期" % int(j.left), "due": "到期，叉车取货中"}.get(str(j.state), str(j.state))] if Txt.zh else [str(j.id), float(j.t), Warehouse.ROWS[int(j.row)], str(j.state)]), 14))
-	# the automation card: within the bounds the player sets
-	var a: Dictionary = d.auto
-	var on := CheckButton.new()
-	on.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	on.custom_minimum_size.x = 300
-	on.text = (words("自动接外运：预计净赚 ≥ %s，同时最多 %d 单%s", "AUTO-TAKE: NET ≥ %s, UP TO %d%s") % [Pal.money(float(a.min_net)), int(a.max_jobs), words("，留一艘拖船给自己", ", ONE TUG KEPT") if bool(a.keep_one) else ""]) if tug else (words("自动接寄存：每期 ≥ %s，同时最多 %d 批，留 %.0f t 空位", "AUTO-TAKE: ≥ %s A PERIOD, UP TO %d LOTS, %.0f t FREE") % [Pal.money(float(a.min_fee)), int(a.max_lots), float(a.keep_free)])
-	on.button_pressed = bool(a.on)
-	on.toggled.connect(func(v): a.on = v; Career.save(); _biz_do({"ok": true}, words("已设定。", "SET.")))
-	biz_box.add_child(on)
-	if not tug:
-		var fork := CheckButton.new()
-		fork.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		fork.custom_minimum_size.x = 300
-		fork.text = words("叉车代搬（客户货由叉车上架，不用自己搬）", "FORKLIFTS CARRY (CLIENTS' CRATES PUT AWAY FOR YOU)")
-		fork.button_pressed = Depot.fork_in()
-		fork.toggled.connect(func(v): Depot.set_fork_in(v); _biz_do({"ok": true}, words("以后的客户货由叉车上架。", "FORKLIFTS PUT AWAY FROM NOW.") if v else words("以后的客户货卸在收货台，你来搬。", "CRATES COME TO THE COUNTER FOR YOU.")))
-		biz_box.add_child(fork)
-	var stop := CheckButton.new()
-	stop.text = words("停止接新单（在做的照常做完）", "NO NEW WORK (RUNNING ONES FINISH)")
-	stop.button_pressed = bool(a.stop_new)
-	stop.toggled.connect(func(v): a.stop_new = v; Career.save(); _biz_do({"ok": true}, words("已设定。", "SET.")))
-	biz_box.add_child(stop)
-	biz_box.add_child(label(words("自动接单永远不会：买船、借钱、超出货架容量、在钱不够付成本时接单。", "IT NEVER BUYS SHIPS, BORROWS, OVERFILLS THE RACKS, OR TAKES WORK IT CANNOT PAY FOR."), 13))
 
 
 var gas_box: VBoxContainer
@@ -574,8 +491,6 @@ func _process(dt: float) -> void:
 		_fill_gas()
 	if next_title != null:
 		_fill_next()
-	if biz_box != null:
-		_fill_biz()
 
 
 func _stage_line() -> String:

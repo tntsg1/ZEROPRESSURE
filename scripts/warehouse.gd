@@ -12,7 +12,7 @@ const ROWS := ["A1", "A2", "A3", "A4", "B1", "B2", "B3", "B4"]
 const ROW_AT := [Vector2(6, 12), Vector2(6, 15), Vector2(6, 18), Vector2(6, 21), Vector2(42, 12), Vector2(42, 15), Vector2(42, 18), Vector2(42, 21)]
 const HATCH := Vector2(30.0, 26.0)
 const DEFAULT := ["ingot", "ingot", "scrap", "nonferrous", "billet", "stock", "parts", "misc"]
-const USES := ["ingot", "scrap", "nonferrous", "billet", "stock", "parts", "client", "hazard", "misc"]
+const USES := ["ingot", "scrap", "nonferrous", "billet", "stock", "parts", "hazard", "misc"]
 const SPEED := 5.0                       # m/s, a forklift at full power, stage 0 (124 号: was 2)
 const HANDLE := 2.0                      # s to pick or set down (124 号: was 4)
 const MW := 0.4                          # a forklift's draw while it drives
@@ -28,7 +28,7 @@ static func w(zh: String, en: String) -> String:
 
 static func use_name(u: String) -> String:
 	return {"ingot": w("钢锭", "INGOTS"), "scrap": w("废料", "SCRAP"), "nonferrous": w("有色金属", "NON-FERROUS"), "billet": w("钢坯", "BILLETS"),
-		"stock": w("型材板材", "SECTIONS AND PLATE"), "parts": w("零件", "PARTS"), "client": w("客户货", "CLIENTS' GOODS"), "hazard": w("危险品", "HAZARDOUS"), "misc": w("杂货", "SUNDRIES")}.get(u, u)
+		"stock": w("型材板材", "SECTIONS AND PLATE"), "parts": w("零件", "PARTS"), "hazard": w("危险品", "HAZARDOUS"), "misc": w("杂货", "SUNDRIES")}.get(u, u)
 
 
 # what kind of goods an item key is, for the racks
@@ -202,10 +202,7 @@ static func advance(game, dt: float) -> bool:
 		j.left = float(j.left) - dt * kk
 		# 77 号: the forklifts' power is paid for
 		if game != null and is_instance_valid(game):
-			var cost := Grid.bill(game, "forklift_%d" % i, dt)
-			# a client's goods carried: the third-party storage's cost
-			if str(j.id).begins_with("DEPOT") and Career.data.has("depot"):
-				Depot.data().spent = float(Depot.data().spent) + cost
+			Grid.bill(game, "forklift_%d" % i, dt)
 	for j in d.jobs.duplicate():
 		if float(j.left) <= 0.0:
 			d.jobs.erase(j)

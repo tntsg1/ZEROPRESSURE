@@ -145,7 +145,7 @@ static func charging() -> Array:
 static func ready_tug() -> String:
 	for i in TugFleet.count():
 		var n: String = TugFleet.NAMES[i]
-		if TugFleet.home(i) and charge(n) >= 1.0 and not Charter.in_service(n):
+		if TugFleet.home(i) and charge(n) >= 1.0:
 			return n
 	return ""
 
@@ -170,10 +170,9 @@ static func advance(game, dt: float) -> bool:
 	for n in charging():
 		var k := Grid.k(game, "tug_" + n)
 		c[n] = minf(1.0, float(c.get(n, 0.0)) + dt * k / CHARGE_S)
-		# 77 号: the charge is paid for; after a charter it is the charter's cost
-		var cost := Grid.bill(game, "tug_" + n, dt) if game != null and is_instance_valid(game) else 0.0
-		if cost > 0.0 and str(Career.data.get("tug_last", {}).get(n, "")) == "charter":
-			Charter.data().spent = float(Charter.data().spent) + cost
+		# 77 号: the charge is paid for
+		if game != null and is_instance_valid(game):
+			Grid.bill(game, "tug_" + n, dt)
 		if float(c[n]) >= 1.0:
 			done = true
 	Career.data.tug_charge = c
@@ -197,7 +196,7 @@ static func status() -> String:
 # ---------------------------------------------------------------- 96 号: the mouth's pre-processing
 # Q11 B: the station draws off a share of a docked hulk's propellant by its stage — the rest is
 # still the operator's to deal with in the berth — into the station's own tank (m³), which fuels
-# the company's tugs and pays a charter's propellant before cash does.
+# the company's tugs.
 const DRAIN := [0.0, 0.4, 0.7]
 const TANK_M3 := 8.0
 const PROP_PRICE := 4000.0               # $ a m³ of propellant, what the tank saves
