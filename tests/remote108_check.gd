@@ -99,6 +99,19 @@ func _run() -> void:
 	check(not g.console_ui.remote_box.has_node("Remote_queue"), "no queue button at the terminal")
 	Cap.save(root, "res://tests/out/remote108_terminal_zh.png")
 	await _close_ui()
+	# ---- user 2026-11-09: in dev mode with the bench shut the F keys still open the jobs (F3 did nothing)
+	var dev_was := Txt.dev
+	Txt.dev = true
+	DevPanel.workbench_open = false
+	await _key(KEY_F5)
+	check(_ui_path() == "power_panel.gd", "dev mode, bench shut: F5 still opens the grid (%s)" % _ui_path())
+	await _close_ui()
+	g.open_console("terminal")
+	await _frames(30)
+	await _key(KEY_F5)
+	check(_ui_path() == "power_panel.gd", "dev mode, at the berth terminal: F5 opens the grid (%s)" % _ui_path())
+	await _close_ui()
+	Txt.dev = dev_was
 	# ---- an old career that walked the whole round
 	Career.data.seen.erase("walk_power")
 	Career.data.seen.erase("walk_process")

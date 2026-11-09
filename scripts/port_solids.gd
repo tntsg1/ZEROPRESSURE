@@ -82,8 +82,11 @@ static func _tug() -> Array:
 		out.append(Rect2(lx - 1.3, 25.6, 2.6, 0.66))
 	# the deck's columns to the floor; each berth's services post on the deck
 	var y0: float = TugW.DECK_Y
-	for cx: float in [23.0, 37.6, 51.4]:
+	# (接驳站穿模修复: the east end hangs from the roof on two rods, scripts/tug_station_art.gd HANGER_X;
+	# its column stood across the freight line)
+	for cx: float in [23.0, 37.6]:
 		out.append(Rect2(cx - 0.32, y0 + 0.7, 0.64, FLOOR - y0 - 0.7))
+	out.append(Rect2(52.45 - 0.26, 0.2, 0.52, y0 + 0.9 - 0.2))
 	for i in 2:
 		out.append(Rect2(float(TugW.BERTH_X[i]) + 6.6 - 0.3, y0 - 3.4, 0.6, 3.4))
 		# the lift shaft's two guides from the deck down to the table

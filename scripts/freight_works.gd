@@ -27,6 +27,16 @@ const HOMES := ["cargo", "salvage", "process", "trade", "tug"]
 # line runs on EXT m past the stop into the building to a buffer, so the shuttle never has to pass a
 # freight train standing at its stop. The berth's is still up its corridor (past its gate is the berth).
 const EXT := 20.0
+# 接驳站穿模修复: the tug station's line stops short of the pod lift's shaft (scripts/tug_works.gd lift_x,
+# its guides to 41.45 m in the station): 16 m in from its stop (Tram.STATION_IN_AT, 1.3 m in from the
+# door), its end at 42.7 m, the buffer's struts 0.3 m clear of the guides; the train standing at it
+# leaves 1.3 m to the shuttle's cab (the shuttle holds 2.4 m in from its stop)
+# The processing district's 0.6 m short: its buffer's struts stood on the baghouse's side (36.7 m)
+const EXT_AT := {"tug": 16.0, "process": 19.4}
+
+
+static func ext(z: String) -> float:
+	return float(EXT_AT.get(z, EXT))
 const EXT_ZONES := ["cargo", "process", "trade", "tug"]
 # 130 号 (user's choice A for the berth): the berth's corridor is wider (PortStructure.HALF_SALVAGE) and
 # its freight stop is a siding beside the line: it leaves the line SIDING_TOE m out from the hub's
@@ -240,7 +250,7 @@ static func siding_main() -> Array:
 
 # the far end of a district's freight line, inside its gate (world px)
 static func ext_end(z: String) -> Vector2:
-	return Tram.station_at(z) - Tram.station_dir(z) * EXT * M()
+	return Tram.station_at(z) - Tram.station_dir(z) * ext(z) * M()
 
 
 # a district's freight stop: the head's place, standing towards the dead end, and its line out to the
@@ -249,7 +259,7 @@ static func _dstop(z: String) -> Dictionary:
 	var k := "d:" + z
 	if not _geo.has(k) and z in EXT_ZONES:
 		# (1.6 m short of the line's end: the front bogie stands on the rails, not past them)
-		var head := Tram.station_at(z) - Tram.station_dir(z) * (EXT - 1.6) * M()
+		var head := Tram.station_at(z) - Tram.station_dir(z) * (ext(z) - 1.6) * M()
 		_geo[k] = {"head": head, "line": [head] + Tram._leg(z), "dir": -Tram.station_dir(z)}
 	if not _geo.has(k) and z == "salvage":
 		# the siding, back from its buffer to the toe, then up the line to the rim

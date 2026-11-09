@@ -1133,6 +1133,8 @@ func _physics_process(dt: float) -> void:
 	if dev_overlay_open:
 		return
 	_camera(dt / maxf(Engine.time_scale, 0.01))
+	if not _glides.is_empty():
+		_glide_step(dt)
 	if state == "play" and not menu_open and not paused_sim:
 		tools.physics_step(dt)
 		_bodies_upkeep(dt)
@@ -2502,6 +2504,9 @@ func _end_build() -> void:
 	world.visible = true
 	cam_override = null
 	zoom_override = -1.0
+	# the empty berth laid out again (a purchase, a rebuild): nothing left outside it
+	if in_berth():
+		keep_in_berth()
 	state = _after_build
 	state_t = 0.0
 	if hud != null:
@@ -2847,6 +2852,8 @@ func _enter_berth() -> void:
 		zoom_now = float(carry.zoom)
 		zoom_target = CAM_ZOOM
 		carry = {}
+		# the contract's berth may have been taller (or longer) than the empty one now is
+		keep_in_berth()
 	elif not drone.alive:
 		_launch_drone()
 		cam_pos = drone.global_position
@@ -2873,6 +2880,100 @@ func _enter_berth() -> void:
 		seen2["ark_seen"] = true
 		Career.data.seen = seen2
 		Copy.say(radio, "L_ark_seen")
+
+
+# 2026-11-09 (user: "我这个本来很大，现在缩小之后，我怎么跑到外面去了"): a berth laid out smaller than the
+# one before — the empty berth after a tall ship's contract has its lift and drop gone, so a drone carried
+# over low in the hold came up under the new floor, out in the vacuum — never leaves the drone or anything
+# loose outside its new edges: the tractor field draws each back in, smoothly, through the girders
+# (collisions off while it glides; it arrives at rest). Called where the berth has just come up.
+const KEEP_IN_M := 2.0          # m inside the berth's edges a body is drawn to
+const GLIDE_V := 20.0           # m/s the field draws it in at on average (eased in and out; 0.8 – 2.5 s)
+var _glides: Array = []         # {body, from, to, t, dur, mask, frozen, mode}
+static var KEEP_IN_ON := true   # tests: false leaves them where they came up (the before picture)
+
+
+# the berth's inside as it is laid out now (m): floor to rail, tower to its open far end
+static func berth_inner() -> Rect2:
+	var x0 := Dock.TOWER_X + 1.0
+	var y0 := Dock.RAIL_Y
+	return Rect2(x0, y0, Dock.BOUNDS.end.x - x0, Dock.FLOOR_Y - y0)
+
+
+# where a body outside the berth at p (px) is drawn to: the nearest point KEEP_IN_M inside
+static func berth_inside(p: Vector2) -> Vector2:
+	var r := berth_inner().grow(-KEEP_IN_M)
+	# clear of the trough's suction over the floor (it would take it the moment it lands)
+	var y1 := minf(r.end.y, Dock.TROUGH_Y - Dock.SUCK_H - 1.5)
+	var m := p / Geom.M
+	return Vector2(clampf(m.x, r.position.x, r.end.x), clampf(m.y, r.position.y, y1)) * Geom.M
+
+
+# outside the berth and not in the port (the empty berth's gate opens on it: a drone up there is in it)
+static func out_of_berth(p: Vector2) -> bool:
+	if berth_inner().has_point(p / Geom.M):
+		return false
+	return PortStructure.zone_at(p) == ""
+
+
+func keep_in_berth() -> void:
+	if not KEEP_IN_ON:
+		return
+	var list: Array = []
+	if drone != null and is_instance_valid(drone) and drone.alive:
+		list.append(drone)
+	if world != null:
+		for b in world.bodies:
+			if is_instance_valid(b) and b is RigidBody2D:
+				list.append(b)
+	for b in list:
+		if _gliding(b):
+			continue
+		var at: Vector2 = b.global_position
+		if not out_of_berth(at):
+			continue
+		var to := berth_inside(at)
+		var dur := clampf(at.distance_to(to) / (GLIDE_V * Geom.M), 0.8, 2.5)
+		_glides.append({"body": b, "from": at, "to": to, "t": 0.0, "dur": dur, "mask": b.collision_mask,
+			"frozen": b.freeze, "mode": b.freeze_mode})
+		b.collision_mask = 0
+		b.freeze_mode = RigidBody2D.FREEZE_MODE_KINEMATIC
+		b.freeze = true
+		b.linear_velocity = Vector2.ZERO
+		b.angular_velocity = 0.0
+		if fx != null:
+			fx.ring(at, 8.0, 40.0, 0.5, Pal.ink(0.35))
+
+
+func _gliding(b) -> bool:
+	for gl in _glides:
+		if gl.body == b:
+			return true
+	return false
+
+
+func berth_gliding() -> bool:
+	return not _glides.is_empty()
+
+
+func _glide_step(dt: float) -> void:
+	for i in range(_glides.size() - 1, -1, -1):
+		var gl: Dictionary = _glides[i]
+		var b = gl.body
+		if not is_instance_valid(b):
+			_glides.remove_at(i)
+			continue
+		gl.t += dt
+		var k := clampf(gl.t / gl.dur, 0.0, 1.0)
+		b.global_position = (gl.from as Vector2).lerp(gl.to, k * k * (3.0 - 2.0 * k))
+		if k >= 1.0:
+			b.freeze = gl.frozen
+			b.freeze_mode = gl.mode
+			b.collision_mask = gl.mask
+			b.linear_velocity = Vector2.ZERO
+			b.angular_velocity = 0.0
+			b.reset_physics_interpolation()
+			_glides.remove_at(i)
 
 
 # what the berth's length goes by: the career's purchases (and the developer's kit)

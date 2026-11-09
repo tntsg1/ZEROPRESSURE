@@ -413,6 +413,18 @@ func page_open() -> bool:
 	return _page() == kind() + ":" + zone()
 
 
+# the drone at the end of a ride to z: at z's stop, in z itself, or (the berth's own stop) back in the berth
+static var ARRIVED_ON := true   # tests: false is the walk as it was (only the ride itself counted: the before picture)
+func arrived(z: String, p: Vector2) -> bool:
+	if not ARRIVED_ON:
+		return game.tram.at == z and game.tram.phase == "" and p.distance_to(Tram.station_at(z)) < 12.0 * Geom.M
+	if p.distance_to(Tram.station_at(z)) < 12.0 * Geom.M:
+		return true
+	if z == "salvage":
+		return _berth_rect().has_point(p)
+	return PortStructure.zone_at(p) == z
+
+
 func passed() -> bool:
 	var d = game.drone
 	match kind():
@@ -443,7 +455,12 @@ func passed() -> bool:
 			return game.tram != null and game.tram.near_station() == (zone() if zone() != "" else "ring")
 		"ride":
 			# 131 号: the car parked at the stop is not the ride — the drone has to be there with it
-			return game.tram != null and game.tram.at == zone() and game.tram.phase == "" and not game.tram.riding 				and d != null and d.global_position.distance_to(Tram.station_at(zone())) < 12.0 * Geom.M
+			if game.tram == null or game.tram.riding or d == null:
+				return false
+			# 2026-11-09 (user: "我本来就在拆船区，我去拆船区干什么"): the ride is for getting there; a drone
+			# already there — flown there by itself, or back inside the berth for the berth's own stop — has
+			# done it (the step goes by at once, it is never told to go where it is)
+			return arrived(zone(), d.global_position)
 		"home":
 			return d != null and _berth_rect().has_point(d.global_position) and d.global_position.y > _rail_y()
 		"repair":
@@ -533,6 +550,9 @@ func _fill() -> void:
 				line = w("什么都不用按，到站自己下车", "Nothing to press; you step off at the stop")
 		"home":
 			title.text = w("下车往下，穿过闸门回七号船坞", "DOWN THROUGH THE GATE TO BERTH 07")
+			# 2026-11-09 占位 (flown back by itself, the car not here: there is no getting off)
+			if game.tram != null and game.tram.at != "salvage":
+				title.text = w("往下飞，穿过闸门回七号船坞", "DOWN THROUGH THE GATE TO BERTH 07")
 			line = w("以后进出港区：拆船区站上车，下车就是船坞", "In and out of the port: the stop in the gate is the berth's own")
 		"repair":
 			title.text = w("按 %s 打开终端，点“船坞”", "PRESS %s, OPEN 'BERTH'") % Keys.label("terminal")

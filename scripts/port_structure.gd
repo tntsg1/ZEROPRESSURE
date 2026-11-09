@@ -31,6 +31,11 @@ static func half(zone: String) -> float:
 const RING_CONSOLE := Vector2(146.0, 18.6)
 const RING_DESK := Vector2(133.0, 18.6)
 const RING_FOOT := 1.6                       # 130 号: its stand, m (2.8 reached over the shuttle's rails)
+# 接驳站穿模修复: a business console's place in its district's box (metres from its top-left) where the
+# rule above (5 m in, 5 m aside) stood it over the shuttle's and freight's lane (12.4–16 m), its column
+# down through the rails: under the lane instead, clear of what stands there (the trade dock's intake
+# duct at 17 m; the cargo district's rack A row plates from 4.35 m)
+const CONSOLE_AT := {"trade": Vector2(5.0, 20.0), "cargo": Vector2(2.5, 20.0)}
 const REACH := 4.0               # m: how close to a console counts
 const HATCH := 4.0               # m: the cargo district's floor hatch over the yard
 # per zone: the machines inside, as rects in the box's local metres (origin: box top-left)
@@ -38,7 +43,7 @@ const MACHINES := {
 	# 100 号: the three reactor bays in their shields (the third empty until stage 2), the switchgear
 	"power": [["reactor_a", Vector2(0.8, 3.2), Vector2(9.4, 14.4)], ["reactor_b", Vector2(10.4, 3.2), Vector2(9.4, 14.4)], ["reactor_c", Vector2(20.0, 3.2), Vector2(9.4, 14.4)],
 		["switchgear", Vector2(38.6, 18.6), Vector2(15.05, 8.2)]],
-	"tug": [["table", Vector2(23.2, 22.3), Vector2(19.1, 4.5)], ["rack", Vector2(39.2, 0.5), Vector2(12.4, 5.2)], ["deck", Vector2(22.6, 10.8), Vector2(29.2, 0.7)]],
+	"tug": [["table", Vector2(23.2, 22.3), Vector2(19.1, 4.5)], ["rack", Vector2(39.2, 0.5), Vector2(12.4, 5.2)], ["deck", Vector2(22.6, 10.8), Vector2(30.3, 0.7)]],
 	# the processing district's works are the real machines now (scripts/process_plant.gd, 30 号)
 	"process": [],
 	# the trade hall's counters and quote board are scripts/trade_hall.gd (38 号)
@@ -96,7 +101,10 @@ static func consoles(zone: String) -> Array:
 	# 128 号 第 4 段: the processing district's business terminal stands in its gallery
 	if zone == "process" and preload("res://scripts/process_gallery.gd").on():
 		return [preload("res://scripts/process_gallery.gd").term("business"), p + n * 5.0 * m - tg * 5.0 * m]
-	return [p + n * 5.0 * m + tg * 5.0 * m, p + n * 5.0 * m - tg * 5.0 * m]
+	var desk := p + n * 5.0 * m - tg * 5.0 * m
+	if CONSOLE_AT.has(zone):
+		return [box(zone).position + (CONSOLE_AT[zone] as Vector2) * m, desk]
+	return [p + n * 5.0 * m + tg * 5.0 * m, desk]
 
 
 static func console_spot(zone: String) -> Vector2:

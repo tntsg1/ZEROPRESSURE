@@ -149,6 +149,10 @@ func _handle_key(ev: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if key >= KEY_F1 and key <= KEY_F11:
+		# user 2026-11-09 (F3 did nothing at the berth terminal): with the bench shut, the game's own
+		# F keys (stores F3, rack F4, grid F5, exchange F8) go to the game, not to the bench's rows
+		if not workbench_open and (key in RemoteOps.KEYS.values() or key == KEY_F8):
+			return
 		var n := key - KEY_F1 + 1
 		if n <= rows().size() and rows()[n - 1][0] != "":
 			get_viewport().set_input_as_handled()

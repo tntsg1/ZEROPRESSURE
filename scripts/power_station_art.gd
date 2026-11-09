@@ -52,6 +52,7 @@ const SHORE_Y := 17.95
 const TRENCH := [27.15, 27.45, 27.75] # outgoing feeders, condensate, radiator return
 const RAD_OUT := 7.8                  # where the radiator headers leave the walls (the booms outside)
 const RAD_IN := 20.2
+const FEEDER_OUT := 34.0              # where the outgoing feeders go down through the slab (beside the door)
 
 const FACE := Color(0.118, 0.124, 0.136)
 const FACE2 := Color(0.15, 0.158, 0.172)
@@ -167,8 +168,41 @@ func paths(stage: int) -> Dictionary:
 	out.rad_out.append(PackedVector2Array([Vector2(58.4, RAD_OUT), Vector2(58.4, RAD_Y), Vector2(0.3, RAD_Y), Vector2(0.3, RAD_OUT), Vector2(0.0, RAD_OUT)]))
 	out.rad_back.append(PackedVector2Array([Vector2(60.0, RAD_IN), Vector2(59.3, RAD_IN), Vector2(59.3, 25.9), Vector2(RP_C[0], 25.9), Vector2(RP_C[0], 24.6), Vector2(RP_C[0] - 0.75, 24.6), Vector2(RP_C[0] - 0.75, 19.3), Vector2(54.2, 19.3), Vector2(54.2, 15.4), Vector2(COND.end.x, 15.4)]))
 	out.rad_back.append(PackedVector2Array([Vector2(0.0, RAD_IN), Vector2(0.3, RAD_IN), Vector2(0.3, TRENCH[2]), Vector2(59.3, TRENCH[2]), Vector2(59.3, 25.9)]))
+	# 接驳站穿模修复: the trench's lines stop either side of the door in the floor (the shuttle's track
+	# comes up through it) and dive into the page there: an elbow each side, drawn in _pipes
+	out["dives"] = []
+	for key in ["cond", "rad_back"]:
+		var cut: Array = []
+		for pl: PackedVector2Array in out[key]:
+			cut.append_array(_around_door(pl, out.dives))
+		out[key] = cut
 	_paths[stage] = out
 	return out
+
+
+const DOOR_GAP := Vector2(26.7, 33.3)   # m: the door in the floor (30 ± 3) and a little more
+
+
+static func _around_door(pl: PackedVector2Array, dives: Array) -> Array:
+	var outs: Array = []
+	var cur := PackedVector2Array([pl[0]])
+	for i in range(1, pl.size()):
+		var a: Vector2 = pl[i - 1]
+		var b: Vector2 = pl[i]
+		var lo := minf(a.x, b.x)
+		var hi := maxf(a.x, b.x)
+		if absf(a.y - b.y) < 0.01 and a.y > FLOOR and lo < DOOR_GAP.x and hi > DOOR_GAP.y:
+			var s := signf(b.x - a.x)
+			var e0 := Vector2(DOOR_GAP.x if s > 0.0 else DOOR_GAP.y, a.y)
+			var e1 := Vector2(DOOR_GAP.y if s > 0.0 else DOOR_GAP.x, a.y)
+			cur.append(e0)
+			outs.append(cur)
+			dives.append(e0)
+			dives.append(e1)
+			cur = PackedVector2Array([e1])
+		cur.append(b)
+	outs.append(cur)
+	return outs
 
 
 # ================================================================== the still parts
@@ -256,6 +290,11 @@ func _pipes(p, stage: int, lod: int) -> void:
 		_pipe(p, pl, 0.24, cool, lod)
 	for pl in pa.cond:
 		_pipe(p, pl, 0.22, feed, lod)
+	# where the trench's lines dive into the page beside the door: an elbow's flange, end on
+	for dv: Vector2 in pa.dives:
+		p.circle(dv, 0.2, Color(0.02, 0.022, 0.026), 12)
+		p.ring(dv, 0.2, _ink(0.5), 0.05, 12)
+		p.circle(dv, 0.07, _ink(0.35), 8)
 	for pl in pa.feed:
 		_pipe(p, pl, 0.2, feed, lod)
 	# the feed pumps' risers into the header
@@ -279,13 +318,16 @@ func _pipes(p, stage: int, lod: int) -> void:
 	for i in range(2, W.FEEDERS.size()):
 		var x := SG_X + i * CUB + 1.07
 		p.line(Vector2(x, SG_Y.y), Vector2(x, TRENCH[0]), Pal.tint(Pal.VOLT, 0.35, 1.0), 0.1)
-	p.line(Vector2(30.4, TRENCH[0]), Vector2(SG_X + 6 * CUB + 1.07, TRENCH[0]), Pal.tint(Pal.VOLT, 0.35, 1.0), 0.14)
-	p.line(Vector2(30.4, TRENCH[0]), Vector2(30.4, 28.0), Pal.tint(Pal.VOLT, 0.35, 1.0), 0.14)
-	# the trench's covers
+	# (接驳站穿模修复: they went out through the door at 30.4 m, across the shuttle's track: now down
+	# through the slab beside it)
+	p.line(Vector2(FEEDER_OUT, TRENCH[0]), Vector2(SG_X + 6 * CUB + 1.07, TRENCH[0]), Pal.tint(Pal.VOLT, 0.35, 1.0), 0.14)
+	p.line(Vector2(FEEDER_OUT, TRENCH[0]), Vector2(FEEDER_OUT, 28.0), Pal.tint(Pal.VOLT, 0.35, 1.0), 0.14)
+	# the trench's covers (none over the door)
 	if lod >= 1:
 		var x2 := 0.0
 		while x2 < 60.0:
-			p.line(Vector2(x2, 26.95), Vector2(x2, 27.95), Color(0.12, 0.125, 0.135), 0.04)
+			if x2 < DOOR_GAP.x or x2 > DOOR_GAP.y:
+				p.line(Vector2(x2, 26.95), Vector2(x2, 27.95), Color(0.12, 0.125, 0.135), 0.04)
 			x2 += 1.5
 
 

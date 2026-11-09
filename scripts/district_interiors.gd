@@ -26,7 +26,7 @@ const SOLIDS := {
 	# 100 号: the turbine deck, the condenser under it, the fuel cells, the feed pumps, the radiator pumps
 	"power": [["turbine", Vector2(37.6, 6.2), Vector2(20.4, 6.4)], ["condenser", Vector2(43.0, 12.6), Vector2(6.6, 3.8)], ["fuelcell", Vector2(0.8, 19.6), Vector2(8.0, 7.2)],
 		["feedpumps", Vector2(10.0, 23.4), Vector2(10.4, 3.4)], ["radpumps", Vector2(54.4, 19.4), Vector2(5.2, 7.4)]],
-	"tug": [["fuel", Vector2(42.7, 12.4), Vector2(3.9, 14.4)], ["bins", Vector2(47.2, 19.4), Vector2(4.6, 7.4)]],
+	"tug": [["fuel", Vector2(42.7, 16.8), Vector2(3.9, 10.0)], ["bins", Vector2(47.2, 19.4), Vector2(4.6, 7.4)]],
 	"process": [["baghouse", Vector2(30.6, 10.2), Vector2(6.1, 7.4)], ["transformer", Vector2(2, 20), Vector2(6, 6.8)]],
 	"trade": [],
 	"cargo": [["pallets", Vector2(53, 21), Vector2(5, 5.8)]],

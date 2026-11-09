@@ -316,46 +316,84 @@ func _draw() -> void:
 
 
 # 130 号 (user): the trade port's recycling station, by its freight stop. A sale comes by train
-# (scripts/freight_works.gd sell); an overhead crane on two runway rails runs its bridge over the
-# wagon, lowers the hook, lifts the crate, carries it across over the chute beside the track and
-# lowers it in. Parked at the far end of the runway otherwise. Top-down line art like the shuttle's;
-# height shown by the crate's size and its shadow.
-const RS_X := Vector2(-1.5, 12.5)    # m along the line from the stop's head (towards the ring)
-const RS_Y := Vector2(-2.3, 6.4)     # m across: the runway rails
-const RS_CHUTE := Rect2(2.0, 3.4, 7.0, 2.1)
+# (scripts/freight_works.gd sell); a crane lifts the crate off the wagon, carries it across over the
+# chute beside the track and lowers it in. Parked at the runway's far end otherwise. Top-down line art
+# like the shuttle's; height shown by the crate's size and its shadow.
+# 接驳站穿模修复 (user: “贸易港这很多铁轨……属于穿模”): its two runway rails ran 6 m down across the hall
+# floor and the dock, its bridge over the business console's column, its chute down in the dock. Now it
+# all stays in the line's own bay, between the counters (10 m) and the hall floor (15.8 m): one runway
+# girder along the bay's upper edge, a jib from its end truck out over the wagon, the chute between the
+# girder and the track; the jib telescopes out over the wagon only while it lifts a crate. Across: m from
+# the track's middle, up positive.
+const RS_X := Vector2(1.9, 12.5)     # m along the line from the stop's head (towards the ring): the runway (0.4 m short of counter 1)
+const RS_RUN := 3.6                  # m up: the runway girder (the counters' desks end 4.0 m up)
+const RS_TIP := -0.55                # m: the jib's tip run out, just past the wagon's middle
+const RS_IN := 2.6                   # m: run in (parked, or between sales), over the chute, clear of the track
+const RS_CHUTE := Rect2(3.0, 1.95, 5.0, 1.3)   # along, across (up): 0.45 m clear of a wagon's side, 0.2 m of the girder
 const RS_PARK := 11.6
-func _recycle_frame() -> Dictionary:
-	if not FW._open("trade"):
-		return {}
+
+
+static func _rs_axes() -> Array:
 	var st := FW._dstop("trade")
 	var line: Array = st.line
 	var o: Vector2 = line[0]
 	var u: Vector2 = ((line[1] as Vector2) - o).normalized()
-	return {"o": o, "u": u, "n": u.orthogonal()}
+	var n := u.orthogonal()
+	if n.y > 0.0:
+		n = -n
+	return [o, u, n]
+
+
+func _recycle_frame() -> Dictionary:
+	if not FW._open("trade"):
+		return {}
+	var ax := _rs_axes()
+	return {"o": ax[0], "u": ax[1], "n": ax[2]}
 
 
 func _rs(rs: Dictionary, x: float, y: float) -> Vector2:
 	return (rs.o as Vector2) + ((rs.u as Vector2) * x + (rs.n as Vector2) * y) * Geom.M
 
 
+# the station's still parts and the jib's reach, world px rects (tests/tram_clear_check.gd)
+static func recycle_rects() -> Array:
+	if not FW._open("trade"):
+		return []
+	var ax := _rs_axes()
+	var o: Vector2 = ax[0]
+	var u: Vector2 = ax[1]
+	var n: Vector2 = ax[2]
+	var M := Geom.M
+	var f := func(x: float, y: float) -> Vector2: return o + (u * x + n * y) * M
+	var out: Array = []
+	out.append(Rect2(f.call(RS_X.x - 0.3, RS_RUN + 0.35), Vector2.ZERO).expand(f.call(RS_X.y + 0.3, RS_RUN - 0.35)))
+	out.append(Rect2(f.call(RS_CHUTE.position.x, RS_CHUTE.position.y), Vector2.ZERO).expand(f.call(RS_CHUTE.end.x, RS_CHUTE.end.y)))
+	out.append(Rect2(f.call(RS_X.x - 0.75, RS_RUN), Vector2.ZERO).expand(f.call(RS_X.y + 0.75, RS_TIP - 0.1)))
+	return out
+
+
 func _recycle_ground(rs: Dictionary) -> void:
 	var M := Geom.M
-	# the chute: a dark pit with a lit rim and a grate
+	# the chute: a dark pit with a lit rim, its grate, a lip on the track's side
 	var ch := RS_CHUTE
 	var q := PackedVector2Array([_rs(rs, ch.position.x, ch.position.y), _rs(rs, ch.end.x, ch.position.y), _rs(rs, ch.end.x, ch.end.y), _rs(rs, ch.position.x, ch.end.y)])
 	draw_colored_polygon(q, Color(0.02, 0.022, 0.026))
 	var ring := q.duplicate()
 	ring.append(q[0])
 	draw_polyline(ring, Pal.heat(0.55, 0.9), 0.09 * M)
-	for k in 7:
-		var gx := ch.position.x + 0.5 + k * (ch.size.x - 1.0) / 6.0
-		draw_line(_rs(rs, gx, ch.position.y + 0.25), _rs(rs, gx, ch.end.y - 0.25), Pal.ink(0.14), 0.04 * M)
-	# the runway: two rails on their posts
-	for y: float in [RS_Y.x, RS_Y.y]:
-		draw_line(_rs(rs, RS_X.x, y), _rs(rs, RS_X.y, y), Pal.ink(0.42), 0.12 * M)
-		for k in 6:
-			var px := RS_X.x + k * (RS_X.y - RS_X.x) / 5.0
-			FastDraw.circle(self, _rs(rs, px, y), 0.17 * M, Pal.ink(0.32))
+	for k in 9:
+		var gx := ch.position.x + 0.4 + k * (ch.size.x - 0.8) / 8.0
+		draw_line(_rs(rs, gx, ch.position.y + 0.2), _rs(rs, gx, ch.end.y - 0.2), Pal.ink(0.14), 0.04 * M)
+	draw_line(_rs(rs, ch.position.x, ch.position.y - 0.12), _rs(rs, ch.end.x, ch.position.y - 0.12), Pal.ink(0.4), 0.06 * M)
+	# the runway: one girder along the bay's edge, the hangers it hangs on, its end stops
+	draw_line(_rs(rs, RS_X.x, RS_RUN), _rs(rs, RS_X.y, RS_RUN), Color(0.09, 0.095, 0.105), 0.3 * M)
+	draw_line(_rs(rs, RS_X.x, RS_RUN + 0.15), _rs(rs, RS_X.y, RS_RUN + 0.15), Pal.ink(0.5), 0.05 * M)
+	draw_line(_rs(rs, RS_X.x, RS_RUN - 0.15), _rs(rs, RS_X.y, RS_RUN - 0.15), Pal.ink(0.36), 0.04 * M)
+	for k in 6:
+		var px := RS_X.x + 0.4 + k * (RS_X.y - RS_X.x - 0.8) / 5.0
+		draw_rect(Rect2(_rs(rs, px, RS_RUN) - Vector2(0.12, 0.12) * M, Vector2(0.24, 0.24) * M), Pal.ink(0.3))
+	for x: float in [RS_X.x, RS_X.y]:
+		draw_line(_rs(rs, x, RS_RUN - 0.3), _rs(rs, x, RS_RUN + 0.3), Pal.heat(0.7, 1.0), 0.12 * M)
 
 
 func _recycle_crane(rs: Dictionary, sells: Array) -> void:
@@ -364,14 +402,17 @@ func _recycle_crane(rs: Dictionary, sells: Array) -> void:
 		var q := clampf((x - a) / (b - a), 0.0, 1.0)
 		return q * q * (3.0 - 2.0 * q)
 	var bx := RS_PARK
-	var ty := RS_CHUTE.get_center().y
+	var cy := RS_CHUTE.get_center().y
+	var ty := cy
 	var hook := 0.0
+	var reach := 0.0
 	var crate: Array = []
 	if not sells.is_empty():
 		var sl: Array = sells[0]
 		var ts := float(sl[1])
+		# the jib runs out over the wagon first and back in last (parked, it is in over the chute)
+		reach = float(e.call(0.0, 0.15, ts)) * (1.0 - float(e.call(0.9, 1.0, ts)))
 		var wx: float = ((sl[0] as Vector2) - (rs.o as Vector2)).dot(rs.u) / M
-		var cy := RS_CHUTE.get_center().y
 		# out over the wagon, hook down, lift, across over the chute, down into it, back to park
 		bx = lerpf(RS_PARK, wx, e.call(0.0, 0.2, ts))
 		bx = lerpf(bx, RS_PARK, e.call(0.9, 1.0, ts))
@@ -388,30 +429,47 @@ func _recycle_crane(rs: Dictionary, sells: Array) -> void:
 		var lift: float = crate[3]
 		var sunk: float = crate[4]
 		var sh := Color(0, 0, 0, 0.35 * lift)
-		draw_circle((crate[1] as Vector2) + Vector2(0.5, 0.7) * M * lift, 1.4 * M, sh)
+		draw_circle((crate[1] as Vector2) + Vector2(0.3, 0.4) * M * lift, 1.1 * M, sh)
 		var k: float = lerpf(0.98, 1.1, lift) * lerpf(1.0, 0.7, sunk)
 		var v: float = lerpf(1.0, 0.25, sunk)
 		art.goods_at(self, crate[0], (crate[1] as Vector2) / M, crate[2], Color(v, v, v, 1.0 - 0.8 * sunk), k)
-	# the bridge across the runway with its end trucks, the trolley on it, the hook below
-	var a := _rs(rs, bx, RS_Y.x)
-	var b := _rs(rs, bx, RS_Y.y)
-	var side: Vector2 = (rs.u as Vector2) * 0.28 * M
+	# the end truck on the runway, the telescopic jib out from it (its sleeve, the inner section's two
+	# chords and their lacing), the trolley on it, the hook below
+	var side: Vector2 = (rs.u as Vector2) * 0.22 * M
+	var nn: Vector2 = (rs.n as Vector2) * 0.28 * M
+	var a := _rs(rs, bx, RS_RUN)
+	var tip := lerpf(RS_IN, RS_TIP, reach)
+	var b := _rs(rs, bx, tip)
+	var tq := PackedVector2Array([a - side * 3.2 - nn, a + side * 3.2 - nn, a + side * 3.2 + nn, a - side * 3.2 + nn])
+	draw_colored_polygon(tq, Color(0.05, 0.055, 0.06))
+	tq.append(tq[0])
+	draw_polyline(tq, Pal.ink(0.6), 0.04 * M)
+	var sl0 := _rs(rs, bx, RS_IN)
+	var sq := PackedVector2Array([a - side * 1.5, a + side * 1.5, sl0 + side * 1.5, sl0 - side * 1.5])
+	draw_colored_polygon(sq, Color(0.075, 0.08, 0.088))
+	sq.append(sq[0])
+	draw_polyline(sq, Pal.ink(0.55), 0.04 * M)
 	draw_line(a - side, b - side, Pal.ink(0.75), 0.07 * M)
 	draw_line(a + side, b + side, Pal.ink(0.75), 0.07 * M)
-	for p: Vector2 in [a, b]:
-		var tq := PackedVector2Array([p - side * 2.6 - (rs.n as Vector2) * 0.3 * M, p + side * 2.6 - (rs.n as Vector2) * 0.3 * M, p + side * 2.6 + (rs.n as Vector2) * 0.3 * M, p - side * 2.6 + (rs.n as Vector2) * 0.3 * M])
-		draw_colored_polygon(tq, Color(0.05, 0.055, 0.06))
-		tq.append(tq[0])
-		draw_polyline(tq, Pal.ink(0.6), 0.04 * M)
+	var lac := PackedVector2Array()
+	var yy := RS_IN
+	var flip := 1.0
+	while yy - 0.5 > tip:
+		lac.append_array([_rs(rs, bx, yy) - side * flip, _rs(rs, bx, yy - 0.5) + side * flip])
+		yy -= 0.5
+		flip = -flip
+	if not lac.is_empty():
+		draw_multiline(lac, Pal.ink(0.4), 0.03 * M)
+	draw_line(b - side * 1.3, b + side * 1.3, Pal.ink(0.75), 0.08 * M)
 	var tp := _rs(rs, bx, ty)
-	var tw: Vector2 = (rs.u as Vector2) * 0.75 * M
-	var tn: Vector2 = (rs.n as Vector2) * 0.55 * M
+	var tw: Vector2 = (rs.u as Vector2) * 0.6 * M
+	var tn: Vector2 = (rs.n as Vector2) * 0.42 * M
 	var tr := PackedVector2Array([tp - tw - tn, tp + tw - tn, tp + tw + tn, tp - tw + tn])
 	draw_colored_polygon(tr, Color(0.06, 0.065, 0.07))
 	tr.append(tr[0])
 	draw_polyline(tr, Pal.heat(0.8, 1.1), 0.05 * M)
-	FastDraw.circle(self, tp, (0.18 + 0.12 * hook) * M, Pal.ink(0.5 + 0.4 * hook))
-	# the warning lamp blinks while it works
+	FastDraw.circle(self, tp, (0.16 + 0.1 * hook) * M, Pal.ink(0.5 + 0.4 * hook))
+	# the warning lamp on the end truck blinks while it works
 	if not sells.is_empty() and fmod(t, 0.5) < 0.25:
 		FastDraw.circle(self, a, 0.16 * M, Pal.heat(1.0, 1.6))
 

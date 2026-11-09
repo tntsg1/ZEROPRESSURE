@@ -15,13 +15,19 @@ const FLOOR := 26.8
 const GIRDER := Vector2(0.35, 1.6)     # the gantry's box girder, top and bottom
 const REEL := Vector2(19.6, 11.7)      # the drain hose's reel
 const RISER_X := 22.9                  # the propellant main's riser to the reel
-const TANK := Rect2(42.7, 12.4, 3.9, 14.4)
+# 接驳站穿模修复: the tank stands under the freight line's lane (12.4–16 m), its vent 0.5 m below it
+# (it stood 14.4 m tall, its head through the rails)
+const TANK := Rect2(42.7, 16.8, 3.9, 10.0)
 const PUMP_AT := Vector2(44.65, 25.7)
 const TABLE := Vector2(23.2, 42.3)     # the service table's ends
 const TABLE_TOP := 22.6
 const BINS := Rect2(47.2, 19.4, 4.6, 7.4)
 const RACK := Rect2(39.2, 0.5, 12.4, 5.2)
-const COLS := [23.0, 37.6, 51.4]       # the deck's columns
+# the deck's columns; its east end hangs from the roof (接驳站穿模修复: the column at 51.4 m stood
+# across the freight line's lane), on two rods past the parts rack
+const COLS := [23.0, 37.6]
+const HANGER_X := 52.45           # the two rods either side of it, 0.15 m off
+const DECK_END := 52.9
 const PROBE_RAIL := Vector2(31.2, 38.6)
 
 const FACE := Color(0.118, 0.124, 0.136)
@@ -106,8 +112,9 @@ func still(ci: CanvasItem, on: bool, lod: int, stage: int) -> void:
 		_text(ci, Vector2(9.4, 1.32), "SWL 40 t", 0.5, Pal.heat(0.75, 1.0))
 		_text(ci, Vector2(14.0, 1.32), "MOUTH GANTRY", 0.34, _ink(0.45))
 		_text(ci, Vector2(0.9, 4.75), w("拖船门", "TUG GATE"), 0.4, _ink(0.6))
-		_text(ci, Vector2(TANK.position.x + 0.5, TANK.position.y + 7.7), "MMH", 0.62, Color(0.05, 0.05, 0.05))
-		_text(ci, Vector2(TANK.position.x + 0.5, TANK.position.y + 8.4), w("甲基肼 · 剧毒易燃", "TOXIC · FLAMMABLE"), 0.28, Color(0.05, 0.05, 0.05))
+		var py := _placard_y()
+		_text(ci, Vector2(TANK.position.x + 0.5, py + 0.7), "MMH", 0.62, Color(0.05, 0.05, 0.05))
+		_text(ci, Vector2(TANK.position.x + 0.5, py + 1.4), w("甲基肼 · 剧毒易燃", "TOXIC · FLAMMABLE"), 0.28, Color(0.05, 0.05, 0.05))
 		_text(ci, Vector2(RACK.position.x, RACK.position.y + 0.42), w("备件架 · 喷管 / 缆绳 / 电池模块 / 阀件", "SPARES · NOZZLES / CABLE / BATTERIES / VALVES"), 0.36, _ink(0.6))
 		_text(ci, Vector2(BINS.position.x, BINS.position.y - 0.25), w("零件箱", "PARTS BINS"), 0.4, _ink(0.65))
 		var names := [["阀件", "VALVES"], ["密封圈", "SEALS"], ["紧固件", "BOLTS"], ["线束", "LOOMS"]]
@@ -226,11 +233,23 @@ func _deck(p, on: bool, lod: int) -> void:
 	var edge := _ink(0.65)
 	var y0: float = W.DECK_Y
 	var x0: float = W.DECK_X.x
-	var x1: float = W.DECK_X.y
+	var x1: float = maxf(W.DECK_X.y, DECK_END)
 	for cx: float in COLS:
 		p.rect(Rect2(cx - 0.32, y0 + 0.7, 0.64, FLOOR - y0 - 0.7), FACE)
 		p.line(Vector2(cx - 0.32, y0 + 0.7), Vector2(cx - 0.32, FLOOR), edge, 0.05)
 		p.line(Vector2(cx + 0.32, y0 + 0.7), Vector2(cx + 0.32, FLOOR), edge, 0.05)
+	# the east end's hanger: a cleat under the roof, two rods with their turnbuckles, the clevis
+	# plate under the deck's edge beam
+	p.rect(Rect2(HANGER_X - 0.45, 0.2, 0.9, 0.3), FACE2)
+	p.rect(Rect2(HANGER_X - 0.45, 0.2, 0.9, 0.3), edge, false, 0.04)
+	for sx in [-0.15, 0.15]:
+		p.line(Vector2(HANGER_X + sx, 0.5), Vector2(HANGER_X + sx, y0 + 0.55), _ink(0.55), 0.07)
+	for ty in [3.6, 7.4]:
+		p.rect(Rect2(HANGER_X - 0.26, ty - 0.35, 0.52, 0.7), FACE)
+		p.rect(Rect2(HANGER_X - 0.26, ty - 0.35, 0.52, 0.7), _ink(0.5), false, 0.035)
+	p.rect(Rect2(HANGER_X - 0.4, y0 + 0.45, 0.8, 0.45), FACE2)
+	p.rect(Rect2(HANGER_X - 0.4, y0 + 0.45, 0.8, 0.45), edge, false, 0.04)
+	p.circle(Vector2(HANGER_X, y0 + 0.67), 0.09, _ink(0.6), 8)
 	p.rect(Rect2(x0, y0, x1 - x0, 0.7), FACE2)
 	if lod >= 1:
 		var x := x0 + 0.3
@@ -292,6 +311,12 @@ func _table_frame(p, lod: int) -> void:
 	p.line(Vector2(PROBE_RAIL.x, ry + 0.3), Vector2(PROBE_RAIL.y, ry + 0.3), _ink(0.45), 0.04)
 
 
+# the placard's top: on the shell's middle
+func _placard_y() -> float:
+	var rx := TANK.size.x * 0.5
+	return (TANK.position.y + rx + TANK.end.y - 1.6 - rx) * 0.5 - 0.8
+
+
 func _tank_frame(p, lod: int) -> void:
 	var edge := _ink(0.72)
 	var x0 := TANK.position.x
@@ -311,12 +336,14 @@ func _tank_frame(p, lod: int) -> void:
 	p.line(Vector2(x0, top), Vector2(x0, bot), edge, 0.1)
 	p.line(Vector2(x1, top), Vector2(x1, bot), edge, 0.1)
 	if lod >= 1:
-		for k in 4:
-			var y := top + 1.6 + k * 2.0
+		# the shell's weld seams, every 1.5 m
+		var y := top + 0.75
+		while y < bot - 0.3:
 			p.line(Vector2(x0, y), Vector2(x1, y), _ink(0.18), 0.035)
+			y += 1.5
 	# the placard
-	p.rect(Rect2(x0 + 0.35, TANK.position.y + 7.0, x1 - x0 - 0.7, 1.6), Pal.ink(0.78))
-	p.rect(Rect2(x0 + 0.35, TANK.position.y + 7.0, 0.22, 1.6), Pal.heat(0.9, 1.0))
+	p.rect(Rect2(x0 + 0.35, _placard_y(), x1 - x0 - 0.7, 1.6), Pal.ink(0.78))
+	p.rect(Rect2(x0 + 0.35, _placard_y(), 0.22, 1.6), Pal.heat(0.9, 1.0))
 	# the sight glass (its level drawn moving), the relief valve and vent on top, the ladder
 	p.rect(Rect2(x1 + 0.15, top + 0.4, 0.28, bot - top - 0.8), Color(0.04, 0.05, 0.055))
 	p.rect(Rect2(x1 + 0.15, top + 0.4, 0.28, bot - top - 0.8), _ink(0.5), false, 0.03)

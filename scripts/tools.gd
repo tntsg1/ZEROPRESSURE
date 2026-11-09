@@ -1125,6 +1125,9 @@ func physics_step(dt: float) -> void:
 			release_grab(false)
 			return
 	if held_piece.body != held_body:
+		# the body fell apart (or the piece came loose): what is left off the line touches again
+		if held_body != null and is_instance_valid(held_body):
+			held_body.tethered = false
 		held_body = held_piece.body
 	var d: Vector2 = aim - drone.global_position if not latched else latch_d
 	var tether_reach := clampf(d.length(), 1.4 * Geom.M, reach(3) * 0.85)
@@ -1135,9 +1138,10 @@ func physics_step(dt: float) -> void:
 		release_grab(false)
 		return
 	if held_body != null and is_instance_valid(held_body):
-		held_body.tethered = true
 		var m: float = held_body.total_mass()
 		overweight = m > game.grab_max() + 0.001
+		# carried, it passes through everything (FreeBody.tethered); too heavy to carry, it stays solid
+		held_body.tethered = not overweight
 		if overweight:
 			strain = minf(1.0, strain + dt * 2.0)
 			tether_force = 1.0

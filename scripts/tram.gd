@@ -53,7 +53,7 @@ var trail: Array = []          # where the front car has been, newest first (the
 var track_lines: Array = []    # tests: every track's centre line, world px (built with the rails)
 const DWELL := 1.3            # s at the boarding stop: doors open, the drone in, doors shut
 const ALIGHT := 0.76           # s at the far stop before the drone is free (the doors shut after)
-const REACH := 4.5             # m: the drone calls the car from this close
+const REACH := 2.5             # m: the drone calls the car from this close (user 2026-11-09: was 4.5, reached the business consoles)
 # 130 号: the hub's stop stands on the loop at RING_A (it was at the bottom, 90°, right behind the
 # berth spoke's hatch, where the freight trains now stand to hand crates over) — between the berth
 # line's and the processing line's switches, the business console beside it
@@ -61,6 +61,13 @@ const RING_A := 140.0 * PI / 180.0
 const RING_SIGN := 1.6          # m along the hub stop from its middle to its sign's post
 const BUFFER_AT := 2.35         # m past a dead-end stop's point to its buffer (scripts/tram_art.gd)
 const STATION_IN := 2.5        # m inside the door
+# 接驳站穿模修复: the tug station's stop 1.2 m nearer its door: its freight line has to stop short of the pod
+# lift's shaft (scripts/freight_works.gd EXT_AT) and the freight train still needs a clear metre between
+# its tail and the shuttle's cab standing here; the sign then stands at the platform's inner end (at its
+# outer end it stood in the doorway)
+const STATION_IN_AT := {"tug": 1.3}
+const SIGN_ALONG := {"ring": RING_SIGN, "tug": -1.2}
+const PLATFORM_SHIFT := {"tug": -1.2}   # m along: the tug stop's platform inside the door (it reached 1.1 m through it)
 const BERTH_STOP := 3.6        # m above the berth's gate rail: where the head car stands (97 号)
 # 97 号: a ride's legs (the train stops and changes ends between them) and the switches
 var legs: Array = []           # [{pts, sw: {switch id: 0 | 1}}] still to run after this one
@@ -103,7 +110,7 @@ static func station_at(zone: String) -> Vector2:
 		return Vector2(_gate_x(), Dock.RAIL_Y - BERTH_STOP) * Geom.M
 	# straight in at the door (where the consoles beside it leave room for it)
 	var d: Array = PortStructure.door(zone)
-	return d[0] + d[1] * STATION_IN * PortStructure.M()
+	return d[0] + d[1] * float(STATION_IN_AT.get(zone, STATION_IN)) * PortStructure.M()
 
 
 static func stations() -> Array:
@@ -150,6 +157,48 @@ static func platform_side(zone: String) -> Vector2:
 	if absf(d.x) > absf(d.y):
 		return n if n.y < 0.0 else -n
 	return n if n.x > 0.0 else -n
+
+
+# a stop's sign: the foot of its post (129 号: the hub stop's past the berth arm's turret) and the
+# plate on it, world px
+static func sign_post(zone: String) -> Vector2:
+	return station_at(zone) + platform_side(zone) * 2.25 * Geom.M + station_dir(zone) * float(SIGN_ALONG.get(zone, 1.6)) * Geom.M
+
+
+static func sign_rect(zone: String) -> Rect2:
+	return Rect2(sign_post(zone) + platform_side(zone) * 0.5 * Geom.M - Vector2(0.55, 0.28) * Geom.M, Vector2(1.1, 0.56) * Geom.M)
+
+
+# 接驳站穿模修复: the stop's name goes on the side of its sign away from the district's business
+# console, so the two screen-sized labels never meet when the view is pulled out (the tug station's
+# name lay under its sign, on the console's plate)
+static func name_above(zone: String) -> bool:
+	if zone in ["ring", "salvage"]:
+		return false
+	return PortStructure.console_spot(zone).y > sign_rect(zone).get_center().y
+
+
+# the stop's name as drawn at zoom z: its box in world px (tests: tests/tram_clear_check.gd)
+const NAME_PX := 12
+static func name_box(zone: String, z: float, font: Font) -> Rect2:
+	var sg := sign_rect(zone)
+	var s := Txt.t("tram_station") + " · " + Port.name_of(zone)
+	var sz := font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, NAME_PX)
+	var asc := font.get_ascent(NAME_PX)
+	var c := sg.get_center()
+	if zone == "ring":
+		var x0 := 0.55 * Geom.M * z + 6.0
+		return Rect2(c + Vector2(x0, 4.0 - asc) / z, sz / z)
+	var base := _name_base(zone, z, font)
+	return Rect2(c + Vector2(-sz.x * 0.5, base - asc) / z, sz / z)
+
+
+# the name's baseline below the sign's middle, screen px (negative: above it)
+static func _name_base(zone: String, z: float, font: Font) -> float:
+	var half := 0.28 * Geom.M * z
+	if name_above(zone):
+		return -(half + 4.0 + font.get_descent(NAME_PX))
+	return half + 16.0
 
 
 # where the drone steps off: the platform's middle
@@ -210,6 +259,10 @@ func near_station() -> String:
 		if game.drone.global_position.distance_to(sp) <= REACH * Geom.M:
 			# the berth's stop is outside the berth: not called from inside it
 			if s == "salvage" and game.drone.global_position.y > (Dock.RAIL_Y - 0.4) * Geom.M:
+				continue
+			# the district's business console beside the stop wins when the drone is nearer to it
+			var ps = game.port_structure
+			if ps != null and ps.near_console() != "" and game.drone.global_position.distance_to(PortStructure.console_spot(ps.near_console())) < game.drone.global_position.distance_to(sp):
 				continue
 			return s
 	return ""
@@ -1067,12 +1120,13 @@ func _build() -> void:
 		var sp := station_at(zone)
 		# 129 号: the hub stop's sign stands past the berth arm's turret (over the platform's middle it
 		# stood under the arm's hatch, the arm and its crates over it)
-		var post := sp + n * 2.25 * M + sd * (RING_SIGN if zone == "ring" else 1.6) * M
-		var sign := Rect2(post + n * 0.5 * M - Vector2(0.55, 0.28) * M, Vector2(1.1, 0.56) * M)
-		_stops.append({"z": zone, "p": sp - c, "n": n, "d": sd, "sign": Rect2(sign.position - c, sign.size)})
+		var post := sign_post(zone)
+		var sign := sign_rect(zone)
+		_stops.append({"z": zone, "p": sp - c, "n": n, "d": sd, "sign": Rect2(sign.position - c, sign.size), "above": name_above(zone)})
 		# 130 号: where the freight line runs on past the stop into the district, no buffer at the stop
 		var ext: bool = zone in FW.EXT_ZONES
-		stops.append({"at": sp - c, "d": sd, "n": n, "end": zone != "ring" and not ext, "post": post - c, "sign": Rect2(sign.position - c, sign.size)})
+		stops.append({"at": sp - c, "d": sd, "n": n, "end": zone != "ring" and not ext, "post": post - c, "sign": Rect2(sign.position - c, sign.size),
+			"shift": float(PLATFORM_SHIFT.get(zone, 0.0))})
 		if ext:
 			lines.append({"pts": rel.call([sp, FW.ext_end(zone)])})
 		if zone == "salvage":
@@ -1203,9 +1257,13 @@ func _draw() -> void:
 			# across the rails the freight trains run on)
 			draw_string(font, Vector2(0.55 * M * z + 6.0, 4.0), Txt.t("tram_station") + " · " + Port.name_of(st.z), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, col)
 		else:
-			draw_string(font, Vector2(-90, below), Txt.t("tram_station") + " · " + Port.name_of(st.z), HORIZONTAL_ALIGNMENT_CENTER, 180, 12, col)
+			draw_string(font, Vector2(-90, _name_base(st.z, z, font)), Txt.t("tram_station") + " · " + Port.name_of(st.z), HORIZONTAL_ALIGNMENT_CENTER, 180, NAME_PX, col)
 		if on and not riding:
-			draw_string(font, Vector2(-110, -0.28 * M * z - 10.0), Txt.t("tram_call") % Keys.label("use"), HORIZONTAL_ALIGNMENT_CENTER, 220, 15, Pal.ink(0.95))
+			# the call hint on the other side of the sign from the name
+			var hy := -0.28 * M * z - 10.0
+			if bool(st.get("above", false)):
+				hy = below + 18.0
+			draw_string(font, Vector2(-110, hy), Txt.t("tram_call") % Keys.label("use"), HORIZONTAL_ALIGNMENT_CENTER, 220, 15, Pal.ink(0.95))
 		draw_set_transform(Vector2.ZERO)
 	# the train, when it is in view
 	if view.grow(8.0 * M).has_point(position_px):

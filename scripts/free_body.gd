@@ -14,8 +14,18 @@ var hit_imp := 0.0
 var hit_pos := Vector2.ZERO
 var prev_v := Vector2.ZERO     # its motion at the last upkeep (game.gd: how hard a knock really was)
 var prev_w := 0.0
-var tethered := false
-var capture = null          # recovery zone that is swallowing this body
+# on the drone's grapple (tools.gd, multi_grab.gd). User 2026-11-09 ("无人机经常出现穿模的状况，我不是让它
+# 取消碰撞了吗"), as the crane's hook since 2026-11-08 (load_motion.gd): a piece on the line collides with
+# nothing (mask 0, layer kept so the mouths and the cursor still find it); off the line its collision
+# comes back, and let go inside the ship it eases out (start_ghost) rather than being shoved or wedged
+var tethered := false:
+	set(v):
+		if v == tethered: return
+		tethered = v
+		if v: _carry_begin()
+		else: _carry_end()
+var _carried := false
+var capture = null         # recovery zone that is swallowing this body
 var scrap_at := -100000       # dock.gd: when it last looked at whether this is plain scrap (ms)
 var scrap_is := false
 var rad_at := -100000         # dock._body_radius: when the reach radius was last worked out
@@ -190,7 +200,8 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 	var could := maxf(state.linear_velocity.length() * state.step * 2.0, TELEPORT)
 	# A body born overlapping (calm) is meant to ease out of what it overlaps:
 	# putting it back would only make it judder in place.
-	if capture == null and calm <= 0.0 and moved > 2.0 and moved < could:
+	# A body that passes through the ship on purpose (on the grapple, easing out) is not put back.
+	if capture == null and calm <= 0.0 and collision_mask & World.STATIC_LAYER and moved > 2.0 and moved < could:
 		var q := PhysicsRayQueryParameters2D.create(_last, here, World.STATIC_LAYER)
 		var hit: Dictionary = state.get_space_state().intersect_ray(q)
 		if not hit.is_empty():
@@ -242,8 +253,51 @@ func _physics_process(dt: float) -> void:
 	reset_physics_interpolation()
 
 
-func start_ghost(dir: Vector2) -> void:
-	ghost = GHOST_T
+func _carry_begin() -> void:
+	# swallowed, on the arm or put away by something else: not ours to change
+	if capture != null or freeze or has_meta("arm") or get_meta("arm_parked", false):
+		return
+	_carried = true
+	ghost = 0.0
+	collision_mask = 0
+
+
+func _carry_end() -> void:
+	if not _carried:
+		return
+	_carried = false
+	if capture != null or freeze or has_meta("arm") or get_meta("arm_parked", false) or collision_mask != 0:
+		return
+	collision_mask = MASK
+	var od: Dictionary = world.overlap_dir(pieces)
+	if not od.is_empty():
+		calm = CALM_T
+		if od.ship:
+			start_ghost(od.dir)
+		return
+	# across a berth edge (the rail, the floor): it comes off it gently, never shot out
+	collision_mask = 4
+	if test_move(global_transform, Vector2.ZERO, null, 0.0):
+		calm = CALM_T
+	collision_mask = MASK
+
+
+const GHOST_MAX := 6.0        # s: the longest a let-go piece eases out of the ship (240 px)
+
+
+# t < 0: as long as its size needs to come clear (a long piece sunk deep took more than GHOST_T and
+# was left wedged with its collision back); it ends the moment it is clear anyway
+func start_ghost(dir: Vector2, t: float = -1.0) -> void:
+	if t < 0.0:
+		var box := Rect2()
+		var first := true
+		for p in pieces:
+			if not p.gone:
+				var bb := Geom.bbox(world.world_poly(p))
+				box = bb if first else box.merge(bb)
+				first = false
+		t = clampf(maxf(box.size.x, box.size.y) / GHOST_SPEED, GHOST_T, GHOST_MAX)
+	ghost = t
 	ghost_dir = dir
 	collision_mask = MASK & ~World.STATIC_LAYER
 	linear_velocity = dir * GHOST_SPEED

@@ -305,9 +305,10 @@ static func _rails(pen: Pen, ln: Dictionary, k0: int, k1: int) -> void:
 # a stop: a platform beside the track, its yellow edge and tactile strip, the sign on its post,
 # a buffer stop at a dead end
 static func _station(pen: Pen, st: Dictionary, m: float) -> void:
-	var at: Vector2 = st.at
 	var d: Vector2 = st.d
 	var n: Vector2 = st.n
+	# (接驳站穿模修复: a stop's platform may sit along from its point, scripts/tram.gd PLATFORM_SHIFT)
+	var at: Vector2 = (st.at as Vector2) + d * float(st.get("shift", 0.0)) * m
 	var mid := at + n * 1.55 * m + d * 0.2 * m
 	pen.rect(mid, d, 4.4, 1.1, FACE)
 	var e0 := at + n * 1.0 * m - d * 2.0 * m
@@ -333,7 +334,7 @@ static func _station(pen: Pen, st: Dictionary, m: float) -> void:
 		pen.seg(e[0], e[1], band, 0.0, 1.0)
 	if st.end:
 		# the buffer stop: a beam across the dead end on two struts, striped, its red lamp
-		var b := at - d * 2.35 * m
+		var b := (st.at as Vector2) - d * 2.35 * m
 		pen.seg(b - n * 0.9 * m, b + n * 0.9 * m, DARK, 0.34, 0.6)
 		for j in 6:
 			var x0 := -0.9 + j * 0.3

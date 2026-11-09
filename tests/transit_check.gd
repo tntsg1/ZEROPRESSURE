@@ -147,6 +147,26 @@ func _run() -> void:
 		Cap.save(root, "res://tests/out/transit_list_zh.png")
 		g.console_ui.close()
 	await frames(2)
+	# user 2026-11-09: the stop's reach is smaller, and at the business console E opens the console
+	for z in Port.ZONES:
+		if z in ["salvage", "ring"]:
+			continue
+		print("  %s: stop to business console %.1f m" % [z, Tram.station_at(z).distance_to(PortStructure.console_spot(z)) / Geom.M])
+	var desk: Vector2 = PortStructure.console_spot("power")
+	await fly(desk, "power business console")
+	await frames(20)
+	check(g.port_structure.near_console() == "power" and g.tram.near_station() == "", "at the business console the shuttle is not called (%.1f m from the stop)" % (g.drone.global_position.distance_to(stop) / Geom.M))
+	press(KEY_E)
+	await frames(2)
+	check(g.console_ui == null or g.console_ui.get("mode") != "tram", "E at the business console does not open the shuttle's list")
+	if g.console_ui != null and g.console_ui.has_method("close"):
+		g.console_ui.close()
+	if g.get("district_ui") != null and is_instance_valid(g.district_ui) and g.district_ui.has_method("close"):
+		g.district_ui.close()
+	await frames(2)
+	await fly(stop, "power stop again")
+	await frames(20)
+	check(g.tram.near_station() == "power", "back at the stop it calls the shuttle again")
 	check(g.tram.call_to("power", "ring"), "the hub can be called from the power stop")
 	var f0 := Engine.get_physics_frames()
 	var boarded := false

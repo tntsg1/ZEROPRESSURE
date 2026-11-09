@@ -88,7 +88,7 @@ static func open(game, kind: String) -> bool:
 
 # a key pressed in the field or at a terminal: the kind it opens, or ""
 static func kind_of_key(ev: InputEvent) -> String:
-	if not (ev is InputEventKey and ev.pressed and not ev.echo) or Txt.dev:
+	if not (ev is InputEventKey and ev.pressed and not ev.echo) or (Txt.dev and DevPanel.workbench_open):
 		return ""
 	for k in KEYS:
 		if ev.physical_keycode == KEYS[k] or ev.keycode == KEYS[k]:
