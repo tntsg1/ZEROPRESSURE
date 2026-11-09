@@ -15,9 +15,19 @@ extends RefCounted
 # Against a crack (user 2026-10-30 "只打包第一小时+水印"): the pack carries only SHIPS, so a cracked
 # build still has only the first hour's ships. The code goes on the window's title bar and nowhere in
 # the picture (user: "激活码水印可以不搞……边框上有的话就行").
+# 公测版 (user 2026-11-08, "b a c a b"): the build goes up for anyone to download —
+#   Q1 B  no codes: the first start registers this machine online (its fingerprint) and goes straight in;
+#         every start checks in (/hello), offline it plays on for 3 days after the last check-in; a switch
+#         on the server stops everyone ("公测已结束，谢谢"). The code flow is kept behind CODES.
+#   Q2 A  still the first hour and Demo.SHIPS only. Since the port redesign the main line reaches the
+#         tug yard (a hulk over 44 m) before the 88 m berth, and the pack has none longer than 44 m, so
+#         the first hour ends where the main line asks for a bigger hulk: every chapter before "tug" done.
+#   Q3 C  no end date; the switch stops it
+#   Q4 A  feedback from the pause menu at any time (scripts/demo_feedback.gd)
 
 const URL := "https://playtest.stellarascensiongame.com"
-const EXPIRES := "2026-11-21"        # last day (UTC), the same as the server's
+const VERSION := "0.9-公测-20261108"
+const CODES := false                  # the 10-30 code gate; the public build registers the machine instead
 const LIMIT_S := 3600.0               # the first hour
 const GRACE_S := 3 * 86400            # offline, a machine that checked in within this still plays
 const CFG := "user://playtest_activation.cfg"
@@ -28,6 +38,7 @@ const SHIPS := ["tug", "pod", "s09", "gr7", "h22", "jd38", "qc30", "st40",
 	"sp_atmos", "sp_cryo", "sp_energy", "sp_fluid", "sp_isolate", "sp_load", "sp_precise"]
 
 static var forced := false            # tests turn it on without the export tag
+static var base_url := URL            # tests point the gate at a dead address (offline)
 static var watch_in_tests := false    # tests let the end card come up
 static var gate_open := false         # the gate is up: the title answers nothing behind it
 
@@ -51,7 +62,7 @@ static func apply() -> void:
 	if not on():
 		return
 	if SaveGame.path != "user://playtest_save.json":
-		print("ZERO PRESSURE playtest build, until ", EXPIRES)
+		print("ZERO PRESSURE public test ", VERSION)
 	SaveGame.path = "user://playtest_save.json"
 	Career.path = "user://playtest_career.json"
 	Txt.cfg_path = "user://playtest_settings.cfg"
@@ -59,9 +70,9 @@ static func apply() -> void:
 	Txt.playtest = true
 
 
+# no end date any more (Q3 C): the server's switch ends it
 static func expired() -> bool:
-	var until := Time.get_unix_time_from_datetime_string(EXPIRES + "T23:59:59")
-	return Time.get_unix_time_from_system() > until
+	return false
 
 
 static func machine() -> String:
@@ -114,10 +125,29 @@ static func mark_finished() -> void:
 	cf.save(CFG)
 
 
-# the code on the window's title bar from the moment the gate lets go
+# the version (and with the old gate the code) on the window's title bar from the moment the gate lets go
 static func mark(tree: SceneTree) -> void:
-	if on() and code() != "":
-		tree.root.title = "%s · %s · %s" % [ProjectSettings.get_setting("application/config/name"), w("试玩版", "PLAYTEST"), code()]
+	if not on():
+		return
+	var t := "%s · %s · %s" % [ProjectSettings.get_setting("application/config/name"), w("公测版", "PUBLIC TEST"), VERSION]
+	if CODES and code() != "":
+		t += " · " + code()
+	tree.root.title = t
+
+
+# the version small in the title's bottom right corner
+static func version_label() -> Label:
+	var l := Label.new()
+	l.name = "DemoVersion"
+	l.text = "%s  %s" % [w("公测版", "PUBLIC TEST"), VERSION]
+	l.add_theme_font_size_override("font_size", 16)
+	l.add_theme_color_override("font_color", Color(1, 1, 1, 0.42))
+	l.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 18)
+	l.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	l.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	l.z_index = 90
+	return l
 
 
 # what an error from the server means, in words
@@ -129,12 +159,12 @@ static func error_text(e: String) -> String:
 			return w("没有这个激活码，请检查输入。", "There is no such code. Please check it.")
 		"revoked":
 			return w("这个激活码已经停用。", "This code has been withdrawn.")
-		"expired":
-			return w("试玩已经在 %s 结束了。谢谢！" % EXPIRES, "The playtest ended on %s. Thank you!" % EXPIRES)
+		"expired", "closed":
+			return w("公测已结束，谢谢！", "The public test is over. Thank you!")
 		"invalid":
 			return w("激活码格式不对，应该是 ZP-XXXX-XXXX。", "That isn't a code: it looks like ZP-XXXX-XXXX.")
 		"offline":
-			return w("连不上服务器，请检查网络后再试。", "Can't reach the server. Check the connection and try again.")
+			return w("连不上服务器。公测版需要联网，请检查网络后再试。", "Can't reach the server. The public test needs the internet: check the connection and try again.")
 	return w("出了点问题（%s），请稍后再试。" % e, "Something went wrong (%s). Please try again." % e)
 
 
@@ -147,12 +177,25 @@ static func watch(g) -> void:
 	if g.state != "play" or g.menu_open or Career.data.is_empty():
 		return
 	var t := float(Career.data.get("time", 0.0))
-	var reached: bool = Mainline.chapter() == "berth88"
+	var reached := main_line_done()
 	if t < LIMIT_S and not reached:
 		return
 	g.set_meta("demo_end", true)
 	var card = preload("res://scripts/demo_end.gd").new()
 	g.add_child(card)
+
+
+# the main line as far as the pack's hulks carry it: every chapter before the tug yard done (or the
+# 88 m berth's reached, for a pack that someday holds longer hulks)
+static func main_line_done() -> bool:
+	if Mainline.chapter() == "berth88":
+		return true
+	for id in Mainline.CHAPTERS:
+		if id == "tug":
+			return true
+		if not Mainline.done(id):
+			return false
+	return true
 
 
 # the record folder zipped (every session, the answers with them) for the upload

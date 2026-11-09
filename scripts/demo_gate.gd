@@ -2,12 +2,15 @@ extends Control
 # The playtest build's gate over the title (scripts/demo.gd): past the end date it says so; a machine
 # already activated is checked online (offline, it plays on if it checked in lately); otherwise it asks
 # for a code. It also says what the recorder does. Nothing behind it can be reached until it lets go.
+# 公测版 (2026-11-08 Q1 B, Gt.CODES off): no code field — the machine registers itself online (/hello)
+# and goes straight in; offline it plays on for 3 days after the last check-in; the server's switch
+# ("closed") holds everyone here with its words. Feedback left unsent last time goes up once it lets go.
 
 const Gt = preload("res://scripts/demo.gd")
 
 var font: Font
 var font_b: Font
-var state := "checking"       # checking | code | busy | expired | done | refused
+var state := "checking"       # checking | code | busy | expired | done | refused | closed | offline
 var msg := ""
 var box: VBoxContainer
 var code_in: LineEdit
@@ -49,7 +52,7 @@ func _ready() -> void:
 	row.add_theme_constant_override("separation", 16)
 	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.add_child(row)
-	go_b = _button(Gt.w("激活", "ACTIVATE"), _activate)
+	go_b = _button(Gt.w("激活", "ACTIVATE") if Gt.CODES else Gt.w("重试", "RETRY"), _activate if Gt.CODES else _hello)
 	row.add_child(go_b)
 	quit_b = _button(Gt.w("退出", "QUIT"), func(): get_tree().quit())
 	row.add_child(quit_b)
@@ -59,6 +62,8 @@ func _ready() -> void:
 		_show("expired", Gt.error_text("expired"))
 	elif Gt.finished():
 		_show("done", Gt.w("这台电脑的试玩已经结束，谢谢你！", "This computer's playtest is over. Thank you!"))
+	elif not Gt.CODES:
+		_hello()
 	elif Gt.code() != "":
 		_check()
 	else:
@@ -84,8 +89,8 @@ func _layout() -> void:
 func _show(st: String, m: String) -> void:
 	state = st
 	msg = m
-	code_in.visible = st == "code" or st == "busy" or st == "refused"
-	go_b.visible = code_in.visible
+	code_in.visible = Gt.CODES and (st == "code" or st == "busy" or st == "refused")
+	go_b.visible = code_in.visible or (not Gt.CODES and st in ["offline", "refused"])
 	go_b.disabled = st == "busy"
 	if code_in.visible:
 		code_in.grab_focus()
@@ -93,7 +98,7 @@ func _show(st: String, m: String) -> void:
 
 
 func _post(path: String, body: Dictionary) -> Dictionary:
-	var err := http.request(Gt.URL + path, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(body))
+	var err := http.request(Gt.base_url + path, ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify(body))
 	if err != OK:
 		return {"ok": false, "error": "offline"}
 	var r: Array = await http.request_completed
@@ -120,6 +125,24 @@ func _check() -> void:
 		_show("refused", Gt.error_text(str(d.get("error", ""))))
 
 
+# 公测版: every start checks in; the first one registers this machine
+func _hello() -> void:
+	_show("checking", Gt.w("正在联网登记……", "Checking in…"))
+	var d := await _post("/hello", {"machine": Gt.machine(), "version": Gt.VERSION})
+	var e := str(d.get("error", ""))
+	if d.get("ok", false):
+		Gt.touched()
+		_pass()
+	elif e == "offline" and Gt.within_grace():
+		_pass()
+	elif e == "closed":
+		_show("closed", str(d.get("message", "")) if str(d.get("message", "")) != "" else Gt.error_text("closed"))
+	elif e == "offline":
+		_show("offline", Gt.error_text("offline"))
+	else:
+		_show("refused", Gt.error_text(e))
+
+
 func _activate() -> void:
 	if state == "busy":
 		return
@@ -137,6 +160,8 @@ func _activate() -> void:
 
 func _pass() -> void:
 	Gt.mark(get_tree())
+	if not Gt.CODES:
+		preload("res://scripts/demo_feedback.gd").flush(get_tree())
 	queue_free()
 
 
@@ -144,6 +169,9 @@ func _input(ev: InputEvent) -> void:
 	# everything behind waits, but the code field still types
 	if ev is InputEventKey and not code_in.has_focus():
 		get_viewport().set_input_as_handled()
+		# Enter tries again (offline, refused): the page's one key
+		if ev.pressed and not ev.echo and ev.keycode in [KEY_ENTER, KEY_KP_ENTER] and go_b.visible and not go_b.disabled:
+			go_b.pressed.emit()
 
 
 func _draw() -> void:
@@ -151,12 +179,14 @@ func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, s), Color(0.02, 0.022, 0.026, 1.0))
 	var cx := s.x * 0.5
 	var y := s.y * 0.5 - 210.0
-	_t(Gt.w("零压拆船厂 · 试玩版", "ZERO PRESSURE · PLAYTEST"), Vector2(cx, y), 34, Color(1, 1, 1, 0.95), font_b)
+	_t(Gt.w("零压拆船厂 · 公测版", "ZERO PRESSURE · PUBLIC TEST"), Vector2(cx, y), 34, Color(1, 1, 1, 0.95), font_b)
 	y += 44.0
-	_t(Gt.w("试玩到 %s 为止 · 第一小时", "UNTIL %s · THE FIRST HOUR") % Gt.EXPIRES, Vector2(cx, y), 15, Color(1, 1, 1, 0.5), font)
+	_t(Gt.w("第一小时 · 需要联网 · %s", "THE FIRST HOUR · ONLINE · %s") % Gt.VERSION, Vector2(cx, y), 15, Color(1, 1, 1, 0.5), font)
 	y += 46.0
 	var lines: Array = []
-	if state == "code" or state == "busy" or state == "refused":
+	if not Gt.CODES:
+		lines.append(Gt.w("有问题随时按 Esc，在菜单里点“反馈”告诉我们。", "Anything wrong? Press Esc and pick Feedback at any time."))
+	elif state == "code" or state == "busy" or state == "refused":
 		lines = [Gt.w("请输入你拿到的激活码。一个码只能在一台电脑上用。", "Enter the code you were given. A code works on one computer only.")]
 	lines.append(Gt.w("这个试玩版会在你自己的电脑上记录你卡住、出事故的地方并截图；", "This build records, on your own computer, where you get stuck or have accidents, with screenshots;"))
 	lines.append(Gt.w("结束时会问你要不要上传，不同意就只留在本机。设置里可以关掉记录。", "at the end it asks whether to upload them; say no and they stay here. The settings can turn it off."))
@@ -164,7 +194,10 @@ func _draw() -> void:
 		_t(str(l), Vector2(cx, y), 15, Color(1, 1, 1, 0.72), font)
 		y += 24.0
 	if msg != "":
-		var col := Color(1.0, 0.55, 0.35, 0.95) if state in ["refused", "expired"] else Color(1, 1, 1, 0.85)
+		var col := Color(1.0, 0.55, 0.35, 0.95) if state in ["refused", "expired", "offline"] else Color(1, 1, 1, 0.85)
+		if state == "closed":
+			_t(msg, Vector2(cx, s.y * 0.5 + 10.0), 28, Color(1, 1, 1, 0.95), font_b)
+			return
 		_t(msg, Vector2(cx, s.y * 0.5 + 10.0), 17, col, font_b)
 
 

@@ -91,17 +91,13 @@ func _run() -> void:
 	for cls in ["energy", "cryo", "fluid", "precise", "load", "isolate", "atmos", "engine", "pump", "power"]:
 		Repair.ships_with(cls)
 	Career.data = saved
-	# the code goes on the window's title bar and nowhere in the picture
-	var cf := ProjectSettings.globalize_path(Demo.CFG)
-	var keep := FileAccess.get_file_as_bytes(cf) if FileAccess.file_exists(cf) else PackedByteArray()
-	Demo.remember("ZP-TEST-0000")
+	# 公测版: the version on the window's title bar (no code any more), and in the title's corner
 	Demo.mark(self)
-	check(root.title.ends_with("ZP-TEST-0000"), "the title bar reads: %s" % root.title)
-	if keep.size() > 0:
-		var f := FileAccess.open(cf, FileAccess.WRITE)
-		f.store_buffer(keep)
-	else:
-		DirAccess.remove_absolute(cf)
+	check(root.title.ends_with(Demo.VERSION) and (root.title.contains("公测版") or root.title.contains("PUBLIC")),"the title bar reads: %s" % root.title)
+	var vl := Demo.version_label()
+	check(vl.text.contains(Demo.VERSION), "the title's corner reads: %s" % vl.text)
+	vl.free()
+	check(not Demo.CODES and not Demo.expired(), "no codes, no end date")
 	Demo.forced = false
 	Ship.clear_cache()
 	print("DEMO PACK %s" % ("PASS" if fails == 0 else "FAIL"))

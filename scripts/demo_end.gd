@@ -114,7 +114,7 @@ func _save_answers() -> void:
 		f.store_string(JSON.stringify({
 			"liked": liked.text, "lost": lost.text, "score": int(score.value),
 			"played_s": float(Career.data.get("time", 0.0)), "chapter": Mainline.chapter(),
-			"code": Gt.code(), "lang": "zh" if Txt.zh else "en", "at": Time.get_datetime_string_from_system(),
+			"code": Gt.code(), "version": Gt.VERSION, "machine": Gt.machine(), "lang": "zh" if Txt.zh else "en", "at": Time.get_datetime_string_from_system(),
 		}, "  "))
 		f.close()
 	Gt.mark_finished()

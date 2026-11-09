@@ -1484,11 +1484,23 @@ func mark_salvage() -> void:
 
 
 func toggle_menu() -> void:
+	# 公测版: the frame as it is, before the menu covers it, for a feedback sent from the menu
+	if not menu_open and Demo.on():
+		preload("res://scripts/demo_feedback.gd").grab(get_viewport())
 	menu_open = not menu_open
 	get_tree().paused = menu_open
 	paused_sim = menu_open
 	hud.menu_changed()
 	sfx.play("menu")
+
+
+# 公测版 (2026-11-08 Q4 A): the feedback page over the pause menu
+func open_feedback() -> Node:
+	if has_meta("feedback_open"):
+		return null
+	var p = preload("res://scripts/demo_feedback.gd").new(self)
+	add_child(p)
+	return p
 
 
 # one of the berth's computers: its terminal page over the berth, play stopped

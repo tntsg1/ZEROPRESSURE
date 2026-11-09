@@ -1,10 +1,11 @@
 extends SceneTree
-# The playtest build (scripts/demo.gd, demo_gate.gd, demo_end.gd) against the live server:
-# its own saves and settings, the recorder on by default, the bench hidden, a code that activates
-# this machine and is checked again on the next start, a refused code, the end card after the hour
-# with its three answers kept beside the record, and the record zipped and uploaded.
-# Needs a fresh code: godot --headless --path . -s tests/demo_check.gd -- ZP-XXXX-XXXX
-# (the code ends up bound to this computer)
+# The public test build (scripts/demo.gd, demo_gate.gd, demo_end.gd; 公测版 2026-11-08) against the live
+# server: its own saves and settings, the recorder on by default, the bench hidden, no end date, the
+# machine registered on the first start and checked in on the next, offline still in within 3 days of
+# the last check-in and held out after, the end card after the hour with its three answers kept beside
+# the record, and the record zipped and uploaded by this machine.
+#   godot --headless --path . -s tests/demo_check.gd
+# (this computer is registered on the server: drop it after with node tools/codes.mjs drop-machine <id>)
 
 const Gt = preload("res://scripts/demo.gd")
 var fails := 0
@@ -31,21 +32,18 @@ func _gate() -> Node:
 	return gate
 
 
-func _wait_gate(gate, n := 900) -> String:
-	for i in n:
+func _wait_gate(gate, secs := 20.0) -> String:
+	var until := Time.get_ticks_msec() + int(secs * 1000.0)
+	while Time.get_ticks_msec() < until:
 		await process_frame
 		if not is_instance_valid(gate):
 			return "passed"
-		if gate.state in ["code", "refused", "expired", "done"]:
+		if gate.state in ["code", "refused", "expired", "done", "offline", "closed"]:
 			return gate.state
 	return "timeout"
 
 
 func _run() -> void:
-	var code := ""
-	for a in OS.get_cmdline_user_args():
-		if a.begins_with("ZP-"):
-			code = a
 	Gt.forced = true
 	# a clean start for the build's own files
 	for f in [Gt.CFG, "user://playtest_save.json", "user://playtest_career.json", "user://playtest_settings.cfg"]:
@@ -55,24 +53,28 @@ func _run() -> void:
 	Txt.load_settings(false)
 	check(Txt.playtest, "the recorder is on by default")
 	check(not Gt.dev_allowed(), "the bench is hidden (no --dev)")
-	check(not Gt.expired(), "not past %s" % Gt.EXPIRES)
-	check(Gt.machine().length() == 32, "a machine id: %s" % Gt.machine().substr(0, 8))
-	# no code yet: the gate asks
+	check(not Gt.expired() and not Gt.CODES, "no end date, no codes")
+	check(Gt.machine().length() == 32, "a machine id: %s" % Gt.machine())
+	# the first start: it registers and goes straight in
 	var g1 := _gate()
-	check(await _wait_gate(g1) == "code", "first start: it asks for a code")
-	g1.code_in.text = "ZP-AAAA-AAAA"
-	g1._activate()
-	check(await _wait_gate(g1) == "refused" and str(g1.msg).length() > 0, "a made-up code is refused: %s" % g1.msg)
-	if code != "":
-		g1.code_in.text = code.to_lower().replace("-", "").substr(2)
-		g1._activate()
-		check(await _wait_gate(g1) == "passed", "the real code (typed loosely) lets it through")
-		check(Gt.code() == code, "the code is remembered")
-		var g2 := _gate()
-		check(await _wait_gate(g2) == "passed", "the next start checks it online and goes straight in")
-	else:
-		print("  (no code given: activation not tried)")
-		g1.queue_free()
+	check(not g1.code_in.visible, "no code field")
+	check(await _wait_gate(g1) == "passed", "first start: registered online, straight in")
+	check(Gt.within_grace(), "the check-in is remembered")
+	var g2 := _gate()
+	check(await _wait_gate(g2) == "passed", "the next start checks in and goes straight in")
+	# offline: in within three days of the last check-in, out after
+	Gt.base_url = "http://127.0.0.1:9"
+	var g3 := _gate()
+	check(await _wait_gate(g3) == "passed", "offline a day later: still in")
+	var cf := ConfigFile.new()
+	cf.load(Gt.CFG)
+	cf.set_value("gate", "last_ok", int(Time.get_unix_time_from_system()) - Gt.GRACE_S - 60)
+	cf.save(Gt.CFG)
+	var g4 := _gate()
+	check(await _wait_gate(g4) == "offline" and (g4.msg.contains("联网") or g4.msg.contains("internet")), "offline past three days: held out: %s" % g4.msg)
+	g4.queue_free()
+	Gt.base_url = Gt.URL
+	check(not Gt.main_line_done() or Career.data.is_empty(), "a fresh career hasn't run the main line out")
 	# the end of the first hour
 	Txt.test_zh = true
 	Txt.zh = true
@@ -102,15 +104,14 @@ func _run() -> void:
 		check(Gt.finished(), "this computer is marked done")
 		var bytes := Gt.zip_records()
 		check(bytes.size() > 100, "the record zips (%d bytes)" % bytes.size())
-		if code != "":
-			var http := HTTPRequest.new()
-			http.process_mode = Node.PROCESS_MODE_ALWAYS
-			root.add_child(http)
-			http.request_raw("%s/report?code=%s&machine=%s" % [Gt.URL, code, Gt.machine()], ["Content-Type: application/zip"], HTTPClient.METHOD_POST, bytes)
-			var r: Array = await http.request_completed
-			check(int(r[1]) == 200, "the record uploads (HTTP %d)" % int(r[1]))
-		var g3 := _gate()
-		check(await _wait_gate(g3) == "done", "after the end the gate says it is over")
+		var http := HTTPRequest.new()
+		http.process_mode = Node.PROCESS_MODE_ALWAYS
+		root.add_child(http)
+		http.request_raw("%s/report?machine=%s" % [Gt.URL, Gt.machine()], ["Content-Type: application/zip"], HTTPClient.METHOD_POST, bytes)
+		var r: Array = await http.request_completed
+		check(int(r[1]) == 200, "the record uploads by this machine (HTTP %d)" % int(r[1]))
+		var g5 := _gate()
+		check(await _wait_gate(g5) == "done", "after the end the gate says it is over")
 	paused = false
 	print("DEMO CHECK %s" % ("PASS" if fails == 0 else "FAIL"))
 	quit(1 if fails > 0 else 0)

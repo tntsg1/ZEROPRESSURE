@@ -567,7 +567,7 @@ func ending_key(k: int) -> void:
 
 func _input(ev: InputEvent) -> void:
 	# the settlement's second page (disposal_panel.gd) sits over the ending screen: its clicks are its own
-	if game == null or game.get("disposal_ui") != null:
+	if game == null or game.get("disposal_ui") != null or game.has_meta("feedback_open"):
 		return
 	if ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
 		if game.contract_open and card_t > 0.35:
@@ -2514,6 +2514,9 @@ func _menu_items() -> Array:
 	var items := [["resume", game.txt("m_resume")]]
 	if game.can_end_early():
 		items.append(["end", game.txt("m_end") if menu_confirm != 1 else game.txt("m_confirm")])
+	# 公测版 (2026-11-08 Q4 A): feedback at any time
+	if Demo.on():
+		items.append(["feedback", Ops.w("反馈", "FEEDBACK")])
 	return items + [
 		["settings", game.txt("m_settings")],
 		["title", Ops.w("返回", "BACK") if menu_confirm != 4 else game.txt("m_confirm")],
@@ -2554,6 +2557,8 @@ func _menu_click() -> void:
 				menu_confirm = 1
 		"settings":
 			game.settings_panel.open()
+		"feedback":
+			game.open_feedback()
 		"title":
 			if menu_confirm == 4:
 				game.to_title()
