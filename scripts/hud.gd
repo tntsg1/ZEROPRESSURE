@@ -339,7 +339,7 @@ func _salvage_power(s: Vector2) -> void:
 	if now - _sp_t > 1.0:
 		_sp_t = now
 		_sp_text = ""
-		if Grid.applies(game):
+		if Grid.applies(game) and (not game.career() or Mainline.power_open()):
 			var gn: Dictionary = Grid.groups_now(game).get("salvage", {})
 			var want := float(gn.get("want", 0.0))
 			var got := float(gn.get("own", 0.0)) + float(gn.get("shore", 0.0))

@@ -76,6 +76,12 @@ func _run() -> void:
 	var wk2 = await _walk_at(5, inside, "process")
 	await _frames(40)
 	check(wk2.step >= 7 or wk2.done, "already back in the berth: the ride and the way home go by (step %d)" % (wk2.step + 1))
+	# Resuming at the return ride must not first add a detour to the berth's stop.
+	check(wk2._legs_to(5).is_empty(), "resuming the ride home inside the berth needs no detour to the stop")
+	g.drone.global_position = salv
+	check(wk2._legs_to(5).is_empty(), "resuming at the salvage stop needs no extra trip to that same stop")
+	g.drone.global_position = Tram.station_at("process")
+	check(not wk2._legs_to(5).is_empty(), "a return ride from the processing district still needs a route")
 	# a ride somewhere the drone is not still waits for it
 	var wk3 = await _walk_at(0, inside, "ring")
 	await _frames(40)

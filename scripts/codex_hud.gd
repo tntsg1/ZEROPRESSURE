@@ -157,7 +157,21 @@ const EDGE := 22.0
 
 
 func _anchor() -> Vector2:
-	return Vector2(c.size.x - EDGE - W, TOP)
+	# 128 号 第 7 段 (user 2026-11-09): a guide card up on the right (the first ship's coach,
+	# the warehouse guide) keeps its place; the first-meeting card waits below it
+	var top := TOP
+	var x := c.size.x - EDGE - W
+	if game != null:
+		for o in [game.coach, game.store_guide]:
+			if o == null or not is_instance_valid(o) or not ("card" in o):
+				continue
+			var pc = o.card
+			if pc == null or not is_instance_valid(pc) or not pc.is_visible_in_tree():
+				continue
+			var r: Rect2 = pc.get_global_rect()
+			if r.end.x > x and r.position.x < x + W:
+				top = maxf(top, r.end.y + 12.0)
+	return Vector2(x, top)
 
 
 func _close_rect() -> Rect2:
@@ -199,7 +213,12 @@ func _para(text: String, pos: Vector2, width: float, size_px: int, col: Color, f
 
 # the width of the "what / danger / do" labels in front of the sentences
 static func label_w() -> float:
-	return 44.0 if Txt.zh else 62.0
+	# 2026-11-09: measured, so the owner's four-character labels ("基本介绍"…) never run into the text
+	var f: Font = Fonts.get_font("Regular")
+	var w := 0.0
+	for part in ["a", "b", "c"]:
+		w = maxf(w, f.get_string_size(Txt.t("cxu_" + part), HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x)
+	return maxf(44.0 if Txt.zh else 62.0, ceilf(w) + 12.0)
 
 
 var _heights := {}

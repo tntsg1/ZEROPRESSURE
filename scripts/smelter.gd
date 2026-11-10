@@ -1075,7 +1075,7 @@ func _draw_lance(ci, F: float, font: Font, zoom: float, txt: Callable) -> void:
 	var opening := clampf(dip * 12,0,1)
 	for side: float in [-1,1]:
 		ci.draw_line(Vector2(X - 1.57 + side * 0.04 + side * opening * 0.16,F + 3.36) * M,Vector2(X - 1.57 + side * 0.25 + side * opening * 0.16,F + 3.36) * M,Pal.ink(0.6),2)
-	var stage: String = {"idle":"待机","lower":"下降","dwell":"浸测","lift":"回升"}[lance_phase] if Txt.zh else lance_phase.to_upper()
+	var stage: String = {"idle":"等待操作","lower":"正在下降","dwell":"正在测温","lift":"正在回升"}[lance_phase] if Txt.zh else lance_phase.to_upper()
 	_label(ci,font,Vector2(X - 2.5,F + 1.9) * M,txt.call("fu_lance") + " · " + stage,zoom,true)
 
 
@@ -1134,9 +1134,9 @@ func _panel(ci, F: float, font: Font, font_b: Font, txt: Callable) -> void:
 	if manual:
 		# A cold machine has no inherited measurement or assay. Composition
 		# from the old decorative cycle is not a test result for this batch.
-		lines[4] = ("投料 %.2f t · 已冷却出料 %.2f t" if Txt.zh else "Charged %.2f t · Cooled output %.2f t") % [input_t,manual_shipped_t]
-		lines[5] = ("测温：尚未取样" if Txt.zh else "Temperature sample: not yet taken") if sample_count == 0 else (("测温 %d °C · %d s 前" if Txt.zh else "Sample %d C · %d s ago") % [int(round(tc_T)),int(tc_age)])
-		lines[6] = ("手动控制 · 可用供电 %.1f MW" if Txt.zh else "Manual control · Available supply %.1f MW") % manual_supply_mw
+		lines[4] = ("已投入原料 %.2f 吨 · 已冷却出料 %.2f 吨" if Txt.zh else "Charged %.2f t · Cooled output %.2f t") % [input_t,manual_shipped_t]
+		lines[5] = ("测温记录：尚未进行取样" if Txt.zh else "Temperature sample: not yet taken") if sample_count == 0 else (("最近测温：%d °C · %d 秒前" if Txt.zh else "Sample %d C · %d s ago") % [int(round(tc_T)),int(tc_age)])
+		lines[6] = ("手动控制模式 · 当前可用电力 %.1f 兆瓦" if Txt.zh else "Manual control · Available supply %.1f MW") % manual_supply_mw
 	if yard > 0.5:
 		lines[2] += txt.call("fu_yard") % yard
 	for i in lines.size():

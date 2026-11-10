@@ -142,7 +142,7 @@ func _run() -> void:
 	check(await _wait_card(), "the setting on again: the card comes")
 	await _key(KEY_ESCAPE)
 	await _frames(10)
-	# ---- 6 the power card's "带我去" opens the power district's console
+	# ---- 6 the power card has no "带我去" (2026-11-09, owner): Enter only closes it
 	GC.test_due.erase("power_short")
 	Career.data.guide_seen.erase("power_short")
 	GC.test_due["power_short"] = {"n": 19, "who": "", "groups": []}
@@ -150,9 +150,7 @@ func _run() -> void:
 	check(await _wait_card(), "power again (seen cleared): the card comes")
 	await _key(KEY_ENTER)
 	await _frames(20)
-	check(g.console_ui != null and g.console_ui.get("zone") == "power", "带我去 opens the power district's console")
-	await _key(KEY_ESCAPE)
-	await _frames(20)
+	check(not GC.showing() and (g.console_ui == null or g.console_ui.get("zone") != "power"), "Enter closes the card and goes nowhere")
 	GC.test_due = {}
 	# ---- 7 a console the first time: the card comes with the page; the page stays after it
 	g.drone.global_position = PortStructure.console_spot("trade")
@@ -169,7 +167,7 @@ func _run() -> void:
 	var d = g.console_ui
 	check(d != null and d.get("trade_box") != null, "the trade console stays open after the card")
 	check(_pane_w(d) <= 730.0, "trade console ≤ 730 px (%.0f)" % _pane_w(d))
-	check(d.now_line.use and str(d.now_line.text).find("码头有人") >= 0, "top line: 现在用得上 the visitor (%s)" % d.now_line.text)
+	check(d.now_line.use and str(d.now_line.text).find("港口有人") >= 0, "top line: 现在用得上 the visitor (%s)" % d.now_line.text)
 	check(d.trade_key.is_visible_in_tree() and d.trade_key.get_meta("bfx_primary", false), "one orange key on Enter (%s)" % d.trade_key.text)
 	var five: Array = d.find_children("*", "Button", true, false).filter(func(b): return str(b.text).begins_with("小幅还价"))
 	check(five.is_empty(), "no row of five haggle keys")
@@ -188,7 +186,7 @@ func _run() -> void:
 	await _frames(40)
 	var hp = g.console_ui
 	var nw: Array = hp.now_of()
-	check(bool(nw[0]) and str(nw[1]).find("仓库有") >= 0, "orders top line: 现在用得上 (%s)" % str(nw[1]))
+	check(bool(nw[0]) and str(nw[1]).find("仓库里已经有了") >= 0, "orders top line: 现在用得上 (%s)" % str(nw[1]))
 	check(str(hp._cards()[0].id) == "OA" and hp.ord_sel == "OA", "the order that can go now is first and picked")
 	await _snap("panel_orders")
 	await _key(KEY_ENTER)
@@ -234,7 +232,7 @@ func _run() -> void:
 	var pz = g.console_ui
 	check(_pane_w(pz) <= 730.0, "gas console ≤ 730 px (%.0f)" % _pane_w(pz))
 	check(pz.get("call_box") == null and pz.find_children("*", "Button", true, false).filter(func(b): return str(b.text).begins_with("接下")).is_empty(), "no passing ship's order on the gas console")
-	check(pz.now_line.use and pz.next_key.get_meta("bfx_primary", false) and str(pz.now_line.text) == "分离一批", "the next step is the one orange key, the top line says it (%s)" % pz.now_line.text)
+	check(pz.now_line.use and pz.next_key.get_meta("bfx_primary", false) and str(pz.now_line.text) == "分离一批气体", "the next step is the one orange key, the top line says it (%s)" % pz.now_line.text)
 	await _snap("panel_gas")
 	await _key(KEY_ESCAPE)
 	await _frames(30)

@@ -162,12 +162,12 @@ static func capacity() -> float:
 static func set_over(id: String, on_: bool) -> Dictionary:
 	var g: Dictionary = d().gens.get(id, {})
 	if g.is_empty():
-		return {"ok": false, "reason": w("没有这台发电机", "NO SUCH SET")}
+		return {"ok": false, "reason": w("找不到这台发电机", "NO SUCH SET")}
 	if g.get("trip", false):
-		return {"ok": false, "reason": w("%s已过热停机，先用维护工具修好", "%s TRIPPED; MEND IT WITH THE WRENCH FIRST") % gen_name(id)}
+		return {"ok": false, "reason": w("%s 已经过热停机，需要先用维护工具完成修理。", "%s TRIPPED; MEND IT WITH THE WRENCH FIRST") % gen_name(id)}
 	g.over = on_
 	Career.save()
-	return {"ok": true, "note": (w("%s超载 +%d%%。热量满了就停机。", "%s OVERLOAD +%d%% · IT HEATS; FULL, IT TRIPS") if on_ else w("%s回到额定 · 慢慢散热", "%s BACK TO RATED · COOLING")) % ([gen_name(id), int(OVER_K * 100)] if on_ else [gen_name(id)])}
+	return {"ok": true, "note": (w("%s 当前超载 %d%%，热量达到上限后会自动停机。", "%s OVERLOAD +%d%% · IT HEATS; FULL, IT TRIPS") if on_ else w("%s 已恢复额定功率，正在散热。", "%s BACK TO RATED · COOLING")) % ([gen_name(id), int(OVER_K * 100)] if on_ else [gen_name(id)])}
 
 
 # box-local metres: where the wrench must be held for each set
@@ -220,11 +220,11 @@ static func _spent_slot(except := -1) -> int:
 
 static func can_order(s: String) -> Dictionary:
 	if not SIZES.has(s):
-		return {"ok": false, "reason": w("没有这种电池", "NO SUCH BLOCK")}
+		return {"ok": false, "reason": w("找不到这种电池", "NO SUCH BLOCK")}
 	if _target_slot() < 0:
-		return {"ok": false, "reason": w("电池泊位都占着：等一块用完、空壳运走再订", "BOTH SLOTS IN USE: ORDER ONCE A SHELL HAS GONE")}
+		return {"ok": false, "reason": w("所有电池泊位都已占用，请等待电池用完并运走空壳后再下单。", "BOTH SLOTS IN USE: ORDER ONCE A SHELL HAS GONE")}
 	if float(Career.data.get("money", 0.0)) < float(SIZES[s].price):
-		return {"ok": false, "reason": w("钱不够：要 $%s", "NOT ENOUGH MONEY: $%s") % _money(float(SIZES[s].price))}
+		return {"ok": false, "reason": w("现金不足，购买需要 $%s", "NOT ENOUGH MONEY: $%s") % _money(float(SIZES[s].price))}
 	return {"ok": true}
 
 
@@ -244,7 +244,7 @@ static func order(s: String, auto_ := false) -> Dictionary:
 	d().orders.append({"size": s, "t": eta, "eta0": eta, "slot": slot, "phase": "transit", "pt": 0.0, "auto": auto_})
 	d().auto_size = s
 	Career.save()
-	return {"ok": true, "note": w("已下单：%s电池 %.1f 兆瓦时 · $%s · 约 %d 秒后到港，吊到电池泊位 %s", "ORDERED: %s BLOCK %.1f MWh · $%s · IN ABOUT %d s, TO BERTH SLOT %s") % [size_name(s), float(z.mwh), _money(float(z.price)), int(ceil(eta)), "AB"[slot]]}
+	return {"ok": true, "note": w("电池已订购：%s 电池，容量 %.1f 兆瓦时，花费 $%s。预计 %d 秒后抵达港口，随后会吊装到 %s 号电池泊位。", "ORDERED: %s BLOCK %.1f MWh · $%s · IN ABOUT %d s, TO BERTH SLOT %s") % [size_name(s), float(z.mwh), _money(float(z.price)), int(ceil(eta)), "AB"[slot]]}
 
 
 static func _money(v: float) -> String:
@@ -499,7 +499,7 @@ static func _tick_orders(game, dt: float) -> void:
 					o.pt = 0.0
 					p.first_install = true
 					Career.save()
-					_say(game, w("电池已接入：%s %.1f 兆瓦时 · 泊位 %s · 总线可多用 %.0f 兆瓦", "BLOCK IN: %s %.1f MWh · SLOT %s · %.0f MW MORE ON THE BUS") % [size_name(str(o.size)), float(z.mwh), "AB"[int(o.slot)], float(z.mw)])
+					_say(game, w("电池已接入：%s，剩余电量 %.1f 兆瓦时，位于 %s 号泊位。现在可以为总线额外提供 %.0f 兆瓦的电力。", "BLOCK IN: %s %.1f MWh · SLOT %s · %.0f MW MORE ON THE BUS") % [size_name(str(o.size)), float(z.mwh), "AB"[int(o.slot)], float(z.mw)])
 			"leave":
 				o.pt = float(o.pt) + dt
 				if float(o.pt) >= LEAVE_S:
@@ -528,7 +528,7 @@ static func _drain(game, own: float, dt: float) -> void:
 			var share := need * float(SIZES[str(sl.size)].mw) / bmw
 			sl.left = maxf(0.0, float(sl.left) - share * dt / 3600.0)
 			if float(sl.left) <= 0.0001:
-				_say(game, w("电池 %s 用完了：空壳等送货飞船吊走", "SLOT %s SPENT: THE SHELL WAITS FOR A SHIP") % "AB"[p.slots.find(sl)])
+				_say(game, w("%s 电池的电量已经用完，空壳会在送货飞船抵达后运走。", "SLOT %s SPENT: THE SHELL WAITS FOR A SHIP") % "AB"[p.slots.find(sl)])
 	# each set's heat: rising while it runs over its rating, falling otherwise; full, it trips
 	var left_own := own
 	for id in gen_list():
@@ -549,7 +549,7 @@ static func _drain(game, own: float, dt: float) -> void:
 				Career.save()
 				# 132 号: the first time, the situation card says it (not this line as well)
 				if not load("res://scripts/guide_cards.gd").will_show("first_trip"):
-					_say(game, w("%s过热停机。拿维护工具（4）修一下才能重启。", "%s OVERHEATED AND TRIPPED: TAKE THE WRENCH (4) TO IT") % gen_name(id))
+					_say(game, w("%s 已经过热停机，需要使用维护工具（4）完成修理后才能重新启动。", "%s OVERHEATED AND TRIPPED: TAKE THE WRENCH (4) TO IT") % gen_name(id))
 		else:
 			g.heat = maxf(0.0, float(g.heat) - HEAT_DOWN * dt)
 
@@ -559,7 +559,7 @@ static func _auto(game, dt: float) -> void:
 	if bool(p.get("auto", false)) and pending().is_empty() and full_mwh() > 0.0 and left_mwh() < full_mwh() * LOW_AT:
 		var r := order(str(p.get("auto_size", "m")), true)
 		if r.ok:
-			_say(game, w("电快用完了，已自动再订一块：", "LOW: ANOTHER ORDERED: ") + str(r.note))
+			_say(game, w("电池电量即将耗尽，已自动订购一块新电池：", "LOW: ANOTHER ORDERED: ") + str(r.note))
 	# a spent shell and no ship coming: a pickup run
 	var spent := false
 	for sl in p.slots:
@@ -726,13 +726,13 @@ static func _withdraw(h2: float, o2: float) -> void:
 static func cryo_status() -> String:
 	var c: Dictionary = d().cryo
 	if str(c.phase) != "home":
-		return w("运送中：液氢 %.0f kg、液氧 %.0f kg（%.1f 兆瓦时）", "ON ITS WAY: %.0f kg LH2, %.0f kg LOX (%.1f MWh)") % [float(c.get("h2_kg", 0.0)), float(c.get("o2_kg", 0.0)), float(c.get("mwh", 0.0))]
+		return w("正在运送燃料：液氢 %.0f kg、液氧 %.0f kg，可提供 %.1f 兆瓦时电量。", "ON ITS WAY: %.0f kg LH2, %.0f kg LOX (%.1f MWh)") % [float(c.get("h2_kg", 0.0)), float(c.get("o2_kg", 0.0)), float(c.get("mwh", 0.0))]
 	var nr := next_run()
 	if float(nr[0]) <= 0.0:
 		if float(d().get("fc_fuel", 0.0)) >= FC_TANK - MIN_MWH:
-			return w("燃料电池储罐满了", "THE FUEL CELLS' TANK IS FULL")
-		return w("没有库存，不送：液氢 %.0f kg（拖船站拆下的液氢罐）· 液氧 %.0f kg（加工区气体线）", "NO STOCK, NO RUN: %.0f kg LH2 (TANKS FROM THE TUG STATION) · %.0f kg LOX (THE GAS LINE)") % [stock_h2(), stock_o2()]
-	return w("库存：液氢 %.0f kg · 液氧 %.0f kg · 储罐低于一半时自动送一趟", "STOCK: %.0f kg LH2 · %.0f kg LOX · A RUN GOES BELOW HALF") % [stock_h2(), stock_o2()]
+			return w("燃料电池的储罐已经装满，暂时无法继续补充燃料。", "THE FUEL CELLS' TANK IS FULL")
+		return w("库存不足，无法运送燃料。当前液氢库存 %.0f kg（来自拖船站拆下的液氢罐），液氧库存 %.0f kg（来自加工区气体生产线）。", "NO STOCK, NO RUN: %.0f kg LH2 (TANKS FROM THE TUG STATION) · %.0f kg LOX (THE GAS LINE)") % [stock_h2(), stock_o2()]
+	return w("当前库存：液氢 %.0f kg、液氧 %.0f kg。燃料储罐低于一半时，会自动安排一次燃料运输。", "STOCK: %.0f kg LH2 · %.0f kg LOX · A RUN GOES BELOW HALF") % [stock_h2(), stock_o2()]
 
 
 static func start_cryo() -> bool:
@@ -795,7 +795,7 @@ static func _tick_cryo(game, dt: float) -> void:
 		else:
 			c.phase = C_STEPS[i + 1][0]
 			if c.phase == "d_close":
-				_say(game, w("液氢液氧已灌进燃料电池：第二组电堆 +%.0f 兆瓦", "LH2 AND LOX IN: THE SECOND STACK +%.0f MW") % FC2_MW)
+				_say(game, w("液氢和液氧已补充到燃料电池储罐，第二组电堆现已启动，额外提供 %.0f 兆瓦电力。", "LH2 AND LOX IN: THE SECOND STACK +%.0f MW") % FC2_MW)
 
 
 # ---------------------------------------------------------------- the step
@@ -825,7 +825,7 @@ static func tick(game, dt: float) -> void:
 			fixing = dr.global_position.distance_to(at) < REPAIR_M * PortStructure.M() and int(tl.tool) == 4 and aimed and (bool(tl.get("lmb")) or wrench_hold)
 			if fixing:
 				if repair_step(id, dt):
-					_say(game, w("%s修好了，已重启", "%s MENDED AND RUNNING") % gen_name(id))
+					_say(game, w("%s 已完成修理，并且重新启动。", "%s MENDED AND RUNNING") % gen_name(id))
 
 
 static var wrench_hold := false

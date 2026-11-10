@@ -60,7 +60,7 @@ func run() -> void:
 		await mouse_click(reserve)
 		check((g.console_ui.message.text.contains("炉料不足") or g.console_ui.message.text.contains("没有钢锭")) and not Career.production_busy(),"real viewport mouse press/release hits the native reserve control and reports actual unavailable stock (%s)" % g.console_ui.message.text)
 		await capture("g5_heat_ui_%dx%d" % [size.x,size.y])
-		var close := find_button("关闭 [Esc]")
+		var close := find_button("关闭面板 [Esc]")
 		await mouse_click(close)
 		check(g.console_ui == null,"native scroll container exposes a clickable close control at "+str(size))
 	# Actual invalid-state restore must show useful account context and let
@@ -74,7 +74,7 @@ func run() -> void:
 	g.open_heat()
 	await frames(20)
 	check(g.console_ui.readout.text.contains("CORRUPT-UI-FIXTURE") and g.console_ui.readout.text.contains("1.50"),"fault panel keeps the heat identity and owed bill visible beside the error")
-	await mouse_click(find_button("关闭 [Esc]"))
+	await mouse_click(find_button("关闭面板 [Esc]"))
 	check(g.console_ui == null and JSON.stringify(Career.data.industrial_heat) == original,"fault panel can be closed by an actual mouse event without erasing its invalid source record")
 	await release()
 	var drain := Time.get_ticks_msec()+250

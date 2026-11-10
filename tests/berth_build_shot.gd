@@ -30,6 +30,9 @@ func _initialize() -> void:
 		for ext in ["", ".bak", ".tmp", ".old", ".done", ".bak.done"]:
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(f + ext))
 	Game.cine_in_tests = true
+	# 65 号/G2: the 88 m berth is a facility repair the crew builds over time (Works.order_repair takes the
+	# upgrade back until the works end); this test is about the on-site build after it, so done at once
+	Works.BUILD_TIME = false
 	root.add_child(preload("res://tests/test_window.gd").new())
 	_run.call_deferred()
 

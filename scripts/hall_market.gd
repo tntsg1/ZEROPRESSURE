@@ -124,10 +124,10 @@ static func net(price: float) -> float:
 static func vs_avg_text(kind: String) -> String:
 	var d := roundi((drift(kind) - 1.0) * 100.0)
 	if d >= 1:
-		return w("现在比平均高 %d%%", "%d%% ABOVE AVERAGE NOW") % d
+		return w("当前价格比平均价格高 %d%%", "%d%% ABOVE AVERAGE NOW") % d
 	if d <= -1:
-		return w("现在比平均低 %d%%", "%d%% BELOW AVERAGE NOW") % -d
-	return w("现在和平均差不多", "ABOUT AVERAGE NOW")
+		return w("当前价格比平均价格低 %d%%", "%d%% BELOW AVERAGE NOW") % -d
+	return w("当前价格接近平均价格", "ABOUT AVERAGE NOW")
 
 
 # s a listing at `price` takes to sell against a market of `mkt`: the nearer, the sooner
@@ -142,10 +142,10 @@ static func fill_secs(price: float, mkt: float) -> float:
 
 static func eta_text(secs: float) -> String:
 	if secs < 60.0:
-		return w("约 %d 秒成交", "SELLS IN ~%d s") % maxi(5, int(round(secs / 5.0)) * 5)
+		return w("预计 %d 秒左右成交", "SELLS IN ~%d s") % maxi(5, int(round(secs / 5.0)) * 5)
 	if secs < 3600.0:
-		return w("约 %d 分钟成交", "SELLS IN ~%d MIN") % maxi(1, int(round(secs / 60.0)))
-	return w("很难卖出去", "UNLIKELY TO SELL")
+		return w("预计 %d 分钟左右成交", "SELLS IN ~%d MIN") % maxi(1, int(round(secs / 60.0)))
+	return w("当前价格下很难成交", "UNLIKELY TO SELL")
 
 
 # ---------------------------------------------------------------- the warehouse: taking and giving back
@@ -241,7 +241,7 @@ static func list(id: String, price := -1.0) -> Dictionary:
 	var result := _list_unit(id, price)
 	if not result.ok or not Career.save():
 		Career.data = before
-		return result if not result.ok else {"ok": false, "reason": w("保存失败", "SAVE FAILED")}
+		return result if not result.ok else {"ok": false, "reason": w("保存失败，请重新尝试", "SAVE FAILED")}
 	return result
 
 
@@ -261,7 +261,7 @@ static func list_raw_bundles(ids: Array) -> Dictionary:
 		var unit: Dictionary = by_id.get(id, {})
 		if unit.is_empty():
 			Career.data = before
-			return {"ok": false, "reason": w("这件东西现在不能挂单", "THIS CANNOT BE LISTED NOW")}
+			return {"ok": false, "reason": w("这件物品目前无法挂单出售", "THIS CANNOT BE LISTED NOW")}
 		by_id.erase(id)
 		var result := _list_unit(str(id), -1.0, unit)
 		if not result.ok:
@@ -271,7 +271,7 @@ static func list_raw_bundles(ids: Array) -> Dictionary:
 		tonnes += float(result.tonnes)
 	if not Career.save():
 		Career.data = before
-		return {"ok": false, "reason": w("保存失败", "SAVE FAILED")}
+		return {"ok": false, "reason": w("保存失败，请重新尝试", "SAVE FAILED")}
 	return {"ok": true, "net": total, "tonnes": tonnes}
 
 
@@ -295,7 +295,7 @@ static func _list_unit(id: String, price: float, known_raw: Dictionary = {}) -> 
 		if not u.is_empty():
 			pl = _take(u)
 	if u.is_empty() or pl.is_empty() or float(u.get("market", 0.0)) <= 0.0:
-		return {"ok": false, "reason": w("这件东西现在不能挂单", "THIS CANNOT BE LISTED NOW")}
+		return {"ok": false, "reason": w("这件物品目前无法挂单出售", "THIS CANNOT BE LISTED NOW")}
 	var mkt := market_now(u)
 	if price < 0.0:
 		price = mkt
@@ -331,10 +331,10 @@ static func cancel(lid: String) -> Dictionary:
 			_give(l.pl)
 			if not Career.save():
 				Career.data = before
-				return {"ok": false, "reason": w("保存失败", "SAVE FAILED")}
+				return {"ok": false, "reason": w("保存失败，请重新尝试", "SAVE FAILED")}
 			return {"ok": true, "name": str(l.name)}
 	Career.data = before
-	return {"ok": false, "reason": w("没有这张挂单", "NO SUCH LISTING")}
+	return {"ok": false, "reason": w("找不到这笔挂单", "NO SUCH LISTING")}
 
 
 static func _fill(l: Dictionary) -> void:
@@ -347,8 +347,8 @@ static func _fill(l: Dictionary) -> void:
 	if sold.size() > 30:
 		sold = sold.slice(sold.size() - 30)
 	data().sold = sold
-	events.append({"kind": "sold", "text": w("交易行成交：%s 卖了 %s，扣 5%% 手续费，到账 %s", "SOLD ON THE EXCHANGE: %s FOR %s, LESS 5%%, %s PAID") % [str(l.name), Pal.money(float(l.price)), Pal.money(cash)]})
-	FreightWorks.sell(str(l.cat), 1, w("交易行成交", "SOLD ON THE EXCHANGE"))
+	events.append({"kind": "sold", "text": w("交易行成交：%s 已出售 %s，扣除 5%% 手续费后，实际到账 %s", "SOLD ON THE EXCHANGE: %s FOR %s, LESS 5%%, %s PAID") % [str(l.name), Pal.money(float(l.price)), Pal.money(cash)]})
+	FreightWorks.sell(str(l.cat), 1, w("交易行成交成功", "SOLD ON THE EXCHANGE"))
 
 
 # ---------------------------------------------------------------- 买: other companies' goods
@@ -389,7 +389,7 @@ static func offers() -> Array:
 	for i in KINDS.size():
 		var nk := str(KINDS[i])
 		out.append({"kind": nk, "name": RepairBill.kind_name(nk), "each": buy_each(nk), "unit": w("台", "PC"), "seller": str(sellers[i % sellers.size()]), "cat": "equip"})
-	out.append({"kind": STEEL, "name": w("修缮钢材", "REPAIR STEEL"), "each": buy_each(STEEL), "unit": "t", "seller": str(sellers[2]), "cat": "steel", "step": 5.0})
+	out.append({"kind": STEEL, "name": w("修缮所需钢材", "REPAIR STEEL"), "each": buy_each(STEEL), "unit": "t", "seller": str(sellers[2]), "cat": "steel", "step": 5.0})
 	return out
 
 
@@ -411,13 +411,13 @@ static func buy(kind: String, n: float) -> Dictionary:
 	var each := buy_each(kind)
 	var cash := snappedf(each * n, 1.0)
 	if float(Career.data.get("money", 0.0)) + 0.5 < cash:
-		return {"ok": false, "reason": w("现金不够：还差 %s", "NOT ENOUGH CASH: %s SHORT") % Pal.money(cash - float(Career.data.get("money", 0.0)))}
+		return {"ok": false, "reason": w("现金不足，还需要 %s", "NOT ENOUGH CASH: %s SHORT") % Pal.money(cash - float(Career.data.get("money", 0.0)))}
 	var before := Career.data
 	Career.data = before.duplicate(true)
 	var where := ""
 	if kind == STEEL:
 		Career.data.structure_t = float(Career.data.get("structure_t", 0.0)) + n
-		where = w("放进修缮钢材区", "INTO THE REPAIR STEEL")
+		where = w("存入修缮钢材区", "INTO THE REPAIR STEEL")
 	else:
 		var inbox_n := 0
 		for i in int(n):
@@ -428,12 +428,12 @@ static func buy(kind: String, n: float) -> Dictionary:
 				ib.append(it)
 				Career.data.inbox = ib
 				inbox_n += 1
-		where = w("放进仓库", "INTO THE STORES") if inbox_n == 0 else w("仓库放不下，%d 件在待入库", "NO ROOM: %d WAITING TO BE STORED") % inbox_n
+		where = w("存入仓库", "INTO THE STORES") if inbox_n == 0 else w("仓库空间不足，剩余 %d 件物品暂存在待入库区", "NO ROOM: %d WAITING TO BE STORED") % inbox_n
 	_pay(cash, kind, n)
 	if not Career.save():
 		Career.data = before
-		return {"ok": false, "reason": w("保存失败", "SAVE FAILED")}
-	var name := w("修缮钢材 %.0f t", "%.0f t REPAIR STEEL") % n if kind == STEEL else "%s × %d" % [RepairBill.kind_name(kind), int(n)]
+		return {"ok": false, "reason": w("保存失败，请重新尝试", "SAVE FAILED")}
+	var name := w("修缮钢材：%.0f 吨", "%.0f t REPAIR STEEL") % n if kind == STEEL else "%s × %d" % [RepairBill.kind_name(kind), int(n)]
 	return {"ok": true, "cash": cash, "name": name, "where": where}
 
 
@@ -481,21 +481,21 @@ static func level(pts := -1) -> int:
 
 
 static func level_name(lv: int) -> String:
-	return [w("新客户", "NEW"), w("熟客", "KNOWN"), w("可靠", "RELIABLE"), w("优选", "PREFERRED"), w("金牌", "GOLD")][clampi(lv - 1, 0, 4)]
+	return [w("新客户", "NEW"), w("老客户", "KNOWN"), w("信誉良好", "RELIABLE"), w("优质客户", "PREFERRED"), w("金牌客户", "GOLD")][clampi(lv - 1, 0, 4)]
 
 
 static func level_text(lv := -1) -> String:
 	if lv < 0:
 		lv = level()
-	return w("信誉 %d 级 · %s", "REPUTATION %d · %s") % [lv, level_name(lv)]
+	return w("信誉等级：%d 级 · %s", "REPUTATION %d · %s") % [lv, level_name(lv)]
 
 
 # points to the next level ("" at the top)
 static func next_level_text() -> String:
 	var lv := level()
 	if lv >= REP_AT.size():
-		return w("已是最高", "AT THE TOP")
-	return w("再完成 %d 张升 %d 级", "%d MORE ORDERS TO LEVEL %d") % [int(REP_AT[lv]) - rep(), lv + 1]
+		return w("已经达到最高信誉等级", "AT THE TOP")
+	return w("再完成 %d 张订单，就能升到 %d 级", "%d MORE ORDERS TO LEVEL %d") % [int(REP_AT[lv]) - rep(), lv + 1]
 
 
 # an order pays its kind's average market price (no drift) times this, by the reputation level it
@@ -509,14 +509,14 @@ static func short_ways(o: Dictionary) -> Array:
 	var kind := str(o.kind)
 	if str(o.cat) == "raw":
 		if kind == Exchange.INGOT:
-			return [w("钢锭不够：拆船时熔炉把碎料炼成钢锭，带回来就入库", "SHORT OF INGOTS: THE BERTH'S FURNACE CASTS THEM FROM THE SCRAP"), w("交易行不卖钢锭，只能自己攒", "THE EXCHANGE SELLS NONE: YOUR OWN ONLY")]
-		return [w("%s不够：订单卡上点“为这单排产”，或在仓库点钢锭“炼成钢坯”", "SHORT: PRESS 'PLAN FOR THIS ORDER' ON THE CARD, OR CAST INGOTS IN THE STORES") % StoreBook.raw_name(kind), w("交易行不卖，只能自己炼", "THE EXCHANGE SELLS NONE: YOUR OWN ONLY")]
+			return [w("钢锭数量不足。拆船时可以用熔炉把碎料炼成钢锭，带回来的钢锭会直接存入仓库。", "SHORT OF INGOTS: THE BERTH'S FURNACE CASTS THEM FROM THE SCRAP"), w("交易行没有钢锭出售，需要自己熔炼获得。", "THE EXCHANGE SELLS NONE: YOUR OWN ONLY")]
+		return [w("%s数量不足。可以在订单卡上点击「为这单排产」，也可以打开仓库，选择钢锭并点击「炼成钢坯」。", "SHORT: PRESS 'PLAN FOR THIS ORDER' ON THE CARD, OR CAST INGOTS IN THE STORES") % StoreBook.raw_name(kind), w("交易行没有出售这种材料，只能自己加工获得。", "THE EXCHANGE SELLS NONE: YOUR OWN ONLY")]
 	var lack := maxi(1, int(round(float(o.n) - have_of("equip", kind))))
 	var each := buy_each(kind)
 	var gain := float(o.price) / maxf(float(o.n), 1.0) - each
-	var l2 := w("或在“买”页买 %d 台（每台 %s，", "OR BUY %d ON THE BUY PAGE (%s EACH, ") % [lack, Pal.money(each)]
-	l2 += (w("交单每台还赚 %s）", "%s MORE EACH ON DELIVERY)") % Pal.money(gain)) if gain >= 0.0 else (w("买来交单每台亏 %s）", "%s LOST EACH)") % Pal.money(-gain))
-	return [w("去拆一艘带%s的船，拆下整台就自动入库", "SALVAGE A HULK WITH A %s: WHOLE ONES GO TO THE STORES") % RepairBill.kind_name(kind), l2]
+	var l2 := w("也可以在「购买」页面购买 %d 台（每台 %s，", "OR BUY %d ON THE BUY PAGE (%s EACH, ") % [lack, Pal.money(each)]
+	l2 += (w("完成订单后，每台还能赚取 %s）", "%s MORE EACH ON DELIVERY)") % Pal.money(gain)) if gain >= 0.0 else (w("购买后用于交付订单，每台会亏损 %s）", "%s LOST EACH)") % Pal.money(-gain))
+	return [w("找一艘装有%s的船进行拆解，只要完整拆下设备，就会自动存入仓库。", "SALVAGE A HULK WITH A %s: WHOLE ONES GO TO THE STORES") % RepairBill.kind_name(kind), l2]
 
 
 static func clients() -> Array:
@@ -603,13 +603,13 @@ static func take(oid: String) -> Dictionary:
 	var o := order(oid)
 	if o.is_empty() or str(o.state) != "open":
 		Career.data = before
-		return {"ok": false, "reason": w("这张订单已经不在了", "THIS ORDER IS GONE")}
+		return {"ok": false, "reason": w("这笔订单已经不存在了", "THIS ORDER IS GONE")}
 	o.state = "taken"
 	o.taken_at = clock()
 	_make_up(o)
 	if not Career.save():
 		Career.data = before
-		return {"ok": false, "reason": w("保存失败", "SAVE FAILED")}
+		return {"ok": false, "reason": w("保存失败，请重新尝试", "SAVE FAILED")}
 	return {"ok": true, "client": str(o.client), "got": float(o.got), "n": float(o.n), "state": str(o.state)}
 
 
@@ -620,7 +620,7 @@ static func drop(oid: String) -> Dictionary:
 	var o := order(oid)
 	if o.is_empty() or not str(o.state) in ["open", "taken"]:
 		Career.data = before
-		return {"ok": false, "reason": w("已经在送货了，不能退", "ALREADY ON ITS WAY")}
+		return {"ok": false, "reason": w("订单已经开始配送，无法取消", "ALREADY ON ITS WAY")}
 	for pl in o.held:
 		_give(pl, "order_back")
 	o.held = []
@@ -628,7 +628,7 @@ static func drop(oid: String) -> Dictionary:
 	o.state = "open" if clock() < float(o.due) else "gone"
 	if not Career.save():
 		Career.data = before
-		return {"ok": false, "reason": w("保存失败", "SAVE FAILED")}
+		return {"ok": false, "reason": w("保存失败，请重新尝试", "SAVE FAILED")}
 	return {"ok": true}
 
 
@@ -676,9 +676,9 @@ static func _settle(o: Dictionary) -> void:
 	data().rep = rep() + 1
 	data().done_n = int(data().get("done_n", 0)) + 1
 	var up := level() > lv0
-	var s := w("订单完成：%s 取走 %s，到账 %s · 信誉 +1", "ORDER DONE: %s TOOK %s, %s PAID · REPUTATION +1") % [str(o.client), want_name(o), Pal.money(cash)]
+	var s := w("订单完成：%s 已收取 %s，收到货款 %s，信誉 +1", "ORDER DONE: %s TOOK %s, %s PAID · REPUTATION +1") % [str(o.client), want_name(o), Pal.money(cash)]
 	if up:
-		s += w(" · 升到 %d 级：订单更大、给价更高", " · NOW LEVEL %d: BIGGER ORDERS, BETTER PRICES") % level()
+		s += w(" · 信誉提升至 %d 级，可以接到数量更多、收购价格更高的订单", " · NOW LEVEL %d: BIGGER ORDERS, BETTER PRICES") % level()
 	events.append({"kind": "done", "text": s})
 
 
@@ -705,21 +705,21 @@ static func mark_loaded(oid: String) -> void:
 static func order_state_text(o: Dictionary) -> String:
 	match str(o.state):
 		"open":
-			return w("可接单", "OPEN")
+			return w("可以接取订单", "OPEN")
 		"taken":
 			var lack := float(o.n) - float(o.got)
 			if str(o.cat) == "raw":
-				return w("备货中：还差 %.1f t，入库后自动补上", "MAKING UP: %.1f t SHORT, ADDED AS IT COMES IN") % lack
-			return w("备货中：还差 %d 台，入库后自动补上", "MAKING UP: %d SHORT, ADDED AS THEY COME IN") % int(round(lack))
+				return w("正在备货：还缺少 %.1f 吨，材料入库后会自动补齐", "MAKING UP: %.1f t SHORT, ADDED AS IT COMES IN") % lack
+			return w("正在备货：还缺少 %d 台设备，设备入库后会自动补齐", "MAKING UP: %d SHORT, ADDED AS THEY COME IN") % int(round(lack))
 		"rail":
 			if FreightWorks.order_arrived(str(o.id)) >= int(o.get("crates", 1)) or clock() - float(o.get("rail_at", clock())) >= RAIL_MAX:
-				return w("到了贸易港，等客户飞船靠泊", "AT THE TRADE PORT, WAITING FOR THE CLIENT'S SHIP")
-			return w("货运火车送往贸易港", "ON THE FREIGHT TRAIN TO THE TRADE PORT")
+				return w("货物已抵达贸易港，正在等待客户飞船靠泊", "AT THE TRADE PORT, WAITING FOR THE CLIENT'S SHIP")
+			return w("货运列车正在将货物运往贸易港", "ON THE FREIGHT TRAIN TO THE TRADE PORT")
 		"ship":
 			match str(ship_phase(o)[0]):
-				"in": return w("客户飞船进港", "THE CLIENT'S SHIP COMING IN")
-				"load": return w("装船中", "LOADING")
-			return w("客户飞船离港", "THE CLIENT'S SHIP LEAVING")
+				"in": return w("客户飞船正在进港", "THE CLIENT'S SHIP COMING IN")
+				"load": return w("正在装载货物", "LOADING")
+			return w("客户飞船已经离港", "THE CLIENT'S SHIP LEAVING")
 		"done":
 			return w("已完成", "DONE")
 	return w("已过期", "LAPSED")
@@ -757,7 +757,7 @@ static func tick(dt: float) -> void:
 		var r := _rng()
 		h.next_order = float(h.clock) + r.randf_range(ORDER_GAP.x, ORDER_GAP.y)
 		ClientShips.visit(str(o.id), str(o.client), want_name(o))
-		events.append({"kind": "new", "text": w("订单板来了新订单：%s 要 %s，给 %s", "NEW ORDER: %s WANTS %s FOR %s") % [str(o.client), want_name(o), Pal.money(float(o.price))]})
+		events.append({"kind": "new", "text": w("新订单：%s 要 %s，给 %s", "NEW ORDER: %s WANTS %s FOR %s") % [str(o.client), want_name(o), Pal.money(float(o.price))]})
 		dirty = true
 	for o in orders():
 		match str(o.state):
@@ -771,7 +771,7 @@ static func tick(dt: float) -> void:
 						_give(pl, "order_back")
 					o.held = []
 					o.state = "gone"
-					events.append({"kind": "gone", "text": w("订单过期：%s 的单没备齐，货已放回仓库，没有罚款", "ORDER LAPSED: %s's — THE GOODS ARE BACK IN STORE, NO PENALTY") % str(o.client)})
+					events.append({"kind": "gone", "text": w("订单过期：%s 的单没备齐，货已放回仓库", "ORDER LAPSED: %s's — THE GOODS ARE BACK IN STORE, NO PENALTY") % str(o.client)})
 					dirty = true
 				elif int(float(h.clock) * 2.0) != int((float(h.clock) - dt) * 2.0):
 					# twice a second: anything new in the warehouse goes to it

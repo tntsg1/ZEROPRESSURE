@@ -2486,6 +2486,7 @@ func _build_step(dt: float) -> void:
 func _end_build() -> void:
 	if build == null:
 		return
+	var grew: bool = build.get_script() == preload("res://scripts/berth_build.gd")
 	build.finish()
 	build.queue_free()
 	build = null
@@ -2493,6 +2494,11 @@ func _end_build() -> void:
 		if Career.data.has("berth_seen"):
 			Career.data["berth_seen"] = Dock.owned(Career.data.get("upgrades", {}))
 		Career.data["berth_now"] = berth_len
+		# 128 号 第 7 段: a longer berth was just shown being built — its repair show would play it a
+		# second time on the next visit (Works writes the berth's id into repaired_pending too)
+		if grew:
+			var pend: Array = Career.data.get("repaired_pending", [])
+			Career.data["repaired_pending"] = pend.filter(func(id): return not str(id).begins_with("berth"))
 		if not in_berth():
 			var rs: Dictionary = Career.data.get("reshaped", {})
 			rs[ship_id] = true

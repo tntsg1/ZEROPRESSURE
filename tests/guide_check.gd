@@ -116,14 +116,14 @@ func _run() -> void:
 	check(_title().begins_with("按 E"), "at the desk: press E (%s)" % _title())
 	g.open_sort()
 	await _frames(20)
-	check(_title().find("整线加工") >= 0 and _lit("整线加工"), "the panel open: run the line, and that button is lit (%s)" % _title())
+	check(_title().find("完整加工流程") >= 0 and _lit("完整加工流程"), "the panel open: run the line, and that button is lit (%s)" % _title())
 	Cap.save(root, "res://tests/out/guide_sort_panel_zh.png")
 	g.console_ui.quantity.value = 2.0
 	check(_press(GuideCopy.text("sort.send_feed")), "feed sent")
 	check(await _until(func(): return str(Career.data.get("industrial_sort", {}).get("state", "")) == "processing", 16000), "the feed reaches the line")
 	await _frames(20)
-	check(_title().find("启动分选驱动") >= 0 and _lit("启动分选驱动"), "next: start the drives, lit (%s)" % _title())
-	check(_press("启动分选驱动"), "drives started")
+	check(_title().find("启动分选设备") >= 0 and _lit("启动分选设备"), "next: start the drives, lit (%s)" % _title())
+	check(_press("启动分选设备"), "drives started")
 	await _frames(20)
 	check(_title().find("磁选进行中") >= 0, "then it says the line is running (%s)" % _title())
 	check(await _until(func(): return g.guide.task == "assay", 30000), "sorted: the guide moves on to the assay by itself")
@@ -160,13 +160,13 @@ func _run() -> void:
 	f.T = 1660.0
 	f.sample_count = 0
 	await _frames(12)
-	check(_title().find("测温取样") >= 0 and _lit("测温取样"), "melted: take a sample")
+	check(_title().find("测量温度并采集样本") >= 0 and _lit("测量温度并采集样本"), "melted: take a sample")
 	f.sample_count = 1
 	f.tc_age = 1.0
 	f.dip = 0.0
 	f.lance_phase = "idle"
 	await _frames(12)
-	check(_title().find("倾炉出钢") >= 0 and _lit("倾炉出钢"), "sampled: tilt and tap")
+	check(_title().find("倾斜炉体，排出钢水") >= 0 and _lit("倾斜炉体，排出钢水"), "sampled: tilt and tap")
 	Cap.save(root, "res://tests/out/guide_heat_zh.png")
 	for k in keep:
 		f.set(k, keep[k])

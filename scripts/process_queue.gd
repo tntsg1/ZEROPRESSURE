@@ -114,6 +114,15 @@ static func charged(lot: String, t: float) -> void:
 		e.melted = snappedf(minf(float(e.t), float(e.melted) + t), 0.001)
 
 
+# 128 号 第 7 段: the rest of a lot that went elsewhere (sold, used) — counted as done with, not as
+# melted metal still owed billet (the queue used to wait for that billet for ever)
+static func skipped(lot: String, t: float) -> void:
+	var e := _entry(lot)
+	if not e.is_empty():
+		e.melted = snappedf(minf(float(e.t), float(e.melted) + t), 0.001)
+		e.skipped = snappedf(float(e.get("skipped", 0.0)) + t, 0.001)
+
+
 # a heat of the lot was tapped and its billet received in the warehouse
 static func tapped(lot: String, t: float, grade: int) -> void:
 	var e := _entry(lot)
@@ -141,7 +150,7 @@ static func rolled(lot: String, t: float) -> void:
 
 # all melted and rolled (what can be): off the list after a while, kept for the books meanwhile
 static func finished(e: Dictionary) -> bool:
-	return float(e.t) - float(e.melted) < HEAT_MIN and float(e.get("billet1", 0.0)) - float(e.get("rolled", 0.0)) < Mill.BATCH - 0.0001 and float(e.get("billet", 0.0)) >= float(e.melted) - 0.001
+	return float(e.t) - float(e.melted) < HEAT_MIN and float(e.get("billet1", 0.0)) - float(e.get("rolled", 0.0)) < Mill.BATCH - 0.0001 and float(e.get("billet", 0.0)) + float(e.get("skipped", 0.0)) >= float(e.melted) - 0.001
 
 
 # the queue's state in a line, for the district's boards: "GR-7 · 12.4 t：已熔 4.0 t，已轧 2.0 t"

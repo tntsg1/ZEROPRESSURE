@@ -38,7 +38,8 @@ func _run() -> void:
 	g.guide.begin("build")
 	await _frames(12)
 	st = g.guide.step
-	check(str(st.get("title", "")).find("阶") >= 0, "port works: the next district stage (%s)" % st.get("title", ""))
+	# 128 号 第 3 段: the districts are mended in parts (“一期/二期”, was “阶”)
+	check(str(st.get("title", "")).find("期") >= 0, "port works: the next district stage (%s)" % st.get("title", ""))
 	if str(st.get("action", "")).begins_with("build:"):
 		g.guide.act()
 		await _frames(12)
@@ -50,7 +51,9 @@ func _run() -> void:
 	# the shuttle
 	g.guide.begin("transit")
 	await _frames(12)
-	check(str(g.guide.step.get("title", "")).find("站台") >= 0 and g.guide.step.target == Tram.station_at("ring"), "shuttle: fly to the hub stop (%s)" % g.guide.step.get("title", ""))
+	# 123 号 (user 2026-11-04): the nearest stop, from the berth the salvage district's over its gate (was the hub's)
+	var near_stop := Guide.nearest_stop(g)
+	check(str(g.guide.step.get("title", "")).find("站") >= 0 and g.guide.step.target == Tram.station_at(near_stop), "shuttle: fly to the nearest stop, %s (%s)" % [near_stop, g.guide.step.get("title", "")])
 	g.guide.stop()
 
 	# buying

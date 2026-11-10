@@ -26,9 +26,13 @@ const DEPLOY := ["anchor", "pump", "probe", "prop"]
 const MODS := []                  # the drone modules were dropped in G2 (player: no use); PRICE keeps theirs for the refund
 const OLD_MODS := ["mod_bumper", "mod_hover", "mod_rack"]
 const PRICE := {"anchor": 18000.0, "pump": 14000.0, "probe": 6000.0, "prop": 12000.0, "mod_bumper": 16000.0, "mod_hover": 12000.0, "mod_rack": 20000.0}
-const NEEDS := {"anchor": "section", "pump": "pressure"}       # the feat a type needs before it can be bought
-const FEATS := ["section", "pressure"]
-const FEAT_GRANT := {"section": "anchor", "pressure": "pump"}  # the first unit comes with the feat
+# 128 号 第 7 段 (user 2026-11-09 "连范围抓钩一起删"): the achievements Section Separated, Pressure
+# Equipment Recovered and the field grapple's are gone. The tools come with learning their method
+# (the rigging order, the GR-7 borrow job, the field grapple's borrow job); an old save's entries for
+# them stay in Career.data.feats, unread.
+const FEATS := []
+const REMOVED_FEATS := ["section", "pressure", "field"]
+const FEAT_GRANT := {}
 const MOD_SLOTS := 3
 const DEPLOY_SLOTS := 2
 const RACK_EXTRA := 1
@@ -530,26 +534,16 @@ func on_swallowed(b, zone: String) -> void:
 			units.erase(u)
 			lost.append({"type": u.type, "lent": u.lent, "why": "gear_why_mouth"})
 			game.say("gear_lost_mouth", Dock.zpos(zone) + Vector2(0, -50), name_of(u.type))
-	if b.total_mass() >= SECTION_T:
-		_feat("section", b.total_mass())
-	# 104 号: scrap into the furnace (the field grapple's achievement); equipment delivered whole
-	# (precision inspection's, counted over all jobs at settlement)
+	# scrap into the furnace (kept for the job's record); equipment delivered whole (precision
+	# inspection's, counted over all jobs at settlement)
 	if zone == "metal" and b.total_mass() > Methods.FIELD_MIN_T:
 		furnace_n += 1
-		if furnace_n >= Methods.FIELD_N:
-			_feat("field", furnace_n)
 	if zone == "equip":
 		for p in b.pieces:
 			if p.cls == "equip" and p.intact:
 				equip_v += float(p.value)
-	if zone == "equip":
-		for p in b.pieces:
-			var v: String = game.sys.tank_vol(p)
-			if v == "" or not p.intact:
-				continue
-			var vc: Dictionary = game.sys.vessel_cfg[v]
-			if float(vc.get("kpa", 0.0)) >= PRESSURE_KPA and not vc.get("sealed", false):
-				_feat("pressure", float(vc.get("kpa", 0.0)))
+	# 128 号 第 7 段 (user 2026-11-09): the pressure feat is no longer a full bottle delivered —
+	# it is a charged store emptied by an independent pump (_step_pump)
 
 
 var feats_now := {}           # feat -> the number that earned it, this contract
@@ -770,6 +764,9 @@ func load_state(d: Dictionary) -> void:
 	hold_mode = bool(d.get("hold_mode",false))
 	next_uid = int(d.get("uid", 1))
 	feats_now = d.get("feats", {})
+	# a job saved before 128 号 第 7 段 may carry a removed achievement: dropped without a word
+	for f in REMOVED_FEATS:
+		feats_now.erase(f)
 	furnace_n = int(d.get("furnace_n", 0))
 	equip_v = float(d.get("equip_v", 0.0))
 	for h in d.get("hints", []):

@@ -101,7 +101,7 @@ func _draw() -> void:
 	var mj := Mill.job()
 	if str(mj.get("ship", "")) != "":
 		var e := ProcessQueue.of_lot(str(mj.get("queue", "")))
-		var label := Methods.ship_label(str(mj.ship)) + Ops.w(" · 轧钢板 %.0f/%.0f t", " · PLATE %.0f/%.0f t") % [float(e.get("rolled", 0.0)), floorf(float(e.get("billet1", 0.0)))]
+		var label := Methods.ship_label(str(mj.ship)) + Ops.w(" · 钢板轧制进度：%.0f / %.0f 吨", " · PLATE %.0f/%.0f t") % [float(e.get("rolled", 0.0)), floorf(float(e.get("billet1", 0.0)))]
 		preload("res://scripts/industrial_heat.gd").ship_tag(self, at(Vector2(RUNOUT.get_center().x, RUNOUT.position.y - 0.3)), label, z)
 	# 103 号: the pedestal is a console like every other (scripts/console_art.gd): the mill's state on
 	# its screen, the name over it, the key's hint when close
@@ -109,9 +109,9 @@ func _draw() -> void:
 	var near_now := near()
 	var lamp: Array = Mill.lamp(game)
 	var floor_m := preload("res://scripts/console_art.gd").foot_at(pp)
-	var info := {"lines": [[Ops.w("轧机", "MILL"), Pal.tint(Pal.AIR, 0.95, 1.2)], [str(lamp[1]), Pal.ink(0.75)]], "bar": -1.0,
+	var info := {"lines": [[Ops.w("钢材轧机", "MILL"), Pal.tint(Pal.AIR, 0.95, 1.2)], [str(lamp[1]), Pal.ink(0.75)]], "bar": -1.0,
 		"lamp": {"run": "ok", "wait": "work", "short": "work", "idle": "idle", "off": "off"}.get(str(lamp[0]), "ok")}
-	preload("res://scripts/console_art.gd").draw(self, pp, floor_m, Ops.w("轧机操作台", "MILL PEDESTAL"), Ops.w("[%s] 打开轧机", "[%s] OPEN THE MILL") % Keys.label("use"), near_now, info, t)
+	preload("res://scripts/console_art.gd").draw(self, pp, floor_m, Ops.w("轧机控制台", "MILL PEDESTAL"), Ops.w("[%s] 操作轧机", "[%s] OPEN THE MILL") % Keys.label("use"), near_now, info, t)
 	var font := Fonts.get_font("Medium")
 	_brief(z, font)
 
@@ -140,5 +140,5 @@ func _brief(z: float, font: Font) -> void:
 	var bar := Rect2(box.position + Vector2(14, 40), Vector2(wd - 28, 8))
 	draw_rect(bar, Pal.ink(0.12))
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * Mill.progress(), bar.size.y)), _lamp_col(str(lamp[0])))
-	draw_string(font, box.position + Vector2(14, 64), Ops.w("钢坯 %.1f t · 配方：%s · %s", "BILLET %.1f t · %s · %s") % [Mill.feed_t(), Mill.product_name(str(Mill.cfg().product)), Ops.w("连续轧", "ROLLING ON") if bool(Mill.cfg().loop) else Ops.w("单次", "ONE PASS")], HORIZONTAL_ALIGNMENT_LEFT, wd - 28, 12, Pal.ink(0.65))
+	draw_string(font, box.position + Vector2(14, 64), Ops.w("剩余钢坯：%.1f 吨 · 当前配方：%s · %s", "BILLET %.1f t · %s · %s") % [Mill.feed_t(), Mill.product_name(str(Mill.cfg().product)), Ops.w("连续轧制", "ROLLING ON") if bool(Mill.cfg().loop) else Ops.w("单次轧制", "ONE PASS")], HORIZONTAL_ALIGNMENT_LEFT, wd - 28, 12, Pal.ink(0.65))
 	draw_set_transform(Vector2.ZERO)

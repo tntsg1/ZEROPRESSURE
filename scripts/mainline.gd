@@ -147,6 +147,17 @@ static func next_open() -> String:
 	return ""
 
 
+# 128 号 第 7 段 (user 2026-11-09: "提示出现得太早的话，那就推迟"): the power district is the player's
+# business once the main line has come to it (every chapter before it done) or it is mended — before
+# that, "underpowered — mend the power district" is not said
+static var power_open_in_tests := false     # tests of the shortage itself, on a fresh career
+static func power_open() -> bool:
+	if Port.stage("power") >= 1 or power_open_in_tests:
+		return true
+	var nx := next_open()
+	return nx == "" or index(nx) >= index("power")
+
+
 # what starts a chapter, for the chapter list's dim rows
 static func trigger_text(id: String) -> String:
 	match id:

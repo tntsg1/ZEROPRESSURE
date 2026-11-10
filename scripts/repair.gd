@@ -487,7 +487,7 @@ static func suggestion() -> Dictionary:
 	var ships: Array = []
 	for cls in pf.missing:
 		lack.append("%s ×%d" % [class_name_of(cls), int(pf.missing[cls])])
-		for s in ships_with(cls):
+		for s in ships_for(cls):
 			if not s in ships:
 				ships.append(s)
 	if pf.tons_missing > 0.001:
@@ -517,6 +517,35 @@ static func ships_with(cls: String) -> Array:
 				break
 	_ships_cache[cls] = out
 	return out
+
+
+# 128 号 第 7 段 (user 2026-11-09): the ship types carrying such parts, the hulks the player
+# already has (on its way home, at the port, being stripped, found and waiting) first
+static func ships_for(cls: String) -> Array:
+	var mine: Array = []
+	var ids: Array = []
+	if not Career.data.is_empty():
+		var act: Dictionary = Career.data.get("active", {})
+		if act.has("ship"):
+			ids.append(str(act.ship))
+		for a in Career.data.get("ship_market", {}).get("assets", []):
+			if str(a.get("state", "")) in ["towing", "arrived"]:
+				ids.append(str(a.get("listing", {}).get("offer", {}).get("ship", "")))
+		for o in Career.data.get("offers", []):
+			if o.get("find", false):
+				ids.append(str(o.get("ship", "")))
+	var all := ships_with(cls)
+	for sid in ids:
+		if sid == "" or not Ship.available(sid):
+			continue
+		var ty := Market.type_of(sid)
+		var nm: String = str(ty.name[0] if Txt.zh else ty.name[1]) if ty.has("name") else sid
+		if nm in all and not nm in mine:
+			mine.append(nm)
+	for nm in all:
+		if not nm in mine:
+			mine.append(nm)
+	return mine
 
 
 static func _class_of_data(d: Dictionary) -> String:

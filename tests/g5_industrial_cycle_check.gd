@@ -140,9 +140,9 @@ func run() -> void:
 		for i in 12000:
 			await frames(1)
 			if g.plant.smelter.T <= 1685.0: break
-	check(press("测温取样"),"native sample control actuates the actual immersion probe")
+	check(press("测量温度并采集样本"),"native sample control actuates the actual immersion probe")
 	await frames(310)
-	check(g.plant.smelter.sample_count == 1 and g.plant.smelter.dip == 0.0 and press("倾炉出钢"),"only actual completed and retracted probe permits the native tap command")
+	check(g.plant.smelter.sample_count == 1 and g.plant.smelter.dip == 0.0 and press("倾斜炉体，排出钢水"),"only actual completed and retracted probe permits the native tap command")
 	check(await await_state("product_transport",16000),"real tilt, gate, mould cooling and indexing create a physical output consignment")
 	check(float(Career.data.exchange.actors.company.stock.get("steel_billet:1",0.0)) == 0.0,"cooled product in transit is not yet available warehouse inventory")
 	check(await await_state("complete",16000),"actual cooled output travels continuously back around the berth into the real warehouse")

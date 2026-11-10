@@ -107,7 +107,7 @@ func _run() -> void:
 	var all: Array = d.more_box.find_children("*", "Button", true, false).map(func(b): return str(b.text))
 	var autos: int = d.gas_box.find_children("*", "CheckButton", true, false).size()
 	check(d.more_box.visible and autos == 2, "更多: two automation switches, separate and liquefy (supply and feed buying gone) (%d)" % autos)
-	for want in ["外购混合气", "液化", "生命支持检测", "放空剩余气", "处置污染剩余"]:
+	for want in ["购买混合气体", "液化", "生命支持检测", "放空剩余气", "处理剩余污染物"]:
 		check(all.any(func(t): return t.begins_with(want)), "更多: %s" % want)
 	await _shot("7d_biz_more")
 	await _key(KEY_ESCAPE)

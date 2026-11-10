@@ -78,7 +78,7 @@ static func step() -> Dictionary:
 		return {"text": w("训练任务：港务局已提供 1 吨混合废金属供你加工。本次训练的电费和材料检测费由港务局承担。", "TRAINING ORDER: THE PORT AUTHORITY HAS PROVIDED 1 TONNE OF MIXED SCRAP METAL FOR PROCESSING. ELECTRICITY AND MATERIAL ASSAY COSTS ARE COVERED FOR THIS TRAINING RUN."), "go": "drill"}
 	var t := Guide.first_for_clients()
 	var txt := {"clients": w("训练任务：将加工完成的钢坯交付工业客户，完成本次订单。", "TRAINING ORDER: DELIVER THE FINISHED STEEL BILLETS TO THE INDUSTRIAL CLIENT TO COMPLETE THE ORDER."), "heat": w("训练任务：前往工业炉台，将处理好的金属炉料熔炼成钢坯。", "TRAINING ORDER: HEAD TO THE INDUSTRIAL FURNACE AND SMELT THE PREPARED METAL FEED INTO STEEL BILLETS."),
-		"assay": w("训练任务：前往材料化验台，检测炉料成分并确认材料等级。", "TRAINING ORDER: TAKE THE METAL FEED TO THE ASSAY STATION TO ANALYZE ITS COMPOSITION AND DETERMINE ITS GRADE."), "sort": w("训练任务：前往材料分选台，选择「整线加工」，将这批金属送入分选线处理。", "TRAINING ORDER: GO TO THE SORTING STATION AND SELECT \"PROCESS FULL BATCH\" TO RUN THE METAL THROUGH THE SORTING LINE."),
+		"assay": w("训练任务：前往材料化验台，检测炉料成分并确认材料等级。", "TRAINING ORDER: TAKE THE METAL FEED TO THE ASSAY STATION TO ANALYZE ITS COMPOSITION AND DETERMINE ITS GRADE."), "sort": w("训练任务：前往材料分选台，选择「完整加工流程」，将这批金属送入分选线处理。", "TRAINING ORDER: GO TO THE SORTING STATION AND SELECT \"PROCESS FULL BATCH\" TO RUN THE METAL THROUGH THE SORTING LINE."),
 		"buy_feed": w("训练任务：前往材料分选台，将提供的 1 吨混合废金属完成分选。", "TRAINING ORDER: GO TO THE SORTING STATION AND SORT THE 1 TONNE OF MIXED SCRAP METAL PROVIDED BY THE PORT AUTHORITY.")}
 	return {"text": str(txt.get(t, "")), "go": "guide:" + ("sort" if t == "buy_feed" else t)}
 

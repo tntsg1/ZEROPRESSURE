@@ -56,7 +56,7 @@ func run() -> void:
 	check(await sort_state("processing"),"complete colliding mixed feed reaches the actual intake by continuous around-berth transport")
 	if g.industrial_sort.heat().state != "processing": await release(); quit(1); return
 	check(g.plant.scrapline.company_input == 1.0 and not g.plant.scrapline.company_powered and g.plant.smelter.input_t == 0.0,"actual intake consumes the source once and leaves cold material waiting for site drive start, outside the furnace")
-	check(press("启动分选驱动"),"native drive control starts the real shredder and separator model")
+	check(press("启动分选设备"),"native drive control starts the real shredder and separator model")
 	await frames(250)
 	check(g.plant.scrapline.company_energy_j > 0.0 and not g.plant.scrapline.company_complete(),"processing takes actual powered mechanism time and measured electrical energy")
 	check(g.industrial_sort.checkpoint(),"mid-processing mechanical state and custody checkpoint saves to the isolated career")

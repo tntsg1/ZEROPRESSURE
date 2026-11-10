@@ -254,6 +254,11 @@ func _legs_to(s: int) -> Array:
 	# 131 号: by shuttle — out to the berth's own stop in the gate, the ride to where the step is
 	var need := "ring" if k == "hub" else (z if z != "" else "ring")
 	var d = game.drone
+	# A resumed ride may already be complete: in particular, the berth itself
+	# counts as arrival at the salvage stop. Do not send the player out to that
+	# stop only to immediately send them back into the berth.
+	if k == "ride" and d != null and arrived(z, d.global_position):
+		return []
 	var here := PortStructure.zone_at(d.global_position) if d != null else ""
 	if here == need or k == "station" and z == "salvage":
 		return []

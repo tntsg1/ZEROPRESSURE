@@ -304,6 +304,8 @@ func target() -> Vector2:
 
 
 func _show() -> void:
+	if game != null and game.ended:
+		return
 	_fill()
 	# shorter text: the card shrinks back to it
 	if card != null:
@@ -414,6 +416,12 @@ func rest_text() -> String:
 
 
 func _process(dt: float) -> void:
+	# 128 号 第 7 段 (user 2026-11-09): the job is settling — the card folds away, off the review
+	if card != null and card.visible and game != null and game.ended:
+		card.visible = false
+	if game != null and game.ended:
+		queue_redraw()
+		return
 	# right-aligned by its real width (the larger text widened it past the screen edge)
 	if card != null and card.visible:
 		card.position.x = get_viewport().get_visible_rect().size.x - card.size.x - 22.0
@@ -469,6 +477,9 @@ func _mouth() -> String:
 func _unhandled_input(ev: InputEvent) -> void:
 	if done or step >= STEPS.size() or STEPS[step] != "mouths":
 		return
+	# 128 号 第 7 段: the contract card's Space / Enter are the card's (the tour ate the first press)
+	if game != null and game.contract_open:
+		return
 	if (ev is InputEventKey and ev.pressed and not ev.echo) or (ev is InputEventMouseButton and ev.pressed):
 		mouth_t = MOUTH_S * MOUTHS.size()
 		get_viewport().set_input_as_handled()
@@ -501,7 +512,7 @@ func _draw() -> void:
 		way.floor_on = false
 	var dt := clampf(t - _way_t, 0.0, 0.1)
 	_way_t = t
-	if done or game == null:
+	if done or game == null or game.ended:
 		way.hide()
 		return
 	var at := target()

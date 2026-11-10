@@ -255,8 +255,9 @@ func _run() -> void:
 	var body = target.body
 	check(body != null and body.total_mass() >= Gear.SECTION_T, "the band is free as one body (%d fixings undone, %.1f t)" % [cut_j, body.total_mass() if body != null else 0.0])
 	check(g.gear.units.size() == 1 and g.gear.unit_pos(g.gear.units[0]).distance_to(_piece_center(g, target)) < 2.0 * Geom.M, "the anchor rides with the band as it comes loose")
-	var hauled := await _wait(func(): return g.gear.feats_now.has("section"), 2400)
-	check(hauled, "the winch hauled the band into the furnace: Section Separated (%s)" % str(g.gear.feats_now))
+	# 128 号 第 7 段: the achievement is gone — the band hauled into the furnace is all that counts
+	var hauled := await _wait(func(): return target.gone, 2400)
+	check(hauled and g.gear.feats_now.is_empty(), "the winch hauled the band into the furnace, no achievement (%s)" % str(g.gear.feats_now))
 	check(g.gear.units.is_empty() and g.gear.drops.size() == 1 and g.gear.drops[0].type == "anchor", "the anchor cast off at the post")
 	if not g.gear.drops.is_empty():
 		await _click(g, 3, g.gear.drops[0].pos, 10)
@@ -264,8 +265,8 @@ func _run() -> void:
 	g.finish_contract(true)
 	await _frames(5)
 	cr = g.career_result
-	check(cr.gear.feats == ["section"] and cr.gear.grants == ["anchor"] and cr.gear.back.is_empty() and cr.gear.lost.is_empty(), "settled: Section Separated, an anchor delivered; the lent one back to the lender: %s" % str(cr.gear))
-	check(Career.data.feats.has("section") and int(Career.data.gear.anchor) == 1 and Gear.reason("anchor") == "", "the anchor type open and one on the shelf")
+	check(cr.gear.feats.is_empty() and cr.gear.grants.is_empty() and cr.gear.back.is_empty() and cr.gear.lost.is_empty(), "settled: no achievement, no anchor given; the lent one back to the lender: %s" % str(cr.gear))
+	check(not Career.data.get("feats", {}).has("section") and int(Career.data.gear.get("anchor", 0)) == 0, "the anchor comes with its method (the rigging order), not from this")
 	g.queue_free()
 	await _frames(2)
 
@@ -328,8 +329,11 @@ func _run() -> void:
 	print("  trial C: ", sum)
 	check(sum.ended, "the bot finished trial C")
 	cr = g.career_result
-	check(cr.gear.feats == ["pressure"] and cr.gear.grants == ["pump"], "settled: Pressure Equipment Recovered, a pump delivered: %s" % str(cr.gear))
-	check(Career.data.feats.has("pressure") and int(Career.data.gear.pump) == 1 and Gear.reason("pump") == "", "the pump type open and one on the shelf")
+	check(cr.gear.feats.is_empty() and cr.gear.grants.is_empty(), "settled: no achievement, no pump given: %s" % str(cr.gear))
+	check(not Career.data.get("feats", {}).has("pressure"), "the pump comes with its method (the GR-7 borrow job), not from this")
+	# trial D below starts from a pump on the shelf (it was the achievement's gift before 128 号 第 7 段)
+	Career.data.gear["pump"] = int(Career.data.gear.get("pump", 0)) + 1
+	Career.save()
 	g.queue_free()
 	await _frames(2)
 

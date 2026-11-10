@@ -30,7 +30,7 @@ func run() -> void:
 		await mouse_click(reserve)
 		check(g.console_ui.message.text.contains("未分选金属不足") and not Career.production_busy(),"actual viewport mouse reservation reports absent stock without creating material or a batch")
 		await capture("g5_sort_ui_%dx%d" % [size.x,size.y])
-		await mouse_click(find_button("关闭 [Esc]"))
+		await mouse_click(find_button("关闭面板 [Esc]"))
 		check(g.console_ui == null and not paused,"native scrolling exposes a working sorting close control at "+str(size))
 	await release()
 	var drain := Time.get_ticks_msec()+250

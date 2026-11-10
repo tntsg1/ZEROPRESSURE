@@ -313,10 +313,10 @@ class Overview extends Control:
 			var r := Rect2((i % cols) * (cw + gap), (i / cols) * 132.0, cw, 124.0)
 			OpsSkin.draw_cell(self, f, r, cells[i], 1.0, 0.0, true)
 		var y := ceili(cells.size() / float(cols)) * 132.0 + 4.0
-		draw_string(f[1], Vector2(0, y + 18), Ops.w("需要你决策的事项", "WAITING ON YOU"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.ink(0.6))
+		draw_string(f[1], Vector2(0, y + 18), Ops.w("等待你处理的事项", "WAITING ON YOU"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.ink(0.6))
 		y += 32.0
 		if decs.is_empty():
-			draw_string(f[0], Vector2(0, y + 20), Ops.w("没有要你拍板的事。", "Nothing needs a decision."), HORIZONTAL_ALIGNMENT_LEFT, size.x, 15, Pal.ink(0.6))
+			draw_string(f[0], Vector2(0, y + 20), Ops.w("目前没有需要你处理的事项。", "Nothing needs a decision."), HORIZONTAL_ALIGNMENT_LEFT, size.x, 15, Pal.ink(0.6))
 		for d in decs:
 			OpsSkin.draw_decision(self, f, Rect2(0, y, size.x, 56.0), d, 1.0, 0.0, true)
 			y += 62.0
@@ -361,7 +361,7 @@ static func draw_decision(ci: CanvasItem, f: Array, r: Rect2, d: Dictionary, a: 
 	ci.draw_rect(Rect2(r.position.x + 1, r.position.y + 10, 3, r.size.y - 20), Color(col.r, col.g, col.b, a))
 	Hmi.lamp(ci, Vector2(r.position.x + 24, r.position.y + r.size.y * 0.5), col, true, a, 5.0)
 	var go := str(d.get("go", ""))
-	var hint := Ops.w("现场", "ON SITE") if go.begins_with("site:") else Ops.w("进入 ›", "OPEN ›")
+	var hint := Ops.w("现场情况", "ON SITE") if go.begins_with("site:") else Ops.w("进入查看 ›", "OPEN ›")
 	var hw: float = f[1].get_string_size(hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
 	var x := r.position.x + 42.0
 	var wmax := r.size.x - 42.0 - hw - 30.0

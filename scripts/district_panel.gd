@@ -87,16 +87,16 @@ func _ready() -> void:
 		column.add_child(ab)
 	if zone == "process":
 		column.add_child(OpsSkin.Section.new(words("轧机", "ROLLING MILL")))
-		column.add_child(label(words("轧机在本区中部（排烟管右边）：飞到它下面的操作台按 %s，选配方、开轧。", "The mill stands mid-district, right of the flue: press %s at its pedestal to pick a recipe and roll.") % Keys.label("use"), 15))
+		column.add_child(label(words("轧机在本区域中间，就在排烟管右边。飞到轧机下方的操作台，按 %s 打开控制界面，选择配方以后就可以开始轧制了。", "The mill stands mid-district, right of the flue: press %s at its pedestal to pick a recipe and roll.") % Keys.label("use"), 15))
 	# 76 号: the gas line — batches, products, the LOX tank, the passing ships, the automation
 	if zone == "process":
-		column.add_child(OpsSkin.Section.new(words("气体线 · 回收 → 分离 → 液氧 → 补给", "GAS LINE · RECOVER → SEPARATE → LOX → SUPPLY")))
+		column.add_child(OpsSkin.Section.new(words("气体回收 → 气体分离 → 液氧生产 → 补给使用", "GAS LINE · RECOVER → SEPARATE → LOX → SUPPLY")))
 		gas_box = VBoxContainer.new()
 		column.add_child(gas_box)
 		_fill_gas()
 	# 75 号: who is at the pier, and the companies' standing contracts
 	if zone == "trade":
-		column.add_child(OpsSkin.Section.new(words("上门的客人", "AT THE PIER")))
+		column.add_child(OpsSkin.Section.new(words("上门客户", "AT THE PIER")))
 		callers = VBoxContainer.new()
 		column.add_child(callers)
 		column.add_child(OpsSkin.Section.new(words("三大公司的长期合同", "THE COMPANIES' STANDING CONTRACTS")))
@@ -107,27 +107,27 @@ func _ready() -> void:
 	if zone == "cargo" and StoreBook.live():
 		# 128 号 (user 2026-11-04): one stores page — the racks put things away by themselves
 		column.add_child(OpsSkin.Section.new(words("仓库", "STORES")))
-		column.add_child(label(words("在船坞的仓库终端或货架口按 %s，或在哪都按 F3，打开的都是同一个仓库。货物自动上架。", "%s at the berth's stores terminal or a rack, or F3 anywhere: the same stores page. Goods are put away by themselves.") % Keys.label("use"), 15))
+		column.add_child(label(words("在船坞的仓库终端或者货架入口按 %s，就能打开仓库界面。你也可以在任何位置按 F3 打开，查看的都是同一个仓库，回收的货物会自动存放进去。", "%s at the berth's stores terminal or a rack, or F3 anywhere: the same stores page. Goods are put away by themselves.") % Keys.label("use"), 15))
 	elif zone == "cargo":
 		column.add_child(OpsSkin.Section.new(words("货架", "RACKS")))
-		var rk := label(words("货架口按 %s 开（左边货架 A1–A4，右边 B1–B4）", "Racks A1–A4 left, B1–B4 right: %s at a rack's mouth") % Keys.label("use"), 15)
-		rk.tooltip_text = words("飞到货架下面的货架口按 %s，只开那一边。", "%s at a rack's mouth opens that side only.") % Keys.label("use")
+		var rk := label(words("走到货架入口，按 %s 就能打开对应的货架。左侧是 A1–A4，右侧是 B1–B4。", "Racks A1–A4 left, B1–B4 right: %s at a rack's mouth") % Keys.label("use"), 15)
+		rk.tooltip_text = words("飞到货架下方，对准货架口按下 %s，就能打开对应的那一侧。", "%s at a rack's mouth opens that side only.") % Keys.label("use")
 		rk.mouse_filter = Control.MOUSE_FILTER_PASS
 		column.add_child(rk)
 	message = label("", 15)
 	column.add_child(message)
-	column.add_child(button(words("关闭 [Esc]", "CLOSE [Esc]"), close))
+	column.add_child(button(words("按 [Esc] 关闭面板", "CLOSE [Esc]"), close))
 	_fill()
 
 
 func _subtitle() -> String:
 	return {
-		"power": words("全港供电 · 高耗能设施的电源", "GRID POWER FOR THE HEAVY FACILITIES"),
-		"tug": words("拖船调度 · 大船进港", "TUG DISPATCH · BIG SHIPS IN"),
-		"process": words("分选与炉次 · 原料变产品", "SORTING AND HEATS · RAW TO PRODUCT"),
-		"trade": words("交易行与客户 · 买入卖出", "EXCHANGE AND CLIENTS · BUY AND SELL"),
-		"cargo": words("公司仓库 · 库存与在途", "COMPANY WAREHOUSE · STOCK AND TRANSIT"),
-		"ring": words("港口总览 · 七区、现金、待办", "PORT OVERVIEW · DISTRICTS, CASH, TO DO"),
+		"power": words("全港供电 · 管理港口内高耗能设施的电力供应", "GRID POWER FOR THE HEAVY FACILITIES"),
+		"tug": words("拖船调度 · 安排大型船只进入港口", "TUG DISPATCH · BIG SHIPS IN"),
+		"process": words("分选与炉次 · 分选回收原料，安排熔炉生产", "SORTING AND HEATS · RAW TO PRODUCT"),
+		"trade": words("交易行与客户 · 采购和出售货物", "EXCHANGE AND CLIENTS · BUY AND SELL"),
+		"cargo": words("公司仓库 · 查看现有库存和运输途中的货物", "COMPANY WAREHOUSE · STOCK AND TRANSIT"),
+		"ring": words("港口总览 · 查看七个区域的情况、公司现金和待办事项", "PORT OVERVIEW · DISTRICTS, CASH, TO DO"),
 	}.get(zone, "")
 
 
@@ -135,15 +135,15 @@ func _subtitle() -> String:
 func _actions() -> Array:
 	match zone:
 		"trade":
-			return [[words("打开交易行 · 买入 / 出售", "OPEN THE EXCHANGE · BUY / SELL"), func(): _then(func(): game.open_exchange()), words("关掉这里，打开交易行：买原料、卖产品", "Close this and open the exchange: buy feed, sell products")]]
+			return [[words("打开交易行 · 购买原料 / 出售产品", "OPEN THE EXCHANGE · BUY / SELL"), func(): _then(func(): game.open_exchange()), words("关闭当前面板，打开交易行，可以在这里购买原料和出售产品。", "Close this and open the exchange: buy feed, sell products")]]
 		"process":
 			# 74 号: the rolling mill, a tonne a pass
 			# 85 号: the mill is run at the mill itself, not from here
 			return []
 		"power":
-			return [[words("动力区控制屏 · 单线图 / 仪表 / 手动调度", "POWER CONTROL SCREEN · LINES / GAUGES / DISPATCH"), func(): _then(func(): game.open_power_screen()), words("关掉这里，打开供电控制屏：看谁在用电、排顺序、暂停电弧炉", "Close this and open the power screen: who uses power, the order, the furnace")]]
+			return [[words("动力区控制屏 · 查看供电情况 / 用电仪表 / 手动调度", "POWER CONTROL SCREEN · LINES / GAUGES / DISPATCH"), func(): _then(func(): game.open_power_screen()), words("关闭当前面板，打开供电控制屏，可以查看各个设施的用电情况、调整供电优先级，还能暂停电弧炉的运行。", "Close this and open the power screen: who uses power, the order, the furnace")]]
 		"ring":
-			return [[words("船坞终端（合同与建设）", "BERTH TERMINAL (CONTRACTS AND WORKS)"), func(): _then(func(): game.open_console("terminal")), words("关掉这里，打开船坞终端：找船接单、报修、建设", "Close this and open the berth terminal: ships, contracts, repairs, building")]]
+			return [[words("船坞终端 · 合同管理与设施建设", "BERTH TERMINAL (CONTRACTS AND WORKS)"), func(): _then(func(): game.open_console("terminal")), words("关闭当前面板，打开船坞终端，可以查看待接的拆船合同、安排设备维修和建设新设施。", "Close this and open the berth terminal: ships, contracts, repairs, building")]]
 	return []
 
 
@@ -181,7 +181,7 @@ func _fill_repair() -> void:
 		c.queue_free()
 	_primary_set = false
 	if st >= 2:
-		repair_box.add_child(label(words("两期都修好了。", "BOTH STAGES DONE."), 15))
+		repair_box.add_child(label(words("两期修缮都已经完成了。", "BOTH STAGES DONE."), 15))
 		return
 	var needs := Port.needs(zone, st + 1)
 	var pf := Repair.parts_for_needs(needs)
@@ -210,7 +210,7 @@ func _fill_repair() -> void:
 		b.disabled = why != ""
 		repair_box.add_child(b)
 		# what it lacks is the list above: the long why goes on the button's note (人性化 规则 4)
-		BenchFx.note(b, words("付钱修到下一阶，立刻开工；修好后本区多一阶的能力", "Pay and mend it to the next stage, starting now") if not with_parts else words("用零件抵一部分钱，修到下一阶，立刻开工", "Mend it to the next stage with parts and cash, starting now"), why)
+		BenchFx.note(b, words("支付费用，将本区域修缮到下一期，立即开始施工。修缮完成后，本区域的能力提升一级。", "Pay and mend it to the next stage, starting now") if not with_parts else words("使用零件修复，将本区域修缮到下一期，立即开始施工。", "Mend it to the next stage with parts and cash, starting now"), why)
 		if why == "" and not _primary_set and next_key == null:
 			_primary_set = true
 			BenchFx.primary(b)
@@ -231,15 +231,15 @@ func _fill_bill() -> void:
 	for c in repair_box.get_children():
 		c.queue_free()
 	if st >= 2:
-		repair_box.add_child(label(words("两期都修好了。", "BOTH STAGES DONE."), 15))
+		repair_box.add_child(label(words("两期修缮都已经完成了。", "BOTH STAGES DONE."), 15))
 		return
 	for row in b.get("rows", []):
 		var ok := int(row.buy) == 0
-		var l := label("%s  %s  %d / %d%s" % ["✓" if ok else "○", str(row.name), int(row.own), int(row.need), "" if ok else words("  · 缺的按市价买", "  · the rest bought")], 15)
+		var l := label("%s  %s  %d / %d%s" % ["✓" if ok else "○", str(row.name), int(row.own), int(row.need), "" if ok else words("  · 不足的零件会按照市场价格购买", "  · the rest bought")], 15)
 		l.modulate = Hmi.ok_col() if ok else Pal.ink(0.8)
 		repair_box.add_child(l)
 	var sd: Dictionary = b.get("steel", {})
-	var lt := label("%s  %s  %.1f / %.1f t" % ["✓" if float(sd.get("buy", 0.0)) < 0.05 else "○", words("修缮钢材", "REPAIR STEEL"), float(sd.get("own", 0.0)), float(sd.get("need", 0.0))], 15)
+	var lt := label("%s  %s  %.1f / %.1f t" % ["✓" if float(sd.get("buy", 0.0)) < 0.05 else "○", words("修缮所需钢材", "REPAIR STEEL"), float(sd.get("own", 0.0)), float(sd.get("need", 0.0))], 15)
 	lt.modulate = Hmi.ok_col() if float(sd.get("buy", 0.0)) < 0.05 else Pal.ink(0.8)
 	repair_box.add_child(lt)
 	for dep in Port.DEPS.get(zone, []):
@@ -253,13 +253,13 @@ func _fill_bill() -> void:
 	if why == "" and Works.busy():
 		why = Works.busy_text()
 	var cost := float(b.get("buy_cash", 0.0))
-	var bt := words("修 %s期  ·  要买 %s", "MEND STAGE %d  ·  BUY %s") % [Works.cn_num(st + 1), Pal.money(cost)] if Txt.zh else "MEND STAGE %d  ·  BUY %s" % [st + 1, Pal.money(cost)]
+	var bt := words("修缮第%s期 · 还需要购买 %s", "MEND STAGE %d  ·  BUY %s") % [Works.cn_num(st + 1), Pal.money(cost)] if Txt.zh else "MEND STAGE %d  ·  BUY %s" % [st + 1, Pal.money(cost)]
 	if cost < 0.5:
-		bt = words("修 %s期  ·  仓库里都有", "MEND STAGE %d  ·  ALL IN STORE") % Works.cn_num(st + 1) if Txt.zh else "MEND STAGE %d  ·  ALL IN STORE" % (st + 1)
+		bt = words("修缮第%s期 · 仓库里的材料已经足够", "MEND STAGE %d  ·  ALL IN STORE") % Works.cn_num(st + 1) if Txt.zh else "MEND STAGE %d  ·  ALL IN STORE" % (st + 1)
 	var mb := button(bt, open_order)
 	mb.disabled = why != ""
 	repair_box.add_child(mb)
-	BenchFx.note(mb, words("看明细再确认：自有的先用，缺的按市价买齐，施工队不收工钱", "See the bill first: own materials go first, the rest is bought at market, the crew is free"), why)
+	BenchFx.note(mb, words("确认前可以查看费用明细。修缮时会优先使用仓库里的材料，不足的部分按照市场价格购买，施工队不收取人工费用。", "See the bill first: own materials go first, the rest is bought at market, the crew is free"), why)
 	# (the processing console's main key is its next step: the mending under "更多" is not Enter's)
 	if why == "" and next_key == null:
 		BenchFx.primary(mb)
@@ -321,7 +321,7 @@ func _fill_gas() -> void:
 	for c in gas_box.get_children():
 		c.queue_free()
 	if not GasLine.built():
-		gas_box.add_child(label(words("气体线没修。在终端“修缮”里修“气体线”（要加工区和动力区各 1 阶）。没修之前，拆船抽回的气照旧在结算时折现。", "NO GAS LINE: BUILD IT UNDER REPAIRS. UNTIL THEN A SHIP'S GAS IS CASHED AT SETTLEMENT."), 14))
+		gas_box.add_child(label(words("气体管线还没有修好。打开终端的「修缮」页面，完成「气体管线」的修缮，需要加工区和动力区都修到 1 期。修缮完成前，拆船回收的气体仍会在结算时自动折算成现金。", "NO GAS LINE: BUILD IT UNDER REPAIRS. UNTIL THEN A SHIP'S GAS IS CASHED AT SETTLEMENT."), 14))
 		return
 	gas_box.add_child(label(GasLine.status(), 14))
 	gas_box.add_child(label(words("正在：", "NOW: ") + GasLine.job_text() + (words(" · 生命支持检测中", " · TESTING") if not d.test.is_empty() else ""), 14))
@@ -331,36 +331,36 @@ func _fill_gas() -> void:
 			continue
 		var m := GasLine.mass(b)
 		var a := GasLine.assess(b)
-		gas_box.add_child(label(words("%s · %s · %.0f kg · 氧 %d%% · 污染 %.1f%%%s", "%s · %s · %.0f kg · O₂ %d%% · TAINT %.1f%%%s") % [str(b.id), str(b.src), m, int(100.0 * float(b.kg.get("o2", 0.0)) / maxf(m, 0.001)), a.taint * 100.0, words(" · 含氢（燃料危险）", " · HYDROGEN") if str(b.hazard) == "fuel" else ""], 14))
+		gas_box.add_child(label(words("%s · %s · 重量 %.0f kg · 氧气 %d%% · 污染程度 %.1f%%%s", "%s · %s · %.0f kg · O₂ %d%% · TAINT %.1f%%%s") % [str(b.id), str(b.src), m, int(100.0 * float(b.kg.get("o2", 0.0)) / maxf(m, 0.001)), a.taint * 100.0, words(" · 含有氢气（存在燃料危险）", " · HYDROGEN") if str(b.hazard) == "fuel" else ""], 14))
 		var bid := str(b.id)
 		var why := GasLine.sep_block(bid)
 		if why == "":
-			gas_box.add_child(_gas_row([[words("分离这一批", "SEPARATE IT"), func(): _gas_do(GasLine.separate(bid), words("开始分离。", "SEPARATING."))]]))
+			gas_box.add_child(_gas_row([[words("分离当前批次", "SEPARATE IT"), func(): _gas_do(GasLine.separate(bid), words("已开始分离。", "SEPARATING."))]]))
 		else:
 			gas_box.add_child(label("  " + why, 13))
 			if str(b.hazard) == "fuel" or a.taint > 0.02:
-				gas_box.add_child(_gas_row([[words("受控处置（%s）", "DISPOSE (%s)") % Pal.money(m / 1000.0 * GasLine.DISPOSE_PER_T), func(): _gas_do(GasLine.dispose(bid), words("已交受控处置。", "DISPOSED."))]]))
+				gas_box.add_child(_gas_row([[words("申请受控处置（%s）", "DISPOSE (%s)") % Pal.money(m / 1000.0 * GasLine.DISPOSE_PER_T), func(): _gas_do(GasLine.dispose(bid), words("已提交受控处置申请。", "DISPOSED."))]]))
 	gas_box.add_child(_gas_row([
-		[words("外购混合气 2 t（%s）", "BUY 2 t MIXED GAS (%s)") % Pal.money(2.0 * GasLine.MIXED_PRICE), func(): _gas_do(GasLine.buy_mixed(2.0), words("已下单，约 60 秒后到。", "ORDERED: IN ~60 s.")), GasLine.buy_block(2.0) == ""],
-		[words("液化 1 t", "LIQUEFY 1 t"), func(): _gas_do(GasLine.liquefy(1000.0), words("开始液化。", "LIQUEFYING.")), GasLine.liq_block(1000.0) == ""],
-		[words("生命支持检测（%s）", "LIFE-SUPPORT TEST (%s)") % Pal.money(GasLine.LS_TEST_FEE), func(): _gas_do(GasLine.ls_test(), words("送检了。", "SENT FOR TESTING.")), float(d.o2.ok) > 0.0 and d.test.is_empty()],
+		[words("购买混合气体 2 t（%s）", "BUY 2 t MIXED GAS (%s)") % Pal.money(2.0 * GasLine.MIXED_PRICE), func(): _gas_do(GasLine.buy_mixed(2.0), words("采购订单已提交，预计 60 秒后送达。", "ORDERED: IN ~60 s.")), GasLine.buy_block(2.0) == ""],
+		[words("液化处理 1 t", "LIQUEFY 1 t"), func(): _gas_do(GasLine.liquefy(1000.0), words("已开始液化处理。", "LIQUEFYING.")), GasLine.liq_block(1000.0) == ""],
+		[words("生命支持检测（%s）", "LIFE-SUPPORT TEST (%s)") % Pal.money(GasLine.LS_TEST_FEE), func(): _gas_do(GasLine.ls_test(), words("已提交生命支持检测申请。", "SENT FOR TESTING.")), float(d.o2.ok) > 0.0 and d.test.is_empty()],
 	]))
 	gas_box.add_child(_gas_row([
-		[words("放空剩余气", "VENT RESIDUE"), func(): _gas_do(GasLine.vent_residue(), words("剩余气已放空（记录在案）。", "RESIDUE VENTED (LOGGED).")), float(d.residue) > 0.0],
-		[words("处置污染剩余", "DISPOSE TAINTED"), func(): _gas_do(GasLine.dispose_waste(), words("已交受控处置。", "DISPOSED.")), float(d.waste) > 0.0],
+		[words("放空剩余气体", "VENT RESIDUE"), func(): _gas_do(GasLine.vent_residue(), words("剩余气体已全部排空，操作已记录。", "RESIDUE VENTED (LOGGED).")), float(d.residue) > 0.0],
+		[words("处理剩余污染物", "DISPOSE TAINTED"), func(): _gas_do(GasLine.dispose_waste(), words("已提交受控处置申请。", "DISPOSED.")), float(d.waste) > 0.0],
 	]))
 	if not GasLine.liq_block(1000.0).is_empty() and d.job.is_empty():
 		gas_box.add_child(label("  " + GasLine.liq_block(1000.0), 13))
 	# the automation, within bounds the player sets
-	gas_box.add_child(OpsSkin.Section.new(words("自动化（只在你定的范围内做）", "AUTOMATION (WITHIN YOUR BOUNDS)")))
-	for key in [["process", words("标准混合气自动分离（异常批次暂停等你）", "SEPARATE STANDARD BATCHES (ODD ONES WAIT)")], ["liquefy", words("自动液化（至少留 %.0f kg 气态氧，储罐留一成余量）", "LIQUEFY (KEEP %.0f kg OF GAS, 10%% OF THE TANK FREE)") % float(d.auto.keep_o2)]]:
+	gas_box.add_child(OpsSkin.Section.new(words("自动化管理（仅执行你设定范围内的操作）", "AUTOMATION (WITHIN YOUR BOUNDS)")))
+	for key in [["process", words("自动分离标准混合气体（遇到异常批次时暂停，等待手动处理）", "SEPARATE STANDARD BATCHES (ODD ONES WAIT)")], ["liquefy", words("自动液化（至少保留 %.0f kg 气态氧，储罐预留 10% 的空间）", "LIQUEFY (KEEP %.0f kg OF GAS, 10%% OF THE TANK FREE)") % float(d.auto.keep_o2)]]:
 		var cb := CheckButton.new()
 		cb.text = str(key[1])
 		cb.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		cb.custom_minimum_size.x = 300
 		cb.button_pressed = bool(d.auto.get(key[0], false))
 		var kk: String = key[0]
-		cb.toggled.connect(func(on): _gas_do(GasLine.set_auto(kk, on), words("已设定。", "SET.")))
+		cb.toggled.connect(func(on): _gas_do(GasLine.set_auto(kk, on), words("设置已保存。", "SET.")))
 		gas_box.add_child(cb)
 		var blk := GasLine.auto_block(kk)
 		if blk != "" and not bool(d.auto.get(kk, false)):
@@ -386,28 +386,28 @@ func _fill_people() -> void:
 		c.queue_free()
 	var list := TradePeople.here()
 	if list.is_empty():
-		callers.add_child(label(words("现在没有客人。贸易区开着时，隔一阵就会有独立商人或个体船主开船来。", "NOBODY AT THE PIER. MERCHANTS AND OWNER-OPERATORS COME BY NOW AND THEN."), 14))
+		callers.add_child(label(words("目前还没有客人。贸易区开放以后，每隔一段时间就会有独立商人或者私人船主驾驶飞船过来。", "NOBODY AT THE PIER. MERCHANTS AND OWNER-OPERATORS COME BY NOW AND THEN."), 14))
 	for v in list:
 		var box := VBoxContainer.new()
 		box.add_child(label("%s · %s" % [TradePeople.card_name(v), TradePeople.temper_name(str(v.temper))], 16))
 		box.add_child(label(TradePeople.card_text(v), 14))
 		if str(v.state) == "arriving":
-			box.add_child(label(words("正在靠泊……", "COMING ALONGSIDE…"), 14))
+			box.add_child(label(words("飞船正在靠泊……", "COMING ALONGSIDE…"), 14))
 		else:
 			var row := HBoxContainer.new()
 			var id := str(v.id)
-			var acts: Array = [[words("接受", "ACCEPT"), func(): _say_deal(TradePeople.accept(id))]]
+			var acts: Array = [[words("接受报价", "ACCEPT"), func(): _say_deal(TradePeople.accept(id))]]
 			if str(v.state) == "waiting":
-				for cut in [["small", words("小幅还价 5%", "ASK 5%")], ["medium", words("中幅 12%", "ASK 12%")], ["hard", words("狠砍 25%", "ASK 25%")]]:
+				for cut in [["small", words("小幅还价 5%", "ASK 5%")], ["medium", words("中幅还价 12%", "ASK 12%")], ["hard", words("大幅还价 25%", "ASK 25%")]]:
 					var c0: String = cut[0]
 					acts.append([str(cut[1]), func(): _say_deal(TradePeople.haggle(id, c0))])
-			acts.append([words("拒绝", "SEND AWAY"), func(): _say_deal(TradePeople.refuse(id))])
+			acts.append([words("拒绝交易", "SEND AWAY"), func(): _say_deal(TradePeople.refuse(id))])
 			# what each key does, as TradePeople really does it (by his temper: yes, halfway once, or he leaves)
-			var deal_notes := [words("按他开的价立刻成交", "Deal at his price, now"),
-				words("还价 5%：按他的脾气，答应、回个中间价或走人；砍得少，最容易答应", "Ask 5%: by his temper he agrees, meets you halfway or leaves; the smallest ask is likeliest"),
-				words("还价 12%：按他的脾气，答应、回个中间价或走人", "Ask 12%: by his temper he agrees, meets you halfway or leaves"),
-				words("还价 25%：砍得最狠，最容易被拒，他可能直接走人", "Ask 25%: the hardest ask, likeliest refused; he may just leave"),
-				words("不做这笔，让他走", "No deal: send him away")]
+			var deal_notes := [words("接受对方的报价，立即完成交易。", "Deal at his price, now"),
+				words("尝试还价 5%：降价幅度比较小，对方更容易接受，也可能提出折中的价格或者放弃交易。", "Ask 5%: by his temper he agrees, meets you halfway or leaves; the smallest ask is likeliest"),
+				words("尝试还价 12%：对方可能接受，也可能提出折中的价格或者直接离开，具体取决于他的性格。", "Ask 12%: by his temper he agrees, meets you halfway or leaves"),
+				words("尝试还价 25%：降价幅度比较大，对方很可能拒绝还价，甚至直接离开。", "Ask 25%: the hardest ask, likeliest refused; he may just leave"),
+				words("这份合同不接了，让他离开", "No deal: send him away")]
 			for i in acts.size():
 				var a: Array = acts[i]
 				var b := Button.new()
@@ -421,24 +421,24 @@ func _fill_people() -> void:
 	for who in TradePeople.orgs():
 		var o: Dictionary = TradePeople.orgs()[who]
 		var box2 := VBoxContainer.new()
-		box2.add_child(label(words("%s · 信誉 %d", "%s · REPUTATION %d") % [TradePeople.org_name(who), int(o.rep)], 16))
+		box2.add_child(label(words("%s · 当前信誉 %d", "%s · REPUTATION %d") % [TradePeople.org_name(who), int(o.rep)], 16))
 		var c: Dictionary = o.contract
 		var w2: String = str(who)
 		if not c.is_empty():
 			var have := float(Career.data.get("exchange", {}).get("actors", {}).get("company", {}).get("stock", {}).get(str(c.key), 0.0))
-			box2.add_child(label(words("执行中：每次 %.1f t %s，$%.0f/t · 第 %d / %d 次 · 下次还剩 %d 秒 · 仓库现有 %.1f t%s", "RUNNING: %.1f t OF %s AT $%.0f/t · %d / %d · NEXT IN %d s · %.1f t IN STOCK%s") % [float(c.qty), Ops.item_name(str(c.key)), float(c.price), int(c.done) + 1, int(c.times), ceili(float(c.next_in)), have, words("（不够）", " (SHORT!)") if have < float(c.qty) else ""], 14))
+			box2.add_child(label(words("合同执行中：每次交付 %.1f t %s，单价 $%.0f/t · 第 %d 次，共 %d 次 · 距离下次交货还有 %d 秒 · 仓库当前库存 %.1f t%s", "RUNNING: %.1f t OF %s AT $%.0f/t · %d / %d · NEXT IN %d s · %.1f t IN STOCK%s") % [float(c.qty), Ops.item_name(str(c.key)), float(c.price), int(c.done) + 1, int(c.times), ceili(float(c.next_in)), have, words("（库存不足）", " (SHORT!)") if have < float(c.qty) else ""], 14))
 			if int(c.done) == 0:
-				var drop := button(words("退掉这份合同（还没开始交货，不扣信誉）", "HAND IT BACK (NO DELIVERY YET)"), func(): _say_deal(TradePeople.drop_contract(w2)))
-				BenchFx.note(drop, words("立刻退掉：还没交过货，所以不扣信誉", "Hand it back now: nothing delivered yet, so no reputation lost"))
+				var drop := button(words("取消这份合同（还没有交付货物，不会扣除信誉）", "HAND IT BACK (NO DELIVERY YET)"), func(): _say_deal(TradePeople.drop_contract(w2)))
+				BenchFx.note(drop, words("确认取消合同：目前还没有交付过货物，所以不会扣除信誉", "Hand it back now: nothing delivered yet, so no reputation lost"))
 				box2.add_child(drop)
 		elif not o.offer.is_empty():
 			var of: Dictionary = o.offer
-			box2.add_child(label(words("给你的合同：每 10 分钟交 %.1f t %s，$%.0f/t，一共 %d 次", "OFFER: %.1f t OF %s EVERY 10 MIN AT $%.0f/t, %d TIMES") % [float(of.qty), Ops.item_name(str(of.key)), float(of.price), int(of.times)], 14))
-			var take := button(words("接下", "TAKE IT"), func(): _say_deal(TradePeople.take_contract(w2)))
-			BenchFx.note(take, words("立刻接下这份长期合同：按上面的量和价按期交货，守约涨信誉", "Take this standing contract now: deliver the amount above on time; keeping it raises reputation"))
+			box2.add_child(label(words("长期合同：每 10 分钟交付 %.1f t %s，单价 $%.0f/t，总共需要交付 %d 次", "OFFER: %.1f t OF %s EVERY 10 MIN AT $%.0f/t, %d TIMES") % [float(of.qty), Ops.item_name(str(of.key)), float(of.price), int(of.times)], 14))
+			var take := button(words("接受合同", "TAKE IT"), func(): _say_deal(TradePeople.take_contract(w2)))
+			BenchFx.note(take, words("确认接受这份长期合同，之后需要按照约定的数量和价格定期交货，按时完成交付可以提高信誉", "Take this standing contract now: deliver the amount above on time; keeping it raises reputation"))
 			box2.add_child(take)
 		else:
-			box2.add_child(label(words("信誉太低，这家暂时不给合同。", "REPUTATION TOO LOW: NO CONTRACT FOR NOW."), 14))
+			box2.add_child(label(words("当前信誉不足，这家客户暂时不愿意提供合同。", "REPUTATION TOO LOW: NO CONTRACT FOR NOW."), 14))
 		org_box.add_child(box2)
 
 
@@ -446,13 +446,13 @@ func _say_deal(r: Dictionary) -> void:
 	if not r.ok:
 		BenchFx.say(message, str(r.reason))
 	elif str(r.get("said", "")) == "halfway":
-		BenchFx.say(message, words("他摇头，回了个中间价 $%.0f/t。接受或拒绝。", "HE MEETS YOU HALFWAY AT $%.0f/t.") % float(r.price))
+		BenchFx.say(message, words("对方没有接受你的报价，提出了 $%.0f/t 的折中价格，你可以选择接受或者拒绝。", "HE MEETS YOU HALFWAY AT $%.0f/t.") % float(r.price))
 	elif str(r.get("said", "")) == "no":
-		BenchFx.say(message, words("他不干，开船走了。", "HE SAID NO AND LEFT."))
+		BenchFx.say(message, words("对方拒绝了这次交易，已经开船离开了。", "HE SAID NO AND LEFT."))
 	elif r.has("total"):
-		BenchFx.say(message, words("成交：$%.0f/t，共 %s。", "DONE: $%.0f/t, %s IN ALL.") % [float(r.price), Pal.money(float(r.total))])
+		BenchFx.say(message, words("交易成功：单价 $%.0f/t，总金额 %s。", "DONE: $%.0f/t, %s IN ALL.") % [float(r.price), Pal.money(float(r.total))])
 	else:
-		BenchFx.say(message, words("好。", "DONE."))
+		BenchFx.say(message, words("确认", "DONE."))
 	_people_sig = ""
 	_fill_people.call_deferred()
 
@@ -486,7 +486,7 @@ func _stage_line() -> String:
 	var s := "%s %d / 2" % [Txt.t("pt_stage"), n]
 	if n < 2:
 		var node := Route.port_node(zone)
-		s += "\n" + words("下一阶段：", "NEXT STAGE: ") + Port.desc_of(zone, n + 1) + "\n" + Route.missing(node)
+		s += "\n" + words("下一期目标：", "NEXT STAGE: ") + Port.desc_of(zone, n + 1) + "\n" + Route.missing(node)
 	else:
 		s += " · " + Txt.t("pt_done")
 	return s
@@ -501,40 +501,40 @@ func _fill() -> void:
 			var v := Grid.verdict(game)
 			lines.append(str(v.t))
 			if str(v.how) != "":
-				lines.append(words("怎么办：", "WHAT TO DO: ") + str(v.how))
+				lines.append(words("处理办法：", "WHAT TO DO: ") + str(v.how))
 			var det: Array = []
-			det.append(["%s  %.0f %s" % [words("自家能发", "WE CAN MAKE"), Grid.capacity(), words("兆瓦", "MW")]])
-			det.append(["%s  %.1f %s" % [words("已经分出去", "GIVEN OUT"), Grid.reserved(game), words("兆瓦", "MW")]])
-			det.append(["%s  %.1f %s" % [words("还空着", "STILL FREE"), Grid.headroom(game), words("兆瓦", "MW")]])
+			det.append(["%s  %.0f %s" % [words("自有发电能力", "WE CAN MAKE"), Grid.capacity(), words("兆瓦", "MW")]])
+			det.append(["%s  %.1f %s" % [words("已分配电力", "GIVEN OUT"), Grid.reserved(game), words("兆瓦", "MW")]])
+			det.append(["%s  %.1f %s" % [words("当前还是空位", "STILL FREE"), Grid.headroom(game), words("兆瓦", "MW")]])
 			if preload("res://scripts/power_supply.gd").ENABLED:
-				det.append(["%s  %.1f / %.1f %s" % [words("电池泊位剩电", "BATTERY BERTH LEFT"), preload("res://scripts/power_supply.gd").left_mwh(), preload("res://scripts/power_supply.gd").full_mwh(), words("兆瓦时", "MWh")]])
+				det.append(["%s  %.1f / %.1f %s" % [words("电池泊位剩余电量", "BATTERY BERTH LEFT"), preload("res://scripts/power_supply.gd").left_mwh(), preload("res://scripts/power_supply.gd").full_mwh(), words("兆瓦时", "MWh")]])
 			else:
 				pass
 			for l in Grid.loads(game):
-				var st: String = {"base": words("一直先供", "ALWAYS FIRST"), "run": words("在用", "ON"), "short": Grid.short_label(int(float(l.k) * 100.0)), "idle": words("没在用", "IDLE")}.get(str(l.state), "")
+				var st: String = {"base": words("始终优先供电", "ALWAYS FIRST"), "run": words("正在使用", "ON"), "short": Grid.short_label(int(float(l.k) * 100.0)), "idle": words("当前未使用", "IDLE")}.get(str(l.state), "")
 				if l.get("free", false):
-					st = words("免费供电", "FREE SUPPLY")
+					st = words("免费提供电力", "FREE SUPPLY")
 				det.append(["%s  %s · %.1f / %.0f" % [str(l.name), st, float(l.own) + float(l.shore) if not l.get("free", false) else float(l.mw), float(l.rated)]])
 			if Grid.wait_text(game) != "":
 				lines.append(Grid.wait_text(game))
 			_details(det)
 			for id in Port.POWER_ITEMS:
 				var owned: bool = d.get("upgrades", {}).has(id)
-				lines.append("%s  %s" % [Repair.name_of(id), words("已建成", "BUILT") if owned else (words("可修（有港电）", "CAN REPAIR (GRID UP)") if Port.power_ok(id) else words("等动力区 1 阶", "WAITS FOR STAGE 1"))])
+				lines.append("%s  %s" % [Repair.name_of(id), words("已经建造完成", "BUILT") if owned else (words("可以维修（港口电力已接通）", "CAN REPAIR (GRID UP)") if Port.power_ok(id) else words("需要先将动力区修到 1 期", "WAITS FOR STAGE 1"))])
 		"tug":
 			# 72 号: the yard and the tugs (the old big-ship queue is retired)
 			for part in TugYard.status().split(" · "):
 				lines.append(part)
 			for a in TugYard.taken():
-				lines.append("%s  %s" % [str(a.id), {"towing": words("在路上", "ON THE WAY"), "arrived": words("泊位 %d" % (int(a.get("yard", 0)) + 1), "BERTH %d" % (int(a.get("yard", 0)) + 1)), "held": words("扣在港口", "HELD")}.get(str(a.state), str(a.state))])
+				lines.append("%s  %s" % [str(a.id), {"towing": words("正在运输途中", "ON THE WAY"), "arrived": words("第 %d 号泊位" % (int(a.get("yard", 0)) + 1), "BERTH %d" % (int(a.get("yard", 0)) + 1)), "held": words("目前停靠在港口", "HELD")}.get(str(a.state), str(a.state))])
 		"process":
-			for key in [["industrial_sort", words("分选批次", "SORTING BATCH")], ["industrial_heat", words("炉次", "HEAT")]]:
+			for key in [["industrial_sort", words("分选处理批次", "SORTING BATCH")], ["industrial_heat", words("熔炼批次", "HEAT")]]:
 				var b: Dictionary = d.get(key[0], {})
 				lines.append("%s  %s" % [key[1], _batch_state(b)])
 			lines.append(Mill.status())
 		"trade":
-			lines.append("%s  ×%.2f" % [words("设备售价系数", "EQUIPMENT PRICE FACTOR"), Port.trade_k()])
-			lines.append(words("市场合同：%d 张", "MARKET OFFERS: %d") % d.get("offers", []).size())
+			lines.append("%s  ×%.2f" % [words("设备出售价格系数", "EQUIPMENT PRICE FACTOR"), Port.trade_k()])
+			lines.append(words("当前市场合同：%d 份", "MARKET OFFERS: %d") % d.get("offers", []).size())
 			var ex: Dictionary = d.get("exchange", {})
 			if not ex.is_empty():
 				var mine: Dictionary = ex.get("actors", {}).get("company", {})
@@ -542,7 +542,7 @@ func _fill() -> void:
 				for o in ex.get("orders", []):
 					if o.get("owner", "") == "company" and o.get("state", "") == "open":
 						open += 1
-				lines.append(words("我的挂单：%d 张 · 托管现金 %s", "MY ORDERS: %d · CASH %s") % [open, Pal.money(float(mine.get("cash", d.get("money", 0.0))))])
+				lines.append(words("我的挂单：%d 笔 · 托管资金 %s", "MY ORDERS: %d · CASH %s") % [open, Pal.money(float(mine.get("cash", d.get("money", 0.0))))])
 		"cargo":
 			var ex: Dictionary = d.get("exchange", {})
 			var stock: Dictionary = ex.get("actors", {}).get("company", {}).get("stock", {})
@@ -551,7 +551,7 @@ func _fill() -> void:
 				stock = StoreBook.raw_stock()
 				lines.append(StoreBook.summary_line())
 			if stock.is_empty():
-				lines.append(words("仓库空着。", "THE WAREHOUSE IS EMPTY."))
+				lines.append(words("仓库目前没有存放任何货物。", "THE WAREHOUSE IS EMPTY."))
 			for key in stock:
 				if float(stock[key]) > 0.0005:
 					lines.append("%s  %.3f t" % [_item_name(str(key)), float(stock[key])])
@@ -559,21 +559,21 @@ func _fill() -> void:
 			for row in d.get("material_batches", []):
 				if row.get("state", "") == "raw_received":
 					raw += 1
-			lines.append(words("未评级原料批次：%d", "UNGRADED BATCHES: %d") % raw)
-			lines.append(words("出场部署槽：%d", "DEPLOY SLOTS: %d") % Gear.deploy_slots(d.get("loadout", {}).get("mods", [])))
+			lines.append(words("尚未评级的原料批次：%d 批", "UNGRADED BATCHES: %d") % raw)
+			lines.append(words("出场部署栏位：%d 个", "DEPLOY SLOTS: %d") % Gear.deploy_slots(d.get("loadout", {}).get("mods", [])))
 			# 73 号: the forklifts
 			var jobs: Array = Warehouse.data().jobs
-			lines.append(words("叉车 %d 台 · 搬运中 %d 趟", "FORKLIFTS %d · %d MOVES") % [Warehouse.forklifts(), jobs.size()])
+			lines.append(words("叉车总数 %d 台 · 正在执行的搬运任务 %d 趟", "FORKLIFTS %d · %d MOVES") % [Warehouse.forklifts(), jobs.size()])
 			for j in jobs.slice(0, Warehouse.forklifts()):
-				lines.append(words("%s %s  %d 秒", "%s %s  %d s") % [Warehouse.ROWS[int(j.row)], words("上架", "IN") if str(j.dir) == "in" else words("出库", "OUT"), ceili(float(j.left))])
+				lines.append(words("%s %s · 剩余 %d 秒", "%s %s  %d s") % [Warehouse.ROWS[int(j.row)], words("货物上架", "IN") if str(j.dir) == "in" else words("货物出库", "OUT"), ceili(float(j.left))])
 		"ring":
 			for z in Port.ZONES:
 				lines.append("%s  %d / 2" % [Port.name_of(z), Port.stage(z)])
 			lines.append("")
-			lines.append("%s %s · %s %s" % [words("现金", "CASH"), Pal.money(float(d.get("money", 0.0))), words("贷款", "LOAN"), Pal.money(float(d.get("loan", 0.0)))])
+			lines.append("%s %s · %s %s" % [words("可用现金", "CASH"), Pal.money(float(d.get("money", 0.0))), words("当前贷款", "LOAN"), Pal.money(float(d.get("loan", 0.0)))])
 			var a: Dictionary = d.get("active", {})
-			lines.append(words("在手合同：", "CONTRACT IN HAND: ") + (str(a.get("id", "")) if not a.is_empty() else words("无", "NONE")))
-			lines.append(words("待办：", "TO DO:"))
+			lines.append(words("当前持有的合同：", "CONTRACT IN HAND: ") + (str(a.get("id", "")) if not a.is_empty() else words("暂无合同", "NONE")))
+			lines.append(words("待处理事项：", "TO DO:"))
 			for n in Route.goals():
 				lines.append("  · %s  %s" % [str(n.name).split(" · ")[0], Route.missing(n)])
 	body.text = "\n".join(lines)
@@ -587,7 +587,7 @@ func _show(lines: Array) -> void:
 	if n < 2:
 		# 108 号 Q4/Q11 (the outside review: the cargo console said the same thing three times): the
 		# next stage here once; what it still lacks is the ticked list under "mend this district"
-		head.append([words("下一期：", "NEXT: ") + Port.desc_of(zone, n + 1), ""])
+		head.append([words("下一期还款：", "NEXT: ") + Port.desc_of(zone, n + 1), ""])
 	stage_box.set_rows(head)
 	plate.set_lamp("ok" if n >= 1 else "warn")
 	if overview != null:
@@ -613,8 +613,8 @@ func _show(lines: Array) -> void:
 
 func _batch_state(b: Dictionary) -> String:
 	if b.is_empty():
-		return words("空闲", "IDLE")
-	var phases := {"raw_transport": "原料运输", "raw_return": "原料返仓", "processing": "进行中", "product_transport": "产物返仓", "complete": "已完成", "cancelled": "已撤回", "written_off": "已报损"}
+		return words("当前没有搬运任务", "IDLE")
+	var phases := {"raw_transport": "正在运输原料", "raw_return": "正在将原料运回仓库", "processing": "正在执行任务", "product_transport": "正在将成品运回仓库", "complete": "搬运任务已完成", "cancelled": "搬运任务已取消", "written_off": "已经登记报损"}
 	return phases.get(str(b.get("state", "")), str(b.get("state", ""))) if Txt.zh else str(b.get("state", "")).to_upper()
 
 
@@ -677,8 +677,8 @@ func _process_layout() -> bool:
 		solid.shadow_size = 24
 		pane.add_theme_stylebox_override("panel", solid)
 	column.add_theme_constant_override("separation", 16)
-	plate = OpsSkin.Plate.new(CODES.process, words("加工区 · 气体", "PROCESSING · GAS"), "", accent)
-	column.add_child(ConsoleKit.header(words("加工区 · 气体线", "PROCESSING · GAS LINE"), CODES.process + words(" · 业务终端", " · CONSOLE")))
+	plate = OpsSkin.Plate.new(CODES.process, words("加工区 · 气体处理", "PROCESSING · GAS"), "", accent)
+	column.add_child(ConsoleKit.header(words("加工区 · 气体处理线", "PROCESSING · GAS LINE"), CODES.process + words(" · 业务管理终端", " · CONSOLE")))
 	now_line = ConsoleKit.NowLine.new()
 	column.add_child(now_line)
 	# ---- the tanks and the next step, side by side
@@ -696,7 +696,7 @@ func _process_layout() -> bool:
 	var cv := VBoxContainer.new()
 	cv.add_theme_constant_override("separation", 8)
 	card.add_child(cv)
-	var nl := label(words("下一步", "NEXT"), 14)
+	var nl := label(words("进行下一步", "NEXT"), 14)
 	nl.modulate = Color(1, 1, 1, 0.55)
 	cv.add_child(nl)
 	next_title = label("", 26)
@@ -724,7 +724,7 @@ func _process_layout() -> bool:
 	cv.add_child(next_key)
 	BenchFx.primary(next_key)
 	# ---- 更多: everything else, as it was
-	more_key = button(words("更多 ›  自动化 · 外购混合气 · 检测 · 放空 · 本区修复", "MORE ›  AUTOMATION · BUY GAS · TEST · VENT · MENDING"), func(): _more_fold.set_open(not _more_fold.open))
+	more_key = button(words("更多 › 自动化设置 · 购买混合气 · 生命支持检测 · 气体排放 · 本区设施维修", "MORE ›  AUTOMATION · BUY GAS · TEST · VENT · MENDING"), func(): _more_fold.set_open(not _more_fold.open))
 	more_key.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	column.add_child(more_key)
 	more_box = VBoxContainer.new()
@@ -732,8 +732,8 @@ func _process_layout() -> bool:
 	more_box.visible = false
 	column.add_child(more_box)
 	_more_fold = BenchFx.fold(more_box)
-	_more_fold.on_toggle = func(open: bool): more_key.text = (words("更多 ▾", "MORE ▾") if open else words("更多 ›  自动化 · 外购混合气 · 检测 · 放空 · 本区修复", "MORE ›  AUTOMATION · BUY GAS · TEST · VENT · MENDING"))
-	BenchFx.note(more_key, words("展开或收起：自动化、外购混合气、生命支持检测、放空、处置污染、本区修复、轧机", "Show or hide the rest: automation, buying gas, the test, venting, disposal, mending, the mill"))
+	_more_fold.on_toggle = func(open: bool): more_key.text = (words("展开更多 ▾", "MORE ▾") if open else words("更多 › 自动化设置 · 购买混合气 · 生命支持检测 · 气体排放 · 本区设施维修", "MORE ›  AUTOMATION · BUY GAS · TEST · VENT · MENDING"))
+	BenchFx.note(more_key, words("展开或收起更多功能，包括自动化设置、购买混合气、生命支持检测、气体排放、污染处理和本区设施维修。", "Show or hide the rest: automation, buying gas, the test, venting, disposal, mending, the mill"))
 	stage_box = OpsSkin.Readout.new()
 	more_box.add_child(stage_box)
 	more_box.add_child(OpsSkin.Section.new(words("本区修复", "MEND THIS DISTRICT")))
@@ -746,14 +746,14 @@ func _process_layout() -> bool:
 	body.visible = false
 	more_box.add_child(body)
 	more_box.add_child(OpsSkin.Section.new(words("轧机", "ROLLING MILL")))
-	more_box.add_child(label(words("轧机在观察廊上有自己的控制台：飞到它上面按 %s，选配方、开轧。", "The mill has its own console on the gallery: press %s at it to pick a recipe and roll.") % Keys.label("use"), 15))
-	more_box.add_child(OpsSkin.Section.new(words("气体线 · 回收 → 分离 → 液氧 → 补给", "GAS LINE · RECOVER → SEPARATE → LOX → SUPPLY")))
+	more_box.add_child(label(words("轧机的控制台就在观察廊上，飞到控制台上方按 %s，就可以选择加工配方并启动轧机。", "The mill has its own console on the gallery: press %s at it to pick a recipe and roll.") % Keys.label("use"), 15))
+	more_box.add_child(OpsSkin.Section.new(words("气体回收 → 气体分离 → 液氧生产 → 补给使用", "GAS LINE · RECOVER → SEPARATE → LOX → SUPPLY")))
 	gas_box = VBoxContainer.new()
 	more_box.add_child(gas_box)
 	_fill_gas()
 	message = label("", 15)
 	column.add_child(message)
-	column.add_child(button(words("关闭 [Esc]", "CLOSE [Esc]"), close))
+	column.add_child(button(words("按 [Esc] 关闭面板", "CLOSE [Esc]"), close))
 	_fill()
 	_fill_next()
 	return true
@@ -770,7 +770,7 @@ func _draw_tanks() -> void:
 	var o2 := float(d.get("o2", {}).get("ind", 0.0)) + float(d.get("o2", {}).get("ok", 0.0)) + float(d.get("o2", {}).get("ls", 0.0))
 	var lox := float(d.get("lox", {}).get("kg", 0.0))
 	var lh2 := float(Career.data.get("gas", {}).get("lh2", {}).get("kg", 0.0))
-	var items := [[words("气态氧", "GAS O₂"), o2, maxf(5000.0, o2 * 1.25), Pal.tint(Pal.AIR, 0.9, 1.3)], [words("液氧", "LOX"), lox, GasLine.TANK_CAP, Pal.tint(Pal.FLUID, 0.95, 1.3)], [words("液氢", "LH₂"), lh2, 8000.0, Color(0.75, 0.85, 1.0)]]
+	var items := [[words("气态氧气", "GAS O₂"), o2, maxf(5000.0, o2 * 1.25), Pal.tint(Pal.AIR, 0.9, 1.3)], [words("液态氧气", "LOX"), lox, GasLine.TANK_CAP, Pal.tint(Pal.FLUID, 0.95, 1.3)], [words("液态氢气", "LH₂"), lh2, 8000.0, Color(0.75, 0.85, 1.0)]]
 	var f := Fonts.get_font("Medium")
 	var fb := Fonts.get_font("SemiBold")
 	var sz := tanks.size
@@ -818,44 +818,44 @@ func _fill_next() -> void:
 	var key := ""
 	var why := ""
 	if not GasLine.built():
-		title = words("气体线还没修", "NO GAS LINE YET")
-		sub = words("在船坞终端“修缮”里修“气体线”（要加工区和动力区各 1 阶）。没修之前，拆船抽回的气在结算时折现。", "Build it under the berth terminal's repairs (processing and power at stage 1). Until then a ship's gas is cashed at settlement.")
+		title = words("气体管线尚未修复", "NO GAS LINE YET")
+		sub = words("前往船坞终端的「修缮」页面，修复「气体管线」。需要加工区和动力区都修到 1 期。修复之前，从船上回收的气体会在结算时直接换成现金。", "Build it under the berth terminal's repairs (processing and power at stage 1). Until then a ship's gas is cashed at settlement.")
 	else:
 		var d := GasLine.data()
 		var raw: Array = d.batches.filter(func(b): return str(b.state) == "raw")
 		if not d.job.is_empty() or not d.get("liq", {}).is_empty():
 			title = words("正在：", "NOW: ") + GasLine.job_text()
-			sub = words("机器在跑，不用守着。", "It runs by itself.")
-			key = words("进行中", "RUNNING")
-			why = words("等这一步做完", "WAIT FOR IT")
+			sub = words("设备正在运行，不需要一直等待。", "It runs by itself.")
+			key = words("正在执行任务", "RUNNING")
+			why = words("等待当前步骤完成", "WAIT FOR IT")
 		elif not raw.is_empty():
 			var b: Dictionary = raw[0]
 			var m := GasLine.mass(b)
 			var a := GasLine.assess(b)
-			title = words("分离一批", "SEPARATE A BATCH")
-			sub = words("%.0f kg · 氧 %d%% · %s\n约 %d 秒", "%.0f kg · O₂ %d%% · %s\n~%d s") % [m, int(100.0 * float(b.kg.get("o2", 0.0)) / maxf(m, 0.001)), (words("污染 %.1f%%", "TAINT %.1f%%") % (a.taint * 100.0)) if a.taint > 0.0005 else words("无污染", "CLEAN"), int(ceil(m / 1000.0 * GasLine.SEP_S_PER_T))]
+			title = words("分离一批气体", "SEPARATE A BATCH")
+			sub = words("%.0f kg · 氧气含量 %d%% · %s\n预计需要 %d 秒", "%.0f kg · O₂ %d%% · %s\n~%d s") % [m, int(100.0 * float(b.kg.get("o2", 0.0)) / maxf(m, 0.001)), (words("污染率 %.1f%%", "TAINT %.1f%%") % (a.taint * 100.0)) if a.taint > 0.0005 else words("没有污染", "CLEAN"), int(ceil(m / 1000.0 * GasLine.SEP_S_PER_T))]
 			if raw.size() > 1:
-				sub += words(" · 还有 %d 批等着", " · %d MORE WAITING") % (raw.size() - 1)
+				sub += words(" · 还有 %d 批等待处理", " · %d MORE WAITING") % (raw.size() - 1)
 			key = words("开始分离", "SEPARATE")
 			why = GasLine.sep_block(str(b.id))
 			var bid := str(b.id)
-			_next_do = func(): _gas_do(GasLine.separate(bid), words("开始分离。", "SEPARATING.")); _fill_next()
+			_next_do = func(): _gas_do(GasLine.separate(bid), words("已开始分离。", "SEPARATING.")); _fill_next()
 		elif GasLine.o2_free() >= 1.0:
 			var kg := minf(1000.0, GasLine.o2_free())
-			title = words("液化 %.0f kg 气态氧", "LIQUEFY %.0f kg OF OXYGEN") % kg
-			sub = words("进液氧储罐（还能装 %.0f kg）· 约 %d 秒", "Into the LOX tank (%.0f kg of room) · ~%d s") % [GasLine.space(), int(ceil(kg / 1000.0 * GasLine.LIQ_S_PER_T))]
-			key = words("液化", "LIQUEFY")
+			title = words("将 %.0f kg 气态氧气液化", "LIQUEFY %.0f kg OF OXYGEN") % kg
+			sub = words("存入液氧储罐（剩余容量 %.0f kg）· 预计需要 %d 秒", "Into the LOX tank (%.0f kg of room) · ~%d s") % [GasLine.space(), int(ceil(kg / 1000.0 * GasLine.LIQ_S_PER_T))]
+			key = words("开始液化", "LIQUEFY")
 			why = GasLine.liq_block(kg)
-			_next_do = func(): _gas_do(GasLine.liquefy(kg), words("开始液化。", "LIQUEFYING.")); _fill_next()
+			_next_do = func(): _gas_do(GasLine.liquefy(kg), words("已开始液化处理。", "LIQUEFYING.")); _fill_next()
 		else:
-			title = words("没有要处理的气", "NOTHING TO PROCESS")
-			sub = words("拆船时用气液回收（5）把舱里的气抽回来，回港就是一批混合气；也可以在“更多”里外购混合气。", "Recover a ship's gas with the gas recovery tool (5): it comes home as a batch. Or buy mixed gas under MORE.")
+			title = words("当前没有需要处理的气体", "NOTHING TO PROCESS")
+			sub = words("拆船时可以按 5 使用「气液回收」，把舱内的气体回收回来，返回港口后就会存为一批混合气体。你也可以在「更多」页面直接购买混合气。", "Recover a ship's gas with the gas recovery tool (5): it comes home as a batch. Or buy mixed gas under MORE.")
 	next_title.text = title
 	next_sub.text = sub
 	next_key.visible = key != ""
 	next_key.text = key
 	next_key.disabled = why != ""
-	BenchFx.note(next_key, words("这一步要做的事", "This step"), why)
+	BenchFx.note(next_key, words("当前需要完成的操作", "This step"), why)
 	_gas_primary(title, key, why)
 
 
@@ -884,8 +884,8 @@ func _trade_layout() -> bool:
 	if zone != "trade" or Port.stage("trade") < 1:
 		return false
 	var column := ConsoleKit.solid(self, 640.0)
-	plate = OpsSkin.Plate.new(CODES.trade, words("贸易港", "TRADE PORT"), "", Pal.tint(Pal.AIR, 1.0, 1.2))
-	column.add_child(ConsoleKit.header(words("贸易港", "TRADE PORT"), CODES.trade + words(" · 业务终端", " · CONSOLE")))
+	plate = OpsSkin.Plate.new(CODES.trade, words("贸易港口", "TRADE PORT"), "", Pal.tint(Pal.AIR, 1.0, 1.2))
+	column.add_child(ConsoleKit.header(words("贸易港口", "TRADE PORT"), CODES.trade + words(" · 业务管理终端", " · CONSOLE")))
 	now_line = ConsoleKit.NowLine.new()
 	column.add_child(now_line)
 	trade_box = VBoxContainer.new()
@@ -906,11 +906,11 @@ func _trade_layout() -> bool:
 	column.add_child(org_list)
 	org_fold = BenchFx.fold(org_list)
 	org_fold.on_toggle = func(_o): _trade_sig = ""
-	var ex := ConsoleKit.key(words("打开交易行", "OPEN THE EXCHANGE"), func(): _then(func(): game.open_exchange()))
-	BenchFx.note(ex, words("卖货、买零件、交订单", "Sell, buy parts, fill orders"))
+	var ex := ConsoleKit.key(words("打开交易市场", "OPEN THE EXCHANGE"), func(): _then(func(): game.open_exchange()))
+	BenchFx.note(ex, words("出售货物、购买零件、交付订单", "Sell, buy parts, fill orders"))
 	column.add_child(ex)
 	# ---- 更多: the figures, the mending
-	more_key = ConsoleKit.key(words("更多 ›   售价系数 · 我的挂单 · 本区修复", "MORE ›   PRICE FACTOR · MY LISTINGS · MENDING"), func(): _more_fold.set_open(not _more_fold.open), 18)
+	more_key = ConsoleKit.key(words("更多 › 出售价格系数 · 我的挂单 · 区域修复", "MORE ›   PRICE FACTOR · MY LISTINGS · MENDING"), func(): _more_fold.set_open(not _more_fold.open), 18)
 	more_key.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	column.add_child(more_key)
 	more_box = VBoxContainer.new()
@@ -918,7 +918,7 @@ func _trade_layout() -> bool:
 	more_box.visible = false
 	column.add_child(more_box)
 	_more_fold = BenchFx.fold(more_box)
-	_more_fold.on_toggle = func(open: bool): more_key.text = (words("更多 ▾", "MORE ▾") if open else words("更多 ›   售价系数 · 我的挂单 · 本区修复", "MORE ›   PRICE FACTOR · MY LISTINGS · MENDING"))
+	_more_fold.on_toggle = func(open: bool): more_key.text = (words("展开更多 ▾", "MORE ▾") if open else words("更多 › 出售价格系数 · 我的挂单 · 区域修复", "MORE ›   PRICE FACTOR · MY LISTINGS · MENDING"))
 	stage_box = OpsSkin.Readout.new()
 	more_box.add_child(stage_box)
 	readout = OpsSkin.Readout.new()
@@ -932,7 +932,7 @@ func _trade_layout() -> bool:
 	_fill_repair()
 	message = ConsoleKit.text("", 18, 0.85)
 	column.add_child(message)
-	column.add_child(button(words("关闭 [Esc]", "CLOSE [Esc]"), close))
+	column.add_child(button(words("按 [Esc] 关闭面板", "CLOSE [Esc]"), close))
 	_fill()
 	_fill_trade()
 	return true
@@ -945,10 +945,10 @@ func _visitors() -> Array:
 func _likely(v: Dictionary, i: int) -> String:
 	var p: float = TradePeople.ACCEPT.get(str(v.temper), [0.5, 0.5, 0.5])[i]
 	if p >= 0.7:
-		return words("多半答应", "LIKELY YES")
+		return words("对方很可能接受报价", "LIKELY YES")
 	if p >= 0.3:
-		return words("可能回个中间价", "MAY MEET HALFWAY") if str(v.temper) == "shrewd" else words("一半一半", "FIFTY-FIFTY")
-	return words("多半走人", "LIKELY LEAVES")
+		return words("对方可能会提出折中价格", "MAY MEET HALFWAY") if str(v.temper) == "shrewd" else words("接受和拒绝的可能性差不多", "FIFTY-FIFTY")
+	return words("对方很可能拒绝交易", "LIKELY LEAVES")
 
 
 # the top line and the one key, from what is at the pier and what the companies offer
@@ -980,27 +980,27 @@ func _fill_trade() -> void:
 		var v: Dictionary = vs[_vis_i]
 		var ref: float = TradePeople.Exchange.ref_price(str(v.key))
 		var diff := roundi((float(v.price) / maxf(ref, 1.0) - 1.0) * 100.0)
-		var cmp := (words("比市价高 %d%%", "%d%% OVER MARKET") % diff) if diff > 0 else ((words("比市价低 %d%%", "%d%% UNDER MARKET") % -diff) if diff < 0 else words("和市价一样", "AT MARKET"))
+		var cmp := (words("比市场价格高 %d%%", "%d%% OVER MARKET") % diff) if diff > 0 else ((words("比市场价格低 %d%%", "%d%% UNDER MARKET") % -diff) if diff < 0 else words("与市场价格相同", "AT MARKET"))
 		if str(v.want) == "buy":
-			now_line.set_now(true, words("码头有人出 %s/t 买%s，%s", "A BUYER OFFERS %s/t FOR %s, %s") % [Pal.money(float(v.price)), Ops.item_name(str(v.key)), cmp])
+			now_line.set_now(true, words("港口有人愿意以 %s/t 的价格收购%s，%s", "A BUYER OFFERS %s/t FOR %s, %s") % [Pal.money(float(v.price)), Ops.item_name(str(v.key)), cmp])
 		else:
-			now_line.set_now(true, words("码头有人卖%s，要 %s/t，%s", "A SELLER: %s AT %s/t, %s") % [Ops.item_name(str(v.key)), Pal.money(float(v.price)), cmp])
+			now_line.set_now(true, words("港口有人正在出售%s，价格为 %s/t，%s", "A SELLER: %s AT %s/t, %s") % [Ops.item_name(str(v.key)), Pal.money(float(v.price)), cmp])
 	elif not offers.is_empty() and running.is_empty():
 		var of: Dictionary = orgs[offers[0]].offer
-		now_line.set_now(true, words("%s给长期合同：每 10 分钟 %.1f t %s", "%s OFFERS A CONTRACT: %.1f t OF %s EVERY 10 MIN") % [TradePeople.org_name(str(offers[0])), float(of.qty), Ops.item_name(str(of.key))])
+		now_line.set_now(true, words("%s 提供的长期合同：每 10 分钟交付 %.1f t %s", "%s OFFERS A CONTRACT: %.1f t OF %s EVERY 10 MIN") % [TradePeople.org_name(str(offers[0])), float(of.qty), Ops.item_name(str(of.key))])
 	else:
 		var short := ""
 		for who in running:
 			var c: Dictionary = orgs[who].contract
 			if float(stock.get(str(c.key), 0.0)) < float(c.qty):
-				short = words("%s的合同下次要 %.1f t %s，仓库不够", "%s'S NEXT DELIVERY: %.1f t OF %s, NOT IN STOCK") % [TradePeople.org_name(str(who)), float(c.qty), Ops.item_name(str(c.key))]
+				short = words("%s 的长期合同即将交付 %.1f t %s，但目前仓库库存不足", "%s'S NEXT DELIVERY: %.1f t OF %s, NOT IN STOCK") % [TradePeople.org_name(str(who)), float(c.qty), Ops.item_name(str(c.key))]
 		if short != "":
 			now_line.set_now(true, short)
 		else:
-			now_line.set_now(false, words("没客人，合同都在跑", "NOBODY AT THE PIER; THE CONTRACTS RUN") if not running.is_empty() else words("没客人", "NOBODY AT THE PIER"))
+			now_line.set_now(false, words("当前没有客人，长期合同仍在正常执行", "NOBODY AT THE PIER; THE CONTRACTS RUN") if not running.is_empty() else words("当前没有客人", "NOBODY AT THE PIER"))
 	# ---- the visitor
 	if vs.is_empty():
-		trade_box.add_child(ConsoleKit.text(words("现在码头没人。隔一阵会有商人或个体船主开船来。", "Nobody at the pier. Merchants and owner-operators come by now and then."), 18, 0.55))
+		trade_box.add_child(ConsoleKit.text(words("码头目前没有客人，过一段时间会有商人或个体船主开船过来。", "Nobody at the pier. Merchants and owner-operators come by now and then."), 18, 0.55))
 	else:
 		var v2: Dictionary = vs[_vis_i]
 		var card := PanelContainer.new()
@@ -1013,32 +1013,32 @@ func _fill_trade() -> void:
 		cv.add_theme_constant_override("separation", 6)
 		card.add_child(cv)
 		var hr := HBoxContainer.new()
-		var h1 := ConsoleKit.text(words("码头客人 · %d / %d", "AT THE PIER · %d / %d") % [_vis_i + 1, vs.size()], 16, 0.55)
+		var h1 := ConsoleKit.text(words("码头来访客户 · %d / %d", "AT THE PIER · %d / %d") % [_vis_i + 1, vs.size()], 16, 0.55)
 		h1.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		hr.add_child(h1)
 		if str(v2.temper) == "hurry":
-			hr.add_child(ConsoleKit.text(words("还等 %d 秒", "%d s LEFT") % ceili(float(v2.left)), 16, 0.55))
+			hr.add_child(ConsoleKit.text(words("还需要等待 %d 秒", "%d s LEFT") % ceili(float(v2.left)), 16, 0.55))
 		cv.add_child(hr)
 		cv.add_child(ConsoleKit.text("%s · %s" % [TradePeople.card_name(v2), TradePeople.temper_name(str(v2.temper))], 18, 0.8))
 		var buys := str(v2.want) == "buy"
-		var big := ConsoleKit.text((words("想买  %s  %.1f t", "BUYS  %s  %.1f t") if buys else words("想卖  %s  %.1f t", "SELLS  %s  %.1f t")) % [Ops.item_name(str(v2.key)), float(v2.qty)], 30, 0.97)
+		var big := ConsoleKit.text((words("想要购买 %s，数量为 %.1f t", "BUYS  %s  %.1f t") if buys else words("想要出售 %s，数量为 %.1f t", "SELLS  %s  %.1f t")) % [Ops.item_name(str(v2.key)), float(v2.qty)], 30, 0.97)
 		big.add_theme_font_override("font", Fonts.get_font("SemiBold"))
 		cv.add_child(big)
 		var ref2: float = TradePeople.Exchange.ref_price(str(v2.key))
-		cv.add_child(ConsoleKit.text((words("出 %s/t   市价 %s/t", "OFFERS %s/t   MARKET %s/t") if buys else words("要 %s/t   市价 %s/t", "ASKS %s/t   MARKET %s/t")) % [Pal.money(float(v2.price)), Pal.money(ref2)], 22, 0.92))
+		cv.add_child(ConsoleKit.text((words("对方报价 %s/t · 当前市场价格 %s/t", "OFFERS %s/t   MARKET %s/t") if buys else words("对方要价 %s/t · 当前市场价格 %s/t", "ASKS %s/t   MARKET %s/t")) % [Pal.money(float(v2.price)), Pal.money(ref2)], 22, 0.92))
 		var have := float(stock.get(str(v2.key), 0.0))
 		var why := TradePeople._short(v2, float(v2.price))
-		var sum_t := (words("共 %s · 仓库有 %.1f t", "%s IN ALL · %.1f t IN STOCK") % [Pal.money(float(v2.price) * float(v2.qty)), have]) if buys else (words("共 %s · 现金 %s", "%s IN ALL · CASH %s") % [Pal.money(float(v2.price) * float(v2.qty)), Pal.money(float(Career.data.get("money", 0.0)))])
+		var sum_t := (words("交易总价 %s · 仓库当前库存 %.1f t", "%s IN ALL · %.1f t IN STOCK") % [Pal.money(float(v2.price) * float(v2.qty)), have]) if buys else (words("交易总价 %s · 当前持有现金 %s", "%s IN ALL · CASH %s") % [Pal.money(float(v2.price) * float(v2.qty)), Pal.money(float(Career.data.get("money", 0.0)))])
 		var hl := ConsoleKit.text(sum_t, 20, 0.9)
 		hl.add_theme_color_override("font_color", Hmi.warn_col() if why != "" else Hmi.ok_col())
 		cv.add_child(hl)
 		if str(v2.state) == "arriving":
-			cv.add_child(ConsoleKit.text(words("正在靠泊……", "COMING ALONGSIDE…"), 20, 0.7))
+			cv.add_child(ConsoleKit.text(words("飞船正在靠泊……", "COMING ALONGSIDE…"), 20, 0.7))
 		else:
 			var id := str(v2.id)
-			trade_key.text = (words("卖给他", "SELL TO HIM") if buys else words("买下", "BUY IT"))
+			trade_key.text = (words("出售给对方", "SELL TO HIM") if buys else words("购买这批货物", "BUY IT"))
 			trade_key.disabled = why != ""
-			BenchFx.note(trade_key, words("按他开的价立刻成交", "Deal at his price, now"), why)
+			BenchFx.note(trade_key, words("接受对方的报价，立即完成交易。", "Deal at his price, now"), why)
 			_trade_do = func(): _say_trade(TradePeople.accept(id))
 			cv.add_child(trade_key)
 			var row := HBoxContainer.new()
@@ -1052,13 +1052,13 @@ func _fill_trade() -> void:
 				row.add_child(hk)
 			var no := ConsoleKit.key(words("不卖", "NO SALE") if buys else words("不买", "NO DEAL"), func(): _say_trade(TradePeople.refuse(id)))
 			no.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			BenchFx.note(no, words("不做这笔，让他走", "No deal: send him away"))
+			BenchFx.note(no, words("这份合同不接了，让他离开", "No deal: send him away"))
 			row.add_child(no)
 			if _haggle_open and str(v2.state) == "waiting":
 				var hf := HBoxContainer.new()
 				hf.add_theme_constant_override("separation", 8)
 				cv.add_child(hf)
-				var cuts := [["small", words("少要 5%", "ASK 5%") if buys else words("压 5%", "DOWN 5%")], ["medium", words("砍 12%", "ASK 12%")], ["hard", words("砍 25%", "ASK 25%")]]
+				var cuts := [["small", words("要求降价 5%", "ASK 5%") if buys else words("尝试压价 5%", "DOWN 5%")], ["medium", words("要求降价 12%", "ASK 12%")], ["hard", words("要求降价 25%", "ASK 25%")]]
 				for i in 3:
 					var c0: String = cuts[i][0]
 					var hb := Button.new()
@@ -1071,7 +1071,7 @@ func _fill_trade() -> void:
 		# the next visitor, one line
 		if vs.size() > 1:
 			var n: Dictionary = vs[(_vis_i + 1) % vs.size()]
-			var nb := ConsoleKit.key(words("下一位：", "NEXT: ") + TradePeople.card_text(n) + "  ›", func():
+			var nb := ConsoleKit.key(words("下一位客户：", "NEXT: ") + TradePeople.card_text(n) + "  ›", func():
 				_vis_i = (_vis_i + 1) % maxi(1, _visitors().size())
 				_haggle_open = false
 				_trade_sig = "", 18)
@@ -1083,7 +1083,7 @@ func _fill_trade() -> void:
 		var c2: Dictionary = orgs[who].contract if not orgs[who].contract.is_empty() else orgs[who].offer
 		if not c2.is_empty():
 			names.append("%s %s" % [TradePeople.org_name(str(who)), Ops.item_name(str(c2.key))])
-	org_key.text = (words("长期合同 · %d 家在招 · %d 份在跑", "STANDING CONTRACTS · %d OFFERED · %d RUNNING") % [offers.size(), running.size()]) + ("  ▾" if org_fold.open else "  ›") + (("\n" + " · ".join(names)) if not names.is_empty() and not org_fold.open else "")
+	org_key.text = (words("长期合同 · %d 家客户正在提供合同 · %d 份合同正在执行", "STANDING CONTRACTS · %d OFFERED · %d RUNNING") % [offers.size(), running.size()]) + ("  ▾" if org_fold.open else "  ›") + (("\n" + " · ".join(names)) if not names.is_empty() and not org_fold.open else "")
 	org_key.add_theme_font_size_override("font_size", 19)
 	for c in org_list.get_children():
 		c.queue_free()
@@ -1095,32 +1095,32 @@ func _fill_trade() -> void:
 		var tv := VBoxContainer.new()
 		tv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		rw.add_child(tv)
-		tv.add_child(ConsoleKit.text(words("%s · 信誉 %d", "%s · REPUTATION %d") % [TradePeople.org_name(w2), int(o.rep)], 20, 0.95))
+		tv.add_child(ConsoleKit.text(words("%s · 当前信誉 %d", "%s · REPUTATION %d") % [TradePeople.org_name(w2), int(o.rep)], 20, 0.95))
 		if not o.contract.is_empty():
 			var c3: Dictionary = o.contract
-			tv.add_child(ConsoleKit.text(words("在跑：%.1f t %s · 第 %d / %d 次 · 下次 %d 秒", "RUNNING: %.1f t %s · %d / %d · NEXT %d s") % [float(c3.qty), Ops.item_name(str(c3.key)), int(c3.done) + 1, int(c3.times), ceili(float(c3.next_in))], 16, 0.65))
+			tv.add_child(ConsoleKit.text(words("正在执行：每次交付 %.1f t %s · 第 %d 次，共 %d 次 · 距离下次交货还有 %d 秒", "RUNNING: %.1f t %s · %d / %d · NEXT %d s") % [float(c3.qty), Ops.item_name(str(c3.key)), int(c3.done) + 1, int(c3.times), ceili(float(c3.next_in))], 16, 0.65))
 			if int(c3.done) == 0:
-				var dk := ConsoleKit.key(words("退掉", "HAND BACK"), func(): _say_trade(TradePeople.drop_contract(w2)), 18)
-				BenchFx.note(dk, words("还没交过货，退掉不扣信誉", "Nothing delivered yet: no reputation lost"))
+				var dk := ConsoleKit.key(words("取消合同", "HAND BACK"), func(): _say_trade(TradePeople.drop_contract(w2)), 18)
+				BenchFx.note(dk, words("目前还没有交付过货物，现在取消合同不会扣除信誉", "Nothing delivered yet: no reputation lost"))
 				rw.add_child(dk)
 		elif not o.offer.is_empty():
 			var of2: Dictionary = o.offer
-			tv.add_child(ConsoleKit.text(words("每 10 分钟 %.1f t %s，%s/t，共 %d 次", "%.1f t OF %s EVERY 10 MIN, %s/t, %d TIMES") % [float(of2.qty), Ops.item_name(str(of2.key)), Pal.money(float(of2.price)), int(of2.times)], 16, 0.65))
-			var tk := ConsoleKit.key(words("接下", "TAKE IT"), func(): _say_trade(TradePeople.take_contract(w2)), 18)
-			BenchFx.note(tk, words("按上面的量和价按期交货，守约涨信誉", "Deliver on time; keeping it raises reputation"))
+			tv.add_child(ConsoleKit.text(words("每 10 分钟交付 %.1f t %s，单价 %s/t，总共需要交付 %d 次", "%.1f t OF %s EVERY 10 MIN, %s/t, %d TIMES") % [float(of2.qty), Ops.item_name(str(of2.key)), Pal.money(float(of2.price)), int(of2.times)], 16, 0.65))
+			var tk := ConsoleKit.key(words("接受合同", "TAKE IT"), func(): _say_trade(TradePeople.take_contract(w2)), 18)
+			BenchFx.note(tk, words("按照约定的数量和价格定期交货，按时完成交付可以提高信誉", "Deliver on time; keeping it raises reputation"))
 			rw.add_child(tk)
 		else:
-			tv.add_child(ConsoleKit.text(words("信誉太低，暂时不给合同", "REPUTATION TOO LOW FOR NOW"), 16, 0.5))
+			tv.add_child(ConsoleKit.text(words("当前信誉不足，暂时无法接受这家客户的合同", "REPUTATION TOO LOW FOR NOW"), 16, 0.5))
 		org_list.add_child(rw)
 	# no visitor: the main key is the first company's offer, or the exchange
 	if not _trade_do.is_valid():
 		if not offers.is_empty() and running.is_empty():
 			var w3: String = str(offers[0])
-			trade_key.text = words("接下%s的合同", "TAKE %s'S CONTRACT") % TradePeople.org_name(w3)
+			trade_key.text = words("接受%s的合同", "TAKE %s'S CONTRACT") % TradePeople.org_name(w3)
 			trade_key.disabled = false
 			_trade_do = func(): _say_trade(TradePeople.take_contract(w3))
 		else:
-			trade_key.text = words("打开交易行", "OPEN THE EXCHANGE")
+			trade_key.text = words("打开交易市场", "OPEN THE EXCHANGE")
 			trade_key.disabled = false
 			_trade_do = func(): _then(func(): game.open_exchange())
 		trade_box.add_child(trade_key)
@@ -1148,6 +1148,6 @@ func _gas_primary(title: String, key: String, why: String) -> void:
 		ConsoleKit.plain(next_key, 19)
 		var d: Dictionary = GasLine.data() if GasLine.built() else {}
 		if not d.is_empty() and (not d.job.is_empty() or not d.get("liq", {}).is_empty()):
-			now_line.set_now(false, words("机器在跑：", "RUNNING: ") + GasLine.job_text())
+			now_line.set_now(false, words("机器正在运行：", "RUNNING: ") + GasLine.job_text())
 		else:
-			now_line.set_now(false, words("没有要处理的气；液氧、液氢去交易行卖", "NOTHING TO PROCESS; SELL LOX AND LH2 ON THE EXCHANGE"))
+			now_line.set_now(false, words("目前没有需要处理的气体，液氧和液氢可以拿到交易行出售", "NOTHING TO PROCESS; SELL LOX AND LH2 ON THE EXCHANGE"))

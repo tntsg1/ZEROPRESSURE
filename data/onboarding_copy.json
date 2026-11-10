@@ -52,7 +52,7 @@
         "Sample, then tap"
       ],
       "body": [
-        "全部熔化、温度到 1640 °C 以后，炉台按「测温取样」。等测温探头完全收回，再按「倾炉出钢」。\n\n超过 1710 °C 会把成品烧成低等级。装了自动测温出钢以后，这两步由机器自己做。",
+        "全部熔化、温度到 1640 °C 以后，炉台按「测量温度并采集样本」。等测温探头完全收回，再按「倾斜炉体，排出钢水」。\n\n超过 1710 °C 会把成品烧成低等级。装了自动测温出钢以后，这两步由机器自己做。",
         "Once all is melted at 1640 °C, Take a sample; when the probe is up, Tilt and tap. Over 1710 °C downgrades the product. With the auto unit fitted, the machine does both."
       ]
     },

@@ -2,8 +2,8 @@ extends Control
 # 132 号 情境引导的讲解卡 (scripts/guide_cards.gd): the game paused under it, the screen darkened,
 # one card in the middle — above, a drawing that moves (the codex's manner: scripts/codex_fx.gd's
 # screen, corner brackets, the scan line); below, the title and at most three lines; at the foot
-# "带我去 [Enter]" (where there is somewhere to go) and "知道了 [Esc]". Enter takes you there (or
-# closes it when there is nowhere), Esc closes it. Shown again from the book: no "带我去" then.
+# only "知道了" (2026-11-09, owner: the card comes when you are already there, so "带我去" has no
+# use). Enter and Esc both close it.
 
 const W_MAX := 1100.0
 const H := 760.0
@@ -65,15 +65,13 @@ func _input(ev: InputEvent) -> void:
 		return
 	if ev is InputEventKey and ev.pressed and not ev.echo:
 		if ev.physical_keycode in [KEY_ENTER, KEY_KP_ENTER]:
-			close(go != "")
+			close(false)
 		elif ev.physical_keycode == KEY_ESCAPE:
 			close(false)
 		get_viewport().set_input_as_handled()
 	elif ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
 		var m := get_local_mouse_position()
-		if _btns.has("go") and (_btns.go as Rect2).has_point(m):
-			close(true)
-		elif _btns.has("ok") and (_btns.ok as Rect2).has_point(m):
+		if _btns.has("ok") and (_btns.ok as Rect2).has_point(m):
 			close(false)
 		get_viewport().set_input_as_handled()
 	elif ev is InputEventMouseButton:
@@ -122,31 +120,10 @@ func _draw() -> void:
 	_btns = {}
 	var by := r.end.y - 84.0
 	var okr := Rect2(Vector2(r.end.x - 40.0 - 170.0, by), Vector2(170.0, 58.0))
-	if go != "":
-		var gr := Rect2(Vector2(okr.position.x - 16.0 - 230.0, by), Vector2(230.0, 58.0))
-		_btns.go = gr
-		var hv := 0.08 if hover == "go" else 0.0
-		var br := 0.5 + 0.5 * sin(t * TAU / 2.4) if BenchFx.on() else 0.5
-		draw_rect(gr, Color(UiSkin.ACCENT.lightened(hv + 0.04 * br), e))
-		draw_string(fb, gr.position + Vector2(0, 38), w("带我去  [Enter]", "TAKE ME  [Enter]"), HORIZONTAL_ALIGNMENT_CENTER, gr.size.x, 22, Color(0.08, 0.06, 0.05, e))
-		draw_string(f, Vector2(ar.position.x, by + 36.0), _where(), HORIZONTAL_ALIGNMENT_LEFT, gr.position.x - ar.position.x - 20.0, 18, Pal.ink(0.5 * e))
 	_btns.ok = okr
 	draw_rect(okr, Color(1, 1, 1, (0.1 if hover == "ok" else 0.05) * e))
 	draw_rect(okr, Pal.ink(0.4 * e), false, 1.0)
 	draw_string(f, okr.position + Vector2(0, 37), w("知道了  [Esc]", "GOT IT  [Esc]"), HORIZONTAL_ALIGNMENT_CENTER, okr.size.x, 20, Pal.ink(0.92 * e))
-
-
-func _where() -> String:
-	if go.begins_with("district:"):
-		var z := go.substr(9)
-		return Port.name_of(z) + w(" · 业务终端", " · BUSINESS CONSOLE")
-	match go:
-		"store": return w("公司仓库", "THE COMPANY STORES")
-		"hall:sell": return w("交易行 · 我的挂单", "THE EXCHANGE · MY LISTINGS")
-		"hall:orders": return w("交易行 · 订单", "THE EXCHANGE · ORDERS")
-		"queue": return w("加工队列", "THE PROCESSING QUEUE")
-		"trip": return w("跳闸的发电机 · 跟着箭头飞", "THE TRIPPED SET · FOLLOW THE ARROW")
-	return ""
 
 
 # ---------------------------------------------------------------- the drawings (each a loop)

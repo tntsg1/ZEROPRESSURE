@@ -174,6 +174,60 @@ func step() -> bool:
 	return finished
 
 
+# ---------------------------------------------------------------- field gear (128 号 第 7 段)
+
+var gear_used := {}           # type -> times placed by the bot
+
+
+func _carries(type: String) -> bool:
+	return g.gear != null and g.gear.carried.any(func(it): return it.type == type)
+
+
+func _gear_step() -> bool:
+	if g.gear == null:
+		return false
+	var w = g.world
+	var s = g.sys
+	# a pump at work: wait for it; drawn dry, take it back
+	for u in g.gear.units:
+		if u.type == "pump":
+			if u.done:
+				g.gear.retrieve(u)
+				_note("pump taken back from %s" % str(u.vol))
+				_work(2.0)
+			return true
+	if _carries("pump") and not done_ops.has("pump"):
+		for v in s.vessel_cfg:
+			var tag := str(s.vessel_cfg[v].get("piece", ""))
+			var p = w.tag(tag) if tag != "" else null
+			if p == null or p.gone or s.P(v) < 40.0 or w.hidden(w.frame(p) * Geom.centroid(p.poly)):
+				continue
+			done_ops["pump"] = true
+			g.gear.act({"kind": "place", "type": "pump", "piece": p, "pos": w.frame(p) * Geom.centroid(p.poly), "vol": v})
+			gear_used.pump = int(gear_used.get("pump", 0)) + 1
+			_note("pump on %s (%s, %.0f kPa)" % [tag, v, s.P(v)])
+			_work(3.0)
+			return true
+	if _carries("anchor") and not done_ops.has("anchor"):
+		done_ops["anchor"] = true
+		var best = null
+		for id in w.order:
+			var p = w.pieces[id]
+			if p.gone or p.body != null or p.cls != "metal" or p.mass < 1.0:
+				continue
+			if w.hidden(w.frame(p) * Geom.centroid(p.poly)):
+				continue
+			if best == null or p.mass > best.mass:
+				best = p
+		if best != null:
+			g.gear.act({"kind": "place", "type": "anchor", "piece": best, "pos": w.frame(best) * Geom.centroid(best.poly)})
+			gear_used.anchor = int(gear_used.get("anchor", 0)) + 1
+			_note("anchor on %s (%.1f t)" % [best.tag if best.tag != "" else str(best.id), best.mass])
+			_work(3.0)
+			return true
+	return false
+
+
 # ---------------------------------------------------------------- making it safe
 
 func _prep() -> void:
@@ -531,6 +585,10 @@ func _prep() -> void:
 					_note("pressurisation %s shut" % pv)
 					_work(2.5)
 					return
+	# 128 号 第 7 段: field gear in hand is used as a player would — the independent pump stuck on a
+	# charged bottle (drawn dry, then taken back), the towing anchor on a heavy section
+	if _gear_step():
+		return
 	# every gas port on something under pressure gets a hose
 	for id in w.ctrls:
 		var c = w.ctrls[id]
@@ -1500,7 +1558,7 @@ func zone_for(b) -> String:
 func summary() -> Dictionary:
 	return {"rate": g.recovery_rate(), "net": g.net(), "earned": g.earned(), "losses": g.losses, "grade": g.hud.grade(),
 		"incidents": g.incidents.size(), "time": g.playtime, "ended": g.state == "ending", "forced": forced,
-		"work": work, "hauls": hauls, "scrap_hauls": scrap_hauls, "arm": g.arm.carried if g.arm != null else 0, "hauler": g.hauler.carried if g.hauler != null else 0, "scrapped": scrapped, "snapped": snapped, "crane": crane_hauls}
+		"work": work, "hauls": hauls, "scrap_hauls": scrap_hauls, "arm": g.arm.carried if g.arm != null else 0, "hauler": g.hauler.carried if g.hauler != null else 0, "scrapped": scrapped, "snapped": snapped, "crane": crane_hauls, "gear": gear_used}
 
 
 # a box of a set already released, still loose inside the doors, in the lane the

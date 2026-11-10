@@ -2726,9 +2726,11 @@ func _draw_ladder(at: Vector2, wd: float, it: Dictionary, pk: float) -> float:
 	var mk := market_of(it)
 	if mk <= 0.0:
 		return 0.0
-	var rows := [[w("回收站 %s", "RECYCLING %s") % Pal.money(roundf(recycle_of(it) * pk)), recycle_of(it), UiSkin.ACCENT, true],
-		[w("交易行约 %s", "EXCHANGE ~%s") % Pal.money(roundf((trade_net(it) if trade_open() else mk * TRADE_K) * pk)), (trade_net(it) if trade_open() else mk * TRADE_K), Pal.ink(0.5), trade_open()],
-		[(w("订单 %s", "ORDER %s") if not order_offer(it).is_empty() else w("订单约 %s", "ORDER ~%s")) % Pal.money(roundf(order_est(it) * pk)), order_est(it), Pal.ink(0.5), trade_open()]]
+	# 128 号 第 7 段 (user 2026-11-09): the figures are the buttons' figures at once — only the
+	# bars grow in (a count-up read $1,796 beside a $1,800 button)
+	var rows := [[w("回收站 %s", "RECYCLING %s") % Pal.money(recycle_of(it)), recycle_of(it), UiSkin.ACCENT, true],
+		[w("交易行约 %s", "EXCHANGE ~%s") % Pal.money(trade_net(it) if trade_open() else mk * TRADE_K), (trade_net(it) if trade_open() else mk * TRADE_K), Pal.ink(0.5), trade_open()],
+		[(w("订单 %s", "ORDER %s") if not order_offer(it).is_empty() else w("订单约 %s", "ORDER ~%s")) % Pal.money(order_est(it)), order_est(it), Pal.ink(0.5), trade_open()]]
 	var top := maxf(order_est(it), mk * ORDER_K)
 	var y := at.y
 	for row in rows:

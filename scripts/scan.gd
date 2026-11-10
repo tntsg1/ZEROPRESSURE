@@ -193,7 +193,7 @@ static func _sweep(i: int) -> Array:
 		s.off = [snappedf(v.x, 0.0001), snappedf(v.y, 0.0001)]
 		var ship := rng.randf() < SHIP_P or (first and k == n - 1 and ships == 0)
 		if ship:
-			var o := Market.valid_offer(rng, Career.data, 1 if ships == 0 else Market.roll_stars(rng, Market.max_stars(int(Career.data.get("rep", 0))), Port.star_weight_of(Career.data)), used, "full", "salvage")
+			var o := _find_offer(rng, ships, used)
 			if o.is_empty():
 				ship = false
 			else:
@@ -208,6 +208,21 @@ static func _sweep(i: int) -> Array:
 		sigs.append(s)
 	d.sectors[str(i)] = {"at": float(d.clock), "sigs": sigs}
 	return sigs
+
+
+# 128 号 第 7 段 (user 2026-11-09, 1.4 A): before the first (free) tow, a find is only a ship no
+# special course stands in front of — the second hulk goes straight to the berth
+static func _find_offer(rng: RandomNumberGenerator, ships: int, used: Dictionary) -> Dictionary:
+	var stars := 1 if ships == 0 else Market.roll_stars(rng, Market.max_stars(int(Career.data.get("rep", 0))), Port.star_weight_of(Career.data))
+	var first_tow: bool = not Career.data.get("seen", {}).get("first_tow", false)
+	for k in (12 if first_tow else 1):
+		var o := Market.valid_offer(rng, Career.data, stars, used, "full", "salvage")
+		if o.is_empty() or not first_tow or Codex.required(str(o.ship)).is_empty():
+			return o
+		used.erase(str(o.get("reg", "")))
+	var f := Market.offer(rng, Career.data, stars, used, "full", "gr7", "salvage")
+	f.erase("_ship")
+	return f
 
 
 static func _what(kind: String, rng: RandomNumberGenerator) -> String:

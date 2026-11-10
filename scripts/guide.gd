@@ -45,7 +45,9 @@ func _ready() -> void:
 # ---------------------------------------------------------------- which task a decision starts
 
 static func _stock(key: String) -> float:
-	return float(Career.data.get("exchange", {}).get("actors", {}).get(Exchange.PLAYER, {}).get("stock", {}).get(key, 0.0))
+	# 128 号 第 7 段: the warehouse's own count — the ingots cast at the berth sit in ingot_batches until
+	# the exchange is open, and the exchange's stock alone read "no ingots" over 128 t of them
+	return float(StoreBook.raw_stock().get(key, 0.0))
 
 
 static func _sortable() -> float:
@@ -194,7 +196,7 @@ func _sort() -> Dictionary:
 			return _wait(srv, name, purpose, 2, 4, w("等原料退回仓库", "FEED GOING BACK"), w("撤回的原料正运回仓库。", "The withdrawn feed is going back."))
 		"processing":
 			if not bool(game.industrial_sort.line().company_powered) and not b.get("through", false):
-				return _at(srv, path, name, purpose, 3, 4, w("按『启动分选驱动』", "PRESS START DRIVES"), "启动分选驱动")
+				return _at(srv, path, name, purpose, 3, 4, w("按『启动分选设备』", "PRESS START DRIVES"), "启动分选设备")
 			return _wait(srv, name, purpose, 3, 4, w("压块 → 撕碎 → 磁选进行中", "PRESSING, SHREDDING, SEPARATING"), w("机器自己在跑，不用守着。", "It runs on its own."))
 		"product_transport":
 			if srv._through_now():
@@ -203,7 +205,7 @@ func _sort() -> Dictionary:
 	if str(b.get("id", "")) != str(start.get("sort", "")) and str(b.get("state", "")) == "complete":
 		return {"done": w("分选完成", "SORTED")}
 	if _sortable() >= 0.3:
-		return _at(srv, path, name, purpose, 1, 4, w("按『整线加工』", "PRESS RUN THE LINE"), "整线加工")
+		return _at(srv, path, name, purpose, 1, 4, w("按『完整加工流程』", "PRESS RUN THE LINE"), "完整加工流程")
 	return {"done": w("仓库里没有可分选的金属", "NOTHING TO SORT"), "end": true}
 
 
@@ -238,7 +240,7 @@ func _heat() -> Dictionary:
 	# 125/126 号: the furnace's own state, the same words the desk and the machine say
 	var inf: Dictionary = srv.info()
 	if str(inf.key) not in ["idle", "fault"] and str(h.get("state", "")) not in ["complete", "cancelled", "written_off"]:
-		var press: String = str({"melt": GuideCopy.text("heat.melt"), "sample": "测温取样", "tap": "倾炉出钢"}.get(str(inf.press), ""))
+		var press: String = str({"melt": GuideCopy.text("heat.melt"), "sample": "测量温度并采集样本", "tap": "倾斜炉体，排出钢水"}.get(str(inf.press), ""))
 		if press != "":
 			return _at(srv, path, name, purpose, int(inf.n), 8, str(inf.title), press)
 		return _wait(srv, name, purpose, int(inf.n), 8, str(inf.title), str(inf.text))
@@ -330,7 +332,7 @@ static func repair_info(id: String) -> Dictionary:
 			lack.append(Ops.w("先修「%s」", "FIRST %s") % Repair.name_of(str(dep)))
 	for cls in pf.missing:
 		lack.append(Repair.lack_text(cls, float(pf.missing[cls])))
-		for sh in Repair.ships_with(cls):
+		for sh in Repair.ships_for(cls):
 			if not sh in ships:
 				ships.append(sh)
 	if pf.tons_missing > 0.001:

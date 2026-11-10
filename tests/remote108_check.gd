@@ -69,21 +69,25 @@ func _run() -> void:
 	check(box != null and box.visible and box.get_child_count() == RemoteOps.kinds().size(), "the terminal's foot has its remote jobs (%d)" % box.get_child_count())
 	var locked := 0
 	for b in box.get_children():
-		if b.disabled and str(b.tooltip_text) != "":
+		# 132 号: the hover note (BenchFx) carries the reason now, not the plain tooltip
+		var why := str(b.get_meta("bfx_note", b.tooltip_text))
+		if b.disabled and why != "":
 			locked += 1
-	check(locked == 3, "each locked, greyed with its reason (%s)" % box.get_child(1).tooltip_text)
+	# 128 号 第 1 段: the parts rack is part of the stores page (RemoteOps.kinds() leaves it out), the queue
+	# has no key (第 4 段): the stores and the grid are left, both locked on a new career
+	check(locked == RemoteOps.kinds().size(), "each locked, greyed with its reason (%d of %d: %s)" % [locked, RemoteOps.kinds().size(), str(box.get_child(box.get_child_count() - 1).get_meta("bfx_note", ""))])
 	Cap.save(root, "res://tests/out/remote108_locked_zh.png")
 	await _close_ui()
-	# ---- the rack used once in person opens it remotely
-	g.open_parts_rack()
+	# ---- the stores counter used once in person (128 号: the parts rack is in the stores) opens it remotely
+	g.open_counter()
 	await _frames(6)
-	check(RemoteOps.ok("rack"), "the rack used at the rack: it opens from anywhere now")
+	check(RemoteOps.ok("store") and RemoteOps.ok("rack"), "the counter used in person: the stores (and the rack in them) open from anywhere now")
 	await _close_ui()
 	# ---- the districts walked
 	Career.data.seen["walk_power"] = true
 	Career.data.seen["walk_process"] = true
 	await _key(KEY_F4)
-	check(_ui_path() == "parts_rack_panel.gd", "F4 in the berth: the parts rack (%s)" % _ui_path())
+	check(_ui_path() == "company_store.gd", "F4 in the berth: the stores page, the rack's equipment in it (%s)" % _ui_path())
 	await _close_ui()
 	await _key(KEY_F5)
 	check(_ui_path() == "power_panel.gd", "F5: the grid's dispatch on the power screen (%s)" % _ui_path())

@@ -11,7 +11,7 @@
 #
 # 已停用的功能（梁工、关掉的剧情层、取消的耗材）、开发者面板、只打印到日志的字不在这里。
 #
-# 本文件共 9072 条。
+# 本文件共 9133 条。
 
 ============================================================
 # 一、标题、菜单与设置（116 条）
@@ -757,7 +757,7 @@
 英：TRAINING ORDER: TAKE THE METAL FEED TO THE ASSAY STATION TO ANALYZE ITS COMPOSITION AND DETERMINE ITS GRADE.
 
 [drill:step:6]
-中：训练任务：前往材料分选台，选择「整线加工」，将这批金属送入分选线处理。
+中：训练任务：前往材料分选台，选择「完整加工流程」，将这批金属送入分选线处理。
 英：TRAINING ORDER: GO TO THE SORTING STATION AND SELECT \"PROCESS FULL BATCH\" TO RUN THE METAL THROUGH THE SORTING LINE.
 
 [drill:step:7]
@@ -1482,7 +1482,7 @@
 英：Turns the on-screen hints on or off.
 
 ============================================================
-# 四、新手：港区现场导览（150 条）
+# 四、新手：港区现场导览（151 条）
 # 第一艘船拆完、船坞空了以后，强制带玩家亲自出坞、坐接驳车跑一遍港区每个区，在每个面板上逐个框出部件讲用途。
 # 卡片上的字只写“去哪、按什么”（一行）；框选的短注释写“这个部件干什么用”（一句）。
 # “港区图卡”是暂停菜单里的速查卡（旧版导览）。
@@ -1811,38 +1811,42 @@
 英：DOWN THROUGH THE GATE TO BERTH 07
 
 [port_walk:_fill:39]
+中：往下飞，穿过闸门回七号船坞
+英：DOWN THROUGH THE GATE TO BERTH 07
+
+[port_walk:_fill:40]
 中：以后进出港区：拆船区站上车，下车就是船坞
 英：In and out of the port: the stop in the gate is the berth's own
 
-[port_walk:_fill:40]
+[port_walk:_fill:41]
 中：按 %s 打开终端，点“船坞”
 英：PRESS %s, OPEN 'BERTH'
 
-[port_walk:_fill:41]
+[port_walk:_fill:42]
 中：看看船坞哪些设施坏了、修好有什么用
 英：See what in the berth is broken, and what mending it does
 
-[port_walk:_fill:42]
+[port_walk:_fill:43]
 中：船坞 · 设施
 英：BERTH · FACILITIES
 
-[port_walk:_fill:43]
+[port_walk:_fill:44]
 中：红的是坏的。修要零件和钱，零件从拆下的设备里来。Esc 关掉。
 英：Red is broken: lights let you see, the furnace pays more. Mending takes parts and money; parts come from the machines you strip. Esc closes
 
-[port_walk:_fill:45]
+[port_walk:_fill:46]
 中：拆船挣钱，挣了修港，港修好了挣得更多。
 英：Strip for money → mend the districts → faster, better paid
 
-[port_walk:_fill:50]
+[port_walk:_fill:51]
 中：看亮框。点一下，下一条（还剩 %d 条）
 英：THE FRAMED PART: CLICK OR SPACE FOR THE NEXT (%d LEFT)
 
-[port_walk:_fill:51]
+[port_walk:_fill:52]
 中：看完了：按 Esc 关掉
 英：DONE: PRESS ESC TO CLOSE
 
-[port_walk:_fill:52]
+[port_walk:_fill:53]
 中：找不到？跟着无人机旁的箭头飞
 英：CAN'T FIND IT? FOLLOW THE ARROW BY THE DRONE
 
@@ -2099,7 +2103,7 @@
 英：The berth's repairs are on the terminal's BERTH page
 
 ============================================================
-# 五、拆船现场（船坞里）（1327 条）
+# 五、拆船现场（船坞里）（1330 条）
 # 拆船时屏幕上的一切：左上合同卡、工具栏、操作提示、测量读数、回收口和熔炉的牌子、结算飘字、无人机状态、图纸、小地图、作业艇、各种“现在不能这样做”的提示。
 # 玩家这时手很忙：字要一眼看懂，尽量短。
 ============================================================
@@ -2687,6 +2691,18 @@
 [txt:bb_haul]
 中：拖船推入 %d 盒折叠桁架 · 共 %.0f m
 英：TUG PUSHES IN %d FOLDED TRUSS CASSETTES · %.0f m IN ALL
+
+[txt:bb_n_stow]
+中：桁架逐节收回
+英：FOLD THE TRUSS BACK
+
+[txt:bb_stow]
+中：桁架逐节折回储筒 · 已收回 %.0f / %.0f m
+英：BAY BY BAY BACK INTO THE CANISTER · %.0f / %.0f m IN
+
+[txt:bb_c_stow]
+中：收回端：节间斜杆松开、逐节折叠
+英：THE STOWING TIP: DIAGONALS SLACKENED, BAYS FOLDING
 
 [txt:bb_deploy]
 中：从旧端储筒逐节展开 · 已锁定 %d / %d 节（每节 0.6 m）
@@ -7923,19 +7939,19 @@
 ------------------------------------------------------------
 
 [smelter:_panel:1]
-中：投料 %.2f t · 已冷却出料 %.2f t
+中：已投入原料 %.2f 吨 · 已冷却出料 %.2f 吨
 英：Charged %.2f t · Cooled output %.2f t
 
 [smelter:_panel:2]
-中：测温：尚未取样
+中：测温记录：尚未进行取样
 英：Temperature sample: not yet taken
 
 [smelter:_panel:3]
-中：测温 %d °C · %d s 前
+中：最近测温：%d °C · %d 秒前
 英：Sample %d C · %d s ago
 
 [smelter:_panel:4]
-中：手动控制 · 可用供电 %.1f MW
+中：手动控制模式 · 当前可用电力 %.1f 兆瓦
 英：Manual control · Available supply %.1f MW
 
 ============================================================
@@ -9068,7 +9084,7 @@
 ------------------------------------------------------------
 
 [txt:tm_needs]
-中：要先修好：%s
+中：需要先完成以下区域的修缮：%s
 英：MEND FIRST: %s
 
 [txt:tm_onsite_note]
@@ -9466,18 +9482,6 @@
 # 出现在：在合同里达成某件事后开放的东西。
 ------------------------------------------------------------
 
-[gear:feat_section_d]
-中：一个 6 t 以上的整体进入回收口。开放牵引锚型号，送一件。
-英：A whole of 6 t or more went down a mouth. Opens the towing anchor; one comes with it.
-
-[gear:feat_pressure]
-中：压力设备回收
-英：PRESSURE EQUIPMENT RECOVERED
-
-[gear:feat_field]
-中：一单往熔炉送 100 件以上 0.5 t 的碎料
-英：100 SCRAP PIECES OVER 0.5 t INTO THE FURNACE ON ONE JOB
-
 [gear:feat_watch]
 中：低温船零事故拆完
 英：A COLD SHIP STRIPPED WITHOUT AN INCIDENT
@@ -9493,10 +9497,6 @@
 [gear:feat_precise]
 中：累计完整送口高价值设备 $500,000
 英：$500,000 OF EQUIPMENT DELIVERED WHOLE
-
-[gear:feat_pressure_d]
-中：一只出厂带压的储瓶完整、安全地进入设备口。开放独立泵型号，送一件。
-英：A bottle that came in charged went whole and safe into the equipment bay. Opens the independent pump; one comes with it.
 
 [gear:feat_new]
 中：工程成果：%s
@@ -11220,7 +11220,7 @@
 英：TOWS UP TO %s
 
 ============================================================
-# 九、港区：各区现场与面板（651 条）
+# 九、港区：各区现场与面板（702 条）
 # 船坞空着时飞出去的港区：中央环、动力区、拖船站、货运区、贸易港、加工区。
 # 每区有业务终端（按 E）、区里的机器（轧机、货架、柜台）、接驳车。
 # 字要说明：这个区为公司做什么、现在能做什么、修好以后会怎样。
@@ -11704,119 +11704,119 @@
 英：Show or hide the power district's figures
 
 [district_panel:_ready:8]
-中：轧机在本区中部（排烟管右边）：飞到它下面的操作台按 %s，选配方、开轧。
+中：轧机在本区域中间，就在排烟管右边。飞到轧机下方的操作台，按 %s 打开控制界面，选择配方以后就可以开始轧制了。
 英：The mill stands mid-district, right of the flue: press %s at its pedestal to pick a recipe and roll.
 
 [district_panel:_ready:9]
-中：气体线 · 回收 → 分离 → 液氧 → 补给
+中：气体回收 → 气体分离 → 液氧生产 → 补给使用
 英：GAS LINE · RECOVER → SEPARATE → LOX → SUPPLY
-
-[district_panel:_ready:10]
-中：上门的客人
-英：AT THE PIER
 
 [district_panel:_ready:11]
 中：三大公司的长期合同
 英：THE COMPANIES' STANDING CONTRACTS
 
 [district_panel:_ready:13]
-中：在船坞的仓库终端或货架口按 %s，或在哪都按 F3，打开的都是同一个仓库。货物自动上架。
+中：在船坞的仓库终端或者货架入口按 %s，就能打开仓库界面。你也可以在任何位置按 F3 打开，查看的都是同一个仓库，回收的货物会自动存放进去。
 英：%s at the berth's stores terminal or a rack, or F3 anywhere: the same stores page. Goods are put away by themselves.
 
 [district_panel:_ready:15]
-中：货架口按 %s 开（左边货架 A1–A4，右边 B1–B4）
+中：走到货架入口，按 %s 就能打开对应的货架。左侧是 A1–A4，右侧是 B1–B4。
 英：Racks A1–A4 left, B1–B4 right: %s at a rack's mouth
 
 [district_panel:_ready:16]
-中：飞到货架下面的货架口按 %s，只开那一边。
+中：飞到货架下方，对准货架口按下 %s，就能打开对应的那一侧。
 英：%s at a rack's mouth opens that side only.
 
 [district_panel:_ready:17]
-中：关闭 [Esc]
+中：按 [Esc] 关闭面板
 英：CLOSE [Esc]
 
 [district_panel:_subtitle:1]
-中：全港供电 · 高耗能设施的电源
+中：全港供电 · 管理港口内高耗能设施的电力供应
 英：GRID POWER FOR THE HEAVY FACILITIES
 
 [district_panel:_subtitle:2]
-中：拖船调度 · 大船进港
+中：拖船调度 · 安排大型船只进入港口
 英：TUG DISPATCH · BIG SHIPS IN
 
 [district_panel:_subtitle:3]
-中：分选与炉次 · 原料变产品
+中：分选与炉次 · 分选回收原料，安排熔炉生产
 英：SORTING AND HEATS · RAW TO PRODUCT
 
 [district_panel:_subtitle:4]
-中：交易行与客户 · 买入卖出
+中：交易行与客户 · 采购和出售货物
 英：EXCHANGE AND CLIENTS · BUY AND SELL
 
 [district_panel:_subtitle:5]
-中：公司仓库 · 库存与在途
+中：公司仓库 · 查看现有库存和运输途中的货物
 英：COMPANY WAREHOUSE · STOCK AND TRANSIT
 
 [district_panel:_subtitle:6]
-中：港口总览 · 七区、现金、待办
+中：港口总览 · 查看七个区域的情况、公司现金和待办事项
 英：PORT OVERVIEW · DISTRICTS, CASH, TO DO
 
 [district_panel:_actions:1]
-中：打开交易行 · 买入 / 出售
+中：打开交易行 · 购买原料 / 出售产品
 英：OPEN THE EXCHANGE · BUY / SELL
 
 [district_panel:_actions:2]
-中：关掉这里，打开交易行：买原料、卖产品
+中：关闭当前面板，打开交易行，可以在这里购买原料和出售产品。
 英：Close this and open the exchange: buy feed, sell products
 
 [district_panel:_actions:3]
-中：动力区控制屏 · 单线图 / 仪表 / 手动调度
+中：动力区控制屏 · 查看供电情况 / 用电仪表 / 手动调度
 英：POWER CONTROL SCREEN · LINES / GAUGES / DISPATCH
 
 [district_panel:_actions:4]
-中：关掉这里，打开供电控制屏：看谁在用电、排顺序、暂停电弧炉
+中：关闭当前面板，打开供电控制屏，可以查看各个设施的用电情况、调整供电优先级，还能暂停电弧炉的运行。
 英：Close this and open the power screen: who uses power, the order, the furnace
 
 [district_panel:_actions:5]
-中：船坞终端（合同与建设）
+中：船坞终端 · 合同管理与设施建设
 英：BERTH TERMINAL (CONTRACTS AND WORKS)
 
 [district_panel:_actions:6]
-中：关掉这里，打开船坞终端：找船接单、报修、建设
+中：关闭当前面板，打开船坞终端，可以查看待接的拆船合同、安排设备维修和建设新设施。
 英：Close this and open the berth terminal: ships, contracts, repairs, building
 
 [district_panel:_fill_repair:1]
-中：两期都修好了。
+中：两期修缮都已经完成了。
 英：BOTH STAGES DONE.
 
 [district_panel:_fill_repair:2]
-中：付钱修到下一阶，立刻开工；修好后本区多一阶的能力
+中：支付费用，将本区域修缮到下一期，立即开始施工。修缮完成后，本区域的能力提升一级。
 英：Pay and mend it to the next stage, starting now
 
 [district_panel:_fill_repair:3]
-中：用零件抵一部分钱，修到下一阶，立刻开工
+中：使用零件修复，将本区域修缮到下一期，立即开始施工。
 英：Mend it to the next stage with parts and cash, starting now
 
 [district_panel:_fill_bill:1]
-中：两期都修好了。
+中：两期修缮都已经完成了。
 英：BOTH STAGES DONE.
 
 [district_panel:_fill_bill:2]
-中：  · 缺的按市价买
+中：  · 不足的零件会按照市场价格购买
 英：  · the rest bought
 
+[district_panel:_fill_bill:3]
+中：修缮所需钢材
+英：REPAIR STEEL
+
 [district_panel:_fill_bill:4]
-中：修 %s期  ·  要买 %s
+中：修缮第%s期 · 还需要购买 %s
 英：MEND STAGE %d  ·  BUY %s
 
 [district_panel:_fill_bill:5]
-中：修 %s期  ·  仓库里都有
+中：修缮第%s期 · 仓库里的材料已经足够
 英：MEND STAGE %d  ·  ALL IN STORE
 
 [district_panel:_fill_bill:6]
-中：看明细再确认：自有的先用，缺的按市价买齐，施工队不收工钱
+中：确认前可以查看费用明细。修缮时会优先使用仓库里的材料，不足的部分按照市场价格购买，施工队不收取人工费用。
 英：See the bill first: own materials go first, the rest is bought at market, the crew is free
 
 [district_panel:_fill_gas:1]
-中：气体线没修。在终端“修缮”里修“气体线”（要加工区和动力区各 1 阶）。没修之前，拆船抽回的气照旧在结算时折现。
+中：气体管线还没有修好。打开终端的「修缮」页面，完成「气体管线」的修缮，需要加工区和动力区都修到 1 期。修缮完成前，拆船回收的气体仍会在结算时自动折算成现金。
 英：NO GAS LINE: BUILD IT UNDER REPAIRS. UNTIL THEN A SHIP'S GAS IS CASHED AT SETTLEMENT.
 
 [district_panel:_fill_gas:3]
@@ -11824,83 +11824,91 @@
 英： · TESTING
 
 [district_panel:_fill_gas:4]
-中：%s · %s · %.0f kg · 氧 %d%% · 污染 %.1f%%%s
+中：%s · %s · 重量 %.0f kg · 氧气 %d%% · 污染程度 %.1f%%%s
 英：%s · %s · %.0f kg · O₂ %d%% · TAINT %.1f%%%s
 
 [district_panel:_fill_gas:5]
-中： · 含氢（燃料危险）
+中： · 含有氢气（存在燃料危险）
 英： · HYDROGEN
 
 [district_panel:_fill_gas:6]
-中：分离这一批
+中：分离当前批次
 英：SEPARATE IT
 
 [district_panel:_fill_gas:7]
-中：开始分离。
+中：已开始分离。
 英：SEPARATING.
 
 [district_panel:_fill_gas:8]
-中：受控处置（%s）
+中：申请受控处置（%s）
 英：DISPOSE (%s)
 
 [district_panel:_fill_gas:9]
-中：已交受控处置。
+中：已提交受控处置申请。
 英：DISPOSED.
 
 [district_panel:_fill_gas:10]
-中：外购混合气 2 t（%s）
+中：购买混合气体 2 t（%s）
 英：BUY 2 t MIXED GAS (%s)
 
 [district_panel:_fill_gas:11]
-中：已下单，约 60 秒后到。
+中：采购订单已提交，预计 60 秒后送达。
 英：ORDERED: IN ~60 s.
 
 [district_panel:_fill_gas:12]
-中：液化 1 t
+中：液化处理 1 t
 英：LIQUEFY 1 t
 
 [district_panel:_fill_gas:13]
-中：开始液化。
+中：已开始液化处理。
 英：LIQUEFYING.
 
 [district_panel:_fill_gas:14]
 中：生命支持检测（%s）
 英：LIFE-SUPPORT TEST (%s)
 
+[district_panel:_fill_gas:15]
+中：已提交生命支持检测申请。
+英：SENT FOR TESTING.
+
 [district_panel:_fill_gas:16]
-中：放空剩余气
+中：放空剩余气体
 英：VENT RESIDUE
 
 [district_panel:_fill_gas:17]
-中：剩余气已放空（记录在案）。
+中：剩余气体已全部排空，操作已记录。
 英：RESIDUE VENTED (LOGGED).
 
 [district_panel:_fill_gas:18]
-中：处置污染剩余
+中：处理剩余污染物
 英：DISPOSE TAINTED
 
 [district_panel:_fill_gas:19]
-中：已交受控处置。
+中：已提交受控处置申请。
 英：DISPOSED.
 
 [district_panel:_fill_gas:20]
-中：自动化（只在你定的范围内做）
+中：自动化管理（仅执行你设定范围内的操作）
 英：AUTOMATION (WITHIN YOUR BOUNDS)
 
 [district_panel:_fill_gas:21]
-中：标准混合气自动分离（异常批次暂停等你）
+中：自动分离标准混合气体（遇到异常批次时暂停，等待手动处理）
 英：SEPARATE STANDARD BATCHES (ODD ONES WAIT)
 
 [district_panel:_fill_gas:22]
-中：自动液化（至少留 %.0f kg 气态氧，储罐留一成余量）
+中：自动液化（至少保留 %.0f kg 气态氧，储罐预留 10% 的空间）
 英：LIQUEFY (KEEP %.0f kg OF GAS, 10%% OF THE TANK FREE)
 
+[district_panel:_fill_gas:23]
+中：设置已保存。
+英：SET.
+
 [district_panel:_fill_people:1]
-中：现在没有客人。贸易区开着时，隔一阵就会有独立商人或个体船主开船来。
+中：目前还没有客人。贸易区开放以后，每隔一段时间就会有独立商人或者私人船主驾驶飞船过来。
 英：NOBODY AT THE PIER. MERCHANTS AND OWNER-OPERATORS COME BY NOW AND THEN.
 
 [district_panel:_fill_people:2]
-中：正在靠泊……
+中：飞船正在靠泊……
 英：COMING ALONGSIDE…
 
 [district_panel:_fill_people:4]
@@ -11908,359 +11916,519 @@
 英：ASK 5%
 
 [district_panel:_fill_people:5]
-中：中幅 12%
+中：中幅还价 12%
 英：ASK 12%
 
 [district_panel:_fill_people:6]
-中：狠砍 25%
+中：大幅还价 25%
 英：ASK 25%
 
 [district_panel:_fill_people:8]
-中：按他开的价立刻成交
+中：接受对方的报价，立即完成交易。
 英：Deal at his price, now
 
 [district_panel:_fill_people:9]
-中：还价 5%：按他的脾气，答应、回个中间价或走人；砍得少，最容易答应
+中：尝试还价 5%：降价幅度比较小，对方更容易接受，也可能提出折中的价格或者放弃交易。
 英：Ask 5%: by his temper he agrees, meets you halfway or leaves; the smallest ask is likeliest
 
 [district_panel:_fill_people:10]
-中：还价 12%：按他的脾气，答应、回个中间价或走人
+中：尝试还价 12%：对方可能接受，也可能提出折中的价格或者直接离开，具体取决于他的性格。
 英：Ask 12%: by his temper he agrees, meets you halfway or leaves
 
 [district_panel:_fill_people:11]
-中：还价 25%：砍得最狠，最容易被拒，他可能直接走人
+中：尝试还价 25%：降价幅度比较大，对方很可能拒绝还价，甚至直接离开。
 英：Ask 25%: the hardest ask, likeliest refused; he may just leave
 
 [district_panel:_fill_people:12]
-中：不做这笔，让他走
+中：这份合同不接了，让他离开
 英：No deal: send him away
 
+[district_panel:_fill_people:13]
+中：%s · 当前信誉 %d
+英：%s · REPUTATION %d
+
 [district_panel:_fill_people:14]
-中：执行中：每次 %.1f t %s，$%.0f/t · 第 %d / %d 次 · 下次还剩 %d 秒 · 仓库现有 %.1f t%s
+中：合同执行中：每次交付 %.1f t %s，单价 $%.0f/t · 第 %d 次，共 %d 次 · 距离下次交货还有 %d 秒 · 仓库当前库存 %.1f t%s
 英：RUNNING: %.1f t OF %s AT $%.0f/t · %d / %d · NEXT IN %d s · %.1f t IN STOCK%s
 
+[district_panel:_fill_people:15]
+中：（库存不足）
+英： (SHORT!)
+
 [district_panel:_fill_people:16]
-中：退掉这份合同（还没开始交货，不扣信誉）
+中：取消这份合同（还没有交付货物，不会扣除信誉）
 英：HAND IT BACK (NO DELIVERY YET)
 
 [district_panel:_fill_people:17]
-中：立刻退掉：还没交过货，所以不扣信誉
+中：确认取消合同：目前还没有交付过货物，所以不会扣除信誉
 英：Hand it back now: nothing delivered yet, so no reputation lost
 
 [district_panel:_fill_people:18]
-中：给你的合同：每 10 分钟交 %.1f t %s，$%.0f/t，一共 %d 次
+中：长期合同：每 10 分钟交付 %.1f t %s，单价 $%.0f/t，总共需要交付 %d 次
 英：OFFER: %.1f t OF %s EVERY 10 MIN AT $%.0f/t, %d TIMES
 
 [district_panel:_fill_people:20]
-中：立刻接下这份长期合同：按上面的量和价按期交货，守约涨信誉
+中：确认接受这份长期合同，之后需要按照约定的数量和价格定期交货，按时完成交付可以提高信誉
 英：Take this standing contract now: deliver the amount above on time; keeping it raises reputation
 
 [district_panel:_fill_people:21]
-中：信誉太低，这家暂时不给合同。
+中：当前信誉不足，这家客户暂时不愿意提供合同。
 英：REPUTATION TOO LOW: NO CONTRACT FOR NOW.
 
 [district_panel:_say_deal:1]
-中：他摇头，回了个中间价 $%.0f/t。接受或拒绝。
+中：对方没有接受你的报价，提出了 $%.0f/t 的折中价格，你可以选择接受或者拒绝。
 英：HE MEETS YOU HALFWAY AT $%.0f/t.
 
 [district_panel:_say_deal:2]
-中：他不干，开船走了。
+中：对方拒绝了这次交易，已经开船离开了。
 英：HE SAID NO AND LEFT.
 
 [district_panel:_say_deal:3]
-中：成交：$%.0f/t，共 %s。
+中：交易成功：单价 $%.0f/t，总金额 %s。
 英：DONE: $%.0f/t, %s IN ALL.
 
 [district_panel:_stage_line:1]
-中：下一阶段：
+中：下一期目标：
 英：NEXT STAGE: 
 
+[district_panel:_fill:1]
+中：处理办法：
+英：WHAT TO DO: 
+
+[district_panel:_fill:2]
+中：自有发电能力
+英：WE CAN MAKE
+
 [district_panel:_fill:4]
-中：已经分出去
+中：已分配电力
 英：GIVEN OUT
 
+[district_panel:_fill:6]
+中：当前还是空位
+英：STILL FREE
+
 [district_panel:_fill:8]
-中：电池泊位剩电
+中：电池泊位剩余电量
 英：BATTERY BERTH LEFT
 
+[district_panel:_fill:10]
+中：始终优先供电
+英：ALWAYS FIRST
+
+[district_panel:_fill:12]
+中：当前未使用
+英：IDLE
+
+[district_panel:_fill:13]
+中：免费提供电力
+英：FREE SUPPLY
+
+[district_panel:_fill:14]
+中：已经建造完成
+英：BUILT
+
 [district_panel:_fill:15]
-中：可修（有港电）
+中：可以维修（港口电力已接通）
 英：CAN REPAIR (GRID UP)
 
 [district_panel:_fill:16]
-中：等动力区 1 阶
+中：需要先将动力区修到 1 期
 英：WAITS FOR STAGE 1
 
+[district_panel:_fill:17]
+中：正在运输途中
+英：ON THE WAY
+
+[district_panel:_fill:18]
+中：第 %d 号泊位
+英：
+
+[district_panel:_fill:19]
+中：目前停靠在港口
+英：HELD
+
+[district_panel:_fill:20]
+中：分选处理批次
+英：SORTING BATCH
+
 [district_panel:_fill:22]
-中：设备售价系数
+中：设备出售价格系数
 英：EQUIPMENT PRICE FACTOR
 
 [district_panel:_fill:23]
-中：市场合同：%d 张
+中：当前市场合同：%d 份
 英：MARKET OFFERS: %d
 
 [district_panel:_fill:24]
-中：我的挂单：%d 张 · 托管现金 %s
+中：我的挂单：%d 笔 · 托管资金 %s
 英：MY ORDERS: %d · CASH %s
 
 [district_panel:_fill:25]
-中：仓库空着。
+中：仓库目前没有存放任何货物。
 英：THE WAREHOUSE IS EMPTY.
 
 [district_panel:_fill:26]
-中：未评级原料批次：%d
+中：尚未评级的原料批次：%d 批
 英：UNGRADED BATCHES: %d
 
 [district_panel:_fill:27]
-中：出场部署槽：%d
+中：出场部署栏位：%d 个
 英：DEPLOY SLOTS: %d
 
 [district_panel:_fill:28]
-中：叉车 %d 台 · 搬运中 %d 趟
+中：叉车总数 %d 台 · 正在执行的搬运任务 %d 趟
 英：FORKLIFTS %d · %d MOVES
 
+[district_panel:_fill:29]
+中：%s %s · 剩余 %d 秒
+英：%s %s  %d s
+
 [district_panel:_fill:34]
-中：在手合同：
+中：当前持有的合同：
 英：CONTRACT IN HAND: 
 
+[district_panel:_fill:36]
+中：待处理事项：
+英：TO DO:
+
+[district_panel:_show:1]
+中：下一期还款：
+英：NEXT: 
+
+[district_panel:_batch_state:1]
+中：当前没有搬运任务
+英：IDLE
+
+[district_panel:_batch_state:2]
+中：正在运输原料
+英：
+
+[district_panel:_batch_state:3]
+中：正在将原料运回仓库
+英：
+
+[district_panel:_batch_state:4]
+中：正在执行任务
+英：
+
+[district_panel:_batch_state:5]
+中：正在将成品运回仓库
+英：
+
+[district_panel:_batch_state:6]
+中：搬运任务已完成
+英：
+
+[district_panel:_batch_state:7]
+中：搬运任务已取消
+英：
+
+[district_panel:_batch_state:8]
+中：已经登记报损
+英：
+
 [district_panel:_process_layout:1]
-中：加工区 · 气体
+中：加工区 · 气体处理
 英：PROCESSING · GAS
 
 [district_panel:_process_layout:2]
-中：加工区 · 气体线
+中：加工区 · 气体处理线
 英：PROCESSING · GAS LINE
 
 [district_panel:_process_layout:3]
-中： · 业务终端
+中： · 业务管理终端
 英： · CONSOLE
 
+[district_panel:_process_layout:4]
+中：进行下一步
+英：NEXT
+
 [district_panel:_process_layout:5]
-中：更多 ›  自动化 · 外购混合气 · 检测 · 放空 · 本区修复
+中：更多 › 自动化设置 · 购买混合气 · 生命支持检测 · 气体排放 · 本区设施维修
 英：MORE ›  AUTOMATION · BUY GAS · TEST · VENT · MENDING
 
+[district_panel:_process_layout:6]
+中：展开更多 ▾
+英：MORE ▾
+
 [district_panel:_process_layout:7]
-中：更多 ›  自动化 · 外购混合气 · 检测 · 放空 · 本区修复
+中：更多 › 自动化设置 · 购买混合气 · 生命支持检测 · 气体排放 · 本区设施维修
 英：MORE ›  AUTOMATION · BUY GAS · TEST · VENT · MENDING
 
 [district_panel:_process_layout:8]
-中：展开或收起：自动化、外购混合气、生命支持检测、放空、处置污染、本区修复、轧机
+中：展开或收起更多功能，包括自动化设置、购买混合气、生命支持检测、气体排放、污染处理和本区设施维修。
 英：Show or hide the rest: automation, buying gas, the test, venting, disposal, mending, the mill
 
 [district_panel:_process_layout:11]
-中：轧机在观察廊上有自己的控制台：飞到它上面按 %s，选配方、开轧。
+中：轧机的控制台就在观察廊上，飞到控制台上方按 %s，就可以选择加工配方并启动轧机。
 英：The mill has its own console on the gallery: press %s at it to pick a recipe and roll.
 
 [district_panel:_process_layout:12]
-中：气体线 · 回收 → 分离 → 液氧 → 补给
+中：气体回收 → 气体分离 → 液氧生产 → 补给使用
 英：GAS LINE · RECOVER → SEPARATE → LOX → SUPPLY
 
 [district_panel:_process_layout:13]
-中：关闭 [Esc]
+中：按 [Esc] 关闭面板
 英：CLOSE [Esc]
 
 [district_panel:_fill_next:1]
-中：气体线还没修
+中：气体管线尚未修复
 英：NO GAS LINE YET
 
 [district_panel:_fill_next:2]
-中：在船坞终端“修缮”里修“气体线”（要加工区和动力区各 1 阶）。没修之前，拆船抽回的气在结算时折现。
+中：前往船坞终端的「修缮」页面，修复「气体管线」。需要加工区和动力区都修到 1 期。修复之前，从船上回收的气体会在结算时直接换成现金。
 英：Build it under the berth terminal's repairs (processing and power at stage 1). Until then a ship's gas is cashed at settlement.
 
 [district_panel:_fill_next:4]
-中：机器在跑，不用守着。
+中：设备正在运行，不需要一直等待。
 英：It runs by itself.
 
+[district_panel:_fill_next:5]
+中：正在执行任务
+英：RUNNING
+
 [district_panel:_fill_next:6]
-中：等这一步做完
+中：等待当前步骤完成
 英：WAIT FOR IT
 
+[district_panel:_fill_next:7]
+中：分离一批气体
+英：SEPARATE A BATCH
+
 [district_panel:_fill_next:8]
-中：%.0f kg · 氧 %d%% · %s\n约 %d 秒
+中：%.0f kg · 氧气含量 %d%% · %s\n预计需要 %d 秒
 英：%.0f kg · O₂ %d%% · %s\n~%d s
 
 [district_panel:_fill_next:11]
-中： · 还有 %d 批等着
+中： · 还有 %d 批等待处理
 英： · %d MORE WAITING
 
 [district_panel:_fill_next:13]
-中：开始分离。
+中：已开始分离。
 英：SEPARATING.
 
 [district_panel:_fill_next:14]
-中：液化 %.0f kg 气态氧
+中：将 %.0f kg 气态氧气液化
 英：LIQUEFY %.0f kg OF OXYGEN
 
 [district_panel:_fill_next:15]
-中：进液氧储罐（还能装 %.0f kg）· 约 %d 秒
+中：存入液氧储罐（剩余容量 %.0f kg）· 预计需要 %d 秒
 英：Into the LOX tank (%.0f kg of room) · ~%d s
 
 [district_panel:_fill_next:17]
-中：开始液化。
+中：已开始液化处理。
 英：LIQUEFYING.
 
 [district_panel:_fill_next:18]
-中：没有要处理的气
+中：当前没有需要处理的气体
 英：NOTHING TO PROCESS
 
 [district_panel:_fill_next:19]
-中：拆船时用气液回收（5）把舱里的气抽回来，回港就是一批混合气；也可以在“更多”里外购混合气。
+中：拆船时可以按 5 使用「气液回收」，把舱内的气体回收回来，返回港口后就会存为一批混合气体。你也可以在「更多」页面直接购买混合气。
 英：Recover a ship's gas with the gas recovery tool (5): it comes home as a batch. Or buy mixed gas under MORE.
 
 [district_panel:_fill_next:20]
-中：这一步要做的事
+中：当前需要完成的操作
 英：This step
 
 [district_panel:_trade_layout:3]
-中： · 业务终端
+中： · 业务管理终端
 英： · CONSOLE
 
 [district_panel:_trade_layout:4]
-中：打开交易行
+中：打开交易市场
 英：OPEN THE EXCHANGE
 
 [district_panel:_trade_layout:5]
-中：卖货、买零件、交订单
+中：出售货物、购买零件、交付订单
 英：Sell, buy parts, fill orders
 
 [district_panel:_trade_layout:6]
-中：更多 ›   售价系数 · 我的挂单 · 本区修复
+中：更多 › 出售价格系数 · 我的挂单 · 区域修复
 英：MORE ›   PRICE FACTOR · MY LISTINGS · MENDING
 
+[district_panel:_trade_layout:7]
+中：展开更多 ▾
+英：MORE ▾
+
 [district_panel:_trade_layout:8]
-中：更多 ›   售价系数 · 我的挂单 · 本区修复
+中：更多 › 出售价格系数 · 我的挂单 · 区域修复
 英：MORE ›   PRICE FACTOR · MY LISTINGS · MENDING
 
 [district_panel:_trade_layout:10]
-中：关闭 [Esc]
+中：按 [Esc] 关闭面板
 英：CLOSE [Esc]
 
+[district_panel:_likely:1]
+中：对方很可能接受报价
+英：LIKELY YES
+
 [district_panel:_likely:2]
-中：可能回个中间价
+中：对方可能会提出折中价格
 英：MAY MEET HALFWAY
 
+[district_panel:_likely:3]
+中：接受和拒绝的可能性差不多
+英：FIFTY-FIFTY
+
+[district_panel:_likely:4]
+中：对方很可能拒绝交易
+英：LIKELY LEAVES
+
+[district_panel:_fill_trade:1]
+中：比市场价格高 %d%%
+英：%d%% OVER MARKET
+
+[district_panel:_fill_trade:2]
+中：比市场价格低 %d%%
+英：%d%% UNDER MARKET
+
 [district_panel:_fill_trade:3]
-中：和市价一样
+中：与市场价格相同
 英：AT MARKET
 
 [district_panel:_fill_trade:4]
-中：码头有人出 %s/t 买%s，%s
+中：港口有人愿意以 %s/t 的价格收购%s，%s
 英：A BUYER OFFERS %s/t FOR %s, %s
 
 [district_panel:_fill_trade:5]
-中：码头有人卖%s，要 %s/t，%s
+中：港口有人正在出售%s，价格为 %s/t，%s
 英：A SELLER: %s AT %s/t, %s
 
 [district_panel:_fill_trade:6]
-中：%s给长期合同：每 10 分钟 %.1f t %s
+中：%s 提供的长期合同：每 10 分钟交付 %.1f t %s
 英：%s OFFERS A CONTRACT: %.1f t OF %s EVERY 10 MIN
 
 [district_panel:_fill_trade:7]
-中：%s的合同下次要 %.1f t %s，仓库不够
+中：%s 的长期合同即将交付 %.1f t %s，但目前仓库库存不足
 英：%s'S NEXT DELIVERY: %.1f t OF %s, NOT IN STOCK
 
 [district_panel:_fill_trade:8]
-中：没客人，合同都在跑
+中：当前没有客人，长期合同仍在正常执行
 英：NOBODY AT THE PIER; THE CONTRACTS RUN
 
+[district_panel:_fill_trade:9]
+中：当前没有客人
+英：NOBODY AT THE PIER
+
 [district_panel:_fill_trade:10]
-中：现在码头没人。隔一阵会有商人或个体船主开船来。
+中：码头目前没有客人，过一段时间会有商人或个体船主开船过来。
 英：Nobody at the pier. Merchants and owner-operators come by now and then.
 
 [district_panel:_fill_trade:11]
-中：码头客人 · %d / %d
+中：码头来访客户 · %d / %d
 英：AT THE PIER · %d / %d
 
 [district_panel:_fill_trade:12]
-中：还等 %d 秒
+中：还需要等待 %d 秒
 英：%d s LEFT
 
 [district_panel:_fill_trade:13]
-中：想买  %s  %.1f t
+中：想要购买 %s，数量为 %.1f t
 英：BUYS  %s  %.1f t
 
 [district_panel:_fill_trade:14]
-中：想卖  %s  %.1f t
+中：想要出售 %s，数量为 %.1f t
 英：SELLS  %s  %.1f t
 
 [district_panel:_fill_trade:15]
-中：出 %s/t   市价 %s/t
+中：对方报价 %s/t · 当前市场价格 %s/t
 英：OFFERS %s/t   MARKET %s/t
 
 [district_panel:_fill_trade:16]
-中：要 %s/t   市价 %s/t
+中：对方要价 %s/t · 当前市场价格 %s/t
 英：ASKS %s/t   MARKET %s/t
 
 [district_panel:_fill_trade:17]
-中：共 %s · 仓库有 %.1f t
+中：交易总价 %s · 仓库当前库存 %.1f t
 英：%s IN ALL · %.1f t IN STOCK
 
 [district_panel:_fill_trade:18]
-中：共 %s · 现金 %s
+中：交易总价 %s · 当前持有现金 %s
 英：%s IN ALL · CASH %s
 
 [district_panel:_fill_trade:19]
-中：正在靠泊……
+中：飞船正在靠泊……
 英：COMING ALONGSIDE…
 
+[district_panel:_fill_trade:20]
+中：出售给对方
+英：SELL TO HIM
+
+[district_panel:_fill_trade:21]
+中：购买这批货物
+英：BUY IT
+
 [district_panel:_fill_trade:22]
-中：按他开的价立刻成交
+中：接受对方的报价，立即完成交易。
 英：Deal at his price, now
 
 [district_panel:_fill_trade:27]
-中：不做这笔，让他走
+中：这份合同不接了，让他离开
 英：No deal: send him away
 
 [district_panel:_fill_trade:28]
-中：少要 5%
+中：要求降价 5%
 英：ASK 5%
 
+[district_panel:_fill_trade:29]
+中：尝试压价 5%
+英：DOWN 5%
+
 [district_panel:_fill_trade:30]
-中：砍 12%
+中：要求降价 12%
 英：ASK 12%
 
 [district_panel:_fill_trade:31]
-中：砍 25%
+中：要求降价 25%
 英：ASK 25%
 
+[district_panel:_fill_trade:32]
+中：下一位客户：
+英：NEXT: 
+
 [district_panel:_fill_trade:33]
-中：长期合同 · %d 家在招 · %d 份在跑
+中：长期合同 · %d 家客户正在提供合同 · %d 份合同正在执行
 英：STANDING CONTRACTS · %d OFFERED · %d RUNNING
 
+[district_panel:_fill_trade:34]
+中：%s · 当前信誉 %d
+英：%s · REPUTATION %d
+
 [district_panel:_fill_trade:35]
-中：在跑：%.1f t %s · 第 %d / %d 次 · 下次 %d 秒
+中：正在执行：每次交付 %.1f t %s · 第 %d 次，共 %d 次 · 距离下次交货还有 %d 秒
 英：RUNNING: %.1f t %s · %d / %d · NEXT %d s
 
 [district_panel:_fill_trade:37]
-中：还没交过货，退掉不扣信誉
+中：目前还没有交付过货物，现在取消合同不会扣除信誉
 英：Nothing delivered yet: no reputation lost
 
 [district_panel:_fill_trade:38]
-中：每 10 分钟 %.1f t %s，%s/t，共 %d 次
+中：每 10 分钟交付 %.1f t %s，单价 %s/t，总共需要交付 %d 次
 英：%.1f t OF %s EVERY 10 MIN, %s/t, %d TIMES
 
 [district_panel:_fill_trade:40]
-中：按上面的量和价按期交货，守约涨信誉
+中：按照约定的数量和价格定期交货，按时完成交付可以提高信誉
 英：Deliver on time; keeping it raises reputation
 
 [district_panel:_fill_trade:41]
-中：信誉太低，暂时不给合同
+中：当前信誉不足，暂时无法接受这家客户的合同
 英：REPUTATION TOO LOW FOR NOW
 
 [district_panel:_fill_trade:42]
-中：接下%s的合同
+中：接受%s的合同
 英：TAKE %s'S CONTRACT
 
 [district_panel:_fill_trade:43]
-中：打开交易行
+中：打开交易市场
 英：OPEN THE EXCHANGE
 
 [district_panel:_gas_primary:1]
-中：机器在跑：
+中：机器正在运行：
 英：RUNNING: 
 
 [district_panel:_gas_primary:2]
-中：没有要处理的气；液氧、液氢去交易行卖
+中：目前没有需要处理的气体，液氧和液氢可以拿到交易行出售
 英：NOTHING TO PROCESS; SELL LOX AND LH2 ON THE EXCHANGE
 
 ------------------------------------------------------------
@@ -12273,16 +12441,16 @@
 英：IN STOCK: %s %.2f t
 
 [freight_pier:_draw:1]
+中：排队等船位 · %s
+英：WAITING FOR A BERTH · %s
+
+[freight_pier:_draw_deck_static:1]
 中：卸货平台 · 待入库
 英：UNLOADING APRON · NOT YET STOCK
 
-[freight_pier:_draw:3]
+[freight_pier:_draw_deck_static:3]
 中：货运码头 · 栈桥
 英：CARGO PIER
-
-[freight_pier:_draw:5]
-中：排队等船位 · %s
-英：WAITING FOR A BERTH · %s
 
 ------------------------------------------------------------
 # 【气体线（gas_line.gd）】
@@ -12627,19 +12795,19 @@
 ------------------------------------------------------------
 
 [mill_line:_draw:1]
-中： · 轧钢板 %.0f/%.0f t
+中： · 钢板轧制进度：%.0f / %.0f 吨
 英： · PLATE %.0f/%.0f t
 
 [mill_line:_draw:3]
-中：轧机操作台
+中：轧机控制台
 英：MILL PEDESTAL
 
 [mill_line:_draw:4]
-中：[%s] 打开轧机
+中：[%s] 操作轧机
 英：[%s] OPEN THE MILL
 
 [mill_line:_brief:1]
-中：钢坯 %.1f t · 配方：%s · %s
+中：剩余钢坯：%.1f 吨 · 当前配方：%s · %s
 英：BILLET %.1f t · %s · %s
 
 ------------------------------------------------------------
@@ -12647,12 +12815,16 @@
 # 出现在：在轧机操作台按 E：配方（钢板 / 型材）、进料槽、进度、出料槽、状态灯、产速、轧一次 / 连续轧。
 ------------------------------------------------------------
 
+[mill_panel:_ready:1]
+中：轧机控制台
+英：ROLLING MILL
+
 [mill_panel:_ready:2]
-中：选这个配方：之后轧出来的就是它
+中：选择要生产的产品配方，之后轧机会按照这个配方进行加工
 英：Pick this recipe: what is rolled next is this
 
 [mill_panel:_ready:3]
-中：1 t 钢坯 → 1 t
+中：消耗 1 t 钢坯，可生产 1 t 产品
 英：1 t BILLET → 1 t
 
 [mill_panel:_ready:4]
@@ -12660,92 +12832,120 @@
 英：IN · BILLET
 
 [mill_panel:_ready:6]
-中：轧一次（1 t）
+中：加工一次（1 t）
 英：ONE PASS (1 t)
 
 [mill_panel:_ready:7]
-中：立刻轧一次：用掉 1 t 钢坯，按选好的配方轧出产品
+中：立即开始一次轧制，消耗 1 t 钢坯，按照当前选择的配方生产对应产品
 英：Roll once now: 1 t of billet into the chosen recipe
 
-[mill_panel:_ready:8]
-中：连续轧：钢坯一到就轧
-英：ROLL ON: EACH BILLET AS IT COMES
-
 [mill_panel:_ready:9]
-中：打开后，仓库里有钢坯就一直轧下去；关掉就停
+中：开启后，只要仓库里还有钢坯，轧机就会按照当前配方持续生产；关闭后停止连续轧制
 英：On: it keeps rolling while there is billet; off: it stops
 
 [mill_panel:_ready:10]
-中：连续轧开了：仓库有钢坯就一直轧。
+中：已开启连续轧制。
 英：ROLLING ON while there is billet.
 
 [mill_panel:_ready:11]
-中：连续轧关了：这一次轧完就停。
+中：已关闭连续轧制。
 英：ROLLING ON is off: it stops after this pass.
 
+[mill_panel:_ready:12]
+中：前往动力区
+英：TO THE POWER DISTRICT
+
 [mill_panel:_ready:13]
-中：关掉轧机台，去供电控制屏调电
+中：关闭轧机控制台，前往供电控制屏调整电力分配。
 英：Close the mill desk and go to the power control screen
 
 [mill_panel:_ready:14]
-中：更多 ›   速度 · 电网
+中：更多设置 › 轧制速度 · 电网供电
 英：MORE ›   RATE · POWER
 
+[mill_panel:_ready:15]
+中：收起设置 ▾
+英：MORE ▾
+
 [mill_panel:_ready:16]
-中：更多 ›   速度 · 电网
+中：更多设置 › 轧制速度 · 电网供电
 英：MORE ›   RATE · POWER
 
 [mill_panel:_ready:17]
-中：关闭 [Esc]
+中：关闭面板 [Esc]
 英：CLOSE [Esc]
 
 [mill_panel:_pick:1]
-中：下一次轧%s。
+中：下次将轧制%s。
 英：THE NEXT PASS ROLLS %s.
 
 [mill_panel:_pick:2]
-中：（这一次还在轧%s）
+中：（当前正在轧制%s）
 英： (THIS PASS IS STILL %s)
 
 [mill_panel:_once:1]
-中：开轧：叉车先从仓库送一吨钢坯来。
+中：开始轧制：叉车会先从仓库运来 1 吨钢坯。
 英：STARTED: THE FORKLIFT BRINGS A TONNE OF BILLET FIRST.
 
-[mill_panel:_refresh:1]
-中：仓库存量 · 每次 1 t
-英：IN STOCK · 1 t A PASS
+[mill_panel:_refresh:2]
+中：轧制成品 · %s
+英：OUT · %s
 
 [mill_panel:_refresh:3]
-中：仓库里 · 这次共轧 %.0f t
+中：仓库库存 · 累计轧制 %.0f t
 英：IN STOCK · %.0f t ROLLED
 
 [mill_panel:_refresh:4]
-中：%d%% · 还剩约 %d 秒
+中：加工进度 %d%% · 预计还需 %d 秒
 英：%d%% · ~%d s LEFT
 
+[mill_panel:_refresh:5]
+中：正在等待钢坯送达
+英：WAITING
+
+[mill_panel:_refresh:6]
+中：轧机已停止运行
+英：STOPPED
+
 [mill_panel:_refresh:7]
-中：满电约 %.1f t/分钟 · 现在 %.1f t/分钟 · 用电 %.0f MW
+中：满功率时每分钟可轧制约 %.1f t · 当前每分钟轧制 %.1f t · 当前用电功率 %.0f MW
 英：%.1f t/min AT FULL POWER · %.1f NOW · %.0f MW
 
+[mill_panel:_refresh:8]
+中：前往动力区
+英：TO THE POWER DISTRICT
+
 [mill_panel:_refresh:9]
-中：：去动力区
+中：前往动力区
 英：: TO THE POWER DISTRICT
 
 [mill_panel:_refresh:10]
-中：轧一次（1 t）
+中：加工一次（1 t）
 英：ONE PASS (1 t)
 
 [mill_panel:_refresh:11]
-中：仓库有 %.1f t 钢坯，轧机停着
+中：仓库现有 %.1f t 钢坯，轧机目前处于停止状态
 英：%.1f t OF BILLET IN STORE, THE MILL IDLE
 
 [mill_panel:_refresh:12]
-中：轧一次（1 t）
+中：加工一次（1 t）
 英：ONE PASS (1 t)
 
+[mill_panel:_refresh:13]
+中：前往动力区
+英：TO THE POWER DISTRICT
+
 [mill_panel:_refresh:14]
-中：连续轧开着，在轧%s
+中：连续轧制已开启，当前正在轧制%s
 英：ROLLING ON: %s
+
+[mill_panel:_refresh:15]
+中：当前正在轧制%s
+英：ROLLING %s
+
+[mill_panel:_refresh:16]
+中：轧机已停止运行
+英：STOPPED
 
 ------------------------------------------------------------
 # 【面板外观（ops_skin.gd）】
@@ -12753,12 +12953,16 @@
 ------------------------------------------------------------
 
 [ops_skin:as_screen:1]
-中：需要你决策的事项
+中：等待你处理的事项
 英：WAITING ON YOU
 
 [ops_skin:as_screen:2]
-中：没有要你拍板的事。
+中：目前没有需要你处理的事项。
 英：Nothing needs a decision.
+
+[ops_skin:draw_decision:2]
+中：进入查看 ›
+英：OPEN ›
 
 ------------------------------------------------------------
 # 【港区远景上的字（port_art.gd）】
@@ -14006,7 +14210,7 @@
 英：%s %s · PICK ~%d s
 
 ============================================================
-# 十、交易行、炉台与加工（447 条）
+# 十、交易行、炉台与加工（483 条）
 # 交易行（买入、出售、记录、航运、船市）、货物物流、炉台（电弧炉一炉钢）、分选台、化验台、自动出钢、订单结算。
 # 字要让玩家算得清账：价格、吨数、等级、多久到货。
 ============================================================
@@ -14401,99 +14605,119 @@
 ------------------------------------------------------------
 
 [hall_market:vs_avg_text:1]
-中：现在比平均高 %d%%
+中：当前价格比平均价格高 %d%%
 英：%d%% ABOVE AVERAGE NOW
 
 [hall_market:vs_avg_text:2]
-中：现在比平均低 %d%%
+中：当前价格比平均价格低 %d%%
 英：%d%% BELOW AVERAGE NOW
 
 [hall_market:vs_avg_text:3]
-中：现在和平均差不多
+中：当前价格接近平均价格
 英：ABOUT AVERAGE NOW
 
 [hall_market:eta_text:1]
-中：约 %d 秒成交
+中：预计 %d 秒左右成交
 英：SELLS IN ~%d s
 
 [hall_market:eta_text:2]
-中：约 %d 分钟成交
+中：预计 %d 分钟左右成交
 英：SELLS IN ~%d MIN
 
 [hall_market:eta_text:3]
-中：很难卖出去
+中：当前价格下很难成交
 英：UNLIKELY TO SELL
 
+[hall_market:list:1]
+中：保存失败，请重新尝试
+英：SAVE FAILED
+
 [hall_market:list_raw_bundles:1]
-中：这件东西现在不能挂单
+中：这件物品目前无法挂单出售
 英：THIS CANNOT BE LISTED NOW
+
+[hall_market:list_raw_bundles:2]
+中：保存失败，请重新尝试
+英：SAVE FAILED
 
 [hall_market:_list_unit:1]
-中：这件东西现在不能挂单
+中：这件物品目前无法挂单出售
 英：THIS CANNOT BE LISTED NOW
 
+[hall_market:cancel:1]
+中：保存失败，请重新尝试
+英：SAVE FAILED
+
 [hall_market:cancel:2]
-中：没有这张挂单
+中：找不到这笔挂单
 英：NO SUCH LISTING
 
 [hall_market:_fill:1]
-中：交易行成交：%s 卖了 %s，扣 5%% 手续费，到账 %s
+中：交易行成交：%s 已出售 %s，扣除 5%% 手续费后，实际到账 %s
 英：SOLD ON THE EXCHANGE: %s FOR %s, LESS 5%%, %s PAID
 
 [hall_market:_fill:2]
-中：交易行成交
+中：交易行成交成功
 英：SOLD ON THE EXCHANGE
 
+[hall_market:offers:2]
+中：修缮所需钢材
+英：REPAIR STEEL
+
 [hall_market:buy:1]
-中：现金不够：还差 %s
+中：现金不足，还需要 %s
 英：NOT ENOUGH CASH: %s SHORT
 
 [hall_market:buy:2]
-中：放进修缮钢材区
+中：存入修缮钢材区
 英：INTO THE REPAIR STEEL
 
 [hall_market:buy:4]
-中：仓库放不下，%d 件在待入库
+中：仓库空间不足，剩余 %d 件物品暂存在待入库区
 英：NO ROOM: %d WAITING TO BE STORED
 
+[hall_market:buy:5]
+中：保存失败，请重新尝试
+英：SAVE FAILED
+
 [hall_market:buy:6]
-中：修缮钢材 %.0f t
+中：修缮钢材：%.0f 吨
 英：%.0f t REPAIR STEEL
 
 [hall_market:level_text:1]
-中：信誉 %d 级 · %s
+中：信誉等级：%d 级 · %s
 英：REPUTATION %d · %s
 
 [hall_market:short_ways:1]
-中：钢锭不够：拆船时熔炉把碎料炼成钢锭，带回来就入库
+中：钢锭数量不足。拆船时可以用熔炉把碎料炼成钢锭，带回来的钢锭会直接存入仓库。
 英：SHORT OF INGOTS: THE BERTH'S FURNACE CASTS THEM FROM THE SCRAP
 
 [hall_market:short_ways:2]
-中：交易行不卖钢锭，只能自己攒
+中：交易行没有钢锭出售，需要自己熔炼获得。
 英：THE EXCHANGE SELLS NONE: YOUR OWN ONLY
 
 [hall_market:short_ways:3]
-中：%s不够：订单卡上点“为这单排产”，或在仓库点钢锭“炼成钢坯”
+中：%s数量不足。可以在订单卡上点击「为这单排产」，也可以打开仓库，选择钢锭并点击「炼成钢坯」。
 英：SHORT: PRESS 'PLAN FOR THIS ORDER' ON THE CARD, OR CAST INGOTS IN THE STORES
 
 [hall_market:short_ways:4]
-中：交易行不卖，只能自己炼
+中：交易行没有出售这种材料，只能自己加工获得。
 英：THE EXCHANGE SELLS NONE: YOUR OWN ONLY
 
 [hall_market:short_ways:5]
-中：或在“买”页买 %d 台（每台 %s，
+中：也可以在「购买」页面购买 %d 台（每台 %s，
 英：OR BUY %d ON THE BUY PAGE (%s EACH, 
 
 [hall_market:short_ways:6]
-中：交单每台还赚 %s）
+中：完成订单后，每台还能赚取 %s）
 英：%s MORE EACH ON DELIVERY)
 
 [hall_market:short_ways:7]
-中：买来交单每台亏 %s）
+中：购买后用于交付订单，每台会亏损 %s）
 英：%s LOST EACH)
 
 [hall_market:short_ways:8]
-中：去拆一艘带%s的船，拆下整台就自动入库
+中：找一艘装有%s的船进行拆解，只要完整拆下设备，就会自动存入仓库。
 英：SALVAGE A HULK WITH A %s: WHOLE ONES GO TO THE STORES
 
 [hall_market:clients:1]
@@ -14505,51 +14729,67 @@
 英：BELT TUG FLEET
 
 [hall_market:take:1]
-中：这张订单已经不在了
+中：这笔订单已经不存在了
 英：THIS ORDER IS GONE
 
+[hall_market:take:2]
+中：保存失败，请重新尝试
+英：SAVE FAILED
+
 [hall_market:drop:1]
-中：已经在送货了，不能退
+中：订单已经开始配送，无法取消
 英：ALREADY ON ITS WAY
 
+[hall_market:drop:2]
+中：保存失败，请重新尝试
+英：SAVE FAILED
+
 [hall_market:_settle:1]
-中：订单完成：%s 取走 %s，到账 %s · 信誉 +1
+中：订单完成：%s 已收取 %s，收到货款 %s，信誉 +1
 英：ORDER DONE: %s TOOK %s, %s PAID · REPUTATION +1
 
 [hall_market:_settle:2]
-中： · 升到 %d 级：订单更大、给价更高
+中： · 信誉提升至 %d 级，可以接到数量更多、收购价格更高的订单
 英： · NOW LEVEL %d: BIGGER ORDERS, BETTER PRICES
 
+[hall_market:order_state_text:1]
+中：可以接取订单
+英：OPEN
+
 [hall_market:order_state_text:2]
-中：备货中：还差 %.1f t，入库后自动补上
+中：正在备货：还缺少 %.1f 吨，材料入库后会自动补齐
 英：MAKING UP: %.1f t SHORT, ADDED AS IT COMES IN
 
 [hall_market:order_state_text:3]
-中：备货中：还差 %d 台，入库后自动补上
+中：正在备货：还缺少 %d 台设备，设备入库后会自动补齐
 英：MAKING UP: %d SHORT, ADDED AS THEY COME IN
 
 [hall_market:order_state_text:4]
-中：到了贸易港，等客户飞船靠泊
+中：货物已抵达贸易港，正在等待客户飞船靠泊
 英：AT THE TRADE PORT, WAITING FOR THE CLIENT'S SHIP
 
 [hall_market:order_state_text:5]
-中：货运火车送往贸易港
+中：货运列车正在将货物运往贸易港
 英：ON THE FREIGHT TRAIN TO THE TRADE PORT
 
 [hall_market:order_state_text:6]
-中：客户飞船进港
+中：客户飞船正在进港
 英：THE CLIENT'S SHIP COMING IN
 
+[hall_market:order_state_text:7]
+中：正在装载货物
+英：LOADING
+
 [hall_market:order_state_text:8]
-中：客户飞船离港
+中：客户飞船已经离港
 英：THE CLIENT'S SHIP LEAVING
 
 [hall_market:tick:1]
-中：订单板来了新订单：%s 要 %s，给 %s
+中：新订单：%s 要 %s，给 %s
 英：NEW ORDER: %s WANTS %s FOR %s
 
 [hall_market:tick:2]
-中：订单过期：%s 的单没备齐，货已放回仓库，没有罚款
+中：订单过期：%s 的单没备齐，货已放回仓库
 英：ORDER LAPSED: %s's — THE GOODS ARE BACK IN STORE, NO PENALTY
 
 ------------------------------------------------------------
@@ -14558,35 +14798,35 @@
 ------------------------------------------------------------
 
 [hall_panel:list_now:1]
-中：仓库里没有能挂单的东西
+中：仓库里目前没有可以上架出售的货物
 英：NOTHING IN STORE TO LIST
 
 [hall_panel:list_now:2]
-中：挂到交易行：%s · 要价 %s · %s，成交后到账 %s（扣 5%% 手续费）
+中：上架出售：%s · 出售价格 %s · 数量 %s，成交后预计收到 %s（已扣除 5%% 手续费）
 英：LISTED: %s · ASKING %s · %s, %s PAID ON THE SALE (LESS 5%%)
 
 [hall_panel:cancel_listing:1]
-中：撤下挂单：%s 回到仓库
+中：取消出售：%s 将退回仓库
 英：WITHDRAWN: %s IS BACK IN STORE
 
 [hall_panel:buy_now:1]
-中：买下 %s · 付了 %s · %s
+中：已购买 %s，支付 %s，购买 %s
 英：BOUGHT %s · PAID %s · %s
 
 [hall_panel:take_order:1]
-中：接了 %s 的订单：仓库里都有，已备好，货运火车送往贸易港
+中：已接受 %s 的订单，仓库库存足够，货物已经备齐，货运火车将把货物运往贸易港
 英：TOOK %s'S ORDER: ALL IN STORE, ON THE FREIGHT TRAIN TO THE TRADE PORT
 
 [hall_panel:take_order:2]
-中：接了 %s 的订单：仓库自动备货，缺的入库后自动补上
+中：已接受 %s 的订单，仓库会自动准备货物，缺少的部分会在入库后自动补齐
 英：TOOK %s'S ORDER: THE STORES MAKE IT UP, THE REST AS IT COMES IN
 
 [hall_panel:take_order:3]
-中：退了这张订单：备好的货放回仓库，没有罚款
+中：已取消这份订单，已经准备好的货物会退回仓库，不会产生罚款
 英：ORDER GIVEN BACK: THE GOODS ARE BACK IN STORE, NO PENALTY
 
 [hall_panel:_press:1]
-中：为这单排产：钢锭 %.1f t → %s，排在加工队列第 1 位
+中：已为这份订单安排加工：消耗钢锭 %.1f t，生产 %s，已排在加工队列的第一位
 英：PLANNED: %.1f t → %s, FIRST IN THE QUEUE
 
 [hall_panel:_draw_head:1]
@@ -14594,103 +14834,103 @@
 英：THE EXCHANGE · TRADE PORT
 
 [hall_panel:_draw_head:2]
-中：挂单中 %d 件 · 订单 %d/%d 张 · %s
+中：当前上架商品 %d 件 · 已接受订单 %d/%d 张 · %s
 英：%d LISTED · %d/%d ORDERS · %s
 
 [hall_panel:_draw_head:4]
-中：回仓库  [Esc]
+中：返回仓库 [Esc]
 英：BACK TO STORES  [Esc]
 
 [hall_panel:_draw_head:5]
-中：关闭  [Esc]
+中：关闭窗口 [Esc]
 英：CLOSE  [Esc]
 
 [hall_panel:_draw_head:6]
-中：关掉交易行
+中：关闭交易行界面
 英：Close the exchange
 
 [hall_panel:_draw_head:7]
-中：回到仓库页
+中：返回仓库界面
 英：Back to the stores page
 
 [hall_panel:_draw_tabs:4]
-中：把仓库里的东西挂到交易行，按真实时间成交
+中：把仓库里的货物上架到交易行，成交需要等待一段现实时间
 英：List what is in store; it sells in real time
 
 [hall_panel:_draw_tabs:5]
-中：买别家公司的设备和钢材，比自己拆的贵
+中：可以购买其他公司的设备和钢材，不过价格会比自己拆船获得的更贵
 英：Buy other companies' machines and steel, dearer than your own
 
 [hall_panel:_draw_tabs:6]
-中：客户点名要的货，市价的 130% 起
+中：客户会指定需要的货物，订单价格从市场价的 130% 起
 英：What clients ask for, from 130% of market
 
 [hall_panel:now_of:1]
-中：%s要的%s，仓库有，接下就能交，比市价多 %s
+中：%s需要的%s仓库里已经有了，接受订单后就能直接交货，价格比市场价高 %s
 英：%s WANTS %s: IN STORE, IT CAN GO NOW, %s OVER MARKET
 
 [hall_panel:now_of:2]
-中：订单要的货仓库还没有
+中：仓库里暂时没有这份订单需要的货物
 英：THE ORDERS WANT WHAT IS NOT IN STORE
 
 [hall_panel:now_of:3]
-中：订单都在路上
+中：目前所有订单都在运输途中
 英：THE ORDERS ARE ON THEIR WAY
 
 [hall_panel:now_of:4]
-中：没有新订单
+中：目前没有新的客户订单
 英：NO ORDERS NOW
 
 [hall_panel:now_of:5]
-中：仓库有 %d 样能挂，最贵的约 %s
+中：仓库里有 %d 种货物可以出售，其中最贵的价值约为 %s
 英：%d THINGS IN STORE TO LIST, THE DEAREST ~%s
 
 [hall_panel:now_of:6]
-中：仓库没有能卖的
+中：仓库里目前没有可以出售的货物
 英：NOTHING IN STORE TO SELL
 
 [hall_panel:now_of:7]
-中：修缮不缺东西
+中：目前修缮工作所需的材料都已经备齐
 英：THE MENDING LACKS NOTHING
 
 [hall_panel:_draw_sell:1]
-中：仓库里能卖的
+中：仓库里可以出售的货物
 英：IN STORE, FOR SALE
 
 [hall_panel:_draw_sell:2]
-中：仓库是空的：拆船带回来的东西会进这里
+中：仓库目前还是空的，拆船回收的货物会自动存放到这里
 英：THE STORES ARE EMPTY: WHAT YOU BRING HOME COMES HERE
 
 [hall_panel:_draw_sell:4]
-中：在左边点一件东西
+中：先从左边选择一件货物
 英：PICK SOMETHING ON THE LEFT
 
 [hall_panel:_draw_sell:5]
-中：回收站 %s · 交易行约 %s · 订单 %s
+中：回收站价格 %s · 交易行预计售价 %s · 订单价格 %s
 英：RECYCLING %s · EXCHANGE ~%s · ORDER %s
 
 [hall_panel:_draw_sell:6]
-中：约 %s（现在没人要）
+中：预计售价 %s（目前没有买家）
 英：~%s (NONE WANT IT NOW)
 
 [hall_panel:_draw_sell:7]
-中：按建议价挂单  %s  [Enter]
+中：按照建议价格上架 %s [Enter]
 英：LIST AT THE SUGGESTED PRICE  %s  [Enter]
 
 [hall_panel:_draw_sell:8]
-中：挂到交易行：要价就是现在的市价，成交后扣 5% 手续费到账
+中：按照当前市场价格上架出售，成交后会扣除 5% 的手续费，剩余金额会转入账户
 英：Listed at the market now; paid less 5% on the sale
 
 [hall_panel:_draw_sell:9]
-中：到账 %s · %s
+中：预计到账 %s · %s
 英：%s PAID · %s
 
 [hall_panel:_draw_sell:10]
-中：自己定价…
+中：自行设置价格…
 英：SET MY OWN PRICE…
 
 [hall_panel:_draw_sell:11]
-中：打开价格滑条：要价高卖得慢，低卖得快
+中：打开价格调整滑条，价格越高，成交可能越慢；价格越低，成交通常越快
 英：Open the price slider: dearer sells slower, cheaper faster
 
 [hall_panel:_draw_curve:2]
@@ -14698,95 +14938,135 @@
 英：30 MIN AGO
 
 [hall_panel:_draw_curve:4]
-中：价格每隔一阵在 ±10% 之间浮动
+中：市场价格会定期变化，每次浮动范围为 ±10%
 英：PRICES DRIFT WITHIN ±10%
 
 [hall_panel:_draw_slider:2]
-中：比现在市价高 %d%%
+中：比当前市场价格高 %d%%
 英：%d%% OVER THE MARKET NOW
 
 [hall_panel:_draw_slider:3]
-中：比现在市价低 %d%%
+中：比当前市场价格低 %d%%
 英：%d%% UNDER THE MARKET NOW
 
 [hall_panel:_draw_slider:4]
-中：就是现在的市价
+中：与当前市场价格相同
 英：THE MARKET NOW
 
+[hall_panel:_draw_slider:5]
+中：高于平均价格 %d%%
+英：%d%% OVER THE AVERAGE
+
+[hall_panel:_draw_slider:6]
+中：低于平均价格 %d%%
+英：%d%% UNDER THE AVERAGE
+
 [hall_panel:_draw_slider:7]
-中：和平均一样
+中：与平均价格相同
 英：THE AVERAGE
 
+[hall_panel:_draw_slider:9]
+中：当前市场价格
+英：MARKET
+
+[hall_panel:_draw_slider:10]
+中：平均成交价格
+英：AVG
+
+[hall_panel:_draw_slider:11]
+中：预计出售较快
+英：SELLS FAST
+
+[hall_panel:_draw_slider:12]
+中：预计出售较慢
+英：SELLS SLOW
+
 [hall_panel:_draw_slider:13]
-中：便宜 1%
+中：降低价格 1%
 英：1% cheaper
 
+[hall_panel:_draw_slider:14]
+中：提高价格 1%
+英：1% dearer
+
 [hall_panel:_draw_slider:15]
-中：按这个价挂单  %s  [Enter]
+中：按当前价格上架出售 %s [Enter]
 英：LIST AT THIS PRICE  %s  [Enter]
 
 [hall_panel:_draw_slider:16]
-中：挂到交易行：成交后扣 5% 手续费到账
+中：将货物上架到交易行，成交后会扣除 5% 的手续费，剩余金额会转入账户
 英：Listed; paid less 5% on the sale
 
+[hall_panel:_draw_slider:17]
+中：使用平均价格
+英：AT THE AVERAGE
+
 [hall_panel:_draw_slider:18]
-中：要价设成平均价
+中：将出售价格设置为市场平均价格
 英：Ask the average price
 
 [hall_panel:_draw_slider:19]
-中：收起  [Esc]
+中：关闭交易窗口 [Esc]
 英：CLOSE  [Esc]
 
 [hall_panel:_draw_slider:20]
-中：回到按建议价挂单
+中：恢复为建议价格
 英：Back to the suggested price
 
 [hall_panel:_draw_listings:1]
-中：挂单中 %d 件
+中：当前有 %d 件商品正在出售
 英：LISTED: %d
 
 [hall_panel:_draw_listings:2]
-中：最近成交：%s %s（到账 %s）
+中：最近成交记录：%s %s（到账 %s）
 英：LAST SALE: %s %s (%s PAID)
 
 [hall_panel:_draw_listings:3]
-中：还没挂单。挑一件，按 Enter。
+中：目前还没有上架的商品，选择一件商品后按 Enter 即可上架。
 英：NOTHING LISTED: PICK ONE ABOVE, ENTER TO LIST
 
 [hall_panel:_draw_listings:4]
-中：要价 %s · %s
+中：当前出售价格 %s · %s
 英：%s · %s
 
 [hall_panel:_draw_listings:6]
-中：撤下挂单，东西回到仓库
+中：将这件商品从交易行撤下，商品会退回仓库。
 英：Withdraw: it comes back to the stores
 
 [hall_panel:_draw_buy:1]
-中：别家公司挂着的货
+中：其他公司正在出售的商品
 英：OTHER COMPANIES' GOODS
 
 [hall_panel:_draw_buy:2]
-中： · 修缮要用
+中： · 修缮时需要使用
 英： · FOR THE MENDING
 
 [hall_panel:_draw_buy:4]
-中：修缮钢材按吨卖，放进仓库的修缮钢材区，修港区时从那里扣
+中：修缮钢材按吨出售，购买后会存入仓库的修缮钢材区，修缮港区时会自动从库存中扣除
 英：Repair steel by the tonne, into the stores' repair steel slot; the works take from it
 
 [hall_panel:_draw_buy:5]
-中：自己拆下来的同类约 %s · 这里贵 %d%%
+中：自己拆船获得的同类物资价值约为 %s，这里的售价高出 %d%%
 英：YOUR OWN SALVAGE OF THIS KIND ~%s · %d%% DEARER HERE
 
 [hall_panel:_draw_buy:6]
-中：仓库里有 %.1f t
+中：仓库当前库存：%.1f t
 英：IN STORE: %.1f t
 
 [hall_panel:_draw_buy:7]
-中：仓库里有 %d 台
+中：仓库当前库存：%d 台
 英：IN STORE: %d
 
+[hall_panel:_draw_buy:8]
+中：减少购买数量
+英：Fewer
+
+[hall_panel:_draw_buy:9]
+中：增加购买数量
+英：More
+
 [hall_panel:_draw_buy:10]
-中：现金不够：还差 %s
+中：现金不足：- %s
 英：NOT ENOUGH CASH: %s SHORT
 
 [hall_panel:_draw_buy:11]
@@ -14794,79 +15074,99 @@
 英：BUY  %s  [Enter]
 
 [hall_panel:_draw_buy:12]
-中：马上付钱，货放进仓库（放不下的进待入库）
+中：确认付款后，购买的货物会存入仓库，仓库空间不足时，多余的货物会进入待入库区
 英：Paid at once; into the stores (what does not fit waits to be stored)
 
 [hall_panel:_draw_buy:13]
-中：现金 %s → %s
+中：付款前现金 %s，付款后剩余 %s
 英：CASH %s → %s
 
 [hall_panel:_repair_need:1]
-中：修%s还缺 %d 台：买下后修缮时自动用上
+中：修缮%s还缺少 %d 台设备，购买后会在修缮时自动使用
 英：%s'S MENDING IS %d SHORT: BOUGHT, THE MENDING USES IT
 
 [hall_panel:_repair_need:2]
-中：修%s还缺钢材 %.0f t
+中：修缮%s还需要 %.0f t 钢材
 英：%s'S MENDING IS %.0f t OF STEEL SHORT
 
 [hall_panel:_draw_orders:1]
-中：新订单约 %d 秒后到
+中：下一批订单预计 %d 秒后到达
 英：NEXT ORDER IN ~%d s
 
 [hall_panel:_draw_orders:2]
-中：订单满了：最多 %d 张
+中：当前订单已达到上限，最多可以同时保留 %d 张订单
 英：FULL: UP TO %d ORDERS
 
+[hall_panel:_order_card:1]
+中：当前市场价格：%s
+英：MARKET %s
+
 [hall_panel:_order_card:2]
-中：仓库有 %.1f / %.0f t
+中：仓库当前库存：%.1f / %.0f t
 英：IN STORE %.1f / %.0f t
 
 [hall_panel:_order_card:3]
-中：仓库有 %d / %d 台
+中：仓库当前库存：%d / %d 台
 英：IN STORE %d / %d
 
 [hall_panel:_order_card:4]
-中：还剩 %d 分钟 · 过期这单就没了
+中：订单还剩 %d 分钟，超过时间后就会自动取消
 英：%d MIN LEFT · LAPSED, IT IS GONE
 
 [hall_panel:_order_card:5]
-中：不用管，到账会通知
+中：不用额外操作，货款到账后会收到通知
 英：NOTHING TO DO: YOU WILL BE TOLD
 
 [hall_panel:_order_card:6]
-中：接单  [Enter]
+中：接受订单 [Enter]
 英：TAKE  [Enter]
 
 [hall_panel:_order_card:8]
-中：接下这张订单：仓库自动备货，备齐后货运火车送到贸易港，客户来取
+中：接受订单后，仓库会自动准备货物，备货完成后由货运火车送到贸易港，等待客户提货
 英：Take it: the stores make it up, the train takes it to the trade port, the client collects
 
 [hall_panel:_order_card:9]
-中：退掉这张订单：备好的货放回仓库，没有罚款
+中：取消这张订单后，已经准备好的货物会退回仓库，不会收取罚款
 英：Give it back: the goods go back to the stores, no penalty
 
 [hall_panel:_order_card:10]
-中：第一炉先去炉台亲手炼一次
+中：第一次冶炼需要先到熔炉操作台亲自完成
 英：MAKE THE FIRST HEAT BY HAND FIRST
 
 [hall_panel:_order_card:11]
-中：为这单排产 · %s模
+中：为这张订单安排生产 · %s模具
 英：PLAN FOR THIS ORDER · %s
 
 [hall_panel:_order_card:12]
-中：把仓库里的钢锭排进加工队列最前面，炼成这张订单要的%s
+中：将仓库里的钢锭安排到加工队列最前面，使用%s模具加工成订单需要的货物
 英：Puts ingots first in the processing queue, cast as the order wants
 
+[hall_panel:_pipeline:1]
+中：正在准备货物
+英：MAKE UP
+
+[hall_panel:_pipeline:2]
+中：货运火车运输中
+英：TRAIN
+
+[hall_panel:_pipeline:3]
+中：等待客户飞船提货
+英：CLIENT SHIP
+
+[hall_panel:_pipeline:4]
+中：等待货款到账
+英：PAID
+
 [hall_panel:_draw_foot:1]
-中：Enter 挂单 · Esc 关闭
+中：Enter 确认挂单 · Esc 关闭界面
 英：ENTER: LIST · ESC: CLOSE
 
 [hall_panel:_draw_foot:2]
-中：Enter 买下 · Esc 关闭
+中：Enter 确认购买 · Esc 关闭界面
 英：ENTER: BUY · ESC: CLOSE
 
 [hall_panel:_draw_foot:3]
-中：Enter 接单 · Esc 关闭
+中：Enter 接受订单 · Esc 关闭界面
 英：ENTER: TAKE · ESC: CLOSE
 
 ------------------------------------------------------------
@@ -14892,155 +15192,191 @@
 ------------------------------------------------------------
 
 [heat_panel:show_result:1]
-中：钢锭还没完全化开，或者温度还不够出钢
+中：钢锭还没有完全熔化，或者当前温度还没有达到出钢要求
 英：Charge not fully melted or below tapping temperature
 
 [heat_panel:show_result:2]
-中：请先完成一次新的测温取样
+中：请先重新测量炉内温度并完成取样
 英：Take a fresh temperature sample first
 
 [heat_panel:show_result:3]
-中：请等待探头完全收回
+中：测温探头还没有完全收回，请稍后再操作
 英：Wait for the probe to retract
 
 [heat_panel:show_result:4]
-中：当前炉况不允许插入探头
+中：当前炉内状态不适合插入测温探头
 英：Probe insertion is interlocked in this state
 
 [heat_panel:show_result:5]
-中：炉体运动中，不能启动给料
+中：炉体正在移动，暂时无法启动加料设备
 英：Feeding is interlocked while the furnace moves
 
+[heat_panel:show_result:6]
+中：操作未能完成
+英：
+
+[heat_panel:show_result:7]
+中：操作已完成
+英：Done
+
 [heat_panel:_ready:1]
-中：电弧炉 · 炉台
+中：电弧炉控制台
 英：ARC FURNACE · DESK
 
 [heat_panel:_ready:2]
-中：炉台 · 电弧炉
+中：电弧炉控制台
 英：FURNACE DESK
 
 [heat_panel:_ready:3]
-中：钢锭 / 吨
+中：钢锭数量（吨）
 英：INGOTS / t
 
+[heat_panel:_ready:4]
+中：前往动力区
+英：TO THE POWER DISTRICT
+
 [heat_panel:_ready:5]
-中：更多 ›   测温取样 · 功率 · 撤回 · 队列
+中：更多操作 › 测温取样 · 功率调整 · 撤回操作 · 任务队列
 英：MORE ›   SAMPLE · POWER · RETURN · QUEUE
 
+[heat_panel:_ready:6]
+中：更多操作 ▾
+英：MORE ▾
+
 [heat_panel:_ready:7]
-中：更多 ›   测温取样 · 功率 · 撤回 · 队列
+中：更多操作 › 测温取样 · 功率调整 · 撤回操作 · 任务队列
 英：MORE ›   SAMPLE · POWER · RETURN · QUEUE
 
 [heat_panel:_ready:8]
-中：展开或收起：自动装置、撤回、报损、手动功率
+中：展开或收起更多操作选项，包括自动装置、撤回操作、报损处理和手动功率调整
 英：Show or hide the auto sampler, returning, writing off, manual power
 
 [heat_panel:_ready:9]
-中：炉台的下一步，按当前炉况来（Enter）
+中：根据当前熔炉的运行情况，继续下一步操作（Enter）
 英：The furnace's next step, as it stands now (Enter)
 
 [heat_panel:_ready:10]
-中：关掉炉台，去供电控制屏调电
+中：关闭熔炉操作台，前往供电控制屏调整电力
 英：Close the desk and go to the power control screen
 
 [heat_panel:_ready:11]
-中：给炉子装自动装置：自己测温、自己出钢（%s）
+中：为熔炉安装自动化装置，可以自动测量温度并完成出钢（%s）
 英：INSTALL AUTO SAMPLE-AND-TAP (%s)
 
 [heat_panel:_ready:12]
-中：装好了：以后到温自己测温、出钢。
+中：自动化装置已安装，之后达到指定温度时会自动测温并出钢
 英：INSTALLED: IT SAMPLES AND TAPS BY ITSELF.
 
 [heat_panel:_ready:13]
-中：花钱给炉子装自动装置：到温后它自己测温、自己出钢，立刻生效
+中：支付费用后，熔炉会立即启用自动化装置，达到指定温度后自动测温并完成出钢
 英：Pay to fit the auto sampler: at heat it samples and taps by itself
 
 [heat_panel:_ready:14]
-中：撤回未投炉批次
+中：撤回尚未投入熔炉的批次
 英：RETURN UNCHARGED FEED
 
 [heat_panel:_ready:15]
-中：还没投进炉子的这批钢锭退回仓库
+中：这批钢锭还没有投入熔炉，可以直接退回仓库
 英：Send the feed not yet charged back to the store
 
 [heat_panel:_ready:16]
-中：报损弃置本批货物（无退款）
+中：将当前批次的货物报损并弃置，不会退还任何费用
 英：WRITE OFF CARGO / NO REFUND
 
 [heat_panel:_ready:17]
-中：这批货直接报废扔掉，钱不退；只在炉子出故障救不回来时用
+中：直接报废这批货物，已经支付的费用不会退还。只有电弧炉发生故障，而且无法恢复正常运行时才建议使用
 英：Scrap this batch for nothing; only when the heat cannot be saved
 
 [heat_panel:_ready:18]
-中：手动功率 / %
+中：手动调整功率 / %
 英：MANUAL POWER / %
 
 [heat_panel:_ready:19]
-中：停机并复位
+中：停止运行并重置设备
 英：STOP / RETURN
 
 [heat_panel:_ready:20]
-中：关闭 [Esc]
+中：关闭面板 [Esc]
 英：CLOSE [Esc]
 
 [heat_panel:_next:1]
-中：钢锭正在从仓库送过来…
+中：正在从仓库运送钢锭…
 英：INGOTS ON THEIR WAY…
 
 [heat_panel:_next:2]
-中：钢锭正在退回仓库…
+中：正在将钢锭退回仓库…
 英：INGOTS GOING BACK…
 
 [heat_panel:_next:3]
-中：钢坯冷却、运回仓库中…
+中：钢坯正在冷却，完成后会运回仓库…
 英：BILLETS GOING BACK…
 
 [heat_panel:_next:4]
-中：电弧炉已暂停（供电屏）· 在供电屏点“电弧炉工作”恢复
+中：电弧炉已在供电面板中暂停运行，请前往供电面板，点击「电弧炉工作」恢复运行
 英：FURNACE PAUSED (POWER SCREEN) · PRESS 'FURNACE ON' THERE
 
 [heat_panel:_next:5]
-中：电弧炉已暂停（供电屏）· 在供电屏点“电弧炉工作”恢复
+中：电弧炉已在供电面板中暂停运行，请前往供电面板，点击「电弧炉工作」恢复运行
 英：FURNACE PAUSED (POWER SCREEN) · PRESS 'FURNACE ON' THERE
 
+[heat_panel:_next:6]
+中：正在出钢…
+英：TAPPING…
+
 [heat_panel:_next:7]
-中：熔化中 · %d °C
+中：钢材正在熔化 · 当前温度 %d °C
 英：MELTING · %d °C
 
 [heat_panel:_next:8]
-中：等探头收回…
+中：正在等待测温探头收回…
 英：PROBE COMING UP…
 
 [heat_panel:_next:9]
-中：自动装置在测温度、等钢水出炉…
+中：自动测温装置正在测量钢水温度，等待出钢…
 英：THE AUTO UNIT IS TAKING THE TEMPERATURE AND TAPPING…
 
 [heat_panel:_next:10]
-中：自动装置在测温度、等钢水出炉…
+中：自动测温装置正在测量钢水温度，等待出钢…
 英：THE AUTO UNIT IS TAKING THE TEMPERATURE AND TAPPING…
+
+[heat_panel:_next:11]
+中：测量温度并采集样本
+英：IMMERSE PROBE
+
+[heat_panel:_next:12]
+中：倾斜炉体，排出钢水
+英：TILT / TAP
 
 [heat_panel:_process:2]
 中：加工队列（结算时留着加工的钢锭，自动轮流熔炼、轧制）：\n
 英：PROCESSING QUEUE (INGOTS KEPT AT SETTLEMENT, MELTED AND ROLLED IN TURN):\n
 
+[heat_panel:_process:6]
+中：本次冶炼电费
+英：POWER COST
+
 [heat_panel:_process:7]
-中： · 待缴 $%.2f
+中： · 待支付电费 $%.2f
 英： · DUE $%.2f
 
 [heat_panel:_now:1]
-中：：去动力区
+中：前往动力区
 英：: TO THE POWER DISTRICT
 
+[heat_panel:_now:2]
+中：倾斜炉体，排出钢水
+英：TILT / TAP
+
 [heat_panel:_now:3]
-中：%d °C 了，可以出钢
+中：当前温度已达到 %d °C，可以开始出钢
 英：%d °C: READY TO TAP
 
 [heat_panel:_now:4]
-中：炉子空着；排炉在加工队列
+中：炉内目前没有钢材，排炉任务正在加工队列中等待
 英：THE FURNACE IS EMPTY; HEATS ARE QUEUED IN THE QUEUE
 
 [heat_panel:close:1]
-中：保存失败，请保留现场
+中：保存失败，请保持当前状态，不要继续操作
 英：Save failed; keep this scene open
 
 ------------------------------------------------------------
@@ -15110,11 +15446,11 @@
 英：
 
 [industrial_exchange:顶层:9]
-中：港务维修队要钢坯做支架
+中：港务维修队需要采购钢坯，用来制作维修支架。
 英：
 
 [industrial_exchange:顶层:10]
-中：远岫工场要钢坯修零件
+中：远岫工场需要采购钢坯，用来修理设备零件。
 英：
 
 ------------------------------------------------------------
@@ -15235,7 +15571,7 @@
 英：
 
 [industrial_heat:info:28]
-中：全熔了：按『测温取样』
+中：全熔了：按『测量温度并采集样本』
 英：
 
 [industrial_heat:info:29]
@@ -15243,7 +15579,7 @@
 英：
 
 [industrial_heat:info:30]
-中：可以出钢：按『倾炉出钢』
+中：可以出钢：按『倾斜炉体，排出钢水』
 英：
 
 [industrial_heat:info:31]
@@ -15768,7 +16104,7 @@
 ------------------------------------------------------------
 
 [sort_panel:_ready:1]
-中：分选线 · 整线加工
+中：分选线 · 全线加工
 英：SORTING LINE · THROUGH
 
 [sort_panel:_ready:2]
@@ -15776,91 +16112,103 @@
 英：PRESS / SHRED / MAGNETS / IN-LINE ASSAY / ARC FURNACE\nNONFERROUS TO THE WAREHOUSE
 
 [sort_panel:_ready:3]
-中：未分选金属 / t
+中：待分选金属 / t
 英：MIXED METAL / t
 
+[sort_panel:_ready:4]
+中：展开更多操作 ▾
+英：MORE ▾
+
+[sort_panel:_ready:5]
+中：收起更多操作 ▴
+英：MORE ▴
+
+[sort_panel:_ready:6]
+中：展开更多操作 ▾
+英：MORE ▾
+
 [sort_panel:_ready:7]
-中：展开或收起分选台的更多操作
+中：点击展开或收起分选台的其他操作选项
 英：Show or hide the sorting desk's other keys
 
 [sort_panel:_ready:8]
-中：分选台的下一步，按当前状态来（Enter）
+中：根据分选台当前的运行状态，执行下一步操作 [Enter]
 英：The sorting desk's next step, as it stands now (Enter)
 
 [sort_panel:_ready:9]
-中：（只分选，两路产物回仓）
+中：（仅进行金属分选，两种产物都会送回仓库）
 英： (SORT ONLY)
 
 [sort_panel:_ready:10]
-中：把这些原料送去只分选不进炉，分出的两路产物都回仓库
+中：将这些原料送入分选线，不经过熔炉处理，分选出来的两种产物都会送回仓库
 英：Send this feed to be sorted only; both outputs go back to the store
 
 [sort_panel:_ready:11]
-中：启动分选驱动
+中：启动分选设备
 英：START DRIVES
 
 [sort_panel:_ready:12]
-中：立刻开动分选线的电机
+中：启动分选线的电机，开始进行原料分选
 英：Start the sorting line's drives now
 
 [sort_panel:_ready:13]
-中：停止分选驱动
+中：停止分选设备
 英：STOP DRIVES
 
 [sort_panel:_ready:14]
-中：立刻停下分选线的电机
+中：关闭分选线的电机，暂停原料分选
 英：Stop the sorting line's drives now
 
 [sort_panel:_ready:15]
-中：撤回未处理原料
+中：退回未处理的原料
 英：RETURN UNPROCESSED FEED
 
 [sort_panel:_ready:16]
-中：还没分选的原料退回仓库
+中：将还没有完成分选的原料全部退回仓库
 英：Send the feed not yet sorted back to the store
 
 [sort_panel:_ready:17]
-中：报损运输货物（无退款）
+中：报废运输中的货物（不予退款）
 英：WRITE OFF CARGO / NO REFUND
 
 [sort_panel:_ready:18]
-中：这批货直接报废扔掉，钱不退；只在救不回来时用
+中：直接报废这批运输中的货物，已经支付的费用不会退还，建议只在无法继续处理时使用
 英：Scrap this batch for nothing; only when it cannot be saved
 
 [sort_panel:_ready:19]
-中：关闭 [Esc]
+中：关闭面板 [Esc]
 英：CLOSE [Esc]
 
 [sort_panel:_next:1]
-中：整线加工（分选 → 化验 → 炼钢）
+中：完整加工流程（分选 → 化验 → 炼钢）
 英：RUN THE LINE (SORT · ASSAY · MELT)
 
 [sort_panel:_next:2]
-中：原料运送中…
+中：正在从仓库运送原料…
 英：FEED ON ITS WAY…
 
 [sort_panel:_next:3]
-中：原料退回仓库中…
+中：正在将原料退回仓库…
 英：FEED GOING BACK…
 
 [sort_panel:_next:4]
-中：启动分选驱动
+中：启动分选设备
 英：START DRIVES
 
 [sort_panel:_next:5]
-中：分选中 · 设备里 %.2f t
+中：正在分选 · 设备内剩余 %.2f t 原料
 英：SORTING · %.2f t IN
 
 [sort_panel:_next:6]
-中：黑色料过化验、进电弧炉…
+中：黑色金属原料正在进行化验，即将送入电弧炉…
 英：FERROUS TO THE ASSAY AND THE FURNACE…
 
 [sort_panel:_next:7]
-中：产物送回仓库中…
+中：正在将加工产物送回仓库…
 英：OUTPUT GOING BACK…
 
 [sort_panel:_next:8]
-中：整线加工（分选 → 化验 → 炼钢）
+中：完整加工流程（分选 → 化验 → 炼钢）
 英：RUN THE LINE
 
 [sort_panel:_process:2]
@@ -15876,11 +16224,11 @@
 英：MIXED METAL IN STOCK
 
 [sort_panel:_process:6]
-中：一键跑完整条线：原料从仓库运来，分选后黑色料经线上化验直接进电弧炉，炉子自己通电；你到炉台测温、出钢。有色料回仓库。
+中：一键启动完整加工流程：系统会从仓库运来原料，完成分选后，黑色金属原料会经过在线化验并直接送入电弧炉，电弧炉自动通电。你只需要前往炉台测量温度并完成出钢，有色金属原料则会送回仓库。
 英：ONE PRESS RUNS THE LINE: FERROUS STRAIGHT TO THE ARC FURNACE, WHICH STARTS ITSELF; YOU SAMPLE AND TAP AT THE FURNACE DESK.
 
 ============================================================
-# 十一、主线与现场引导（348 条）
+# 十一、主线与现场引导（351 条）
 # 左上角的主线卡（第几章、下一步做什么、“带我去”）、顶上的引导卡（引导 · 某任务 · 第几步）、运营面板的决策条、施工队（修东西要等工期）、交易与生产的引导页。
 # 字要一句话说清“下一步做什么”。
 ============================================================
@@ -15919,11 +16267,11 @@
 英：The withdrawn feed is going back.
 
 [guide:_sort:7]
-中：按『启动分选驱动』
+中：按『启动分选设备』
 英：PRESS START DRIVES
 
 [guide:_sort:8]
-中：启动分选驱动
+中：启动分选设备
 英：
 
 [guide:_sort:9]
@@ -15947,8 +16295,12 @@
 英：OUTPUT GOING BACK
 
 [guide:_sort:15]
-中：按『整线加工』
+中：按『完整加工流程』
 英：PRESS RUN THE LINE
+
+[guide:_sort:16]
+中：完整加工流程
+英：
 
 [guide:_sort:17]
 中：仓库里没有可分选的金属
@@ -15993,6 +16345,14 @@
 [guide:_heat:2]
 中：把钢锭重新熔成钢水、浇成钢坯，卖给工业客户
 英：Melts grade 1 feed and casts billets for industrial clients
+
+[guide:_heat:3]
+中：测量温度并采集样本
+英：
+
+[guide:_heat:4]
+中：倾斜炉体，排出钢水
+英：
 
 [guide:_heat:5]
 中：出钢完成：钢坯已入库
@@ -16785,7 +17145,7 @@
 英：%.2f t OF MIXED METAL IN STOCK
 
 [ops:decisions:24]
-中：到分选台按『整线加工』：分选后黑色料直接进电弧炉炼成钢坯；或者直接挂牌卖。
+中：到分选台按『完整加工流程』：分选后黑色料直接进电弧炉炼成钢坯；或者直接挂牌卖。
 英：Run the line: sorted and straight into the arc furnace; or list it as is.
 
 [ops:decisions:25]
@@ -17285,7 +17645,7 @@
 英：Sample, then tap
 
 [guidepage:M05:body]
-中：全部熔化、温度到 1640 °C 以后，炉台按「测温取样」。等测温探头完全收回，再按「倾炉出钢」。\n\n超过 1710 °C 会把成品烧成低等级。装了自动测温出钢以后，这两步由机器自己做。
+中：全部熔化、温度到 1640 °C 以后，炉台按「测量温度并采集样本」。等测温探头完全收回，再按「倾斜炉体，排出钢水」。\n\n超过 1710 °C 会把成品烧成低等级。装了自动测温出钢以后，这两步由机器自己做。
 英：Once all is melted at 1640 °C, Take a sample; when the probe is up, Tilt and tap. Over 1710 °C downgrades the product. With the auto unit fitted, the machine does both.
 
 [guidepage:M06:title]
@@ -22297,7 +22657,7 @@
 英：DEVICES
 
 [codex:cxu_cat_mech]
-中：机制
+中：运行机制
 英：MECHANISMS
 
 [codex:cxu_cat_sys]
@@ -22305,27 +22665,27 @@
 英：SYSTEMS
 
 [codex:cxu_first]
-中：首次遇见
+中：首次发现
 英：FIRST MET
 
 [codex:cxu_a]
-中：是什么
+中：基本介绍
 英：WHAT
 
 [codex:cxu_b]
-中：危险
+中：危险提示
 英：DANGER
 
 [codex:cxu_c]
-中：做法
+中：处理方法
 英：DO
 
 [codex:cxu_x]
-中：原理与数字
+中：工作原理与参数
 英：HOW IT WORKS
 
 [codex:cxu_more]
-中：%s 图鉴 · 原理与数字
+中：%s 图鉴 · 工作原理与参数
 英：%s CODEX · HOW IT WORKS
 
 [codex:cxu_book]
@@ -22333,23 +22693,23 @@
 英：CODEX
 
 [codex:cxu_book_sub]
-中：遇见过的结构、设备、机制和系统都记在这里
+中：你遇到过的船体结构、设备和各种系统，都会记录在这里。
 英：Every structure, machine, mechanism and system you have met
 
 [codex:cxu_ship_only]
-中：只看本船 · %s
+中：只显示当前船只 · %s
 英：THIS SHIP ONLY · %s
 
 [codex:cxu_unmet]
-中：未遇见
+中：尚未发现
 英：NOT MET YET
 
 [codex:cxu_unmet_d]
-中：在船上遇见它之后，这里会写清它是什么、为什么危险、该怎么拆。
+中：等你在船上遇到这个东西以后，就能在这里查看它的用途、可能存在的危险，还有具体的拆除方法。
 英：Meet it on a ship and this page explains what it is, why it bites and how to take it apart.
 
 [codex:cxu_empty]
-中：这一类里没有本船的条目
+中：当前船只没有这一类的相关记录。
 英：Nothing of this kind on this ship
 
 [codex:cxu_keys]
@@ -22441,7 +22801,7 @@
 英：FLUIDS
 
 [codex:cxu_stamp_atmos]
-中：气氛与火
+中：气与火
 英：ATMOSPHERE
 
 [codex:cxu_stamp_load]
@@ -22633,19 +22993,19 @@
 英：BOLT
 
 [codex:cx_bolt_a]
-中：可拆的固定点，维护工具拧下即松开，零件完好。
+中：螺栓用来固定船上的零件，可以使用维护工具拧下来。这样拆除不会损坏零件，设备也能保持完整。
 英：A fixing made to come undone: the wrench backs it out and the part stays whole.
 
 [codex:cx_bolt_b]
-中：最后一颗松开，零件就没东西拉住，会带着惯性漂走。
+中：拧下最后一颗螺栓以后，零件就失去了固定。如果没有提前固定好，零件可能会带着惯性漂走。
 英：Take the last one out and nothing holds the part: it drifts off with whatever motion it had.
 
 [codex:cx_bolt_c]
-中：先用抓钩稳住，再松最后一颗。
+中：拆除之前，先用抓钩固定住零件，确认不会漂走以后，再拧下最后一颗螺栓。
 英：Steady it with the grapple first, then the last bolt.
 
 [codex:cx_bolt_x]
-中：船上的螺栓多是 M12–M24 的高强度螺栓，靠预紧力把两件压在一起，承受剪切和拉力的是摩擦面而不是螺杆本身。拧松它不改变零件本身，所以“能拧就别切”：螺栓拆下的设备保留全部价值，切开的只值废金属价。失重下没有地板替你接住东西，一件 0.5 t 的板只要 0.1 m/s 的余速，十秒后就离开一米。
+中：船上常用的是 M12–M24 高强度螺栓，拧紧以后会产生预紧力，把连接的两个零件压在一起。连接处主要依靠接触面的摩擦力防止零件滑动，螺栓本身也能承受一定的拉力和剪切力。\n拆除螺栓不会损坏设备，所以能用维护工具拆下来的零件，就尽量不要使用切割工具。完整拆下来的设备可以保留全部价值，一旦切开，就只能按照废金属的价格回收。\n还要注意，失重环境下没有地板帮你接住松开的零件。一块重达 0.5 吨的金属板，即使只有 0.1 米每秒的剩余速度，经过 10 秒也会漂出去 1 米，所以拆除最后一颗螺栓之前，一定要先把零件固定好。
 英：Ship bolts are mostly high-strength M12–M24, preloaded so the friction between the faces carries the load, not the shank. Backing one out changes nothing about the part, hence the rule \"unbolt before you cut\": unbolted equipment keeps its full value, cut equipment is scrap. In free fall nothing catches what you loosen: a 0.5 t plate with 0.1 m/s left on it is a metre away ten seconds later.
 
 [codex:cx_weld]
@@ -22653,19 +23013,19 @@
 英：WELD
 
 [codex:cx_weld_a]
-中：两件金属熔成一体的连接，扳手拧不开。
+中：两块金属通过焊接连在一起，已经成为一个整体，没办法用扳手拆开。
 英：Two pieces of metal fused into one. No wrench undoes it.
 
 [codex:cx_weld_b]
-中：只能切。切开的位置决定剩下的东西还值多少。
+中：焊缝只能通过切割拆除，切割时如果损坏了旁边的设备，还会影响回收价值。
 英：Only the laser parts it, and where you cut decides what the pieces are worth.
 
 [codex:cx_weld_c]
-中：沿焊缝或标线切，别切进设备本体。
+中：沿着焊缝或者标记好的切割线慢慢切开，注意不要切到设备本体。
 英：Cut along the seam or a marked line, never through the equipment itself.
 
 [codex:cx_weld_x]
-中：结构焊缝的强度和母材相当，激光要把整个截面熔透才算切开。切割速度由材料决定：普通钢板快，装甲和厚梁慢，冰和复合材料各有自己的规矩。激光前沿只按材料的限速追着光标走，贴着边慢慢推才提交切口——急着来回扫只会烧出一道浅沟。
+中：结构焊缝的强度和连接的金属差不多，所以激光需要切透整个截面，才能把两边彻底分开。\n不同材料的切割速度也不一样，普通钢板比较容易切开，装甲和厚梁需要更长时间，冰和复合材料则有各自的切割要求。\n切割时，激光会按照材料允许的速度跟随光标移动。尽量贴着切割线缓慢移动，等激光把材料完全切透以后再继续向前。如果移动得太快，激光就只能在表面留下浅浅的切痕，需要重新切割。
 英：A structural weld is as strong as the plate around it; the beam has to melt the whole section through before it parts. How fast depends on the material: thin steel quick, armour and heavy beams slow, ice and composites with rules of their own. The cut front follows the cursor only as fast as the material lets it, and commits when it reaches the edge — sweeping back and forth just burns a shallow groove.
 
 [codex:cx_lock]
@@ -22673,19 +23033,19 @@
 英：LOCK
 
 [codex:cx_lock_a]
-中：带锁销的快拆固定件，常藏在别的件后面。
+中：锁扣是一种带有锁销的固定零件，拆卸起来比较方便，通常安装在检修盖或其他零件的背面。由于安装位置比较隐蔽，需要仔细检查才能找到。
 英：A quick-release fixing with a locking pin, often hidden behind something else.
 
 [codex:cx_lock_b]
-中：漏掉一个锁扣硬拽，零件会被扯坏或扯断锁扣弹开。
+中：如果还有锁扣没有拆除，就直接使用抓钩拉扯零件，可能会损坏零件的连接位置，拉力过大时还会把锁扣直接扯断。
 英：Miss one and pull, and the part tears or the lock snaps and lets it fly.
 
 [codex:cx_lock_c]
-中：拽之前看光标提示还剩几个固定点。
+中：使用抓钩拉扯零件之前，先查看光标上的提示，确认还有多少个固定点没有拆除，全部处理完成后再进行拆卸。
 英：Before you pull, read how many fixings the cursor says are left.
 
 [codex:cx_lock_x]
-中：锁扣用在需要快速更换的地方：检修盖、可更换单元、货物托盘。它和螺栓一样能用维护工具打开，但拉力过大时会先于零件失效——所以抓钩硬拽时，被扯断的是锁扣，被撕坏的可能是零件的安装耳。拉扯只会扯断锁扣和管线，螺栓不会断。
+中：锁扣通常安装在需要经常拆卸的地方，像检修盖、可更换的设备和货物托盘，都可能使用锁扣固定。拆卸方法和螺栓差不多，使用维护工具就可以将锁扣打开。\n如果没有提前拆除锁扣，就直接使用抓钩强行拉扯，拉力超过锁扣的承受范围后，锁扣就会断裂，零件的安装位置也可能受到损坏。\n抓钩可以强行扯断锁扣和管线，但无法扯断螺栓。如果零件还有螺栓固定，就需要先使用维护工具将螺栓拆除，才能继续拆卸零件。
 英：Locks go where things are meant to come out fast: service covers, replaceable units, cargo pallets. The wrench opens them like bolts, but under a big enough pull they fail before the part does — so when the grapple yanks, what snaps is the lock, and what tears may be the part's mounting ear. A pull only ever breaks locks and lines; bolts don't give.
 
 [codex:cx_clamp]
@@ -22693,19 +23053,19 @@
 英：BERTH CLAMP
 
 [codex:cx_clamp_a]
-中：船坞的液压夹爪，把整艘船固定在泊位上。
+中：船坞里的液压夹具，用来把整艘船固定在泊位上，防止船体在拆解过程中发生移动。
 英：The berth's hydraulic jaws holding the whole ship in place.
 
 [codex:cx_clamp_b]
-中：夹具只夹某几件结构：把它们拆走，整艘船会松脱漂移。
+中：夹具只固定着船体上的几处结构，如果提前把这些结构拆掉，船体就会失去固定，可能在泊位里发生漂移。
 英：They grip a few structural pieces: take those away and the ship comes loose and drifts.
 
 [codex:cx_clamp_c]
-中：最后再拆夹具咬着的那几件。
+中：拆解船体的时候，先保留被夹具固定的结构，等其他部分都拆得差不多了，再处理这些位置。
 英：Leave whatever the clamps bite on until last.
 
 [codex:cx_clamp_x]
-中：夹具通常咬在龙骨或底板上。一艘几百吨的船只要获得 0.05 m/s，撞上泊位端墙时的冲量就足以撞坏舱内松动的设备。夹具咬着的件在蓝图里有标记，拆到后半程时先确认剩下的船体还有夹具抓着。
+中：船坞夹具一般固定在龙骨或底板上，虽然船体的移动速度可能很慢，但一艘几百吨重的船就算只以 0.05 m/s 的速度撞上泊位端墙，也可能因为撞击而损坏舱内没有固定好的设备。\n蓝图上会标出夹具固定的位置，拆解进入后半段以后，记得检查剩下的船体是否还被夹具固定，确认安全以后再继续拆解。
 英：The clamps usually bite the keel or the floor plates. A few hundred tonnes of ship picking up 0.05 m/s hits the berth's end wall hard enough to wreck anything loose inside. The pieces the clamps hold are marked on the drawing; late in a job, check what's left is still held.
 
 [codex:cx_hull]
@@ -22713,19 +23073,19 @@
 英：HULL PLATE
 
 [codex:cx_hull_a]
-中：船的外皮，也是舱室的气密边界。
+中：外壳板是船体外侧的金属板，负责保护内部结构，同时保持舱室密封，防止舱内气体泄漏。
 英：The ship's skin, and the airtight wall of the rooms behind it.
 
 [codex:cx_hull_b]
-中：舱里还有气就切开，舱压会把板和里面的东西一起喷出去。
+中：如果舱室里面还有气压就直接切开外壳板，内部的高压气体会从切口快速喷出，可能把切开的板材和舱内没有固定好的设备一起冲出去。
 英：Cut it with air still inside and the pressure blows the plate out, and what's behind it with it.
 
 [codex:cx_hull_c]
-中：先测舱压，放气到 5 kPa 以下再动它。
+中：拆除外壳板之前，先检查舱室的气压，等气压降低到 5 kPa 以下以后，再开始切割。
 英：Measure the room, vent it below 5 kPa, then work on it.
 
 [codex:cx_hull_x]
-中：一个标准大气压是 101 kPa，也就是每平方米 10 吨的力。一块 1 × 2 m 的舱壁板背后有 100 kPa，就有 20 吨在推它；切出一条缝，气流在缝口达到音速，几秒内把松动的零件和碎屑带出去。舱室低于 5 kPa 视为安全。
+中：一个标准大气压大约是 101 kPa，相当于每平方米承受约 10 吨的压力作用力。如果一块长 2 米、宽 1 米的外壳板承受着 100 kPa 的压差，那么整块板受到的推力就相当于 20 吨重物产生的重力。\n这种情况下直接切开外壳板，高压气体就会从切口快速喷出，气流速度甚至可能达到音速，几秒钟内就能把舱室里没有固定好的零件和碎屑冲出去。\n所以拆解之前一定要先完成泄压，确认舱室气压已经降低到 5 kPa 以下，再进行切割。
 英：One atmosphere is 101 kPa, ten tonnes on every square metre. A 1 × 2 m panel with 100 kPa behind it has twenty tonnes pushing on it; open a slit and the flow through it goes sonic, carrying loose parts and debris out within seconds. Below 5 kPa a room counts as safe.
 
 [codex:cx_bulkhead]
@@ -22733,19 +23093,19 @@
 英：BULKHEAD
 
 [codex:cx_bulkhead_a]
-中：把船分成独立气密舱的内部隔墙。
+中：舱壁是船体内部的隔墙，负责把船舱分成多个独立的密封区域，防止一个舱室发生事故以后影响到其他舱室。
 英：An internal wall dividing the ship into separate airtight rooms.
 
 [codex:cx_bulkhead_b]
-中：两侧压力不同时切开，高压一侧的气体和东西冲向低压一侧。
+中：如果舱壁两侧的气压不同，直接切开舱壁就会让高压一侧的气体迅速进入低压舱室，还可能把附近没有固定好的设备和零件一起冲过去。
 英：Cut it with different pressures each side and the high side's air and loose things rush through.
 
 [codex:cx_bulkhead_c]
-中：两侧舱室都测一遍压力，先放气或平衡。
+中：切割舱壁之前，先检查两侧舱室的气压，如果存在压差，就先进行泄压或者平衡两侧的气压，确认安全以后再开始拆除。
 英：Measure the rooms on both sides; vent or equalise first.
 
 [codex:cx_bulkhead_x]
-中：舱壁让一个舱的事故不扩散到全船，也让你可以分舱处理：一个舱放完气，隔壁可能还满着。压差才是危险的来源——两侧都是 100 kPa 时切开舱壁不会爆，但两个舱从此变成一个，放气时要一起放。
+中：舱壁可以把不同舱室隔开，这样即使其中一个舱室发生泄漏，也不会直接影响整艘船。拆解的时候也要注意，即使你已经把一个舱室的气体排空，隔壁的舱室也可能还保持着原来的气压。\n真正需要注意的是两侧的压差。如果两个舱室都是 100 kPa，切开中间的舱壁一般不会因为气压差而发生喷气，但两个舱室也会从此连通。\n如果之后还需要泄压，就得把连通的舱室一起处理，所以切割之前最好确认两侧的气压，避免增加后面的拆解工作。
 英：Bulkheads keep one room's trouble out of the next, and let you work room by room: one emptied, the next may still be full. The danger is the difference: with 100 kPa on both sides a cut doesn't blow, but the two rooms become one and have to be vented together.
 
 [codex:cx_frame]
@@ -22753,19 +23113,19 @@
 英：LOAD-BEARING FRAME
 
 [codex:cx_frame_a]
-中：龙骨、肋骨、纵梁、支撑杆：船的骨架。
+中：船体内部的龙骨、肋骨、纵梁和支撑杆都属于承力结构，它们组成了船体的主要骨架，负责支撑和固定其他设备。
 英：Keel, frames, longitudinals, struts: the ship's skeleton.
 
 [codex:cx_frame_b]
-中：切断还在承重的骨架，它托着的部分会坠落、弹开或扭断。
+中：有些承力结构还在支撑其他设备，如果直接把它们切断，原本固定好的设备和船体结构就可能突然移动，甚至发生弹开、扭曲或断裂的情况。
 英：Cut a member still carrying load and what it held drops, springs or twists off.
 
 [codex:cx_frame_c]
-中：先卸掉它托着的重量，最后再拆骨架。
+中：拆解之前，先检查承力结构连接着哪些设备，把它支撑的重量卸下来，确认没有其他结构需要依靠它固定以后，再进行切割。
 英：Take the weight off it first; the frame comes out last.
 
 [codex:cx_frame_x]
-中：失重下没有重力载荷，但还有预紧、惯性和船坞夹具传来的力：一根梁可能正把两台几十吨的设备撑在原位。骨架件通常很重，常超过抓钩 3 t 的上限，要沿标线切成段再运走。
+中：虽然太空里没有正常的重力载荷，但船体内部仍然存在预紧力、惯性作用，以及船坞夹具传递过来的外力。有些梁甚至需要同时固定两台几十吨重的设备，直接切断就可能让这些设备失去支撑。\n承力结构本身通常也比较重，有些会超过抓钩 3 t 的承重上限，所以拆解时需要沿着标记好的切割线分成几段，再分别运走。
 英：Free fall takes gravity away, not preload, inertia or the clamps' grip: a beam may be what keeps two machines of tens of tonnes in place. Frame pieces are heavy, often past the grapple's 3 t, and go out in sections cut along their marked lines.
 
 [codex:cx_door]
@@ -22773,19 +23133,19 @@
 英：DOORS AND HATCHES
 
 [codex:cx_door_a]
-中：通往舱室的门，多数靠总线供电开关。
+中：船上的舱门用来连接不同的舱室，大部分都需要通过船体总线供电，才能正常开启和关闭。
 英：The way into a room; most open on power from the ship's bus.
 
 [codex:cx_door_b]
-中：舱里有气就开门，门会被气压推开爆开；断电后有些门打不开。
+中：如果舱室里面还有气压，直接打开舱门可能会让舱门受到气压冲击，严重时甚至会被直接冲飞。有些舱门还需要电力才能开启，一旦提前切断电源，就可能再也无法正常打开。
 英：Open it with air inside and the pressure blows it open; with the power cut some won't open at all.
 
 [codex:cx_door_c]
-中：先放气再开门；要开的门，在断电前开。
+中：打开舱门之前，先确认舱室里面的气压已经排空。需要使用电力开启的舱门，最好在切断船体电源之前就打开。
 英：Vent the room before the door; open the doors you need before you cut the power.
 
 [codex:cx_door_x]
-中：一扇 2 m² 的门背后 60 kPa，就有 12 吨压在门上，电机打不开，锁一松就会被整扇推飞。货舱大门常由电机或液压驱动：先断了电池，它就只能切开。船坞的外部供电插座可以在断船电后给门临时供电。
+中：一扇面积为 2 m² 的舱门，如果两侧存在 60 kPa 的气压差，舱门就会承受相当于约 12 吨重物的压力。这种情况下，驱动电机可能无法正常开启舱门，一旦解除门锁，舱门甚至可能被气压直接冲飞。\n大型货舱门一般需要电机或者液压系统驱动，如果提前拆除了供电电池，后面可能就只能使用切割工具强行打开。不过船坞也提供了外部供电插座，即使已经切断船体电源，也可以通过外部供电临时启动舱门。
 英：A 2 m² door with 60 kPa behind it carries twelve tonnes: no motor opens that, and the moment the latch gives the whole leaf flies. Big cargo doors run on motors or hydraulics: kill the battery first and the only way through is the laser. The berth's external power socket can feed a door once the ship's own power is off.
 
 [codex:cx_rail]
@@ -22793,19 +23153,19 @@
 英：RAIL
 
 [codex:cx_rail_a]
-中：货物、吊车或滑架沿着走的导轨。
+中：安装在船体内部的导轨，主要用来运输货物，或者让吊车和滑架沿着固定的路线移动。
 英：A guide rail cargo, cranes or cradles run along.
 
 [codex:cx_rail_b]
-中：切到还托着东西的轨道，那件东西会被扯坏或掉下去。
+中：如果轨道上还有货物或者设备，直接切断轨道可能会让它们失去支撑，导致设备损坏，严重时还可能直接掉落。
 英：Cut a rail still carrying something and that thing is torn or dropped.
 
 [codex:cx_rail_c]
-中：先把轨道上的东西运走，再拆轨道。
+中：拆除轨道之前，先把上面的货物和设备全部移走，确认轨道上没有剩余载荷以后，再开始拆解。
 英：Move what's on the rail off it first, then the rail.
 
 [codex:cx_rail_x]
-中：导轨把载荷分散到很多个支座上；切断一段，载荷全落到断口两边的支座，常常超出它们的能力。锁轨货物要从轨道上开出去，不能用扳手卸——见各船的锁轨条目。
+中：轨道通常由多个支座共同承受重量，这样就能把货物的重量分散到不同位置。如果直接切断其中一段，原本由整条轨道承担的部分重量就会集中到断口附近的支座上，一旦超过它们的承重能力，就可能发生变形或者断裂。\n如果货物通过锁轨固定在轨道上，需要先沿着轨道把货物运出去，不能直接使用扳手拆除固定装置。具体操作可以查看对应船型的锁轨说明。
 英：A rail spreads its load over many mounts; cut a length and the whole load falls on the two either side of the gap, usually more than they take. Rail-locked cargo is driven off its rail, not unbolted — see the rail-locked cargo entry.
 
 [codex:cx_film]
@@ -22813,19 +23173,19 @@
 英：FILM
 
 [codex:cx_film_a]
-中：几微米厚的聚酰亚胺膜：帆面、气囊壁、遮阳膜。
+中：一种只有几微米厚的聚酰亚胺薄膜，主要用在飞船的帆面、气囊外壁和遮阳膜上。
 英：Polyimide a few microns thick: sail panels, gasbag walls, sunshades.
 
 [codex:cx_film_b]
-中：绷紧时一切就撕，裂口会沿张力方向跑开。
+中：薄膜在绷紧的时候很容易被撕裂，如果直接使用切割工具，切口可能会在张力作用下迅速扩大，最后导致整片薄膜破裂。
 英：Under tension it doesn't cut, it tears, and the tear runs along the load.
 
 [codex:cx_film_c]
-中：先松掉张力，再整块拆下。
+中：拆解薄膜之前，先解除固定装置，让薄膜完全松弛下来，再把整片薄膜拆下来。
 英：Slack it first, then take it off in whole panels.
 
 [codex:cx_film_x]
-中：薄膜的抗撕裂强度只有每米几牛，而张紧的帆面每米承受几十牛的膜应力。激光切出的切口是一个尖锐的裂纹源，在张力下以接近声速扩展。薄膜几乎没有质量，不挡碰撞也不挡路径，但会挡光、带静电。
+中：这种薄膜的抗撕裂强度只有每米几牛，而绷紧的帆面每米可能承受几十牛的张力。如果直接使用激光切割，切口就可能成为裂纹的起点，在张力作用下，裂纹甚至能以接近声速的速度扩展。\n薄膜本身非常轻，基本不会阻挡物体碰撞，也不会影响正常的移动路径，不过它仍然能够遮挡光线，而且表面容易积累静电，拆解的时候也需要注意。
 英：Film resists tearing at a few newtons per metre; a tensioned sail panel carries tens of newtons per metre of membrane stress. A laser kerf is a sharp crack start, and under tension it runs at close to the speed of sound. Film has next to no mass and doesn't block the drone, but it shades light and holds static charge.
 
 [codex:cx_cable]
@@ -22833,19 +23193,19 @@
 英：CABLE
 
 [codex:cx_cable_a]
-中：设备和电网之间的供电线，两端是可拔的接头。
+中：连接船体电网和各种设备的供电电缆，两端都有可以拆卸的接头，用来给设备提供电力。
 英：A power line from a device to the grid, with a plug at each end.
 
 [codex:cx_cable_b]
-中：带电拔或切会起弧，伤到无人机和设备。
+中：如果电缆还带着电，直接拔掉接头或者使用切割工具，就可能产生电弧，损坏附近的设备，甚至伤到正在作业的无人机。
 英：Pull or cut it live and it arcs, hurting the drone and the equipment.
 
 [codex:cx_cable_c]
-中：验电确认 0 V，再拔接头带走设备。
+中：拆卸电缆之前，先用验电工具确认电压已经降到 0 V，再拔掉两端的接头，之后就可以正常搬走设备了。
 英：Test it to 0 V, then unplug it and take the equipment.
 
 [codex:cx_cable_x]
-中：30 V 以下的电不会伤到无人机；船上的总线常在 28–400 V 之间，电容组可达上千伏。直流电弧不会像交流那样每秒过零 100 次自行熄灭，一旦拉起来就会一直烧。设备的电缆没拔，抓钩拉它会被拉住——拉力大了，扯断的是接头。
+中：30 V 以下的电压通常不会对无人机造成伤害，不过船上的供电总线一般在 28–400 V 之间，部分电容组的电压甚至能达到上千伏，拆卸之前一定要确认电路已经断电。\n直流电弧没有交流电那种周期性的电流过零点，一旦产生电弧，就可能持续放电，直到电流被切断。\n搬运设备的时候也要注意，如果连接设备的电缆还没有拔掉，抓钩就可能无法正常拖动设备。继续增加拉力的话，还可能直接把电缆接头扯坏。
 英：Under 30 V can't hurt the drone; ship buses run 28 to 400 V and capacitor banks reach a thousand and more. A DC arc doesn't go out by itself a hundred times a second like AC does; drawn once, it keeps burning. A device still plugged in is held by its cable — pull hard enough and the plug is what tears.
 
 [codex:cx_pipe_line]
@@ -22853,19 +23213,19 @@
 英：PIPE
 
 [codex:cx_pipe_line_a]
-中：冷却液、燃料或气体的管路，两端有接头。
+中：船上的管线主要用来输送冷却液、燃料和气体，两端都有可以拆卸的接头，方便连接设备或者其他管路。
 英：A line for coolant, fuel or gas, with a coupling at each end.
 
 [codex:cx_pipe_line_b]
-中：满管切开会漏，燃料会成可燃云，热管会烫伤。
+中：如果管线里面还残留着液体或者气体，直接切开就可能造成泄漏。燃料泄漏以后可能形成易燃的气体云团，而温度过高的管线还可能损坏正在作业的无人机。
 英：Cut a full line and it leaks: fuel makes a flammable cloud, a hot line burns.
 
 [codex:cx_pipe_line_c]
-中：从低点排放口抽空，测温不烫，再拔或切。
+中：拆卸管线之前，先通过低处的排放口把内部的液体抽干净，再检查管线温度，确认已经冷却到安全范围以后，才能拔掉接头或者进行切割。
 英：Draw it off at the low-point drain, check it's not hot, then uncouple or cut.
 
 [codex:cx_pipe_line_x]
-中：管路系统里，阀门关了不等于管子空了：两阀之间总留着一段液体（死腿）。失重下漏出来的液体不会流到地上，而是变成漂浮的液团，碰到带电件就短路。60 °C 以上的管路会伤到抓取它的无人机。
+中：关闭阀门以后，管线里面可能仍然残留着液体，尤其是两个阀门之间的管段，即使两端都已经关闭，中间的液体也不会自动排出去，所以拆卸之前还需要单独排空。\n在失重环境下，泄漏的液体不会流到地面，而是会形成漂浮的液团。如果这些液体接触到带电设备，就可能造成短路。\n管线的温度如果超过 60°C，还可能损坏负责抓取和搬运的无人机，所以拆卸之前要先测量温度，确认安全以后再继续操作。
 英：In a piping system a shut valve doesn't make the pipe empty: there's always a length trapped between two valves (a dead leg). In free fall what leaks doesn't run to the floor; it floats off in globules that short whatever live thing they touch. Lines over 60 °C hurt the drone that grabs them.
 
 [codex:cx_cut_line]
@@ -22873,19 +23233,19 @@
 英：MARKED CUT LINE
 
 [codex:cx_cut_line_a]
-中：超重设备上预先标出的切分位置。
+中：一些大型设备的重量超过了抓钩的搬运上限，所以设备表面会提前标出可以安全切割的位置，方便拆解时将设备分成几个部分。
 英：Where a piece too heavy to move is meant to be cut apart.
 
 [codex:cx_cut_line_b]
-中：随便切会切进内部零件，价值大减；整件又超出抓钩上限。
+中：如果随便选择位置切割，很容易损坏设备内部的零件，导致回收价值大幅下降。但如果不进行分段，整台设备又可能因为重量太大，无法使用抓钩搬运。
 英：Cut anywhere else and you cut into its insides; whole, it's beyond the grapple.
 
 [codex:cx_cut_line_c]
-中：沿标线切成几段，每段都在抓钩上限以内。
+中：按照设备表面的标线进行切割，把设备分成几个部分，并确认每个部分的重量都没有超过抓钩的搬运上限。
 英：Cut along the marked lines; each section is within the grapple's limit.
 
 [codex:cx_cut_line_x]
-中：抓钩额定 3 t（升级后 5 t）。超过它的设备在设计时就留了可分段的位置：法兰、模块接缝、无管线穿过的地方。沿标线切开，每段仍按设备回收；乱切的切口会穿过绕组、管束或电路板，剩下的只值废金属。
+中：抓钩最初的搬运上限是 3 吨，升级以后可以提高到 5 吨。对于重量超过这个上限的设备，设计时一般都会预留能够安全分段的位置，通常位于连接法兰、模块接缝或者没有管线经过的地方。\n只要沿着标线进行切割，拆下来的每个部分仍然可以按照设备部件回收，保留原有的回收价值。如果随意切割，就可能切坏内部的线圈绕组、管束或者电路板，到时候损坏的部分就只能按照废金属的价格回收了。
 英：The grapple is rated 3 t (5 t upgraded). Equipment heavier than that was built with places it can come apart: flanges, module seams, spans no pipe or cable crosses. Cut on the lines and each section still counts as equipment; a cut anywhere else goes through windings, tube bundles or boards, and what's left is scrap.
 
 [codex:cx_glass]
@@ -22893,19 +23253,19 @@
 英：GLASS AND WINDOWS
 
 [codex:cx_glass_a]
-中：压条螺栓固定的舷窗或精密玻璃罩板。
+中：船上的舷窗和精密玻璃罩板，一般通过压条和螺栓固定在船体上，拆解时可以将整块玻璃完整取下来。
 英：A window or precision glass panel held in by clamping strips.
 
 [codex:cx_glass_b]
-中：背后有压力时拆会被推出去碎掉；附近动激光会烤裂。
+中：如果玻璃背后还有气压，直接拆除固定螺栓可能会让整块玻璃被气压推出去，造成玻璃破碎。在玻璃附近使用激光切割工具，也可能因为温度变化过大而导致玻璃开裂。
 英：Unbolted with pressure behind it, it's blown out and shatters; a laser nearby cracks it.
 
 [codex:cx_glass_c]
-中：先泄压，远离它切割，拧下压条整块取出。
+中：拆除玻璃之前，先确认舱室已经完成泄压，切割周围结构的时候也要和玻璃保持距离。等附近的拆解工作完成以后，再拧下固定压条的螺栓，把整块玻璃取出来。
 英：Vent first, cut well away from it, unbolt the strips and lift it out whole.
 
 [codex:cx_glass_x]
-中：玻璃抗压不抗拉，表面的划痕和局部热应力都会成为裂纹源。激光在 0.7 m 内工作，辐射和溅射的热能让玻璃两面温差超过 100 °C，热应力足以让它开裂。完整的光学玻璃价值远高于碎玻璃（几乎为零）。
+中：玻璃能够承受较大的压力，但受到拉力或者局部温度变化时就容易出现裂纹，表面原本存在的划痕也会增加破裂的风险。\n如果在距离玻璃 0.7 m 以内使用激光切割工具，切割产生的热辐射和高温飞溅物可能让玻璃两侧的温差超过 100°C，产生的热应力足以让玻璃开裂。\n完整的光学玻璃可以卖出很高的价格，一旦发生破碎，基本就没有多少回收价值了。
 英：Glass takes compression, not tension; a scratch or a hot spot is where a crack starts. With the laser working within 0.7 m, the heat thrown off can put a hundred degrees between its faces, enough thermal stress to craze it. Whole optical glass is worth a great deal; broken, next to nothing.
 
 [codex:cx_armor]
@@ -22913,19 +23273,19 @@
 英：ARMOUR
 
 [codex:cx_armor_a]
-中：厚的防护板：分层装甲、隔热瓦、屏蔽层。
+中：船体外部安装的厚重防护板，包括分层装甲、隔热瓦和辐射屏蔽层，主要用来保护船体和内部设备。
 英：Thick protective plate: layered armour, heat tiles, shielding.
 
 [codex:cx_armor_b]
-中：切得极慢，热量会积在切口附近，烤坏贴着它的东西。
+中：装甲的厚度和硬度都比较高，使用切割工具拆除时会花费很长时间，而且切割产生的热量容易集中在切口附近。如果周围安装了其他设备，持续产生的高温就可能把这些设备损坏。
 英：It cuts very slowly, and the heat building up at the kerf cooks what's behind it.
 
 [codex:cx_armor_c]
-中：能拆螺栓就拆，切口选在远离设备的地方。
+中：拆解装甲之前，先检查有没有固定螺栓，能够直接拆卸的就尽量不要使用切割工具。如果必须进行切割，最好选择远离其他设备的位置，避免高温造成额外损失。
 英：Unbolt where you can; cut where nothing sits behind it.
 
 [codex:cx_armor_x]
-中：装甲靠厚度和硬度吸收能量，切割速度可低到普通钢板的十分之一。屏蔽层（钨、氢化锂）则是挡辐射用的，重而脆。外挂装甲条常用螺栓挂在船体上，拆下来比切穿快得多。
+中：装甲主要依靠自身的厚度和硬度来吸收冲击能量，所以切割起来会比较困难，有些装甲的切割速度甚至只有普通钢板的十分之一。\n部分船体还安装了钨或氢化锂制成的辐射屏蔽层，这些材料主要用来阻挡辐射，通常重量较大，而且比较容易发生脆裂。\n船体外部的装甲条一般通过螺栓固定，如果能够找到固定位置，直接拆除螺栓通常会比切穿整块装甲快得多，也能减少切割过程中产生的热量。
 英：Armour soaks up energy with thickness and hardness; it may cut ten times slower than plain plate. Shielding (tungsten, lithium hydride) stops radiation, heavy and brittle. Add-on armour strips usually hang on bolts — much faster off than through.
 
 [codex:cx_insul]
@@ -22933,19 +23293,19 @@
 英：INSULATION
 
 [codex:cx_insul_a]
-中：两层蒙皮夹泡沫芯的隔热壁，或多层隔热毯。
+中：船体内部用来隔绝热量的结构，有些是在两层金属蒙皮之间填充隔热泡沫，有些则使用多层隔热毯，主要用来保持冷藏舱和低温储罐的温度。
 英：Foam core between two skins, or multilayer insulation blanket.
 
 [codex:cx_insul_b]
-中：破了隔热，冷舱回温、低温罐升压就会加快。
+中：如果提前拆除了隔热层，外部的热量就会更快进入冷藏舱和低温储罐，导致内部温度上升。低温储罐里的液体还可能因为受热而加快蒸发，让罐内压力不断增加。
 英：Break it and a cold room warms, a cryogenic tank's pressure climbs, much faster.
 
 [codex:cx_insul_c]
-中：冷的东西没处理完之前，别动它的隔热层。
+中：拆解隔热层之前，先确认附近的冷藏设备和低温储罐已经处理完成。如果里面还有需要保持低温的货物，就暂时保留隔热层，等货物转移完成以后再拆除。
 英：Leave the insulation alone until what it keeps cold is dealt with.
 
 [codex:cx_insul_x]
-中：真空中的多层隔热毯靠几十层镀铝膜反射热辐射，漏热只有每平方米零点几瓦；划开一道口，那一块的漏热可以高十倍以上。低温货物的回温和蒸发速率直接由隔热完好度决定。
+中：真空环境中的多层隔热毯通常由几十层镀铝薄膜组成，可以通过反射热辐射来减少热量传递。隔热层保持完整时，每平方米的漏热量通常只有零点几瓦。\n如果在隔热毯上划开一道缺口，受损区域的漏热量就可能增加到原来的十倍以上，导致内部温度上升得更快。\n对于装有低温货物的储罐来说，隔热层的完整程度会直接影响货物的升温和蒸发速度，所以最好等低温货物全部处理完成以后，再开始拆除隔热结构。
 英：In vacuum, multilayer insulation stops heat with tens of aluminised films, letting through a fraction of a watt per square metre; slit it and that patch leaks ten times more. How fast cold cargo warms or boils off comes straight from how sound its insulation is.
 
 [codex:cx_cover]
@@ -22953,19 +23313,19 @@
 英：SERVICE COVERS
 
 [codex:cx_cover_a]
-中：挡住后面设备或固定件的盖板。
+中：船体上用来保护设备或遮挡固定位置的盖板，有些设备和螺栓安装在盖板后面，需要拆除盖板以后才能接触到。
 英：A panel over the equipment or fixings behind it.
 
 [codex:cx_cover_b]
-中：盖板后面的螺栓看不见、拧不到，常被漏掉。
+中：有些固定螺栓藏在盖板后面，从外面看不到，也无法直接拆卸。如果没有注意到这些位置，就可能漏掉固定螺栓，导致后面的设备无法正常拆除。
 英：The bolts behind it can't be seen or reached, and get missed.
 
 [codex:cx_cover_c]
-中：先拆盖板，再找它后面的固定点。
+中：遇到检修盖或者护板时，可以先把盖板拆下来，再检查后面有没有隐藏的螺栓或其他固定位置，确认以后再继续拆解设备。
 英：Take the cover off first, then look for what's behind it.
 
 [codex:cx_cover_x]
-中：工程图会画出盖板后面的东西，但图纸是设计时画的，不一定和现在的船对得上。被盖住的固定点在光标上不会显示，只有盖板拆走之后才可操作。
+中：工程蓝图通常会标出盖板后面的设备和固定位置，不过图纸记录的是船体设计时的结构，实际拆解的船只可能经过维修或者改装，所以有些位置会和图纸不一样。\n被盖板挡住的固定点不会在光标上显示，也无法直接操作。只有拆除盖板以后，才能找到并拆卸后面的固定螺栓。
 英：The drawing shows what's behind a cover, but it was drawn at design time and may not match the ship now. Hidden fixings don't show under the cursor; they can only be worked once the cover is off.
 
 [codex:cx_port]
@@ -22973,19 +23333,19 @@
 英：PORT
 
 [codex:cx_port_a]
-中：接测量工具或回收软管的接口，接在某个舱、罐或管路上。
+中：船体上用来连接测量工具或者回收软管的接口，一般安装在舱室、储罐或者管路上，可以通过这些接口检查内部压力，也可以把里面的气体和液体回收出来。
 英：A connection for the meter or the recovery hose, on a room, a tank or a line.
 
 [codex:cx_port_b]
-中：它测的是它连着的那一段：中间的阀关着，读数是零也不代表舱里没气。
+中：测压口只能测量与它连通的那段管路，如果中间的阀门处于关闭状态，就算压力读数显示为零，也不能说明舱室或者储罐里面已经没有气压。
 英：It reads what it's connected to: with a valve shut in between, zero doesn't mean the room is empty.
 
 [codex:cx_port_c]
-中：打开工程图，确认接口和目标之间的阀门是开的。
+中：使用接口之前，先打开工程图，检查接口连接到了哪个舱室或者储罐，再确认中间的阀门已经打开，避免测量到错误的压力数据。
 英：Open the drawing and check every valve between the port and what you want is open.
 
 [codex:cx_port_x]
-中：测压口后面常有一段短管和阀门，阀门关着时，你测到的是这段短管（死腿）里的压力。回收口用软管把气体或液体抽进船坞的回收泵：气体按价值计入合同，抽的速度由接口的口径和泵的能力决定。
+中：测压口后面通常连接着一小段管路和阀门，如果阀门处于关闭状态，测量工具只能读取这段短管里面的压力，即使显示为零，阀门另一侧也可能还有大量高压气体。\n回收口则可以连接软管，通过船坞的回收泵把船内的气体或者液体抽出来，其中回收的气体会按照对应价值计入合同收益。\n回收速度主要取决于接口的口径和回收泵的工作能力，如果接口太小，就算使用更大的回收泵，也很难明显提高回收速度。
 英：Behind a pressure port there's often a short pipe and a valve; with the valve shut, what you read is that stub (the dead leg). A recovery port takes the hose to the berth's recovery pump: the gas or liquid is paid into the contract, as fast as the port's bore and the pump allow.
 
 [codex:cx_valve]
@@ -22993,19 +23353,19 @@
 英：VALVE
 
 [codex:cx_valve_a]
-中：开关一段管路或两个容积之间通路的手动阀。
+中：安装在船体管路上的手动阀门，可以控制管路的开启和关闭，也能用来切断两个舱室或容器之间的连接。
 英：A hand valve that opens or shuts the way between two volumes.
 
 [codex:cx_valve_b]
-中：关着的阀会骗过测量；卡死的阀接不上软管。
+中：关闭的阀门会把管路隔成不同的部分，如果只测量其中一段，就可能误以为整条管路都已经排空。有些阀门还可能因为故障而卡住，导致后面无法正常连接软管。
 英：A shut valve fools your meter; a jammed one won't take the hose.
 
 [codex:cx_valve_c]
-中：维护工具开关它；卡死的先用扳手拧开。
+中：可以使用维护工具开启或关闭阀门。如果遇到卡死的阀门，就先使用扳手把它拧开，再继续处理管路。
 英：Turn it with the wrench; free a jammed one with the wrench first.
 
 [codex:cx_valve_x]
-中：阀门把系统分成段：每一段的压力、液位可以完全不同。查管路时顺着工程图从接口走到目标，每遇到一个阀门问一句：它现在是开还是关？
+中：阀门可以把整套管路分成几个独立的部分，每一段管路里面的压力和液位都可能不同，所以其中一段已经排空，并不代表其他部分也已经安全。\n检查管路的时候，可以按照工程图找到对应接口，再沿着管路逐段检查。每经过一个阀门，都要确认它当前处于开启还是关闭状态，避免遗漏仍然存在压力或残留液体的管路。
 英：Valves split a system into sections, each with its own pressure and level. Trace the drawing from the port to what you want and at every valve ask: is it open or shut right now?
 
 [codex:cx_switch]
@@ -23013,19 +23373,19 @@
 英：SWITCH
 
 [codex:cx_switch_a]
-中：电路的隔离开关、待发开关、刹车或锁的控制。
+中：船上的开关可以用来切断电路、控制设备待发状态，也可以操作刹车和机械锁等装置。不同开关控制的设备和功能也会有所区别。
 英：A circuit isolator, an arming switch, a brake or a lock control.
 
 [codex:cx_switch_b]
-中：断一个开关只断一路：别的电源、蓄能还在。
+中：关闭一个开关，通常只能切断它所控制的那条线路。如果船上还有备用电池、独立电源或者储能设备，其他线路就可能仍然带电，直接拆解会有危险。
 英：One switch kills one path: the other sources and stored energy are still there.
 
 [codex:cx_switch_c]
-中：断开后再验电或读表，确认真的归零。
+中：关闭开关以后，先使用测量工具检查对应线路的电压，确认电压已经降到 0 V，再继续拆解相关设备。
 英：Switch it, then test or read the gauge to see it really went to zero.
 
 [codex:cx_switch_x]
-中：“关机不等于断电”：主开关只断主电源，备用电池、独立电源、电容组各自还可能带电。专项机制里的开关常有顺序（先冷却后刹车，先泄压后拔销），顺序错了比不动更糟。
+中：设备关闭以后，不代表内部已经完全断电。主开关一般只能切断主电源，备用电池和独立供电线路仍然可能带电，电容组也可能保留之前储存的电能。\n部分设备还需要按照指定顺序操作开关，比如先完成冷却再解除刹车，或者先释放内部压力再拔出锁销。如果操作顺序错误，可能会导致设备损坏，甚至引发危险，所以拆解之前最好先确认每个开关的作用。\n---
 英：\"Off isn't dead\": the main switch isolates the main supply; backup batteries, independent supplies and capacitor banks may each still be live. The switches of a ship's special mechanisms often have an order (cooling before the brake, pressure off before the pins), and the wrong order is worse than none.
 
 [codex:cx_test]
@@ -23033,19 +23393,19 @@
 英：TEST POINT
 
 [codex:cx_test_a]
-中：电网上可以用测量工具读电压的点。
+中：船体电网上专门用来测量电压的位置，可以使用测量工具读取对应线路的电压，检查这部分电路是否已经断电。
 英：A point on the grid where the meter reads the voltage.
 
 [codex:cx_test_b]
-中：它读的是它所在那段总线；别的支路可能另有电源。
+中：验电点只能显示它所在那段线路的电压，其他支路可能连接着独立电源，所以一个位置显示 0 V，并不代表整艘船的电路都已经断电。
 英：It reads its own stretch of bus; another branch may have its own supply.
 
 [codex:cx_test_c]
-中：断电、放电之后，再测一次确认 0 V。
+中：先切断相关线路的电源，再释放电容等设备中储存的电能，完成这些操作以后，重新使用测量工具检查电压，确认读数为 0 V 再开始拆解。
 英：After isolating and discharging, test again for 0 V.
 
 [codex:cx_test_x]
-中：读数会过期：你测完之后开关一动，旧读数就不再是现在的状态。安全的流程是“断开—放电—验电”三步，最后一步必须在前两步之后。
+中：验电点显示的是测量时的电压，如果测量完成以后又操作了其他开关，线路的供电状态就可能发生变化，之前的读数也就不能继续作为判断依据。\n比较安全的操作顺序是先断开电源，再释放储存的电能，随后进行验电。一定要在前两项操作完成以后重新测量，如果中途修改了开关状态，也需要再次确认电压，避免根据之前的读数进行拆解。
 英：A reading goes stale: switch anything after you measured and the old number is no longer the truth. The safe sequence is isolate, discharge, verify — and the verify has to come after the other two.
 
 [codex:cx_probe]
@@ -23053,19 +23413,19 @@
 英：PROBE
 
 [codex:cx_probe_a]
-中：读温度、液位、剂量、张力、转速等的传感器。
+中：安装在船体和各种设备上的传感器，可以用来测量温度、液位、辐射剂量、张力和转速等数据，帮助你了解设备当前的运行状态。
 英：A sensor reading temperature, level, dose, tension, speed and the like.
 
 [codex:cx_probe_b]
-中：不读就不知道：危险往往藏在数字里。
+中：有些设备即使已经停止运行，内部也可能残留压力、热量或者其他危险。如果没有提前查看探头的读数，就很难判断设备是否已经达到安全的拆解条件。
 英：Unread, you don't know: the danger is usually in the number.
 
 [codex:cx_probe_c]
-中：动手前用测量工具读一遍，动手后再读一遍。
+中：开始拆解之前，先使用测量工具查看相关探头的读数，确认设备目前的状态。完成操作以后再测量一次，检查数值有没有达到安全范围。
 英：Read it with the meter before you work, and again after.
 
 [codex:cx_probe_x]
-中：专项机制几乎都有一个探头：线圈储能、飞轮转速、钻杆扭矩、罐压、氧浓度、剂量率、炉芯温度。读数告诉你还要等多久，或者哪一步还没做完。
+中：船上的很多特殊设备都有对应的测量探头，包括线圈的储存能量、飞轮的转速、钻杆的扭矩、储罐的压力、舱室内的氧气浓度、辐射剂量率和炉芯温度等。\n这些读数可以帮助你判断设备是否已经达到安全状态。如果数值还没有降到要求的范围，就说明可能还需要继续等待，或者检查有没有遗漏的操作。拆解之前多检查一次，通常能避免后面出现不必要的事故。
 英：Nearly every special mechanism has its probe: a coil's stored energy, a flywheel's speed, a drill string's torque, a tank's pressure, oxygen, dose rate, a core's temperature. The reading says how long to wait, or which step isn't done.
 
 [codex:cx_socket]
@@ -23073,19 +23433,19 @@
 英：EXTERNAL SOCKET
 
 [codex:cx_socket_a]
-中：船坞的临时供电、供冷或地线接口。
+中：船坞外部面板上的连接接口，可以为船体提供临时电力、冷却系统和接地线路，方便在拆解过程中继续使用部分设备。
 英：Where the berth plugs in temporary power, cooling or an earth.
 
 [codex:cx_socket_b]
-中：断了船电，有些系统还需要外来的电或冷才能安全收尾。
+中：有些设备在切断船体电源以后，仍然需要电力或者冷却才能安全关闭。如果提前断开电源，又没有接好船坞提供的外部接口，就可能导致这些设备无法正常工作。
 英：With the ship's own power off, some systems still need outside power or cooling to finish safely.
 
 [codex:cx_socket_c]
-中：断船电之前先把船坞的那一路接上。
+中：切断船体电源之前，先找到船坞外部面板上的对应插座，把需要的供电、供冷或者接地线路连接好，再继续拆解。
 英：Plug the berth's supply in before you kill the ship's.
 
 [codex:cx_socket_x]
-中：船坞供电让门、泵、制冷机在船电断开后还能工作；船坞供冷让冷链货舱不回温；地线把帆面这类大面积带电体的静电导走。插座在外部面板上，接上后才算有效。
+中：船坞的外部供电可以让舱门、水泵和制冷机在船体断电以后继续工作，这样就不用担心拆除电池后，还有设备需要通电才能完成操作。\n外部供冷可以让冷链货舱继续保持低温，避免货物因为温度升高而损坏。接地线路则可以把帆面等大面积结构上积累的静电导走，减少拆解时发生静电放电的风险。\n这些接口都安装在船坞的外部面板上，需要完成连接以后才能发挥作用。
 英：Berth power keeps doors, pumps and chillers working after the ship's own is off; berth cooling keeps a cold hold from warming; an earth drains the static off a big charged surface like a sail. The sockets are on the outside panel and count once plugged.
 
 [codex:cx_discharge]
@@ -23093,19 +23453,19 @@
 英：DISCHARGE POINT
 
 [codex:cx_discharge_a]
-中：让电容组经电阻受控放电的开关。
+中：安装在设备附近接线盒上的放电开关，可以让电容组通过电阻缓慢放电，把内部储存的电能释放掉。
 英：A switch that bleeds a capacitor bank through a resistor.
 
 [codex:cx_discharge_b]
-中：电容断电后仍能存着上千焦的能量，碰一下就是电弧。
+中：电容即使已经断开电源，内部也可能储存着大量电能。如果没有完成放电就直接拆解，接触带电部件时可能产生高压电弧，造成严重伤害。
 英：Isolated, a capacitor still holds kilojoules; touch it and it arcs.
 
 [codex:cx_discharge_c]
-中：打开放电，等到电量归零，再验电。
+中：拆解电容组之前，先找到附近接线盒上的放电开关，启动放电程序。等电量显示归零以后，还需要使用检测工具确认没有残余电压，再开始拆解。
 英：Open the discharge, wait for it to reach zero, then test.
 
 [codex:cx_discharge_x]
-中：电容储能 E = ½CV²：一组 0.1 F 的电容在 400 V 下存 8 kJ。经电阻放电时电压按 e^(−t/RC) 衰减，大约五个时间常数后降到 1% 以下。放电点通常在设备附近的接线盒上。
+中：电容可以在断电以后继续储存电能，储存的能量可以通过公式 E = ½CV² 计算。一组容量为 0.1 F 的电容，如果电压达到 400 V，内部就储存着 8 kJ 的能量，即使已经切断电源，也可能在接触时产生危险的电弧。\n通过电阻放电时，电容的电压会按照 e^(−t/RC) 的规律逐渐降低，大约经过五个时间常数以后，电压就会降到初始值的 1% 以下。\n放电开关一般安装在设备附近的接线盒上，完成放电以后还要检查剩余电压，确认安全才能继续拆解。
 英：A capacitor stores E = ½CV²: a 0.1 F bank at 400 V holds 8 kJ. Through the resistor its voltage falls as e^(−t/RC), under 1 % after about five time constants. The discharge point is usually on a junction box near the equipment.
 
 [codex:cx_seal]
@@ -23113,19 +23473,19 @@
 英：SEAL
 
 [codex:cx_seal_a]
-中：把生物危险品封进密封袋或密封盖的控件。
+中：用来封存船上生物危险品的装置，可以通过密封袋或者密封盖把危险品封闭起来，防止污染物在搬运过程中扩散。
 英：The control that closes a biohazard item into its seal.
 
 [codex:cx_seal_b]
-中：没封就搬或切，污染会散进整个舱室的空气。
+中：如果还没有完成密封就直接搬运或者切割，里面的污染物可能会进入舱室空气，并随着空气流动扩散到其他位置，导致更多设备受到污染。
 英：Moved or cut unsealed, it spills contamination into the room's air.
 
 [codex:cx_seal_c]
-中：先封好，再整件送危险品口。
+中：处理生物危险品之前，先使用密封袋或者密封盖把危险品封好，确认不会发生泄漏以后，再把整件危险品送到专门的危险品回收口。
 英：Seal it first, then take it whole to the hazard mouth.
 
 [codex:cx_seal_x]
-中：生物污染随空气流动：舱门打开、舱壁切开，污染就扩散到隔壁舱。被污染舱室里的完好设备要走洗消，价值降四分之一。
+中：生物污染物可以随着空气流动扩散，如果舱室里面还有没有密封的危险品，直接打开舱门或者切开舱壁，就可能让污染物进入隔壁舱室。\n一旦设备受到污染，即使设备本身没有损坏，也需要先经过清洗和消毒才能回收，最终价值会降低 25%。\n所以在拆解受到生物污染的舱室之前，最好先把里面的危险品全部密封好，再继续处理周围的船体结构。
 英：Contamination travels with the air: open a door or cut a bulkhead and it spreads to the next room. Whole equipment in a contaminated room has to be decontaminated and loses a quarter of its value.
 
 [codex:cx_s_gas]
@@ -23133,39 +23493,39 @@
 英：ROOM PRESSURE
 
 [codex:cx_s_gas_a]
-中：每个密封舱里还留着的空气或工艺气体。
+中：船上的密封舱室里可能还存有空气或者其他工艺气体，这些气体会让舱室内部保持一定的压力，拆解之前需要先检查。
 英：The air or process gas still held in each sealed room.
 
 [codex:cx_s_gas_b]
-中：带压开口会爆开：门、板和舱里的东西一起喷出去。
+中：如果舱室里面还有较高的气压，直接打开舱门或者切开舱壁，就可能让里面的气体突然喷出，严重时甚至会把舱门、舱壁板和附近的设备一起冲出去。
 英：Open it under pressure and it blows: door, plate and contents thrown out.
 
 [codex:cx_s_gas_c]
-中：从接口测压，接软管放气到 5 kPa 以下，再开口。
+中：拆解密封舱室之前，先通过接口检查内部气压，再连接回收软管，把舱室压力降到 5 kPa 以下，确认泄压完成以后才能打开舱门或者切割舱壁。
 英：Measure at a port, hose it down below 5 kPa, then open it.
 
 [codex:cx_s_gas_x]
-中：舱压由舱里气体的量和舱的容积决定（pV = nRT）。回收泵从接口把气抽走，压力按指数下降：舱越大、接口越小，越慢；大舱可能要几十秒。舱壁一旦有了开口，气体就从开口流向压力低的一侧，相连的几个舱会变成一个。抽走的气体按价值计入合同。
+中：舱室里的气压与内部气体的数量、温度和舱室容积有关，可以用公式 pV = nRT 来表示。\n连接回收泵以后，舱室里的气体会逐渐被抽走，内部压力也会随之降低。舱室越大，或者抽气接口越小，完成泄压需要的时间就越长，一些大型舱室可能需要几十秒才能达到安全压力。\n如果直接打开舱门或者切开舱壁，里面的气体就会从开口流向压力较低的一侧。几个原本独立的舱室一旦连通，内部的气压也会相互影响。\n通过回收泵抽走的气体还可以按照回收价值计入合同，所以提前完成气体回收，也能获得额外收入。
 英：A room's pressure comes from how much gas is in it and its volume (pV = nRT). The recovery pump draws it off through a port and the pressure falls away exponentially: the bigger the room and the smaller the port, the slower; a big hold can take tens of seconds. Once a wall has an opening, gas flows to the low side and connected rooms become one. Recovered gas is paid into the contract.
 
 [codex:cx_s_stale]
-中：读数会过期
+中：过期
 英：READINGS GO STALE
 
 [codex:cx_s_stale_a]
-中：测到的数字只代表测的那一刻。
+中：检测工具显示的数值只代表测量时的状态。如果后面又对船上的设备进行了操作，之前测到的数值就可能不准确了。
 英：A reading is true only for the moment you took it.
 
 [codex:cx_s_stale_b]
-中：之后开了阀、断了电，旧读数就不是现在的状态。
+中：打开阀门、切断电源或者修改电路连接以后，设备的实际状态可能已经发生变化。如果继续按照之前的检测结果进行拆解，就有可能误判当前的压力或者电力状态。
 英：Open a valve or cut a supply afterwards and the old number is no longer the state.
 
 [codex:cx_s_stale_c]
-中：改动之后重新测一次；过期的读数会变灰。
+中：每次操作设备或者改变连接状态以后，最好重新检测一次，确认当前状态是否安全。已经过期的检测数值会显示成灰色，看到这种情况就需要重新测量。
 英：After any change, measure again; stale readings grey out.
 
 [codex:cx_s_stale_x]
-中：压力变化超过 2 kPa（或 4%），或者电路的连接关系改变，读数就标为过期。船上的面板和总览屏显示的是“上一次记录”，同样可能早已过期——永远以自己刚测的为准。
+中：如果舱室压力与上次测量时相比，变化超过 2 kPa 或者 4%，之前的压力读数就会被标记为过期。电路的连接关系发生改变以后，相关的电力检测结果也会失效。\n船上的控制面板和总览屏通常显示的是上一次记录的数据，这些数据也可能已经过期，所以不能完全依靠它们判断当前状态。\n拆解之前，最好使用自己的检测工具重新测量，确认设备当前的实际状态以后再继续操作。
 英：A pressure reading goes stale when the pressure moves more than 2 kPa (or 4 %); a voltage reading when the circuit's connections change. Panels and overview screens on board show their last record, which may be long out of date — trust only what you just measured.
 
 [codex:cx_s_power]
@@ -23173,19 +23533,19 @@
 英：POWER AND ITS SOURCES
 
 [codex:cx_s_power_a]
-中：发电机、电池、电容、独立电源经总线供给设备。
+中：船上的发电机、电池和电容都可以为设备提供电力，大部分设备通过船体总线供电，也有一些设备使用独立电源，所以切断主电源以后，船上仍然可能有带电的设备。
 英：Generators, batteries, capacitors and independent supplies feed the equipment over the bus.
 
 [codex:cx_s_power_b]
-中：主电源关了，备用电池、独立电源、电容还能让设备带电。
+中：关闭船体主电源以后，备用电池和独立电源可能还在供电，电容里面也可能储存着没有释放的电能。如果直接拆除这些设备或者切断电缆，就有可能产生电弧。
 英：Main power off, a backup battery, an independent supply or a capacitor can still keep it live.
 
 [codex:cx_s_power_c]
-中：找出每一路电源：逐个断开、放电，再验电。
+中：拆解电力设备之前，先查看工程图，确认船上有哪些供电线路和独立电源，再逐个断开电源并完成电容放电。处理完成以后，还需要使用检测工具重新验电，确认没有残余电压才能开始拆解。
 英：Find every source: isolate each, discharge, then test.
 
 [codex:cx_s_power_x]
-中：工程图的电路层画出每条电缆和它连到哪里。独立电源（无人机电池、门锁备用电源、仪器的不间断电源）只供它那一小片，主开关管不到它；接在总线上的独立电源还会反过来给整条总线供电。超过 30 V 的设备拔线、切割会起弧。
+中：工程图的电路层会标出每条电缆的连接位置，可以通过这些线路找到对应的电源和设备。\n有些设备使用自己的独立电源，包括无人机电池、舱门备用电源和仪器的不间断电源。这些电源通常只负责附近的设备，关闭船体主开关也不会切断它们的供电。\n如果独立电源连接到了船体总线，还可能通过总线向其他设备供电，所以即使已经关闭主电源，也不能直接认定整条线路都已经断电。\n电压超过 30 V 的设备，在拔除电缆或者进行切割时就可能产生电弧。拆解之前需要检查所有供电线路，断开剩余电源并完成放电，最后重新验电，确认安全以后再继续操作。
 英：The drawing's circuit layer shows every cable and where it goes. An independent supply (a drone's battery, a door lock's backup, an instrument's UPS) feeds its own little patch, beyond the main switch's reach; one tied to the bus feeds the whole bus back. Over 30 V, unplugging or cutting draws an arc.
 
 [codex:cx_s_heat]
@@ -23193,19 +23553,19 @@
 英：HEAT
 
 [codex:cx_s_heat_a]
-中：发动机、反应堆、炉子停了以后还热着的管线和设备。
+中：发动机、反应堆和加热炉等设备即使已经停止运行，内部的管线和零件也可能保持很高的温度，需要经过一段时间的冷却才能安全拆除。
 英：Lines and machines still hot after an engine, reactor or furnace stopped.
 
 [codex:cx_s_heat_b]
-中：60 °C 以上抓取会伤无人机；骤冷会让热件开裂。
+中：如果设备温度还在 60°C 以上，直接使用无人机抓取可能会造成无人机损坏。如果使用不合适的方法快速降温，也可能因为温度变化太大，导致管线或设备出现裂纹。
 英：Over 60 °C they hurt the drone; quenched suddenly, hot parts crack.
 
 [codex:cx_s_heat_c]
-中：测温，让冷却系统把它带下来，冷透再拆。
+中：拆解之前先测量设备温度，确认冷却系统还在正常运行，让设备慢慢降温。等温度降到安全范围以后，再开始拆除管线和其他零件。
 英：Measure, let the cooling bring it down, take it out cold.
 
 [codex:cx_s_heat_x]
-中：真空里没有对流，热只能靠辐射和传导散掉：一件几百度的设备自然冷却可能要几个小时。冷却回路有电、有液时才能带走热量；先断冷却再等，等于把它关在保温瓶里。
+中：真空环境里没有空气对流，设备只能通过热辐射和接触部件之间的热传导慢慢散热。一些温度达到几百度的大型设备，如果只依靠自然冷却，可能需要几个小时才能降到安全温度。\n冷却系统需要有电力供应和足够的冷却液才能正常工作，如果设备还很热就提前切断冷却系统，剩余的热量会很难散出去，冷却时间也会变得更长。所以拆解高温设备时，最好先保持冷却系统运行，等设备充分降温以后再切断电源。
 英：In vacuum there's no convection; heat leaves only by radiation and conduction, and a machine at a few hundred degrees may take hours to cool alone. The cooling loop carries heat off only while it has power and coolant; cut it first and wait, and you've shut it in a vacuum flask.
 
 [codex:cx_s_cloud]
@@ -23213,19 +23573,19 @@
 英：PROPELLANT CLOUD
 
 [codex:cx_s_cloud_a]
-中：漏出的燃料蒸气在舱里或船外聚成的一团。
+中：燃料发生泄漏以后，挥发出来的蒸气可能会聚集在舱室里面，或者在船体外面形成一团燃料气体。
 英：Leaked fuel vapour gathering in a room or outside the hull.
 
 [codex:cx_s_cloud_b]
-中：激光扫进去就点燃，起火、爆燃。
+中：如果燃料蒸气达到能够燃烧的浓度，附近的激光切割就可能将其点燃。如果舱室里面聚集了大量燃料蒸气，还可能发生爆燃，损坏附近的设备。
 英：Sweep the laser into it and it lights: fire, a flash.
 
 [codex:cx_s_cloud_c]
-中：先回收燃料、等云散开，再在附近切割。
+中：发现推进剂泄漏以后，先把剩余的燃料回收干净，等泄漏形成的气体充分扩散，确认附近没有危险以后，再继续进行切割。
 英：Recover the fuel and let the cloud disperse before cutting near it.
 
 [codex:cx_s_cloud_x]
-中：燃料蒸气只在一定浓度范围内能燃烧（肼约 4.7–100%，氢约 4–75%），太稀太浓都点不着；但云团边缘总有一圈正好在范围内。真空里云团会慢慢扩散变稀，舱里有空气时散得慢得多。
+中：燃料蒸气需要达到一定的浓度才能燃烧，浓度太低或者太高都可能无法点燃。拿肼和氢气来说，肼在空气中的可燃浓度范围约为 4.7%～100%，氢气则约为 4%～75%。\n即使云团中心的燃料浓度太高，外围也可能存在浓度刚好适合燃烧的区域，只要接触到火源，就有可能发生燃烧。\n在真空环境下，泄漏的燃料蒸气会逐渐向周围扩散，浓度也会慢慢降低。如果泄漏发生在有空气的封闭舱室里面，燃料蒸气就可能聚集更长时间，需要先完成通风和气体清理，才能安全进行切割。
 英：Fuel vapour burns only within a band of concentration (hydrazine about 4.7–100 %, hydrogen 4–75 %), too lean or too rich won't light — but the edge of a cloud is always somewhere in the band. In vacuum the cloud spreads and thins; in a room with air it lingers much longer.
 
 [codex:cx_s_fire]
@@ -23233,19 +23593,19 @@
 英：FIRE
 
 [codex:cx_s_fire_a]
-中：燃料只在有空气的舱里、或碰到氧化剂时才烧；真空里它只会蒸发、结冰、漂走。
+中：燃料需要接触空气中的氧气或者其他氧化剂才能燃烧。如果周围是真空环境，而且没有其他氧化剂，泄漏的燃料一般只会逐渐蒸发、冻结或者向周围扩散。
 英：Fuel burns only in a room with air, or where it meets an oxidiser; in vacuum it just boils off, freezes and drifts.
 
 [codex:cx_s_fire_b]
-中：激光、电弧、带电电缆的火花、短路、刚切的红热切口、尾焰、爆炸都能点着；火逐团蔓延，舱压可升到 8 倍冲开舱门。
+中：激光切割、电弧、带电电缆产生的火花、短路、高温切口、发动机尾焰和爆炸都可能引燃附近的燃料。\n一旦舱室发生火灾，火焰就可能逐渐蔓延到其他区域。严重时，舱内压力甚至可能上升到原来的 8 倍，导致舱门被气压冲开。
 英：Laser, arc, live-cable spark, short, fresh hot cut, thruster, blast: any lights it. It spreads; room pressure can rise 8x and blow the doors.
 
 [codex:cx_s_fire_c]
-中：先把舱抽成真空再动激光；着火的舱别开门补氧，等它把氧耗光。
+中：使用激光切割工具之前，先把舱室里的空气抽干净，确认内部已经达到真空状态。\n如果舱室已经发生火灾，暂时不要打开舱门，以免外面的空气进入，让火势进一步扩大。保持舱室封闭，等内部氧气消耗到无法维持燃烧时，火焰就会逐渐熄灭。
 英：Vent the room to vacuum before the laser; don't open a burning room's door to feed it air, let it use its oxygen up.
 
 [codex:cx_s_fire_x]
-中：火需要燃料、氧气和点火源三样。失重下火焰没有浮力，成一个缓慢的球，靠扩散补氧。火把舱里的氧耗光会自己灭，但燃料还在，补进空气、再来一个火星就会复燃。封闭舱里的燃烧把气体加热到几千度，压力跟着升到原来的数倍。
+中：燃烧需要燃料、氧气和点火源三个条件，只要缺少其中一个，火焰就无法继续维持。\n在失重环境下，火焰不会像地面上一样向上燃烧，因为这里没有重力造成的自然对流。火焰可能形成一个缓慢扩散的球形区域，主要依靠周围氧气的扩散来维持燃烧。\n如果舱室完全封闭，火焰会持续消耗内部的氧气，等氧气浓度下降到一定程度以后，燃烧就会停止。不过这时候燃料可能还留在舱室里面，如果重新打开舱门，让空气进入，再遇到火花就可能再次起火。\n封闭舱室发生火灾时，燃烧产生的高温还会让内部气体迅速膨胀。如果气体温度上升到几千度，舱内压力就可能增加到原来的数倍，严重时甚至会损坏舱门和周围的船体结构。
 英：Fire needs fuel, oxygen and a spark. Without gravity a flame has no buoyancy: it sits in a slow sphere fed by diffusion. A fire that uses up a room's oxygen goes out on its own, but the fuel is still there: let air in, add a spark, and it lights again. In a closed room the burning heats the gas to thousands of degrees and the pressure rises several times over.
 
 [codex:cx_s_liquid]
@@ -23253,19 +23613,19 @@
 英：LIQUIDS IN FREE FALL
 
 [codex:cx_s_liquid_a]
-中：漏出的液体在失重下变成漂浮的液团。
+中：船上的管线或储罐发生泄漏以后，里面的液体会进入失重环境，并在表面张力的作用下形成漂浮的液团。
 英：Liquid let loose in free fall becomes drifting globules.
 
 [codex:cx_s_liquid_b]
-中：碰到带电设备会短路，燃料遇激光起火，低温液体冻裂设备。
+中：泄漏的液体如果接触到还在通电的设备，可能会造成短路。如果泄漏的是燃料，在附近使用激光切割工具还可能引起火灾。温度很低的液体也会对设备造成损伤，严重时甚至会让零件冻裂。
 英：A globule shorts live equipment, fuel lights under the laser, cryogens crack what they touch.
 
 [codex:cx_s_liquid_c]
-中：接软管从接口抽空，再切管或拆罐。
+中：拆除管线或储罐之前，先把软管连接到对应的接口，将里面剩余的液体抽取干净，确认没有残留液体以后，再开始切割管线或者拆除储罐。
 英：Draw it off through a port with the hose before cutting the line or moving the tank.
 
 [codex:cx_s_liquid_x]
-中：没有重力，液体靠表面张力收成球，保持动量直线漂移，碰到表面要么溅开、要么摊成液膜跟着那件走。液氢、液氦一出来就闪蒸掉一部分，其余边漂边沸；水在真空里几秒内结成冰球；燃料慢慢挥发，蒸气汇进可燃云；钻井泥浆落哪粘哪。
+中：在失重环境下，液体会受到表面张力的影响，逐渐聚集成球形液团。如果没有其他外力影响，这些液团就会沿着原来的运动方向继续漂浮，碰到设备表面以后，可能会溅散成更小的液滴，也可能附着在表面形成一层液膜。\n不同液体泄漏以后还会出现不同的情况。液氢和液氦会在泄漏时迅速汽化一部分，剩余液体也会继续沸腾；水在真空环境下可能在几秒内结成冰球；燃料会逐渐挥发，产生的蒸气如果聚集起来，就可能形成可燃气体区域。钻井泥浆则容易附着在接触到的设备表面，增加后续的清理工作。\n所以拆解装有液体的设备之前，最好先通过接口把液体抽取干净，避免切割过程中发生泄漏。
 英：With no gravity, surface tension pulls liquid into balls that drift in straight lines and either splash or wet the surface they meet, then travel with it. Liquid hydrogen and helium flash part away on release and boil as they drift; water freezes into a ball of ice within seconds in vacuum; fuel evaporates slowly into a flammable cloud; drilling mud sticks wherever it lands.
 
 [codex:cx_s_hose]
@@ -23273,19 +23633,19 @@
 英：RECOVERY HOSE
 
 [codex:cx_s_hose_a]
-中：气液回收工具接上接口，把气体或液体抽进船坞的泵。
+中：回收软管用来抽取船上的气体和液体，将软管连接到对应的接口以后，就可以通过船坞的回收泵，把管线或储罐里面的气体和液体抽取出来。
 英：The recovery tool on a port, drawing gas or liquid into the berth's pump.
 
 [codex:cx_s_hose_b]
-中：接错接口会混料；抽干了还开着，有些泵会干转损坏。
+中：如果把软管连接到错误的接口，可能会让不同的回收物混在一起，影响回收处理。有些回收泵在抽取完成以后还继续运行，也可能因为没有液体进入而发生空转，造成设备损坏。
 英：The wrong port mixes the media; left running dry, some pumps wreck themselves.
 
 [codex:cx_s_hose_c]
-中：接上后看读数下降，到量后摘下软管。
+中：先确认接口对应的回收物，再连接软管开始抽取。抽取过程中注意查看剩余量，等气体或液体回收到指定数量以后，就可以停止回收并取下软管。
 英：Hose on, watch the reading fall, take it off when it's done.
 
 [codex:cx_s_hose_x]
-中：一条软管同时只接一个接口。抽速随压力（或液位）降低而变慢，按住 = 会加速时间。回收的气体和液体按市价计入合同；危险介质要接到对应的回收口，不能放到太空。
+中：一条回收软管每次只能连接一个接口。随着储罐里面的气压或者液位逐渐降低，回收速度也会慢慢下降，如果觉得等待时间太长，可以按住「=」键加快游戏时间。\n回收的气体和液体会按照当前市场价格计入合同收入，所以能回收的材料最好尽量保留下来。遇到危险气体或者液体时，还需要连接对应的专用回收接口，不能直接排放到太空中。
 英：One hose, one port at a time. The draw slows as the pressure or level drops; hold = to speed time up. What's recovered is paid into the contract at market price; hazardous media have to go to their own recovery, never to space.
 
 [codex:cx_s_free]
@@ -23293,19 +23653,19 @@
 英：FREE PIECES AND INERTIA
 
 [codex:cx_s_free_a]
-中：最后一个固定点松开，零件就成了自由漂浮的刚体。
+中：当零件的最后一个固定点被拆除以后，零件就会完全脱离船体，开始在失重环境中自由漂浮。
 英：With its last fixing gone a part becomes a free-floating body.
 
 [codex:cx_s_free_b]
-中：它保持原来的速度和转动，撞上别的东西会撞坏。
+中：零件脱离以后，会继续保持原来的移动速度和旋转状态。如果没有及时控制，零件就可能撞上附近的船体结构或者其他设备，造成不必要的损坏。
 英：It keeps its speed and spin, and whatever it runs into gets damaged.
 
 [codex:cx_s_free_c]
-中：用抓钩接住，慢慢送进回收口。
+中：拆除最后一个固定点之前，先用抓钩固定住零件。等零件完全脱离船体以后，再慢慢调整它的移动方向，将零件送进回收口。
 英：Catch it with the grapple and ease it into a mouth.
 
 [codex:cx_s_free_x]
-中：失重下没有摩擦帮你停下：推一下就一直走，停下来要同样大的反推。重的件动量大，0.5 m/s 的 3 t 设备和 1.5 m/s 的 1 t 设备撞起来一样狠。船坞边缘的牵引场会把漂出去的东西慢慢拉回来。
+中：在失重环境中，如果没有受到其他外力，零件就会一直保持原来的运动状态。即使只是轻轻推动一下，零件也会继续向前移动，想让它停下来，就需要施加反方向的作用力。\n零件的质量和移动速度都会影响撞击时的动量。一件重 3 吨、以 0.5 m/s 移动的设备，和一件重 1 吨、以 1.5 m/s 移动的设备，具有相同大小的动量，失去控制后都可能造成严重损坏。\n如果零件不小心漂出了船坞范围，船坞边缘的牵引场会逐渐把它拉回来。不过拆解大型设备时，最好还是提前使用抓钩控制，避免零件发生碰撞。
 英：Free fall has no friction to stop things: a push goes on forever, and stopping takes the same push the other way. Heavy pieces carry momentum — 3 t at 0.5 m/s hits as hard as 1 t at 1.5 m/s. The tractor field at the berth's edge slowly pulls back what drifts out.
 
 [codex:cx_s_grapple]
@@ -23313,19 +23673,19 @@
 英：MAGNETIC GRAPPLE
 
 [codex:cx_s_grapple_a]
-中：无人机抓住、拖动零件的工具。
+中：磁力抓钩是无人机用来固定和拖动零件的工具，可以在拆解过程中控制零件的移动方向，也能把拆下来的设备送到指定位置。
 英：The drone's tool for holding and towing parts.
 
 [codex:cx_s_grapple_b]
-中：超过额定质量拖不动；拉还连着的件会扯断锁扣和管线。
+中：磁力抓钩有一定的承重限制，如果零件超过了额定质量，就无法正常拖动。如果零件还连接着船体，强行拖动可能会扯断固定锁扣和连接管线，造成设备损坏。
 英：Over its rating it can't move a load; pulling something still fixed tears its locks and lines.
 
 [codex:cx_s_grapple_c]
-中：先看质量和剩余固定点，再拖。
+中：使用磁力抓钩之前，先检查零件的质量和剩余固定点，确认零件已经完全脱离船体，并且没有超过抓钩的承重限制以后，再开始拖动。
 英：Check the mass and the fixings left before you tow.
 
 [codex:cx_s_grapple_x]
-中：抓钩额定 3 t（升级 5 t）。无人机的推力有限，拖着重物时加速慢、刹车也慢，要提前减速。还连着的件被拉时，光标会显示剩几个固定点；拉力越大，越先断的是锁扣和管线。
+中：磁力抓钩默认最多可以拖动 3 吨的零件，升级以后可以提高到 5 吨。\n由于无人机的推力有限，拖动较重的设备时，加速和减速都需要更长时间，所以在接近回收口或者其他船体结构之前，最好提前减速，避免因为来不及停止而发生碰撞。\n如果零件还连接着船体，使用抓钩拖动时，光标会显示剩余的固定点数量。继续增加拉力就可能扯断锁扣或者连接管线，所以最好先把这些连接全部拆除，再使用抓钩搬运零件。
 英：Rated 3 t (5 t upgraded). The drone's thrust is limited: towing, it speeds up slowly and stops slowly, so start braking early. Pulling something still fixed, the cursor shows the fixings left; pull harder and the locks and lines go first.
 
 [codex:cx_s_furnace]
@@ -23333,19 +23693,19 @@
 英：THE FURNACE
 
 [codex:cx_s_furnace_a]
-中：泊位底部的废料口：废金属进去，熔成钢锭按吨付钱。
+中：船坞底部设有专门回收废金属的熔炉入口，拆下来的金属废料可以直接送进去熔炼，处理完成后会按照回收的金属重量结算报酬。
 英：The scrap mouth in the berth's floor: scrap goes in, is melted to ingots and paid by the tonne.
 
 [codex:cx_s_furnace_b]
-中：危险品、带电或带压的东西进炉会炸。完整设备进炉只值废金属价。
+中：不要把危险品或者还带有电压、压力的设备送进熔炉，这些东西在高温下可能发生爆炸。\n完整设备也不建议直接送进去，因为熔炉只会按照废金属的价格结算，原本还能正常使用的设备就卖不出完整回收的价格了。
 英：Hazards, live or pressurised things go off in it. Whole equipment sent in is paid as scrap.
 
 [codex:cx_s_furnace_c]
-中：只送纯金属废料；6–8 m 外对准长槽甩进去就行。
+中：先确认准备回收的材料只有普通金属，没有残留的危险物品。然后在距离熔炉入口大约 6–8 m 的位置，用抓钩将废料对准下方的长条形入口，调整好方向后送进去就可以了。
 英：Only plain scrap; from 6–8 m out, line it up with the trough and let it go.
 
 [codex:cx_s_furnace_x]
-中：炉口下面：料仓把废料压实，螺旋给料机送进一台真空感应炉。坩埚以 45 rpm 旋转，离心力把熔池压在炉衬上（约 1.4 g）。水冷铜线圈产生交变磁场，在金属里感应涡流加热（集肤深度 δ = 503·√(ρ/μf)）；炉温升到 1640 °C 出钢，倒进水冷铜锭模。真空本身就是熔炼条件。
+中：废金属进入熔炉入口以后，会先经过下方的料仓压实，再由螺旋给料机送进真空感应炉进行熔炼。\n熔炉内部的坩埚以每分钟 45 转的速度旋转，产生大约 1.4 g 的离心加速度，让熔融金属保持在炉衬附近。炉体外侧还安装了水冷铜线圈，线圈通电以后会产生交变磁场，使金属内部形成涡流并逐渐升温。电流在金属内部的集肤深度可以用公式 δ = 503 × √(ρ/μf) 计算。\n当炉内温度达到 1640°C 后，熔融金属就会被倒入水冷铜锭模，冷却成型后作为钢锭回收。\n整个熔炼过程需要在真空环境下进行，所以船坞已经为熔炉准备了相应的真空系统，不需要额外调整外部压力。
 英：Under the mouth a bunker compacts the scrap and a screw feeder charges a vacuum induction furnace. The crucible spins at 45 rpm so the melt is held against the lining at about 1.4 g. A water-cooled copper coil drives eddy currents in the metal (skin depth δ = 503·√(ρ/μf)); at 1,640 °C it taps into water-cooled copper ingot moulds. The vacuum is the berth's own.
 
 [codex:cx_s_equip_mouth]
@@ -23353,39 +23713,39 @@
 英：EQUIPMENT BAY
 
 [codex:cx_s_equip_mouth_a]
-中：收完整设备的回收口，从下方送入。
+中：船坞里专门用来回收完整设备的回收口，拆下来的设备需要从下方送进去，才能按照设备的完整价值进行回收。
 英：The mouth for whole equipment, fed from below.
 
 [codex:cx_s_equip_mouth_b]
-中：损坏或切开的设备按成色折价，带电带液的会出事。
+中：如果设备在拆解过程中受到撞击或者切割损坏，回收价格就会按照受损程度降低。如果设备内部还有电力或者残留液体，直接送进回收口还可能引发事故。
 英：Damaged or cut equipment is marked down; live or wet equipment causes trouble.
 
 [codex:cx_s_equip_mouth_c]
-中：断电、排空、拔线之后整件送进来。
+中：回收设备之前，先切断电源，排空内部的液体，再拔掉连接的线路。确认设备已经安全以后，尽量保持设备完整，再用抓钩把它送进回收口。
 英：Isolated, drained and unplugged, then in whole.
 
 [codex:cx_s_equip_mouth_x]
-中：设备按“价值 × 成色”付钱：撞击、过热、短路、污染都会降成色。合同里的指定件必须完整送达这里。离口太远时，设备口会把接收环移向你。
+中：设备的回收价格按照原本价值乘以当前成色计算。如果设备在拆解过程中受到撞击、过热、短路或者污染，成色就会下降，最后能够拿到的回收金额也会减少。\n如果合同要求回收指定设备，就必须把这些设备完整送进回收口，才能满足合同要求。\n当设备距离回收口太远时，回收口的接收环会向设备所在的位置移动，方便你把设备送进去。
 英：Equipment pays its value times its condition: knocks, heat, shorts and contamination all lower the condition. A contract's named items must arrive here whole. Far from the bay, it moves its receiving ring towards you.
 
 [codex:cx_s_hazard_mouth]
-中：危险品口
+中：危险品回收口
 英：HAZARD MOUTH
 
 [codex:cx_s_hazard_mouth_a]
-中：收燃料罐、电池、火工品、放射源等危险品的回收口。
+中：船坞里专门用来回收危险品的地方，燃料罐、电池、火工品和放射源等物品都需要送到这里处理。
 英：The mouth for fuel tanks, batteries, pyrotechnics, radioactive parts.
 
 [codex:cx_s_hazard_mouth_b]
-中：危险品送进熔炉会爆炸或污染。
+中：危险品不能直接送进熔炉，如果把燃料罐或者其他危险物品送进去，可能会引发爆炸，也可能造成熔炉污染。
 英：A hazard sent to the furnace explodes or contaminates.
 
 [codex:cx_s_hazard_mouth_c]
-中：光标显示“危险品”的件，只送这里。
+中：拆解过程中，如果光标指向的物品显示为「危险品」，就需要把它送进危险品回收口，不要送到普通的设备回收口或者熔炉里。
 英：Anything the cursor calls a hazard goes here and nowhere else.
 
 [codex:cx_s_hazard_mouth_x]
-中：危险品口按危险处理津贴付钱，不按金属价。它的口子小，要慢慢对准；拖着危险品靠近熔炉时，指导会提醒你。
+中：危险品会按照危险处理津贴计算回收收入，不会按照普通金属的价格结算，所以需要把它们单独送到危险品回收口。\n危险品回收口的入口比较小，运送的时候需要慢慢调整位置和方向，确认对准以后再把物品送进去。\n如果你拖着危险品靠近熔炉，系统也会显示提醒，避免因为送错回收位置而发生事故。
 英：The hazard mouth pays a handling allowance, not the metal price. Its opening is small, so line up slowly; towing a hazard near the furnace draws a warning.
 
 [codex:cx_s_field]
@@ -23393,19 +23753,19 @@
 英：TRACTOR FIELD
 
 [codex:cx_s_field_a]
-中：泊位开放边缘的力场，把漂出去的东西拉回来。
+中：船坞开放区域边缘安装了牵引力场，可以把漂出泊位的零件和设备逐渐拉回来，防止它们继续向外漂移。
 英：The field along the berth's open edges, pulling back what drifts out.
 
 [codex:cx_s_field_b]
-中：它只拉回，不刹车：高速漂出的件仍会撞上东西。
+中：牵引场只能改变零件的移动方向，无法直接让零件停下来。如果零件漂出去的时候速度太快，即使被牵引场拉了回来，也可能继续撞上船体或者附近的设备，造成损坏。
 英：It pulls back, it doesn't brake: something fast still hits what's in its way.
 
 [codex:cx_s_field_c]
-中：别指望它救场，脱离前先抓住。
+中：拆除零件的最后一个固定点之前，最好先用抓钩固定住零件，避免零件失去控制。不要完全依赖牵引场，等零件漂出去以后再处理。
 英：Don't count on it; catch things before they go.
 
 [codex:cx_s_field_x]
-中：泊位是半开放的：底部平台、塔架和悬臂，上方和右侧开放。牵引场在内框以外起作用，越往外拉力越大。船坞扩建时，场的边界会先外推到新的端部之外。
+中：船坞采用半开放式结构，底部设有作业平台，周围安装了塔架和悬臂，上方和右侧则保持开放，方便大型船体和拆解下来的设备进出。\n牵引场主要在船坞内部边框以外的区域发挥作用，零件漂出去的距离越远，受到的牵引力就越大，最终会被逐渐拉回泊位附近。\n如果后续扩建船坞，牵引场的作用范围也会跟着扩大，边界会移动到新建船坞的最外侧，确保扩建后的开放区域仍然受到牵引场保护。
 英：The berth is half open: floor, tower and boom, open above and to the right. The field acts outside the inner frame and pulls harder the further out you go. When the berth is extended, the field's edge is pushed out past the new end first.
 
 [codex:cx_s_berth_ext]
@@ -23413,19 +23773,19 @@
 英：BERTH EXTENSION
 
 [codex:cx_s_berth_ext_a]
-中：买下的扩建在现场按真实的在轨桁架施工流程建起来。
+中：购买船坞扩建项目以后，施工队会直接在现有泊位旁边进行建设，按照实际的在轨施工流程安装新的桁架、平台和其他设施。
 英：A bought extension is built on site the way a real in-space truss job runs.
 
 [codex:cx_s_berth_ext_b]
-中：施工时工区封闭，任何东西进去都会被牵引场推开。
+中：扩建施工期间，正在施工的区域会暂时封闭。如果有零件或者设备进入施工区域，周围的牵引场就会把它们推开，避免影响正在进行的安装工作。
 英：During the works the zone is closed; the field pushes anything out of it.
 
 [codex:cx_s_berth_ext_c]
-中：看着它建，或任意键跳过。
+中：你可以留在现场观看整个施工过程，也可以按任意键跳过，直接等到船坞扩建完成。
 英：Watch it go up, or skip with any key.
 
 [codex:cx_s_berth_ext_x]
-中：流程：工区隔离 → 拖船推入折叠桁架盒 → 铰接桁架从储筒逐节展开（每节 0.6 m，横撑锁正后再展下一节）→ 每个模块接口先钩爪锁紧、再上 M20 10.9 级螺栓（预紧 125 kN）→ 电子束焊接缝（电子束焊需要真空，泊位本身就是）→ 管路用氦气加压到 1.5 倍工作压力检漏，同时新地板承受 1.25 倍设计载荷（挠度限值 L/800）→ 调试认证。高船进坞时，塔架顶升加节、平台同步下放。
+中：船坞扩建会按照实际的在轨施工流程进行。施工开始前，系统会先隔离施工区域，然后由拖船把装有折叠桁架的货箱运送到指定位置。\n桁架通过铰接结构从储存筒内逐节展开，每节长度为 0.6 m。施工设备会在横向支撑杆展开并锁定以后，再继续安装下一节，直到整个桁架达到设计长度。\n安装模块的时候，会先用机械钩爪固定接口，再使用 M20、10.9 级高强度螺栓进行连接，每颗螺栓的预紧力为 125 kN。完成固定以后，施工设备还会使用电子束焊接技术处理连接处的焊缝。由于电子束焊接需要真空环境，而船坞本身就位于太空中，所以可以直接进行焊接。\n所有结构安装完成以后，还需要进行压力测试和承重测试。管路会使用氦气加压到正常工作压力的 1.5 倍，检查有没有泄漏，新安装的平台则需要承受设计载荷的 1.25 倍，测试时的最大挠度不能超过跨度的 1/800。\n通过这些测试以后，施工队才会进行最后的设备调试和验收，确认没有问题后，新的船坞区域就可以正式投入使用。\n如果扩建后的船坞需要停靠更高的船只，施工队还会增加塔架的高度，同时降低底部平台的位置，为大型船体留出足够的空间。
 英：Close the work zone → a tug pushes in the folded truss cassettes → the articulated truss deploys bay by bay out of its canister (0.6 m a bay, each squared and locked before the next) → each module interface latched, then bolted with M20 grade 10.9 bolts at 125 kN preload → the seams electron-beam welded (EB welding needs a vacuum, which the berth is) → the lines proof-pressurised with helium at 1.5 × working pressure and leak-checked while the new floor carries 1.25 × its design load (deflection limit L/800) → commissioned. For a tall ship, the tower is jacked up section by section and the platform lowered in step.
 
 [codex:cx_s_blueprint]
@@ -23433,19 +23793,19 @@
 英：THE DRAWING
 
 [codex:cx_s_blueprint_a]
-中：船的设计图：管路、电路、舱室和固定件。
+中：工程图记录了船只原本的设计结构，包括舱室分布、管路走向、电路连接和各个设备的固定位置，拆解的时候可以用来查看船体内部的布置。
 英：The ship's design drawing: pipes, circuits, rooms and fixings.
 
 [codex:cx_s_blueprint_b]
-中：图是设计时画的，船是后来出事的：两者不一定对得上。
+中：工程图记录的是船只最初的设计情况，但船只在使用过程中可能经历过改装、维修或者事故，所以图纸上的结构不一定和现在的船体完全一致。
 英：It was drawn at design time; the ship had its accident later. They may not agree.
 
 [codex:cx_s_blueprint_c]
-中：用它找东西、查走向；东西现在的状态自己测。
+中：拆解之前可以先查看工程图，确认设备的位置和管线的连接方式。不过实际操作的时候，还是要通过现场检查来确认设备当前的状态，不能完全按照图纸判断。
 英：Use it to find things and trace lines; check their state yourself.
 
 [codex:cx_s_blueprint_x]
-中：Tab 打开。图上能看到盖板后面的设备、阀门在哪条管线上、每台设备的电从哪里来。改装、事故、维修留下的变化不在图上：多出来的电源、被堵的接口、补过的管子，只有现场测得出来。
+中：按下 Tab 键就可以打开工程图，查看船体内部的结构，包括盖板后面安装了哪些设备、阀门连接着哪条管线，以及各个设备从哪里获得电力。\n不过工程图通常不会记录船只后来发生的变化。如果船只曾经进行过改装或者维修，内部就可能出现额外安装的电源、已经堵塞的接口，或者重新修补过的管路。\n这些变化都需要在拆解现场进行检查，尤其是涉及电路和压力管线的时候，最好先测量实际状态，再决定怎么拆除。\n---
 英：Tab opens it. It shows the equipment behind covers, which line a valve sits on, where each machine's power comes from. What modifications, accidents and repairs changed isn't on it: an extra supply, a blocked port, a patched pipe — only measuring on site finds those.
 
 [codex:cx_s_scope]
@@ -23453,19 +23813,19 @@
 英：PART-SHIP CONTRACTS
 
 [codex:cx_s_scope_a]
-中：只拆指定区段，或只取指定设备的合同。
+中：这类合同只要求你拆除船体的指定区域，或者回收几件指定的设备，不需要把整艘船全部拆完。
 英：A contract for one section only, or only for named equipment.
 
 [codex:cx_s_scope_b]
-中：动了范围外的件，损坏或拆走都要按违约扣钱。
+中：合同只允许你处理指定范围内的零件，如果拆除了范围以外的结构，或者在操作过程中造成损坏，都会被视为违反合同，需要从报酬中扣除相应的费用。
 英：Damage or take anything outside the scope and you pay for it.
 
 [codex:cx_s_scope_c]
-中：看清界面上画出的区段边界，范围外的不碰。
+中：开始拆解之前，先查看界面上标记的合同范围，确认哪些区域和设备可以处理。范围以外的部分尽量不要碰，避免因为误拆或者损坏而被扣钱。
 英：Read the section boundary drawn on screen; leave what's outside alone.
 
 [codex:cx_s_scope_x]
-中：分段拆解只买区段内的零件，不买气体和液体；抢救单按件付固定报酬，送齐即结束，船体其余部分由拖船拖走。光标会对范围外的件标“范围外”。
+中：分段拆解合同只会收购指定区段内的零件，船体里面剩余的气体和液体不属于收购范围，所以即使把它们回收下来，也不会计入合同收入。\n抢救合同则按照指定设备支付固定报酬，只要把合同要求的设备全部送进回收口，就可以直接完成任务，剩下的船体会由拖船负责运走，不需要继续拆解。\n拆解时可以通过光标确认零件是否属于合同范围，如果光标指向的零件显示「范围外」，就说明合同没有授权拆除这个零件，最好保留原样。
 英：A section job buys the pieces inside it, not the gas or fluids; a salvage job pays a fixed sum per named item and ends when they're in, the rest of the hull towed away. The cursor marks out-of-scope pieces.
 
 [codex:cx_s_hauler]
@@ -23473,19 +23833,19 @@
 英：HAULING DRONE
 
 [codex:cx_s_hauler_a]
-中：船坞悬臂上的辅助机，把标记的零件运进回收口。
+中：船坞悬臂上安装的辅助搬运设备，可以自动把你标记好的零件运送到对应的回收口，省去手动搬运的过程。
 英：The helper on the boom that carries marked pieces to the mouths.
 
 [codex:cx_s_hauler_b]
-中：它只运你标记的件，不检查危险：带电带液的照样搬。
+中：搬运无人机只会按照你的标记执行任务，不会主动检查零件是否安全。即使零件内部还有残留液体，或者设备尚未断电，无人机也会直接进行搬运，可能在运输过程中发生事故。
 英：It carries what you mark without checking: live or wet, it moves it.
 
 [codex:cx_s_hauler_c]
-中：处理完危险再右键标记，让它去运。
+中：标记零件之前，先检查并处理好内部的电力和液体等危险，确认零件已经可以安全回收以后，再点击鼠标右键进行标记，让无人机负责搬运。
 英：Make a piece safe, then mark it (right click) and let it carry it.
 
 [codex:cx_s_hauler_x]
-中：搬运无人机按标记顺序排队，自己找路、选回收口。它省掉的是重复的拖运，不省判断：哪件已经安全、哪件该进哪个口，仍然由你决定。
+中：搬运无人机会按照你标记零件的先后顺序安排运输任务，并自动规划搬运路线，选择对应的回收口。\n有了无人机以后，你就不用每次都亲自把零件拖到回收口了，不过无人机不会替你判断零件是否已经处理安全，也不会检查零件应该如何分类回收。\n所以在标记之前，你仍然需要确认零件已经完成断电、排液等必要处理，并检查回收目标是否正确，之后再交给无人机搬运。
 英：The hauler queues marked pieces in order, finds its own way and picks the mouth. It saves the repetitive towing, not the judgement: which piece is safe and where it goes is still yours.
 
 [codex:cx_s_impact]
@@ -23493,19 +23853,19 @@
 英：IMPACT
 
 [codex:cx_s_impact_a]
-中：漂浮的零件、无人机或整段船体撞上别的东西。
+中：在失重环境中，漂浮的零件、无人机或者整段船体，都有可能在移动过程中撞上附近的设备或其他船体结构。
 英：A floating piece, the drone or a section of hull running into something.
 
 [codex:cx_s_impact_b]
-中：撞击按速度变化折损两边的成色，精密件最怕。
+中：发生撞击以后，游戏会根据碰撞时的速度变化和零件的易损程度，降低双方的完好度。精密设备比较容易受到损坏，即使碰撞速度不快，也可能造成很大的损失。
 英：An impact marks down both sides by the change in speed; precision parts suffer worst.
 
 [codex:cx_s_impact_c]
-中：拖运时慢一点、提前刹车，别让东西自己漂。
+中：使用抓钩拖运零件的时候，尽量控制移动速度，接近目标位置之前就提前减速。尤其是搬运大型设备时，要避免零件脱离控制后继续漂移。
 英：Tow slowly, brake early, don't let things drift on their own.
 
 [codex:cx_s_impact_x]
-中：撞击的伤害取决于速度变化（Δv）和件的易损度。1 m/s 的撞击对钢结构无所谓，对光学玻璃或芯片就是致命的。拖着重物刹不住时，松开抓钩反而更糟：它会带着全部动量继续走。
+中：撞击造成的损坏主要取决于碰撞前后的速度变化（Δv），以及零件本身的易损程度。\n同样是以 1 m/s 的速度发生碰撞，普通钢结构通常不会受到太大影响，但光学玻璃、芯片等精密设备就可能出现严重损坏，甚至直接失去回收价值。\n拖运重型设备的时候，还要注意它们的惯性。设备的质量越大，想要让它停下来就越困难。如果发现自己来不及减速，直接松开抓钩只会让情况更加危险，因为设备还会保持原来的动量继续移动，直到受到其他外力影响。\n所以搬运大型零件时，最好提前减速，并且一直保持抓钩连接，直到设备安全进入回收区域。
 英：Damage comes from the change in speed (Δv) and how fragile the piece is. 1 m/s means nothing to steel and everything to optical glass or a chip. Towing something you can't stop, letting go is worse: it carries all its momentum on.
 
 [codex:cx_swb]
@@ -23513,19 +23873,19 @@
 英：SWITCHBOARD
 
 [codex:cx_swb_a]
-中：母排、仪表和一排塑壳断路器：全船电力在这里分路。
+中：配电盘负责把船上的电力分配到不同设备和线路，内部装有母排、仪表和一排断路器，可以分别控制各条线路的供电。
 英：Busbars, meters and a stack of moulded-case breakers: where the ship's power is split up.
 
 [codex:cx_swb_b]
-中：它是电网的汇点，任何一路电源都可能让它带电。
+中：配电盘连接着船上的多条供电线路，只要还有一路电源没有切断，内部就可能仍然带电。即使已经关闭了所有断路器，也不能直接拆除配电盘。
 英：Every source on the ship can make it live; it's where they all meet.
 
 [codex:cx_swb_c]
-中：先断所有电源，在它的验电点测到 0 V 再拆。
+中：拆除配电盘之前，先切断船上所有的电源，再通过配电盘上的验电点检查电压。确认读数已经降到 0 V 以后，才能开始拆解。
 英：Isolate every source, test 0 V at its test point, then remove it.
 
 [codex:cx_swb_x]
-中：上部是三相母排室，下面每个分段一块仪表板和一列断路器，电缆从底部的格兰板进线。断路器断开的是负载侧：母排上游只要有一路电源没断，整块盘依然带电。母排之间的电弧温度可达上万度。
+中：配电盘的上半部分是三相母排室，负责连接和分配电力。下半部分分成多个区域，每个区域都安装了仪表板和断路器，供电电缆则通过底部的电缆密封板接入。\n需要注意的是，断路器通常只能切断通往设备的负载侧线路。如果母排上游还有任何一路电源没有关闭，配电盘内部就仍然可能带电，所以不能只看断路器是否关闭，还要检查所有电源有没有彻底断开。\n带电拆解配电盘非常危险，如果工具导致母排之间发生短路，就可能产生温度高达上万摄氏度的电弧，严重损坏周围设备。\n拆解之前一定要完成断电和验电，确认电压为 0 V 以后再动手。
 英：Along the top the three-phase busbar chamber; below it each section's meter panel and a column of breakers, the cables rising through the gland plate. A breaker opens the load side only: while any source upstream is live, the whole board is. An arc between busbars runs at over ten thousand degrees.
 
 [codex:cx_battery]
@@ -23533,19 +23893,19 @@
 英：BATTERY PACK
 
 [codex:cx_battery_a]
-中：串联的电芯模块、汇流排、冷板和电池管理板。
+中：船上的电池组由多个串联的电芯模块组成，内部还安装了汇流排、冷却板和电池管理板，主要负责储存电能，并在需要的时候为船上设备供电。
 英：Modules of cells in series, busbars, a cooling plate and the battery management board.
 
 [codex:cx_battery_b]
-中：断不掉的电源：开关只断外部，电芯里的能量一直在。
+中：电池组即使已经关闭了外部电源，内部仍然储存着大量电能。切断电源只能让电池停止向外供电，无法消除电芯内部的能量，如果直接切割或者拆开电池组，就可能引发短路甚至起火。
 英：A source you can't switch off inside: the switch isolates its output, not the cells.
 
 [codex:cx_battery_c]
-中：断开它的隔离开关，拔掉输出线，整件送危险品口。
+中：拆除电池组之前，先关闭对应的隔离开关，再拔掉连接到船体的输出电缆。确认电池组已经与船体电路断开以后，将整组电池完整拆下来，送进危险品回收口处理。
 英：Open its isolator, unplug its output, take it whole to the hazard mouth.
 
 [codex:cx_battery_x]
-中：一组 50 kWh 的锂电池在满电时储存 180 MJ。电芯短路或穿刺会热失控：电芯温度在几秒内升到 600 °C 以上，释放可燃气体并引燃相邻电芯。主接触器在模块一端，断开后电池端子之间仍有全电压。
+中：一组容量为 50 kWh 的锂电池，在充满电以后可以储存约 180 MJ 的能量，即使已经切断了外部电源，这些能量也仍然保存在电芯内部。\n如果拆解时刺穿电芯，或者让内部电路发生短路，就可能引发热失控。在严重的情况下，电芯温度可能在几秒内升高到 600°C 以上，同时释放大量可燃气体，甚至引燃附近的其他电芯。\n电池组的主接触器一般安装在模块的一端，断开以后可以停止向外部设备供电，但电池内部的正负极之间仍然存在电压。\n所以拆解电池组的时候，一定要先断开隔离开关和输出电缆，之后再将整个电池组送去回收，不要直接切割内部结构。
 英：A 50 kWh lithium pack holds 180 MJ when full. A shorted or punctured cell runs away thermally: past 600 °C in seconds, venting flammable gas and lighting its neighbours. The main contactor sits at one end; open, the pack's own terminals still carry full voltage.
 
 [codex:cx_cap]
@@ -23553,19 +23913,19 @@
 英：CAPACITOR BANK
 
 [codex:cx_cap_a]
-中：一排电容罐、汇流排和放电电阻，储能供脉冲用电。
+中：电容组由多个电容罐、汇流排和放电电阻组成，主要用来储存电能，在发射系统等设备需要大量电力的时候，可以在短时间内释放储存的能量。
 英：A row of capacitor cans, busbars and a discharge resistor, storing energy for pulse loads.
 
 [codex:cx_cap_b]
-中：断电后仍保持高压，碰一下就是电弧。
+中：即使已经切断了船体电源，电容组内部也可能保留着很高的电压。如果没有提前放电就直接拆解，工具接触到带电部位时可能产生电弧，造成严重损坏。
 英：Isolated it still holds its voltage; touch it and it arcs.
 
 [codex:cx_cap_c]
-中：找到它的放电点，放到 0 再验电。
+中：拆除电容组之前，先找到对应的放电接口，使用放电装置把剩余电压降到 0 V，再通过验电点确认没有残余电压。完成放电和验电以后，才能开始拆解。
 英：Find its discharge point, bleed it to zero, then test.
 
 [codex:cx_cap_x]
-中：E = ½CV²：0.1 F 在 400 V 下存 8 kJ，发射系统的电容组可达兆焦级。电容没有“关”：只能放电。放电电阻按 RC 时间常数把能量变成热，约五个时间常数降到 1%。
+中：电容组储存的能量可以通过 E = ½CV² 计算，其中 C 是电容，V 是电压。一组电容为 0.1 F、电压为 400 V 的设备，就可以储存 8 kJ 的能量，而大型发射系统使用的电容组，储存的能量甚至可以达到兆焦级别。\n电容组和普通用电设备有所不同，关闭电源以后，已经储存的电能不会立即消失，必须通过放电才能降低内部电压。\n放电电阻可以让电容组逐渐释放电能，并将这些能量转化成热量。放电速度取决于电阻和电容形成的 RC 时间常数，通常经过大约五个时间常数以后，剩余电压就会降到初始值的 1% 以下。\n所以即使船上的电源已经全部关闭，也要单独检查电容组的电压，确认完成放电以后再进行拆解。
 英：E = ½CV²: 0.1 F at 400 V holds 8 kJ, and a launcher's bank holds megajoules. A capacitor has no off, only discharged. The resistor turns its energy to heat on the RC time constant, under 1 % after five of them.
 
 [codex:cx_gen]
@@ -23573,19 +23933,19 @@
 英：GENERATING SET
 
 [codex:cx_gen_a]
-中：发动机拖动的发电机，带散热器、励磁机和控制屏。
+中：发电机组通过发动机带动发电机运转，为船上的设备提供电力。整套机组还安装了散热器、励磁机和控制屏，用来维持发电机的正常运行。
 英：An engine driving an alternator, with radiator, exciter and control panel.
 
 [codex:cx_gen_b]
-中：停机不等于断电：别的电源会经总线倒送到它的出线端。
+中：发电机停止运行以后，出线端仍然可能带电。如果船上的其他电源还连接着供电总线，电流就可能通过总线反向进入发电机的线路，所以不能只看发动机有没有停止运行。
 英：Stopped isn't dead: other sources feed back to its terminals through the bus.
 
 [codex:cx_gen_c]
-中：确认停机，断开它的出线，验电后拆。
+中：拆除发电机组之前，先确认发动机已经完全停止运行，再断开连接供电总线的输出线路。完成断电以后，还需要检查出线端的电压，确认没有残余电压后再进行拆解。
 英：Confirm it's stopped, isolate its output, test, then remove.
 
 [codex:cx_gen_x]
-中：发电机的转子是凸极磁极，定子槽里嵌着绕组；转起来时，即使励磁断开，剩磁也能发出几十伏。机组质量常在 1–3 t，底座有减振器，螺栓都在底座上。
+中：发电机内部的转子装有凸极磁极，定子槽内则安装了用于发电的绕组。发动机带动转子旋转以后，发电机就可以产生电力。\n即使已经关闭了励磁系统，转子内部仍然可能保留一定的剩余磁性。如果转子继续旋转，发电机就可能产生几十伏的电压，所以停机以后还要等待转子完全停止，并检查线路是否带电。\n一套发电机组通常重达 1–3 吨，底座上还安装了减振器，用来减少运行时产生的振动。固定螺栓一般集中在机组底座上，拆解时需要先找到这些连接位置。\n由于整套设备的重量比较大，拆除底座螺栓之前，最好先用抓钩固定住机组，避免最后一个固定点松开以后，发电机组失去控制并撞上附近的设备。
 英：The rotor carries salient poles, the windings sit in the stator slots; spinning, even unexcited, the residual magnetism gives tens of volts. A set weighs 1–3 t; its bolts are on the base frame, under the anti-vibration mounts.
 
 [codex:cx_panel]
@@ -27562,7 +27922,7 @@
 英：
 
 ============================================================
-# 十四、其他（752 条）
+# 十四、其他（775 条）
 # 没归到上面各章的零散文字。
 ============================================================
 
@@ -27585,6 +27945,14 @@
 [bale_press:draw:9]
 中：→ 回仓库
 英：→ TO STORES
+
+------------------------------------------------------------
+# 【berth_bridge.gd（berth_bridge.gd）】
+------------------------------------------------------------
+
+[berth_bridge:_draw:1]
+中：船坞栈桥 · %.0f m
+英：BERTH BRIDGE · %.0f m
 
 ------------------------------------------------------------
 # 【cast_art.gd（cast_art.gd）】
@@ -28050,6 +28418,10 @@
 # 【demo.gd（demo.gd）】
 ------------------------------------------------------------
 
+[demo:顶层:1]
+中：0.9-公测-20261108
+英：
+
 [demo:error_text:1]
 中：这个激活码已经在另一台电脑上用过了。
 英：This code has already been used on another computer.
@@ -28063,16 +28435,16 @@
 英：This code has been withdrawn.
 
 [demo:error_text:4]
-中：试玩已经在 %s 结束了。谢谢！
-英：The playtest ended on %s. Thank you!
+中：公测已结束，谢谢！
+英：The public test is over. Thank you!
 
 [demo:error_text:5]
 中：激活码格式不对，应该是 ZP-XXXX-XXXX。
 英：That isn't a code: it looks like ZP-XXXX-XXXX.
 
 [demo:error_text:6]
-中：连不上服务器，请检查网络后再试。
-英：Can't reach the server. Check the connection and try again.
+中：连不上服务器。公测版需要联网，请检查网络后再试。
+英：Can't reach the server. The public test needs the internet: check the connection and try again.
 
 [demo:error_text:7]
 中：出了点问题（%s），请稍后再试。
@@ -28131,10 +28503,66 @@
 英：The record is in the folder that opened: zip it and send it over. Thank you!
 
 ------------------------------------------------------------
+# 【demo_feedback.gd（demo_feedback.gd）】
+------------------------------------------------------------
+
+[demo_feedback:顶层:2]
+中：有 bug
+英：
+
+[demo_feedback:_ready:2]
+中：遇到了什么？卡住、出错、想法都可以写。会自动附上打开菜单前的画面截图和运行日志。
+英：What happened? Stuck, broken, an idea: anything. A picture of the moment before the menu and the log go with it.
+
+[demo_feedback:_ready:3]
+中：写在这里……（Shift+Enter 换行）
+英：Write here… (Shift+Enter for a new line)
+
+[demo_feedback:_ready:4]
+中：发送（Enter）
+英：SEND (Enter)
+
+[demo_feedback:_ready:5]
+中：取消（Esc）
+英：CANCEL (Esc)
+
+[demo_feedback:send:1]
+中：先写几句再发送。
+英：Write a few words first.
+
+[demo_feedback:send:2]
+中：正在发送……
+英：Sending…
+
+[demo_feedback:send:3]
+中：已发送，谢谢！按 Enter 或 Esc 回到菜单。
+英：Sent. Thank you! Enter or Esc goes back.
+
+[demo_feedback:send:4]
+中：好的（Enter）
+英：OK (Enter)
+
+[demo_feedback:send:5]
+中：连不上服务器
+英：can't reach the server
+
+[demo_feedback:send:6]
+中：发得太快了，每分钟最多 3 条
+英：too fast: 3 a minute at most
+
+[demo_feedback:send:7]
+中：没发出去（%s）。已经存在本机，下次启动游戏会自动补发。
+英：Not sent (%s). It's kept on this computer and goes up on the next start.
+
+[demo_feedback:send:8]
+中：好的（Enter）
+英：OK (Enter)
+
+------------------------------------------------------------
 # 【demo_gate.gd（demo_gate.gd）】
 ------------------------------------------------------------
 
-[demo_gate:_ready:3]
+[demo_gate:_ready:4]
 中：这台电脑的试玩已经结束，谢谢你！
 英：This computer's playtest is over. Thank you!
 
@@ -28142,27 +28570,35 @@
 中：正在验证激活……
 英：Checking the activation…
 
+[demo_gate:_hello:1]
+中：正在联网登记……
+英：Checking in…
+
 [demo_gate:_activate:1]
 中：正在激活……
 英：Activating…
 
 [demo_gate:_draw:1]
-中：零压拆船厂 · 试玩版
-英：ZERO PRESSURE · PLAYTEST
+中：零压拆船厂 · 公测版
+英：ZERO PRESSURE · PUBLIC TEST
 
 [demo_gate:_draw:2]
-中：试玩到 %s 为止 · 第一小时
-英：UNTIL %s · THE FIRST HOUR
+中：第一小时 · 需要联网 · %s
+英：THE FIRST HOUR · ONLINE · %s
 
 [demo_gate:_draw:3]
+中：有问题随时按 Esc，在菜单里点“反馈”告诉我们。
+英：Anything wrong? Press Esc and pick Feedback at any time.
+
+[demo_gate:_draw:4]
 中：请输入你拿到的激活码。一个码只能在一台电脑上用。
 英：Enter the code you were given. A code works on one computer only.
 
-[demo_gate:_draw:4]
+[demo_gate:_draw:5]
 中：这个试玩版会在你自己的电脑上记录你卡住、出事故的地方并截图；
 英：This build records, on your own computer, where you get stuck or have accidents, with screenshots;
 
-[demo_gate:_draw:5]
+[demo_gate:_draw:6]
 中：结束时会问你要不要上传，不同意就只留在本机。设置里可以关掉记录。
 英：at the end it asks whether to upload them; say no and they stay here. The settings can turn it off.
 
@@ -28943,26 +29379,34 @@
 英：%.1f t with it, past the crane's %.0f t; drained, it lifts
 
 [next_step:_take:5]
+中：%s 还连着别的件：先卸开
+英：%s STILL HAS PARTS ON IT: TAKE THEM OFF
+
+[next_step:_take:6]
+中：整块 %.1f t，%s 本身 %.1f t：维护工具（4）拧下它的固定件，吊车（%.0f t）就吊得动
+英：%.1f t as it is, %s itself %.1f t: wrench (4) on its fixings, then the crane (%.0f t) lifts it
+
+[next_step:_take:7]
 中：%s 超过吊车额定
 英：%s IS PAST THE CRANE
 
-[next_step:_take:6]
+[next_step:_take:8]
 中：%.1f t，吊车只吊 %.0f t：船坞页把吊车升级到 16 t
 英：%.1f t, the crane takes %.0f t: upgrade it to 16 t on the berth page
 
-[next_step:_take:8]
+[next_step:_take:10]
 中：%.1f t 超过抓钩：对着它按右键，吊车整件吊走
 英：%.1f t, past the grapple: right-click it, the crane takes it whole
 
-[next_step:_take:10]
+[next_step:_take:12]
 中：%.1f t 超过抓钩，船坞还没修好吊车
 英：%.1f t, past the grapple; the berth's crane isn't mended
 
-[next_step:_take:11]
+[next_step:_take:13]
 中：把 %s 送进设备回收口
 英：%s TO THE EQUIPMENT MOUTH
 
-[next_step:_take:12]
+[next_step:_take:14]
 中：磁力抓钩（3）抓住，送进设备回收口
 英：grapple (3) it into the equipment mouth
 
@@ -29795,75 +30239,75 @@
 英：FUEL-CELL SET
 
 [power_supply:set_over:1]
-中：没有这台发电机
+中：找不到这台发电机
 英：NO SUCH SET
 
 [power_supply:set_over:2]
-中：%s已过热停机，先用维护工具修好
+中：%s 已经过热停机，需要先用维护工具完成修理。
 英：%s TRIPPED; MEND IT WITH THE WRENCH FIRST
 
 [power_supply:set_over:3]
-中：%s超载 +%d%%。热量满了就停机。
+中：%s 当前超载 %d%%，热量达到上限后会自动停机。
 英：%s OVERLOAD +%d%% · IT HEATS; FULL, IT TRIPS
 
 [power_supply:set_over:4]
-中：%s回到额定 · 慢慢散热
+中：%s 已恢复额定功率，正在散热。
 英：%s BACK TO RATED · COOLING
 
 [power_supply:can_order:1]
-中：没有这种电池
+中：找不到这种电池
 英：NO SUCH BLOCK
 
 [power_supply:can_order:2]
-中：电池泊位都占着：等一块用完、空壳运走再订
+中：所有电池泊位都已占用，请等待电池用完并运走空壳后再下单。
 英：BOTH SLOTS IN USE: ORDER ONCE A SHELL HAS GONE
 
 [power_supply:can_order:3]
-中：钱不够：要 $%s
+中：现金不足，购买需要 $%s
 英：NOT ENOUGH MONEY: $%s
 
 [power_supply:order:1]
-中：已下单：%s电池 %.1f 兆瓦时 · $%s · 约 %d 秒后到港，吊到电池泊位 %s
+中：电池已订购：%s 电池，容量 %.1f 兆瓦时，花费 $%s。预计 %d 秒后抵达港口，随后会吊装到 %s 号电池泊位。
 英：ORDERED: %s BLOCK %.1f MWh · $%s · IN ABOUT %d s, TO BERTH SLOT %s
 
 [power_supply:_tick_orders:1]
-中：电池已接入：%s %.1f 兆瓦时 · 泊位 %s · 总线可多用 %.0f 兆瓦
+中：电池已接入：%s，剩余电量 %.1f 兆瓦时，位于 %s 号泊位。现在可以为总线额外提供 %.0f 兆瓦的电力。
 英：BLOCK IN: %s %.1f MWh · SLOT %s · %.0f MW MORE ON THE BUS
 
 [power_supply:_drain:1]
-中：电池 %s 用完了：空壳等送货飞船吊走
+中：%s 电池的电量已经用完，空壳会在送货飞船抵达后运走。
 英：SLOT %s SPENT: THE SHELL WAITS FOR A SHIP
 
 [power_supply:_drain:2]
-中：%s过热停机。拿维护工具（4）修一下才能重启。
+中：%s 已经过热停机，需要使用维护工具（4）完成修理后才能重新启动。
 英：%s OVERHEATED AND TRIPPED: TAKE THE WRENCH (4) TO IT
 
 [power_supply:_auto:1]
-中：电快用完了，已自动再订一块：
+中：电池电量即将耗尽，已自动订购一块新电池：
 英：LOW: ANOTHER ORDERED: 
 
 [power_supply:cryo_status:1]
-中：运送中：液氢 %.0f kg、液氧 %.0f kg（%.1f 兆瓦时）
+中：正在运送燃料：液氢 %.0f kg、液氧 %.0f kg，可提供 %.1f 兆瓦时电量。
 英：ON ITS WAY: %.0f kg LH2, %.0f kg LOX (%.1f MWh)
 
 [power_supply:cryo_status:2]
-中：燃料电池储罐满了
+中：燃料电池的储罐已经装满，暂时无法继续补充燃料。
 英：THE FUEL CELLS' TANK IS FULL
 
 [power_supply:cryo_status:3]
-中：没有库存，不送：液氢 %.0f kg（拖船站拆下的液氢罐）· 液氧 %.0f kg（加工区气体线）
+中：库存不足，无法运送燃料。当前液氢库存 %.0f kg（来自拖船站拆下的液氢罐），液氧库存 %.0f kg（来自加工区气体生产线）。
 英：NO STOCK, NO RUN: %.0f kg LH2 (TANKS FROM THE TUG STATION) · %.0f kg LOX (THE GAS LINE)
 
 [power_supply:cryo_status:4]
-中：库存：液氢 %.0f kg · 液氧 %.0f kg · 储罐低于一半时自动送一趟
+中：当前库存：液氢 %.0f kg、液氧 %.0f kg。燃料储罐低于一半时，会自动安排一次燃料运输。
 英：STOCK: %.0f kg LH2 · %.0f kg LOX · A RUN GOES BELOW HALF
 
 [power_supply:_tick_cryo:1]
-中：液氢液氧已灌进燃料电池：第二组电堆 +%.0f 兆瓦
+中：液氢和液氧已补充到燃料电池储罐，第二组电堆现已启动，额外提供 %.0f 兆瓦电力。
 英：LH2 AND LOX IN: THE SECOND STACK +%.0f MW
 
 [power_supply:tick:1]
-中：%s修好了，已重启
+中：%s 已完成修理，并且重新启动。
 英：%s MENDED AND RUNNING
 
 ------------------------------------------------------------
@@ -30199,47 +30643,47 @@
 ------------------------------------------------------------
 
 [process_queue_panel:cycle_use:1]
-中：第 %d 批改成：%s
+中：已将第 %d 批的加工类型修改为：%s
 英：BATCH %d IS NOW: %s
 
 [process_queue_panel:cycle_mould:1]
-中：这批是订单要的，模具跟订单走：先把用途换掉
+中：这批钢锭用于完成订单，模具需要按照订单要求设置。请先修改这批钢锭的用途。
 英：THIS BATCH IS FOR AN ORDER: ITS MOULD IS THE ORDER'S
 
 [process_queue_panel:cycle_mould:2]
-中：这批已经在炉里了，换不了模具
+中：钢锭已经开始加工，暂时无法更换模具。
 英：THIS BATCH IS IN THE FURNACE ALREADY
 
 [process_queue_panel:cycle_mould:3]
-中：第 %d 批改浇%s
+中：已将第 %d 批的浇铸类型修改为：%s
 英：BATCH %d NOW CASTS %s
 
 [process_queue_panel:drop_batch:1]
-中：炉里正在炼这批，等它炼完
+中：熔炉正在处理这批钢锭，请等待当前加工完成。
 英：THE FURNACE IS ON THIS BATCH
 
 [process_queue_panel:drop_batch:2]
-中：撤下这批：钢锭留在仓库
+中：取消这批加工任务，钢锭会保留在仓库中。
 英：BATCH TAKEN OFF: THE INGOTS STAY IN STORE
 
 [process_queue_panel:toggle_auto:1]
-中：按订单截止时间自动排：开 · 订单批次按截止先后排在前面，同模具的连着炼
+中：自动排序：开启 · 优先安排快到期的订单批次，相同模具尽量连续加工
 英：AUTO BY DEADLINE: ON
 
 [process_queue_panel:toggle_auto:2]
-中：自动排：关 · 拖动行来定顺序
+中：自动排序：关闭 · 可以拖动批次调整加工顺序
 英：AUTO: OFF · DRAG THE ROWS
 
 [process_queue_panel:_drop_drag:1]
-中：自己排了顺序：自动排已关
+中：已手动调整加工顺序，自动排序已关闭
 英：ORDER SET BY HAND: AUTO IS OFF
 
 [process_queue_panel:_drop_drag:2]
-中：排到第 %d 位
+中：已移动到第 %d 位
 英：NOW NUMBER %d
 
 [process_queue_panel:queue_one:1]
-中：排进第 %d 批：钢锭 %.1f t → %s · %s · 炉子会自己开炉
+中：已安排为第 %d 批：钢锭 %.1f t → %s · %s · 到达加工顺序后自动开炉
 英：BATCH %d: %.1f t → %s · %s · THE FURNACE STARTS BY ITSELF
 
 [process_queue_panel:_draw:2]
@@ -30247,63 +30691,67 @@
 英：PRC-3 · FURNACE CONSOLE
 
 [process_queue_panel:_draw:3]
-中：关闭  [Esc]
+中：关闭 [Esc]
 英：CLOSE  [Esc]
 
 [process_queue_panel:_draw:4]
-中：关掉队列，回到现场
+中：关闭加工队列，返回现场
 英：Close the queue
 
 [process_queue_panel:now_of:1]
-中：仓库有 %.1f t 钢锭，炉子空着
+中：仓库现有 %.1f t 钢锭，电弧炉空闲，可以安排下一批加工
 英：%.1f t OF INGOT IN STORE, THE FURNACE IDLE
 
 [process_queue_panel:now_of:2]
-中：仓库还有 %.1f t 钢锭，可以再排一炉
+中：仓库还剩 %.1f t 钢锭，可以继续安排下一批加工
 英：%.1f t OF INGOT LEFT: QUEUE ANOTHER HEAT
 
 [process_queue_panel:now_of:3]
-中：还排着 %d 炉，约 %d 分钟
+中：还有 %d 批等待加工，预计需要 %d 分钟
 英：%d HEATS QUEUED, ~%d MIN
 
 [process_queue_panel:now_of:4]
-中：仓库没有钢锭：再拆一艘船
+中：仓库没有钢锭了，可以继续拆船获取材料
 英：NO INGOTS IN STORE: STRIP ANOTHER SHIP
 
 [process_queue_panel:_state_line:1]
-中：电弧炉空闲
+中：电弧炉当前空闲
 英：FURNACE IDLE
 
+[process_queue_panel:_state_line:2]
+中：电弧炉状态：
+英：FURNACE: 
+
 [process_queue_panel:_state_line:3]
-中：换模中：%s模 → %s模，还要约 %d 秒
+中：正在更换模具：%s模 → %s模，预计还需 %d 秒
 英：CHANGING THE MOULD: %s → %s, ~%d s
 
 [process_queue_panel:_state_line:4]
-中： · 座上%s模 · 架上：%s
+中： · 当前安装：%s模 · 模具架：%s
 英： · %s MOULD IN THE SEAT · RACK: %s
 
 [process_queue_panel:_draw_empty:4]
-中：队列是空的。仓库里有 %.1f t 钢锭可以炼。
+中：生产队列里还没有任务，仓库里有 %.1f t 钢锭可以加工。
 英：THE QUEUE IS EMPTY. %.1f t OF INGOT IN STORE.
 
 [process_queue_panel:_draw_empty:5]
-中：队列是空的，仓库里也没有没排上的钢锭：再拆一艘船，碎料会炼成钢锭。
+中：生产队列里没有任务，仓库里也没有剩余的钢锭了。可以再拆解一艘船，把回收的碎料炼成钢锭。
 英：THE QUEUE IS EMPTY AND NO INGOTS ARE FREE: STRIP ANOTHER SHIP, ITS SCRAP BECOMES INGOTS.
 
 [process_queue_panel:_draw_empty:6]
-中：排一炉：钢锭 %.1f t  [Enter]
+中：加入生产队列：钢锭 %.1f t [Enter]
 英：QUEUE A HEAT: %.1f t  [Enter]
 
 [process_queue_panel:_draw_empty:7]
-中：把仓库里还没排上的钢锭排一炉，炉子按队列自己炼
+中：把仓库里还没有安排加工的钢锭加入队列，电弧炉就会按照顺序进行加工。
 英：Queue a heat of the ingots in store; the furnace works the queue by itself
 
 [process_queue_panel:_draw_empty:8]
-中：去仓库挑别的
+中：去仓库选择其他材料
 英：PICK OTHERS IN STORE
 
 [process_queue_panel:_draw_empty:9]
-中：在仓库里点钢锭“炼成钢坯”，可以挑吨数
+中：打开仓库，找到钢锭后点击「炼成钢坯」，还可以选择这次要加工的数量。
 英：In the stores, ingots → 'cast', any tonnage
 
 [process_queue_panel:_draw_empty:10]
@@ -30311,51 +30759,63 @@
 英：TO THE STORES  [Enter]
 
 [process_queue_panel:_draw_empty:11]
-中：仓库里点钢锭“炼成钢坯”就排进来
+中：在仓库里选择钢锭，点击「炼成钢坯」，就能把加工任务加入这里。
 英：In the stores, ingots → 'cast' adds a batch
 
 [process_queue_panel:_draw_list:1]
-中：换模：%s → %s，炉子停约 %d 秒
+中：更换模具：%s → %s，电弧炉需要暂停约 %d 秒。
 英：MOULD CHANGE: %s → %s, THE FURNACE STANDS ~%d s
 
 [process_queue_panel:_draw_list:2]
-中：展开或收起：按订单截止自动排、压块机
+中：展开或收起订单截止时间自动排程和压块机设置。
 英：Show or hide: auto by deadline, the baler
 
+[process_queue_panel:_draw_list:3]
+中：更多选项 ▾
+英：MORE ▾
+
+[process_queue_panel:_draw_list:4]
+中：更多选项 ›
+英：MORE ›
+
 [process_queue_panel:_draw_list:5]
-中：按订单截止自动排 · 压块机
+中：按订单截止时间自动安排生产 · 压块机
 英：AUTO BY DEADLINE · THE BALER
 
 [process_queue_panel:_draw_list:6]
-中：再排一炉：钢锭 %.1f t  [Enter]
+中：再安排一炉：钢锭 %.1f t [Enter]
 英：ONE MORE HEAT: %.1f t  [Enter]
 
 [process_queue_panel:_draw_list:7]
-中：把仓库里还没排上的钢锭再排一炉
+中：从仓库里选择还没有安排生产的钢锭，再安排一炉。
 英：Queue another heat of the ingots in store
 
+[process_queue_panel:_draw_list:8]
+中：前往仓库挑选
+英：PICK IN STORE
+
 [process_queue_panel:_draw_list:9]
-中：在仓库里点钢锭“炼成钢坯”，可以挑吨数
+中：打开仓库，找到钢锭后点击「炼成钢坯」，还可以选择这次要加工的数量。
 英：In the stores, ingots → 'cast', any tonnage
 
 [process_queue_panel:_draw_list:10]
-中：去仓库挑别的  [Enter]
+中：返回仓库查看其他物品 [Enter]
 英：PICK OTHERS IN STORE  [Enter]
 
 [process_queue_panel:_draw_list:11]
-中：仓库里没有没排上的钢锭了；在仓库里可以看别的
+中：仓库里已经没有等待安排的钢锭了，你可以返回仓库查看其他物品。
 英：No free ingots left; see the stores
 
 [process_queue_panel:_draw_list:12]
-中：开着时：订单批次按截止先后排在最前，其余在后，同模具的连着炼，少换模
+中：开启后，系统会按照订单的截止时间优先安排订单批次，其他批次排在后面。使用相同模具的批次也会尽量安排在一起，减少更换模具的次数。
 英：On: order batches by their deadlines first, the rest after, the same mould together
 
 [process_queue_panel:_draw_list:13]
-中：按订单截止时间自动排
+中：按照订单截止时间自动排序
 英：AUTO BY DEADLINE
 
 [process_queue_panel:_row:1]
-中：按住拖动来改顺序
+中：按住批次并拖动以调整生产顺序。
 英：Hold and drag to reorder
 
 [process_queue_panel:_row:2]
@@ -30363,75 +30823,71 @@
 英：INGOT %.1f t →
 
 [process_queue_panel:_row:3]
-中：。点一下换模具
+中：点击更换模具。
 英：. Click to change the mould
 
 [process_queue_panel:_row:4]
-中：订单点名要这种，跟着订单走
+中：订单要求使用这种钢锭，按照订单要求生产
 英：THE ORDER NAMES THIS MOULD
 
 [process_queue_panel:_row:5]
-中：这批炼来干什么：留着 / 卖 / 给哪张订单。点一下换
+中：这批钢锭准备怎么处理？可以选择留在仓库、直接出售，或者交给指定订单，点击切换
 英：What it is for: keep / sell / an order. Click to change
 
 [process_queue_panel:_row:6]
-中：炉里 · 还剩约 %d 秒
+中：正在熔炼 · 预计还需要 %d 秒
 英：IN THE FURNACE · ~%d s LEFT
 
-[process_queue_panel:_row:7]
-中：炉里 · 正在炼
-英：IN THE FURNACE
-
 [process_queue_panel:_row:8]
-中：约 %d 秒后
+中：预计 %d 秒后完成
 英：IN ~%d s
 
 [process_queue_panel:_row:9]
-中：约 %d 分钟后
+中：预计 %d 分钟后完成
 英：IN ~%d MIN
 
 [process_queue_panel:_row:10]
-中：炉里正在炼这批
+中：这批钢锭正在炉内熔炼
 英：THE FURNACE IS ON IT
 
 [process_queue_panel:_row:11]
-中：撤下这批（钢锭留在仓库）
+中：取消这批生产（钢锭保留在仓库）
 英：Take it off (the ingots stay in store)
 
 [process_queue_panel:_draw_press:2]
-中：送到压力探头
+中：送往压力检测探头
 英：TO THE PROBE
 
 [process_queue_panel:_draw_press:3]
-中：压力探头检测
+中：正在进行压力检测
 英：PROBING
 
 [process_queue_panel:_draw_press:4]
-中：拒收，退回仓库
+中：检测未通过，退回仓库
 英：REJECTED, GOING BACK
 
-[process_queue_panel:_draw_press:8]
-中：推出，回仓库
-英：OUT, TO STORES
+[process_queue_panel:_draw_press:5]
+中：关闭进料门
+英：SHUTTING
 
-[process_queue_panel:_draw_press:9]
-中：压块机空闲
-英：THE BALER IS IDLE
+[process_queue_panel:_draw_press:6]
+中：正在压制成块
+英：PRESSING
 
 [process_queue_panel:_draw_press:10]
 中：压块机：%s · %s
 英：BALER: %s · %s
 
 [process_queue_panel:_draw_press:11]
-中： · 还有 %d 件等着
+中： · 还有 %d 件等待处理
 英： · %d WAITING
 
 [process_queue_panel:_draw_foot:1]
-中：Enter 排一炉 · Esc 关闭 · 拖动卡片换先后
+中：Enter 添加一炉生产任务 · Esc 关闭面板 · 拖动卡片调整生产顺序
 英：ENTER QUEUES A HEAT · ESC CLOSES · DRAG TO REORDER
 
 [process_queue_panel:_draw_foot:2]
-中：Enter 排一炉 · Esc 关闭
+中：Enter 添加一炉生产任务 · Esc 关闭面板
 英：ENTER QUEUES A HEAT · ESC CLOSES
 
 ------------------------------------------------------------
@@ -30483,39 +30939,43 @@
 ------------------------------------------------------------
 
 [repair_order:_ready:1]
-中：修  [Enter]
+中：确认修缮 [Enter]
 英：MEND  [Enter]
 
 [repair_order:_ready:2]
-中：取消  [Esc]
+中：取消修缮 [Esc]
 英：BACK  [Esc]
 
 [repair_order:_ready:3]
-中：修到下一期
+中：修缮到下一期
 英：Mend the next stage
 
 [repair_order:_ready:4]
-中：现金不够：还差 %s
+中：现金不足，还需要 %s
 英：NOT ENOUGH CASH: %s SHORT
 
 [repair_order:_draw:1]
-中：修缮 · %s · %s期
+中：修缮确认 · %s · 第%s期
 英：MEND · %s · STAGE %d
 
 [repair_order:_draw:2]
-中：修好后：交易行按市价卖货 · 订单板接客户订单
+中：修缮完成后，可以在交易行按市价出售货物，也可以到订单板接取客户订单。
 英：Mended: the exchange sells at market · the order board takes client orders
 
 [repair_order:_draw:3]
-中：有的先用自己的，缺的去交易行买，比自己拆的贵。施工队不收工钱。
+中：修缮时会优先使用你库存里的材料，缺少的部分需要从交易行购买，价格会比自己拆解获得的材料贵一些。施工队不收取人工费。
 英：What the warehouse has goes first; what is short is bought on the exchange in the same click (other companies' goods, dearer than your own). The crew is free.
 
 [repair_order:_draw:4]
-中：有的先用自己的，缺的按市价买。施工队不收工钱。
+中：修缮时会优先使用你库存里的材料，不够的部分会按照市价购买。施工队不收取人工费。
 英：What the warehouse has goes first; what is short is bought at market in the same click. The crew is free.
 
+[repair_order:_draw:9]
+中：修缮所需钢材
+英：REPAIR STEEL
+
 [repair_order:_draw:13]
-中：现金 %s → 修完后 %s
+中：当前现金：%s → 修缮后剩余：%s
 英：CASH %s → AFTER %s
 
 ------------------------------------------------------------
@@ -30687,7 +31147,7 @@
 英：[ENTER] HOOK ON
 
 ============================================================
-# 十五、短标签（四个字以内的按钮、栏目名、单位）（1742 条）
+# 十五、短标签（四个字以内的按钮、栏目名、单位）（1686 条）
 # 同样的字在很多界面出现时只列一次，「# 在」写了出现在哪些界面、共几处；改这里一条，所有这些地方一起改。
 # 这些字要短：按钮和栏目的宽度是按现在的字数排的，多一两个字可能放不下（合并后会跑超框检查）。
 ============================================================
@@ -31033,7 +31493,7 @@
 英：NOW OPEN
 
 [short:75]
-# 在：结算与收尾、驳船连接、各区业务终端、动力区现场、标题终端（5 处）
+# 在：结算与收尾、驳船连接、动力区现场、标题终端（4 处）
 中：无
 英：NONE
 
@@ -31078,7 +31538,7 @@
 英：KEPT AS RAW MATERIAL
 
 [short:84]
-# 在：结算与收尾、成长与建设的条件、各区业务终端、拆船时的屏幕、need_voice.gd、船坞终端（6 处）
+# 在：结算与收尾、成长与建设的条件、拆船时的屏幕、need_voice.gd、船坞终端（5 处）
 中：下一步
 英：NEXT
 
@@ -32288,7 +32748,7 @@
 英：NEW SAVE
 
 [short:329]
-# 在：标题、终端通用、各区业务终端、标题终端（4 处）
+# 在：标题、终端通用、标题终端（3 处）
 中：贷款
 英：LOAN
 
@@ -32417,9 +32877,9 @@
 中：合同市场
 英：Contract market
 
-[short:355]
+[short:1842]
 # 在：成长与建设的条件（1 处）
-中：先要
+中：需要先
 英：Needs first
 
 [short:356]
@@ -33028,7 +33488,7 @@
 英：TUG STATION
 
 [short:478]
-# 在：港区各区的名字与提示、各区业务终端、guide_cards.gd（4 处）
+# 在：港区各区的名字与提示、guide_cards.gd（2 处）
 中：贸易港
 英：TRADE PORT
 
@@ -33068,7 +33528,7 @@
 英：BOUGHT
 
 [short:486]
-# 在：化验台、炉台（2 处）
+# 在：化验台（1 处）
 中：已执行
 英：Done
 
@@ -33278,7 +33738,7 @@
 英：CODEX
 
 [short:1563]
-# 在：company_store.gd、各区业务终端、交易行规则的字、repair_order.gd、成长与建设页、store_book.gd（7 处）
+# 在：company_store.gd、成长与建设页、store_book.gd（4 处）
 中：修缮钢材
 英：REPAIR STEEL
 
@@ -33293,7 +33753,7 @@
 英：DAY %d
 
 [short:1527]
-# 在：company_store.gd、交易行（128 号新版）（2 处）
+# 在：company_store.gd（1 处）
 中：资金
 英：CASH
 
@@ -33323,7 +33783,7 @@
 英：EXCHANGE
 
 [short:1568]
-# 在：company_store.gd、交易行（128 号新版）（2 处）
+# 在：company_store.gd（1 处）
 中：订单
 英：ORDERS
 
@@ -34362,15 +34822,40 @@
 中： 吊车自动
 英： CRANE
 
-[short:721]
-# 在：demo.gd（1 处）
-中：试玩版
-英：PLAYTEST
+[short:1843]
+# 在：demo.gd（2 处）
+中：公测版
+英：PUBLIC TEST
+
+[short:1844]
+# 在：demo_feedback.gd（1 处）
+中：卡住了
+英：
+
+[short:1845]
+# 在：demo_feedback.gd（1 处）
+中：建议
+英：
+
+[short:1846]
+# 在：demo_feedback.gd（1 处）
+中：其他
+英：
+
+[short:1847]
+# 在：demo_feedback.gd、拆船时的屏幕（2 处）
+中：反馈
+英：FEEDBACK
 
 [short:722]
 # 在：demo_gate.gd（1 处）
 中：激活
 英：ACTIVATE
+
+[short:1848]
+# 在：demo_gate.gd（1 处）
+中：重试
+英：RETRY
 
 [short:1474]
 # 在：回收物去向（结算第二页）（1 处）
@@ -34588,9 +35073,14 @@
 英：DETAILS ▴
 
 [short:744]
-# 在：各区业务终端、guide_cards.gd、轧机面板、港区现场导览、轧机状态（6 处）
+# 在：各区业务终端、guide_cards.gd、港区现场导览、轧机状态（5 处）
 中：轧机
 英：ROLLING MILL
+
+[short:1849]
+# 在：各区业务终端（1 处）
+中：上门客户
+英：AT THE PIER
 
 [short:1557]
 # 在：各区业务终端、guide_card.gd、远程调度（F4/F5/F6）（3 处）
@@ -34607,229 +35097,94 @@
 中：正在：
 英：NOW: 
 
-[short:753]
+[short:1850]
 # 在：各区业务终端（1 处）
-中：送检了。
-英：SENT FOR TESTING.
-
-[short:751]
-# 在：各区业务终端（1 处）
-中：已设定。
-英：SET.
-
-[short:756]
-# 在：各区业务终端（1 处）
-中：接受
+中：接受报价
 英：ACCEPT
 
-[short:757]
+[short:1851]
 # 在：各区业务终端（1 处）
-中：拒绝
+中：拒绝交易
 英：SEND AWAY
 
-[short:758]
+[short:1852]
 # 在：各区业务终端（2 处）
-中：%s · 信誉 %d
-英：%s · REPUTATION %d
-
-[short:1778]
-# 在：各区业务终端（1 处）
-中：（不够）
-英： (SHORT!)
-
-[short:759]
-# 在：各区业务终端（2 处）
-中：接下
+中：接受合同
 英：TAKE IT
 
-[short:760]
+[short:1853]
 # 在：各区业务终端（1 处）
-中：好。
+中：确认
 英：DONE.
-
-[short:1535]
-# 在：各区业务终端（1 处）
-中：怎么办：
-英：WHAT TO DO: 
-
-[short:1536]
-# 在：各区业务终端（1 处）
-中：自家能发
-英：WE CAN MAKE
 
 [short:1537]
 # 在：各区业务终端（3 处）
 中：兆瓦
 英：MW
 
-[short:1538]
-# 在：各区业务终端（1 处）
-中：还空着
-英：STILL FREE
-
 [short:1762]
 # 在：各区业务终端（1 处）
 中：兆瓦时
 英：MWh
 
-[short:1539]
+[short:1854]
 # 在：各区业务终端（1 处）
-中：一直先供
-英：ALWAYS FIRST
-
-[short:1540]
-# 在：各区业务终端（1 处）
-中：在用
+中：正在使用
 英：ON
 
-[short:1541]
+[short:1855]
 # 在：各区业务终端（1 处）
-中：没在用
-英：IDLE
-
-[short:1542]
-# 在：各区业务终端（1 处）
-中：免费供电
-英：FREE SUPPLY
-
-[short:770]
-# 在：各区业务终端（1 处）
-中：已建成
-英：BUILT
-
-[short:771]
-# 在：各区业务终端（1 处）
-中：在路上
-英：ON THE WAY
-
-[short:772]
-# 在：各区业务终端（1 处）
-中：泊位 %d
-英：
-
-[short:773]
-# 在：各区业务终端（1 处）
-中：扣在港口
-英：HELD
-
-[short:775]
-# 在：各区业务终端（1 处）
-中：分选批次
-英：SORTING BATCH
-
-[short:776]
-# 在：各区业务终端（1 处）
-中：炉次
+中：熔炼批次
 英：HEAT
 
-[short:777]
+[short:1856]
 # 在：各区业务终端（1 处）
-中：%s %s  %d 秒
-英：%s %s  %d s
-
-[short:778]
-# 在：各区业务终端（1 处）
-中：上架
+中：货物上架
 英：IN
 
-[short:779]
+[short:1857]
 # 在：各区业务终端（1 处）
-中：出库
+中：货物出库
 英：OUT
 
-[short:780]
-# 在：各区业务终端、标题终端（2 处）
-中：现金
+[short:1858]
+# 在：各区业务终端（1 处）
+中：可用现金
 英：CASH
 
-[short:781]
+[short:1859]
 # 在：各区业务终端（1 处）
-中：待办：
-英：TO DO:
+中：当前贷款
+英：LOAN
 
-[short:782]
+[short:1860]
 # 在：各区业务终端（1 处）
-中：下一期：
-英：NEXT: 
+中：暂无合同
+英：NONE
 
-[short:783]
-# 在：各区业务终端、气体线、运营面板、process_gallery.gd、轧机状态（8 处）
-中：空闲
-英：IDLE
-
-[short:784]
+[short:1861]
 # 在：各区业务终端（1 处）
-中：原料运输
-英：
-
-[short:785]
-# 在：各区业务终端（1 处）
-中：原料返仓
-英：
-
-[short:786]
-# 在：各区业务终端（1 处）
-中：进行中
-英：
-
-[short:787]
-# 在：各区业务终端（1 处）
-中：产物返仓
-英：
-
-[short:788]
-# 在：各区业务终端（1 处）
-中：已完成
-英：
-
-[short:789]
-# 在：各区业务终端（1 处）
-中：已撤回
-英：
-
-[short:790]
-# 在：各区业务终端（1 处）
-中：已报损
-英：
-
-[short:920]
-# 在：各区业务终端、炉台、轧机面板、process_queue_panel.gd、分选台（7 处）
-中：更多 ▾
-英：MORE ▾
-
-[short:1763]
-# 在：各区业务终端（1 处）
-中：气态氧
+中：气态氧气
 英：GAS O₂
 
-[short:845]
-# 在：各区业务终端、power_supply_view.gd（2 处）
-中：液氧
+[short:1862]
+# 在：各区业务终端（1 处）
+中：液态氧气
 英：LOX
 
-[short:1764]
+[short:1863]
 # 在：各区业务终端（1 处）
-中：液氢
+中：液态氢气
 英：LH₂
 
-[short:1765]
+[short:1864]
 # 在：各区业务终端（1 处）
-中：进行中
-英：RUNNING
-
-[short:1779]
-# 在：各区业务终端（1 处）
-中：分离一批
-英：SEPARATE A BATCH
-
-[short:1767]
-# 在：各区业务终端（1 处）
-中：污染 %.1f%%
+中：污染率 %.1f%%
 英：TAINT %.1f%%
 
-[short:1768]
+[short:1865]
 # 在：各区业务终端（1 处）
-中：无污染
+中：没有污染
 英：CLEAN
 
 [short:1769]
@@ -34837,50 +35192,15 @@
 中：开始分离
 英：SEPARATE
 
-[short:1770]
+[short:1866]
 # 在：各区业务终端（1 处）
-中：液化
+中：开始液化
 英：LIQUEFY
 
-[short:1780]
-# 在：各区业务终端（1 处）
-中：多半答应
-英：LIKELY YES
-
-[short:1781]
-# 在：各区业务终端（1 处）
-中：一半一半
-英：FIFTY-FIFTY
-
-[short:1782]
-# 在：各区业务终端（1 处）
-中：多半走人
-英：LIKELY LEAVES
-
-[short:1783]
-# 在：各区业务终端（1 处）
-中：比市价高 %d%%
-英：%d%% OVER MARKET
-
-[short:1784]
-# 在：各区业务终端（1 处）
-中：比市价低 %d%%
-英：%d%% UNDER MARKET
-
-[short:1785]
-# 在：各区业务终端（1 处）
-中：没客人
-英：NOBODY AT THE PIER
-
-[short:1786]
-# 在：各区业务终端（1 处）
-中：卖给他
-英：SELL TO HIM
-
-[short:1787]
-# 在：各区业务终端（1 处）
-中：买下
-英：BUY IT
+[short:1867]
+# 在：各区业务终端（2 处）
+中：贸易港口
+英：TRADE PORT
 
 [short:1788]
 # 在：各区业务终端（1 处）
@@ -34902,19 +35222,9 @@
 中：不买
 英：NO DEAL
 
-[short:1792]
+[short:1868]
 # 在：各区业务终端（1 处）
-中：压 5%
-英：DOWN 5%
-
-[short:1793]
-# 在：各区业务终端（1 处）
-中：下一位：
-英：NEXT: 
-
-[short:1794]
-# 在：各区业务终端（1 处）
-中：退掉
+中：取消合同
 英：HAND BACK
 
 [short:1626]
@@ -35178,7 +35488,7 @@
 英：WHAT
 
 [short:831]
-# 在：facility_card.gd、交易行（128 号新版）、港区图卡（速查）（3 处）
+# 在：facility_card.gd、港区图卡（速查）（2 处）
 中：现在
 英：NOW
 
@@ -35322,6 +35632,11 @@
 中：液化冷箱
 英：LIQUEFIER
 
+[short:783]
+# 在：气体线、运营面板、process_gallery.gd、轧机状态（7 处）
+中：空闲
+英：IDLE
+
 [short:854]
 # 在：气体线（现场）（1 处）
 中：压缩机
@@ -35343,7 +35658,7 @@
 英：BASE
 
 [short:859]
-# 在：电网、交易行规则的字、process_line.gd、轧机状态、找到的船 / 船市的船、store_book.gd等 7 处（21 处）
+# 在：电网、process_line.gd、轧机状态、找到的船 / 船市的船、store_book.gd、仓库（15 处）
 中：保存失败
 英：SAVE FAILED
 
@@ -35552,11 +35867,6 @@
 中：分选完成
 英：SORTED
 
-[short:897]
-# 在：引导卡（1 处）
-中：整线加工
-英：
-
 [short:898]
 # 在：引导卡（1 处）
 中：定级
@@ -35566,16 +35876,6 @@
 # 在：引导卡、guide_cards.gd（2 处）
 中：炉台
 英：FURNACE DESK
-
-[short:900]
-# 在：引导卡（1 处）
-中：测温取样
-英：
-
-[short:901]
-# 在：引导卡（1 处）
-中：倾炉出钢
-英：
 
 [short:1715]
 # 在：引导卡、港区现场导览（2 处）
@@ -35927,9 +36227,9 @@
 中：北辰船务
 英：BEICHEN SHIPPING
 
-[short:1665]
+[short:1869]
 # 在：交易行规则的字（1 处）
-中：放进仓库
+中：存入仓库
 英：INTO THE STORES
 
 [short:1666]
@@ -35937,24 +36237,24 @@
 中：新客户
 英：NEW
 
-[short:1667]
+[short:1870]
 # 在：交易行规则的字（1 处）
-中：熟客
+中：老客户
 英：KNOWN
 
-[short:1668]
+[short:1871]
 # 在：交易行规则的字（1 处）
-中：可靠
+中：信誉良好
 英：RELIABLE
 
-[short:1669]
+[short:1872]
 # 在：交易行规则的字（1 处）
-中：优选
+中：优质客户
 英：PREFERRED
 
-[short:1670]
+[short:1873]
 # 在：交易行规则的字（1 处）
-中：金牌
+中：金牌客户
 英：GOLD
 
 [short:1672]
@@ -35967,195 +36267,95 @@
 中：星港建设
 英：STARPORT BUILDERS
 
-[short:1674]
-# 在：交易行规则的字（1 处）
-中：可接单
-英：OPEN
-
-[short:1675]
-# 在：交易行规则的字（1 处）
-中：装船中
-英：LOADING
-
 [short:1676]
 # 在：交易行规则的字（1 处）
 中：已过期
 英：LAPSED
 
-[short:1677]
+[short:1874]
 # 在：交易行（128 号新版）（1 处）
-中：卖
+中：当前资金
+英：CASH
+
+[short:1875]
+# 在：交易行（128 号新版）（1 处）
+中：出售货物
 英：SELL
 
-[short:1678]
+[short:1876]
 # 在：交易行（128 号新版）（1 处）
-中：买
+中：购买货物
 英：BUY
 
-[short:1679]
+[short:1877]
 # 在：交易行（128 号新版）（1 处）
-中：约 %s
+中：客户订单
+英：ORDERS
+
+[short:1878]
+# 在：交易行（128 号新版）（1 处）
+中：预计 %s
 英：~%s
 
-[short:1680]
+[short:1879]
 # 在：交易行（128 号新版）（1 处）
-中：平均 %s
+中：平均价格 %s
 英：AVERAGE %s
 
-[short:1681]
+[short:1880]
 # 在：交易行（128 号新版）（1 处）
-中：要价  %s
+中：当前时间
+英：NOW
+
+[short:1881]
+# 在：交易行（128 号新版）（1 处）
+中：设置售价 %s
 英：ASKING  %s
 
-[short:1682]
+[short:1882]
 # 在：交易行（128 号新版）（1 处）
-中：比平均高 %d%%
-英：%d%% OVER THE AVERAGE
-
-[short:1683]
-# 在：交易行（128 号新版）（1 处）
-中：比平均低 %d%%
-英：%d%% UNDER THE AVERAGE
-
-[short:1684]
-# 在：交易行（128 号新版）（1 处）
-中：到账 %s
+中：到手 %s
 英：%s PAID
 
-[short:1685]
+[short:1883]
 # 在：交易行（128 号新版）（1 处）
-中：市价
-英：MARKET
-
-[short:1686]
-# 在：交易行（128 号新版）（1 处）
-中：平均
-英：AVG
-
-[short:1687]
-# 在：交易行（128 号新版）（1 处）
-中：卖得快
-英：SELLS FAST
-
-[short:1688]
-# 在：交易行（128 号新版）（1 处）
-中：卖得慢
-英：SELLS SLOW
-
-[short:1689]
-# 在：交易行（128 号新版）（1 处）
-中：贵 1%
-英：1% dearer
-
-[short:1690]
-# 在：交易行（128 号新版）（1 处）
-中：按平均价
-英：AT THE AVERAGE
-
-[short:1691]
-# 在：交易行（128 号新版）（1 处）
-中：撤单
+中：取消挂单
 英：WITHDRAW
 
-[short:1692]
+[short:1884]
 # 在：交易行（128 号新版）（1 处）
-中：卖家 %s
+中：出售方：%s
 英：SELLER %s
 
-[short:1693]
+[short:1885]
 # 在：交易行（128 号新版）（1 处）
-中：少买一些
-英：Fewer
-
-[short:1694]
-# 在：交易行（128 号新版）（1 处）
-中：多买一些
-英：More
-
-[short:1831]
-# 在：交易行（128 号新版）（1 处）
-中：市价 %s
-英：MARKET %s
-
-[short:1696]
-# 在：交易行（128 号新版）（1 处）
-中：退单
+中：取消订单
 英：GIVE BACK
-
-[short:1697]
-# 在：交易行（128 号新版）（1 处）
-中：备货
-英：MAKE UP
-
-[short:1698]
-# 在：交易行（128 号新版）（1 处）
-中：火车
-英：TRAIN
-
-[short:1699]
-# 在：交易行（128 号新版）（1 处）
-中：客户飞船
-英：CLIENT SHIP
-
-[short:1700]
-# 在：交易行（128 号新版）（1 处）
-中：到账
-英：PAID
 
 [short:918]
 # 在：自动出钢（1 处）
 中：现金不够 %s
 英：Not enough cash for %s
 
-[short:919]
-# 在：炉台（1 处）
-中：操作失败
-英：
-
-[short:1832]
-# 在：炉台、轧机面板（4 处）
-中：去动力区
-英：TO THE POWER DISTRICT
-
-[short:922]
-# 在：炉台（1 处）
-中：出钢中…
-英：TAPPING…
-
-[short:923]
-# 在：炉台（1 处）
-中：测温取样
-英：IMMERSE PROBE
-
-[short:924]
-# 在：炉台（2 处）
-中：倾炉出钢
-英：TILT / TAP
-
 [short:925]
 # 在：炉台（1 处）
 中：待缴
 英：Due
 
-[short:928]
+[short:1886]
 # 在：炉台（1 处）
-中：已熔
+中：已熔化
 英：MELTED
 
-[short:1833]
+[short:1887]
 # 在：炉台（1 处）
-中：钢水
+中：钢水状态
 英：MELT
 
-[short:1834]
+[short:1888]
 # 在：炉台（1 处）
-中：功率
+中：当前功率
 英：POWER
-
-[short:1835]
-# 在：炉台（1 处）
-中：本炉电费
-英：POWER COST
 
 [short:930]
 # 在：中央环的现场（1 处）
@@ -36722,45 +36922,35 @@
 中：还没学会
 英：NOT LEARNED YET
 
-[short:1022]
+[short:1889]
 # 在：轧机（现场）（1 处）
-中：轧机
+中：钢材轧机
 英：MILL
 
-[short:1023]
+[short:1890]
 # 在：轧机（现场）（1 处）
-中：连续轧
+中：连续轧制
 英：ROLLING ON
 
-[short:1024]
+[short:1891]
 # 在：轧机（现场）（1 处）
-中：单次
+中：单次轧制
 英：ONE PASS
 
-[short:1026]
+[short:1892]
 # 在：轧机面板（1 处）
-中：出料
+中：成品出料
 英：OUT
 
-[short:1027]
+[short:1893]
 # 在：轧机面板（1 处）
-中：出料 · %s
-英：OUT · %s
+中：连续轧制
+英：ROLL ON: EACH BILLET AS IT COMES
 
-[short:1028]
+[short:1894]
 # 在：轧机面板（1 处）
-中：等钢坯
-英：WAITING
-
-[short:1029]
-# 在：轧机面板（2 处）
-中：停着
-英：STOPPED
-
-[short:1836]
-# 在：轧机面板（1 处）
-中：在轧%s
-英：ROLLING %s
+中：仓库库存
+英：IN STOCK · 1 t A PASS
 
 [short:1030]
 # 在：小地图（1 处）
@@ -37182,15 +37372,10 @@
 中：炉次 %s 
 英：HEAT %s 
 
-[short:1103]
+[short:1895]
 # 在：面板外观（1 处）
-中：现场
+中：现场情况
 英：ON SITE
-
-[short:1104]
-# 在：面板外观（1 处）
-中：进入 ›
-英：OPEN ›
 
 [short:1105]
 # 在：光学设备（1 处）
@@ -37887,6 +38072,11 @@
 中：空壳
 英：SPENT
 
+[short:845]
+# 在：power_supply_view.gd（1 处）
+中：液氧
+英：LOX
+
 [short:1734]
 # 在：power_supply_view.gd（1 处）
 中：起吊
@@ -37972,11 +38162,6 @@
 中：压块 · %s
 英：BALE · %s
 
-[short:1774]
-# 在：process_queue_panel.gd（1 处）
-中：电弧炉：
-英：FURNACE: 
-
 [short:1775]
 # 在：process_queue_panel.gd（1 处）
 中：钢锭
@@ -37987,35 +38172,30 @@
 中：钢坯
 英：BILLET
 
-[short:1839]
+[short:1896]
 # 在：process_queue_panel.gd（1 处）
-中：更多 ›
-英：MORE ›
+中：正在熔炼
+英：IN THE FURNACE
 
-[short:1777]
+[short:1897]
 # 在：process_queue_panel.gd（1 处）
-中：去仓库挑
-英：PICK IN STORE
-
-[short:1751]
-# 在：process_queue_panel.gd（1 处）
-中：送料
+中：输送原料
 英：FEEDING
 
-[short:1752]
+[short:1898]
 # 在：process_queue_panel.gd（1 处）
-中：关料门
-英：SHUTTING
-
-[short:1753]
-# 在：process_queue_panel.gd（1 处）
-中：压制
-英：PRESSING
-
-[short:1754]
-# 在：process_queue_panel.gd（1 处）
-中：打包带
+中：正在打包
 英：STRAPPING
+
+[short:1899]
+# 在：process_queue_panel.gd（1 处）
+中：送回仓库
+英：OUT, TO STORES
+
+[short:1900]
+# 在：process_queue_panel.gd（1 处）
+中：空闲
+英：THE BALER IS IDLE
 
 [short:1758]
 # 在：加工区的运行状态（1 处）
@@ -38077,24 +38257,24 @@
 中：修好：
 英：Repaired: 
 
-[short:1635]
+[short:1901]
 # 在：repair_order.gd（1 处）
-中：材料
+中：材料名称
 英：MATERIAL
 
-[short:1636]
+[short:1902]
 # 在：repair_order.gd（1 处）
-中：要
+中：所需数量
 英：NEED
 
-[short:1637]
+[short:1903]
 # 在：repair_order.gd（1 处）
-中：自有
+中：库存数量
 英：OWN
 
-[short:1638]
+[short:1904]
 # 在：repair_order.gd（1 处）
-中：要买
+中：需要购买
 英：BUY
 
 [short:1639]
@@ -38107,9 +38287,9 @@
 中：台
 英：
 
-[short:1641]
+[short:1905]
 # 在：repair_order.gd（1 处）
-中：不用买
+中：无需购买
 英：NONE
 
 [short:1250]
@@ -38552,30 +38732,25 @@
 中：还需攒 %s
 英：Save %s more
 
-[short:1335]
+[short:1906]
 # 在：船坞熔炉的牌子（1 处）
-中：待机
+中：等待操作
 英：
 
-[short:1336]
+[short:1907]
 # 在：船坞熔炉的牌子（1 处）
-中：下降
+中：正在下降
 英：
 
-[short:1337]
+[short:1908]
 # 在：船坞熔炉的牌子（1 处）
-中：浸测
+中：正在测温
 英：
 
-[short:1338]
+[short:1909]
 # 在：船坞熔炉的牌子（1 处）
-中：回升
+中：正在回升
 英：
-
-[short:921]
-# 在：分选台（1 处）
-中：更多 ▴
-英：MORE ▴
 
 [short:1339]
 # 在：分选台（1 处）
@@ -38856,6 +39031,11 @@
 # 在：标题终端（2 处）
 中：作业状态
 英：WORK STATUS
+
+[short:780]
+# 在：标题终端（1 处）
+中：现金
+英：CASH
 
 [short:1384]
 # 在：标题终端（1 处）

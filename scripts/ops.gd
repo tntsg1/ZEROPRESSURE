@@ -293,7 +293,7 @@ static func decisions(game = null) -> Array:
 	var mixed := maxf(0.0, _stock_t(Exchange.lot_key("mixed_metal", 0)) - to_describe)
 	if mixed > Exchange.EPS and not _busy(sort):
 		out.append({"level": CHANCE, "title": w("仓库有 %.2f t 未分选金属", "%.2f t OF MIXED METAL IN STOCK") % mixed,
-			"why": w("到分选台按『整线加工』：分选后黑色料直接进电弧炉炼成钢坯；或者直接挂牌卖。", "Run the line: sorted and straight into the arc furnace; or list it as is."), "go": "site:sort"})
+			"why": w("到分选台按『完整加工流程』：分选后黑色料直接进电弧炉炼成钢坯；或者直接挂牌卖。", "Run the line: sorted and straight into the arc furnace; or list it as is."), "go": "site:sort"})
 	if to_grade > Exchange.EPS and not Career.data.get("assay", {}).get("state", "") == "running":
 		out.append({"level": CHANCE, "title": w("%.2f t 未评级黑色炉料可以化验", "%.2f t OF UNRATED FERROUS FEED TO ASSAY") % to_grade,
 			"why": w("化验位在分选台右侧 12 m；杂质够低就整批升为等级 1，能进炉。", "The assay bench is 12 m right of the sorting desk; low enough impurity makes it grade 1."), "go": "site:assay"})

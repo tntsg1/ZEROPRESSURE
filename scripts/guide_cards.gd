@@ -256,7 +256,7 @@ static func _due(game, id: String) -> Variant:
 		return test_due[id]
 	match id:
 		"power_short":
-			if not Grid.applies(game):
+			if not Grid.applies(game) or not Mainline.power_open():
 				return null
 			var v := Grid.verdict(game)
 			return null if bool(v.ok) else _power_args(game)
@@ -415,7 +415,9 @@ static func closed(c, take: bool) -> void:
 	var layer = c.get_parent()
 	if layer != null:
 		layer.queue_free()
-	if take and str(c.go) != "" and game != null and is_instance_valid(game):
+	# 2026-11-09 (owner): the cards have no "带我去" any more; only the tripped set, which can trip
+	# anywhere, still gets its arrow — on its own, as the card closes
+	if (take or str(c.go) == "trip") and str(c.go) != "" and not c.replay and game != null and is_instance_valid(game):
 		(func(): take_me(game, str(c.go), c.args)).call_deferred()
 
 

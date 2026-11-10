@@ -163,8 +163,8 @@ func info() -> Dictionary:
 	if (HeatAuto.on() or str(h.get("queue","")) != "") and plant() != null:
 		return {"key":"probe","n":6,"title":_w("自动装置在测温、出钢","THE AUTO UNIT IS SAMPLING AND TAPPING"),"text":"","press":"","eta":-1.0}
 	if int(f.sample_count) == 0 or float(f.tc_age) > 60.0:
-		return {"key":"sample","n":6,"title":_w("全熔了：按『测温取样』","ALL MELTED: PRESS 'TAKE A SAMPLE'"),"text":_w("%d °C，钢水 %.2f t。","%d °C, %.2f t of melt.") % [int(f.T),float(f.m_l)],"press":"sample","eta":-1.0}
-	return {"key":"tap","n":7,"title":_w("可以出钢：按『倾炉出钢』","READY: PRESS 'TILT AND TAP'"),"text":_w("%d °C，钢水 %.2f t。","%d °C, %.2f t of melt.") % [int(f.T),float(f.m_l)],"press":"tap","eta":-1.0}
+		return {"key":"sample","n":6,"title":_w("全熔了：按『测量温度并采集样本』","ALL MELTED: PRESS 'TAKE A SAMPLE'"),"text":_w("%d °C，钢水 %.2f t。","%d °C, %.2f t of melt.") % [int(f.T),float(f.m_l)],"press":"sample","eta":-1.0}
+	return {"key":"tap","n":7,"title":_w("可以出钢：按『倾斜炉体，排出钢水』","READY: PRESS 'TILT AND TAP'"),"text":_w("%d °C，钢水 %.2f t。","%d °C, %.2f t of melt.") % [int(f.T),float(f.m_l)],"press":"tap","eta":-1.0}
 
 
 func _w(zh: String, en: String) -> String: return zh if Txt.zh else en
@@ -867,10 +867,37 @@ func _process(dt: float) -> void:
 		queue_redraw()
 
 var _queue_t := 0.0
+
+func _queue_have(e: Dictionary) -> float:
+	var actor: Dictionary = Career.data.get("exchange",{}).get("actors",{}).get("company",{})
+	if str(e.get("key","")) != "":
+		return float(actor.get("stock",{}).get(str(e.key),0.0))
+	return float(actor.get("lots",{}).get(str(e.lot),{}).get("available",0.0))
+
+# 128 号 第 7 段: a save from before the fix — a lot marked melted with no heat on it and no billet
+# (or skip) to show for it — goes back to be melted (its ingots were never taken)
+func _unstick_queue() -> void:
+	var live := str(heat().get("queue","")) if str(heat().get("state","")) not in ["","complete","cancelled","written_off"] else ""
+	var changed := false
+	for e in ProcessQueue.entries():
+		if str(e.lot) == live: continue
+		var owed := float(e.melted) - float(e.get("billet",0.0)) - float(e.get("skipped",0.0))
+		if owed >= ProcessQueue.HEAT_MIN:
+			e.melted = snappedf(float(e.melted) - owed, 0.001)
+			changed = true
+	if changed: Career.save()
+
+# ingots cast at the berth that the exchange's books have not taken in yet
+func _ingots_unbooked() -> bool:
+	var sources: Dictionary = Career.data.get("exchange",{}).get("sources",{})
+	for b in Career.data.get("ingot_batches",[]):
+		if not sources.has(str(b.get("id",""))) and float(b.get("mass_t",0.0)) > 0.0001: return true
+	return false
 # a heat for the queue's next lot when nothing else holds the furnace or the line
 func _queue_next() -> bool:
 	if plant() == null or Port.stage("process") < 1 or Career.production_busy(): return false
 	if float(heat().get("energy_debt",0.0)) > 0.000001 or furnace().phase in ["tilt","pour","back"]: return false
+	_unstick_queue()
 	var e := ProcessQueue.next_melt()
 	if e.is_empty(): return false
 	# 128 号 第 4 段: a batch for another mould waits for the crane to change the block in the seat
@@ -881,14 +908,17 @@ func _queue_next() -> bool:
 			ProcessLine.start_change(want)
 			Career.save()
 		return false
-	var actor: Dictionary = Career.data.get("exchange",{}).get("actors",{}).get("company",{})
-	var have := float(actor.get("lots",{}).get(str(e.lot),{}).get("available",0.0))
-	if str(e.get("key","")) != "":
-		have = float(actor.get("stock",{}).get(str(e.key),0.0))
+	var have := _queue_have(e)
+	# 128 号 第 7 段: the berth's ingots sit in ingot_batches until the exchange's books take them in
+	# (any exchange command does); read short before that, the batch was written off as "gone elsewhere"
+	# and the queue waited for billet that never came
+	if have < minf(ProcessQueue.HEAT_MIN, float(e.t)-float(e.melted)) and _ingots_unbooked():
+		Exchange.command("view")
+		have = _queue_have(e)
 	var q := minf(ProcessQueue.HEAT_T,minf(float(e.t)-float(e.melted),have))
 	if q < ProcessQueue.HEAT_MIN:
 		# the rest of the lot went elsewhere (sold on the exchange, or used): nothing more to melt
-		ProcessQueue.charged(str(e.lot),float(e.t)-float(e.melted))
+		ProcessQueue.skipped(str(e.lot),float(e.t)-float(e.melted))
 		Career.save()
 		return false
 	return bool(begin_queued(snappedf(q,0.001),e).ok)

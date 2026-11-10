@@ -68,9 +68,11 @@ func _run() -> void:
 	check(Methods.buy("pump").contains("还差"), "short of money: refused (%s)" % Methods.buy("pump"))
 	Career.data.money = 1000000.0
 
-	# ---- an achievement teaches a method on any ship
+	# ---- 128 号 第 7 段: the furnace-count achievement is gone; the field grapple comes from its borrow job
 	learned = Methods.settle({"ship": "tug"}, {}, 1, ["field"], {})
-	check(learned == ["field"] and is_equal_approx(Growth.value(Methods.kit(), "grapple_multi"), 4.0), "100 pieces into the furnace: field grapple learned, 4 at once")
+	check(learned.is_empty() and not Methods.learned("field"), "100 pieces into the furnace no longer teach the field grapple (%s)" % str(learned))
+	learned = Methods.settle({"ship": "m14", "borrow": "field"}, {}, 1, [], {})
+	check(learned == ["field"] and is_equal_approx(Growth.value(Methods.kit(), "grapple_multi"), 4.0), "its borrow job passed: field grapple learned, 4 at once")
 	Methods.buy("field")
 	k = Methods.kit()
 	check(is_equal_approx(Growth.value(k, "grapple_multi"), 7.0) and is_equal_approx(Growth.value(k, "grapple_mass"), 5.0), "field tier II: 7 at once, single grab 5 t")

@@ -161,7 +161,7 @@ func run() -> void:
 	g.console_ui.quantity.value = PLATES * PLATE_T
 	check(press_prefix("把仓库废料送到分选机"), "the whole 2 t reserved for sorting")
 	check(await sort_state("processing"), "the courier brings it to the line")
-	check(press("启动分选驱动"), "drives started")
+	check(press("启动分选设备"), "drives started")
 	check(await sort_state("complete", 30000), "both streams back in the warehouse")
 	g.console_ui.close()
 	await frames(2)
@@ -230,9 +230,9 @@ func run() -> void:
 		if g.plant.smelter.T >= 1640.0 and g.plant.smelter.m_l > 0.999999:
 			break
 	check(g.plant.smelter.m_l > 0.999999, "melted")
-	check(press("测温取样"), "sampled")
+	check(press("测量温度并采集样本"), "sampled")
 	await frames(310)
-	check(press("倾炉出钢"), "tapped")
+	check(press("倾斜炉体，排出钢水"), "tapped")
 	check(await await_state("complete", 20000), "billet back in the warehouse")
 	check(is_equal_approx(stock("steel_billet:1"), 1.0), "1 t of grade 1 billet from the company's own salvage")
 	var before_sale := float(Career.data.money)

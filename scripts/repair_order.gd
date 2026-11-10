@@ -29,13 +29,13 @@ func _ready() -> void:
 	font_b = Fonts.get_font("SemiBold")
 	bill = RepairBill.of(zone)
 	ok_b = Button.new()
-	ok_b.text = w("修  [Enter]", "MEND  [Enter]")
+	ok_b.text = w("确认修缮 [Enter]", "MEND  [Enter]")
 	ok_b.focus_mode = Control.FOCUS_NONE
 	ok_b.custom_minimum_size = Vector2(220, 46)
 	ok_b.pressed.connect(func(): _end(true))
 	add_child(ok_b)
 	no_b = Button.new()
-	no_b.text = w("取消  [Esc]", "BACK  [Esc]")
+	no_b.text = w("取消修缮 [Esc]", "BACK  [Esc]")
 	no_b.focus_mode = Control.FOCUS_NONE
 	no_b.custom_minimum_size = Vector2(160, 46)
 	no_b.pressed.connect(func(): _end(false))
@@ -43,7 +43,7 @@ func _ready() -> void:
 	BenchFx.primary(ok_b)
 	if not bool(bill.get("cash_ok", true)):
 		ok_b.disabled = true
-		BenchFx.note(ok_b, w("修到下一期", "Mend the next stage"), w("现金不够：还差 %s", "NOT ENOUGH CASH: %s SHORT") % Pal.money(float(bill.buy_cash) - float(Career.data.get("money", 0.0))))
+		BenchFx.note(ok_b, w("修缮到下一期", "Mend the next stage"), w("现金不足，还需要 %s", "NOT ENOUGH CASH: %s SHORT") % Pal.money(float(bill.buy_cash) - float(Career.data.get("money", 0.0))))
 
 
 func _rows() -> Array:
@@ -78,16 +78,16 @@ func _draw() -> void:
 	var x0 := r.position.x + 28
 	var y := r.position.y + 44
 	var st := int(bill.get("stage", 1))
-	draw_string(font, Vector2(x0, y - 14), w("修缮 · %s · %s期", "MEND · %s · STAGE %d") % [Port.name_of(zone), Works.cn_num(st)] if Txt.zh else "MEND · %s · STAGE %d" % [Port.name_of(zone), st], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(acc, 0.9))
-	draw_string(font, Vector2(x0, y + 16), w("修好后：交易行按市价卖货 · 订单板接客户订单", "Mended: the exchange sells at market · the order board takes client orders"), HORIZONTAL_ALIGNMENT_LEFT, W - 56, 22, Pal.ink(0.96))
-	var lead_s := w("有的先用自己的，缺的去交易行买，比自己拆的贵。施工队不收工钱。", "What the warehouse has goes first; what is short is bought on the exchange in the same click (other companies' goods, dearer than your own). The crew is free.") if bool(bill.get("at_hall", false)) else w("有的先用自己的，缺的按市价买。施工队不收工钱。", "What the warehouse has goes first; what is short is bought at market in the same click. The crew is free.")
+	draw_string(font, Vector2(x0, y - 14), w("修缮确认 · %s · 第%s期", "MEND · %s · STAGE %d") % [Port.name_of(zone), Works.cn_num(st)] if Txt.zh else "MEND · %s · STAGE %d" % [Port.name_of(zone), st], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(acc, 0.9))
+	draw_string(font, Vector2(x0, y + 16), w("修缮完成后，可以在交易行按市价出售货物，也可以到订单板接取客户订单。", "Mended: the exchange sells at market · the order board takes client orders"), HORIZONTAL_ALIGNMENT_LEFT, W - 56, 22, Pal.ink(0.96))
+	var lead_s := w("修缮时会优先使用你库存里的材料，缺少的部分需要从交易行购买，价格会比自己拆解获得的材料贵一些。施工队不收取人工费。", "What the warehouse has goes first; what is short is bought on the exchange in the same click (other companies' goods, dearer than your own). The crew is free.") if bool(bill.get("at_hall", false)) else w("修缮时会优先使用你库存里的材料，不够的部分会按照市价购买。施工队不收取人工费。", "What the warehouse has goes first; what is short is bought at market in the same click. The crew is free.")
 	draw_string(font, Vector2(x0, y + 44), lead_s, HORIZONTAL_ALIGNMENT_LEFT, W - 56, 14, Pal.ink(0.6))
 	y += 74
 	# the column heads
 	var cx_need := r.position.x + 380
 	var cx_own := r.position.x + 470
 	var cx_buy := r.position.x + 590
-	for h in [[w("材料", "MATERIAL"), x0 + 64], [w("要", "NEED"), cx_need], [w("自有", "OWN"), cx_own], [w("要买", "BUY"), cx_buy]]:
+	for h in [[w("材料名称", "MATERIAL"), x0 + 64], [w("所需数量", "NEED"), cx_need], [w("库存数量", "OWN"), cx_own], [w("需要购买", "BUY"), cx_buy]]:
 		draw_string(font, Vector2(h[1], y), str(h[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.45))
 	y += 10
 	draw_line(Vector2(x0, y), Vector2(r.end.x - 28, y), Color(1, 1, 1, 0.08), 1.0)
@@ -110,7 +110,7 @@ func _draw() -> void:
 		if row.get("steel", false):
 			var sd: Dictionary = bill.get("steel", {})
 			_bundle(thumb.grow(-8), a)
-			name = w("修缮钢材", "REPAIR STEEL")
+			name = w("修缮所需钢材", "REPAIR STEEL")
 			need = "%.0f t" % float(sd.get("need", 0.0))
 			own = float(sd.get("own", 0.0))
 			buy = float(sd.get("buy", 0.0))
@@ -132,12 +132,12 @@ func _draw() -> void:
 			var buy_s := ("%.1f t" % buy) if unit == "t" else ("%d" % int(buy))
 			draw_string(font, Vector2(cx_buy, ry + 32), "%s × %s" % [buy_s, Pal.money(each)], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(acc, a))
 		else:
-			draw_string(font, Vector2(cx_buy, ry + 32), w("不用买", "NONE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Pal.ink(0.35 * a))
+			draw_string(font, Vector2(cx_buy, ry + 32), w("无需购买", "NONE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Pal.ink(0.35 * a))
 		i += 1
 	var yb := y + 8 + 64.0 * lines.size() + 14
 	draw_line(Vector2(x0, yb), Vector2(r.end.x - 28, yb), Color(1, 1, 1, 0.08), 1.0)
 	draw_string(font, Vector2(x0, yb + 34), RepairBill.line(bill), HORIZONTAL_ALIGNMENT_LEFT, W - 56, 18, Pal.ink(0.95))
-	draw_string(font, Vector2(x0, yb + 60), w("现金 %s → 修完后 %s", "CASH %s → AFTER %s") % [Pal.money(float(Career.data.get("money", 0.0))), Pal.money(float(Career.data.get("money", 0.0)) - float(bill.get("buy_cash", 0.0)))], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.ink(0.55))
+	draw_string(font, Vector2(x0, yb + 60), w("当前现金：%s → 修缮后剩余：%s", "CASH %s → AFTER %s") % [Pal.money(float(Career.data.get("money", 0.0))), Pal.money(float(Career.data.get("money", 0.0)) - float(bill.get("buy_cash", 0.0)))], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.ink(0.55))
 
 
 func _thumb(r: Rect2, nk: String, a: float) -> void:

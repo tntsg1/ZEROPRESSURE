@@ -58,7 +58,8 @@ func _run() -> void:
 	Cap.save(root, "res://tests/out/exchange_buy_zh.png")
 	# buying: a card, a seller row, the confirm (64 号: nobody offers raw feed now — a merchant
 	# offers ingots for the test)
-	Ex.post(Career.data.exchange, "merchant_00", "sell", "ferrous_scrap", 1, 2.0, 180.0)
+	# (priced above every standing bid, or the book fills it at once and no seller row is left — 128 号 第 7 段)
+	Ex.post(Career.data.exchange, "merchant_00", "sell", "ferrous_scrap", 1, 2.0, 5000.0)
 	Career.save()
 	ui.item = "ferrous_scrap"
 	ui.grade = 1
@@ -127,7 +128,8 @@ func _run() -> void:
 	cash = float(Career.data.money)
 	ui.list_it()
 	await _frames(3)
-	check(float(Career.data.money) > cash + 400.0, "listed at it: sold and paid at once (+%s)" % Pal.money(float(Career.data.money) - cash))
+	# 108 号 第 5 件 (the economy rebalanced: billets ~$550/t): 0.5 t at the best bid, paid at once (was "> $400")
+	check(float(Career.data.money) > cash + 0.5 * float(bid.price) * 0.9, "listed at it: sold and paid at once (+%s for 0.5 t at %s)" % [Pal.money(float(Career.data.money) - cash), Pal.money(float(bid.price))])
 	# the port buyback
 	ui.open_sell("steel_billet", 1)
 	await _frames(2)

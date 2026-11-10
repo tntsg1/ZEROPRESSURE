@@ -54,7 +54,9 @@ func _run() -> void:
 	Career.save()
 	await _spawn()
 	await _frames(20)
-	check(not Game.G4_OPEN and Codex.required("fx70").is_empty() and not Codex.missing("fx70").is_empty(), "a ship never trained for is taken without a course (fx70 has untrained parts, none required)")
+	# 97–109 号 (Codex.COURSES_REQUIRED, the seven special courses made a qualification): a ship never
+	# trained for asks for its courses first (was: taken without one)
+	check(not Game.G4_OPEN and not Codex.missing("fx70").is_empty() and Codex.required("fx70") == (Codex.missing("fx70") if Codex.COURSES_REQUIRED else []), "a ship never trained for: its untrained families are the courses it requires (fx70 %s)" % str(Codex.required("fx70")))
 	Cap.save(root, "res://tests/out/plain_berth_zh.png")
 	g.open_console("terminal")
 	await _frames(6)

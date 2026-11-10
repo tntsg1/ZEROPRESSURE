@@ -59,7 +59,13 @@ func _run() -> void:
 	check(Grid.salvage_k(g, "laser", 0.15) > lk * 1.5, "with nothing to melt the furnace asks only to stay hot: the laser at %d%%" % int(Grid.salvage_k(g, "laser", 0.15) * 100.0))
 	g.dock.smelter.bunker = 2.0
 	await _frames(70)
-	check(g.hud._sp_text.begins_with("电不够"), "the HUD says the berth is short: %s" % g.hud._sp_text)
+	# 128 号 第 7 段 (user 2026-11-09): before the main line reaches the power district, not said
+	check(g.hud._sp_text == "", "before the power district is open the HUD says nothing (%s)" % g.hud._sp_text)
+	Mainline.power_open_in_tests = true
+	await _frames(70)
+	# 132 号: one way of saying it, "电力不足—功率 xx%"
+	check(g.hud._sp_text.begins_with("电力不足"), "the HUD says the berth is short: %s" % g.hud._sp_text)
+	Mainline.power_open_in_tests = false
 	Cap.save(root, "res://tests/out/salvage_power_short_zh.png")
 	# salvage put last, a big load ahead of it
 	var fake := preload("res://tests/grid_check.gd").Fake.new()

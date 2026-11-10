@@ -116,12 +116,14 @@ func _run() -> void:
 	check(sum.ended, "the bot finished the Heron")
 	var cr: Dictionary = g.career_result
 	var pr: Dictionary = cr.get("parts", {})
+	# 128 号 第 1 段: the settlement puts the haul in waiting; the player puts it away (仓库页「能放的都放进去」)
+	StoreBook.admit()
 	d = Career.data
 	check(pr.tags.size() >= 5 and "G-01" in pr.tags and "CP-E" in pr.tags and float(pr.value) > 10000.0, "parts shelved: %s worth %d" % [str(pr.tags), int(pr.value)])
 	check(float(pr.tons) > 10.0 and float(d.structure_t) == float(pr.tons), "structure by the tonne: %.1f t" % float(pr.tons))
 	check(d.parts.size() == pr.tags.size(), "the shelf holds them")
-	var expect: float = money_before + float(sum.net) + (float(cr.fee) if cr.prepaid else 0.0) + float(cr.bonus) - float(pr.value) - float(cr.installment) - float(cr.interest) - float(cr.get("tow", 0.0)) - float(cr.get("ingot_value", 0.0))
-	check(absf(float(d.money) - expect) < 1.0, "cash = net − parts value − the scrap now ingots (64 号): %d (%d)" % [int(d.money), int(expect)])
+	var expect: float = money_before + float(sum.net) + (float(cr.fee) if cr.prepaid else 0.0) + float(cr.bonus) - float(pr.value) - float(cr.installment) - float(cr.interest) - float(cr.get("tow", 0.0)) - float(cr.get("ingot_value", 0.0)) - float(cr.get("goods_value", 0.0))
+	check(absf(float(d.money) - expect) < 1.0, "cash = net − parts value − the scrap now ingots (64 号) − the goods kept in the warehouse (128 号): %d (%d)" % [int(d.money), int(expect)])
 	var sg: Dictionary = cr.get("suggest", {})
 	check(not sg.is_empty() and sg.has("name"), "the settlement suggests the next repair: %s" % str(sg.get("name", "")))
 	var rows: Array = g.hud.career_rows()

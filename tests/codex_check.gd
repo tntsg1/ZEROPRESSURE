@@ -145,9 +145,15 @@ func _fit() -> void:
 			for part in ["a", "b", "c"]:
 				var n := CodexHud.wrap_lines(f, Codex.line(id, part), CodexHud.TXT_W - CodexHud.label_w(), CodexHud.FS)
 				worst = maxi(worst, n)
-				# a ship's own mechanism may take a fourth line in English
-				if n > (4 if CodexData.E[id].cat == "mech" and not lang else 3):
-					_fail("card sentence over three lines (%s): cx_%s_%s" % ["zh" if lang else "en", id, part])
+				# 2026-11-09 (owner: 加高): the card grows with the owner's longer sentences; what
+				# must hold is that the whole card stays above the navigation map (checked below)
+				if n > 8:
+					_fail("card sentence over eight lines (%s): cx_%s_%s" % ["zh" if lang else "en", id, part])
+			var card_h := 64.0
+			for part in ["a", "b", "c"]:
+				card_h += CodexHud.wrap_lines(f, Codex.line(id, part), CodexHud.TXT_W - CodexHud.label_w(), CodexHud.FS) * CodexHud.LINE_H + 8.0
+			if CodexHud.TOP + card_h + 30.0 > 850.0:
+				_fail("card runs into the navigation map (%s): cx_%s %.0f px" % ["zh" if lang else "en", id, card_h + 30.0])
 			var tw := fb.get_string_size(Codex.title(id), HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x
 			if tw > CodexHud.W - 60.0:
 				_fail("card title too wide (%s): %s %.0f px" % ["zh" if lang else "en", id, tw])

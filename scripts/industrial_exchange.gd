@@ -29,8 +29,8 @@ const CATALOG := {
 	"steel_section":{"name":"型材", "grades":[1]},
 }
 const CUSTOMER_OFFERS := {
-	"PORT-STEEL-01":{"name":"港务维修队要钢坯做支架","buyer":"merchant_01","item":"steel_billet","grade":1,"quantity":1.0,"price":BILLET_PRICE},
-	"SHOP-STEEL-01":{"name":"远岫工场要钢坯修零件","buyer":"merchant_02","item":"steel_billet","grade":1,"quantity":0.5,"price":BILLET_PRICE - 25.0},
+	"PORT-STEEL-01":{"name":"港务维修队需要采购钢坯，用来制作维修支架。","buyer":"merchant_01","item":"steel_billet","grade":1,"quantity":1.0,"price":BILLET_PRICE},
+	"SHOP-STEEL-01":{"name":"远岫工场需要采购钢坯，用来修理设备零件。","buyer":"merchant_02","item":"steel_billet","grade":1,"quantity":0.5,"price":BILLET_PRICE - 25.0},
 }
 
 static func lot_key(item: String, grade: int) -> String:

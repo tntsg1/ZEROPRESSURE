@@ -46,7 +46,7 @@ class NowLine extends Control:
 		queue_redraw()
 
 	static func head(u: bool) -> String:
-		return ("现在用得上：" if u else "现在不用管：") if Txt.zh else ("WORTH DOING NOW: " if u else "NOTHING NEEDED: ")
+		return ("当前需要关注：" if u else "目前无需处理：") if Txt.zh else ("WORTH DOING NOW: " if u else "NOTHING NEEDED: ")
 
 	func full() -> String:
 		return head(use) + text

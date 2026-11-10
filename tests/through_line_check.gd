@@ -57,7 +57,7 @@ func _run() -> void:
 	g.open_sort()
 	await _frames(10)
 	var ui = g.console_ui
-	check(ui != null and str(ui.main.text).begins_with("整线加工"), "the sorting desk's one button: run the line (%s)" % (ui.main.text if ui != null else ""))
+	check(ui != null and str(ui.main.text).begins_with("完整加工流程"), "the sorting desk's one button: run the line (%s)" % (ui.main.text if ui != null else ""))
 	check(is_equal_approx(ui.quantity.value, 1.0), "it offers what is in stock (%.2f t)" % ui.quantity.value)
 	ui.main.pressed.emit()
 	await _frames(4)

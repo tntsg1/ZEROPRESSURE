@@ -20,17 +20,12 @@ const S := {
 	"gear_unknown": ["未知装备", "Unknown gear"],
 	"gear_needs_feat": ["需要工程成果「%s」", "Needs the engineering achievement: %s"],
 	# the achievements
-	"feat_section": ["整段分离", "SECTION SEPARATED"],
-	"feat_section_d": ["一个 6 t 以上的整体进入回收口。开放牵引锚型号，送一件。", "A whole of 6 t or more went down a mouth. Opens the towing anchor; one comes with it."],
-	"feat_pressure": ["压力设备回收", "PRESSURE EQUIPMENT RECOVERED"],
 	# 104 号: the achievements that teach a dismantling method
-	"feat_field": ["一单往熔炉送 100 件以上 0.5 t 的碎料", "100 SCRAP PIECES OVER 0.5 t INTO THE FURNACE ON ONE JOB"],
 	"feat_watch": ["低温船零事故拆完", "A COLD SHIP STRIPPED WITHOUT AN INCIDENT"],
 	"feat_propped": ["卸完一整面货柜墙不折弯", "A WHOLE CONTAINER WALL EMPTIED WITHOUT A BEND"],
 	"feat_replay": ["自己接的单里同型号船拆第二次", "THE SAME TYPE STRIPPED A SECOND TIME ON YOUR OWN JOBS"],
 	"feat_precise": ["累计完整送口高价值设备 $500,000", "$500,000 OF EQUIPMENT DELIVERED WHOLE"],
 	"gear_needs_method": ["需要先学会拆法「%s」", "Learn the method first: %s"],
-	"feat_pressure_d": ["一只出厂带压的储瓶完整、安全地进入设备口。开放独立泵型号，送一件。", "A bottle that came in charged went whole and safe into the equipment bay. Opens the independent pump; one comes with it."],
 	"feat_new": ["工程成果：%s", "ACHIEVEMENT: %s"],
 	"feat_again": ["再次完成：%s", "DONE AGAIN: %s"],
 	# on site

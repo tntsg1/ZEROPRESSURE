@@ -266,7 +266,7 @@ func _run() -> void:
 	g.start_port_walk(true)
 	await _frames(4)
 	var rw = g.port_walk
-	check(rw.step == at_ride and rw.kind() == "station" and rw.zone() == "salvage", "resumed at the ride home (%d), to the berth's stop first" % rw.step)
+	check(rw.back.is_empty() and rw.step >= at_ride + 1 and rw.kind() != "station", "resumed inside the berth: no detour out to the salvage stop (%d)" % rw.step)
 	rw.stop()
 	await _frames(2)
 	# a walk cut short under the old 21-step round: its number is dropped, the core starts over
@@ -284,7 +284,7 @@ func _run() -> void:
 	Career.data.seen.erase("port_walk")
 	g.start_port_walk(true)
 	await _frames(4)
-	check(g.port_walk.step == 3 and str(g.port_walk.steps[3]) == str(["ride", "salvage"]) and int(Career.data.walk_v) == 3, "an 8-step save at its ride home: the 7-step walk at its ride home (%d)" % g.port_walk.step)
+	check(g.port_walk.step >= 3 and str(g.port_walk.steps[3]) == str(["ride", "salvage"]) and g.port_walk.back.is_empty() and int(Career.data.walk_v) == 3, "an 8-step save migrates to the ride home, then advances when already in the berth (%d)" % g.port_walk.step)
 	g.port_walk.stop()
 	await _frames(2)
 	print("PORT WALK %s (%d checks, %d failed)" % ["PASS" if fails == 0 else "FAIL", checks, fails])
