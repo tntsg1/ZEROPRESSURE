@@ -625,7 +625,11 @@ func _process(dt: float) -> void:
 	hint_t += dt
 	op_t += dt
 	# 132 号: the situation cards; while one is up the other voices step aside
-	GuideCards.tick(game, dt)
+	# 128 号 第 7 段: never over the contract card — a card that came up while it was open paused the
+	# game on top of it, took the Space meant for "start" (it answers Enter / Esc only) and left two
+	# cards to read at once; it waits until the contract card is closed
+	if not game.contract_open:
+		GuideCards.tick(game, dt)
 	if game.codex_hud != null and is_instance_valid(game.codex_hud):
 		game.codex_hud.visible = not GuideCards.showing()
 	if need_mark != null and is_instance_valid(need_mark):
