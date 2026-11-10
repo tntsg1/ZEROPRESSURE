@@ -331,8 +331,13 @@ static func draw(ci: CanvasItem, at: Vector2, foot: float, title: String, hint: 
 		ci.draw_rect(Rect2(at + Vector2(-1.0, -1.6) * m + Vector2(0.12, 0.14) * m, Vector2(2.2, 2.2) * m), Color(0, 0, 0, 0.35))
 	ci.draw_mesh(mesh, null, Transform2D(0.0, Vector2(m, m), 0.0, at), Color.WHITE)
 	var lamp := str(info.get("lamp", "ok"))
+	# every console (user 2026-11-10: "要玩家操作才有显示屏"; then "ok" to all the port's consoles): the
+	# name plate only while the operator is at it — not while the automation runs, not from afar. The
+	# unit itself (its body, lit screen and lamps) is always drawn, so it can be found
+	var plate := on
 	if kind == "rack":
-		_name_plate(ci, at + Vector2(0.0, -1.15) * m, title, hint if on else "", lamp, on, t, z)
+		if plate:
+			_name_plate(ci, at + Vector2(0.0, -1.15) * m, title, hint if on else "", lamp, on, t, z)
 		return
 	# the desk's lamps: its state, and the power on
 	var lamp_at := Vector2(0.75, 0.33) if kind not in ["wall", "store"] else Vector2(0.75, -0.0)
@@ -372,16 +377,22 @@ static func draw(ci: CanvasItem, at: Vector2, foot: float, title: String, hint: 
 	if kind == "furnace":
 		var glow := clampf(float(info.get("glow", 0.0)), 0.0, 1.0)
 		FastDraw.circle(ci, at + Vector2(2.11, -0.75) * m, 0.19 * m, Pal.heat(0.12 + 0.8 * glow, 1.0 + 0.8 * glow))
-	_name_plate(ci, at + Vector2(0.0, -1.9 if kind != "wall" else -3.3) * m, title, hint if on else "", lamp, on, t, z)
+	if plate:
+		_name_plate(ci, at + Vector2(0.0, -1.9 if kind != "wall" else -3.3) * m, title, hint if on else "", lamp, on, t, z)
 
 
 # the name over the hood: screen-sized, centred over it, kept inside the view; the key's hint
 # under the name while the operator is at it
+# the tests' witness (tests/plate_scale_check.gd): title -> [frame drawn, the canvas scale it was drawn for]
+static var plates := {}
+
+
 static func _name_plate(ci: CanvasItem, anchor: Vector2, title: String, hint: String, lamp: String, on: bool, t: float, z: float) -> void:
 	if z < 0.12 and not on:
 		return
 	var font := Fonts.get_font("Medium")
-	var xf := ci.get_canvas_transform()
+	# the item's own transform with the canvas (a moved or scaled node too), not the canvas alone
+	var xf := ci.get_global_transform_with_canvas()
 	var sp: Vector2 = xf * anchor
 	# its desk out of the view: no plate pinned to the view's edge
 	if not ci.get_viewport_rect().grow(60.0).has_point(sp):
@@ -392,8 +403,10 @@ static func _name_plate(ci: CanvasItem, anchor: Vector2, title: String, hint: St
 	var pos := sp - Vector2(size.x * 0.5, size.y + 4.0)
 	var vs := ci.get_viewport_rect().size
 	pos.x = clampf(pos.x, 8.0, vs.x - size.x - 8.0)
-	pos.y = clampf(pos.y, 8.0, vs.y - size.y - 8.0)
+	# under the HUD's top strip (REC · CAM · the clock), never over it, when its anchor is above the view
+	pos.y = clampf(pos.y, 100.0, vs.y - size.y - 8.0)
 	var col := Pal.tint(Pal.AIR, 1.0 if on else 0.75, 1.3)
+	plates[title] = [Engine.get_process_frames(), xf.get_scale().x]
 	ci.draw_set_transform_matrix(xf.affine_inverse())
 	ci.draw_rect(Rect2(pos, size), Color(0.02, 0.022, 0.026, 0.88))
 	ci.draw_rect(Rect2(pos, Vector2(3.0, size.y)), col)

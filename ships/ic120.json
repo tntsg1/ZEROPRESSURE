@@ -1,4 +1,5 @@
 {
+	"prestress": {"beams":{"BU-1":{"kn":450.0,"mode":"bend"},"BL-1":{"kn":450.0,"mode":"bend"},"BU-2":{"kn":450.0,"mode":"bend"},"BL-2":{"kn":450.0,"mode":"bend"},"BU-3a":{"kn":450.0,"mode":"bend"},"BU-3b":{"kn":450.0,"mode":"bend"},"BL-3":{"kn":450.0,"mode":"bend"},"BU-4":{"kn":450.0,"mode":"bend"},"BL-4":{"kn":450.0,"mode":"bend"},"BU-5":{"kn":450.0,"mode":"bend"},"BL-5":{"kn":450.0,"mode":"bend"}},"reach":4.0},
 	"id": "ic120",
 	"name": "IC-120 ICEBERG",
 	"title": ["IC-120「冰山」冰体水货船 · 120 m","IC-120 ICEBERG · ICE-HULLED WATER CARRIER · 120 m"],

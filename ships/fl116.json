@@ -1,4 +1,5 @@
 {
+	"mounts": {"LVL-1":"SEP-1","LVL-2":"SEP-2","LVL-3":"SEP-3","FLOWM":"TK-3"},
 	"id": "fl116",
 	"name": "FL-116 TIDE",
 	"title": ["FL-116「潮汐」工艺船 · 118 m","FL-116 TIDE · PROCESS SHIP · 118 m"],

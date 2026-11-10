@@ -32,7 +32,7 @@
 	"fluids": {
 		"volumes": {
 			"ball": {"amount":8.0,"fluid":"water","full":9.0,"leak":0.4,"nets":["ball"],"piece":"WP","port":"PW","pump":[0.02,0.02]},
-			"nutr": {"amount":0.3,"fluid":"water","full":0.4,"leak":0.1,"nets":["nutr"],"piece":"NUT","port":"PN","pump":[0.1,0.006]},
+			"nutr": {"thin":true,"amount":0.3,"fluid":"water","full":0.4,"leak":0.1,"nets":["nutr"],"piece":"NUT","port":"PN","pump":[0.1,0.006]},
 			"loop": {"amount":0.25,"fluid":"water","full":0.3,"leak":0.1,"leak_min":0.004,"nets":["loop"],"piece":"MCP-1","port":"PL","pump":[0.1,0.006]},
 			"fuel": {"amount":0.3,"content":1.0,"fluid":"fuel","full":0.5,"leak":0.12,"nets":["fuel"],"piece":"FUEL-P","port":"PF","pump":[0.1,0.008]}
 		},

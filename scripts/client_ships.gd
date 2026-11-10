@@ -24,7 +24,12 @@ const COURIER_L := 11.0
 const POST_IN := 7.0             # s: a courier in, alongside, out
 const POST_HOLD := 5.0
 const POST_OUT := 7.0
-const FAR := 170.0               # m east of the berth where they come from and go to
+# 货船穿模 (user 2026-11-10: "货船一过来就直接消失不见了，只知道货凭空冒出来了"): they come from and go
+# to well out past the port (the trade pier's far end is 72 m out, ARK-01's hull starts 116 m east of the
+# port's centre but 50 m north of this lane), always drawn whole: no fading in or out in plain view. A
+# leaving ship's burn runs on until it is FAR out; only then is it gone.
+const FAR := 320.0               # m east of the berth where they come from and go to
+const OUT_ACC := 12.0            # m/s²: the leaving main burn
 
 static var visits := {}          # new orders' couriers: oid -> {who, what, t0, lock}
 
@@ -76,6 +81,14 @@ func _process(dt: float) -> void:
 				TW.lighter_k = 1.0
 				if not TW.job.is_empty() and str(TW.job.id) == "hall:" + str(o.id) and bool(TW.job.done):
 					HallMarket.mark_loaded(str(o.id))
+	# a delivery alongside: the crane swings its crates out onto the belt; they run on into the intake
+	# (after the ship has gone, if it has) and are in the stores when the last one is through
+	for d in HallMarket.deliveries():
+		if str(d.state) == "ship" and HallMarket.clock() - float(d.ship_at) >= HallMarket.SHIP_IN and not d.has("out_at"):
+			hide = true
+			TW.lighter_k = 1.0
+	if not TW.job.is_empty() and str(TW.job.id).begins_with("hallbuy:") and int(TW.job.get("into", 0)) >= int(TW.job.n):
+		HallMarket.mark_unloaded(str(TW.job.id).substr(8))
 	if TW.lighter_hide and not hide:
 		# it has left with the crates: no lighter of the old kind follows it out
 		TW.lighter_k = 0.0
@@ -83,7 +96,7 @@ func _process(dt: float) -> void:
 		TW.linger = 0.0
 	TW.lighter_hide = hide
 	for id in visits.keys():
-		if HallMarket.clock() - float(visits[id].t0) > POST_IN + POST_HOLD + POST_OUT:
+		if HallMarket.clock() - float(visits[id].t0) > POST_IN + POST_HOLD + leave_secs(POST_OUT):
 			visits.erase(id)
 	if visible:
 		queue_redraw()
@@ -113,10 +126,23 @@ static func _profile(u: float) -> Array:
 	return [0.5 * a * 0.16 + v * 0.2 + v * d - 0.5 * a * d * d, "retro", 1.0 - d / 0.4]
 
 
-# leaving over u 0 … 1: back out on the retros, turn end for end drifting, burn away.
-# -> [m gone east, flip 1 (bow −x) … −1 (bow +x), engine, push 0 … 1]
+# s from its out_at a freighter takes to be FAR out (the main burn running on past HallMarket.SHIP_OUT)
+static func leave_secs(total := -1.0) -> float:
+	if total < 0.0:
+		total = HallMarket.SHIP_OUT
+	var at_end: Array = _leave(1.0, total)
+	var d0 := float(at_end[0])
+	if d0 >= FAR:
+		return total
+	var tc := total * 0.4
+	var v0 := 5.0 + OUT_ACC * tc
+	return total + (-v0 + sqrt(v0 * v0 + 2.0 * OUT_ACC * (FAR - d0))) / OUT_ACC
+
+
+# leaving over u 0 … (past 1: the burn goes on): back out on the retros, turn end for end drifting, burn
+# away. -> [m gone east, flip 1 (bow −x) … −1 (bow +x), engine, push 0 … 1]
 static func _leave(u: float, total: float) -> Array:
-	u = clampf(u, 0.0, 1.0)
+	u = maxf(u, 0.0)
 	var v1 := 5.0
 	var ta := 0.35 * total
 	var tb := 0.25 * total
@@ -132,34 +158,65 @@ static func _leave(u: float, total: float) -> Array:
 		var k := (s - ta) / tb
 		return [d_a + v1 * (s - ta), cos(PI * smoothstep(0.0, 1.0, k)), "rcs", sin(PI * k)]
 	var tc := s - ta - tb
-	return [d_a + v1 * tb + v1 * tc + 0.5 * 12.0 * tc * tc, -1.0, "main", 1.0]
+	return [d_a + v1 * tb + v1 * tc + 0.5 * OUT_ACC * tc * tc, -1.0, "main", 1.0]
 
 
-# every ship now: [{oid, kind, who, what, at (box m, its centre), flip, eng, push, alpha, len}]
+# the berth: alongside OUTSIDE the trade port's east wall, its bow at TW.BOW_X (box-local m, its centre)
+static func berth() -> Vector2:
+	return Vector2(TW.BOW_X + FREIGHTER_L * 0.5, TW.LIGHTER_Y)
+
+
+# where a freighter on the east berth's timeline is: phase, at (box m), flip, engine, push
+static func _place(e: Dictionary, ship_at: float, out_at: float) -> void:
+	var s := HallMarket.clock() - ship_at
+	var b := berth()
+	if out_at >= 0.0:
+		var lv := _leave((HallMarket.clock() - out_at) / HallMarket.SHIP_OUT, HallMarket.SHIP_OUT)
+		e.phase = "out"
+		e.at = b + Vector2(float(lv[0]), 0.0)
+		e.flip = lv[1]
+		e.eng = lv[2]
+		e.push = lv[3]
+	elif s < HallMarket.SHIP_IN:
+		var pr := _profile(s / HallMarket.SHIP_IN)
+		e.phase = "in"
+		e.at = b + Vector2(FAR * (1.0 - float(pr[0])), 0.0)
+		e.eng = pr[1]
+		e.push = pr[2]
+	else:
+		e.phase = "load"
+		e.at = b
+
+
+# alongside: what the dock's crane has put in or not yet taken out (before its job starts: `before`)
+static func _dock_hold(job_id: String, before: int) -> int:
+	if not TW.job.is_empty() and str(TW.job.get("id", "")) == job_id:
+		return TW.hold
+	return before
+
+
+# every ship now: [{oid, kind, who, what, at (box m, its centre), flip, eng, push, alpha, len, phase, crates}]
+# pick: an order's client coming for its crates; drop: the seller of something bought bringing it
 static func ships() -> Array:
 	var out: Array = []
+	var gone := HallMarket.leave_secs()
 	for o in HallMarket.orders():
-		if str(o.state) != "ship":
+		if not str(o.state) in ["ship", "done"] or not o.has("ship_at"):
 			continue
-		var berth := Vector2(52.0 + FREIGHTER_L * 0.5, TW.LIGHTER_Y)
-		var ph := HallMarket.ship_phase(o)
-		var e := {"phase": str(ph[0]), "crates": int(o.get("crates", 1)), "oid": str(o.id), "kind": "pick", "who": str(o.client), "what": HallMarket.want_name(o), "len": FREIGHTER_L, "flip": 1.0, "eng": "", "push": 0.0, "alpha": 1.0, "say": HallMarket.order_state_text(o)}
-		match str(ph[0]):
-			"in":
-				var pr := _profile(float(ph[1]))
-				e.at = berth + Vector2(FAR * (1.0 - float(pr[0])), 0.0)
-				e.eng = pr[1]
-				e.push = pr[2]
-				e.alpha = clampf(float(ph[1]) * 6.0, 0.0, 1.0)
-			"load":
-				e.at = berth
-			_:
-				var lv := _leave(float(ph[1]), HallMarket.SHIP_OUT)
-				e.at = berth + Vector2(float(lv[0]), 0.0)
-				e.flip = lv[1]
-				e.eng = lv[2]
-				e.push = lv[3]
-				e.alpha = clampf((1.0 - float(ph[1])) * 5.0, 0.0, 1.0)
+		if o.has("out_at") and HallMarket.clock() - float(o.out_at) >= gone:
+			continue
+		var e := {"crates": int(o.get("crates", 1)), "oid": str(o.id), "kind": "pick", "who": str(o.client), "what": HallMarket.want_name(o), "len": FREIGHTER_L, "flip": 1.0, "eng": "", "push": 0.0, "alpha": 1.0,
+			"say": HallMarket.order_state_text(o) if str(o.state) == "ship" else w("已装货离港", "LOADED · LEAVING")}
+		_place(e, float(o.ship_at), float(o.out_at) if o.has("out_at") else -1.0)
+		e.hold = int(e.crates) if str(e.phase) == "out" else (_dock_hold("hall:" + str(o.id), 0) if str(e.phase) == "load" else 0)
+		out.append(e)
+	for d in HallMarket.deliveries():
+		if str(d.state) != "ship":
+			continue
+		var e := {"crates": int(d.crates), "oid": str(d.id), "kind": "drop", "who": str(d.seller), "what": HallMarket._dv_name(d), "len": FREIGHTER_L, "flip": 1.0, "eng": "", "push": 0.0, "alpha": 1.0,
+			"say": HallMarket.delivery_state_text(d)}
+		_place(e, float(d.ship_at), float(d.out_at) if d.has("out_at") else -1.0)
+		e.hold = int(d.crates) if str(e.phase) == "in" else (_dock_hold("hallbuy:" + str(d.id), int(d.crates)) if str(e.phase) == "load" else 0)
 		out.append(e)
 	for oid in visits:
 		var v: Dictionary = visits[oid]
@@ -173,17 +230,15 @@ static func ships() -> Array:
 			e.at = berth + Vector2(FAR * (1.0 - float(pr[0])), 0.0)
 			e.eng = pr[1]
 			e.push = pr[2]
-			e.alpha = clampf(s / POST_IN * 6.0, 0.0, 1.0)
 		elif s < POST_IN + POST_HOLD:
 			e.at = berth
-		else:
+		elif s < POST_IN + POST_HOLD + leave_secs(POST_OUT):
 			var u := (s - POST_IN - POST_HOLD) / POST_OUT
 			var lv := _leave(u, POST_OUT)
 			e.at = berth + Vector2(float(lv[0]), 0.0)
 			e.flip = lv[1]
 			e.eng = lv[2]
 			e.push = lv[3]
-			e.alpha = clampf((1.0 - u) * 5.0, 0.0, 1.0)
 		out.append(e)
 	return out
 
@@ -293,6 +348,9 @@ func _plume(at: Vector2, dir: Vector2, length: float, wid: float, k: float) -> v
 	var flick := 0.85 + 0.15 * sin(t * 47.0 + at.x) * sin(t * 31.0)
 	var n := dir.orthogonal()
 	var tip := at + dir * length * k * flick * m
+	# a plume under a pixel long is a sliver the triangulator refuses
+	if length * 0.5 * k * flick * m < 1.0 or wid * 0.25 * m < 0.5:
+		return
 	var a := at + n * wid * 0.5 * m
 	var b := at - n * wid * 0.5 * m
 	draw_colored_polygon(PackedVector2Array([a, tip, b]), Pal.heat(0.55 * k, 1.4))
@@ -309,12 +367,13 @@ func _draw() -> void:
 	var box := PortStructure.box("trade")
 	for e in ships():
 		var at := box.position + (e.at as Vector2) * m
-		if not ViewCull.sees(game, Rect2(at - Vector2(12, 6) * m, Vector2(24, 12) * m)):
+		if not ViewCull.sees(game, Rect2(at - Vector2(26, 7) * m, Vector2(52, 14) * m)):
 			continue
 		var flip := float(e.flip)
 		var sx := flip if absf(flip) > 0.04 else 0.04 * signf(flip if flip != 0.0 else 1.0)
 		var a := float(e.alpha)
-		var mesh := _mesh("freighter", build_freighter) if str(e.kind) == "pick" else _mesh("courier", build_courier)
+		var big := str(e.kind) != "post"
+		var mesh := _mesh("freighter", build_freighter) if big else _mesh("courier", build_courier)
 		# its shadow on the deck plating below (and a plain fill first: a canvas item whose first
 		# command is a mesh was not drawn at all)
 		draw_rect(Rect2(at + Vector2(-float(e.len) * 0.5 + 0.6, 3.2) * m, Vector2(float(e.len) - 1.2, 0.5) * m), Color(0, 0, 0, 0.18 * float(e.alpha)))
@@ -324,37 +383,41 @@ func _draw() -> void:
 		# the push: the main engine's plume aft (away from the bow), the retros' forward, the jets' puffs
 		var aft := Vector2(signf(sx), 0.0)
 		if eng == "main":
-			if str(e.kind) == "pick":
+			if big:
 				_plume(at + Vector2((half + 1.4) * sx, 0.75) * m, aft, 6.5, 1.6, push * a)
 			else:
 				for ky in [-0.8, 0.8]:
 					_plume(at + Vector2((half + 1.3) * sx, ky) * m, aft, 4.5, 1.1, push * a)
 		elif eng == "retro":
-			var ys := [0.25, 2.0] if str(e.kind) == "pick" else [-1.0, 1.0]
+			var ys := [0.25, 2.0] if big else [-1.0, 1.0]
 			for ry in ys:
 				_plume(at + Vector2((-half - 0.15) * sx, float(ry)) * m, -aft, 2.6, 0.45, push * a)
 		elif eng == "rcs":
-			var cs := [Vector2(-half + 1.9, -0.4), Vector2(half - 1.9, 2.95)] if str(e.kind) == "pick" else [Vector2(-half + 2.0, -1.85), Vector2(half - 2.2, 1.85)]
+			var cs := [Vector2(-half + 1.9, -0.4), Vector2(half - 1.9, 2.95)] if big else [Vector2(-half + 2.0, -1.85), Vector2(half - 2.2, 1.85)]
 			for i in cs.size():
 				var c: Vector2 = cs[i]
 				_plume(at + Vector2(c.x * sx, c.y) * m, Vector2(0.0, -1.0 if i == 0 else 1.0), 1.2, 0.3, push * a)
 		draw_mesh(mesh, null, Transform2D(0.0, Vector2(sx * m, m), 0.0, at), Color(1, 1, 1, a))
-		# leaving, the order's crates ride in its hold
-		if str(e.kind) == "pick" and str(e.get("phase", "")) == "out":
-			for i in int(e.get("crates", 1)):
-				var cx := (-half + 3.0 + i * 1.75 + TW.CRATE.x * 0.5) * sx
-				var r := Rect2(at + Vector2(cx - TW.CRATE.x * 0.5 * absf(sx), -TW.CRATE.y) * m, Vector2(TW.CRATE.x * absf(sx), TW.CRATE.y) * m)
-				draw_rect(r, Color(FACE2, a))
-				draw_rect(r, Pal.ink(0.6 * a), false, 1.0)
+		# the crates in its hold, in the dock's places: coming in loaded (drop), lying alongside (as many as
+		# the crane has put in or not yet taken out), leaving loaded (pick)
+		for i in int(e.get("hold", 0)):
+			var lx := TW.hold_x(i) - TW.BOW_X - half
+			var r := Rect2(at + Vector2(lx * sx - TW.CRATE.x * 0.5 * absf(sx), TW.hold_y(i) - TW.LIGHTER_Y - TW.CRATE.y) * m, Vector2(TW.CRATE.x * absf(sx), TW.CRATE.y) * m)
+			draw_rect(r, Color(0.17, 0.18, 0.19, a))
+			for k in range(1, 4):
+				var kx := r.position.x + r.size.x * k / 4.0
+				draw_line(Vector2(kx, r.position.y + 0.08 * m), Vector2(kx, r.end.y - 0.08 * m), Pal.ink(0.25 * a), 1.0)
+			draw_rect(r, Pal.ink(0.75 * a), false, 1.0)
+			draw_rect(Rect2(r.position + Vector2(r.size.x * 0.5 - 0.2 * m, 0.5 * m), Vector2(0.4, 0.3) * m), Pal.heat(0.8 * a, 1.1))
 		# its lamps: the masthead lamp blinks, the bow's clearance lamp steady
 		var blink := 1.0 if fmod(t + float(e.at.x) * 0.01, 1.4) < 0.18 else 0.25
-		if str(e.kind) == "pick":
+		if big:
 			FastDraw.circle(self, at + Vector2((-half + 13.3) * sx, -4.3) * m, 0.16 * m, Pal.heat(blink * a, 1.6))
 			FastDraw.circle(self, at + Vector2((-half - 0.2) * sx, -0.1) * m, 0.11 * m, Pal.tint(Pal.AIR, 0.8 * a, 1.5))
 		else:
 			FastDraw.circle(self, at + Vector2((-half + 8.0) * sx, -1.8) * m, 0.13 * m, Pal.heat(blink * a, 1.6))
 		drawn += 1
-		last.append({"oid": str(e.oid), "kind": str(e.kind), "pos": at, "flip": flip, "eng": eng, "push": push})
+		last.append({"oid": str(e.oid), "kind": str(e.kind), "pos": at, "flip": flip, "eng": eng, "push": push, "alpha": a})
 
 
 # ---------------------------------------------------------------- hover
@@ -368,10 +431,11 @@ func _items() -> Array:
 	for e in ships():
 		var at := box.position + (e.at as Vector2) * m
 		var half := float(e.len) * 0.5 + 1.5
-		var pick := str(e.kind) == "pick"
+		var pick := str(e.kind) != "post"
+		var drop := str(e.kind) == "drop"
 		out.append({"rect": Rect2(at - Vector2(half, 4.5) * m, Vector2(half * 2.0, 8.0) * m),
 			"title": (w("%s 的货船", "%s'S FREIGHTER") if pick else w("%s 的小飞船", "%s'S COURIER")) % str(e.who),
-			"use": (w("来取订单的货：%s", "COMING FOR AN ORDER: %s") if pick else w("来订单板下单：%s", "POSTING AN ORDER: %s")) % str(e.what),
+			"use": (w("送来你在交易行买的货：%s", "BRINGING WHAT YOU BOUGHT: %s") if drop else (w("来取订单的货：%s", "COMING FOR AN ORDER: %s") if pick else w("来订单板下单：%s", "POSTING AN ORDER: %s"))) % str(e.what),
 			"now": str(e.say),
 			"can": w("订单板（F8 · 订单）里接单，仓库自动备货，货运火车送到贸易港，它来取走。", "Take orders on the order board (F8 · ORDERS): the stores make them up, the freight train brings them to the trade port, a ship like this takes them."),
 			"lamp": "work"})

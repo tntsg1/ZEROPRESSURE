@@ -1,4 +1,5 @@
 {
+	"prestress": {"beams":{"STR-40":{"kn":250.0,"mode":"tension"},"STR-28":{"kn":250.0,"mode":"tension"},"STR4":{"kn":250.0,"mode":"tension"},"STR26":{"kn":250.0,"mode":"tension"},"STR40":{"kn":250.0,"mode":"tension"},"BRC-U":{"kn":250.0,"mode":"tension"},"BRC-L":{"kn":250.0,"mode":"tension"}},"reach":2.5},
 	"id": "ob90",
 	"name": "OB-90 SKY-EYE",
 	"title": ["OB-90「天眼」望远镜船 · 90 m","OB-90 SKY-EYE · TELESCOPE SHIP · 90 m"],

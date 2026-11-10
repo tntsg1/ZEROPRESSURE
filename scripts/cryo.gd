@@ -19,7 +19,7 @@ extends Node
 # tank ruptures. A temperature probe reads a tank's cargo.
 
 const LEAK := 0.0035             # °C/s through a sound jacket
-const LEAK_LOST := 0.05          # °C/s through a jacket that has lost its vacuum
+const LEAK_LOST := 0.035         # °C/s through a jacket that has lost its vacuum (10x LEAK, per the codex)
 const CHILL := 0.02              # °C/s a running chiller pulls each tank back
 const HEAT := 0.09               # °C/s the heater adds to its tank
 const DOUBLE := 20.0             # °C for the vapour pressure to double
@@ -29,6 +29,7 @@ var tanks := {}                  # tag -> cfg merged with live {"T", "ruptured"}
 var chillers: Array = []
 var heater := {}
 var t := 0.0
+var fx                         # the relief valves drawn venting (scripts/cryo_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
@@ -41,6 +42,9 @@ func setup(g, ship: Dictionary) -> void:
 		tanks[tg] = e
 	chillers = c.get("chillers", [])
 	heater = c.get("heater", {})
+	if active():
+		fx = preload("res://scripts/cryo_fx.gd").new()
+		fx.setup(self)
 
 
 func active() -> bool:

@@ -24,12 +24,16 @@ var folded := {}              # bag -> true
 var ripped := {}              # bag -> true
 var whipped := {}             # strap -> true
 var _t := 0.0
+var fx                         # the bags drawn letting down (scripts/softshell_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
 	game = g
 	world = g.world
 	cfg = ship.get("softshell", {})
+	if active():
+		fx = preload("res://scripts/softshell_fx.gd").new()
+		fx.setup(self)
 
 
 func active() -> bool:

@@ -1,4 +1,5 @@
 {
+	"mounts": {"LVL-2":"T-2","FLOW-2":"T-2","LVL-5":"T-5","FLOW-5":"T-5"},
 	"id": "mt140",
 	"name": "MT-140 CENTIPEDE",
 	"title": ["MT-140「蜈蚣」模块列车 · 140 m","MT-140 CENTIPEDE · MODULAR TRAIN · 140 m"],

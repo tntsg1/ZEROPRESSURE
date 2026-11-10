@@ -27,8 +27,17 @@ func _process(dt: float) -> void:
 		queue_free()
 		return
 	# 108 号 帧率: only while its part of the port is in view (scripts/view_cull.gd)
-	if ViewCull.sees_zone(game, "salvage", 30.0):
+	# its own rect over the berth (the salvage district's box is out at the port: culled by that it was
+	# never redrawn in the berth, its spark and swinging hook frozen)
+	if ViewCull.sees(game, view_rect()):
 		queue_redraw()
+
+
+# the rail from end to end, the trolley and the hook block hanging off it, px
+static func view_rect() -> Rect2:
+	var x0 := (Dock.BOUNDS.position.x + 0.6) * Geom.M
+	var x1 := (Dock.FLOOR_X1 - 0.6) * Geom.M
+	return Rect2(x0, Crane.rail_y(), x1 - x0, 0.0).grow(15.0 * Geom.M)
 
 
 func _draw() -> void:

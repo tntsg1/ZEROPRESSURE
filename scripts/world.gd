@@ -40,7 +40,7 @@ var _chunks := {}               # [part, strip index] -> Node2D
 # outline, the equipment art, the fixings on top. Zoomed far out (the whole
 # ship on the screen) the art fades away: at that size its lines and lettering
 # are below a pixel, and it was half of what such a view drew.
-const PASSES := ["fill", "line", "line_far", "art", "joint"]
+const PASSES := ["fill", "block", "line", "line_far", "art", "joint"]   # block: 工业剖面 far-out tone (Pal.solid only)
 const LINE_FAR := 0.3                     # zoom under which outlines are hairlines (line_far)
 const ART_FADE := Vector2(0.6, 0.75)    # zoom: gone below .x, whole above .y
 var _pass_roots := {}
@@ -51,6 +51,7 @@ var _full_redraw := true        # every strip redraws at the next sync
 var _dirty_near: Array = []     # areas (px) whose strips redraw at the next sync
 var cover_layer: Node2D
 var heat_layer: Node2D
+var cut_light: Node2D
 var light_layer: Node2D
 var dirty_links := false
 var dirty_cols := {}
@@ -111,6 +112,10 @@ func _init() -> void:
 	rope_fx.z_index = 1
 	rope_fx.z_as_relative = false
 	add_child(rope_fx)
+	# 工业剖面样片 (Pal.solid): the laser's light on the metal round it
+	cut_light = preload("res://scripts/cutaway_light.gd").new()
+	cut_light.world = self
+	add_child(cut_light)
 
 
 # the cut-up equipment still on the ship: piece id -> a node whose own drawing (the
@@ -1309,6 +1314,12 @@ func _process(dt: float) -> void:
 		var k := clampf((game.cam_zoom() - ART_FADE.x) / (ART_FADE.y - ART_FADE.x), 0.0, 1.0)
 		art.modulate.a = k
 		art.visible = k > 0.01
+		# 工业剖面: where the machines' drawings fade out, their material blocks and the hull's
+		# thick lit / shaded edges fade in (nothing is drawn there with Pal.solid off)
+		if _pass_roots.has("block"):
+			var bl: Node2D = _pass_roots["block"]
+			bl.modulate.a = 1.0 - k
+			bl.visible = Pal.solid and k < 0.99
 	if _pass_roots.has("line") and game != null:
 		var far_out: bool = game.cam_zoom() < LINE_FAR
 		_pass_roots["line"].visible = not far_out
@@ -1788,7 +1799,7 @@ func _style(p) -> Array:
 		"ice":
 			# a hull of water ice (IC-120): pale, the fluid tint in its edges
 			fill = Color(0.085, 0.108, 0.13)
-			line_c = Pal.ink(0.5).lerp(Pal.tint(Pal.FLUID, 0.7), 0.5)
+			line_c = Pal.ink(0.5).lerp(Pal.tint(preload("res://scripts/liquid_colors.gd").of("water"), 0.7), 0.5)   # water ice: its real colour
 	if p.cls == "equip" and not p.intact:
 		fill = Color(0.045, 0.045, 0.05)
 		line_c = Pal.ink(0.42)
@@ -1812,6 +1823,9 @@ func draw_piece(ci: CanvasItem, p) -> void:
 # all the fills, one line batch for all the outlines, then the equipment art.
 # part: "all", or one pass of it ("fill", "line", "art") for the strips
 func draw_pieces(ci: CanvasItem, list: Array, part: String = "all") -> void:
+	if Pal.solid:
+		Cutaway.draw_pieces(self, ci, list, part)
+		return
 	var fp := PackedVector2Array()
 	var fc := PackedColorArray()
 	var fi := PackedInt32Array()
@@ -2259,7 +2273,7 @@ func draw_joints_of(ci: CanvasItem, list: Array, js = null) -> void:
 		for c in dots:
 			for ring in 2:
 				var r := 2.6 if ring == 0 else 1.1
-				var col := Pal.ink(0.75) if ring == 0 else Pal.BG
+				var col := Pal.ink(0.42 if Pal.solid else 0.75) if ring == 0 else Pal.BG
 				var b0 := pts.size()
 				pts.append(c)
 				cols.append(col)
@@ -2442,6 +2456,9 @@ func _draw_back() -> void:
 
 
 func _draw_back_rooms() -> void:
+	if Pal.solid:
+		Cutaway.back_rooms(self)
+		return
 	var shells := _room_shells()
 	for n in rooms:
 		var r = rooms[n]
@@ -2510,10 +2527,14 @@ func _draw_light() -> void:
 
 
 func _draw_cover() -> void:
+	if Pal.solid:
+		Cutaway.cover(self)
 	var hatch := PackedVector2Array()
 	for n in rooms:
 		var r = rooms[n]
 		if r.revealed and r.reveal_t >= 1.0:
+			continue
+		if Pal.solid and not r.revealed:
 			continue
 		var poly: PackedVector2Array = r.poly
 		var cover_c := Color(0.026, 0.027, 0.031)
@@ -2577,6 +2598,9 @@ func _draw_lines() -> void:
 
 
 func _draw_line_path(ci: CanvasItem, l, path: PackedVector2Array, a: float) -> void:
+	if Pal.solid and l.kind != "cable":
+		Cutaway.pipe(ci, path, a)
+		return
 	if l.kind == "cable":
 		ci.draw_polyline(path, Pal.ink(0.38 * a), 1.6, true)
 	else:

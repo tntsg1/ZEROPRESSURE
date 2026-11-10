@@ -25,6 +25,7 @@ var torn := {}
 var hung: Array = []        # [x m, piece], aft first
 var _w := {}
 var _t := 0.0
+var fx                         # the spine drawn under load, tearing (scripts/spine_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
@@ -41,6 +42,8 @@ func setup(g, ship: Dictionary) -> void:
 			hung.append([x, p])
 	hung.sort_custom(func(a, b): return a[0] > b[0])
 	_weigh()
+	fx = preload("res://scripts/spine_fx.gd").new()
+	fx.setup(self)
 
 
 func active() -> bool:

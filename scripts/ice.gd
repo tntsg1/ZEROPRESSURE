@@ -28,6 +28,7 @@ var split := false
 var dropped := false
 var _blocks0 := 0
 var _was := {}
+var fx                         # the ice drawn as it goes (scripts/ice_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
@@ -49,6 +50,8 @@ func setup(g, ship: Dictionary) -> void:
 		g.sys.fluid0[f] = float(g.sys.fluid0.get(f, 0.0)) + float(cfg.get("water", 0.6)) * _blocks0
 		if not g.sys.fluid_rec.has(f):
 			g.sys.fluid_rec[f] = 0.0
+	fx = preload("res://scripts/ice_fx.gd").new()
+	fx.setup(self)
 
 
 func active() -> bool:

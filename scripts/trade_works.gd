@@ -24,10 +24,19 @@ const INTAKE_X := 13.4                  # the warehouse intake in the dock's wes
 const WEIGH := Vector2(27.0, 31.0)      # the weighbridge's span on the belt
 const SEAL_X := 38.6
 const BELT_END := 49.4
-const HOLD_X := 55.6                    # where the crane sets a crate down in the lighter
 const LIGHTER_Y := 22.0                 # the lighter's deck line in the east port
 const CRANE_Y := 17.2                   # the crane's girder (under the slab)
-const PORT := Vector2(18.4, 26.4)       # the east port (lighter), top and bottom
+# 货船穿模 (user 2026-11-10: "货船一过来就直接消失不见了"): the ship no longer pushes its bow 8 m through
+# the east wall over the port's frame and the dock's machines; it lies alongside OUTSIDE the wall, its
+# bow off the hull plating, and the crane's boom runs out through the port over its hold. The port's
+# opening reaches up under the slab so the girder, the trolley and the hook pass through it clear.
+const PORT := Vector2(16.75, 26.4)      # the east port (lighter), top and bottom
+const BOW_X := 60.9                     # the berthed ship's bow (its docking clamp 0.35 m off: 60.55)
+const WALL_X := 58.6                    # the east wall's inner face
+const GIRDER_END := 59.0                # the fixed girder's end (the boom runs out of it)
+const BOOM_L := 12.6                    # how far the boom runs out past the girder's end
+const BOOM_V := 1.0 / 2.8               # its share a second, out or in
+const HOLD_X := BOW_X + 3.8             # the hold's first crate (its centre); four a row, 1.75 m apart
 const LOCKS := [Vector2(2.6, 7.4), Vector2(8.6, 13.4)]   # the two visitor airlocks in the east wall
 const WAIT_X := 26.0                    # where a visitor's cart stops (接驳站穿模修复: at 16.2 it stood in the freight line's bay, which runs to 23.4 m with its buffer)
 const CRATE := Vector2(1.6, 1.3)
@@ -41,6 +50,8 @@ static var lighter_hide := false        # 128 号 第 2 段: an order's client f
 static var job := {}                    # {id, sell, n, made, done, crates: [...]} the trade being handed over
 static var crates: Array = []           # {x, y, at: "belt"/"hook"/"hold", wait, weighed, sealed}
 static var hold := 0                    # crates in the lighter's hold
+static var boom := 0.0                  # the crane's boom: 0 in … 1 out over the berth
+static var boom_want := 0.0
 static var weigh_show := 0.0            # the weighbridge's reading (t), shown smoothly
 static var weigh_to := 0.0
 static var seal_t := 0.0                # the sealer's stamp, 1 at the bottom of its stroke
@@ -78,6 +89,7 @@ static func reset() -> void:
 	# 128 号 第 3 段: not mended, the crane is found where it stopped
 	if Port.stage("trade") < 1:
 		cx = 36.0; cx_to = 36.0; ch = 22.6; ch_to = 22.6
+	boom = 0.0; boom_want = 0.0
 	linger = 0.0; visitors = {}; tubes = []; _sig = {}; near_k = [0.0, 0.0, 0.0]; _hist_t = 0.0; t = 0.0; handed = 0
 	events = []; _crane_was = false
 
@@ -114,7 +126,7 @@ static func _dock(dt: float, trade: Dictionary) -> void:
 		var sell: bool = str(trade.get("seller", "")) == preload("res://scripts/industrial_exchange.gd").PLAYER
 		var q := float(trade.get("quantity", 0.5))
 		var n := clampi(int(ceil(q / 0.5)), 1, 6)
-		job = {"id": str(trade.id), "sell": sell, "n": n, "made": 0 if sell else n, "done": false, "q": q, "spawn": 0.0, "weighed": 0}
+		job = {"id": str(trade.id), "sell": sell, "n": n, "made": 0 if sell else n, "done": false, "q": q, "spawn": 0.0, "weighed": 0, "into": 0}
 		lighter_for = Shipping.other(trade)
 		hold = 0 if sell else n
 		crates = []
@@ -128,19 +140,33 @@ static func _dock(dt: float, trade: Dictionary) -> void:
 	lighter_k = move_toward(lighter_k, want, dt / 2.5)
 	intake = move_toward(intake, 1.0 if working else 0.0, dt * 0.8)
 	# the crates: made at the intake (selling) or swung out of the hold (buying)
-	if working and lighter_k >= 1.0:
+	if working and (lighter_k >= 1.0 or bool(job.get("ship_free", false))):
 		var sell: bool = job.sell
 		if sell:
 			job.spawn = float(job.spawn) - dt
-			if int(job.made) < int(job.n) and float(job.spawn) <= 0.0 and intake > 0.9 and _clear_at(INTAKE_X + 1.0):
+			# only what the freight train has brought to the port's west stop comes through the intake
+			if int(job.made) < mini(int(job.n), int(job.get("avail", job.n))) and float(job.spawn) <= 0.0 and intake > 0.9 and _clear_at(INTAKE_X + 1.0):
 				crates.append({"x": INTAKE_X + 0.2, "at": "belt", "wait": 0.0, "weighed": false, "sealed": false})
 				job.made = int(job.made) + 1
 				job.spawn = 1.3
 		_belt(dt, sell)
 		_crane(dt, sell)
-		if int(job.made) >= int(job.n) and crates.is_empty() and not on_hook and (not sell or hold >= int(job.n)) and (sell or hold <= 0):
-			job.done = true
-			handed += 1
+		# the ship's part is over once its crates are all in (selling) or all out on the belt (buying): the
+		# trolley comes home, the boom runs in, and only then may the ship go (job.ship_free); a bought
+		# thing's crates still run on along the belt into the intake
+		var ship_done: bool = not on_hook and crane_step == "" and ((sell and int(job.made) >= int(job.n) and crates.is_empty() and hold >= int(job.n)) or (not sell and hold <= 0))
+		if ship_done:
+			cx_to = 52.0
+			ch_to = 19.0
+			boom_want = 0.0
+			job.ship_free = boom <= 0.0 and cx <= GIRDER_END - 0.6
+			if bool(job.ship_free) and crates.is_empty():
+				job.done = true
+				handed += 1
+		else:
+			boom_want = 1.0
+	elif working:
+		boom_want = 0.0
 	else:
 		belt_v = move_toward(belt_v, 0.0, dt * 2.0)
 		cx_to = 52.0
@@ -150,6 +176,16 @@ static func _dock(dt: float, trade: Dictionary) -> void:
 		if Port.stage("trade") < 1 or not preload("res://scripts/district_revive.gd").started("trade", "crane"):
 			cx_to = 36.0
 			ch_to = 22.6
+	if not job.is_empty() and trade.has("avail"):
+		job.avail = int(trade.avail)
+	# the boom never runs in over a trolley still out on it
+	if cx > GIRDER_END - 0.6:
+		boom_want = 1.0
+	elif job.is_empty() or bool(job.done) or not working:
+		boom_want = 0.0 if cx_to <= GIRDER_END - 0.6 else boom_want
+	boom = move_toward(boom, boom_want, dt * BOOM_V)
+	# the trolley never runs past the end of what is out
+	cx_to = minf(cx_to, reach())
 	var r := _drive(cx, cvx, cx_to, 2.0, 1.4, dt)
 	cx = r[0]; cvx = r[1]
 	r = _drive(ch, cvh, ch_to, 1.8, 1.6, dt)
@@ -213,7 +249,10 @@ static func _belt(dt: float, sell: bool) -> void:
 	belt_v = move_toward(belt_v, V_BELT if moving else 0.0, dt * 3.0)
 	# buying: a crate reaching the intake goes into the warehouse
 	if not sell:
+		var before := crates.size()
 		crates = crates.filter(func(c): return not (str(c.at) == "belt" and float(c.x) <= INTAKE_X - 0.5))
+		if crates.size() < before:
+			job.into = int(job.get("into", 0)) + before - crates.size()
 
 
 # the dock crane: selling, from the belt's end into the hold; buying, out of the hold onto it
@@ -244,11 +283,11 @@ static func _crane(dt: float, sell: bool) -> void:
 			if settled:
 				crane_step = "over_hold" if sell else "down_belt"
 		"over_hold":
-			cx_to = HOLD_X
-			if settled:
+			cx_to = hold_x(hold)
+			if settled and boom >= 1.0:
 				crane_step = "down_hold"
 		"down_hold":
-			ch_to = LIGHTER_Y - CRATE.y
+			ch_to = hold_y(hold if sell else hold - 1) - CRATE.y
 			if settled:
 				if sell:
 					crates = crates.filter(func(c): return str(c.at) != "hook")
@@ -257,7 +296,7 @@ static func _crane(dt: float, sell: bool) -> void:
 					crane_step = "up_hold"
 				else:
 					hold -= 1
-					crates.append({"x": HOLD_X, "at": "hook", "wait": 0.0, "weighed": false, "sealed": false})
+					crates.append({"x": cx, "at": "hook", "wait": 0.0, "weighed": false, "sealed": false})
 					on_hook = true
 					crane_step = "up_hold"
 		"up_hold":
@@ -265,9 +304,9 @@ static func _crane(dt: float, sell: bool) -> void:
 			if settled:
 				crane_step = "" if sell else "to_end"
 		"to_hold":
-			cx_to = HOLD_X
+			cx_to = hold_x(hold - 1)
 			ch_to = 19.0
-			if settled:
+			if settled and boom >= 1.0:
 				crane_step = "down_hold"
 		"to_end":
 			cx_to = BELT_END
@@ -286,6 +325,20 @@ static func _crane(dt: float, sell: bool) -> void:
 			ch_to = 19.0
 			if settled:
 				crane_step = ""
+
+
+# the hold's places (box-local m): a crate's centre x and its bottom, four a row, the next row on top
+static func hold_x(i: int) -> float:
+	return HOLD_X + (maxi(i, 0) % 4) * 1.75
+
+
+static func hold_y(i: int) -> float:
+	return LIGHTER_Y - (maxi(i, 0) / 4) * CRATE.y
+
+
+# how far east the trolley may run: the girder's end, or the boom's end as far as it is out
+static func reach() -> float:
+	return GIRDER_END - 0.6 + (BOOM_L + 0.6) * clampf(boom, 0.0, 1.0) if boom < 1.0 else GIRDER_END + BOOM_L - 0.6
 
 
 # where the crate on the hook is

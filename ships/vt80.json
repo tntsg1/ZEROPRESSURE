@@ -1,4 +1,5 @@
 {
+	"mounts": {"FM":"T-3"},
 	"id": "vt80",
 	"name": "VT-80 LONG WHALE",
 	"title": ["VT-80「长鲸」推进剂运输船 · 96 m","VT-80 LONG WHALE · PROPELLANT CARRIER · 96 m"],
@@ -20,9 +21,9 @@
 			"N-5": {"V":0.6,"burst":200.0,"kpa":1800.0,"piece":"NS-5"},
 			"N-6": {"V":0.6,"burst":200.0,"kpa":1800.0,"piece":"NS-6"},
 			"NH": {"V":0.05,"burst":200.0,"kpa":1800.0,"piece":"NHDR"},
-			"O2B": {"V":0.1,"burst":200.0,"kpa":6000.0,"piece":"O2B"},
-			"CO2-1": {"V":0.12,"burst":200.0,"kpa":5000.0,"piece":"CO2-1"},
-			"CO2-2": {"V":0.12,"burst":200.0,"kpa":5000.0,"piece":"CO2-2"}
+			"O2B": {"V":0.1,"burst":200.0,"kpa":15000.0,"piece":"O2B"},
+			"CO2-1": {"V":0.12,"burst":200.0,"kpa":5700.0,"piece":"CO2-1"},
+			"CO2-2": {"V":0.12,"burst":200.0,"kpa":5700.0,"piece":"CO2-2"}
 		},
 		"valves": [
 			{"a":"NH","b":"TU-1","ctrl":"PV-1","g":1.2},

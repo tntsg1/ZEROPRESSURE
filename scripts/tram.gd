@@ -473,19 +473,51 @@ const CLEAR_R := 25.0          # m: no drone this close to its stop, it may go b
 
 
 # 130 号: standing idle at a district's stop with a freight train held up behind it and no drone
-# about: back to the hub's stop, out of the way
+# about: back to the hub's stop, out of the way.
+# 货车不进站 (user 2026-11-10: "我在交易点的时候，如果我的车停在轨道上，就没有火车进来的动画，也没有卸下来
+# 动画"): at the trade counter the drone is always within CLEAR_R of the stop, so the car never left and
+# the train never came. Now, empty and idle, it gives way to a train it has held up for NEAR_YIELD_S even
+# with the drone beside it — said on screen, seen driving off to the hub's stop; a call brings it back
+# first (the passenger still comes first: FW.passenger_request).
+const NEAR_YIELD_S := 5.0
+var _held_since := -1.0
+var _held_last := -1.0
+static var yields_near := 0     # tests: times it gave way with the drone beside it
+var _said_t := -100.0
+
+
+static func w(zh: String, en: String) -> String:
+	return zh if Txt.zh else en
+
+
 func _maybe_clear() -> void:
 	if not FW.tram_clear:
+		if _held_last >= 0.0 and t - _held_last > FW.WAIT_MAX + 1.0:
+			_held_since = -1.0
 		return
 	FW.tram_clear = false
-	if phase != "" or at == "" or at == "ring":
+	if phase != "" or at == "" or at == "ring" or riding:
+		_held_since = -1.0
 		return
+	if _held_since < 0.0 or t - _held_last > FW.WAIT_MAX + 1.0:
+		_held_since = t
+	_held_last = t
 	var d = game.drone if game != null else null
-	if d != null and d.alive and (d.global_position as Vector2).distance_to(station_at(at)) < CLEAR_R * Geom.M:
+	var near: bool = d != null and d.alive and (d.global_position as Vector2).distance_to(station_at(at)) < CLEAR_R * Geom.M
+	if near and t - _held_since < NEAR_YIELD_S:
+		# the train keeps asking (WAIT_MAX); say why it is not coming in yet
+		if game.get("hud") != null and t - _said_t > 8.0:
+			_said_t = t
+			game.hud.show_hint(w("货运列车要进站，被停着的接驳车挡住了：%d 秒后接驳车先让到中央环站", "A FREIGHT TRAIN IS HELD UP BY THE SHUTTLE: IT GIVES WAY TO THE HUB IN %d s") % int(ceil(NEAR_YIELD_S - (t - _held_since))))
 		return
 	legs = plan(at, "ring", true)
 	if legs.is_empty():
 		return
+	if near:
+		yields_near += 1
+		if game.get("hud") != null:
+			game.hud.show_hint(w("接驳车让到中央环站，给货运列车让路；要坐车随时叫车", "THE SHUTTLE GIVES WAY TO THE FREIGHT TRAIN AT THE HUB; CALL IT ANY TIME"))
+	_held_since = -1.0
 	FW.passenger_request(self, legs)
 	_next_leg()
 	stop = ""

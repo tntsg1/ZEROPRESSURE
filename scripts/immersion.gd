@@ -20,12 +20,16 @@ var world
 var cfg := {}
 var spilt := {}
 var breached := {}
+var fx                         # the tanks drawn with their coolant (scripts/immersion_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
 	game = g
 	world = g.world
 	cfg = ship.get("immersion", {})
+	if active():
+		fx = preload("res://scripts/immersion_fx.gd").new()
+		fx.setup(self)
 
 
 func active() -> bool:

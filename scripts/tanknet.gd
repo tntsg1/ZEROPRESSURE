@@ -35,6 +35,7 @@ var ran_dry := false
 var _dry_t := 0.0
 var _pump0: Array = []        # the manifold's pump rate as the ship file gives it
 var _ull := {}                # tank tag -> the ullage volume the vessel stood for last step
+var fx                         # the tanks drawn with their levels (scripts/tanknet_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
@@ -45,6 +46,8 @@ func setup(g, ship: Dictionary) -> void:
 		return
 	var v: Dictionary = ship.get("fluids", {}).get("volumes", {}).get(cfg.get("manifold", ""), {})
 	_pump0 = v.get("pump", [0.1, 0.005])
+	fx = preload("res://scripts/tanknet_fx.gd").new()
+	fx.setup(self)
 
 
 func active() -> bool:

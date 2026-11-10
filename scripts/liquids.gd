@@ -61,6 +61,7 @@ const LOOKS := {
 	"mud": {"boil_v": 0.0, "boil_a": 0.0, "flash": 0.0, "rho": 1800.0, "splash": 99.0, "sticky": true, "pvap": 0.0},
 }
 const CRYO := ["lhe", "lh2", "lng", "ln2"]
+const LiquidColors = preload("res://scripts/liquid_colors.gd")
 
 var game
 var world
@@ -88,6 +89,9 @@ static func look_of(v: Dictionary) -> String:
 		"lng": return "lng"
 		"n2": return "ln2"
 		"coolant": return "glycol"
+		# their own colour (liquid_colors.gd); no look of their own: they move as water does
+		"hydraulic", "refrigerant", "solvent", "acid", "nutrient": return str(v.fluid)
+		"o2", "lox": return "lox"
 		_: return "water"
 
 
@@ -681,7 +685,7 @@ func _draw_jet(j: Array) -> void:
 	var len_px: float = clampf(0.3 + flow * 12.0, 0.3, 1.4) * Geom.M
 	var w0: float = clampf(1.5 + flow * 40.0, 1.5, 5.0)
 	var nrm := Vector2(-dir.y, dir.x)
-	var col := Pal.tint(Pal.FLUID, 0.85, 1.4 if cryo else 1.1)
+	var col := LiquidColors.of(look, 0.85)
 	var n := 10
 	var left := PackedVector2Array()
 	var right := PackedVector2Array()
@@ -697,27 +701,28 @@ func _draw_jet(j: Array) -> void:
 		for k in 3:
 			var f3: float = fposmod(_t * 1.5 + k * 0.33, 1.0)
 			_ink.draw_arc(at + dir * len_px * f3 * 1.4 + nrm * sin(f3 * 9.0 + k) * 6.0, 3.0 + f3 * 10.0, 0.0, TAU, 10, Pal.ink(0.12 * (1.0 - f3)), 1.0, false)
+	elif look == "nto":
+		# nitrogen tetroxide fumes brown as it comes out
+		for k in 3:
+			var f4: float = fposmod(_t * 1.1 + k * 0.33, 1.0)
+			_ink.draw_arc(at + dir * len_px * f4 * 1.2 + nrm * sin(f4 * 7.0 + k) * 8.0, 4.0 + f4 * 14.0, 0.0, TAU, 10, Color(0.55, 0.25, 0.1, 0.3 * (1.0 - f4)), 1.4, false)
 
 
 func _draw_blob(b: Dictionary) -> void:
 	var r: float = maxf(1.6, radius_m(b.vol) * Geom.M)
 	var c: Vector2 = b.pos
 	var look: String = b.look
-	var col := Pal.tint(Pal.FLUID, 0.75, 1.2)
+	# its real colour (liquid_colors.gd; user 2026-11-10 "不同液体用它现实里的颜色")
+	var col := LiquidColors.of(look, 0.85)
 	var w := 1.2
 	match look:
 		"lhe", "lh2", "lng", "ln2":
-			col = Pal.tint(Pal.FLUID, 0.95, 1.6)
 			w = 0.9
 		"fuel", "mmh":
-			col = Pal.tint(Pal.FLUID, 0.8, 1.0)
 			w = 1.8
 		"nto":
-			# nitrogen tetroxide: yellow-orange liquid
-			col = Color(0.95, 0.6, 0.28, 0.9)
 			w = 1.6
 		"mud":
-			col = Pal.ink(0.35)
 			w = 1.4
 	if b.ice:
 		# a ball of ice: faceted, still
@@ -744,11 +749,21 @@ func _details(b: Dictionary, c: Vector2, r: float, look: String, col: Color) -> 
 			var sw: float = _t * 0.8 + float(b.ph)
 			_ink.draw_arc(c, r * 0.55, sw, sw + 2.2, 8, Color(col.r, col.g, col.b, 0.5), 1.0, false)
 			_ink.draw_arc(c, r * 0.3, -sw * 1.3, -sw * 1.3 + 1.8, 6, Color(col.r, col.g, col.b, 0.35), 1.0, false)
+			if look == "nto":
+				# tetroxide fumes: brown vapour coming off its surface
+				for k in 2:
+					var nf: float = fposmod(_t * 0.4 + k * 0.5 + float(b.ph), 1.0)
+					_ink.draw_arc(c + Vector2.from_angle(float(b.ph) * 2.0 + k * 3.0) * r * (1.0 + nf), r * (0.3 + 0.4 * nf), 0.0, TAU, 12, Color(0.55, 0.25, 0.1, 0.28 * (1.0 - nf)), 1.0 + r * 0.05, false)
 		"lhe", "lh2", "lng", "ln2":
 			# boiling: vapour bubbles nucleating inside and rising out of it
 			for k in 3:
 				var bp: Vector2 = c + Vector2.from_angle(float(b.ph) * 3.0 + k * 2.1 + _t * 2.0) * r * fposmod(_t * 0.9 + k * 0.33, 1.0) * 0.8
 				_ink.draw_arc(bp, maxf(0.8, r * 0.12), 0.0, TAU, 6, Pal.ink(0.5), 1.0, false)
+			# the white cold mist hanging round it, drifting off
+			for k in 3:
+				var mf: float = fposmod(_t * 0.35 + k * 0.33 + float(b.ph), 1.0)
+				var mp: Vector2 = c + Vector2.from_angle(float(b.ph) + k * 2.1) * r * (0.9 + 0.8 * mf)
+				_ink.draw_arc(mp, r * (0.35 + 0.5 * mf), 0.0, TAU, 12, Pal.ink(0.16 * (1.0 - mf)), 1.0 + r * 0.06, false)
 		"mud":
 			for k in mini(8, int(r * 0.6)):
 				var gp: Vector2 = c + Vector2.from_angle(k * 2.4 + float(b.ph)) * r * fposmod(k * 0.37, 0.8)

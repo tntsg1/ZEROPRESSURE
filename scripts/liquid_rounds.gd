@@ -9,7 +9,7 @@ func _init() -> void:
 	var vertices := PackedVector2Array()
 	var uvs := PackedVector2Array()
 	var indices := PackedInt32Array()
-	var col := Pal.tint(Pal.FLUID, 0.75, 1.2)
+	var col: Color = preload("res://scripts/liquid_colors.gd").of("water", 0.75)   # real water colour
 	# Body fan, then outline, highlight and glycol's inner ring, in draw order.
 	vertices.append(Vector2(-1, 0))
 	uvs.append(Vector2.ZERO)

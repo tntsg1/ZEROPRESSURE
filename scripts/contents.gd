@@ -33,15 +33,15 @@ const TABLE := {
 	"p_fx_he_buffer": {"gas": "he", "kpa": 1600.0, "pack": 0.7, "worth": 1.2},
 	# gas samples drawn off the hydrogen plant
 	"p_hg_sample_cyl": {"gas": "h2", "kpa": 2000.0, "pack": 0.2, "worth": 0.5},
-	"p_water_tank": {"liquid": "water", "fill": 0.7, "pack": 0.6, "worth": 150.0, "t": 1.0, "benign": true},
+	"p_water_tank": {"liquid": "water", "fill": 0.7, "pack": 0.6, "worth": 150.0, "t": 1.0, "benign": true, "bellows": 150.0},
 	"p_ark_ecc_tank": {"liquid": "water", "fill": 0.9, "pack": 0.6, "worth": 150.0, "t": 1.0, "benign": true},
 	"p_bl_water_recycler": {"liquid": "water", "fill": 0.6, "pack": 0.4, "worth": 150.0, "t": 1.0, "benign": true},
 	"p_sanitation": {"liquid": "water", "fill": 0.5, "pack": 0.4, "worth": 40.0, "t": 1.0, "benign": true},
-	"p_ark_dispenser": {"liquid": "water", "fill": 0.5, "pack": 0.3, "worth": 150.0, "t": 1.0, "benign": true},
+	"p_ark_dispenser": {"liquid": "water", "fill": 0.5, "pack": 0.3, "worth": 150.0, "t": 1.0, "benign": true, "bellows": 150.0},
 	"p_bl_pond": {"liquid": "water", "fill": 0.9, "pack": 0.7, "worth": 150.0, "t": 1.0, "benign": true},
 	"p_bl_fish_tank": {"liquid": "water", "fill": 0.9, "pack": 0.7, "worth": 150.0, "t": 1.0, "benign": true},
 	"p_bl_fry_tank": {"liquid": "water", "fill": 0.9, "pack": 0.6, "worth": 150.0, "t": 1.0, "benign": true},
-	"p_ballast": {"liquid": "water", "fill": 0.6, "pack": 0.7, "worth": 20.0, "t": 1.0, "benign": true},
+	"p_ballast": {"liquid": "water", "fill": 0.6, "pack": 0.7, "worth": 20.0, "t": 1.0, "benign": true, "thin": true},
 	"p_waste_tank": {"liquid": "water", "fill": 0.5, "pack": 0.6, "worth": 10.0, "t": 1.0, "benign": true},
 	"p_dr_mud_tank": {"liquid": "mud", "fill": 0.6, "pack": 0.7, "worth": 120.0, "t": 1.8, "benign": true},
 	"p_foam": {"liquid": "foam", "fill": 0.8, "pack": 0.6, "worth": 900.0, "t": 1.0, "benign": true},
@@ -128,6 +128,14 @@ static func add(d: Dictionary) -> void:
 				"content": float(e.t), "leak": 0.05, "pump": [0.25, 0.01], "contents": true}
 			if e.get("benign", false):
 				v["hazard"] = 1.0e9
+			# a supply tank pushes its water to the taps: a gas-backed bellows at this
+			# pressure (kPa, absolute) when it was filled (systems.gd _hole_flow)
+			# a thin tank built for little pressure (scripts/codex_rules.gd: it buckles under a vacuum)
+			if e.get("thin", false):
+				v["thin"] = true
+			if e.has("bellows"):
+				v["bellows"] = float(e.bellows)
+				v["fill0"] = float(e.fill)
 			vols[fid] = v
 			var cl := {"id": did, "kind": "port", "piece": pd.key, "at": [at.x, at.y], "medium": "fluid", "target": fid}
 			if room != "":

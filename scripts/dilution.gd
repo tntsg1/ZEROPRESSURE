@@ -36,6 +36,7 @@ var temp := {}
 var boiled := false
 var cracked := ""
 var _shake_t := -99.0
+var fx                         # the stack drawn cold, warming, boiling (scripts/dilution_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
@@ -44,6 +45,9 @@ func setup(g, ship: Dictionary) -> void:
 	cfg = ship.get("dilution", {})
 	for s in cfg.get("stages", {}):
 		temp[s] = float(cfg.stages[s])
+	if active():
+		fx = preload("res://scripts/dilution_fx.gd").new()
+		fx.setup(self)
 
 
 func active() -> bool:

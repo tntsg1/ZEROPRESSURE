@@ -154,10 +154,13 @@ func _draw() -> void:
 		var a: float = TAU * i / 48.0
 		var wob: float = 1.0 + 0.025 * sin(a * 3.0 + _t * 1.3) + 0.015 * sin(a * 5.0 - _t * 0.9)
 		pts.append(c + Vector2(cos(a), sin(a)) * r * wob)
-	draw_polyline(pts, Pal.ink(0.4), 1.5, true)
+	# the water itself in its real colour (liquid_colors.gd): a faint body, its surface catching the light
+	var wc: Color = preload("res://scripts/liquid_colors.gd").of("water")
+	draw_colored_polygon(pts.slice(0, 48), Color(wc.r, wc.g, wc.b, 0.07))
+	draw_polyline(pts, Color(wc.r, wc.g, wc.b, 0.5), 1.5, true)
 	for j in 3:
 		var rr: float = r * (0.35 + j * 0.2)
-		draw_arc(c + Vector2(r * 0.12, -r * 0.1), rr, -1.2 + sin(_t * 0.5 + j) * 0.2, -0.3, 12, Pal.ink(0.12), 1.0, true)
+		draw_arc(c + Vector2(r * 0.12, -r * 0.1), rr, -1.2 + sin(_t * 0.5 + j) * 0.2, -0.3, 12, Color(wc.r, wc.g, wc.b, 0.16), 1.0, true)
 	var n := int(4 + 10 * k)
 	for i in n:
 		var a: float = _t * (0.25 + 0.05 * (i % 3)) + i * 2.4

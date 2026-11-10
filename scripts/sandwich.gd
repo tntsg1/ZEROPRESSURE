@@ -27,6 +27,7 @@ var sprung := false
 var twisted := false
 var torn := false
 var _was := {}
+var fx                         # the clamps and beam 2 drawn working (scripts/sandwich_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
@@ -35,6 +36,9 @@ func setup(g, ship: Dictionary) -> void:
 	cfg = ship.get("sandwich", {})
 	for t in _holds():
 		_was[t] = true
+	if active():
+		fx = preload("res://scripts/sandwich_fx.gd").new()
+		fx.setup(self)
 
 
 func active() -> bool:

@@ -48,7 +48,9 @@ func _run() -> void:
 	await _frames(8)
 	var ui = g.console_ui
 	var n: int = ShipMarket.data().listings.size()
-	check(ui != null and n == 15 and _cards(ui).size() == n, "the market opens with fifteen cards (%d)" % n)
+	# 133 号: the fifteen kept listings and the endless feed; only the cards on screen are built
+	var kept_in: bool = ShipMarket.data().listings.all(func(l): return ui._items.any(func(e): return str(e.id) == str(l.id)))
+	check(ui != null and n == 15 and kept_in and ui._items.size() > 15 and _cards(ui).size() >= 6 and _cards(ui).size() <= 30, "the market opens with its fifteen kept listings among %d, %d cards built" % [ui._items.size(), _cards(ui).size()])
 	var outlined := true
 	for c in _cards(ui):
 		outlined = outlined and not ShipThumb.shape_of(c.offer).outline.is_empty()
@@ -60,7 +62,8 @@ func _run() -> void:
 	for l in ShipMarket.data().listings:
 		if ui.length_of(l) <= 40.0:
 			small += 1
-	check(_cards(ui).size() == small, "the small filter shows the small ones (%d)" % small)
+	var small_in: int = ui._items.filter(func(e): return not e.has("m")).size()
+	check(small_in == small and ui._items.all(func(e): return float(Market.type_of(str(e.ship)).get("length", 99.0)) <= 40.0), "the small filter shows the small ones (%d kept, %d in all)" % [small, ui._items.size()])
 	ui._cat("all")
 	await _frames(3)
 	var pick: Dictionary = {}

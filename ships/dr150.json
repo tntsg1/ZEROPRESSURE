@@ -1,4 +1,5 @@
 {
+	"prestress": {"beams":{"DL-A1":{"kn":600.0,"mode":"compression"},"DL-A2":{"kn":600.0,"mode":"compression"},"DL-A3":{"kn":600.0,"mode":"compression"},"DL-A4":{"kn":600.0,"mode":"compression"},"DL-B1":{"kn":600.0,"mode":"compression"},"DL-B2":{"kn":600.0,"mode":"compression"},"DL-B3":{"kn":600.0,"mode":"compression"},"DL-B4":{"kn":600.0,"mode":"compression"}},"reach":3.5},
 	"id": "dr150",
 	"name": "DR-150 DERRICK",
 	"title": ["DR-150「钻塔」深空钻探船 · 150 m","DR-150 DERRICK · DEEP-SPACE DRILLING SHIP · 150 m"],

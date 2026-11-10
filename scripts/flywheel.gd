@@ -30,6 +30,7 @@ var loose := {}
 var rails_gone := {}
 var _dry := {}
 var _was_on := {}
+var fx                         # the wheels drawn turning (scripts/flywheel_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
@@ -41,6 +42,9 @@ func setup(g, ship: Dictionary) -> void:
 	for r in cfg.get("rails", {}):
 		for t in cfg.rails[r].get("tensioners", []):
 			_was_on[t] = true
+	if active():
+		fx = preload("res://scripts/flywheel_fx.gd").new()
+		fx.setup(self)
 
 
 func active() -> bool:

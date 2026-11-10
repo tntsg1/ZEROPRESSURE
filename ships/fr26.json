@@ -1,4 +1,5 @@
 {
+	"mounts": {"LG-1":"T-1","LG-2":"T-2","LG-3":"T-3"},
 	"id": "fr26",
 	"name": "FR-26 FROSTLINE",
 	"title": ["FR-26「霜线」低温运输船 · 72 m","FR-26 FROSTLINE · CRYOGENIC CARRIER · 72 m"],

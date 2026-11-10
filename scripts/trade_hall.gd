@@ -14,6 +14,7 @@ const COUNTER_W := 9.0         # m
 const REACH := 3.0             # m: close enough to a counter to be served
 const TradeWorks = preload("res://scripts/trade_works.gd")
 const TradeArt = preload("res://scripts/trade_hall_art.gd")
+const FreightWorks = preload("res://scripts/freight_works.gd")
 
 var game
 var walls: StaticBody2D
@@ -101,7 +102,13 @@ func _local_trade() -> Dictionary:
 	# 128 号 第 2 段: an order's client freighter alongside — the dock's crane loads its crates
 	for o in HallMarket.orders():
 		if str(o.state) == "ship" and str(HallMarket.ship_phase(o)[0]) == "load" and not bool(o.get("loaded", false)):
-			return {"id": "hall:" + str(o.id), "state": "loading", "seller": Exchange.PLAYER, "buyer": "hall_client", "quantity": 0.5 * int(o.get("crates", 1))}
+			# 货车不进站: only the crates the freight train has brought (no trains: all of them)
+			var avail := FreightWorks.order_arrived(str(o.id)) if bool(o.get("sent", false)) else int(o.get("crates", 1))
+			return {"id": "hall:" + str(o.id), "state": "loading", "seller": Exchange.PLAYER, "buyer": "hall_client", "quantity": 0.5 * int(o.get("crates", 1)), "avail": avail}
+	# 货船穿模: what was bought on the exchange, alongside on its seller's freighter — the crane unloads it
+	for d in HallMarket.deliveries():
+		if str(d.state) == "ship" and HallMarket.clock() - float(d.ship_at) >= HallMarket.SHIP_IN and not d.has("out_at"):
+			return {"id": "hallbuy:" + str(d.id), "state": "loading", "seller": "hall_seller", "buyer": Exchange.PLAYER, "quantity": 0.5 * int(d.crates)}
 	for t in Career.data.get("exchange", {}).get("trades", []):
 		if str(t.state) in ["awaiting_dispatch", "loading", "in_transit"] and not Shipping.orbital(t) and Shipping.other(t) in COMPANIES:
 			return t

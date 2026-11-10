@@ -30,6 +30,8 @@ func setup(g, ship: Dictionary) -> void:
 	game = g
 	world = g.world
 	cfg = ship.get("atmos", {})
+	if active():
+		preload("res://scripts/cabin_fx.gd").ensure(g)   # what is in the air, drawn (drawing only)
 
 
 func active() -> bool:
@@ -62,9 +64,9 @@ func _rooms_near(pos: Vector2) -> Array:
 
 
 func on_cut(p, pos: Vector2) -> void:
+	_glass(p, pos)
 	if not active():
 		return
-	_glass(p, pos)
 	var s = game.sys
 	for r in _rooms_near(pos):
 		if s.P(r) < FIRE_P or s.o2_frac(r) < fire_o2():
@@ -75,9 +77,28 @@ func on_cut(p, pos: Vector2) -> void:
 		_flash(r, pos)
 
 
+var _panes = null               # every pane of glass aboard (the ship file's list and every glass item)
+
+
+# the codex (cx_glass_b/x): the beam within GLASS_NEAR of any pane heats one face of it
+# a hundred degrees past the other and it crazes; on every ship, not only those that list
+# their glazing (user 2026-11-10, 用户定案 2)
+func panes() -> Array:
+	if _panes == null:
+		_panes = []
+		for t in cfg.get("glass", []):
+			var g = world.tag(str(t))
+			if g != null and not _panes.has(g):
+				_panes.append(g)
+		for id in world.order:
+			var q = world.pieces[id]
+			if q.art == "glass" and q.cls == "equip" and not _panes.has(q):
+				_panes.append(q)
+	return _panes
+
+
 func _glass(p, pos: Vector2) -> void:
-	for t in cfg.get("glass", []):
-		var g = world.tag(str(t))
+	for g in panes():
 		if g == null or g.gone or not g.intact or g.cond < 0.3:
 			continue
 		var gp: PackedVector2Array = world.frame(g) * g.poly
@@ -87,6 +108,11 @@ func _glass(p, pos: Vector2) -> void:
 		game._dent(g, minf(g.cond, 0.15), "dv_glass")
 		game.incident("glass_craze", g.tag)
 		game.say("glass_craze", pos, g.tag)
+		# a tick and a spray of fine chips off the heated face
+		var c: Vector2 = world.frame(g) * Geom.centroid(g.poly)
+		game.sfx.play("crack", c, 0.7, 1.4)
+		game.fx.burst_shards(c, 7, 140.0, Pal.tint(Pal.AIR, 0.7, 1.4), 3.5)
+		game.fx.ring(c, 4.0, 0.9 * Geom.M, 0.35, Pal.tint(Pal.AIR, 0.5, 1.2), 1.0)
 
 
 func _flash(room: String, pos: Vector2) -> void:

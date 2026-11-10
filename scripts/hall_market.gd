@@ -415,20 +415,20 @@ static func buy(kind: String, n: float) -> Dictionary:
 	var before := Career.data
 	Career.data = before.duplicate(true)
 	var where := ""
-	if kind == STEEL:
-		Career.data.structure_t = float(Career.data.get("structure_t", 0.0)) + n
-		where = w("存入修缮钢材区", "INTO THE REPAIR STEEL")
-	else:
-		var inbox_n := 0
+	# 货船穿模 (user 2026-11-10: "货凭空冒出来了"): paid now, at this price, as before — but the goods come
+	# on the seller's freighter to the trade port's east berth, and are in the stores once the dock's crane
+	# has swung their crates out of its hold and the belt has run them into the intake (_land)
+	var goods: Array = []
+	if kind != STEEL:
 		for i in int(n):
-			var gd := _new_machine(kind)
-			var it := {"uid": str(gd.uid), "src": "goods", "good": gd, "job": "hall_buy"}
-			if not StoreBook._admit(it):
-				var ib: Array = Career.data.get("inbox", [])
-				ib.append(it)
-				Career.data.inbox = ib
-				inbox_n += 1
-		where = w("存入仓库", "INTO THE STORES") if inbox_n == 0 else w("仓库空间不足，剩余 %d 件物品暂存在待入库区", "NO ROOM: %d WAITING TO BE STORED") % inbox_n
+			goods.append(_new_machine(kind))
+	var cs := clients()
+	var dv := {"id": _id("D"), "seller": str(cs[(int(data().get("seq", 0)) * 5 + int(n)) % cs.size()]), "kind": kind, "n": n, "goods": goods,
+		"steel": n if kind == STEEL else 0.0, "crates": clampi(int(ceil(n / 2.0)) if kind == STEEL else int(n), 1, 6), "at": clock(), "state": "wait"}
+	var dl: Array = data().get("deliveries", [])
+	dl.append(dv)
+	data().deliveries = dl
+	where = w("卖方货船送到贸易港东码头，卸下后入库", "ON THE SELLER'S FREIGHTER TO THE TRADE PORT, STORED ONCE UNLOADED")
 	_pay(cash, kind, n)
 	if not Career.save():
 		Career.data = before
@@ -665,6 +665,7 @@ static func _make_up(o: Dictionary) -> bool:
 
 
 static func _settle(o: Dictionary) -> void:
+	FreightWorks.order_done(str(o.id))
 	o.state = "done"
 	o.done_at = clock()
 	o.held = []
@@ -700,6 +701,97 @@ static func mark_loaded(oid: String) -> void:
 	var o := order(oid)
 	if not o.is_empty():
 		o.loaded = true
+
+
+# ---------------------------------------------------------------- the east berth (货船穿模 2026-11-10)
+# One ship alongside at a time, pick-ups and deliveries alike; the next one starts in only once the last
+# is out past FAR (client_ships.gd), so two never meet on the approach. Leaving, a ship is drawn till then
+# too — the order is paid half-way out as before, but the ship is not taken off the screen with it.
+static func deliveries() -> Array:
+	return data().get("deliveries", [])
+
+
+static func delivery(id: String) -> Dictionary:
+	for d in deliveries():
+		if str(d.id) == id:
+			return d
+	return {}
+
+
+# s from its out_at a ship takes to be out past FAR (its leaving burn runs on, client_ships._leave)
+static func leave_secs() -> float:
+	return ClientShips.leave_secs()
+
+
+static func _on_berth(e: Dictionary) -> bool:
+	if not e.has("ship_at"):
+		return false
+	return not e.has("out_at") or clock() - float(e.out_at) < leave_secs()
+
+
+static func berth_busy() -> bool:
+	return orders().any(func(o): return str(o.state) in ["ship", "done"] and _on_berth(o)) or deliveries().any(func(d): return str(d.state) == "ship" and _on_berth(d))
+
+
+# the dock may let a ship go: its crane is home and its boom in (or nobody is in the port to work it)
+static func dock_clear(job_id: String) -> bool:
+	if not watched:
+		return true
+	var TW = ClientShips.TW
+	if float(TW.boom) > 0.0:
+		return false
+	if TW.job.is_empty() or str(TW.job.get("id", "")) != job_id:
+		return true
+	return bool(TW.job.get("done", true)) or bool(TW.job.get("ship_free", false))
+
+
+# the dock's crane has finished with this ship (its crates in, or out on the belt)
+static func dock_done(job_id: String) -> bool:
+	var TW = ClientShips.TW
+	return not TW.job.is_empty() and str(TW.job.get("id", "")) == job_id and (bool(TW.job.get("done", false)) or bool(TW.job.get("ship_free", false)))
+
+
+# the crates are through the intake: the delivery's goods are in the stores now
+static func mark_unloaded(id: String) -> void:
+	var d := delivery(id)
+	if not d.is_empty() and not bool(d.get("landed", false)):
+		_land(d)
+
+
+static func _land(d: Dictionary) -> void:
+	d.landed = true
+	d.landed_at = clock()
+	var inbox_n := 0
+	if str(d.kind) == STEEL:
+		Career.data.structure_t = float(Career.data.get("structure_t", 0.0)) + float(d.steel)
+	else:
+		for gd in d.goods:
+			var it := {"uid": str(gd.uid), "src": "goods", "good": gd, "job": "hall_buy"}
+			if not StoreBook._admit(it):
+				var ib: Array = Career.data.get("inbox", [])
+				ib.append(it)
+				Career.data.inbox = ib
+				inbox_n += 1
+	var where := w("存入修缮钢材区", "INTO THE REPAIR STEEL") if str(d.kind) == STEEL else (w("存入仓库", "INTO THE STORES") if inbox_n == 0 else w("仓库空间不足，%d 件暂存在待入库区", "NO ROOM: %d WAITING TO BE STORED") % inbox_n)
+	events.append({"kind": "landed", "text": w("到货：%s 已从 %s 的货船卸下，%s", "DELIVERED: %s OFF %s'S FREIGHTER, %s") % [_dv_name(d), str(d.seller), where]})
+	Career.save()
+
+
+static func _dv_name(d: Dictionary) -> String:
+	return w("修缮钢材 %.0f 吨", "%.0f t REPAIR STEEL") % float(d.steel) if str(d.kind) == STEEL else "%s × %d" % [RepairBill.kind_name(str(d.kind)), int(d.n)]
+
+
+static func delivery_state_text(d: Dictionary) -> String:
+	match str(d.state):
+		"wait":
+			return w("货船排队，等东码头空出来", "WAITING FOR THE BERTH")
+		"ship":
+			if d.has("out_at"):
+				return w("已卸完，货船离港", "UNLOADED · LEAVING")
+			if clock() - float(d.ship_at) < SHIP_IN:
+				return w("货船正在进港", "COMING IN")
+			return w("靠泊卸货中 · 卸完入库", "ALONGSIDE · UNLOADING INTO THE STORES")
+	return w("已入库", "STORED")
 
 
 static func order_state_text(o: Dictionary) -> String:
@@ -780,20 +872,53 @@ static func tick(dt: float) -> void:
 			"rail":
 				var arrived: bool = FreightWorks.order_arrived(str(o.id)) >= int(o.get("crates", 1))
 				# one client freighter alongside at a time: the next waits at the port
-				var berth_free := not orders().any(func(x): return str(x.state) == "ship")
-				if (arrived or not bool(o.get("sent", false)) or float(h.clock) - float(o.rail_at) >= RAIL_MAX) and berth_free:
+				if (arrived or not bool(o.get("sent", false)) or float(h.clock) - float(o.rail_at) >= RAIL_MAX) and not berth_busy():
 					o.state = "ship"
 					o.ship_at = float(h.clock)
-					FreightWorks.order_done(str(o.id))
+					# 货车不进站: the train's count stays until the order is settled — the dock's intake lets
+					# through only the crates a train has really unloaded at the port (TradeWorks job.avail);
+					# what is still to come keeps its place in the freight queue
+					events.append({"kind": "ship", "text": w("%s 的货船正在进港，靠贸易港东码头取货", "%s'S FREIGHTER COMING IN TO THE TRADE PORT'S EAST BERTH") % str(o.client)})
 					dirty = true
 			"ship":
 				var s := float(h.clock) - float(o.ship_at)
 				if not o.has("out_at"):
-					if s >= SHIP_IN and (bool(o.get("loaded", false)) or (not watched and s >= SHIP_IN + SHIP_LOAD) or s >= SHIP_IN + LOAD_MAX):
+					if s >= SHIP_IN and not bool(o.get("berthed", false)):
+						o.berthed = true
+						events.append({"kind": "berth", "text": w("%s 的货船已靠上贸易港东码头，吊车开始装货", "%s'S FREIGHTER ALONGSIDE AT THE TRADE PORT: THE CRANE IS LOADING") % str(o.client)})
+					if s >= SHIP_IN and dock_done("hall:" + str(o.id)):
+						o.loaded = true
+					if s >= SHIP_IN and (bool(o.get("loaded", false)) or (not watched and s >= SHIP_IN + SHIP_LOAD) or s >= SHIP_IN + LOAD_MAX) and dock_clear("hall:" + str(o.id)):
 						o.out_at = float(h.clock)
 				elif float(h.clock) - float(o.out_at) >= SHIP_OUT * 0.5:
 					_settle(o)
 					dirty = true
+	# the deliveries of what was bought: in, alongside till the crates are through the intake, out
+	for d in deliveries():
+		match str(d.state):
+			"wait":
+				if not berth_busy():
+					d.state = "ship"
+					d.ship_at = float(h.clock)
+					events.append({"kind": "ship", "text": w("%s 的货船正在进港，送来 %s", "%s'S FREIGHTER COMING IN WITH %s") % [str(d.seller), _dv_name(d)]})
+					dirty = true
+			"ship":
+				var s := float(h.clock) - float(d.ship_at)
+				if not d.has("out_at"):
+					if s >= SHIP_IN and not bool(d.get("berthed", false)):
+						d.berthed = true
+						d.berthed_at = float(h.clock)
+						events.append({"kind": "berth", "text": w("%s 的货船已靠上贸易港东码头，吊车开始卸货", "%s'S FREIGHTER ALONGSIDE AT THE TRADE PORT: THE CRANE IS UNLOADING") % str(d.seller)})
+					if s >= SHIP_IN and not watched and s >= SHIP_IN + SHIP_LOAD and not bool(d.get("landed", false)):
+						_land(d)
+					if (bool(d.get("landed", false)) or dock_done("hallbuy:" + str(d.id))) and dock_clear("hallbuy:" + str(d.id)):
+						d.out_at = float(h.clock)
+						dirty = true
+				elif float(h.clock) - float(d.out_at) >= leave_secs():
+					d.state = "done"
+					d.done_at = float(h.clock)
+					dirty = true
+	h.deliveries = deliveries().filter(func(d): return str(d.state) != "done" or not bool(d.get("landed", false)) or float(h.clock) - float(d.get("done_at", 0.0)) < 30.0)
 	# what is done or lapsed leaves the board after a while (the board keeps the last ones)
 	var keep: Array = []
 	for o in orders():

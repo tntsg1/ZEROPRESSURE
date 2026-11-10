@@ -17,6 +17,7 @@ var world
 var cfg := {}
 var temp := {}                # room -> °C
 var thawed := {}              # room -> true
+var fx                         # the holds drawn frosted (scripts/coldchain_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
@@ -25,6 +26,9 @@ func setup(g, ship: Dictionary) -> void:
 	cfg = ship.get("cold", {})
 	for r in cfg.get("rooms", {}):
 		temp[r] = float(cfg.rooms[r])
+	if active():
+		fx = preload("res://scripts/coldchain_fx.gd").new()
+		fx.setup(self)
 
 
 func active() -> bool:

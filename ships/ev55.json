@@ -40,9 +40,9 @@
 	},
 	"fluids": {
 		"volumes": {
-			"cool": {"amount":0.3,"fluid":"coolant","full":0.4,"leak":0.15,"leak_min":0.004,"nets":["cool"],"piece":"ACC","port":"PC","pump":[0.12,0.006]},
+			"cool": {"thin":true,"amount":0.3,"fluid":"coolant","full":0.4,"leak":0.15,"leak_min":0.004,"nets":["cool"],"piece":"ACC","port":"PC","pump":[0.12,0.006]},
 			"prop": {"amount":0.5,"content":1.0,"fluid":"fuel","full":0.8,"leak":0.12,"nets":["prop"],"piece":"PT-E","port":"PF","pump":[0.12,0.008]},
-			"h2o": {"amount":0.4,"content":1.0,"fluid":"water","full":0.6,"leak":0.08,"piece":"H2O","port":"PW","pump":[0.1,0.006]}
+			"h2o": {"thin":true,"amount":0.4,"content":1.0,"fluid":"water","full":0.6,"leak":0.08,"piece":"H2O","port":"PW","pump":[0.1,0.006]}
 		},
 		"joins": [],
 		"value": {"coolant":3000.0,"fuel":6000.0,"water":400.0}

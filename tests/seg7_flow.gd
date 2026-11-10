@@ -153,6 +153,14 @@ func _key_ev(k: int, down: bool) -> void:
 
 
 # a key press through the window's own input (the viewport), as the OS delivers it
+# who could have the key: the focused control, a paused tree, a card up, the game's state
+func _input_state() -> Dictionary:
+	var fo = root.gui_get_focus_owner()
+	return {"focus": (str(fo.get_path()) + " " + fo.get_class() + " '" + str(fo.get("text")) + "'") if fo != null else "", "paused": paused, "state": str(g.state),
+		"guide_card": (str(GuideCards.card.id) if GuideCards.card != null and is_instance_valid(GuideCards.card) else "") if GuideCards.showing() else "", "card_t": float(g.hud.get("card_t")), "console": g.console_ui != null, "menu": g.menu_open,
+		"codex": str(g.codex.card) if g.codex != null else "", "coach": g.coach_on()}
+
+
 func _tap(k: int) -> void:
 	var ev := InputEventKey.new()
 	ev.keycode = k
@@ -542,10 +550,11 @@ func _ship() -> void:
 		Engine.time_scale = 1.0
 		await _look("contract_card", true)
 		await _read("合同卡：作业艇 16 m，合同要求四条，核心资产两种拆法，船舶清单")
+		var pre := _input_state()
 		await _tap(KEY_SPACE)
 		await _frames(45)   # (the card fades out over ~0.5 s)
 		if g.contract_open:
-			_log("issue", {"what": "合同卡按 Space 没关"})
+			_log("issue", {"what": "合同卡按 Space 没关", "before": pre, "after": _input_state()})
 			g.close_contract()
 		return
 	if bot == null:

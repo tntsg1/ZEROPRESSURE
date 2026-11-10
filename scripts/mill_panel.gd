@@ -237,7 +237,9 @@ func _refresh() -> void:
 	if why != "" and not Mill.busy() and message.text == "":
 		message.text = why
 	loop_b.set_pressed_no_signal(bool(c.loop))
-	var short := Mill.k(game) < 0.98
+	# 2026-11-10 用户: the way to the power district only when it would help — the mill rolling,
+	# set to roll or able to start, and the power district open; idle with nothing to roll it is noise
+	var short := Mill.k(game) < 0.98 and Mainline.power_open() and (Mill.busy() or bool(c.loop) or why == "")
 	power_l.visible = short
 	power_b.visible = short
 	if short:

@@ -26,6 +26,8 @@ func _run() -> void:
 	Career.data.drill = {"granted": true, "done": true}
 	Career.data.mill = {"product": "plate", "qty": 1.0, "state": "roll", "left": 40.0, "total": 40.0, "id": "MILL-T"}
 	Career.save()
+	# 2026-11-10: power hints only once the power district is open (128 第 7 段); this checks the hint itself
+	Mainline.power_open_in_tests = true
 	await _spawn()
 	await _frames(10)
 	var kk := Mill.k(g)

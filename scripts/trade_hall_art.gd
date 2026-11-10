@@ -194,8 +194,15 @@ func _locks(p, lod: int) -> void:
 		p.line(Vector2(gx, TW.LOCKS[0].x), Vector2(gx, TW.SLAB.x), _ink(0.4), 0.07)
 	# the lighter's port
 	var pt := TW.PORT
-	p.rect(Rect2(58.6, pt.x - 0.5, 1.6, 0.5), FACE2)
-	p.hatch(Rect2(58.7, pt.x - 0.42, 1.4, 0.34), Pal.heat(0.6, 1.0), 0.1, 0.36)
+	# its lintel, tucked under the slab (the opening reaches up so the crane's boom runs out through it)
+	p.rect(Rect2(58.6, pt.x - 0.35, 1.6, 0.35), FACE2)
+	p.hatch(Rect2(58.7, pt.x - 0.3, 1.4, 0.24), Pal.heat(0.6, 1.0), 0.1, 0.36)
+	# the boom's sleeve at the girder's end: rollers it runs out on
+	p.rect(Rect2(TW.GIRDER_END - 1.4, TW.CRANE_Y - 0.5, 1.4, 0.7), FACE)
+	p.rect(Rect2(TW.GIRDER_END - 1.4, TW.CRANE_Y - 0.5, 1.4, 0.7), _ink(0.55), false, 0.04)
+	for rx in [TW.GIRDER_END - 1.05, TW.GIRDER_END - 0.35]:
+		p.circle(Vector2(rx, TW.CRANE_Y - 0.42), 0.09, _ink(0.5), 8)
+		p.circle(Vector2(rx, TW.CRANE_Y + 0.12), 0.09, _ink(0.5), 8)
 	p.line(Vector2(59.1, pt.x), Vector2(59.1, pt.y), Color(0.03, 0.03, 0.035), 0.16)
 	if lod >= 1:
 		var y := pt.x + 0.5
@@ -430,6 +437,8 @@ func _dock_moving(ci: CanvasItem, t: float, on: bool, names: Dictionary) -> void
 	var head := lerpf(by - 2.3, by - TW.CRATE.y - 0.15, TW.seal_t)
 	ci.draw_line(_p(Vector2(TW.SEAL_X, by - 3.2)), _p(Vector2(TW.SEAL_X, head)), _ink(0.65), _lw(0.12))
 	ci.draw_rect(Rect2(_p(Vector2(TW.SEAL_X - 0.4, head)), Vector2(0.8, 0.25) * m), Pal.heat(0.75, 1.1))
+	# the boom: a box section run out of the girder's end through the port, over the berthed ship's hold
+	_boom(ci, t)
 	# the dock crane: trolley, ropes, the spreader
 	_put(ci, _mesh("dtrolley", _trolley), Vector2(TW.cx, TW.CRANE_Y + 0.65))
 	var hk := TW.hook_at()
@@ -442,6 +451,37 @@ func _dock_moving(ci: CanvasItem, t: float, on: bool, names: Dictionary) -> void
 	plate(ci, Vector2(15.0, 17.0), 13.5, w("交货码头", "HAND-OVER DOCK"), TW.dock_state(), t)
 	var nm := str(names.get(TW.lighter_for, {}).get("name", ""))
 	plate(ci, Vector2(41.0, 26.95), 18.0, w("驳船口", "LIGHTER PORT"), TW.lighter_state(nm), t)
+
+
+# 货船穿模: the dock crane's telescopic boom. Stowed, its end sits in the sleeve at the girder's end;
+# run out, it reaches BOOM_L m past the wall over the ship alongside. Box-local m.
+func _boom(ci: CanvasItem, t: float) -> void:
+	var k := clampf(TW.boom, 0.0, 1.0)
+	var x0 := TW.GIRDER_END - 1.2
+	var x1 := TW.GIRDER_END + TW.BOOM_L * k
+	var y0 := TW.CRANE_Y - 0.36
+	var y1 := TW.CRANE_Y + 0.06
+	ci.draw_rect(Rect2(_p(Vector2(x0, y0)), Vector2(x1 - x0, y1 - y0) * m), FACE2)
+	ci.draw_line(_p(Vector2(x0, y0)), _p(Vector2(x1, y0)), _ink(0.72), _lw(0.06))
+	ci.draw_line(_p(Vector2(x0, y1)), _p(Vector2(x1, y1)), _ink(0.62), _lw(0.06))
+	# its lattice and the trolley's running rail along the bottom flange
+	var lat := PackedVector2Array()
+	var gx := x0 + 0.3
+	var up := true
+	while gx + 0.6 < x1:
+		lat.append_array([_p(Vector2(gx, y1 if up else y0)), _p(Vector2(gx + 0.6, y0 if up else y1))])
+		gx += 0.6
+		up = not up
+	if not lat.is_empty():
+		ci.draw_multiline(lat, _ink(0.24), _lw(0.03))
+	# the end: an end-stop with its buffers, hazard-marked, and a lamp (amber running, green out)
+	if k > 0.02:
+		ci.draw_rect(Rect2(_p(Vector2(x1 - 0.22, y0 - 0.08)), Vector2(0.22, y1 - y0 + 0.36) * m), FACE)
+		ci.draw_rect(Rect2(_p(Vector2(x1 - 0.22, y0 - 0.08)), Vector2(0.22, y1 - y0 + 0.36) * m), _ink(0.7), false, _lw(0.04))
+		ci.draw_rect(Rect2(_p(Vector2(x1 - 0.5, y1 + 0.02)), Vector2(0.28, 0.2) * m), Pal.heat(0.75, 1.0))
+		var running := k < 1.0 and k > 0.0
+		var lamp := Pal.heat(0.4 + 0.6 * absf(sin(t * 7.0)), 1.6) if running else Pal.tint(Pal.FLUID, 0.85, 1.3)
+		FastDraw.circle(ci, _p(Vector2(x1 - 0.11, y0 - 0.22)), 0.1 * m, lamp)
 
 
 # the visitors' carts on the hall floor and their lift; a label over each
@@ -495,14 +535,15 @@ func _outside(ci: CanvasItem, t: float, names: Dictionary) -> void:
 	# (scripts/client_ships.gd draws it); the old one shows only when it lies alongside
 	if TW.lighter_k > 0.0 and (TW.lighter_hide or not HallMarket.open()):
 		var k := Pal.ease_out(TW.lighter_k)
-		var at := Vector2(52.0 + (1.0 - k) * 45.0, TW.LIGHTER_Y)
+		# 货船穿模: alongside OUTSIDE the east wall (its bow at TW.BOW_X), not 8 m in through it
+		var at := Vector2(TW.BOW_X + (1.0 - k) * 45.0, TW.LIGHTER_Y)
 		if TW.lighter_hide:
-			at = Vector2(52.0, TW.LIGHTER_Y)
+			at = Vector2(TW.BOW_X, TW.LIGHTER_Y)
 		else:
 			_put(ci, _mesh("lighter", _lighter), at)
-		# what is in its hold
-		for i in TW.hold:
-			_put(ci, _mesh("crate", _crate), at + Vector2(3.0 + (i % 4) * 1.75, 0.0 - (i / 4) * TW.CRATE.y))
+			# what is in its hold (an order's client freighter draws its own, over its hull)
+			for i in TW.hold:
+				_put(ci, _mesh("crate", _crate), Vector2(TW.hold_x(i) + at.x - TW.BOW_X, TW.hold_y(i)))
 		var nm := str(names.get(TW.lighter_for, {}).get("name", ""))
 		if Pal.labels and not TW.lighter_hide:
 			_text(ci, at + Vector2(11.0, -4.4), nm, 0.5, Pal.ink(0.8), true)

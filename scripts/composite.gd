@@ -26,6 +26,8 @@ func setup(g, ship: Dictionary) -> void:
 	game = g
 	world = g.world
 	cfg = ship.get("composite", {})
+	if active():
+		preload("res://scripts/cabin_fx.gd").ensure(g)   # what is in the air, drawn (drawing only)
 
 
 func active() -> bool:

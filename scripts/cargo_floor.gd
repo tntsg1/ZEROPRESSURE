@@ -106,5 +106,6 @@ func _draw() -> void:
 			hint = Ops.w("[%s] 打开仓库", "[%s] OPEN THE STORES") if StoreBook.live() else Ops.w("[%s] 打开这一边的货架", "[%s] OPEN THIS SIDE'S RACKS")
 			hint = hint.replace("%s", Keys.label("use")) if hint.contains("%s") else hint
 		var plate := Ops.w("仓库货架", "STORES RACKS") if StoreBook.live() else Ops.w("货架口 %s（%s）", "RACK MOUTH %s (%s)") % [s, Ops.w("左边 A1–A4", "LEFT A1–A4") if s == "A" else Ops.w("右边 B1–B4", "RIGHT B1–B4")]
-		ConsoleArt._name_plate(self, p + Vector2(0.0, -2.7) * m, plate, hint,
-			"ok", nm == s, t, z)
+		# the plate only while the drone is at this mouth (user 2026-11-10: every console's plate)
+		if nm == s:
+			ConsoleArt._name_plate(self, p + Vector2(0.0, -2.7) * m, plate, hint, "ok", true, t, z)

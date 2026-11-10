@@ -28,7 +28,7 @@
 	},
 	"fluids": {
 		"volumes": {
-			"nut": {"amount":1.4,"content":1.6,"fluid":"nutrient","leak":0.12,"piece":"NUT","port":"PN","pump":[0.14,0.01]},
+			"nut": {"thin":true,"amount":1.4,"content":1.6,"fluid":"nutrient","leak":0.12,"piece":"NUT","port":"PN","pump":[0.14,0.01]},
 			"nut_line": {"amount":0.02,"fluid":"nutrient","leak":0.06,"leak_min":0.004,"nets":["nut"]}
 		},
 		"joins": [],

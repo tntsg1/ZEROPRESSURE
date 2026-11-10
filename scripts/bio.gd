@@ -37,6 +37,8 @@ func setup(g, ship: Dictionary) -> void:
 	for r in rooms:
 		if float(rooms[r]) >= THRESHOLD:
 			dirty_from_start[r] = true
+	if active():
+		preload("res://scripts/cabin_fx.gd").ensure(g)   # the contamination in the air, drawn (drawing only)
 
 
 func active() -> bool:

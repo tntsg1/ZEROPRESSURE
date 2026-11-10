@@ -33,12 +33,16 @@ var flooded := {}            # room -> true
 var wet := {}                # piece id -> true
 var pending: Array = []      # [piece id, seconds left] rounds about to go off
 var _vel := {}               # body instance id -> last speed
+var fx                       # the rounds drawn cooking, the magazine flooding (scripts/munitions_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
 	game = g
 	world = g.world
 	cfg = ship.get("munitions", {})
+	if active():
+		fx = preload("res://scripts/munitions_fx.gd").new()
+		fx.setup(self)
 
 
 func active() -> bool:

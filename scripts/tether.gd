@@ -34,6 +34,7 @@ var heat := 0.0
 var slipped := false
 var thrown := false
 var snapped := false
+var fx                         # the pair drawn turning (scripts/tether_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
@@ -41,6 +42,9 @@ func setup(g, ship: Dictionary) -> void:
 	world = g.world
 	cfg = ship.get("tether", {})
 	rpm = float(cfg.get("rpm", 0.0))
+	if active():
+		fx = preload("res://scripts/tether_fx.gd").new()
+		fx.setup(self)
 
 
 func active() -> bool:

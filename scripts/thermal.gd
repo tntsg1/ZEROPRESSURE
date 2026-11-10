@@ -26,6 +26,7 @@ var shattered := {}
 var spoiled := {}
 var _zone_of := {}          # piece id -> zone (sorted once)
 var _burn_t := -99.0
+var fx                         # the hull drawn glowing (scripts/thermal_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
@@ -42,6 +43,9 @@ func setup(g, ship: Dictionary) -> void:
 			if r.size() == 4 and c.x >= float(r[0]) and c.x <= float(r[2]) and c.y >= float(r[1]) and c.y <= float(r[3]):
 				_zone_of[p.id] = z
 				break
+	if active():
+		fx = preload("res://scripts/thermal_fx.gd").new()
+		fx.setup(self)
 
 
 func active() -> bool:

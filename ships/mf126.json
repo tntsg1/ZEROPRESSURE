@@ -31,7 +31,7 @@
 		"volumes": {
 			"loop": {"amount":1.2,"content":1.2,"fluid":"coolant","leak":0.14,"piece":"CT","port":"PC","pump":[0.12,0.008]},
 			"loop_line": {"amount":0.02,"fluid":"coolant","leak":0.06,"leak_min":0.004,"nets":["cool"]},
-			"exp": {"amount":0.15,"fluid":"coolant","full":0.2,"leak":0.1,"nets":["xcool"],"piece":"EXP-T","port":"PEX","pump":[0.15,0.006]},
+			"exp": {"thin":true,"amount":0.15,"fluid":"coolant","full":0.2,"leak":0.1,"nets":["xcool"],"piece":"EXP-T","port":"PEX","pump":[0.15,0.006]},
 			"steam": {"amount":0.4,"content":1.0,"fluid":"water","full":0.5,"leak":0.1,"piece":"DRUM","port":"PDR","pump":[0.15,0.006]}
 		},
 		"joins": [],

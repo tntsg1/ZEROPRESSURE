@@ -36,6 +36,11 @@ var workday                   # a job of several working days (ARK-01), scripts/
 var boiloff                   # cryogenic tanks boiling off (HG-170), scripts/boiloff.gd
 var liquids                   # liquid adrift in free fall (every leak and spill), scripts/liquids.gd
 var combustion                # what burns, with what, and how hard, scripts/combustion.gd
+var recoil                    # a container pushed back by its own jet, scripts/recoil.gd
+var runaway                   # thermal runaway of a pierced charged battery (scripts/runaway.gd)
+var prestress                 # loaded beams that spring, twist and ring when cut through (scripts/prestress.gd)
+var spin                      # rotors coasting down after their power goes, a generator's remanence (scripts/spin.gd)
+var codex_rules               # buckling thin tanks, pumps run dry, gauges/solenoids/thrusters taken off live (scripts/codex_rules.gd)
 var drillstring               # a drill string in its derrick (DR-150), scripts/drillstring.gd
 var nested                    # a ship carried inside the ship (LC-140), scripts/nested.gd
 var waterball                 # a water ball in its net (BL-88), scripts/waterball.gd
@@ -445,6 +450,26 @@ func _ready() -> void:
 	combustion = preload("res://scripts/combustion.gd").new()
 	world.add_child(combustion)
 	combustion.setup(self)
+	recoil = preload("res://scripts/recoil.gd").new()
+	recoil.process_mode = Node.PROCESS_MODE_PAUSABLE
+	world.add_child(recoil)
+	recoil.setup(self)
+	runaway = preload("res://scripts/runaway.gd").new()
+	runaway.process_mode = Node.PROCESS_MODE_PAUSABLE
+	world.add_child(runaway)
+	runaway.setup(self)
+	codex_rules = preload("res://scripts/codex_rules.gd").new()
+	codex_rules.process_mode = Node.PROCESS_MODE_PAUSABLE
+	world.add_child(codex_rules)
+	codex_rules.setup(self)
+	spin = preload("res://scripts/spin.gd").new()
+	spin.process_mode = Node.PROCESS_MODE_PAUSABLE
+	world.add_child(spin)
+	spin.setup(self)
+	prestress = preload("res://scripts/prestress.gd").new()
+	prestress.process_mode = Node.PROCESS_MODE_PAUSABLE
+	world.add_child(prestress)
+	prestress.setup(self, ship)
 	boiloff = preload("res://scripts/boiloff.gd").new()
 	boiloff.process_mode = Node.PROCESS_MODE_PAUSABLE
 	world.add_child(boiloff)
@@ -4001,6 +4026,8 @@ func _check_done() -> void:
 # ---------------------------------------------------------------- bodies
 
 func on_body_freed(b) -> void:
+	if spin != null:
+		spin.on_freed(b)
 	if bio != null:
 		bio.on_freed(b)
 	if media != null:
@@ -4139,14 +4166,32 @@ func _bodies_upkeep(dt: float) -> void:
 				bb = qb if bb.size == Vector2.ZERO else bb.merge(qb)
 			var r: float = bb.size.length() * 0.5
 			dv = minf(dv, 1.5 * ((b.linear_velocity - b.prev_v).length() + absf(b.angular_velocity - b.prev_w) * r))
-		if dv > 55.0 and b.age > 0.4:
+		# a body stopped dead on the hull in one step can come with no contact impulse at all:
+		# a sudden loss of speed is a knock too (user 2026-11-10, 缺陷 1)
+		var stop: float = (b.linear_velocity - b.prev_v).length()
+		# (only against something it is touching: a mechanism setting its speed, a rail's
+		# run-out brake, say, is not a knock)
+		if dv <= 55.0 and stop > 55.0 and b.prev_v.length() - b.linear_velocity.length() > stop * 0.75 and not b.get_colliding_bodies().is_empty():
+			dv = stop
+			if b.hit_imp <= 0.0:
+				b.hit_pos = b.global_position + b.prev_v.normalized() * 0.5 * Geom.M
+		if dv > 55.0 and b.age > 0.4 and b.age - float(b.get_meta("imp_t", -9.0)) > IMPACT_GAP:
+			b.set_meta("imp_t", b.age)
 			_impact(b, dv)
 		b.hit_imp = 0.0
 		b.prev_v = b.linear_velocity
 		b.prev_w = b.angular_velocity
 
 
+# one knock takes at most this much of an item's condition, and a body grinding along
+# the hull is one knock, not one per step (user 2026-11-10: "不能扣太多")
+const IMPACT_CAP := 0.10
+const IMPACT_GAP := 0.2         # s
+
+
 func _impact(b, dv: float) -> void:
+	if recoil != null:
+		recoil.on_impact(b, dv)
 	var at: Vector2 = b.hit_pos
 	var k := clampf((dv - 55.0) / 260.0, 0.0, 1.0)
 	fx.sparks(at, Vector2.from_angle(randf() * TAU), 3 + int(k * 10), Pal.ink(0.8, 1.4), 200.0 + 200.0 * k, 0.3, 1.4)
@@ -4155,7 +4200,7 @@ func _impact(b, dv: float) -> void:
 	for p in b.pieces:
 		if p.cls == "equip" and p.intact:
 			var before: float = p.cond
-			_dent(p, maxf(0.0, p.cond - p.fragile * k * 0.5), "dv_impact")
+			_dent(p, maxf(0.0, p.cond - minf(p.fragile * k * 0.5, IMPACT_CAP)), "dv_impact")
 			lost += (before - p.cond) * p.value
 	if lost > 150.0:
 		incident("impact", "%d" % int(lost))
@@ -4336,6 +4381,9 @@ func on_cut_into(p, pos: Vector2) -> void:
 	var was_value: float = p.value * p.cond
 	var volts: float = sys.piece_volts(p)
 	var fv: String = sys.fluid_in_piece(p)
+	if recoil != null:
+		# a vessel charged below its burst pressure: the kerf is a hole it jets out of
+		recoil.on_cut(p, pos)
 	if p.hazard == "explosive" and p.intact and (munitions == null or munitions.live(p)):
 		_blast(p, pos)
 	elif sys.bursts(p):
@@ -4347,6 +4395,12 @@ func on_cut_into(p, pos: Vector2) -> void:
 			_breach(p, fv, pos, burst_kpa)
 	elif fv != "" and sys.fluid(fv) > 0.02:
 		_breach(p, fv, pos, 0.0)
+	if spin != null:
+		# a rotor still coasting: it bursts
+		spin.on_cut(p, pos)
+	if runaway != null:
+		# a charged battery pierced: thermal runaway (before the arc below empties it)
+		runaway.on_cut(p, pos)
 	if volts > 30.0:
 		_arc(pos, volts, p)
 		# the arc empties whatever stored it
@@ -4521,6 +4575,10 @@ func _leak(fluid: String, src: String, at: Vector2, piece = null) -> void:
 	var lk := {"pos": at, "dir": Vector2.from_angle(randf() * TAU), "fluid": fluid, "rate": 1.0, "src": src, "t": 0.0, "piece": piece, "local": Vector2.ZERO}
 	if piece != null:
 		lk.local = world.frame(piece).affine_inverse() * at
+		# a piece that comes loose later is re-centred on its body: leak_pos moves the point
+		# with it, once, when it does
+		lk.cen0 = Geom.centroid(piece.poly)
+		lk.body0 = piece.body
 		lk.dir = (at - world.frame(piece) * Geom.centroid(piece.poly)).normalized()
 	sys.leaks.append(lk)
 	sfx.play("leak")
@@ -4542,6 +4600,7 @@ func _leak(fluid: String, src: String, at: Vector2, piece = null) -> void:
 # what it held is thrown out with its shell at once.
 const LIQ = preload("res://scripts/liquids.gd")
 const KERF_W := 0.004           # m: the width of a laser kerf through a tank wall
+const HOT_GRAB := 60.0          # °C: equipment hotter than this burns the drone that grabs it
 
 
 func _breach(p, fv: String, pos: Vector2, burst_kpa: float) -> void:
@@ -4566,6 +4625,8 @@ func _breach(p, fv: String, pos: Vector2, burst_kpa: float) -> void:
 
 # the kerf grows across a tank holding liquid: so does the hole; cut through, it is open
 func _kerf_breach(p, pl: PackedVector2Array, res: Dictionary) -> void:
+	if recoil != null:
+		recoil.on_kerf(p, pl, res)
 	for lk in sys.leaks:
 		if lk.piece != p or not lk.has("area"):
 			continue
@@ -4590,6 +4651,20 @@ func _kerf_breach(p, pl: PackedVector2Array, res: Dictionary) -> void:
 
 func leak_pos(lk: Dictionary) -> Vector2:
 	if lk.piece != null and not lk.piece.gone:
+		if lk.has("cen0"):
+			# the piece's outline is re-centred on itself when it becomes a body: move the
+			# points kept in its frame (the hole, the kerf, the spot the liquid wells up on) once
+			var cen: Vector2 = Geom.centroid(lk.piece.poly)
+			if lk.piece.body != lk.body0:
+				var sh: Vector2 = cen - lk.cen0
+				lk.local = lk.local + sh
+				var slit: Array = lk.get("slit", [])
+				for i in slit.size():
+					slit[i] = (slit[i] as Vector2) + sh
+				if lk.has("_spot"):
+					lk["_spot"][0] = (lk["_spot"][0] as Vector2) + sh
+				lk.body0 = lk.piece.body
+			lk.cen0 = cen
 		return world.frame(lk.piece) * lk.local
 	return lk.pos
 
@@ -4703,6 +4778,10 @@ func cut_kerf(p, pl: PackedVector2Array, kerf: float = World.KERF, by_plan: bool
 	var res: Dictionary = world.commit_cut(p, material_pl, kerf, source)
 	if not source.is_empty(): source.split = int(res.split)
 	_kerf_breach(p, pl, res)
+	if recoil != null:
+		recoil.on_door_cut(p, res)
+	if prestress != null:
+		prestress.on_cut(p, pl, res)
 	on_kerf(p, res)
 	if plan != null:
 		plan.on_cut(p, local_pl, incidents.size() > inc0, attached, plan_context, by_plan)
@@ -4735,6 +4814,10 @@ func on_kerf(p, res: Dictionary) -> void:
 
 
 func on_grab(p) -> void:
+	# the book (cx_s_heat_b): equipment still over 60 °C burns the drone that takes hold of it
+	if p.cls == "equip" and p.temp > HOT_GRAB:
+		hurt_drone(clampf(6.0 + (p.temp - HOT_GRAB) * 0.05, 6.0, 20.0), aim, "heat_hit", "grab_hot", 1.0)
+		fx.sparks(aim, Vector2.UP, 6, Pal.heat(0.9, 1.6), 120.0, 0.3, PI)
 	if p.body == null:
 		var fixed := 0
 		for j in world.joints_of(p):
@@ -4803,6 +4886,9 @@ func on_tear(p, weak: Array, lines_held: Array, at: Vector2) -> void:
 	sfx.play("snap")
 	say("torn_free", at)
 	hint("torn")
+	if recoil != null:
+		# a charged bottle torn loose loses its valve or its fitting with it (scripts/recoil.gd)
+		recoil.on_tear(p, lines_held, at)
 
 
 # ---------------------------------------------------------------- measure / wrench / hose

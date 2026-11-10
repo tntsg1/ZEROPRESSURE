@@ -246,7 +246,7 @@ func _process(dt: float) -> void:
 " + str(inf2.text) if str(inf2.text) != "" else "")) if str(heat.get("state","")) in ["raw_transport","processing","product_transport"] else (GuideCopy.text(instruction) if service.waiting == "" else service.waiting)
 	# paused at the power screen: the way there is right on the desk
 	var pp := _pct()
-	power_b.visible = Grid.ctl().defer or Grid.is_short_text(str(service.waiting)) or pp < 100
+	power_b.visible = Grid.ctl().defer or ((Grid.is_short_text(str(service.waiting)) or pp < 100) and Mainline.power_open())
 	_now(inf2, pp)
 
 	var ql: Array = []

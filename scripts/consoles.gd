@@ -80,9 +80,18 @@ func near() -> String:
 
 func _process(dt: float) -> void:
 	t += dt
-	# 108 号 帧率: only while its part of the port is in view (scripts/view_cull.gd)
-	if ViewCull.sees_zone(game, "salvage", 20.0):
+	# 108 号 帧率: only while it is in view (scripts/view_cull.gd). Its own rect on the berth's tower
+	# wall — not the port's salvage district, which is far off: culled by that box it was never
+	# redrawn in the berth, and its last picture (the screen's figures sized for that frame's zoom)
+	# was stretched by the camera, blurred (user 2026-11-10, IC-120)
+	if ViewCull.sees(game, view_rect()):
 		queue_redraw()
+
+
+# the world rect its drawing covers (the terminal, the stores terminal or the rack), px
+static func view_rect() -> Rect2:
+	var r := Rect2(centre(0), Vector2.ZERO).expand(kiosk_at()).expand(rack_centre())
+	return r.grow(4.0 * Geom.M)
 
 
 # 105 号: the berth terminal is a cabinet on the tower wall and the parts rack a frame of cubbies

@@ -31,6 +31,7 @@ var wait_t := 0.0
 const LoadMotion = preload("res://scripts/load_motion.gd")
 var wait_reason := ""
 var route_t := 0.0
+var _rail_node: Node2D = null   # 工业剖面: the rail, drawn once
 
 
 func _init() -> void:
@@ -295,12 +296,28 @@ func _draw() -> void:
 	var x0 := (Dock.BOUNDS.position.x + 0.6) * Geom.M
 	var x1 := (Dock.FLOOR_X1 - 0.6) * Geom.M
 	# the rail
-	draw_line(Vector2(x0, ry), Vector2(x1, ry), Pal.ink(0.5), 3.0)
-	draw_line(Vector2(x0, ry + 6.0), Vector2(x1, ry + 6.0), Pal.ink(0.22), 1.0)
-	var x := x0
-	while x < x1:
-		draw_line(Vector2(x, ry), Vector2(x + 10.0, ry + 6.0), Pal.ink(0.18), 1.0)
-		x += 26.0
+	# 工业剖面: the rail never moves — a child node draws it once (60 FPS: drawn here each frame it
+	# cost ARK-01's long berth ~20 ms); redrawn only when the berth's span changes
+	if _rail_node == null:
+		_rail_node = Node2D.new()
+		_rail_node.show_behind_parent = true
+		_rail_node.draw.connect(func() -> void:
+			var k: Array = _rail_node.get_meta("k")
+			Cutaway.crane_rail(_rail_node, k[0], k[1], k[2]))
+		add_child(_rail_node)
+	_rail_node.visible = Pal.solid
+	if Pal.solid:
+		var key := [x0, x1, ry]
+		if _rail_node.get_meta("k", []) != key:
+			_rail_node.set_meta("k", key)
+			_rail_node.queue_redraw()
+	else:
+		draw_line(Vector2(x0, ry), Vector2(x1, ry), Pal.ink(0.5), 3.0)
+		draw_line(Vector2(x0, ry + 6.0), Vector2(x1, ry + 6.0), Pal.ink(0.22), 1.0)
+		var x := x0
+		while x < x1:
+			draw_line(Vector2(x, ry), Vector2(x + 10.0, ry + 6.0), Pal.ink(0.18), 1.0)
+			x += 26.0
 	# marks on the queued loads
 	for i in queue.size():
 		var b = queue[i]
@@ -313,8 +330,11 @@ func _draw() -> void:
 	# the trolley, the cable, the hook
 	# 91 号: the trolley rides a little ahead of or behind the hook as the load swings
 	var tr := Vector2(pos.x + art.x, ry)
-	MechArt.cable_and_hook(self, tr + Vector2(-4, 12), pos, 4, state in ["carry", "release"])
-	art.trolley(self, tr, 56.0, state != "idle", t)
+	MechArt.cable_and_hook(self, tr + Vector2(-4, 38.0 if Pal.solid else 12.0), pos, 4, state in ["carry", "release"])
+	if Pal.solid:
+		Cutaway.trolley(self, tr, 56.0, state != "idle", t, art.wheel)
+	else:
+		art.trolley(self, tr, 56.0, state != "idle", t)
 	if wait_reason != "":
 		draw_string(Fonts.get_font("Medium"), pos + Vector2(18, 28), LoadMotion.wait_line(body,wait_reason), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.heat(0.95, 1.2))
 	if body != null and is_instance_valid(body) and state in ["carry", "release"]:

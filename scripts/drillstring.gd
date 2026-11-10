@@ -30,12 +30,16 @@ var dropped := {}
 var whipped := false
 var blown := false
 var _done := {}
+var fx                         # the string drawn twisted, the mud in it, the slips (scripts/drillstring_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
 	game = g
 	world = g.world
 	cfg = ship.get("drillstring", {})
+	if active():
+		fx = preload("res://scripts/drillstring_fx.gd").new()
+		fx.setup(self)
 
 
 func active() -> bool:

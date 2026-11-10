@@ -10,7 +10,7 @@
 	"gas": {
 		"rooms": {"AL":101.0,"AU":101.0,"BL":101.0,"BU":101.0},
 		"vessels": {
-			"O2A": {"V":0.06,"burst":200.0,"kpa":12000.0,"piece":"O2-A"},
+			"O2A": {"V":0.06,"burst":200.0,"kpa":15000.0,"piece":"O2-A"},
 			"HEB": {"V":0.08,"burst":200.0,"kpa":20000.0,"piece":"HE-B"}
 		},
 		"valves": [],

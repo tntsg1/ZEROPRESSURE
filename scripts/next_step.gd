@@ -858,6 +858,13 @@ static func _ic120(g) -> Dictionary:
 			var c = g.world.ctrls[id]
 			if c.kind == "port" and str(c.target) == vol and g.world.ctrl_alive(c):
 				port = str(id)
+		# 用户定案（2026-11-10，图鉴对标 6 号 A 方案）: the meltwater pumped down to nothing with
+		# the hose still on it and the pump still powered runs the pump dry (codex_rules.gd):
+		# take the hose off till more water comes. 占位文字，等用户定稿.
+		var pv = g.world.tag(str(g.sys.fvol.get(vol, {}).get("piece", "")))
+		var dry_low: float = float(g.sys.fvol.get(vol, {}).get("full", 1.0)) * 0.03
+		if port != "" and g.sys.hoses.has(port) and g.sys.fluid(vol) < dry_low and pv != null and not pv.gone and g.sys.piece_volts(pv) > 0.0:
+			return _step(w("融水抽干了：拔掉 %s 的软管，免得 %s 空转", "THE MELTWATER IS DRAWN OFF: TAKE THE HOSE OFF %s BEFORE %s RUNS DRY") % [port, pv.tag], w("气液回收（5）再点一下接口；或者先断 %s 的电", "hose (5) on the port again; or cut %s's power first") % pv.tag, _ctrl_at(g, port))
 		if port != "" and (g.sys.fluid(vol) > lim * 0.5 or (ic.blocks_left() == 0 and g.sys.fluid(vol) > 0.05)):
 			return _drain(g, port, w("泵走融水", "PUMP THE MELTWATER"), w("气液回收（5）；融水就是这一单的钱，积到 %.0f m³ 带电会短路", "hose (5); the water is the pay, past %.0f m³ it shorts") % lim, w("：%.1f m³", ": %.1f m³") % g.sys.fluid(vol))
 		if ic.blocks_left() > 0:

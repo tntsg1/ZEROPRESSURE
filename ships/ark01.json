@@ -24,6 +24,7 @@
 		"value": 60000.0
 	},
 	"power": {
+		"transformers": {"XFMR-111":10.0,"XFMR-165":10.0,"XFMR-220":10.0,"XFMR-270":10.0,"XFMR-317":10.0,"XFMR-371":10.0},
 		"bus": "DC",
 		"sources": [
 			{"cable":"pa1","charge":0.85,"drain":0.0002,"kind":"battery","local_volts":48.0,"piece":"AUX-1","switch":"K-AUX","volts":440.0},
@@ -65,17 +66,17 @@
 			"pt6": {"amount":1.2,"content":1.0,"fluid":"fuel","full":3.0,"leak":0.15,"piece":"PT-6","port":"PP-6","pump":[0.15,0.01]},
 			"pt7": {"amount":0.6,"content":1.0,"fluid":"fuel","full":3.0,"leak":0.15,"piece":"PT-7","port":"PP-7","pump":[0.15,0.01]},
 			"pt8": {"amount":2.0,"content":1.0,"fluid":"fuel","full":3.0,"leak":0.15,"piece":"PT-8","port":"PP-8","pump":[0.15,0.01]},
-			"wt1": {"amount":0.6,"content":1.0,"fluid":"water","full":3.0,"leak":0.1,"piece":"WT-1","port":"PW-1","pump":[0.12,0.008]},
-			"wt2": {"amount":0.6,"content":1.0,"fluid":"water","full":3.0,"leak":0.1,"piece":"WT-2","port":"PW-2","pump":[0.12,0.008]},
-			"wt3": {"amount":0.6,"content":1.0,"fluid":"water","full":3.0,"leak":0.1,"piece":"WT-3","port":"PW-3","pump":[0.12,0.008]},
-			"wt4": {"amount":0.6,"content":1.0,"fluid":"water","full":3.0,"leak":0.1,"piece":"WT-4","port":"PW-4","pump":[0.12,0.008]}
+			"wt1": {"thin":true,"amount":0.6,"content":1.0,"fluid":"water","full":3.0,"leak":0.1,"piece":"WT-1","port":"PW-1","pump":[0.12,0.008]},
+			"wt2": {"thin":true,"amount":0.6,"content":1.0,"fluid":"water","full":3.0,"leak":0.1,"piece":"WT-2","port":"PW-2","pump":[0.12,0.008]},
+			"wt3": {"thin":true,"amount":0.6,"content":1.0,"fluid":"water","full":3.0,"leak":0.1,"piece":"WT-3","port":"PW-3","pump":[0.12,0.008]},
+			"wt4": {"thin":true,"amount":0.6,"content":1.0,"fluid":"water","full":3.0,"leak":0.1,"piece":"WT-4","port":"PW-4","pump":[0.12,0.008]}
 		},
 		"joins": [],
 		"value": {"coolant":9000.0,"fuel":90000.0,"water":8000.0}
 	},
 	"reactor": {
 		"core": "CORE-M",
-		"rate": 900.0,
+		"rate": 3200.0,
 		"shields": ["SHIELD"],
 		"limit": 150.0,
 		"drums": {"CRD-1":"RL-1","CRD-2":"RL-2","CRD-3":"RL-3","CRD-4":"RL-4"},

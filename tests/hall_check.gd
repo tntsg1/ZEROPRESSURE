@@ -155,11 +155,16 @@ func _rules() -> void:
 	m0 = _money()
 	var each := HallMarket.buy_each("p_radiator")
 	var b := HallMarket.buy("p_radiator", 1)
-	check(b.ok and absf(m0 - _money() - each) < 1.0 and RepairBill.own_of("p_radiator").size() == 1, "bought a radiator for %s: in the stores" % Pal.money(each))
+	# 货船穿模 (2026-11-10): paid at once, the same price; in the stores once the seller's freighter is unloaded
+	check(b.ok and absf(m0 - _money() - each) < 1.0 and RepairBill.own_of("p_radiator").size() == 0 and HallMarket.deliveries().size() == 1, "bought a radiator for %s: paid now, on its way by freighter" % Pal.money(each))
+	_tick(HallMarket.SHIP_IN + HallMarket.SHIP_LOAD + 2.0)
+	check(RepairBill.own_of("p_radiator").size() == 1, "the freighter alongside, unloaded: the radiator is in the stores")
 	check(each > RepairBill.kind_price("p_radiator") * 1.2, "dearer than one's own salvage (%s against %s)" % [Pal.money(each), Pal.money(RepairBill.kind_price("p_radiator"))])
 	var st0 := float(Career.data.structure_t)
 	HallMarket.buy(HallMarket.STEEL, 5.0)
-	check(absf(float(Career.data.structure_t) - st0 - 5.0) < 0.01, "5 t of repair steel bought into its slot")
+	check(absf(float(Career.data.structure_t) - st0) < 0.01, "repair steel bought: not in its slot before its freighter comes")
+	_tick(60.0)
+	check(absf(float(Career.data.structure_t) - st0 - 5.0) < 0.01, "5 t of repair steel unloaded into its slot")
 	Career.data.money = 10.0
 	check(not HallMarket.buy("p_engine", 1).ok, "not enough cash: refused")
 	Career.data.money = 200000.0

@@ -7,6 +7,7 @@ extends Node
 # a faint fill, a bright edge, a highlight where the surface faces the berth's light. Ice is not
 # liquid and is drawn by liquids.gd as before.
 
+const LiquidColors = preload("res://scripts/liquid_colors.gd")
 const FIELD_R := 1.85        # a globule's field reaches this many radii (its iso-line sits at its radius)
 const HALF := 0.5            # the buffer's resolution, of the screen's
 
@@ -63,9 +64,7 @@ func setup(liquids: Node2D) -> void:
 	mat = ShaderMaterial.new()
 	mat.shader = preload("res://scripts/liquid_surface.gdshader")
 	mat.set_shader_parameter("field", sv.get_texture())
-	mat.set_shader_parameter("liquid", Pal.tint(Pal.FLUID, 0.85, 1.25))
-	mat.set_shader_parameter("orange", Color(0.95, 0.6, 0.28, 0.95))
-	mat.set_shader_parameter("mud", Pal.ink(0.45))
+	mat.set_shader_parameter("palette", LiquidColors.palette())
 	mat.set_shader_parameter("shine", Pal.ink(0.75))
 	rect.material = mat
 	layer.add_child(rect)
@@ -83,13 +82,9 @@ static func _falloff() -> Texture2D:
 	return ImageTexture.create_from_image(img)
 
 
-# tint channels: green toward the orange of the tetroxide, blue toward the grey of mud
+# tint channels: where the liquid sits in the palette (liquid_colors.gd), u in green, v in blue
 static func _tint(look: String) -> Vector2:
-	match look:
-		"nto": return Vector2(1, 0)
-		"mud": return Vector2(0, 1)
-		"fuel", "mmh", "oil": return Vector2(0.18, 0.15)
-	return Vector2.ZERO
+	return LiquidColors.uv(look)
 
 
 func update(blobs: Array) -> void:

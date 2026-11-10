@@ -41,6 +41,20 @@ const LIEN_SHARE := Vector2(0.08, 0.16)  # a yard's lien, a share of the ask
 const WASTE_PER_M := 120.0               # hazardous-waste disposal, $ per metre of hull
 const TITLE_ADMIT_CUT := 0.92            # a seller who says so takes this much off
 const LOG_KEEP := 40                     # the agencies' public record: the last results kept
+# 133 号 (user 2026-11-10 "二手船市你可以做成无限的，和淘宝一样"): the endless feed. Besides the fifteen
+# kept listings, the belt lists a hulk every FEED_GAP orbit days, each fixed by its place on that
+# timeline (seed, time up, time left, station): the same slot is the same ship every time. Only the
+# cheap part (ship, station, times) is worked out for the whole feed; a card's full listing is drawn
+# when it comes on screen and kept in memory only. A listing the player opens (or holds, offers on,
+# inspects) is checked like any market contract and only then written to the save; one that fails
+# the check is withdrawn (about 1 in 80). Bought feed listings are remembered by id until their
+# time would have run out, so the save stays small however far the page is scrolled.
+const FEED_GAP := 0.5                    # orbit days between two feed listings (~2,700 up at once)
+const FEED_SEED := 3000000
+const FEED_KEEP_VIEWED := 30             # opened but not acted on: the newest this many are kept
+static var _meta := {}                   # feed slot -> {s, id, listed, expires, station, ship}
+static var _drafts := {}                 # feed id -> its full listing (memory only)
+static var _feed_sig := ""
 
 
 static func w(zh: String, en: String) -> String:
@@ -101,7 +115,9 @@ static func refresh() -> bool:
 			continue
 		kept.append(l)
 	d.listings = kept
-	while d.listings.size() < LISTINGS and showcase_count < SHOWCASE_LIMIT:
+	if _prune_feed():
+		changed = true
+	while _kept_n() < LISTINGS and showcase_count < SHOWCASE_LIMIT:
 		var due := Methods.showcase_due()
 		if due == "":
 			break
@@ -116,7 +132,7 @@ static func refresh() -> bool:
 			showcase_count += 1
 		changed = true
 	var tries := 0
-	while d.listings.size() < LISTINGS and tries < 20:
+	while _kept_n() < LISTINGS and tries < 20:
 		tries += 1
 		var l := _make(int(d.seed))
 		d.seed = int(d.seed) + 1
@@ -166,21 +182,38 @@ static func _showcase(id: String) -> Dictionary:
 
 
 static func _make(seed: int) -> Dictionary:
+	var d := data()
+	var l := _build(seed, "SM-%03d" % int(d.next), {}, "retry")
+	if not l.is_empty():
+		d.next = int(d.next) + 1
+	return l
+
+
+# one listing from its seed. mode: "retry" (the kept fifteen: drawn again until the contract checks),
+# "none" (a feed card on screen, unchecked), "check" (a feed listing opened: checked, {} if it fails).
+# A feed slot gives its own time up, time left and station; the price is drawn the same way.
+static func _build(seed: int, id: String, slot: Dictionary, mode: String) -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed * 7919 + 13
 	var career := Career.data
 	var stars := rng.randi_range(1, Market.max_stars(int(career.get("rep", 0))))
-	var o := Market.valid_offer(rng, career, stars, {}, "full", "salvage")
+	var o: Dictionary
+	if mode == "retry":
+		o = Market.valid_offer(rng, career, stars, {}, "full", "salvage")
+	else:
+		o = Market.offer(rng, career, stars, {}, "full", Market.pick_ship(rng, career, stars), "salvage")
+		if mode == "check" and not ContractValidator.check(o._ship).ok:
+			return {}
+		o.erase("_ship")
 	if o.is_empty():
 		return {}
-	var d := data()
-	var id := "SM-%03d" % int(d.next)
-	d.next = int(d.next) + 1
 	o.id = id
 	o.bought = true
 	o.drift_years = 0
 	o.fee = 0.0
 	var station := rng.randi_range(0, Orbits.STATIONS.size() - 1)
+	if not slot.is_empty():
+		station = int(slot.station)
 	var traps: Array = o.get("traps", [])
 	# what the seller says, category by category
 	var statements: Array = []
@@ -206,7 +239,7 @@ static func _make(seed: int) -> Dictionary:
 	var value := float(o.value)
 	# what it costs: under the broker's value by how far it lies and how it is said to be
 	var price := snappedf(value * rng.randf_range(0.42, 0.62) * (1.0 + 0.04 * (score - 6)), 500.0)
-	var now := Shipping.day()
+	var now := Shipping.day() if slot.is_empty() else float(slot.listed)
 	# 57 号: a yard's lien or the waste liability, said or not (its own draw, the rest unchanged)
 	var trng := RandomNumberGenerator.new()
 	trng.seed = seed * 104729 + 31
@@ -223,7 +256,150 @@ static func _make(seed: int) -> Dictionary:
 	return {"id": id, "offer": o, "station": station, "price": price, "statements": statements, "title": title,
 		"rating": {"score": score, "agency": ag, "day": now - rng.randf_range(20.0, 400.0), "paid": ag == "qr" and false_said},
 		"inspected": {}, "listed": now, "expires": now + rng.randf_range(LIFE.x, LIFE.y),
-		"floor": snappedf(price * rng.randf_range(0.82, 0.97), 100.0)}
+		"floor": snappedf(price * rng.randf_range(0.82, 0.97), 100.0)}.merged({} if slot.is_empty() else {"expires": float(slot.expires), "feed": int(slot.s)}, true)
+
+
+# ---------------------------------------------------------------- the endless feed (133 号)
+
+static func _kept_n() -> int:
+	var n := 0
+	for l in data().listings:
+		if not l.has("feed"):
+			n += 1
+	return n
+
+
+# what the feed depends on besides its slot: a new berth or a new rank draws other ships
+static func _sig() -> String:
+	return "%d/%.0f" % [Market.max_stars(int(Career.data.get("rep", 0))), Dock.owned(Career.data.get("upgrades", {}))]
+
+
+static func _check_sig() -> void:
+	var sg := _sig()
+	if sg != _feed_sig:
+		_feed_sig = sg
+		_meta.clear()
+		_drafts.clear()
+		_pools.clear()
+
+
+static func feed_id(s: int) -> String:
+	return "SM-F%d" % s
+
+
+# the cheap part of a feed slot: when it went up and comes down, where it lies, which ship
+static func feed_meta(s: int) -> Dictionary:
+	if _meta.has(s):
+		return _meta[s]
+	var t := RandomNumberGenerator.new()
+	t.seed = hash(["feed", s])
+	var listed := float(s) * FEED_GAP
+	var m := {"s": s, "id": feed_id(s), "listed": listed, "expires": listed + t.randf_range(LIFE.x, LIFE.y),
+		"station": t.randi_range(0, Orbits.STATIONS.size() - 1)}
+	# the same first draws as _build, so the ship named here is the ship drawn there
+	var rng := RandomNumberGenerator.new()
+	rng.seed = (FEED_SEED + s) * 7919 + 13
+	var stars := rng.randi_range(1, Market.max_stars(int(Career.data.get("rep", 0))))
+	m.ship = _pick(rng, stars)
+	_meta[s] = m
+	return m
+
+
+# Market.pick_ship with its pool kept per rank (the pool is the slow part; the draw is the same)
+static var _pools := {}
+static func _pick(rng: RandomNumberGenerator, stars: int) -> String:
+	if not _pools.has(stars):
+		var rep := int(Career.data.get("rep", 0))
+		var pool: Array = []
+		var total := 0
+		for e in Market.POOL:
+			if (Market.BY_BERTH_ONLY or rep >= int(e[2])) and (e.size() < 4 or stars >= int(e[3])) and Ship.available(e[0]) and Market.fits(e[0], Career.data):
+				pool.append(e)
+				total += int(e[1])
+		_pools[stars] = [pool, total]
+	var r := RandomNumberGenerator.new()
+	r.seed = hash([rng.state, "ship"])
+	var k := r.randi_range(1, maxi(1, int(_pools[stars][1])))
+	for e in _pools[stars][0]:
+		k -= int(e[1])
+		if k <= 0:
+			return e[0]
+	return "gr7"
+
+
+# every feed slot up now, newest first (gone and withdrawn ones left out); upto: only those already
+# listed by then (a page read at one moment keeps its order while it is scrolled)
+static func feed(now: float, upto := INF) -> Array:
+	_check_sig()
+	var gone: Dictionary = data().get("gone", {})
+	var out: Array = []
+	var hi := int(floor(minf(now, upto) / FEED_GAP))
+	var lo := int(ceil((now - LIFE.y) / FEED_GAP))
+	for s in range(hi, lo - 1, -1):
+		var m := feed_meta(s)
+		if float(m.expires) > now and not gone.has(str(m.id)):
+			out.append(m)
+	return out
+
+
+# a feed card's full listing: the one in the save if it was opened, else drawn (memory only)
+static func feed_draft(m: Dictionary) -> Dictionary:
+	var kept := listing(str(m.id))
+	if not kept.is_empty():
+		return kept
+	if not _drafts.has(m.id):
+		if _drafts.size() > 1500:
+			_drafts.clear()
+		_drafts[m.id] = _build(FEED_SEED + int(m.s), str(m.id), m, "none")
+	return _drafts[m.id]
+
+
+# opened: the listing is checked and written to the save (true), or withdrawn (false)
+static func take(id: String) -> bool:
+	if not listing(id).is_empty():
+		return true
+	if not id.begins_with("SM-F"):
+		return false
+	_check_sig()
+	var s := int(id.substr(4))
+	var m := feed_meta(s)
+	var d := data()
+	if float(m.expires) <= Shipping.day() or d.get("gone", {}).has(id):
+		return false
+	var l := _build(FEED_SEED + s, id, m, "check")
+	if l.is_empty():
+		var gone: Dictionary = d.get("gone", {})
+		gone[id] = float(m.expires)
+		d.gone = gone
+		_drafts.erase(id)
+		return false
+	l.opened = Shipping.day()
+	d.listings.append(l)
+	_drafts.erase(id)
+	_prune_feed()
+	return true
+
+
+# a feed listing only opened (not held, offered on or inspected) is let go beyond the newest few;
+# the gone list forgets what would have run out anyway
+static func _prune_feed() -> bool:
+	var d := data()
+	var changed := false
+	var idle: Array = d.listings.filter(func(l): return l.has("feed") and not l.has("hold") and not l.get("haggled", false) and (l.inspected as Dictionary).is_empty())
+	if idle.size() > FEED_KEEP_VIEWED:
+		idle.sort_custom(func(a, b): return float(a.get("opened", 0.0)) > float(b.get("opened", 0.0)))
+		var drop := {}
+		for l in idle.slice(FEED_KEEP_VIEWED):
+			drop[str(l.id)] = true
+		d.listings = d.listings.filter(func(l): return not drop.has(str(l.id)))
+		changed = true
+	if d.has("gone"):
+		var now := Shipping.day()
+		for id in (d.gone as Dictionary).keys():
+			if float(d.gone[id]) <= now:
+				d.gone.erase(id)
+				changed = true
+	return changed
 
 
 # ---------------------------------------------------------------- the belt's finds (62 号)
@@ -379,10 +555,12 @@ static func inspect(id: String, cat: String) -> Dictionary:
 
 
 # the tow home: from the station on a Lambert arc; the contractor's fee by hull and Δv
-static func tow_quote(l: Dictionary) -> Dictionary:
+# (run: the station's arc already worked out — a page of cards shares one per station)
+static func tow_quote(l: Dictionary, run := {}) -> Dictionary:
 	if l.has("hold"):
 		return {"run": l.hold.run, "fee": float(l.hold.fee)}
-	var run := Orbits.transfer(Orbits.station(int(l.station)), Orbits.PORT, Shipping.day())
+	if run.is_empty():
+		run = Orbits.transfer(Orbits.station(int(l.station)), Orbits.PORT, Shipping.day())
 	var length := float(Market.type_of(str(l.offer.ship)).get("length", 30.0))
 	var fee := snappedf(1500.0 + length * 30.0 + (float(run.dv1) + float(run.dv2)) * length * 1.5, 100.0)
 	return {"run": run, "fee": fee}
@@ -432,6 +610,10 @@ static func buy(id: String, at_price := -1.0) -> Dictionary:
 	l = listing(id)
 	Career.data.money = float(Career.data.money) - total
 	d.listings = d.listings.filter(func(x): return str(x.id) != id)
+	if l.has("feed"):
+		var gone: Dictionary = d.get("gone", {})
+		gone[id] = float(l.expires)
+		d.gone = gone
 	d.assets.append({"id": id, "listing": l.duplicate(true), "state": "towing", "run": q.run, "tow": q.fee, "price": price, "claimed": false, "mind": reservation(l), "tug": tug})
 	if not Career.save():
 		Career.data = before

@@ -25,12 +25,16 @@ var _was := {}                # branch -> its volume's amount last frame
 var _told := false
 var _owed := 0.0              # the mixed waste's charge, settled once a second
 var _owed_t := 0.0
+var fx                         # the media drawn running and mixing (scripts/media_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
 	game = g
 	world = g.world
 	cfg = ship.get("media", {})
+	if active():
+		fx = preload("res://scripts/media_fx.gd").new()
+		fx.setup(self)
 
 
 func active() -> bool:

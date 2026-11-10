@@ -848,6 +848,16 @@ func _unhandled_key_input(ev: InputEvent) -> void:
 		if game.hud != null and game.hud.has_method("show_hint"):
 			game.hud.show_hint("画面：新（91 号）" if on else "画面：旧（对比用）")
 		get_viewport().set_input_as_handled()
+	# 工业剖面样片: F9, the solid cutaway picture or the current one (not saved)
+	if ev is InputEventKey and ev.pressed and not ev.echo and ev.physical_keycode == KEY_F9:
+		Pal.solid = not Pal.solid
+		if game.world != null:
+			game.world.redraw_all(true)
+		if game.crane != null:
+			game.crane.queue_redraw()
+		if game.hud != null and game.hud.has_method("show_hint"):
+			game.hud.show_hint("画面：工业剖面样片" if Pal.solid else "画面：当前")
+		get_viewport().set_input_as_handled()
 
 
 func _draw_notes() -> void:

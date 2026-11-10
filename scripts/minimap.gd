@@ -642,6 +642,21 @@ func _draw_port_live() -> void:
 			var bp2 := pmap(FW.behind(tr, 8.7 * Geom.M))
 			ci.draw_line(hp, bp2, Pal.heat(0.9, 1.2), 3.0)
 			ci.draw_rect(Rect2(hp - Vector2(2, 2), Vector2(4, 4)), Pal.ink(0.9, 1.3))
+	# 货船穿模 (user 2026-11-10: "完全看不到货船在哪里"): the trade port's freighters — a hull bar, its
+	# bow lit, and a ring breathing round it while it comes in or lies alongside
+	if HallMarket.open():
+		var CS = preload("res://scripts/client_ships.gd")
+		var tb := PortStructure.box("trade")
+		for e in CS.ships():
+			if str(e.kind) == "post":
+				continue
+			var sp := pmap(tb.position + (e.at as Vector2) * m)
+			var hl := maxf(3.0, float(e.len) * 0.5 * m * k)
+			var fl := signf(float(e.flip)) if absf(float(e.flip)) > 0.04 else 1.0
+			ci.draw_line(sp - Vector2(hl * fl, 0), sp + Vector2(hl * fl, 0), Color(UiSkin.ACCENT, 0.95), 3.0)
+			ci.draw_rect(Rect2(sp - Vector2(hl * fl, 0) - Vector2(1.5, 1.5), Vector2(3, 3)), Pal.ink(0.95, 1.3))
+			if str(e.phase) != "out":
+				FastDraw.arc(ci, sp, 6.0 + 4.0 * pulse, 0.0, TAU, 16, Color(UiSkin.ACCENT, 0.7 * (1.0 - pulse)), 1.0)
 	# the work boat
 	if game.boat != null and is_instance_valid(game.boat):
 		var bp := pmap(game.boat.global_position)

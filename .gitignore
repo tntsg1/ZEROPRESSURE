@@ -12,3 +12,4 @@ tests/out/
 
 # Demo videos recorded for review (large; kept local)
 recordings/*.mp4
+recordings/**/*.mp4

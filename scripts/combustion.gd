@@ -44,8 +44,22 @@ const CHEM := {
 	"oil": {"role": "fuel", "hc": 4.2e7, "o2": 3.3, "rho": 870.0, "air": true},
 	# oxygen let out of a cylinder in vacuum: any fuel burns in it, given a spark
 	"o2": {"role": "ox", "rho": 1.0},
+	# a lithium cell's carbonate electrolyte, boiled off in a thermal runaway (scripts/runaway.gd)
+	"electrolyte": {"role": "fuel", "hc": 2.0e7, "o2": 1.1, "rho": 1100.0, "air": true},
 }
 const H2_KG := 0.00082          # kg of hydrogen in one kPa·m³ of it (at 20 °C)
+# the codex (cx_s_cloud_x, cx_fuelcell_x; user 2026-11-10, 用户定案 4): a vapour lights in air
+# only between its lower and upper flammability limits (volume fraction): too lean or too
+# rich and it does not. [lower, upper, kg per mol]. Hydrazine (the propellant, "fuel") and
+# hydrogen as the book has them; the rest from their data sheets. A fresh cloud is rich;
+# it lights once it has spread into enough air.
+const LIMITS := {
+	"fuel": [0.047, 1.0, 0.032],
+	"mmh": [0.025, 0.92, 0.046],
+	"lh2": [0.04, 0.75, 0.002],
+	"lng": [0.05, 0.15, 0.016],
+	"electrolyte": [0.042, 0.13, 0.09],
+}
 
 var game
 var world
@@ -191,8 +205,45 @@ func _oxidiser(u: Dictionary) -> String:
 	if _o2_near(u, float(_r(u)) + REACH) != null:
 		return "ox"
 	if bool(ch.get("air", false)) and o2_avail(_room_at(u.pos)) > 0.01:
+		if not u.has("vol") and not flammable(u):
+			return ""
 		return "air"
 	return ""
+
+
+const ENTRAIN := 4.0            # a release stirs in this many times its own volume of air at once
+
+
+# a vapour cloud's fuel fraction by volume: its moles over its moles and the air's in what it
+# has mixed with: its spread (a sphere of radius r), or at least a few times its own volume at
+# the room's pressure (a release entrains the air round it), but never more than the room
+# holds. So a cloud in open air always has a flammable mix; a lot of fuel in a small closed
+# compartment is too rich, and a wisp in a hall too lean.
+func mix_frac(u: Dictionary) -> float:
+	var lim: Array = LIMITS.get(str(u.look), [])
+	if lim.is_empty() or u.has("vol"):
+		return -1.0
+	var nf: float = float(u.kg) / float(lim[2])
+	var room := _room_at(u.pos)
+	var p: float = game.sys.P(room) if room != "" else 0.0
+	if p <= 0.1:
+		return 1.0
+	var rt := 8.314 * 293.0
+	var own: float = nf * rt / (p * 1000.0)
+	var r: float = maxf(float(u.r), 0.05)
+	var v: float = maxf(4.0 / 3.0 * PI * r * r * r, ENTRAIN * own)
+	if game.sys.vols.has(room):
+		v = minf(v, float(game.sys.vols[room].get("V", v)))
+	var na: float = p * 1000.0 * maxf(v - own, 0.0) / rt
+	return nf / maxf(nf + na, 1e-9)
+
+
+func flammable(u: Dictionary) -> bool:
+	var x := mix_frac(u)
+	if x < 0.0:
+		return true
+	var lim: Array = LIMITS[str(u.look)]
+	return x >= float(lim[0]) and x <= float(lim[1])
 
 
 # ---------------------------------------------------------------- the units

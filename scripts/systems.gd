@@ -878,14 +878,31 @@ func piece_volts(p) -> float:
 	if p.cls != "equip" or not p.intact:
 		return 0.0
 	if src.has(p.tag):
-		return _local_volts(src[p.tag])
+		var lv: float = _local_volts(src[p.tag])
+		# a generator stopped but still turning: its remanence (spin.gd, cx_gen_x)
+		if lv <= 0.0 and game != null and game.spin != null:
+			lv = game.spin.remanence(p)
+		return lv
 	if iso.has(p.tag):
 		return iso_volts(p.tag) if iso_live(p.tag) else 0.0
 	if iso_powered.has(p.id):
 		return iso_powered[p.id]
 	if p.tag == bus_tag or powered.has(p.id):
-		return bus_volts()
+		return bus_volts() * xfmr_ratio(p)
+	# the codex (cx_transformer_b/x; user 2026-11-10, 用户定案 12): a transformer on the live bus
+	# steps it up: its high side is what a cut or a probe meets (400 V in, about 4 kV out)
+	if xfmr_ratio(p) > 1.0 and bus_live:
+		return bus_volts() * xfmr_ratio(p)
+	# a generator off the bus but still turning: its remanence (spin.gd, cx_gen_x)
+	if game != null and game.spin != null:
+		return game.spin.remanence(p)
 	return 0.0
+
+
+# a transformer's turns ratio ("transformers" in the ship file's power section: tag -> ratio)
+func xfmr_ratio(p) -> float:
+	var t: Dictionary = cfg.get("power", {}).get("transformers", {})
+	return float(t.get(p.tag, 1.0)) if p.tag != "" else 1.0
 
 
 # is this piece part of an electric network at all (worth a volt reading)?
@@ -1143,9 +1160,13 @@ func _hole_flow(lk: Dictionary, v: Dictionary, dt: float) -> float:
 	var gas: float = P(uk) if uk != "" and vols.has(uk) else 0.0
 	var room: String = world.room_at(game.leak_pos(lk))
 	var outside: float = P(room) if room != "" else 0.0
-	var dp: float = maxf(gas, float(lkd.get("pvap", 1.0))) - outside
 	var full: float = maxf(float(v.get("full", v.amount)), 0.01)
 	var liq: float = clampf(float(v.amount) / full, 0.0, 1.0)
+	# a bellows tank: the gas behind the bellows expands as the water goes (isothermal)
+	if v.has("bellows"):
+		var g0: float = clampf(1.0 - float(v.get("fill0", 0.7)), 0.05, 1.0)
+		gas = maxf(gas, float(v.bellows) * g0 / maxf(1.0 - liq, g0))
+	var dp: float = maxf(gas, float(lkd.get("pvap", 1.0))) - outside
 	var area: float = float(lk.area)
 	var vel: float = sqrt(2.0 * maxf(dp, 0.0) * 1000.0 / rho)
 	lk.v = vel
@@ -1305,6 +1326,16 @@ func contents_of(p) -> String:
 	return ""
 
 
+# the name the measuring tool gives a liquid: its own (hydraulic oil, refrigerant...), "water"
+# only for water; a liquid with no name of its own is "liquid", never "water"
+func liquid_key(v: Dictionary) -> String:
+	var look: String = LIQ.look_of(v)
+	var kind: String = str(v.get("fluid", ""))
+	if look == "water" and kind != "water":
+		return "cn_" + kind if Txt.has("cn_" + kind) else "cn_liquid"
+	return "cn_" + look if Txt.has("cn_" + look) else "cn_liquid"
+
+
 func contents_reading(p) -> Array:
 	var parts: Array = []
 	var val := 0.0
@@ -1313,7 +1344,7 @@ func contents_reading(p) -> Array:
 		var v: Dictionary = fvol[fv]
 		var look: String = LIQ.look_of(v)
 		var full: float = maxf(float(v.get("full", v.amount)), 0.001)
-		parts.append("%s %.2f m³ (%d %%)" % [Txt.t("cn_" + look) if Txt.has("cn_" + look) else Txt.t("cn_liquid"), float(v.amount), int(round(float(v.amount) / full * 100.0))])
+		parts.append("%s %.2f m³ (%d %%)" % [Txt.t(liquid_key(v)), float(v.amount), int(round(float(v.amount) / full * 100.0))])
 		val += float(v.amount)
 	var gv := tank_vol(p)
 	if gv != "":

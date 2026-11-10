@@ -21,6 +21,7 @@ var T := 20.0
 var cracked := false
 var _cooling_was := true
 var _loop0 := 0.0
+var fx                         # the core drawn glowing (scripts/furnace_fx.gd: drawing only)
 
 
 func setup(g, ship: Dictionary) -> void:
@@ -30,6 +31,9 @@ func setup(g, ship: Dictionary) -> void:
 	T = float(cfg.get("T0", 20.0))
 	var v: Dictionary = ship.get("fluids", {}).get("volumes", {}).get(cfg.get("loop", ""), {})
 	_loop0 = float(v.get("amount", 0.0))
+	if active():
+		fx = preload("res://scripts/furnace_fx.gd").new()
+		fx.setup(self)
 
 
 func active() -> bool:
