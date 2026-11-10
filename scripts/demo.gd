@@ -26,7 +26,7 @@ extends RefCounted
 #   Q4 A  feedback from the pause menu at any time (scripts/demo_feedback.gd)
 
 const URL := "https://playtest.stellarascensiongame.com"
-const VERSION := "0.9-公测-20261108"
+const VERSION := "0.9-公测-20261109"
 const CODES := false                  # the 10-30 code gate; the public build registers the machine instead
 const LIMIT_S := 3600.0               # the first hour
 const GRACE_S := 3 * 86400            # offline, a machine that checked in within this still plays
