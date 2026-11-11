@@ -20,6 +20,7 @@ extends RefCounted
 const FastDraw = preload("res://scripts/fast_draw.gd")
 const PortStructure = preload("res://scripts/port_structure.gd")
 
+static var INSIDE_ON := true   # 2026-11-10: the ways inside a district's hall (false: straight, as before)
 const NEAR_M := 9.0          # m of way left: everything folds away
 const SPACING := 2.8         # m between chevrons
 const FLOOR_MIN := 14.0      # m: a way shorter than this (and straight) gets no floor arrows
@@ -224,6 +225,7 @@ static func _depth(kind: String) -> int:
 
 # the way from a to b as it can be flown: corridors, doors, the gate, the ring's deck
 static func route(game, a: Vector2, b: Vector2) -> PackedVector2Array:
+	_g = game
 	var pts := PackedVector2Array([a])
 	var ps = game.get("port_structure") if game != null else null
 	if ps == null or not is_instance_valid(ps) or not ps.active():
@@ -233,7 +235,7 @@ static func route(game, a: Vector2, b: Vector2) -> PackedVector2Array:
 	var wb := _where(b)
 	if wa[0] == "open" or wb[0] == "open" or wa == wb:
 		pts.append(b)
-		return pts
+		return _inside(pts) if wa == wb and wa[0] == "box" else pts
 	var oa := _out(a, wa)
 	var ob := _out(b, wb)
 	if wa[1] != "" and wa[1] == wb[1]:
@@ -266,8 +268,192 @@ static func route(game, a: Vector2, b: Vector2) -> PackedVector2Array:
 	return _tidy(pts)
 
 
+# 2026-11-10 引导可达性 (user: "这个引导是要我飞过去吗？我飞不过去啊"): inside a district's hall the way is
+# not a straight line from the door any more but the way round what is really solid there — the processing
+# hall's gallery (its walkway and the glass under it, open only past the walkway's right end), the power
+# hall's decks and sets. A leg whose straight line a drone-sized circle cannot sweep is found again on a
+# one-metre grid of the hall (A*, the cells and the steps between them tested against the drone's own
+# collision layers, kept a few seconds), then pulled tight to as few bends as can be flown straight.
+const CELL_M := 1.0
+const PROBE_R := 0.42        # m: a little under the drone's own radius (0.5 m): the way keeps off the walls
+const SOLID_MASK := 1 | 4 | 16
+const KEEP_MS := 3000
+static var _g = null                 # the game the way is worked out for (route sets it)
+static var _cells := {}              # zone -> {"t": ms, "free": {Vector2i: bool}, "step": {key: bool}}
+
+
+static func _space():
+	if _g == null or not is_instance_valid(_g) or _g.get("drone") == null or not is_instance_valid(_g.drone):
+		return null
+	return _g.drone.get_world_2d().direct_space_state
+
+
+static func _query(r_m: float) -> PhysicsShapeQueryParameters2D:
+	var q := PhysicsShapeQueryParameters2D.new()
+	var c := CircleShape2D.new()
+	c.radius = r_m * Geom.M
+	q.shape = c
+	q.collision_mask = SOLID_MASK
+	q.exclude = [_g.drone.get_rid()]
+	return q
+
+
+# a drone-sized circle swept from a to b meets nothing solid
+static func clear(a: Vector2, b: Vector2) -> bool:
+	var space = _space()
+	if space == null:
+		return true
+	var q := _query(PROBE_R)
+	q.transform = Transform2D(0.0, a)
+	q.motion = b - a
+	var r: PackedFloat32Array = space.cast_motion(q)
+	return r.is_empty() or r[0] >= 0.999
+
+
+static func _hall(zone: String) -> Dictionary:
+	var now := Time.get_ticks_msec()
+	var h: Dictionary = _cells.get(zone, {})
+	if h.is_empty() or now - int(h.t) > KEEP_MS:
+		h = {"t": now, "free": {}, "step": {}}
+		_cells[zone] = h
+	return h
+
+
+static func _at(box: Rect2, c: Vector2i) -> Vector2:
+	return box.position + (Vector2(c) + Vector2(0.5, 0.5)) * CELL_M * PortStructure.M()
+
+
+static func _free(h: Dictionary, box: Rect2, c: Vector2i) -> bool:
+	if h.free.has(c):
+		return h.free[c]
+	var ok := false
+	var space = _space()
+	if space != null:
+		var q := _query(PROBE_R)
+		q.transform = Transform2D(0.0, _at(box, c))
+		ok = space.intersect_shape(q, 1).is_empty()
+	h.free[c] = ok
+	return ok
+
+
+static func _step_ok(h: Dictionary, box: Rect2, a: Vector2i, b: Vector2i) -> bool:
+	var k := Vector4i(a.x, a.y, b.x, b.y) if a < b else Vector4i(b.x, b.y, a.x, a.y)
+	if h.step.has(k):
+		return h.step[k]
+	var ok := clear(_at(box, a), _at(box, b))
+	h.step[k] = ok
+	return ok
+
+
+# the free cell nearest p that p can be flown to straight (none: Vector2i(-1, -1))
+static func _snap(h: Dictionary, box: Rect2, p: Vector2, n: Vector2i) -> Vector2i:
+	var m := PortStructure.M()
+	var c := Vector2i(((p - box.position) / (CELL_M * m)).floor())
+	var best := Vector2i(-1, -1)
+	var bd := INF
+	for dy in range(-3, 4):
+		for dx in range(-3, 4):
+			var q := c + Vector2i(dx, dy)
+			if q.x < 0 or q.y < 0 or q.x >= n.x or q.y >= n.y or not _free(h, box, q):
+				continue
+			var d := p.distance_to(_at(box, q))
+			if d < bd and clear(p, _at(box, q)):
+				bd = d
+				best = q
+	return best
+
+
+# the way from a to b inside the hall of `zone`, a and b left out ([] when there is none)
+static func _hall_way(zone: String, a: Vector2, b: Vector2) -> Array:
+	var box := PortStructure.box(zone)
+	var m := PortStructure.M()
+	var n := Vector2i(int(ceil(box.size.x / (CELL_M * m))), int(ceil(box.size.y / (CELL_M * m))))
+	var h := _hall(zone)
+	var s := _snap(h, box, a, n)
+	var e := _snap(h, box, b, n)
+	if s.x < 0 or e.x < 0:
+		return []
+	# A*, eight ways
+	var open: Array = [s]
+	var g_of := {s: 0.0}
+	var came := {}
+	var shut := {}
+	var hops := 0
+	while not open.is_empty() and hops < 4000:
+		hops += 1
+		var bi := 0
+		var bf := INF
+		for i in open.size():
+			var f: float = g_of[open[i]] + Vector2(open[i] - e).length()
+			if f < bf:
+				bf = f
+				bi = i
+		var cur: Vector2i = open[bi]
+		open.remove_at(bi)
+		if cur == e:
+			break
+		shut[cur] = true
+		for dy in range(-1, 2):
+			for dx in range(-1, 2):
+				if dx == 0 and dy == 0:
+					continue
+				var nb := cur + Vector2i(dx, dy)
+				if nb.x < 0 or nb.y < 0 or nb.x >= n.x or nb.y >= n.y or shut.has(nb) or not _free(h, box, nb):
+					continue
+				var ng: float = g_of[cur] + (1.4142 if dx != 0 and dy != 0 else 1.0)
+				if g_of.has(nb) and ng >= g_of[nb]:
+					continue
+				if not _step_ok(h, box, cur, nb):
+					continue
+				g_of[nb] = ng
+				came[nb] = cur
+				if not open.has(nb):
+					open.append(nb)
+	if not came.has(e) and e != s:
+		return []
+	var cells: Array = [e]
+	while cells[0] != s:
+		cells.push_front(came[cells[0]])
+	# pulled tight: from each point on, the farthest cell still straight in reach
+	var pts: Array = []
+	var from := a
+	var i := 0
+	while i < cells.size():
+		if clear(from, b):
+			break
+		var j := cells.size() - 1
+		while j > i and not clear(from, _at(box, cells[j])):
+			j -= 1
+		from = _at(box, cells[j])
+		pts.append(from)
+		i = j + 1
+	return pts
+
+
+static func _inside(p: PackedVector2Array) -> PackedVector2Array:
+	if not INSIDE_ON or p.size() < 2 or _space() == null:
+		return p
+	var m := PortStructure.M()
+	var out := PackedVector2Array([p[0]])
+	for i in range(1, p.size()):
+		var a: Vector2 = p[i - 1]
+		var b: Vector2 = p[i]
+		for zone in PortArt.ANGLE:
+			if zone == "salvage":
+				continue
+			var box: Rect2 = PortStructure.box(zone).grow(1.0 * m)
+			if box.has_point(a) and box.has_point(b):
+				if not clear(a, b):
+					for q in _hall_way(zone, a, b):
+						out.append(q)
+				break
+		out.append(b)
+	return out
+
+
 # no point a metre from the last
 static func _tidy(p: PackedVector2Array) -> PackedVector2Array:
+	p = _inside(p)
 	var out := PackedVector2Array()
 	for q in p:
 		if out.is_empty() or out[out.size() - 1].distance_to(q) > 1.0 * Geom.M:

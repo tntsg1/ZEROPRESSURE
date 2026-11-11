@@ -27,6 +27,14 @@ var trail: Array = []
 # the airframe (UI animation, 2026-10-17: H1 arrow-ring, scripts/drone_art.gd)
 const Art = preload("res://scripts/drone_art.gd")
 const DESIGN := "arrowring"
+# 2026-11-10 外观款式: the airframe flown is the one chosen in the loadout (scripts/drone_skins.gd);
+# looks only, the numbers and the collision stay the same
+const Skins = preload("res://scripts/drone_skins.gd")
+var _skin := ""
+# the attitude jets (2026-11-10): how hard the airframe is being turned, -1..1, from the heading's
+# angular acceleration (spinning up lights one pair, slowing the turn the other)
+var turn_k := 0.0
+var _turn_rate := 0.0
 const BOOT_T := 1.1           # s: the launch draw-on
 const OPEN_T := 0.25          # s: a tool's transform
 var tool_shown := 0
@@ -82,6 +90,9 @@ func _init() -> void:
 	add_node.z_index = 1
 	add_node.draw.connect(_draw_add)
 	add_child(add_node)
+	var trim := Skins.SoundTrim.new()
+	trim.drone = self
+	add_child(trim)
 
 
 func muzzle() -> Vector2:
@@ -163,9 +174,15 @@ func _physics_process(dt: float) -> void:
 
 func _process(dt: float) -> void:
 	spawn_t += dt
+	_skin = Skins.current()
 	hurt_t = maxf(0.0, hurt_t - dt)
 	var want := (aim - global_position).angle() if aim.distance_to(global_position) > 4.0 else heading
+	var h0 := heading
 	heading = lerp_angle(heading, want, 1.0 - exp(-14.0 * dt))
+	if dt > 0.0:
+		var rate := wrapf(heading - h0, -PI, PI) / dt
+		turn_k = Pal.damp(turn_k, clampf((rate - _turn_rate) / dt / 60.0, -1.0, 1.0), 18.0, dt)
+		_turn_rate = rate
 	var dirs := [Vector2.RIGHT, Vector2.LEFT, Vector2.DOWN, Vector2.UP]
 	for i in 4:
 		var target := maxf(0.0, -thrust.dot(dirs[i]))
@@ -189,11 +206,11 @@ func _process(dt: float) -> void:
 	if spawn_t < 0.05:
 		_booted = false
 	if alive and lvl >= 1:
-		for jet in Art.arrowring_jets(art_state()):
+		for jet in Skins.jets_world(skin_id(), art_state()):
 			var f: float = jet[2]
 			if f > 0.3 and randf() < f * (0.6 if lvl >= 2 else 0.25):
 				var d: Vector2 = jet[1]
-				fx.puff(global_position + jet[0] + d * 3.0, d * randf_range(90, 160) * f + linear_velocity * 0.5, randf_range(0.18, 0.32), 2.5, 8.0 * f, Pal.heat(0.12, 1.0))
+				fx.puff(global_position + jet[0] + d * 3.0, d * randf_range(90, 160) * f + linear_velocity * 0.5, randf_range(0.18, 0.32), 2.5, 8.0 * f, Skins.puff_col(skin_id()))
 		if dashing:
 			trail.push_front(global_position)
 		else:
@@ -237,15 +254,15 @@ func _draw() -> void:
 			var p: Vector2 = trail[i] - global_position
 			var k := 1.0 - float(i) / trail.size()
 			draw_set_transform(p, heading, Vector2.ONE * (0.8 + 0.2 * k))
-			FastDraw.poly(self, PackedVector2Array(Art.ARROW), Pal.ink(0.035 * k))
+			FastDraw.poly(self, Skins.hull(skin_id()), Pal.ink(0.035 * k))
 		draw_set_transform(Vector2.ZERO)
 	Art.set_scale(game.cam_zoom() if game != null else 2.0)
-	Art.draw(self, DESIGN, art_state())
+	Skins.draw(self, skin_id(), art_state())
 	Art.lite = false
 	# hit: the hull flashes in heat
 	if hurt_t > 0.0:
 		var flash := hurt_t / 0.35
-		var hull := Art.rot(Art.ARROW, heading)
+		var hull := Art.rot(Array(Skins.hull(skin_id())), heading)
 		Art.outline(self, hull, Pal.heat(flash, 1.8), 2.4)
 	if game != null:
 		# fitted upgrades show on the airframe: armour as plates round the hull,
@@ -253,7 +270,7 @@ func _draw() -> void:
 		var kit: Dictionary = game.job.get("kit", {})
 		var armor := Growth.level(kit, "armor")
 		for i in armor:
-			var hull := Art.rot(Art.ARROW, heading, 1.18 + i * 0.12)
+			var hull := Art.rot(Array(Skins.hull(skin_id())), heading, 1.18 + i * 0.12)
 			Art.outline(self, hull, Pal.ink(0.22), 1.0)
 		var shield := Growth.level(kit, "shield")
 		for i in shield:
@@ -270,10 +287,17 @@ func _draw() -> void:
 		FastDraw.arc(self, Vector2.ZERO, R + 9.0, -PI / 2.0, -PI / 2.0 + TAU * integrity / 100.0, 40, Pal.ink(0.35) if integrity > 35.0 else Pal.heat(0.8, 1.2), 1.6, true)
 
 
+# the airframe flown (read once a frame)
+func skin_id() -> String:
+	if _skin == "":
+		_skin = Skins.current()
+	return _skin
+
+
 # what the airframe drawing needs this frame
 func art_state() -> Dictionary:
 	return {"heading": heading, "tool": tool_shown, "open": tool_open, "t": art_t, "thrust": thrust, "dash": dashing,
-		"boot": boot(), "design": DESIGN, "base_xf": Transform2D.IDENTITY}
+		"boot": boot(), "design": DESIGN, "base_xf": Transform2D.IDENTITY, "turn": turn_k}
 
 
 # the launch: the airframe draws itself on over its first second out
@@ -288,6 +312,6 @@ func _draw_add() -> void:
 		return
 	var tex: Texture2D = game.fx.glow_tex
 	# the core glows in the tool's colour
-	var core := Vector2(-2, 0).rotated(heading)
+	var core := Skins.core(skin_id()).rotated(heading)
 	var col := Art.tool_col(tool_shown, 0.3 + 0.25 * tool_open, 1.2)
 	add_node.draw_texture_rect(tex, Rect2(core - Vector2(12, 12), Vector2(24, 24)), false, col)

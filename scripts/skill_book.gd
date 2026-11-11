@@ -194,7 +194,7 @@ func _draw_diagram() -> void:
 	var xf := Transform2D(0.0, Vector2(2.4, 2.4), 0.0, c)
 	diagram.draw_set_transform_matrix(xf)
 	DArt.tint = Color(Pal.AIR.r * 1.1, Pal.AIR.g * 1.1, Pal.AIR.b * 1.1)
-	DArt.draw(diagram, "arrowring", {"heading": -PI / 2.0, "tool": 0, "open": 0.4, "t": 1.0, "thrust": Vector2.ZERO, "dash": false, "design": "arrowring", "base_xf": xf})
+	preload("res://scripts/drone_skins.gd").draw(diagram, preload("res://scripts/drone_skins.gd").current(), {"heading": -PI / 2.0, "tool": 0, "open": 0.4, "t": 1.0, "thrust": Vector2.ZERO, "dash": false, "design": "arrowring", "base_xf": xf})
 	DArt.tint = Color(1, 1, 1)
 	diagram.draw_set_transform_matrix(Transform2D.IDENTITY)
 	# each group's volumes as a lamp row under the airframe

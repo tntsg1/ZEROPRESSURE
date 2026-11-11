@@ -19,6 +19,25 @@ extends Node2D
 #            ship's bus: taken off with the bus live, it fires (its valve opens, recoil.gd).
 #   rcs      (cx_rcs_quad_b) a thruster's valves are on the bus too: taken off live with
 #            propellant aboard, it fires one short pulse.
+# Second round (design/图鉴对标_审计_第二轮_20261110.md):
+#   pane     (cx_glass_b/c, cx_m_glass_b/x) a pane let go of its last fixing with GLASS_KPA or
+#            more across it: the cabin pushes it out (the difference times its area for the
+#            instant the gap takes to equalise) and it shatters. Vent the room first.
+#   armour   (cx_armor_b) the heat a kerf leaves in an armour plate (mat.gd kerf_dt) over
+#            ARMOUR_HOT reaches the equipment beside it: it heats and loses value, up to ARMOUR_MAX.
+#   residual (cx_inverter_b/x, cx_xray_scanner_b/x, cx_gyrotron_b) a DC link's capacitors still
+#            hold their volts after the supply goes: V0·e^(−t/τ) (systems.gd piece_volts reads it,
+#            a cut or an unplugging over 30 V arcs). Wait, then prove it dead.
+#   sorter   (cx_sorter_b) an eddy-current sorter's rotor is a drum of strong permanent magnets:
+#            whole and in place it pulls the drone and loose steel within SORT_R toward it
+#            (no switch kills it: a permanent magnet), and knocks a drone dragged onto it.
+#   electrolyser (cx_electrolyser_b/x) its cells hold hydrogen and oxygen two to one: cut
+#            into, the knallgas goes up with the beam's spark, in vacuum too (combustion.gd).
+#   uv lamp  (cx_uv_steriliser_b/x) a mercury lamp broken by the beam lets its vapour into the
+#            room: the equipment round it has to be cleaned (MERCURY_LOSS off its value).
+#   hot      (cx_humidifier_b/x, cx_screw_comp_b) a humidifier's water and a screw compressor's
+#            oil are hot while it runs and cool slowly once it stops: grabbed hot it burns
+#            the drone (game.gd on_grab), the probe reads it.
 # Each is drawn (a buckled shell's creases, a dry pump's heat and smoke) and booked.
 
 const DRY_S := 30.0            # s a pump runs dry before its seal is gone (the book: tens of seconds)
@@ -34,6 +53,25 @@ const ARTS_GAUGE := ["coriolis", "level_radar"]
 const KEYS_GAUGE := ["p_level", "p_level_radar", "p_hg_level_gauge", "p_flow_meter", "p_hg_flow_sensor", "p_coriolis"]
 const KEYS_FIRE := ["p_ark_fire_bottle", "p_co2_bottle", "p_fire_bottle", "p_extinguisher", "p_foam"]
 const KEYS_RCS := ["p_rcs", "p_rcs_q", "p_rcs_t", "p_rcs_quad"]
+const GLASS_KPA := 20.0        # kPa across a pane over which its frame's fixings were holding it in
+const GLASS_T := 0.08          # s the gap takes to equalise (as a door blown out, recoil.gd)
+const GLASS_KEEP := 0.05       # what a shattered pane is still worth
+const GLASS_HURT_R := 2.0      # m: the drone this close is cut by the shards
+const ARMOUR_HOT := 150.0      # °C of kerf heat in an armour plate over which it reaches its neighbours
+const ARMOUR_NEAR := 0.6       # m from the plate's outline
+const ARMOUR_RATE := 0.02      # of a neighbour's value a second while the plate is that hot
+const ARMOUR_MAX := 0.2        # most a neighbour loses so
+const ARMOUR_MATS := ["armor", "ceramic"]
+# the DC link's volts with the supply on, and its bleed time constant (s; the book's minutes
+# shortened to game time: about a minute to under 30 V)
+const SORT_R := 1.8            # m an eddy-current sorter's magnet drum reaches out
+const SORT_F := 1500.0         # its pull on the drone at the drum (game force, falling off to the edge)
+const KNALL_H2 := 0.08         # kg of hydrogen in an electrolyser's cells and separators (oxygen 8 times that)
+const MERCURY_R := 3.0         # m round a broken UV lamp the mercury settles on
+const MERCURY_LOSS := 0.05     # of each machine's value to clean it off
+const HOT := {"humidifier": 90.0, "screw_comp": 70.0}   # °C while running
+const HOT_TAU := 45.0          # s its heat takes to fall by e once it stops
+const RESIDUAL := {"inverter": [700.0, 15.0], "xray_scanner": [2000.0, 15.0], "gyrotron": [40000.0, 15.0]}
 
 var game
 var world
@@ -43,6 +81,15 @@ var watch: Array = []          # {p, kind ("gauge"/"solenoid"/"rcs"), tank, atta
 var buckled := {}              # piece id -> true
 var pulses: Array = []         # {p, t, local, ldir}
 var _smoke := 0.0
+var armour: Array = []         # armour plates (their kerf heat is watched)
+var heated := {}               # piece id -> {"k": glow 0..1, "lost": value share lost to it}
+var residuals := {}            # piece id -> {"p", "v0", "tau", "t" (s since its supply went)}
+var _armour_t := 0.0
+var sorters: Array = []        # eddy-current sorters (permanent magnet drums)
+var hot: Array = []            # {p, T}: machines whose insides run hot
+var _sort_cd := 0.0
+var _pulled_last := false
+var _pull: Array = []          # [drone pos, sorter centre, strength] drawn this frame
 
 
 func setup(g) -> void:
@@ -69,6 +116,25 @@ func setup(g) -> void:
 			watch.append({"p": p, "kind": "solenoid", "tank": p, "attached": p.body == null})
 		elif p.art == "rcs_quad" or nk in KEYS_RCS:
 			watch.append({"p": p, "kind": "rcs", "tank": null, "attached": p.body == null})
+		# the book's entry this machine is drawn as (several drawings can share one entry)
+		var art: String = Codex.device_entry(Codex.art_of(p))
+		if art == "armor" or str(p.mat) in ARMOUR_MATS:
+			armour.append(p)
+		if art == "sorter":
+			sorters.append(p)
+		if HOT.has(art):
+			hot.append({"p": p, "T": float(HOT[art])})
+		if RESIDUAL.has(art) and p.tag != "":
+			residuals[p.id] = {"p": p, "kind": art, "v0": float(RESIDUAL[art][0]), "tau": float(RESIDUAL[art][1]), "t": 0.0}
+	for id in world.order:
+		var q = world.pieces[id]
+		if q.cls != "equip" and str(q.mat) in ARMOUR_MATS and not armour.has(q):
+			armour.append(q)
+	for id in residuals:
+		residuals[id].t = 0.0 if _fed(residuals[id].p) else 999.0
+	for e in hot:
+		if _fed(e.p):
+			e.p.temp = maxf(e.p.temp, float(e.T))
 	for k in s.fvol:
 		var v: Dictionary = s.fvol[k]
 		if v.get("thin", false):
@@ -116,8 +182,272 @@ func _physics_process(dt: float) -> void:
 	_thin(dt)
 	_removals()
 	_pulses(dt)
-	if not buckled.is_empty() or not pumps.is_empty():
+	_residuals(dt)
+	_armour(dt)
+	_sorters(dt)
+	_hot(dt)
+	if not buckled.is_empty() or not pumps.is_empty() or not heated.is_empty() or not _pull.is_empty() or _pulled_last:
 		queue_redraw()
+
+
+# ---------------------------------------------------------------- a pane pushed out
+
+# game.gd on_body_freed: a body just made of what came loose
+func on_freed(b) -> void:
+	for q in b.pieces:
+		if q.gone or q.cls != "equip" or not q.intact or q.has_meta("pane_out"):
+			continue
+		if q.art != "glass" and Codex.device_entry(Codex.art_of(q)) != "glass":
+			continue
+		# a hall's glazing in the ship file is liner.gd's (PS-12, ARK-01, BL-88, LC-140)
+		if _liner_pane(q):
+			continue
+		var poly: PackedVector2Array = world.world_poly(q)
+		var bb := Geom.bbox(poly)
+		var c := bb.get_center()
+		var tall: bool = bb.size.y >= bb.size.x
+		var n := Vector2(1, 0) if tall else Vector2(0, 1)
+		var half: float = (bb.size.x if tall else bb.size.y) * 0.5 + 0.5 * Geom.M
+		var pa: float = _kpa_at(c + n * half)
+		var pb: float = _kpa_at(c - n * half)
+		var dp: float = absf(pa - pb)
+		if dp < GLASS_KPA:
+			continue
+		q.set_meta("pane_out", true)
+		var dir: Vector2 = -n if pa > pb else n
+		var area: float = maxf(bb.size.x, bb.size.y) / Geom.M * 1.0
+		var dv: float = dp * 1000.0 * area * GLASS_T / maxf(float(b.total_mass()) * 1000.0, 20.0)
+		b.calm = 0.0
+		b.settle = 0.0
+		b.linear_velocity += dir * dv * Geom.M
+		b.angular_velocity += randf_range(-3.0, 3.0)
+		if game.recoil != null:
+			game.recoil._fly(b)
+		_shatter(q, c, dir, dp, bb)
+
+
+func _liner_pane(q) -> bool:
+	var ln = game.get("liner")
+	if ln == null or not ln.active():
+		return false
+	if ln.blown.has(q.tag):
+		return true
+	var all: Array = ln.cfg.get("glazings", []).duplicate()
+	if not ln.cfg.get("glazing", {}).is_empty():
+		all.append(ln.cfg.glazing)
+	for gz in all:
+		if (gz.get("panes", []) as Array).has(q.tag):
+			return true
+	return false
+
+
+func _kpa_at(pos: Vector2) -> float:
+	var r: String = world.room_at(pos)
+	return game.sys.P(r) if r != "" else 0.0
+
+
+func _shatter(q, c: Vector2, dir: Vector2, dp: float, bb: Rect2) -> void:
+	game._dent(q, minf(q.cond, GLASS_KEEP), "dv_pane_out")
+	game.incident("pane_out", q.tag)
+	game.say("pane_blown", c, q.tag)
+	game.shake(clampf(dp / 200.0, 0.15, 0.45), dir)
+	game.hitstop(0.04)
+	game.sfx.play("blowout", c, clampf(dp / 120.0, 0.4, 0.9))
+	game.sfx.play("crack", c, 1.0, 1.5)
+	var glass: Color = Pal.tint(Pal.AIR, 0.85, 1.6)
+	# the frame lets go with a bang, the pane bursts into a fan of glittering shards that
+	# ride out on the air, a thin ring of the pressure wave, a breath of fog as the cabin's
+	# moisture freezes in the jet
+	game.fx.flash(c, 150.0, 0.25, Pal.tint(Pal.AIR, 0.5, 1.8))
+	game.fx.ring(c, 6.0, 2.5 * Geom.M, 0.4, Pal.tint(Pal.AIR, 0.6, 1.4), 2.0)
+	game.fx.burst_shards(c, 22, 520.0, glass, 4.0)
+	var span: float = maxf(bb.size.x, bb.size.y)
+	var side: Vector2 = dir.orthogonal()
+	for i in 34:
+		var o: Vector2 = side * randf_range(-0.5, 0.5) * span
+		game.fx.spark(c + o, dir.rotated(randf_range(-0.55, 0.55)) * randf_range(260, 760), randf_range(0.35, 0.8), glass, 1.2, 6.0, 0.6)
+	for i in 18:
+		var o2: Vector2 = side * randf_range(-0.5, 0.5) * span
+		game.fx.puff(c + o2, dir.rotated(randf_range(-0.5, 0.5)) * randf_range(200, 700), randf_range(0.4, 0.9), 4.0, 24.0, Pal.tint(Pal.AIR, 0.14))
+	var dr = game.drone
+	if dr.alive and dr.global_position.distance_to(c) < GLASS_HURT_R * Geom.M:
+		game.hurt_drone(8.0 + clampf(dp / 10.0, 0.0, 12.0), c, "glass_hit", "pane_out", 0.5)
+
+
+# ---------------------------------------------------------------- armour kerf heat
+
+func _armour(dt: float) -> void:
+	_armour_t -= dt
+	# glows fade as the plates cool
+	for id in heated.keys():
+		var h: Dictionary = heated[id]
+		h.k = maxf(0.0, float(h.k) - dt * 0.4)
+		if h.k <= 0.0:
+			heated.erase(id)
+	if _armour_t > 0.0:
+		return
+	var step := 0.25
+	_armour_t = step
+	for a in armour:
+		if a.gone or float(a.kerf_dt) < ARMOUR_HOT:
+			continue
+		var ap: PackedVector2Array = world.world_poly(a)
+		var reach: float = ARMOUR_NEAR * Geom.M
+		var bb := Geom.bbox(ap).grow(reach)
+		var heat: float = float(a.kerf_dt)
+		for id in world.order:
+			var q = world.pieces[id]
+			if q == a or q.gone or q.cls != "equip" or not q.intact or q.art == "armor" or str(q.mat) in ARMOUR_MATS:
+				continue
+			var qp: PackedVector2Array = world.world_poly(q)
+			if not bb.intersects(Geom.bbox(qp)):
+				continue
+			var qc: Vector2 = Geom.centroid(qp)
+			if Geom.dist_to_boundary(qc, ap) > reach + Geom.bbox(qp).size.length() * 0.5:
+				continue
+			var h: Dictionary = heated.get(q.id, {"k": 0.0, "lost": 0.0})
+			var k: float = clampf((heat - ARMOUR_HOT) / 200.0 + 0.3, 0.3, 1.0)
+			q.temp = maxf(q.temp, 20.0 + heat * 0.55)
+			if float(h.lost) < ARMOUR_MAX:
+				var take: float = minf(ARMOUR_RATE * k * step, ARMOUR_MAX - float(h.lost))
+				h.lost = float(h.lost) + take
+				game._dent(q, maxf(0.0, q.cond - take), "dv_armour_heat")
+			if float(h.k) <= 0.0:
+				game.say("armour_heat", qc, q.tag)
+				game.incident("armour_heat", q.tag)
+			h.k = minf(1.0, float(h.k) + 0.5 * k)
+			heated[q.id] = h
+			if randf() < 0.35:
+				game.fx.puff(qc + Vector2(randf_range(-12, 12), -4), Vector2(randf_range(-15, 15), -40.0), randf_range(0.6, 1.1), 3.0, 14.0, Pal.ink(0.07))
+
+
+# ---------------------------------------------------------------- inside, when cut
+
+# game.gd on_cut_into: the beam has gone into p at pos
+func on_cut(p, pos: Vector2) -> void:
+	if p.cls != "equip" or not p.intact or p.has_meta("insides_out"):
+		return
+	match Codex.device_entry(Codex.art_of(p)):
+		"electrolyser":
+			p.set_meta("insides_out", true)
+			var c: Vector2 = world.frame(p) * Geom.centroid(p.poly)
+			var out: Vector2 = (pos - c).normalized() if pos.distance_to(c) > 2.0 else Vector2.UP
+			game.combustion.add_vapour(pos + out * 0.2 * Geom.M, out * 0.6 * Geom.M, KNALL_H2, "lh2")
+			game.combustion.add_vapour(pos + out * 0.3 * Geom.M, out * 0.5 * Geom.M, KNALL_H2 * 8.0, "o2")
+			game.combustion.spark(pos + out * 0.3 * Geom.M, 1.2)
+			game.incident("knallgas", p.tag)
+			game.say("knallgas", pos, p.tag)
+			game.fx.puff(pos, out * 120.0, 0.6, 6.0, 40.0, Pal.tint(Pal.AIR, 0.14))
+		"uv_steriliser":
+			p.set_meta("insides_out", true)
+			_mercury(p, pos)
+
+
+func _mercury(p, pos: Vector2) -> void:
+	var room: String = world.room_at(pos)
+	var names: Array = []
+	for q in game._equip_near(pos, MERCURY_R * Geom.M):
+		if q == p or q.gone or not q.intact or q.has_meta("mercury"):
+			continue
+		if room != "" and world.room_at(world.frame(q) * Geom.centroid(q.poly)) != room:
+			continue
+		q.set_meta("mercury", true)
+		game._dent(q, maxf(0.0, q.cond - MERCURY_LOSS), "dv_mercury")
+		if q.tag != "":
+			names.append(q.tag)
+	game.incident("mercury", p.tag)
+	game.say("uv_mercury", pos, p.tag)
+	game.sfx.play("crack", pos, 0.6, 1.8)
+	# the quartz sleeve's tinkle, a pale grey-green haze creeping out low and slow
+	game.fx.burst_shards(pos, 8, 120.0, Pal.tint(Pal.AIR, 0.7, 1.4), 2.5)
+	for i in 16:
+		game.fx.puff(pos + Vector2(randf_range(-10, 10), randf_range(-6, 6)), Vector2.from_angle(randf() * TAU) * randf_range(15, 60), randf_range(1.6, 3.0), 6.0, 40.0 + randf() * 30.0, Color(0.62, 0.78, 0.66, 0.10))
+
+
+# ---------------------------------------------------------------- machines that run hot
+
+func _hot(dt: float) -> void:
+	for e in hot:
+		var p = e.p
+		if p.gone:
+			continue
+		if _fed(p):
+			p.temp = maxf(p.temp, float(e.T))
+		elif p.temp > 20.5:
+			p.temp = 20.0 + (p.temp - 20.0) * exp(-dt / HOT_TAU)
+
+
+# ---------------------------------------------------------------- a sorter's magnet drum
+
+func _sorters(dt: float) -> void:
+	_sort_cd = maxf(0.0, _sort_cd - dt)
+	_pull.clear()
+	var r: float = SORT_R * Geom.M
+	for p in sorters:
+		if p.gone or not p.intact:
+			continue
+		var wp: PackedVector2Array = world.world_poly(p)
+		var c: Vector2 = Geom.centroid(wp)
+		var box := Geom.bbox(wp).grow(r)
+		var dr = game.drone
+		if dr != null and dr.alive and dr.spawn_t > 2.5 and box.has_point(dr.global_position):
+			# measured from the machine's casing (a sorter can be a dozen metres long)
+			var gap: float = 0.0 if Geometry2D.is_point_in_polygon(dr.global_position, wp) else Geom.dist_to_boundary(dr.global_position, wp)
+			if gap < r:
+				var d: Vector2 = (c - dr.global_position).normalized()
+				dr.apply_central_force(d * SORT_F * (1.0 - gap / r))
+				_pull.append([dr.global_position, c, 1.0 - gap / r])
+				if gap < 0.6 * Geom.M and _sort_cd <= 0.0:
+					_sort_cd = 3.0
+					game.incident("sorter_pull", p.tag)
+					game.hurt_drone(6.0, dr.global_position, "hurt_magnet", "sorter", 2.0)
+					game.say("sorter_pull", dr.global_position, p.tag)
+					game.fx.sparks(dr.global_position, d, 10, Pal.ink(0.9, 1.4), 160.0, 0.25, 1.0)
+		for b in world.bodies:
+			if not is_instance_valid(b) or b.pieces.has(p) or b.mass > 600.0 or not box.has_point(b.global_position):
+				continue
+			var steel := false
+			for q in b.pieces:
+				if Mat.id_of(q) in [Mat.STEEL, "armor"]:
+					steel = true
+					break
+			if not steel:
+				continue
+			var gap2: float = Geom.dist_to_boundary(b.global_position, wp)
+			if gap2 < r:
+				b.apply_central_force((c - b.global_position).normalized() * 700.0 * (1.0 - gap2 / r))
+
+
+# ---------------------------------------------------------------- a DC link still charged
+
+func _fed(p) -> bool:
+	var s = game.sys
+	if p.gone or not p.intact:
+		return false
+	if s.iso_powered.has(p.id) or (s.bus_live and (s.powered.has(p.id) or p.tag == s.bus_tag)):
+		return true
+	return s.bus_live and not s.electric_piece(p)
+
+
+func _residuals(dt: float) -> void:
+	for id in residuals:
+		var e: Dictionary = residuals[id]
+		if _fed(e.p):
+			e.t = 0.0
+			# an inverter's link is the bus rectified: about 1.35 times its AC volts
+			if str(e.kind) == "inverter" and game.sys.bus_volts() > 0.0:
+				e.v0 = game.sys.bus_volts() * 1.35
+		else:
+			e.t = float(e.t) + dt
+
+
+# what the link still holds (systems.gd piece_volts, when nothing feeds it)
+func residual(p) -> float:
+	var e = residuals.get(p.id)
+	if e == null or p.gone or not p.intact:
+		return 0.0
+	var v: float = float(e.v0) * exp(-float(e.t) / float(e.tau))
+	return v if v >= 1.0 else 0.0
 
 
 # ---------------------------------------------------------------- pumps run dry
@@ -164,6 +494,20 @@ func _pumps(dt: float) -> void:
 					game.fx.puff(c, Vector2.from_angle(randf() * TAU) * randf_range(40, 120), randf_range(1.0, 2.0), 6.0, 40.0, Pal.ink(0.12))
 		else:
 			e.t = maxf(0.0, float(e.t) - dt * 2.0)
+
+
+# a pump running dry right now and the port whose hose is drawing on it: [pump, port id], or []
+# (next_step.gd puts "take the hose off" up first, so following the guide never burns a pump)
+func dry_running() -> Array:
+	for e in pumps:
+		var p = e.p
+		if p.gone or p.has_meta("ran_dry") or float(e.t) <= 0.0:
+			continue
+		for pid in game.sys.hoses:
+			var ct = world.ctrls.get(pid)
+			if ct != null and str(ct.target) == str(e.vol):
+				return [p, str(pid)]
+	return []
 
 
 # ---------------------------------------------------------------- thin tanks buckle
@@ -324,6 +668,28 @@ func _draw() -> void:
 		var c: Vector2 = bb.get_center()
 		draw_line(xf * Vector2(bb.position.x, c.y), xf * Vector2(bb.position.x + bb.size.x * 0.12, c.y), Pal.ink(0.7), 1.6, true)
 		draw_line(xf * Vector2(bb.end.x, c.y), xf * Vector2(bb.end.x - bb.size.x * 0.12, c.y), Pal.ink(0.7), 1.6, true)
+	# the drum's field reaching for the drone: faint flux lines bowing from the drone into the
+	# machine, crawling inward, brighter the closer it is dragged
+	_pulled_last = not _pull.is_empty()
+	var tms: float = Time.get_ticks_msec() * 0.001
+	for e in _pull:
+		var a: Vector2 = e[0]
+		var b: Vector2 = e[1]
+		var k: float = float(e[2])
+		var ab: Vector2 = b - a
+		var len: float = minf(ab.length(), 3.0 * Geom.M)
+		var dir: Vector2 = ab.normalized()
+		var side: Vector2 = dir.orthogonal()
+		for i in 5:
+			var bow: float = (float(i) - 2.0) * 0.22 * len
+			var pts := PackedVector2Array()
+			for j in 13:
+				var u: float = j / 12.0
+				pts.append(a + dir * len * u + side * bow * sin(u * PI))
+			draw_polyline(pts, Pal.tint(Pal.VOLT, 0.10 + 0.25 * k, 1.2), 1.0, true)
+			# a bead running down each line toward the drum
+			var u2: float = fposmod(tms * (0.8 + 0.6 * k) + i * 0.21, 1.0)
+			draw_circle(a + dir * len * u2 + side * bow * sin(u2 * PI), 1.6 + 1.4 * k, Pal.tint(Pal.VOLT, 0.35 + 0.5 * k, 1.6))
 	# a pump running dry: its casing glows with the heat
 	var tex: Texture2D = game.fx.glow_tex if game.fx != null else null
 	for e in pumps:
@@ -334,3 +700,18 @@ func _draw() -> void:
 		var c2: Vector2 = world.frame(p) * Geom.centroid(p.poly)
 		var r: float = maxf(Geom.bbox(p.poly).size.length() * 0.5, 20.0)
 		draw_texture_rect(tex, Rect2(c2 - Vector2(r, r), Vector2(r, r) * 2.0), false, Pal.heat(0.12 + 0.4 * k, 1.6))
+	# equipment the armour's kerf heat is reaching: a dull red soak over it, and its outline
+	# picked out hot on the side the heat comes from
+	for id in heated:
+		var q = world.pieces.get(id)
+		if q == null or q.gone or tex == null:
+			continue
+		var hk: float = float(heated[id].k)
+		var qc: Vector2 = world.frame(q) * Geom.centroid(q.poly)
+		var qr: float = maxf(Geom.bbox(q.poly).size.length() * 0.55, 16.0)
+		var flick: float = 0.85 + 0.15 * sin(Time.get_ticks_msec() * 0.011 + float(id))
+		draw_texture_rect(tex, Rect2(qc - Vector2(qr, qr), Vector2(qr, qr) * 2.0), false, Pal.heat((0.05 + 0.16 * hk) * flick, 1.3))
+		var ol: PackedVector2Array = world.world_poly(q)
+		if ol.size() > 2:
+			ol.append(ol[0])
+			draw_polyline(ol, Pal.heat(0.25 + 0.5 * hk, 1.8), 1.3, true)

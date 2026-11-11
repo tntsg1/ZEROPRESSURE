@@ -64,7 +64,7 @@ func active() -> bool:
 
 
 func save_state() -> Dictionary:
-	return {"energy": energy, "temp": temp, "quenched": quenched.keys()}
+	return {"energy": energy, "temp": temp, "quenched": quenched.keys(), "res_lost": _res_lost}
 
 
 func load_state(d: Dictionary) -> void:
@@ -74,6 +74,7 @@ func load_state(d: Dictionary) -> void:
 		temp[str(c)] = float(d.temp[c])
 	for c in d.get("quenched", []):
 		quenched[str(c)] = true
+	_res_lost = bool(d.get("res_lost", false))
 
 
 func field() -> float:
@@ -138,10 +139,53 @@ func hold_power() -> bool:
 	return any_energised()
 
 
+# the dump resistor (cx_dump_res_b; second codex round): the piece the dump switch sends the
+# coils' current into. "resistor" in the ship file, else the piece drawn as one
+var _res = null
+var _res_lost := false
+
+
+func _resistor():
+	if _res == null:
+		var t: String = str(cfg.get("resistor", ""))
+		if t != "":
+			_res = world.tag(t)
+		if _res == null:
+			for id in world.order:
+				var p = world.pieces[id]
+				if p.cls == "equip" and Codex.art_of(p) == "dump_res":
+					_res = p
+					break
+	return _res
+
+
+# is there still a path for the dump: the resistor whole and in its place
+func dump_path() -> bool:
+	var r = _resistor()
+	return r == null or (not r.gone and r.intact and r.body == null)
+
+
 func _physics_process(dt: float) -> void:
 	if not active():
 		return
 	var dumping: bool = game.sys.on(str(cfg.get("dump", "")))
+	# the book: the resistor taken out while the coils still hold their field leaves them no
+	# way to shed it; opened under a running dump the current has nowhere to go and every
+	# coil still energised quenches
+	if not _res_lost and not dump_path():
+		_res_lost = true
+		if any_energised():
+			var r = _resistor()
+			game.incident("dump_res_lost", r.tag if r != null else "")
+			if dumping:
+				for c in energy:
+					if energised(c):
+						_quench(c, "magnet_quench_dump")
+			else:
+				var at: Vector2 = world.frame(r) * Geom.centroid(r.poly) if r != null else Vector2.ZERO
+				game.say("dump_res_gone", at)
+	if _res_lost:
+		dumping = false
 	var tau: float = maxf(1.0, float(cfg.get("tau", 35.0)))
 	var tc: float = float(cfg.get("Tc", 9.0))
 	var t0: float = float(cfg.get("T0", 4.5))

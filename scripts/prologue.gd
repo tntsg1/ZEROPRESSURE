@@ -19,6 +19,8 @@ const TOOLS := {"fly": [], "brake": [], "measure": [1], "cut": [2], "clear": [3]
 
 
 func tool_allowed(n: int) -> bool:
+	if cold != null and is_instance_valid(cold) and cold.holds_tools():
+		return cold.tool_allowed(n)
 	if done or step >= STEPS.size():
 		return true
 	return (TOOLS.get(STEPS[step], [1, 2, 3, 4, 5, 6]) as Array).has(n)
@@ -36,6 +38,9 @@ var _way_t := 0.0
 var step_t := 0.0               # 80 号: time on this step — 20 s adds where to go, 40 s the ring swells
 const STUCK_1 := 20.0
 const STUCK_2 := 40.0
+# 开局重做 样片 (scripts/cold_open.gd, off by default): the film and the first cut before step 1
+const ColdOpen = preload("res://scripts/cold_open.gd")
+var cold = null
 # where the company tug lies, the drone's launch point off its bow (Backdrop draws the tug)
 static func tug_at() -> Vector2:
 	return Dock.centre() * Geom.M + Vector2(-62.0, -6.0) * Geom.M
@@ -68,6 +73,10 @@ func _ready() -> void:
 		col.add_child(n)
 	layer.add_child(card)
 	_show()
+	if ColdOpen.wants(game):
+		cold = ColdOpen.new()
+		add_child(cold)
+		cold.begin(game, self)
 
 
 func _label(size_px: int, c: Color) -> Label:
@@ -207,6 +216,8 @@ func _keys_move() -> String:
 func _process(dt: float) -> void:
 	if done or game == null or game.state != "play" or game.paused_sim or get_tree().paused:
 		queue_redraw()
+		return
+	if cold != null and is_instance_valid(cold) and cold.active():
 		return
 	t += dt
 	# the drone leaves from the tug's bow, a good way off the hulk

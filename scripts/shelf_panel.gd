@@ -1,4 +1,5 @@
 extends Control
+const Back := preload("res://scripts/ui_back.gd")
 # One side of the cargo district's racks (85 号, user 2026-10-26: "左边的这个柜台就显示左边柜台的东西，
 # 右边柜台显示右边柜台的东西"): opened with E at that rack's mouth (scripts/cargo_floor.gd). Its four
 # rows only, each a card: what the row is for (set here), what is on it now (the company's goods
@@ -22,6 +23,7 @@ func rows() -> Array:
 
 
 func _ready() -> void:
+	Back.arrive()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var accent := Pal.tint(Pal.AIR, 1.0, 1.2)
 	var column := OpsSkin.pane(self, accent, 520.0)
@@ -39,14 +41,14 @@ func _ready() -> void:
 		BenchFx.note(parts_b, w("打开零件架：看架上有哪些零件、成色多少", "Open the parts rack: what is on it, in what condition"))
 		parts_b.custom_minimum_size.y = 42
 		parts_b.pressed.connect(func():
-			close()
-			if game != null:
-				game.open_parts_rack.call_deferred())
+			var g = game
+			if g != null: _leave("rack", func(): g.open_parts_rack())
+			else: close())
 		column.add_child(parts_b)
 	var close_b := Button.new()
-	close_b.text = w("关闭 [Esc]", "CLOSE [Esc]")
+	close_b.text = Back.close_text()
 	close_b.custom_minimum_size.y = 42
-	close_b.pressed.connect(close)
+	close_b.pressed.connect(_back)
 	column.add_child(close_b)
 	_fill()
 
@@ -109,6 +111,24 @@ func _process(dt: float) -> void:
 		_fill()
 
 
+# 134 号: how to open this page again, for the page it leaves for; Esc and the close key go back
+# where it was opened from, else away (scripts/ui_back.gd)
+func _back_entry() -> Dictionary:
+	var g = game
+	var sd := side
+	return Back.entry("shelf:" + sd, ["货架", "THE RACKS"], func(): g.open_shelf(sd))
+
+func _leave(to: String, open: Callable) -> void:
+	var e := _back_entry()
+	close()
+	Back.go(e, to, open)
+
+
+func _back() -> void:
+	close()
+	Back.back()
+
+
 func close() -> void:
 	if on_close.is_valid():
 		on_close.call()
@@ -117,4 +137,4 @@ func close() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:
 		get_viewport().set_input_as_handled()
-		close()
+		_back()

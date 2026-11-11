@@ -239,6 +239,8 @@ static func ships() -> Array:
 			e.flip = lv[1]
 			e.eng = lv[2]
 			e.push = lv[3]
+		else:
+			continue        # gone past the far edge: no place left to draw it at (it had no "at": _draw crashed)
 		out.append(e)
 	return out
 

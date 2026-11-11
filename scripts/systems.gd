@@ -893,6 +893,11 @@ func piece_volts(p) -> float:
 	# steps it up: its high side is what a cut or a probe meets (400 V in, about 4 kV out)
 	if xfmr_ratio(p) > 1.0 and bus_live:
 		return bus_volts() * xfmr_ratio(p)
+	# a DC link's capacitors still charged after the supply went (codex_rules.gd, cx_inverter_b)
+	if game != null and game.codex_rules != null:
+		var rv: float = game.codex_rules.residual(p)
+		if rv > 0.0:
+			return rv
 	# a generator off the bus but still turning: its remanence (spin.gd, cx_gen_x)
 	if game != null and game.spin != null:
 		return game.spin.remanence(p)

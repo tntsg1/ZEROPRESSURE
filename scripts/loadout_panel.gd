@@ -188,6 +188,7 @@ func clear(node: Node) -> void:
 func refresh() -> void:
 	clear(slots_box)
 	clear(shelf_box)
+	_skin_row()
 	var a: Dictionary = Career.active()
 	# module slots (none while the catalogue has no modules)
 	if not Gear.MODS.is_empty():
@@ -295,6 +296,60 @@ func refresh() -> void:
 	foot.text = "%s：%s      %s：%s      %s：%s" % [Txt.t("ld_value"), Pal.money(val), Txt.t("ld_risk"), Pal.money(val), Txt.t("ld_funds"), Pal.money(float(Career.data.get("money", 0.0)))]
 	if status_text != "":
 		status.text = status_text
+
+
+# 2026-11-10 外观款式: the airframe flown, switched among those owned, with a moving preview
+# of it flying, braking and grabbing (bought on the terminal's drone page)
+const Skins = preload("res://scripts/drone_skins.gd")
+
+
+class SkinPreview extends Control:
+	var id := "arrowring"
+	var tt := 0.0
+
+	func _process(dt: float) -> void:
+		tt += dt
+		queue_redraw()
+
+	func _draw() -> void:
+		Terminal.skin_preview(self, id, Rect2(Vector2.ZERO, size), tt, 1.0, Fonts.get_font("Regular"))
+
+
+func _skin_row() -> void:
+	var own := Skins.owned()
+	var cur := Skins.current()
+	var h := label(words("机体外观", "AIRFRAME") + "  %d / %d" % [own.size(), Skins.ORDER.size()], 18)
+	h.add_theme_font_override("font", Fonts.get_font("SemiBold"))
+	slots_box.add_child(h)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	slots_box.add_child(row)
+	row.add_child(key("◀", _skin_step.bind(-1), own.size() > 1, 52))
+	var nm := label(Skins.name_of(cur), 20)
+	nm.add_theme_font_override("font", Fonts.get_font("SemiBold"))
+	nm.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	row.add_child(nm)
+	row.add_child(key("▶", _skin_step.bind(1), own.size() > 1, 52))
+	var pv := SkinPreview.new()
+	pv.id = cur
+	pv.custom_minimum_size = Vector2(0, 150)
+	pv.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	slots_box.add_child(pv)
+	var more := words("外观不同，数值和手感完全相同。", "Looks only: same numbers, same handling. ")
+	if own.size() < Skins.ORDER.size():
+		more += words("其余款式在船坞终端“无人机升级”页购买。", "More airframes on the terminal's drone page.")
+	slots_box.add_child(label(more, 14, Color(1, 1, 1, 0.5)))
+	slots_box.add_child(HSeparator.new())
+
+
+func _skin_step(dir: int) -> void:
+	var own := Skins.owned()
+	var i := own.find(Skins.current())
+	var nxt: String = own[posmod(i + dir, own.size())]
+	if Skins.equip(nxt):
+		_click()
+		_say(words("已换上 %s", "NOW FLYING %s") % Skins.name_of(nxt))
+	refresh()
 
 
 func _num(v: float) -> String:

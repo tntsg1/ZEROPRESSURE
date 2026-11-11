@@ -1,4 +1,5 @@
 extends Control
+const Back := preload("res://scripts/ui_back.gd")
 # The parts rack (86 号 Q11, was the berth page's right column): opened with E at the rack under the
 # berth's terminal, or at the cargo district's left racks once the district is mended. Play goes on
 # while it is open; Esc closes. Repair is the authority.
@@ -52,6 +53,7 @@ func w(zh: String, en: String) -> String:
 
 
 func _ready() -> void:
+	Back.arrive()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	theme = OpsSkin.theme()
@@ -71,8 +73,8 @@ func _ready() -> void:
 	sell_b = _button("Sell", func(): _sell_sel())
 	list_b = _button("List", func(): _list_sel())
 	all_b = _button("SellAll", func(): _sell_all())
-	close_b = _button("Close", close)
-	close_b.text = w("关闭 [Esc]", "CLOSE [Esc]")
+	close_b = _button("Close", _back)
+	close_b.text = Back.close_text()
 	UiSkin.accent_button(sell_b)
 	overlay = Control.new()
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -411,7 +413,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	var used := true
 	match event.physical_keycode:
 		KEY_ESCAPE:
-			close()
+			_back()
 		KEY_LEFT, KEY_A:
 			_select(sel_row, sel_col - 1)
 		KEY_RIGHT, KEY_D:
@@ -430,6 +432,23 @@ func _unhandled_input(event: InputEvent) -> void:
 			used = false
 	if used:
 		get_viewport().set_input_as_handled()
+
+
+# 134 号: how to open this page again, for the page it leaves for; Esc and the close key go back
+# where it was opened from, else away (scripts/ui_back.gd)
+func _back_entry() -> Dictionary:
+	var g = game
+	return Back.entry("rack", ["零件架", "THE PARTS RACK"], func(): g.open_parts_rack())
+
+func _leave(to: String, open: Callable) -> void:
+	var e := _back_entry()
+	close()
+	Back.go(e, to, open)
+
+
+func _back() -> void:
+	close()
+	Back.back()
 
 
 func close() -> void:
@@ -501,7 +520,7 @@ func _draw() -> void:
 	_draw_bins(_k(0.12, 0.4))
 	_draw_detail(_k(0.1, 0.4))
 	# the keys along the foot
-	var keys := w("← → ↑ ↓ 选货箱 · Enter 出售 · L 挂牌/撤牌 · 滚轮 左右翻这一层 · 双击 出售 · Esc 关闭", "← → ↑ ↓ PICK · ENTER SELL · L LIST · WHEEL SCROLLS THE SHELF · DOUBLE-CLICK SELLS · ESC CLOSE")
+	var keys := w("← → ↑ ↓ 选货箱 · Enter 出售 · L 挂牌/撤牌 · 滚轮 左右翻这一层 · 双击 出售 · ", "← → ↑ ↓ PICK · ENTER SELL · L LIST · WHEEL SCROLLS THE SHELF · DOUBLE-CLICK SELLS · ") + ((w("Esc 返回%s", "ESC BACK TO %s") % Back.label()) if Back.has_back() else w("Esc 关闭", "ESC CLOSE"))
 	_text(keys, Vector2(PAD, size.y - 26), 13, Pal.ink(0.45 * a), font_b)
 
 

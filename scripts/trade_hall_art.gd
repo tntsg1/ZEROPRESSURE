@@ -419,12 +419,23 @@ func _dock_moving(ci: CanvasItem, t: float, on: bool, names: Dictionary) -> void
 		ci.draw_line(_p(Vector2(TW.INTAKE_X - 1.1, by - 2.1 + shut)), _p(Vector2(TW.INTAKE_X, by - 2.1 + shut)), Pal.heat(0.75, 1.0), _lw(0.08))
 	# the belt's rollers turning with it
 	var rl := PackedVector2Array()
-	var off := fmod(TW.belt_run, 0.6)
+	var off := fposmod(TW.belt_run, 0.6)   # belt_run falls while it runs west (buying)
 	var x := TW.INTAKE_X + 0.3 + off
 	while x < TW.BELT_END + 0.8:
 		rl.append_array([_p(Vector2(x, by + 0.08)), _p(Vector2(x, by + 0.34))])
 		x += 0.6
 	ci.draw_multiline(rl, _ink(0.42), _lw(0.04))
+	# 传送带方向: while it runs, chevrons on its side skirt point the way it carries (east out, west in)
+	var bv := TW.belt_v / TW.V_BELT
+	if absf(bv) > 0.05:
+		var sd := signf(bv)
+		var ch := PackedVector2Array()
+		var cx := TW.INTAKE_X + 2.0
+		while cx < TW.BELT_END - 1.0:
+			var tip := Vector2(cx + 0.18 * sd, by + 0.62)
+			ch.append_array([_p(tip + Vector2(-0.3 * sd, -0.16)), _p(tip), _p(tip), _p(tip + Vector2(-0.3 * sd, 0.16))])
+			cx += 4.0
+		ci.draw_multiline(ch, Pal.heat(0.35 + 0.4 * absf(bv), 1.1), _lw(0.06))
 	# the crates on the belt and on the hook, their seals
 	for c in TW.crates:
 		var at: Vector2 = Vector2(float(c.x), by) if str(c.at) == "belt" else TW.hook_at() + Vector2(0.0, TW.CRATE.y)

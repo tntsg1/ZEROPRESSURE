@@ -37,6 +37,7 @@ func setup(g, ship: Dictionary) -> void:
 	world = g.world
 	cfg = ship.get("boiloff", {})
 	z_index = 20
+	preload("res://scripts/tank_fill_fx.gd").ensure(g, self)
 	for t in cfg.get("tanks", {}):
 		kpa[t] = float(cfg.get("P0", 420.0))
 		thaw[t] = 0.0
@@ -279,34 +280,7 @@ func on_freed(_b) -> void:
 
 # ---------------------------------------------------------------- drawing
 
-# each tank's liquid seen through its shell: the level, hatched below, a shimmer on it;
-# the gas lifting off it while it vents
+# each tank's liquid is drawn by scripts/tank_fill_fx.gd (with every other ship's tanks): the
+# liquid round the walls, the vapour bubble, boiling harder as the pressure climbs, frost
 func _draw() -> void:
-	if not active():
-		return
-	var r: float = float(cfg.get("radius", 5.0)) * Geom.M
-	for t in cfg.get("tanks", {}):
-		if burst.has(t):
-			continue
-		var c: Array = _e(t).get("centre", [])
-		if c.size() != 2:
-			continue
-		var ctr := Vector2(float(c[0]), float(c[1])) * Geom.M
-		var k: float = clampf(cargo(t) / float(_c0.get(t, 1.0)), 0.0, 1.0)
-		if k <= 0.005:
-			continue
-		var y: float = ctr.y + r - 2.0 * r * k
-		var half: float = sqrt(maxf(0.0, r * r - (y - ctr.y) * (y - ctr.y)))
-		var wob: float = sin(_t * 1.7 + ctr.x) * 1.5
-		draw_line(Vector2(ctr.x - half, y + wob), Vector2(ctr.x + half, y - wob), Pal.ink(0.45), 1.4, true)
-		var step := 0.9 * Geom.M
-		var yy: float = y + step
-		while yy < ctr.y + r:
-			var hh: float = sqrt(maxf(0.0, r * r - (yy - ctr.y) * (yy - ctr.y)))
-			draw_line(Vector2(ctr.x - hh, yy), Vector2(ctr.x + hh, yy), Pal.ink(0.08), 1.0, true)
-			yy += step
-		if _venting.has(t):
-			for i in 4:
-				var bx: float = ctr.x + (fposmod(i * 0.37 + _t * 0.3, 1.0) - 0.5) * half * 1.6
-				var by: float = y - fposmod(_t * 40.0 + i * 25.0, maxf(10.0, y - (ctr.y - r)))
-				draw_arc(Vector2(bx, by), 3.0, 0.0, TAU, 8, Pal.ink(0.3), 1.0, true)
+	pass

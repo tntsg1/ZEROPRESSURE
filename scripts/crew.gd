@@ -160,6 +160,9 @@ func _clear_world() -> void:
 			w0.remove_piece(p)
 	wreck.clear()
 	parts.clear()
+	for q in boat_hung:
+		if q.body != null and is_instance_valid(q.body) and q.body.held():
+			q.body.hold_end()
 	boat_hung.clear()
 
 
@@ -221,6 +224,7 @@ func _spawn_parts_on_boat() -> void:
 	for p in parts:
 		if p.body != null:
 			p.body.set_meta("crew_part", true)
+			p.body.hold_begin()      # on the boat's hook: no collision (FreeBody.hold_begin)
 			boat_hung.append(p)
 
 

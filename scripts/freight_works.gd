@@ -1590,6 +1590,10 @@ static func _extend(tr: Dictionary, mind_pending: bool, dt := 0.0) -> void:
 	if held_up and float(tr.auth_left) < 1.5 * Mx and float(tr.speed) < 0.1 * Mx:
 		tr.blocked_t = float(tr.get("blocked_t", 0.0)) + dt
 		tr.status = w("信号停车：前方区段有车", "HELD AT A SIGNAL: THE BLOCK AHEAD IS OCCUPIED")
+		# 在站内等 (2026-11-10): held at a signal by the shuttle standing idle at a district's stop (it waits
+		# where its passenger got off): ask it to give way, as a train finding no route at all does
+		if tr.get("blocker") != null and int(tr.blocker) == PASSENGER and float(tr.blocked_t) > 1.0 and tram != null and is_instance_valid(tram) and str(tram.phase) == "" and str(tram.at) != "ring":
+			tram_clear = true
 	else:
 		tr.blocked_t = 0.0
 		if not held_up:

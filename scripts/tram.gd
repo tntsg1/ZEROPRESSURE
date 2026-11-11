@@ -75,6 +75,12 @@ var _leg_sw: Dictionary = {}   # the running leg's switches: it waits for them t
 var _hold := 0.0               # s still to stand before the leg sets off
 const HOLD := 0.6              # s a reversal stands: the driver changes ends
 const CLEAR := 7.0             # m past a switch the head car runs so the whole train clears it
+# 接驳车绕路 (user 2026-11-10: "我明明要往左边的下面，它偏偏要往左边，然后再往后倒一下"): five pairs of neighbouring
+# stops (hub–process, power–tug, tug–process, trade–cargo, cargo–berth) sit closer round the loop than their
+# turnouts are long, so the short way between them runs past the switch and backs in; the only other way is
+# round the loop. Priced at 90 m that long way was taken, and on a busy mended ring it waited over 80 s for
+# its whole route to clear (tests/track_bogie_check 5/13) — so the reversal stays where the track makes it
+# (tests/tram_wait_check holds it to those five pairs, once). Taking it away for good is the track's job.
 const REVERSE_COST := 30.0     # m a reversal is worth when choosing the way
 var sw_pos := {}               # switch id -> 0 (branch a) … 1 (branch b)
 var sw_vel := {}
@@ -472,22 +478,43 @@ var _queued: Array = []        # a call made while it was going back to the hub:
 const CLEAR_R := 25.0          # m: no drone this close to its stop, it may go back to the hub for freight
 
 
-# 130 号: standing idle at a district's stop with a freight train held up behind it and no drone
-# about: back to the hub's stop, out of the way.
-# 货车不进站 (user 2026-11-10: "我在交易点的时候，如果我的车停在轨道上，就没有火车进来的动画，也没有卸下来
-# 动画"): at the trade counter the drone is always within CLEAR_R of the stop, so the car never left and
-# the train never came. Now, empty and idle, it gives way to a train it has held up for NEAR_YIELD_S even
-# with the drone beside it — said on screen, seen driving off to the hub's stop; a call brings it back
-# first (the passenger still comes first: FW.passenger_request).
-const NEAR_YIELD_S := 5.0
-var _held_since := -1.0
-var _held_last := -1.0
-static var yields_near := 0     # tests: times it gave way with the drone beside it
+# 130 号: standing idle at a district's stop with a freight train held up behind it: out of the way.
+# 货车不进站 (user 2026-11-10): it gave way only with no drone within CLEAR_R, so at the trade counter the
+# train never came. 在站内等 (user 2026-11-10: "为什么我每次下列车再上列车，列车总是从其他地方跑过来呢？它为什么
+# 不是在站内等我呢"): it now stays at the stop the drone got off at (home) and moves only when a freight train
+# really needs the track it stands on (FW.tram_clear: the train finds no way, or stands at a signal held by
+# it) — at once with nobody at the stop, after NEAR_YIELD_S with the drone there; said on screen and seen
+# driving — to the hub's stop: every district stop is the end of a spur
+# with its freight stop beyond the passenger stop, so there is no siding between (the hub's stop is beside
+# the loop: trains run past outside its platform and never stop there). Once no train is coming to or
+# leaving that district any more it drives back to home and waits there again. A call comes first.
+var home := ""                 # the stop the drone last got off at: the car waits there
+var _home_t := 0.0
+static var yields_near := 0     # tests: times it gave way (with the drone anywhere)
+static var returns_home := 0    # tests: times it went back to wait at home
+var _return_to := "ring"
 var _said_t := -100.0
 
 
 static func w(zh: String, en: String) -> String:
 	return zh if Txt.zh else en
+
+
+func _say(text: String) -> void:
+	if game == null or game.get("hud") == null or game.get("drone") == null or not game.drone.alive:
+		return
+	# only near the stop it is leaving or coming back to
+	if (game.drone.global_position as Vector2).distance_to(station_at(home if home != "" else at)) > 70.0 * Geom.M:
+		return
+	game.hud.show_hint(text)
+
+
+# with the drone at the stop (just off, or about to get on) a held-up train waits NEAR_YIELD_S first: the car
+# leaving the moment its passenger stepped off is what the user did not want, and giving way at once in
+# every case locked a fetch against a parked train (tests/track_bogie_check: 253 cells pending for good)
+const NEAR_YIELD_S := 5.0
+var _held_since := -1.0
+var _held_last := -1.0
 
 
 func _maybe_clear() -> void:
@@ -505,25 +532,68 @@ func _maybe_clear() -> void:
 	var d = game.drone if game != null else null
 	var near: bool = d != null and d.alive and (d.global_position as Vector2).distance_to(station_at(at)) < CLEAR_R * Geom.M
 	if near and t - _held_since < NEAR_YIELD_S:
-		# the train keeps asking (WAIT_MAX); say why it is not coming in yet
-		if game.get("hud") != null and t - _said_t > 8.0:
-			_said_t = t
-			game.hud.show_hint(w("货运列车要进站，被停着的接驳车挡住了：%d 秒后接驳车先让到中央环站", "A FREIGHT TRAIN IS HELD UP BY THE SHUTTLE: IT GIVES WAY TO THE HUB IN %d s") % int(ceil(NEAR_YIELD_S - (t - _held_since))))
 		return
+	_held_since = -1.0
 	legs = plan(at, "ring", true)
 	if legs.is_empty():
 		return
-	if near:
-		yields_near += 1
-		if game.get("hud") != null:
-			game.hud.show_hint(w("接驳车让到中央环站，给货运列车让路；要坐车随时叫车", "THE SHUTTLE GIVES WAY TO THE FREIGHT TRAIN AT THE HUB; CALL IT ANY TIME"))
-	_held_since = -1.0
+	yields_near += 1
+	if home == "":
+		home = at
+	_say(w("接驳车临时让路，马上回来", "THE SHUTTLE IS MAKING WAY FOR A FREIGHT TRAIN: BACK SHORTLY"))
 	FW.passenger_request(self, legs)
 	_next_leg()
 	stop = ""
 	at = ""
 	speed = 0.0
+	_return_to = "ring"
 	phase = "return"
+
+
+# is a freight train coming to, standing at with work, or leaving district `z`'s stop?
+static func freight_at(z: String) -> bool:
+	var dz := "d:" + z
+	for tr in FW.trains:
+		var st: Dictionary = tr.get("step", {})
+		if str(st.get("place", "")) == dz:
+			return true
+		if str(tr.get("place", "")) == dz and (bool(tr.get("moving", false)) or not st.is_empty()):
+			return true
+		for s2 in tr.get("steps", []):
+			if s2 is Dictionary and str(s2.get("place", "")) == dz:
+				return true
+		# on its way there or back (the run it is on, what its wagons carry)
+		if str(tr.get("to", "")) == z or (str(tr.get("from", "")) == z and bool(tr.get("moving", false))):
+			return true
+		for wg in tr.get("wag", []):
+			if wg is Dictionary and (str(wg.get("to", "")) == z or str(wg.get("from", "")) == z):
+				return true
+	return false
+
+
+# back at the hub's stop after giving way: home again once the trains are done there
+func _maybe_home(dt: float) -> void:
+	if phase != "" or at != "ring" or home == "" or home == "ring" or riding:
+		return
+	_home_t += dt
+	if _home_t < 0.5:
+		return
+	_home_t = 0.0
+	if FW.on and freight_at(home):
+		return
+	var lg := plan("ring", home, true)
+	if lg.is_empty():
+		return
+	legs = lg
+	returns_home += 1
+	FW.passenger_request(self, legs)
+	_next_leg()
+	stop = ""
+	at = ""
+	speed = 0.0
+	_return_to = home
+	phase = "return"
+	_say(w("接驳车回站等你", "THE SHUTTLE IS GOING BACK TO WAIT FOR YOU"))
 
 
 var _replan_t := 0.0
@@ -676,6 +746,7 @@ func _reverse() -> void:
 
 
 func _begin_board() -> void:
+	home = ""
 	phase = "board"
 	dwell = 0.0
 	riding = true
@@ -701,6 +772,7 @@ var _wait_here := ""
 func _finish_alight() -> void:
 	riding = false
 	phase = ""
+	home = at
 	dest = ""
 	var d = game.drone
 	d.global_position = alight_at(at) if at != "" else position_px + Vector2(0, -2.4 * Geom.M)
@@ -1022,11 +1094,13 @@ func _physics_process(dt: float) -> void:
 	match phase:
 		"":
 			_maybe_clear()
+			_maybe_home(dt)
 		"return":
 			if _run(dt):
 				speed = 0.0
 				accel_now = 0.0
-				at = "ring"
+				at = _return_to
+				_return_to = "ring"
 				stop = ""
 				phase = ""
 				FW.passenger_arrived(self)

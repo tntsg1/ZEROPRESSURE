@@ -26,6 +26,12 @@ static func on(_g) -> bool:
 static func of(g) -> Dictionary:
 	if g == null or g.world == null or g.sys == null or not on(g) or not CoreAsset.has(g) or g.store_guide_on():
 		return {}
+	# 用户定案（IC-120 的 A 方案推广到所有船，图鉴对标第二轮）: a pump whose line the hose has
+	# drawn dry is running dry (codex_rules.gd): take the hose off first. 占位文字，等用户定稿.
+	if g.get("codex_rules") != null:
+		var dr: Array = g.codex_rules.dry_running()
+		if not dr.is_empty():
+			return _step(w("%s 的管路抽干了：拔掉 %s 的软管，免得泵空转", "%s'S LINE IS DRAWN DRY: TAKE THE HOSE OFF %s BEFORE THE PUMP RUNS DRY") % [dr[0].tag, dr[1]], w("气液回收（5）再点一下接口；或者先断 %s 的电", "hose (5) on the port again; or cut %s's power first") % dr[0].tag, _ctrl_at(g, str(dr[1])))
 	match CoreAsset.ship_key(g):
 		"ob90":
 			return _ob90(g)

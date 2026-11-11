@@ -23,6 +23,7 @@ var _meshes := {}
 var t := 0.0
 var draw_us := 0.0           # tests: the drawing a frame (µs, smoothed)
 var tick_us := 0.0
+var roll_dir := {}            # tests: per wagon, the way its lit roller steps (+1 / −1 local y, 0 still)
 var tick_max := 0.0          # tests: the slowest step seen (µs)
 var tick_n := 0              # tests: steps run, and how many took over 2 ms and over 4 ms
 var tick_over2 := 0
@@ -247,9 +248,16 @@ func _draw() -> void:
 			draw_mesh(Art.wagon_mesh(), null, xf)
 			# the rollers, their highlight stepping across while a crate moves on them
 			var rolling: bool = not pu.is_empty() and int(pu.wi) == wi
+			# 传送带方向 (user 2026-11-10): the lit roller steps the way the crate rolls — toward the hatch
+			# pushing in, toward the wagon's middle taking one off (it always stepped toward −y before)
+			var roll_s := 0
+			if rolling:
+				var inw := 1.0 if v.dot(c - (ps[k][0] as Vector2)) > 0.0 else -1.0
+				roll_s = int(inw) if str(W.pushing(str(pu.z)).get("dir", "")) == "in" else -int(inw)
+			roll_dir[Vector2i(int(tr.id), wi)] = roll_s
 			for i in 8:
 				var y := -1.05 + i * 0.3
-				var rm := Color(1.35, 1.35, 1.35) if rolling and (i + int(FW.t * 14.0)) % 3 == 0 else Color.WHITE
+				var rm := Color(1.35, 1.35, 1.35) if rolling and posmod(i - roll_s * int(FW.t * 14.0), 3) == 0 else Color.WHITE
 				draw_mesh(Art.roller_mesh(), null, Transform2D(ps[k][1], sc, 0.0, xf * Vector2(0.0, y)), rm)
 			# the hatch is on the loop's inside: the far plate follows a crate across towards it
 			var inward := 1.0 if v.dot(c - (ps[k][0] as Vector2)) > 0.0 else -1.0

@@ -12,6 +12,7 @@ const R := 4.5 * 48.0       # px: how far the laser's light reaches
 const LAMP_R := 3.4 * 48.0  # px: a work lamp's reach on the structure
 const ENGINE_R := 2.2 * 48.0
 const LAMP_C := Color(1.0, 0.93, 0.82)
+const LaserSkin = preload("res://scripts/drone_skins.gd")   # the laser light in the airframe's beam colour
 const LED := {"engine": Color(1.0, 0.62, 0.25), "reactor": Color(1.0, 0.62, 0.25), "tank": Color(0.56, 0.83, 0.9),
 	"pipe": Color(0.56, 0.83, 0.9), "cargo": Color(0.62, 0.88, 0.62)}
 
@@ -194,14 +195,14 @@ func _draw() -> void:
 			fp.append_array(poly)
 			for v in poly:
 				var k := clampf(1.0 - v.distance_to(f) / R, 0.0, 1.0)
-				fc.append(Pal.heat(0.16 * k * k * flick, 1.0))
+				fc.append(LaserSkin.lheat(0.16 * k * k * flick, 1.0))
 			for i in tri:
 				fi.append(base + i)
-	_edges(segs, sc, f, R, Pal.heat(1.0, 1.6), 0.75 * flick)
+	_edges(segs, sc, f, R, LaserSkin.lheat(1.0, 1.6), 0.75 * flick)
 	if not fi.is_empty():
 		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), fi, fp, fc)
 	if not segs.is_empty():
 		draw_multiline_colors(segs, sc, 2.0)
 	var tex: Texture2D = world.game.fx.glow_tex
-	draw_texture_rect(tex, Rect2(f - Vector2(R, R) * 0.7, Vector2(R, R) * 1.4), false, Pal.heat(0.12 * flick, 1.0))
-	draw_texture_rect(tex, Rect2(f - Vector2(30, 30), Vector2(60, 60)), false, Pal.heat(0.5 * flick, 1.6))
+	draw_texture_rect(tex, Rect2(f - Vector2(R, R) * 0.7, Vector2(R, R) * 1.4), false, LaserSkin.lheat(0.12 * flick, 1.0))
+	draw_texture_rect(tex, Rect2(f - Vector2(30, 30), Vector2(60, 60)), false, LaserSkin.lheat(0.5 * flick, 1.6))

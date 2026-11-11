@@ -210,6 +210,10 @@ static func _clear_at(x: float) -> bool:
 static func _belt(dt: float, sell: bool) -> void:
 	var dir := 1.0 if sell else -1.0
 	var moving := false
+	# 传送带方向 (user 2026-11-10: "为什么外面往里面运货，这履带还是往右边滚啊"): the belt runs the way the
+	# crates go — east selling (out to the crane), west buying (in to the intake) — and a crate rides at the
+	# belt's surface speed (no sliding while it starts or stops); belt_v is signed, + east
+	var ride := maxf(0.0, belt_v * dir) * dt
 	crates.sort_custom(func(a, b): return float(a.x) * dir > float(b.x) * dir)
 	var ahead := INF if sell else -INF
 	for c in crates:
@@ -230,9 +234,9 @@ static func _belt(dt: float, sell: bool) -> void:
 			stop = BELT_END if sell else INTAKE_X - 0.6
 		var limit := ahead - dir * (CRATE.x + 0.4)
 		var target := minf(stop, limit) if sell else maxf(stop, limit)
-		var nx := move_toward(x, target, V_BELT * dt)
-		if absf(nx - x) > 1e-4:
+		if absf(target - x) > 1e-4:
 			moving = true
+		var nx := move_toward(x, target, ride)
 		c.x = nx
 		if is_equal_approx(nx, mid) and not bool(c.weighed):
 			c.weighed = true
@@ -246,7 +250,7 @@ static func _belt(dt: float, sell: bool) -> void:
 			seal_t = 1.0
 			events.append(["stamp", Vector2(SEAL_X, BELT_Y - 2.0)])
 		ahead = float(c.x)
-	belt_v = move_toward(belt_v, V_BELT if moving else 0.0, dt * 3.0)
+	belt_v = move_toward(belt_v, V_BELT * dir if moving else 0.0, dt * 3.0)
 	# buying: a crate reaching the intake goes into the warehouse
 	if not sell:
 		var before := crates.size()
@@ -348,7 +352,7 @@ static func hook_at() -> Vector2:
 
 # how hard the dock's motors run, 0 … 1 (the motor loop's level)
 static func motor() -> float:
-	return clampf(maxf(maxf(absf(cvx) / 2.0, absf(cvh) / 1.8), belt_v / V_BELT * 0.6), 0.0, 1.0)
+	return clampf(maxf(maxf(absf(cvx) / 2.0, absf(cvh) / 1.8), absf(belt_v) / V_BELT * 0.6), 0.0, 1.0)
 
 
 # ---------------------------------------------------------------- the visitors (Q3 A)

@@ -28,7 +28,8 @@ var game
 var on_close: Callable
 var start_tab := ""
 var start_pick := ""
-var back_to_store := false
+var back_to_store := false   # 134 号: superseded by the shared trail (scripts/ui_back.gd); kept for old callers
+const Back := preload("res://scripts/ui_back.gd")
 var tab := "sell"
 var font: Font
 var font_b: Font
@@ -64,6 +65,7 @@ func w(zh: String, en: String) -> String:
 
 
 func _ready() -> void:
+	Back.arrive()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	focus_mode = Control.FOCUS_ALL
@@ -170,8 +172,16 @@ func close() -> void:
 		on_close.call()
 	elif not handed:
 		queue_free()
-	if back and g != null and is_instance_valid(g) and g.has_method("open_store"):
+	if back and not Back.has_back() and g != null and is_instance_valid(g) and g.has_method("open_store"):
 		(func(): g.open_store()).call_deferred()
+
+
+# Esc and the close key: back where the exchange was opened from (the stores, a console…), else away
+func _back() -> void:
+	var trail := Back.has_back()
+	close()
+	if trail:
+		Back.back()
 
 
 # ---------------------------------------------------------------- doing it
@@ -262,7 +272,7 @@ func _press(id: String) -> void:
 	if id.begins_with("tab:"):
 		set_tab(id.substr(4))
 	elif id == "close":
-		close()
+		_back()
 	elif id == "list":
 		list_now()
 	elif id == "custom":
@@ -359,6 +369,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 			if custom and ev.physical_keycode == KEY_ESCAPE:
 				custom = false
 				price_k = 1.0
+			elif ev.physical_keycode == KEY_ESCAPE:
+				_back()
 			else:
 				close()
 		KEY_ENTER, KEY_KP_ENTER:
@@ -526,8 +538,8 @@ func _draw_head() -> void:
 	_text(line, Vector2(PAD + 16, 104), 18, Pal.ink(0.88), font_b)
 	_text(w("当前资金", "CASH"), Vector2(size.x - PAD - 180.0 - 220.0, 58), 13, Pal.ink(0.5), font_b, 200.0, HORIZONTAL_ALIGNMENT_RIGHT)
 	_text(Pal.money(roundf(_cash_shown)), Vector2(size.x - PAD - 180.0 - 220.0, 88), 24, Pal.ink(0.95), font_s, 200.0, HORIZONTAL_ALIGNMENT_RIGHT)
-	var back := w("返回仓库 [Esc]", "BACK TO STORES  [Esc]") if back_to_store else w("关闭窗口 [Esc]", "CLOSE  [Esc]")
-	_key("close", Rect2(size.x - PAD - 170.0, 48, 170.0, 46.0), back, w("关闭交易行界面", "Close the exchange") if not back_to_store else w("返回仓库界面", "Back to the stores page"))
+	var back := Back.close_text(true) if Back.has_back() else (w("返回仓库 [Esc]", "BACK TO STORES  [Esc]") if back_to_store else w("关闭窗口 [Esc]", "CLOSE  [Esc]"))
+	_key("close", Rect2(size.x - PAD - 170.0, 48, 170.0, 46.0), back, (w("返回%s界面", "Back to %s") % Back.label()) if Back.has_back() else (w("关闭交易行界面", "Close the exchange") if not back_to_store else w("返回仓库界面", "Back to the stores page")))
 	draw_line(Vector2(PAD, HEAD_H), Vector2(size.x - PAD, HEAD_H), Pal.ink(0.12), 1.0)
 
 
@@ -996,7 +1008,8 @@ func _draw_foot() -> void:
 		draw_rect(Rect2(r.position.x, r.end.y - 2.0, r.size.x * clampf(_msg_t / 4.0, 0.0, 1.0), 2.0), Color(UiSkin.DATA, 0.6 * k))
 		_text(message, r.position + Vector2(24, 26), 16, Pal.ink(0.97 * k), font_b)
 	else:
-		_text({"sell": w("Enter 确认挂单 · Esc 关闭界面", "ENTER: LIST · ESC: CLOSE"), "buy": w("Enter 确认购买 · Esc 关闭界面", "ENTER: BUY · ESC: CLOSE"), "orders": w("Enter 接受订单 · Esc 关闭界面", "ENTER: TAKE · ESC: CLOSE")}.get(tab, ""), Vector2(PAD, y), 16, Pal.ink(0.4), font_b)
+		var esc := (w("Esc 返回%s", "ESC: BACK TO %s") % Back.label()) if Back.has_back() else w("Esc 关闭界面", "ESC: CLOSE")
+		_text({"sell": w("Enter 确认挂单 · ", "ENTER: LIST · "), "buy": w("Enter 确认购买 · ", "ENTER: BUY · "), "orders": w("Enter 接受订单 · ", "ENTER: TAKE · ")}.get(tab, "") + esc, Vector2(PAD, y), 16, Pal.ink(0.4), font_b)
 
 
 # 人性化 规则 4: a key's plain note after 0.4 s by the pointer; a shut one says why

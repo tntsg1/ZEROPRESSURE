@@ -278,6 +278,7 @@ func _begin() -> void:
 	opened = false
 	_seen_all = false
 	_repair_t = 0.0
+	_look_t = 0.0
 	co_i = 0
 	step_t = 0.0
 	if game.tools != null and game.tools.has_method("release_grab"):
@@ -286,6 +287,11 @@ func _begin() -> void:
 	if tg != Vector2.INF and kind() in ["gate", "hub", "station", "home"]:
 		game.plan_focus = tg
 		game.plan_focus_t = 2.0
+	# 2026-11-10: a look step — the camera looks down at it a while (the furnace is under the gallery, off the
+	# screen from the console); any move of the player's takes the camera back
+	if tg != Vector2.INF and is_look():
+		game.plan_focus = tg
+		game.plan_focus_t = LOOK_S + 1.5
 	_show()
 
 
@@ -394,6 +400,10 @@ func _page() -> String:
 		return "screen:power"
 	if path.ends_with("exchange_panel.gd"):
 		return "exchange:trade"
+	# 2026-11-10 引导可达性: since 128 号 the trade console's key opens the new exchange (hall_panel.gd); the
+	# step waited on the old page for ever
+	if path.ends_with("hall_panel.gd") and kind() == "exchange":
+		return "exchange:trade"
 	if path.ends_with("transit_panel.gd"):
 		return "transit"
 	if path.ends_with("mill_panel.gd"):
@@ -419,6 +429,7 @@ func page_open() -> bool:
 
 
 # the drone at the end of a ride to z: at z's stop, in z itself, or (the berth's own stop) back in the berth
+static var LOOK_ON := true    # 2026-11-10: the look-only steps pass on the target seen (false: as before)
 static var ARRIVED_ON := true   # tests: false is the walk as it was (only the ride itself counted: the before picture)
 func arrived(z: String, p: Vector2) -> bool:
 	if not ARRIVED_ON:
@@ -448,6 +459,10 @@ func passed() -> bool:
 		"queue":
 			return not ProcessQueue.open_entries().is_empty() or str(Career.data.get("industrial_heat", {}).get("state", "")) not in ["", "complete", "cancelled", "written_off"]
 		"watch":
+			# 2026-11-10 (user: "这个引导是要我飞过去吗？我飞不过去啊"): a look, not a place to go — the furnace
+			# is under the gallery's glass, out of the drone's reach; seen on the screen a while, it is done
+			if LOOK_ON and _look_t >= LOOK_S:
+				return true
 			# the machines seen at work: the ingots in the furnace and melting (or further on)
 			var ih = game.get("industrial_heat")
 			# (nothing to melt — no ingots, the grid short — the walk does not wait for ever)
@@ -509,7 +524,8 @@ func _fill() -> void:
 			title.text = w("点“动力区控制屏”", "CLICK 'POWER CONTROL SCREEN'")
 			line = w("在动力区业务终端里（按 %s 打开）", "In the power console (%s opens it)") % e
 		"exchange":
-			title.text = w("点“打开交易行”", "CLICK 'OPEN THE EXCHANGE'")
+			# 2026-11-10: the key's own name (128 号 renamed it 打开交易市场; the card named one that was not there)
+			title.text = w("点“%s”", "CLICK '%s'") % _ex_key()
 			line = w("在贸易港业务终端里（按 %s 打开）", "In the trade console (%s opens it); F8 anywhere too") % e
 		"shelf":
 			title.text = w("飞到左边货架口，按 %s 打开仓库", "FLY TO THE LEFT RACK AND PRESS %s TO OPEN THE STORES") % e
@@ -534,6 +550,9 @@ func _fill() -> void:
 			var ih = game.get("industrial_heat")
 			title.text = w("往下看：%s", "LOOK DOWN: %s") % (str(ih.info().title) if ih != null else "")
 			line = w("料自己送到炉口，炉子自己熔、自己浇。不用按，关掉面板看就行。", "The forklift and the trolley bring the ingots, the arcs melt them, the melt is cast; nothing to press")
+			if LOOK_ON:
+				# 2026-11-10 占位 (待用户定稿): a look — not a place to fly to
+				line += "\n" + (w("不用飞过去：电弧炉在玻璃下面，镜头里看到它就行（亮框里）", "No need to fly there: the furnace is under the glass; having it on screen (in the frame) is enough") if not target_seen() or _look_t < 0.2 else w("看着就行 · %d 秒", "JUST WATCH · %d s") % maxi(1, int(ceil(LOOK_S - _look_t))))
 		"gate":
 			title.text = w("出坞：沿青色箭头往上飞", "OUT: UP ALONG THE CYAN ARROWS")
 			line = w("船坞空着时，顶上这道门通向整个港区", "With the berth empty, this gate opens on the port")
@@ -617,7 +636,7 @@ func _callouts() -> Array:
 			return [["m:stage_box", w("本区第几期、下一期还缺什么", "This district's stage and what the next lacks")], fix[0], fix[1], fix[2],
 				["l:" + w("上门的客人", "AT THE PIER"), w("码头边想买卖东西的小船", "Little ships at the pier, buying and selling")],
 				["l:" + w("三大公司", "THE COMPANIES"), w("三家公司长期收什么、给什么价", "What the three companies keep buying")],
-				["b:" + w("打开交易行", "OPEN THE EXCHANGE"), w("下一步点它，进交易行", "Click it next: the exchange")]]
+				["b:" + _ex_key(), w("下一步点它，进交易行", "Click it next: the exchange")]]
 		"console:process":
 			return [["m:stage_box", w("本区第几期、下一期还缺什么", "This district's stage and what the next lacks")], fix[0], fix[1], fix[2],
 				["l:" + w("轧机在本区中部", "The mill stands"), w("轧机不在这里开：飞到轧机操作台", "The mill is run at the mill: fly to its pedestal")],
@@ -654,11 +673,37 @@ func _callouts() -> Array:
 	return []
 
 
+# 2026-11-10: the look-only steps (kinds in LOOK_KINDS): the seconds the target has been on the screen
+const LOOK_KINDS := ["watch"]
+const LOOK_S := 3.0
+var _look_t := 0.0
+
+
+func is_look() -> bool:
+	return LOOK_ON and kind() in LOOK_KINDS
+
+
+# the target in the camera's view (a margin in from the edges), no page over it
+func target_seen() -> bool:
+	var at := target()
+	if at == Vector2.INF or game == null or game.console_ui != null:
+		return false
+	var v: Rect2 = ViewCull.view(game)
+	if v.size == Vector2.ZERO:
+		return false
+	return v.grow(-0.08 * minf(v.size.x, v.size.y)).has_point(at)
+
+
 var _repair_t := 0.0            # 108 号: time the berth page has been open on the repair step
 var co_i := 0                   # the callout shown on this step's page
 var _co_page := ""
 var overlay: Control
 var dims: Array = []
+
+
+# the trade console's key to the exchange, by its name on the page now
+func _ex_key() -> String:
+	return w("打开交易市场", "OPEN THE EXCHANGE") if StoreBook.live() else w("打开交易行", "OPEN THE EXCHANGE")
 
 
 func _co_rect(spec: String) -> Rect2:
@@ -790,6 +835,8 @@ func _process(dt: float) -> void:
 	var shown_open := opened
 	if kind() == "repair" and page_open():
 		_repair_t += dt
+	if is_look() and target_seen():
+		_look_t += dt
 	if page_open():
 		opened = true
 		if callouts_done():
@@ -829,7 +876,12 @@ func _done_line() -> String:
 		"gallery": return w("上了观察廊：沿这条走廊能直飞过全场", "On the gallery: this corridor runs the whole hall")
 		"furnace": return w("加工队列开了：以后在这里排产", "The queue is open: this is where the work is ordered")
 		"queue": return w("排上了：炉子会自己开炉", "Queued: the furnace starts by itself")
-		"watch": return w("炉子在熔化了：出钢后钢坯自己回仓库", "Melting: the billets go back to the stores by themselves")
+		"watch":
+			var ih = game.get("industrial_heat")
+			if LOOK_ON and not (ih != null and str(ih.info().key) in ["melting", "probe", "tapping", "cooling", "returning"]):
+				# 2026-11-10 占位 (待用户定稿): seen before the arcs struck
+				return w("看过了：炉子按队列自己开炉，出钢后钢坯自己回仓库", "Seen: the furnace starts by the queue; the billets go back to the stores by themselves")
+			return w("炉子在熔化了：出钢后钢坯自己回仓库", "Melting: the billets go back to the stores by themselves")
 		"console", "screen", "exchange": return w("%s看过了", "%s seen") % nm
 		"gate": return w("出坞了：船坞空着时从这道门进出港区", "Out: with the berth empty, this gate is the way into the port")
 		"hub": return w("到中央环了", "In the ring")
@@ -911,6 +963,7 @@ func _draw() -> void:
 	var big := 1.6 if step_t >= STUCK_2 else 1.0
 	GuideMark.target(self, at, z, UiSkin.ACCENT, t, target_name(), 26.0, big)
 	if d != null and d.visible:
-		GuideMark.arrow(self, game.look.lamp_pos() if game.look != null else d.global_position, at, z, UiSkin.ACCENT, t)
+		if not is_look():
+			GuideMark.arrow(self, game.look.lamp_pos() if game.look != null else d.global_position, at, z, UiSkin.ACCENT, t)
 	if fly:
 		way.draw_edge(self, target_name(), UiSkin.ACCENT, card.get_global_rect() if card != null and card.visible and layer.visible else Rect2())

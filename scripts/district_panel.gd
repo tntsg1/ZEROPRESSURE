@@ -1,4 +1,5 @@
 extends Control
+const Back := preload("res://scripts/ui_back.gd")
 # A district's business console (2026-10-24, scripts/port_structure.gd): what this part
 # of the port is doing for the company right now, and the one or two things you can do
 # from here. Same skin as the furnace and sorting panels. Play goes on while it is open
@@ -37,6 +38,7 @@ func button(value: String, callback: Callable) -> Button:
 
 
 func _ready() -> void:
+	Back.arrive()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# 2026-11-07: the processing district's console, once mended, is its own simpler page
 	if _process_layout():
@@ -116,7 +118,7 @@ func _ready() -> void:
 		column.add_child(rk)
 	message = label("", 15)
 	column.add_child(message)
-	column.add_child(button(words("按 [Esc] 关闭面板", "CLOSE [Esc]"), close))
+	column.add_child(button(Back.close_text() if Back.has_back() else words("按 [Esc] 关闭面板", "CLOSE [Esc]"), _back))
 	_fill()
 
 
@@ -135,15 +137,15 @@ func _subtitle() -> String:
 func _actions() -> Array:
 	match zone:
 		"trade":
-			return [[words("打开交易行 · 购买原料 / 出售产品", "OPEN THE EXCHANGE · BUY / SELL"), func(): _then(func(): game.open_exchange()), words("关闭当前面板，打开交易行，可以在这里购买原料和出售产品。", "Close this and open the exchange: buy feed, sell products")]]
+			return [[words("打开交易行 · 购买原料 / 出售产品", "OPEN THE EXCHANGE · BUY / SELL"), func(): _then(func(): game.open_exchange(), "exchange"), words("关闭当前面板，打开交易行，可以在这里购买原料和出售产品。", "Close this and open the exchange: buy feed, sell products")]]
 		"process":
 			# 74 号: the rolling mill, a tonne a pass
 			# 85 号: the mill is run at the mill itself, not from here
 			return []
 		"power":
-			return [[words("动力区控制屏 · 查看供电情况 / 用电仪表 / 手动调度", "POWER CONTROL SCREEN · LINES / GAUGES / DISPATCH"), func(): _then(func(): game.open_power_screen()), words("关闭当前面板，打开供电控制屏，可以查看各个设施的用电情况、调整供电优先级，还能暂停电弧炉的运行。", "Close this and open the power screen: who uses power, the order, the furnace")]]
+			return [[words("动力区控制屏 · 查看供电情况 / 用电仪表 / 手动调度", "POWER CONTROL SCREEN · LINES / GAUGES / DISPATCH"), func(): _then(func(): game.open_power_screen(), "power"), words("关闭当前面板，打开供电控制屏，可以查看各个设施的用电情况、调整供电优先级，还能暂停电弧炉的运行。", "Close this and open the power screen: who uses power, the order, the furnace")]]
 		"ring":
-			return [[words("船坞终端 · 合同管理与设施建设", "BERTH TERMINAL (CONTRACTS AND WORKS)"), func(): _then(func(): game.open_console("terminal")), words("关闭当前面板，打开船坞终端，可以查看待接的拆船合同、安排设备维修和建设新设施。", "Close this and open the berth terminal: ships, contracts, repairs, building")]]
+			return [[words("船坞终端 · 合同管理与设施建设", "BERTH TERMINAL (CONTRACTS AND WORKS)"), func(): _then(func(): game.open_console("terminal"), "terminal"), words("关闭当前面板，打开船坞终端，可以查看待接的拆船合同、安排设备维修和建设新设施。", "Close this and open the berth terminal: ships, contracts, repairs, building")]]
 	return []
 
 
@@ -457,10 +459,11 @@ func _say_deal(r: Dictionary) -> void:
 	_fill_people.call_deferred()
 
 
-func _then(what: Callable) -> void:
+func _then(what: Callable, to := "") -> void:
+	var e := _back_entry()
 	if on_close.is_valid():
 		on_close.call()
-	what.call_deferred()
+	Back.go(e, to, what)
 
 
 func _process(dt: float) -> void:
@@ -628,6 +631,25 @@ func _item_name(key: String) -> String:
 var _primary_set := false
 
 
+# 134 号: how to open this page again, for the page it leaves for; Esc and the close key go back
+# where it was opened from, else away (scripts/ui_back.gd)
+func _back_entry() -> Dictionary:
+	var g = game
+	var z := zone
+	var nm := Port.name_of(z)
+	return Back.entry("district:" + z, [nm + "操作台", nm + " CONSOLE"], func(): g.open_district(z))
+
+func _leave(to: String, open: Callable) -> void:
+	var e := _back_entry()
+	close()
+	Back.go(e, to, open)
+
+
+func _back() -> void:
+	close()
+	Back.back()
+
+
 func close() -> void:
 	if BenchFx.leaving(self):
 		return
@@ -641,7 +663,7 @@ func close() -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:
-		close()
+		_back()
 		get_viewport().set_input_as_handled()
 
 
@@ -753,7 +775,7 @@ func _process_layout() -> bool:
 	_fill_gas()
 	message = label("", 15)
 	column.add_child(message)
-	column.add_child(button(words("按 [Esc] 关闭面板", "CLOSE [Esc]"), close))
+	column.add_child(button(Back.close_text() if Back.has_back() else words("按 [Esc] 关闭面板", "CLOSE [Esc]"), _back))
 	_fill()
 	_fill_next()
 	return true
@@ -906,7 +928,7 @@ func _trade_layout() -> bool:
 	column.add_child(org_list)
 	org_fold = BenchFx.fold(org_list)
 	org_fold.on_toggle = func(_o): _trade_sig = ""
-	var ex := ConsoleKit.key(words("打开交易市场", "OPEN THE EXCHANGE"), func(): _then(func(): game.open_exchange()))
+	var ex := ConsoleKit.key(words("打开交易市场", "OPEN THE EXCHANGE"), func(): _then(func(): game.open_exchange(), "exchange"))
 	BenchFx.note(ex, words("出售货物、购买零件、交付订单", "Sell, buy parts, fill orders"))
 	column.add_child(ex)
 	# ---- 更多: the figures, the mending
@@ -932,7 +954,7 @@ func _trade_layout() -> bool:
 	_fill_repair()
 	message = ConsoleKit.text("", 18, 0.85)
 	column.add_child(message)
-	column.add_child(button(words("按 [Esc] 关闭面板", "CLOSE [Esc]"), close))
+	column.add_child(button(Back.close_text() if Back.has_back() else words("按 [Esc] 关闭面板", "CLOSE [Esc]"), _back))
 	_fill()
 	_fill_trade()
 	return true
@@ -1122,7 +1144,7 @@ func _fill_trade() -> void:
 		else:
 			trade_key.text = words("打开交易市场", "OPEN THE EXCHANGE")
 			trade_key.disabled = false
-			_trade_do = func(): _then(func(): game.open_exchange())
+			_trade_do = func(): _then(func(): game.open_exchange(), "exchange")
 		trade_box.add_child(trade_key)
 	BenchFx.primary(trade_key)
 

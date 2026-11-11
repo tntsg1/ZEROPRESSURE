@@ -1,4 +1,5 @@
 extends Control
+const Back := preload("res://scripts/ui_back.gd")
 # 128 号 第 4 段 排产 (2026-11-07 问答定案 ①): the processing queue, one panel on the right with the
 # works still in view on the left. Each batch is a row — what goes in, the mould it is cast in, what it
 # is for (an order: whose and when it is due; to sell; to keep), how far along, when it will be done —
@@ -47,6 +48,7 @@ func w(zh: String, en: String) -> String:
 
 
 func _ready() -> void:
+	Back.arrive()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	focus_mode = Control.FOCUS_ALL
@@ -63,6 +65,23 @@ func _ready() -> void:
 		var tw := create_tween().set_parallel(true)
 		tw.tween_property(self, "modulate:a", 1.0, 0.3).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		tw.tween_property(self, "position:x", 0.0, BenchFx.ENTER_S).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
+
+
+# 134 号: how to open this page again, for the page it leaves for; Esc and the close key go back
+# where it was opened from, else away (scripts/ui_back.gd)
+func _back_entry() -> Dictionary:
+	var g = game
+	return Back.entry("queue", ["加工队列", "THE PROCESS QUEUE"], func(): g.open_queue_panel())
+
+func _leave(to: String, open: Callable) -> void:
+	var e := _back_entry()
+	close()
+	Back.go(e, to, open)
+
+
+func _back() -> void:
+	close()
+	Back.back()
 
 
 func close() -> void:
@@ -193,7 +212,7 @@ func _press(id: String) -> void:
 			_say(why, true)
 		return
 	if id == "close":
-		close()
+		_back()
 	elif id == "auto":
 		toggle_auto()
 	elif id == "more":
@@ -228,9 +247,10 @@ func queue_one() -> void:
 
 func _to_store() -> void:
 	var g = game
-	close()
 	if g != null and is_instance_valid(g) and g.has_method("open_store"):
-		(func(): g.open_store("raw")).call_deferred()
+		_leave("store", func(): g.open_store("raw"))
+	else:
+		close()
 
 
 # ---------------------------------------------------------------- input
@@ -283,7 +303,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			elif more_open:
 				more_open = false
 			else:
-				close()
+				_back()
 		KEY_ENTER, KEY_KP_ENTER:
 			_press("one" if free_t() >= ProcessQueue.HEAT_MIN else "store")
 		_:
@@ -362,7 +382,7 @@ func _draw() -> void:
 	# ---- the head: the district's code, the name, the furnace and the mould in one line
 	_text(w("加工队列", "PROCESSING QUEUE"), Vector2(x, 64), 30, Pal.ink(0.97), font_s)
 	_text(w("PRC-3 · 炉体控制台", "PRC-3 · FURNACE CONSOLE"), Vector2(x + 170, 62), 14, Pal.ink(0.35), font_b)
-	_key("close", Rect2(pr.end.x - PAD - 132.0, 34, 132.0, 40.0), w("关闭 [Esc]", "CLOSE  [Esc]"), w("关闭加工队列，返回现场", "Close the queue"))
+	_key("close", Rect2(pr.end.x - PAD - 132.0, 34, 132.0, 40.0), Back.close_text(true), (w("返回%s", "Back to %s") % Back.label()) if Back.has_back() else w("关闭加工队列，返回现场", "Close the queue"))
 	var open := _open()
 	var free := free_t()
 	var nw := now_of()
@@ -653,4 +673,5 @@ func _draw_foot(pr: Rect2) -> void:
 		draw_rect(Rect2(r.position.x, r.end.y - 2.0, r.size.x * clampf(_msg_t / 4.0, 0.0, 1.0), 2.0), Color(UiSkin.DATA, 0.6 * k))
 		_text(message, r.position + Vector2(18, 25), 14, Pal.ink(0.97 * k), font_b, r.size.x - 24.0)
 	else:
-		_text(w("Enter 添加一炉生产任务 · Esc 关闭面板 · 拖动卡片调整生产顺序", "ENTER QUEUES A HEAT · ESC CLOSES · DRAG TO REORDER") if not _open().is_empty() else w("Enter 添加一炉生产任务 · Esc 关闭面板", "ENTER QUEUES A HEAT · ESC CLOSES"), Vector2(x, y), 16, Pal.ink(0.4), font_b)
+		var esc := (w("Esc 返回%s", "ESC BACK TO %s") % Back.label()) if Back.has_back() else w("Esc 关闭面板", "ESC CLOSES")
+		_text(w("Enter 添加一炉生产任务 · ", "ENTER QUEUES A HEAT · ") + esc + (w(" · 拖动卡片调整生产顺序", " · DRAG TO REORDER") if not _open().is_empty() else ""), Vector2(x, y), 16, Pal.ink(0.4), font_b)

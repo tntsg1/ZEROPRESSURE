@@ -684,7 +684,7 @@ func _draw_drone() -> void:
 	# the drone, as painted on its pad
 	var dc := box.position + Vector2(64, 68)
 	var pts := PackedVector2Array()
-	for v in DroneArt.ARROW:
+	for v in preload("res://scripts/drone_skins.gd").hull(preload("res://scripts/drone_skins.gd").current()):
 		pts.append(dc + (v as Vector2) * 1.6)
 	draw_colored_polygon(pts, Color(0.11, 0.115, 0.13))
 	pts.append(pts[0])

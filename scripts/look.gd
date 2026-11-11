@@ -266,6 +266,7 @@ func _process(dt: float) -> void:
 	laser.enabled = high and tools != null and tools.cutting
 	if laser.enabled:
 		laser.position = tools.front
+		laser.color = preload("res://scripts/drone_skins.gd").lheat(1.0, 1.0) if game.drone != null and game.drone.skin_id() != "arrowring" else Color(1.0, 0.55, 0.22)
 		laser.energy = 1.7 + 0.35 * sin(_t * 47.0) + 0.2 * sin(_t * 113.0)
 	# the drone's head lamp, a little ahead of it
 	var d = game.drone
@@ -324,6 +325,10 @@ func _step_feed(rdt: float, high: bool) -> void:
 			bl -= bh
 		beam.rotation = beam_ang - PI * 0.5
 		beam.energy = 1.45
+		# 2026-11-10 外观款式: each airframe's lamp has its own colour, width and reach
+		var lk := _lamp_kind()
+		beam.color = lk[0]
+		beam.scale = Vector2(float(lk[1]), float(lk[2]))
 		beam.position = lamp_pos()
 		beam_fx.position = beam.position
 	beam_fx.visible = beam.enabled and Txt.anim_level() >= 1
@@ -422,22 +427,33 @@ func _step_feed(rdt: float, high: bool) -> void:
 		osd_c.queue_redraw()
 
 
+# the airframe's lamp: [colour, width ×, reach ×] (scripts/drone_skins.gd)
+func _lamp_kind() -> Array:
+	var d = game.drone if game != null else null
+	if d == null or not d.has_method("skin_id"):
+		return [Color(0.86, 0.93, 1.0), 1.0, 1.0]
+	return preload("res://scripts/drone_skins.gd").SKINS[d.skin_id()].lamp
+
+
 func _draw_beam() -> void:
 	var d = game.drone
 	var dir: Vector2 = Vector2.from_angle(beam.rotation + PI * 0.5)
 	var wp: Vector2 = beam_fx.position   # where the lamp is in the world (the motes drift past it)
 	var p0 := Vector2.ZERO
-	var L := 10.0 * Geom.M
+	var lk := _lamp_kind()
+	var lc: Color = lk[0]
+	var wk: float = lk[1]
+	var L := 10.0 * Geom.M * float(lk[2])
 	var side := dir.orthogonal()
 	# the beam made visible by what floats in it: faint, widening, fading out
 	# two lengths: a brighter core near the lamp, fading out within a third of the reach,
 	# and the faint full cone (the falloff reads as light in thin dust, not a grey wedge)
 	for layer in [[0.35, 0.05], [1.0, 0.018]]:
 		var l2: float = L * layer[0]
-		var w2: float = 6.0 + l2 * 0.42
+		var w2: float = 6.0 + l2 * 0.42 * wk
 		var pts := PackedVector2Array([p0 + side * 4.0, p0 - side * 4.0, p0 + dir * l2 - side * w2, p0 + dir * l2 + side * w2])
-		var c0 := Color(0.9, 0.95, 1.0, layer[1])
-		var c1 := Color(0.9, 0.95, 1.0, 0.0)
+		var c0 := Color(lc.r, lc.g, lc.b, layer[1])
+		var c1 := Color(lc.r, lc.g, lc.b, 0.0)
 		beam_fx.draw_polygon(pts, PackedColorArray([c0, c0, c1, c1]))
 	# dust and ice glinting where the beam crosses it, drifting slowly round the drone
 	var z: float = maxf(game.cam_zoom(), 0.05)
@@ -448,7 +464,7 @@ func _draw_beam() -> void:
 		var along := rel.dot(dir)
 		if along < 0.0 or along > L:
 			continue
-		var across := absf(rel.dot(side)) / (6.0 + along * 0.42)
+		var across := absf(rel.dot(side)) / (6.0 + along * 0.42 * wk)
 		if across > 1.0:
 			continue
 		var k := (1.0 - along / L) * (1.0 - across * across)

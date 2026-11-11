@@ -42,6 +42,8 @@ var game
 var smelter
 var t := 0.0
 var arriving: Array = []      # items on their way from the mouth: {item, t, dur, from}
+var belt_run := 0.0           # m the return belt's surface has run, + east (传送带方向 2026-11-10)
+var belt_v := 0.0             # m/s now, + east (tests)
 var press_q: Array = []
 var shred_q: Array = []
 var press = null              # the item in the press: {polys, w, h, mass, s, ph, pt, seed}
@@ -328,6 +330,15 @@ func step(dt: float) -> void:
 	drive_rate = move_toward(drive_rate,2.0 if busy() > 4 else 1.0,dt * 0.5)
 	var hurry := drive_rate
 	# arrivals: along the belt, down the chute, through the diverter
+	# 传送带方向 (user 2026-11-10): the return belt's surface runs the way the pieces on it go (from the
+	# mouth toward the line: east or west) at their speed, 3 m/s (dur = 2 + distance / 3), and only
+	# while one is on it — it used to run east at 2.5 m/s whatever came, or nothing
+	belt_v = 0.0
+	for a in arriving:
+		if float(a.t) < maxf(0.0, float(a.dur) - 2.0):
+			belt_v = 3.0 * hurry * signf(X - float(a.from))
+			break
+	belt_run += belt_v * dt
 	for a in arriving.duplicate():
 		a.t += dt * hurry
 		if a.t >= a.dur:
@@ -631,7 +642,7 @@ func draw(ci, F: float, mx: float, font: Font, font_b: Font, zoom: float, txt: C
 		ci.draw_line(_p(bx0 - X - 0.4, 0.62, F), _p(bx1 - X + 0.4, 0.62, F), ink, 1.0)
 		ci.draw_line(_p(bx0 - X - 0.4, 0.98, F), _p(bx1 - X + 0.4, 0.98, F), ink, 1.0)
 		var sl := PackedVector2Array()
-		var x := bx0 + fposmod(t * 2.5, 0.5)
+		var x := bx0 + fposmod(belt_run, 0.5)
 		while x < bx1:
 			sl.append_array([Vector2(x, F + 0.66) * M, Vector2(x, F + 0.94) * M])
 			x += 0.5

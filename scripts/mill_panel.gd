@@ -1,4 +1,5 @@
 extends Control
+const Back := preload("res://scripts/ui_back.gd")
 # The rolling mill's own panel (85 号; as a Dyson Sphere Program building's window): the recipe
 # (plate or sections, picked by a tile, used from the next pass), the flow — the input slot (billet
 # in the warehouse, a tonne a pass), the pass's progress, the output slot (that product in stock,
@@ -77,6 +78,7 @@ class Flow extends Control:
 
 
 func _ready() -> void:
+	Back.arrive()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var accent := Pal.tint(Pal.AIR, 1.0, 1.2)
 	# 132 号: a 520 px card on the far side of the mill; the top line, the recipe, the flow, one orange key
@@ -165,9 +167,9 @@ func _ready() -> void:
 	BenchFx.note(power_b, w("关闭轧机控制台，前往供电控制屏调整电力分配。", "Close the mill desk and go to the power control screen"))
 	power_b.custom_minimum_size.y = 42
 	power_b.pressed.connect(func():
-		close()
-		if game != null and is_instance_valid(game):
-			game.open_power_screen.call_deferred())
+		var g = game
+		if g != null and is_instance_valid(g): _leave("power", func(): g.open_power_screen())
+		else: close())
 	column.add_child(power_b)
 	# 更多: the rate, what can be done about the power
 	more_key = Button.new()
@@ -187,9 +189,9 @@ func _ready() -> void:
 	message = OpsSkin.label("", 18)
 	column.add_child(message)
 	var close_b := Button.new()
-	close_b.text = w("关闭面板 [Esc]", "CLOSE [Esc]")
+	close_b.text = Back.close_text() if Back.has_back() else w("关闭面板 [Esc]", "CLOSE [Esc]")
 	close_b.custom_minimum_size.y = 42
-	close_b.pressed.connect(close)
+	close_b.pressed.connect(_back)
 	column.add_child(close_b)
 	_refresh()
 
@@ -278,6 +280,23 @@ func _process(dt: float) -> void:
 		_refresh()
 
 
+# 134 号: how to open this page again, for the page it leaves for; Esc and the close key go back
+# where it was opened from, else away (scripts/ui_back.gd)
+func _back_entry() -> Dictionary:
+	var g = game
+	return Back.entry("mill", ["轧机控制台", "THE MILL DESK"], func(): g.open_mill())
+
+func _leave(to: String, open: Callable) -> void:
+	var e := _back_entry()
+	close()
+	Back.go(e, to, open)
+
+
+func _back() -> void:
+	close()
+	Back.back()
+
+
 func close() -> void:
 	if on_close.is_valid():
 		on_close.call()
@@ -286,4 +305,4 @@ func close() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:
 		get_viewport().set_input_as_handled()
-		close()
+		_back()

@@ -987,7 +987,7 @@ func draw(ci, F: float, mx: float, font: Font, font_b: Font, zoom: float, txt: C
 	ci.draw_line(Vector2(X + LINE_X0, ry + 0.22) * M, Vector2(X + LINE_X1, ry + 0.22) * M, Pal.ink(0.2), 1.0)
 	for e: float in [LINE_X0, LINE_X1]:
 		ci.draw_arc(Vector2(X + e, ry + 0.11) * M, 0.13 * M, 0.0, TAU, 14, Pal.ink(0.45), 1.2)
-		var sa := -line_off / 0.13
+		var sa := line_off / 0.13   # 传送带方向: clockwise, so the belt's top runs east with the ingots
 		ci.draw_line(Vector2(X + e, ry + 0.11) * M, Vector2(X + e, ry + 0.11) * M + Vector2.from_angle(sa) * 0.13 * M, Pal.ink(0.4), 1.0)
 	var mo := fposmod(line_off, PITCH)
 	var mx2 := FILL_X - PITCH * 1.0 + mo

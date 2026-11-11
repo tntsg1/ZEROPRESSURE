@@ -63,14 +63,11 @@ static func move(body, delta: Vector2) -> bool:
 
 # out of the hook or the claw: its collision back. Let go inside the ship it eases out of it the way
 # a piece born overlapping does (FreeBody.start_ghost); inside anything else, gently (calm).
+# 2026-11-10: the one way out of every hold (FreeBody.hold_end): overlapping anything it stays
+# untouchable until it is clear.
 static func let_go(body) -> void:
-	body.collision_layer = 1
-	body.collision_mask = FreeBody.MASK
 	body.set_deferred("freeze", false)
-	var od: Dictionary = body.world.overlap_dir(body.pieces)
-	if od.is_empty(): return
-	body.calm = FreeBody.CALM_T
-	if od.get("ship", false): body.start_ghost(od.dir)
+	body.hold_end()
 
 static func wait_line(body, reason: String) -> String:
 	if reason == "": return ""
@@ -87,8 +84,8 @@ static func grip(body) -> bool:
 	# Gripped, it collides with nothing until let go (a wedged or overlapping load is taken all the
 	# same: nothing in its way matters now). Its own ghost easing ends here, or it would put the
 	# mask back mid-carry.
-	body.ghost = 0.0
-	body.collision_mask = 0
+	# 2026-11-10: the one way into every hold (FreeBody.hold_begin): on a layer nothing collides with
+	body.hold_begin()
 	body.freeze_mode = RigidBody2D.FREEZE_MODE_KINEMATIC
 	body.set_deferred("freeze", true)
 	body.linear_velocity = Vector2.ZERO

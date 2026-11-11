@@ -25,13 +25,28 @@ func _run() -> void:
 	Career.data.history = [{"id": "TUG-001"}]
 	check(not Game.ts1_due(), "an older career past its first ship is not sent back to it")
 	Career.data.history = []
-	# the prologue over: straight into TS-1, marked as required
+	# 开局重做 (owner 2026-11-10): the prologue over, the first ship comes first; TS-1 once it is stripped
 	Game.start_ship = "berth"
 	await _spawn()
 	await _frames(10)
+	check(Game.TS1_AFTER_FIRST, "(the course comes after the first ship)")
 	g.finish_prologue()
 	await _frames(2)
-	check(Game.start_ship == "ts1" and Career.data.get("ts1_required", false), "the tow home over: TS-1 next (start ship %s), and it is required" % Game.start_ship)
+	check(Game.start_ship != "ts1" and Career.data.get("ts1_after", false) and not Career.data.get("ts1_required", false), "the tow home over: the first ship next, not TS-1 (start ship %s)" % Game.start_ship)
+	check(not Game.ts1_due(), "  nothing owed before the first ship")
+	Career.data.history = [{"id": "TUG-001"}]
+	check(Game.ts1_due() and Game.ts1_after_due(), "TUG-001 stripped: the course is owed now")
+	g._to_berth()
+	check(Game.start_ship == "ts1" and Career.data.get("ts1_required", false), "  the way back to the berth goes into TS-1 (start ship %s), and it is required" % Game.start_ship)
+	# the old order still holds with the switch off (a career begun before keeps its own)
+	Game.TS1_AFTER_FIRST = false
+	Career.data.erase("ts1_after")
+	Career.data.erase("ts1_required")
+	Career.data.history = []
+	g.finish_prologue()
+	check(Game.start_ship == "ts1" and Career.data.get("ts1_required", false), "switch off: the tow home over, TS-1 next (start ship %s), and it is required" % Game.start_ship)
+	Game.TS1_AFTER_FIRST = true
+	await _frames(2)
 	# no skipping it from the pause menu
 	g.training = true
 	var items: Array = g.hud._menu_items().map(func(it): return str(it[0]))

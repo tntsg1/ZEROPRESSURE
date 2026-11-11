@@ -104,28 +104,7 @@ func _draw() -> void:
 			for k in 3:
 				var x := lerpf(bb.position.x, bb.end.x, (k + 1) / 4.0)
 				node.draw_line(Vector2(x, bb.position.y + bb.size.y * 0.18 * suck), Vector2(x + 8.0, bb.position.y + bb.size.y * 0.3 * suck), Pal.ink(0.5 * suck), 1.0)
-		var full := clampf(game.sys.fluid(e.vol) / maxf(0.001, float(e.cap)), 0.0, 1.0)
-		if full <= 0.005:
-			continue
-		var top := bb.end.y - bb.size.y * full
-		var surf := PackedVector2Array()
-		var n := 16
-		for i in n + 1:
-			var x := lerpf(bb.position.x - 2.0, bb.end.x + 2.0, float(i) / n)
-			surf.append(Vector2(x, top + sin(i * 1.3 + _t * 2.2) * 1.6 * (0.3 + _flow.get(e.vol, 0.0))))
-		var body := surf.duplicate()
-		body.append(Vector2(bb.end.x + 2.0, bb.end.y + 2.0))
-		body.append(Vector2(bb.position.x - 2.0, bb.end.y + 2.0))
-		var look: String = str(game.sys.fvol.get(e.vol, {}).get("look", "mmh"))
-		var col := LC.of(look, 0.16 + 0.2 * LC.opacity(look))
-		for q in Geometry2D.intersect_polygons(poly, body):
-			Kit.fill(node, q, col)
-		var line := PackedVector2Array()
-		for v in surf:
-			if Geometry2D.is_point_in_polygon(v, poly):
-				line.append(v)
-		if line.size() > 1:
-			node.draw_polyline(line, Color(col.r, col.g, col.b, 0.7), 1.2)
+		# its propellant itself: scripts/tank_fill_fx.gd (every ship's tanks alike)
 
 
 func _vol_lines(v: String) -> Array:

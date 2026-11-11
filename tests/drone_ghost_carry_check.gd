@@ -1,4 +1,5 @@
 extends "res://tests/guide_check.gd"
+# (2026-11-10: now with the quantum tunnelling upgrade on — without it the player's load collides.)
 # The drone's grapple carries through structure (user 2026-11-09: "还有无人机经常出现穿模的状况，我不是让它
 # 取消碰撞了吗"), as the crane's hook does since 2026-11-08: a loose piece on the magnetic line collides
 # with nothing (mask 0) until it is let go; let go inside the ship it eases out (FreeBody.start_ghost,
@@ -62,13 +63,16 @@ func _run() -> void:
 	var tag := "after" if "after" in OS.get_cmdline_user_args() else "before"
 	g = load("res://scenes/main.tscn").instantiate()
 	g.ship_id = "pod"
-	g.bot = {"skip_intro": true, "skip_contract": true, "aim": Vector2.ZERO, "lmb": false, "move": Vector2.ZERO, "kit": {}}
+	g.bot = {"skip_intro": true, "skip_contract": true, "aim": Vector2.ZERO, "lmb": false, "move": Vector2.ZERO, "kit": {"tunnel": 1}}
 	root.add_child(g)
 	await _frames(8)
 	g.tutorial = null
 	g.drone.alive = true
 	g.drone.spawn_t = 3.0
 	g.tools.set_tool(3, true)
+	# 2026-11-10: the player's grapple keeps its collision; carrying through structure is the
+	# quantum tunnelling upgrade (kit "tunnel"), switched on
+	g.tools.tunnel = true
 	var M := Geom.M
 	print("grab_max %.2f t" % g.grab_max())
 	# ---------------- A: out of a closed box through its wall
@@ -92,14 +96,14 @@ func _run() -> void:
 		g.bot.move = Vector2(1, 0) if i < 200 else Vector2.ZERO
 		g.bot.aim = g.drone.global_position + Vector2(-2.0 * M, 0.0)
 		await _frames(1)
-		if ab.collision_mask == 0: ghosted = true
+		if ab.collision_mask == FreeBody.TUNNEL_MASK: ghosted = true
 		if shots and i == 70:
 			Cap.save(root, "res://tests/out/drone_ghost_%s_box.png" % tag)
 		if (g.drone.global_position / M).x > c.x - 2.4 and (g.drone.global_position / M).x < c.x + 2.4 and absf(g.drone.global_position.y / M - c.y) < 1.4:
 			drone_in_wall = true
 	var out_x: float = (_com(ab).x - x0) / M
 	print("  A: load moved %.2f m (box half-width 2.4 m), mask while held %d" % [out_x, ab.collision_mask])
-	check(ghosted, "A: on the line the load collides with nothing (mask 0)")
+	check(ghosted, "A: on the line, tunnelling, the load passes the hull and the berth (mask %d)" % FreeBody.TUNNEL_MASK)
 	check(out_x > 3.2, "A: hauled straight out through the box wall (%.2f m)" % out_x)
 	check(not drone_in_wall, "A: the drone itself still keeps out of the box")
 	await _drop()
@@ -182,7 +186,7 @@ func _run() -> void:
 	db.refresh()
 	await _frames(10)
 	print("  D: before split mask %d; held part mask %d, part left %d" % [held_mask0, nb.collision_mask, db.collision_mask])
-	check(held_mask0 == 0 and g.tools.held_body == nb and nb.collision_mask == 0, "D: the grapple carries on with the split-off part, still through everything")
+	check(held_mask0 == FreeBody.TUNNEL_MASK and g.tools.held_body == nb and nb.collision_mask == FreeBody.TUNNEL_MASK, "D: the grapple carries on with the split-off part, still through everything")
 	check(db.collision_mask == FreeBody.MASK, "D: the part left behind collides again")
 	g.bot.hold = false
 	await _drop()

@@ -73,6 +73,50 @@ var lens_rolled := false   # this stroke's chance of a cheap lens bursting was t
 var denied_t := 9.0
 var t := 0.0
 var add_node: Node2D
+# 2026-11-10: the quantum tunnelling upgrade ("量子隧穿效应", Terminal.SHOP "tunnel"): fitted, N switches
+# it; on, what the player's grapple holds passes through walls, hull and facilities (FreeBody.set_tunnel)
+var tunnel := false
+var tunnel_fx: Node2D
+
+
+func tunnel_fitted() -> bool:
+	return game != null and game.has_upgrade("tunnel")
+
+
+func tunnel_on() -> bool:
+	return tunnel and tunnel_fitted()
+
+
+func toggle_tunnel() -> void:
+	var at: Vector2 = drone.global_position + Vector2(0, -44) if drone != null else Vector2.INF
+	if not tunnel_fitted():
+		game.say("qt_unfitted", at)
+		game.sfx.play("deny")
+		return
+	tunnel = not tunnel
+	_apply_tunnel()
+	game.say("qt_on" if tunnel else "qt_off", at)
+	game.sfx.play("holo", Vector2.INF, 0.7, 0.55 if tunnel else 0.4)
+	game.sfx.play("switch")
+
+
+# the switch reaches what is on the line now as well
+func _apply_tunnel() -> void:
+	var on := tunnel_on()
+	if held_body != null and is_instance_valid(held_body) and held_body.tethered:
+		held_body.set_tunnel(on)
+	if multi != null:
+		for h in multi.held:
+			if is_instance_valid(h.body) and h.body.tethered:
+				h.body.set_tunnel(on)
+
+
+func _unhandled_input(ev: InputEvent) -> void:
+	if game == null or game.state != "play" or game.menu_open:
+		return
+	if Keys.pressed(ev, "tunnel"):
+		toggle_tunnel()
+		get_viewport().set_input_as_handled()
 
 
 func _init() -> void:
@@ -86,6 +130,9 @@ func _init() -> void:
 	add_node.z_as_relative = false
 	add_node.draw.connect(_draw_add)
 	add_child(add_node)
+	tunnel_fx = preload("res://scripts/tunnel_fx.gd").new()
+	tunnel_fx.tools = self
+	add_child(tunnel_fx)
 
 
 # how far the tool in hand reaches
@@ -951,6 +998,10 @@ func _last_free(a: Vector2, b: Vector2) -> Vector2:
 	return a.lerp(b, lo)
 
 
+# 2026-11-10 外观款式: the beam in the colour of the airframe flown (scripts/drone_skins.gd)
+const LaserSkin = preload("res://scripts/drone_skins.gd")
+
+
 func _cut_fx(dt: float, went: float) -> void:
 	var fx = game.fx
 	var mv := (front - front_prev)
@@ -966,9 +1017,9 @@ func _cut_fx(dt: float, went: float) -> void:
 	var glk: float = Mat.fx(q, "glint") if q != null else 0.0
 	var n := int(round((3 + int(went * 0.2)) * sk))
 	if n > 0:
-		fx.sparks(front, away.rotated(randf_range(-0.6, 0.6)), n, Pal.heat(1.0, 3.4 * (0.8 + 0.2 * sv)), 460.0 * sv, 0.38 * sv, 0.9)
+		fx.sparks(front, away.rotated(randf_range(-0.6, 0.6)), n, LaserSkin.lheat(1.0, 3.4 * (0.8 + 0.2 * sv)), 460.0 * sv, 0.38 * sv, 0.9)
 	if randf() < minf(1.0, sk):
-		fx.sparks(front, Vector2.from_angle(randf() * TAU), 2, Color(2.4, 2.1, 1.8, 1.0), 260.0 * sv, 0.2)
+		fx.sparks(front, Vector2.from_angle(randf() * TAU), 2, LaserSkin.lcore(Color(2.4, 2.1, 1.8, 1.0)), 260.0 * sv, 0.2)
 	for i in int(ceil(2.0 * mk)):
 		if randf() < 0.7:
 			fx.molten(front, away * randf_range(60, 200) + Vector2.from_angle(randf() * TAU) * 50.0, 2.0)
@@ -978,7 +1029,7 @@ func _cut_fx(dt: float, went: float) -> void:
 		fx.burst_shards(front, 1 + int(randf() * 2.0 * shk), 120.0, Pal.ink(0.7), 3.0)
 	if glk > 0.0 and randf() < 0.2 * glk:
 		# a reflective face throws part of the beam back: a short white glint off the surface
-		fx.flash(front, 14.0 + 10.0 * glk, 0.06, Color(2.2, 2.2, 2.3, 0.4))
+		fx.flash(front, 14.0 + 10.0 * glk, 0.06, LaserSkin.lcore(Color(2.2, 2.2, 2.3, 0.4)))
 
 
 # ---------------------------------------------------------------- grapple
@@ -1087,6 +1138,20 @@ func release_grab(thrown: bool) -> void:
 	cap_fail_t = -1.0
 
 
+const NEAR_GAP := 0.3 * 48.0   # m of air kept between a held load and its drone
+
+
+# how far the held load reaches from its grab point g along u (its outline as it is now)
+func _extent(g: Vector2, u: Vector2) -> float:
+	var s := 0.0
+	for p in held_body.pieces:
+		if p.gone:
+			continue
+		for v in world.world_poly(p):
+			s = maxf(s, (v - g).dot(u))
+	return s
+
+
 func grab_point() -> Vector2:
 	if held_piece == null or held_piece.gone:
 		return drone.global_position
@@ -1130,9 +1195,14 @@ func physics_step(dt: float) -> void:
 			held_body.tethered = false
 		held_body = held_piece.body
 	var d: Vector2 = aim - drone.global_position if not latched else latch_d
-	var tether_reach := clampf(d.length(), 1.4 * Geom.M, reach(3) * 0.85)
-	tether_target = drone.global_position + d.normalized() * tether_reach
 	var g := grab_point()
+	# bug 2026-11-10: the shortest line is where the load, held at its grab point, clears the drone
+	# (a wide load caught at its middle no longer sits on top of the drone); a stop, not a push
+	var near := 1.4 * Geom.M
+	if held_body != null and is_instance_valid(held_body) and d != Vector2.ZERO:
+		near = clampf(_extent(g, -d.normalized()) + Drone.R + NEAR_GAP, near, reach(3) * 1.2)
+	var tether_reach := clampf(d.length(), near, maxf(near, reach(3) * 0.85))
+	tether_target = drone.global_position + d.normalized() * tether_reach
 	if g.distance_to(drone.global_position) > reach(3) * 1.35:
 		game.say("tether_snap", g)
 		release_grab(false)
@@ -1172,6 +1242,18 @@ func physics_step(dt: float) -> void:
 		# stopping a load gets more of the grapple than getting it going
 		var cap := force_max * (BRAKE if f.dot(vg) < 0.0 else 1.0)
 		f = f.limit_length(cap)
+		# bug 2026-11-10 ("拿离我太近的话，反而会把我推着走"): the load keeps its collision, so a line
+		# pulling it into the drone (the pointer close by or past the drone) pressed it against the
+		# drone without end and shoved the drone along. At the shortest gap the line can no longer pull
+		# it any closer: that part of the pull is taken off (a stop, it does no work) and the rest
+		# swings it round the drone. A real knock is still one collision, the physics' own.
+		var to_d: Vector2 = drone.global_position - g
+		if to_d.length() > 0.001:
+			var ud := to_d.normalized()
+			var gap := to_d.length() - _extent(g, ud) - Drone.R
+			var inward := f.dot(ud)
+			if gap < NEAR_GAP and inward > 0.0:
+				f -= ud * inward
 		tether_force = minf(1.0, f.length() / force_max)
 		held_body.apply_central_force(f)
 		held_body.apply_torque(r.cross(f) * HANG)
@@ -1387,8 +1469,8 @@ func _draw_add() -> void:
 		# close to intact equipment the beam itself turns red and pulses
 		var hot: bool = not warn.is_empty() and t - warn.t < 0.25
 		var pulse := 0.6 + 0.4 * sin(t * 18.0)
-		var outer: Color = Color(2.4, 0.25, 0.2, (0.35 + 0.3 * k) * pulse) if hot else Pal.heat(0.22 + 0.25 * k, 1.5)
-		var inner: Color = Color(2.4, 0.9, 0.8, 0.85) if hot else Color(2.0, 1.7, 1.4, 0.75 + 0.2 * k)
+		var outer: Color = Color(2.4, 0.25, 0.2, (0.35 + 0.3 * k) * pulse) if hot else LaserSkin.lheat(0.22 + 0.25 * k, 1.5)
+		var inner: Color = Color(2.4, 0.9, 0.8, 0.85) if hot else LaserSkin.lcore(Color(2.0, 1.7, 1.4, 0.75 + 0.2 * k))
 		# 71 号: short of power the beam is thinner and dimmer
 		var pk := Grid.salvage_k(game, "laser", 0.15)
 		outer.a *= 0.35 + 0.65 * pk
@@ -1403,16 +1485,16 @@ func _draw_add() -> void:
 		for i in 4:
 			var u := fposmod(t * 3.2 + i * 0.25, 1.0)
 			var pp := m + bd * bl * u
-			add_node.draw_line(pp, pp + bd * minf(18.0, bl * 0.2), Color(2.2, 1.9, 1.6, 0.8), 1.8, true)
+			add_node.draw_line(pp, pp + bd * minf(18.0, bl * 0.2), LaserSkin.lcore(Color(2.2, 1.9, 1.6, 0.8)), 1.8, true)
 		# the surface glows hot around the cut (87-1: armour and titanium hold the heat in a wide
 		# bright pool, aluminium carries it off, composite chars without glowing)
 		var mg: float = clampf(float(Mat.of(cut_mat).get("glow", 1.0)), 0.25, 2.0) if cut_mat != null and in_material else 1.0
 		var hw := 70.0 * (0.7 + 0.3 * mg)
 		add_node.draw_texture_rect(tex, Rect2(front - Vector2(hw, hw), Vector2(hw, hw) * 2.0), false, Pal.heat(0.22 * k * mg, 1.8))
 		var r := (16.0 + 26.0 * k * (0.6 + 0.4 * mg)) * flick
-		add_node.draw_texture_rect(tex, Rect2(front - Vector2(r, r), Vector2(r, r) * 2.0), false, Pal.heat(0.6 * (0.3 + k), 2.2))
-		add_node.draw_texture_rect(tex, Rect2(front - Vector2(6, 6), Vector2(12, 12)), false, Color(2.0, 1.8, 1.6, 0.9))
-		add_node.draw_texture_rect(tex, Rect2(m - Vector2(10, 10), Vector2(20, 20)), false, Pal.heat(0.6, 2.0))
+		add_node.draw_texture_rect(tex, Rect2(front - Vector2(r, r), Vector2(r, r) * 2.0), false, LaserSkin.lheat(0.6 * (0.3 + k), 2.2))
+		add_node.draw_texture_rect(tex, Rect2(front - Vector2(6, 6), Vector2(12, 12)), false, LaserSkin.lcore(Color(2.0, 1.8, 1.6, 0.9)))
+		add_node.draw_texture_rect(tex, Rect2(m - Vector2(10, 10), Vector2(20, 20)), false, LaserSkin.lheat(0.6, 2.0))
 	# pending kerfs glow as grooves before they go through
 	for id in pending:
 		var p = world.pieces.get(id)
@@ -1420,7 +1502,7 @@ func _draw_add() -> void:
 			continue
 		var pl: PackedVector2Array = world.frame(p) * (pending[id].pl as PackedVector2Array)
 		if pl.size() >= 2:
-			FastDraw.polyline(add_node, pl, Pal.heat(0.85, 2.4), game.skill_value("laser_kerf") * 1.6, true)
+			FastDraw.polyline(add_node, pl, LaserSkin.lheat(0.85, 2.4), game.skill_value("laser_kerf") * 1.6, true)
 	# the magnetic tether
 	if held_piece != null and not held_piece.gone:
 		var a := drone.muzzle()

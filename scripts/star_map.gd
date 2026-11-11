@@ -13,6 +13,7 @@ var map: Control
 var font: Font
 var _list_t := 0.0
 # 68 号: "find" sweeps the belt for hulks, "ships" follows the freighters
+const Back := preload("res://scripts/ui_back.gd")
 var mode := "ships"
 var sel_sector := -1
 var sel_sig := ""
@@ -78,6 +79,7 @@ func w(zh: String, en: String) -> String:
 
 
 func _ready() -> void:
+	Back.arrive()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	font = Fonts.get_font("Medium")
 	# 54 号: the new skin's ground under the map
@@ -134,9 +136,9 @@ func _ready() -> void:
 	find_box = VBoxContainer.new()
 	column.add_child(find_box)
 	var close_b := Button.new()
-	close_b.text = w("关闭 [Esc]", "CLOSE [Esc]")
+	close_b.text = Back.close_text()
 	close_b.custom_minimum_size.y = 42
-	close_b.pressed.connect(close)
+	close_b.pressed.connect(_back)
 	column.add_child(close_b)
 	_tour_parts.close = close_b
 	for b in [tab_find, tab_ships, close_b]:
@@ -918,8 +920,16 @@ func _open_hulk_market() -> void:
 	if game == null or not ShipMarket.open():
 		return
 	var g = game
+	var e := _back_entry()
 	close()
-	g.open_ship_market.call_deferred()
+	Back.go(e, "ship_market", func(): g.open_ship_market())
+
+
+# 134 号: how to open the map again as it is (its page), for the page it leaves for
+func _back_entry() -> Dictionary:
+	var g = game
+	var m := mode
+	return Back.entry("star_map", ["星图", "STAR MAP"], func(): g.open_star_map(m))
 
 
 func close() -> void:
@@ -927,10 +937,16 @@ func close() -> void:
 		on_close.call()
 
 
+# Esc and the close key: back where the map was opened from, else away (scripts/ui_back.gd)
+func _back() -> void:
+	close()
+	Back.back()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:
 		get_viewport().set_input_as_handled()
-		close()
+		_back()
 
 
 # ---------------------------------------------------------------- finding hulks (68 号)

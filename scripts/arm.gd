@@ -132,9 +132,7 @@ func _physics_process(dt: float) -> void:
 				# the claw closes: the body is the arm's now, out of the physics
 				body.freeze_mode = RigidBody2D.FREEZE_MODE_KINEMATIC
 				body.set_deferred("freeze", true)
-				body.collision_layer = 0
-				body.collision_mask = 0
-				body.ghost = 0.0
+				body.hold_begin()   # FreeBody: the one way into every hold
 				body.remove_meta("arm_parked")
 				body.set_meta("arm_receiver",zone)
 				off = body.global_position - claw
@@ -167,10 +165,9 @@ func _physics_process(dt: float) -> void:
 				_drop_it()
 			elif hold_t > 0.3:
 				# let go over the mouth: physics back on, a nudge down, the mouth does the rest
-				body.collision_layer = 1
-				body.collision_mask = FreeBody.MASK
 				body.set_deferred("freeze", false)
 				body.linear_velocity = -Dock.ZONES[zone].face*80.0
+				body.hold_end()     # overlapping something it stays untouchable until clear
 				# (the drop point follows a furnace mouth moved along its rail)
 				body.set_meta("arm", false)
 				body.remove_meta("arm_by")
@@ -192,10 +189,9 @@ func _heading() -> Vector2:
 # let go of what it holds, where it is, and stand by
 func halt() -> void:
 	if body != null and is_instance_valid(body) and body.capture == null and state in ["carry", "release"]:
-		body.collision_layer = 1
-		body.collision_mask = FreeBody.MASK
 		body.set_deferred("freeze", false)
 		body.linear_velocity = Vector2.ZERO
+		body.hold_end()
 	if body != null and is_instance_valid(body):
 		body.set_meta("arm", false)
 		body.remove_meta("arm_by")

@@ -25,6 +25,7 @@ var _t := 0.0
 var _live: Array = []          # each card's clock: the time up / left, every second
 var _dlive: Array = []         # the open window's clock
 const Face := preload("res://scripts/listing_face.gd")
+const Back := preload("res://scripts/ui_back.gd")
 
 
 func w(zh: String, en: String) -> String:
@@ -71,6 +72,7 @@ func _box(bg: Color, edge: Color, pad := 10.0) -> StyleBoxFlat:
 
 
 func _ready() -> void:
+	Back.arrive()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	theme = UiSkin.theme()
 	# 51 号: the new look's ground (gradient, drifting glow, the pointer's light)
@@ -92,8 +94,10 @@ func _ready() -> void:
 	bal.autowrap_mode = TextServer.AUTOWRAP_OFF
 	bal.add_theme_color_override("font_color", Pal.tint(Pal.AIR, 0.95, 1.2))
 	top.add_child(bal)
-	top.add_child(_btn(w("回交易行", "TO THE EXCHANGE"), _to_exchange))
-	top.add_child(_btn(w("关闭 [Esc]", "CLOSE [Esc]"), close))
+	# came from the exchange: the back key says so, no second key to it
+	if not (Back.has_back() and str(Back.stack[-1].key) == "exchange"):
+		top.add_child(_btn(w("回交易行", "TO THE EXCHANGE"), _to_exchange))
+	top.add_child(_btn(Back.close_text(), _back))
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 14)
@@ -1130,14 +1134,40 @@ func _mine_card(a: Dictionary) -> PanelContainer:
 
 func _to_exchange() -> void:
 	var g = game
+	var e := _back_entry()
 	close()
 	if g != null:
-		g.open_exchange.call_deferred()
+		Back.go(e, "exchange", func(): g.open_exchange())
+
+
+# 134 号: how to open the market again as it is (its filter, order and scroll), for the page it
+# leaves for; and restored when it is opened that way (scripts/ui_back.gd)
+func _back_entry() -> Dictionary:
+	var g = game
+	var st := {"cat": cat, "sort": sort, "scroll": _scroll.scroll_vertical if _scroll != null else 0, "snap": _snap}
+	return Back.entry("ship_market", ["二手船市", "HULK MARKET"], func():
+		g.open_ship_market()
+		if g.console_ui != null and g.console_ui.has_method("restore"):
+			g.console_ui.restore(st))
+
+
+func restore(st: Dictionary) -> void:
+	cat = str(st.get("cat", "all"))
+	sort = str(st.get("sort", "mix"))
+	_snap = float(st.get("snap", -1.0))   # the page as it was read, not what came in since
+	_fill()
+	_want_scroll = int(st.get("scroll", 0))
 
 
 func close() -> void:
 	if on_close.is_valid():
 		on_close.call()
+
+
+# Esc and the close key: back where the market was opened from, else away
+func _back() -> void:
+	close()
+	Back.back()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -1146,4 +1176,4 @@ func _unhandled_input(event: InputEvent) -> void:
 		if detail_win.visible:
 			detail_win.visible = false
 		else:
-			close()
+			_back()

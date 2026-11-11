@@ -6,9 +6,9 @@ extends Node2D
 #   bot     tags the circuit out at its box      cutter  burns through a weld (beam and sparks)
 #   hauler  carries a real body on a tether       torque  runs a bolt home (wrench and sparks)
 #   cable   lays a cable from the box to the part tester  holds its probe on the work
-# It does not collide (it flies round the work, it is not part of it); what it carries does: the
-# load is pulled by a spring and a damper toward a point under it, so it swings, snags and knocks
-# like anything else in the berth. Driven by scripts/crew.gd.
+# It does not collide (it flies round the work, it is not part of it); since 2026-11-10 what it
+# carries does not either (FreeBody.hold_begin): the load is pulled by a spring and a damper toward
+# a point under it, so it swings, but passes through what is in its way. Driven by scripts/crew.gd.
 
 const SPEED := 240.0
 const ACCEL := 620.0
@@ -48,13 +48,22 @@ func at(p: Vector2, tol: float = 6.0) -> bool:
 
 func hook(b, local_pt: Vector2 = Vector2.INF) -> void:
 	load = b
+	# 2026-11-10 (user: "辅助无人机……抓取的那一瞬间就直接没有碰撞了"): on the hook it collides with nothing
+	# (FreeBody.hold_begin); let go it touches again once clear (hold_end)
+	b.hold_begin()
 	load_pt = local_pt if local_pt != Vector2.INF else b.center_of_mass
 	steady = false
 
 
 func drop() -> void:
-	load = null
+	_let_go()
 	steady = false
+
+
+func _let_go() -> void:
+	if load != null and is_instance_valid(load) and load.held():
+		load.hold_end()
+	load = null
 
 
 func hold_point() -> Vector2:
@@ -93,7 +102,7 @@ func _carry(dt: float) -> void:
 	if load == null:
 		return
 	if not is_instance_valid(load) or load.freeze:
-		load = null
+		_let_go()
 		return
 	var grip: Vector2 = load.global_transform * load_pt
 	var d: Vector2 = hold_point() - grip
@@ -109,7 +118,7 @@ func _carry(dt: float) -> void:
 		load.angular_velocity *= exp(-4.0 * dt)
 	if d.length() > 8.0 * Geom.M:
 		# the tether gave: the load is lost (stuck fast, or pulled away by someone)
-		load = null
+		_let_go()
 
 
 func _draw() -> void:

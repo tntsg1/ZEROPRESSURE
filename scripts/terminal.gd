@@ -17,13 +17,15 @@ const SHOP := [
 	["scan_kit", "upgrade", 24000.0, "up_scan", "up_scan_d"],
 	["grapple5", "upgrade", 38000.0, "up_grapple", "up_grapple_d"],
 	["pump2", "upgrade", 22000.0, "up_pump", "up_pump_d"],
+	# 2026-11-10 量子隧穿效应: late, dear (LATE), after the 5 t grapple; not on the drone drawing (DRONE_UPGRADES)
+	["tunnel", "upgrade", 480000.0, "up_tunnel", "up_tunnel_d"],
 	["arm", "facility", 65000.0, "fa_arm", "fa_arm_d"],
 	["repair", "item", 3000.0, "it_repair", "it_repair_d"],
 	["ring", "item", 9000.0, "it_ring", "it_ring_d"],
 	["spare", "item", 15000.0, "it_spare", "it_spare_d"],
 	["intel", "item", 6000.0, "it_intel", "it_intel_d"],
 ]
-const FITTED := 4
+const FITTED := 5
 const DRONE_UPGRADES := 3
 # now → after, per upgrade: [label key, now, after, now 0..1, after 0..1] ("sh_" values are Txt keys)
 const STATS := {
@@ -52,11 +54,14 @@ const BERTH := [
 	["lox_tank", "facility", 60000.0, "fa_lox_tank", "fa_lox_tank_d", true],
 ]
 # a facility that only makes sense with another one bought first
-const REQUIRES := {"hauler2": "hauler", "berth120": "berth88", "berth200": "berth120", "berth620": "berth200"}
+# late upgrades: [completed jobs, reputation] before they can be bought
+const LATE := {"tunnel": [20, 30]}
+const REQUIRES := {"tunnel": "grapple5", "hauler2": "hauler", "berth120": "berth88", "berth200": "berth120", "berth620": "berth200"}
 # The terminal is one device (P.7 structure A, player 2026-10-18): a home screen
 # of apps; on site the same device, opened by its key or at the berth's
 # computer, with what can't be used there locked and the reason written on it.
 const HOME := -1
+const Back := preload("res://scripts/ui_back.gd")
 const DRONE_PAGE := 8
 # [the page it opens, its name] in tile order; keys 1–4 open them
 # 53 号 (player 2026-10-25): radio, ledger, supplies and tools & techniques taken off, "no use"
@@ -239,6 +244,7 @@ func _note_text(k: String) -> String:
 
 
 func _ready() -> void:
+	Back.arrive()
 	testing = _is_test()
 	if not testing:
 		Txt.load_settings(false)
@@ -510,8 +516,17 @@ func items() -> Array:
 		4: return _supply_items()
 		5: return [] # The growth desk uses native, clipped and focusable controls.
 		7: return _training_rows()
-		DRONE_PAGE: return SHOP.slice(0, DRONE_UPGRADES)
+		DRONE_PAGE: return SHOP.slice(0, DRONE_UPGRADES) + _skin_items()
 	return []
+
+
+# 2026-11-10 外观款式: the airframes after the three tool upgrades on the drone page
+# [id, "skin", price, id, id] (names and lines from scripts/drone_skins.gd)
+func _skin_items() -> Array:
+	var out: Array = []
+	for id in Skins.ORDER:
+		out.append([id, "skin", Skins.price(id), id, id])
+	return out
 
 
 # the training page's rows (2026-10-20): the base course, the seven special courses
@@ -565,8 +580,9 @@ func open_remote(kind: String) -> void:
 		say(RemoteOps.why(kind))
 		return
 	var current_game = game_ref
+	var e := _back_entry()
 	if on_close.is_valid(): on_close.call()
-	RemoteOps.open(current_game, kind)
+	Back.go(e, "remote:" + kind, func(): RemoteOps.open(current_game, kind))
 
 
 func open_exchange(page: String = "") -> void:
@@ -577,8 +593,9 @@ func open_exchange(page: String = "") -> void:
 		return
 	if game_ref != null:
 		var current_game = game_ref
+		var e := _back_entry()
 		if on_close.is_valid(): on_close.call()
-		current_game.open_exchange(page)
+		Back.go(e, "exchange", func(): current_game.open_exchange(page))
 	else:
 		# Keep the real station and its freight service alive behind the market,
 		# including when arriving from an old standalone terminal scene.
@@ -604,8 +621,7 @@ func _take_main() -> void:
 	# nothing on the find-ships page to act on: straight to the star map's sweep (user 2026-10-26)
 	if (go == "scan" or (go == "contracts" and Scan.ON and not Mainline._cards_waiting())) and game_ref != null:
 		var gm = game_ref
-		close()
-		gm.open_star_map.call_deferred("find")
+		_go_page("star_map", func(): gm.open_star_map("find"))
 	elif go == "contracts":
 		set_tab(0)
 	elif (go == "store" or go.begins_with("guide:")) and game_ref != null:
@@ -636,8 +652,7 @@ func ops_go(go: String) -> void:
 		if game_ref == null:
 			return
 		var gm = game_ref
-		close()
-		gm.open_star_map.call_deferred("find" if go == "scan" else "ships")
+		_go_page("star_map", func(): gm.open_star_map("find" if go == "scan" else "ships"))
 	elif go == "drill":
 		# the training run: the tonne handed over at the first click, then the guide (30 号)
 		if game_ref == null or game_ref.get("guide") == null:
@@ -657,11 +672,12 @@ func ops_go(go: String) -> void:
 		var t := Guide.task_for(go)
 		var g = game_ref
 		g.guide.begin(t)
-		close()
 		if t == "clients":
-			g.open_exchange.call_deferred("clients")
+			_go_page("exchange", func(): g.open_exchange("clients"))
 		elif t == "buy_feed":
-			g.open_exchange.call_deferred("feed")
+			_go_page("exchange", func(): g.open_exchange("feed"))
+		else:
+			close()
 	elif go == "exchange" or go == "clients":
 		if Onboard.stage() == "find":
 			_refuse(Onboard.lock_reason())
@@ -876,14 +892,12 @@ func _gui_input(ev: InputEvent) -> void:
 		elif tab == 0 and next_job.is_empty() and Scan.ON and _scan_rect().has_point(get_local_mouse_position()):
 			if game_ref != null:
 				var gm = game_ref
-				close()
-				gm.open_star_map.call_deferred("find")
+				_go_page("star_map", func(): gm.open_star_map("find"))
 		elif tab == 0 and next_job.is_empty() and _shipmkt_rect().has_point(get_local_mouse_position()) and ShipMarket.open():
 			# 62 号: the hulk market from the find-ships page
 			if game_ref != null:
 				var gm = game_ref
-				close()
-				gm.open_ship_market.call_deferred()
+				_go_page("ship_market", func(): gm.open_ship_market())
 			else:
 				say(Ops.w("回到船坞后再打开二手船市。", "Open the hulk market from the berth."))
 		elif tab == HOME and hover_cell >= 0 and hover_cell < _ops_cells.size():
@@ -1003,6 +1017,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 				set_tab(HOME)
 			elif overlay:
 				close()
+				Back.back()
 			elif not _wiping:
 				_wiping = true
 				var tree := get_tree()
@@ -1027,6 +1042,29 @@ func _end_contract() -> void:
 	var g = game_ref
 	close()
 	g.finish_contract(true)
+
+
+# 134 号: how to open the terminal again as it is now (the page it is on); and leaving for another
+# page with that remembered, so Esc there comes back here (scripts/ui_back.gd)
+func _back_entry() -> Dictionary:
+	var g = game_ref
+	var at := tab
+	if at == 0 and _find_empty():
+		at = HOME
+	var lab := ["找船", "FIND SHIPS"] if at == 0 else ["船坞终端", "THE TERMINAL"]
+	return Back.entry("terminal", lab, func():
+		g.open_console("terminal")
+		var t = g.console_ui
+		if t != null and t.has_method("set_tab"):
+			t._skip_boot()
+			if t.tab != at:
+				t.set_tab(at))
+
+
+func _go_page(to: String, open: Callable) -> void:
+	var e := _back_entry()
+	close()
+	Back.go(e, to, open)
 
 
 func close() -> void:
@@ -1060,8 +1098,7 @@ func set_tab(i: int) -> void:
 	# map's sweep, whichever way the page was asked for (user 2026-10-28: "这个我都说多少次了")
 	if i == 0 and _find_empty() and game_ref != null:
 		var gm = game_ref
-		close()
-		gm.open_star_map.call_deferred("find")
+		_go_page("star_map", func(): gm.open_star_map("find"))
 		return
 	press_t = 0.16
 	tab_press = i
@@ -1417,8 +1454,7 @@ func take(i: int) -> void:
 		# user 2026-10-26: the star map opens on the tug, under way
 		var gm = game_ref
 		if gm != null and overlay:
-			close()
-			gm.watch_tow.call_deferred(oid)
+			_go_page("star_map", func(): gm.watch_tow(oid))
 		return
 	if offers()[i].get("queued", false):
 		if Career.hold(_offer_index(i)):
@@ -1546,6 +1582,9 @@ func buy(it: Array, n: int = 1) -> void:
 	var id: String = it[0]
 	var price: float = it[2] * n
 	var d := Career.data
+	if it[1] == "skin":
+		_buy_skin(id)
+		return
 	if overlay and not between and it[1] in ["training", "upgrade", "facility", "loan"]:
 		_refuse(Txt.t("tm_onsite_no") if it[1] == "training" else Txt.t("tm_lock_equip"))
 		return
@@ -1587,6 +1626,9 @@ func buy(it: Array, n: int = 1) -> void:
 		return
 	if REQUIRES.has(id) and not d.upgrades.has(REQUIRES[id]):
 		_refuse(Txt.t("tm_needs") % Txt.t(_facility_name(REQUIRES[id])))
+		return
+	if LATE.has(id) and (int(d.get("done", 0)) < int(LATE[id][0]) or int(d.get("rep", 0)) < int(LATE[id][1])):
+		_refuse(Growth.text(["需要完成 %d 单、声望 %d", "Requires %d completed jobs, %d reputation"]) % [int(LATE[id][0]), int(LATE[id][1])])
 		return
 	if float(d.money) < price:
 		_refuse(Txt.t("tm_short") % Pal.money(price - float(d.money)))
@@ -1667,7 +1709,7 @@ func _item_rect(i: int) -> Rect2:
 				return _callout(i)
 			return _facility_rect(i - FITTED)
 		DRONE_PAGE:
-			return _callout(i)
+			return _callout(i) if i < DRONE_UPGRADES else _skin_rect(i - DRONE_UPGRADES)
 		2:
 			return _finance_rect()
 		4:
@@ -1970,6 +2012,23 @@ func _drone_c() -> Vector2:
 
 const DK := 4.0      # the drone drawn at four times its size on site
 const DArt = preload("res://scripts/drone_art.gd")
+const Skins = preload("res://scripts/drone_skins.gd")
+
+
+# the airframes' strip along the top of the drawing, right of the first callout
+func _skin_rect(i: int) -> Rect2:
+	var r := _schematic_rect()
+	var x0 := r.position.x + 318.0
+	var n := float(Skins.ORDER.size())
+	var tw := (r.end.x - 24.0 - x0 - (n - 1.0) * 8.0) / n
+	return Rect2(x0 + i * (tw + 8.0), r.position.y + 52.0, tw, 80.0)
+
+
+# the airframe the drawing shows: the one picked in the strip, else the one flown
+func _shown_skin() -> String:
+	if tab == DRONE_PAGE and sel >= DRONE_UPGRADES and sel < DRONE_UPGRADES + Skins.ORDER.size():
+		return Skins.ORDER[sel - DRONE_UPGRADES]
+	return Skins.current()
 
 
 func _anchor(i: int) -> Vector2:
@@ -2704,6 +2763,8 @@ func _shop(_s: Vector2, a: float) -> void:
 	_schematic(sr, ka)
 	for i in DRONE_UPGRADES:
 		_callout_box(i, ka)
+	for i in Skins.ORDER.size():
+		_skin_tile(DRONE_UPGRADES + i, ka)
 	# how to read the lamps
 	var ly := sr.position.y + 30
 	var keys := [[Hmi.ok_col(), Txt.t("tm_lamp_have")], [Hmi.can_col(), Txt.t("tm_lamp_can")], [Hmi.warn_col(), Txt.t("tm_lamp_short")]]
@@ -2744,7 +2805,7 @@ func _schematic(sr: Rect2, a: float) -> void:
 	var xf := Transform2D(0.0, Vector2(DK, DK), 0.0, c)
 	draw_set_transform_matrix(xf)
 	DArt.tint = Color(Pal.AIR.r * 1.1 * a, Pal.AIR.g * 1.1 * a, Pal.AIR.b * 1.1 * a)
-	DArt.draw(self, "arrowring", {"heading": -0.2, "tool": 1, "open": 1.0, "t": t, "thrust": Vector2.ZERO, "dash": false, "design": "arrowring", "base_xf": xf})
+	Skins.draw(self, _shown_skin(), {"heading": -0.2, "tool": 1, "open": 1.0, "t": t, "thrust": Vector2.ZERO, "dash": false, "design": "arrowring", "base_xf": xf})
 	DArt.tint = Color(1, 1, 1)
 	draw_set_transform_matrix(Transform2D.IDENTITY)
 	_text("R-02", c + Vector2(-22, R + 40), 18, Pal.tint(Pal.AIR, 0.85 * a, 1.2), font_s)
@@ -2914,7 +2975,7 @@ func _icon(id: String, p: Vector2, a: float) -> void:
 		"spare":
 			# a spare airframe: the drone's own outline
 			var pts := PackedVector2Array()
-			for v in DArt.ARROW:
+			for v in Skins.hull(Skins.current()):
 				pts.append(p + (v as Vector2) * 0.8)
 			pts.append(pts[0])
 			draw_polyline(pts, col, 1.8, true)
@@ -2932,6 +2993,148 @@ func _sweep(r: Rect2, sw: float) -> void:
 	draw_rect(Rect2(sx - 2, r.position.y, 2, r.size.y), Pal.heat(fade, 2.0))
 
 
+# an airframe in the strip: the craft itself, its name, in use / owned / the price
+func _skin_tile(i: int, a: float) -> void:
+	var id: String = Skins.ORDER[i - DRONE_UPGRADES]
+	var r := _item_rect(i)
+	var hk: float = hover_k[i].x if i < hover_k.size() else 0.0
+	var sk: float = sel_k[i].x if i < sel_k.size() else 0.0
+	var k := Pal.ease_out(clampf((deal_t - 0.14 - (i - DRONE_UPGRADES) * 0.04) / 0.3, 0.0, 1.0)) * a
+	r.position.y += (1.0 - k) * -18.0
+	var flown := Skins.current() == id
+	var have := Skins.owns(id)
+	var short := not have and float(Career.data.money) < Skins.price(id)
+	Hmi.raised(self, r, k, Hmi.PANEL_LO.lerp(Hmi.PANEL_HI, maxf(hk * 0.6, sk)))
+	Hmi.lamp(self, r.position + Vector2(12, 12), Hmi.ok_col() if have else (Hmi.warn_col() if short else Hmi.can_col()), true, k, 4.0)
+	var c := r.position + Vector2(r.size.x * 0.5, 27.0)
+	var s := 0.74 + 0.08 * maxf(hk, sk)
+	var xf := Transform2D(0.0, Vector2(s, s), 0.0, c)
+	draw_set_transform_matrix(xf)
+	DArt.set_scale(s)
+	Skins.draw(self, id, {"heading": 0.0, "tool": 0, "open": 0.0, "t": t + i, "thrust": Vector2(0.6 * maxf(hk, sk), 0.0), "dash": false, "base_xf": xf})
+	DArt.lite = false
+	draw_set_transform_matrix(Transform2D.IDENTITY)
+	_text(Skins.name_of(id), Vector2(c.x, r.end.y - 22), 13, Pal.ink(0.95 * k), font_s, 0)
+	var st := Ops.w("使用中", "IN USE") if flown else (Ops.w("已拥有", "OWNED") if have else Pal.money(Skins.price(id)))
+	var sc := Pal.tint(Pal.FLUID, 0.95 * k, 1.1) if flown else (Pal.ink(0.7 * k) if have else Pal.ink((0.9 if not short else 0.45) * k))
+	_text(st, Vector2(c.x, r.end.y - 7), 12, sc, font_b, 0)
+	if flown:
+		draw_rect(r.grow(2.0), Pal.tint(Pal.FLUID, 0.5 * k, 1.1), false, 1.2)
+
+
+# the chosen airframe on the right: three moving previews (flight, braking, grabbing), what it is,
+# and the money, or that it is owned / in use
+func _skin_detail(id: String, ka: float) -> void:
+	var r := _detail_rect()
+	var d := Career.data
+	Hmi.raised(self, r, ka)
+	var x := r.position.x + 32
+	var w := r.size.x - 64
+	var pl := Rect2(r.position.x + 18, r.position.y + 18, r.size.x - 36, 44)
+	Hmi.plate(self, font_s, pl, Ops.w("机体外观", "AIRFRAME"), 18, ka, Pal.tint(Pal.AIR, 0.95, 1.2))
+	var have := Skins.owns(id)
+	var flown := Skins.current() == id
+	var cost := Skins.price(id)
+	Hmi.lamp(self, Vector2(pl.end.x - 22, pl.get_center().y), Hmi.ok_col() if have else (Hmi.warn_col() if float(d.money) < cost else Hmi.can_col()), true, ka)
+	_text(Skins.name_of(id), Vector2(x, r.position.y + 112), 34, Pal.ink(0.98 * ka), font_s)
+	_wrap(Skins.blurb(id), Vector2(x, r.position.y + 146), w, 15, Pal.ink(0.75 * ka))
+	var sc := Rect2(x - 10, r.position.y + 210, w + 20, 170)
+	Hmi.screen(self, sc, ka)
+	skin_preview(self, id, sc, t, ka, font)
+	_text(Ops.w("外观不同，数值和手感完全相同", "LOOKS ONLY: SAME NUMBERS, SAME HANDLING"), Vector2(x, sc.end.y + 26), 14, Pal.ink(0.55 * ka), font)
+	if flown:
+		Hmi.lamp(self, Vector2(x + 10, r.end.y - 136), Hmi.ok_col(), true, ka, 9.0)
+		_text(Ops.w("使用中", "IN USE"), Vector2(x + 30, r.end.y - 128), 22, Pal.tint(Pal.FLUID, 0.95 * ka, 1.1), font_s)
+		return
+	if have:
+		Hmi.lamp(self, Vector2(x + 10, r.end.y - 136), Hmi.ok_col(), true, ka, 9.0)
+		_text(Ops.w("已拥有 · 按 Enter 换上，出发前在配装页也能换", "OWNED · ENTER TO FLY IT, OR CHANGE IT ON THE LOADOUT PAGE"), Vector2(x + 30, r.end.y - 128), 16, Pal.ink(0.85 * ka), font_s)
+		return
+	var my := r.end.y - 236.0
+	var after := float(d.money) - cost
+	draw_line(Vector2(x, my - 22), Vector2(x + w, my - 22), Color(0, 0, 0, 0.5 * ka), 2.0)
+	_text(Txt.t("tm_price"), Vector2(x, my), 15, Pal.ink(0.6 * ka), font)
+	_text(Pal.money(cost), Vector2(x + w, my), 18, Pal.ink(0.95 * ka), font_b, 1)
+	_text(Txt.t("tm_after"), Vector2(x, my + 30), 15, Pal.ink(0.6 * ka), font)
+	_text(Pal.money(after), Vector2(x + w, my + 30), 18, (Pal.heat(0.95 * ka, 1.2) if after < 0.0 else Pal.ink(0.95 * ka)), font_b, 1)
+
+
+# four moving previews in a rect: flying (thrust ahead), braking (reverse thrust), grabbing
+# (claws out, the tether to a plate), cutting (the beam in the airframe's own colour); also used
+# by the loadout page
+static func skin_preview(ci: CanvasItem, id: String, rc: Rect2, tt: float, a: float, f: Font) -> void:
+	var labels := [Ops.w("飞行", "FLYING"), Ops.w("刹车", "BRAKING"), Ops.w("抓取", "GRABBING"), Ops.w("切割", "CUTTING")]
+	var n := 4
+	var cw := rc.size.x / n
+	var s := clampf(minf(cw / 100.0, rc.size.y / 62.0), 0.7, 2.4)
+	for k in n:
+		var c := Vector2(rc.position.x + cw * (k + 0.5) + [12.0, 0.0, -16.0, -22.0][k] * s, rc.position.y + rc.size.y * 0.46)
+		var th: Vector2 = [Vector2(1, 0), Vector2(-1, 0), Vector2(-0.3, 0), Vector2.ZERO][k]
+		var bob := Vector2(0, sin(tt * 1.3 + k) * 1.5 * s)
+		if k >= 2:
+			# a plate held ahead
+			var b := c + Vector2((40.0 if k == 2 else 58.0) * s, 0) + bob
+			var plate := PackedVector2Array()
+			for v in [Vector2(-5, -9), Vector2(6, -7), Vector2(8, 7), Vector2(-4, 9), Vector2(-7, 1)]:
+				plate.append(b + (v as Vector2) * s)
+			ci.draw_colored_polygon(plate, Color(0.06, 0.064, 0.072, a))
+			var pc := plate.duplicate()
+			pc.append(plate[0])
+			ci.draw_polyline(pc, Pal.ink(0.6 * a), 1.2, true)
+			var m := c + Vector2(28.0 * s, 0) + bob
+			if k == 2:
+				# the tether's three strands
+				for j in 3:
+					var mid := (m + b) * 0.5 + Vector2(0, (j - 1) * 2.0 + sin(tt * (30.0 + j * 7.0)) * 1.2)
+					ci.draw_polyline(PackedVector2Array([m, mid, b - Vector2(6.0 * s, 0)]), Pal.ink((0.75 - j * 0.15) * a, 1.4), 1.2, true)
+			else:
+				# the beam into the plate's face: halo, core, the hit glowing, a few sparks thrown back
+				var hit := b - Vector2(6.0 * s, 0)
+				m = c + Vector2(38.0 * s, 0) + bob
+				var flick := 0.85 + 0.15 * sin(tt * 90.0)
+				ci.draw_line(m, hit, Skins.lheat(0.5 * a, 1.5, id), 4.5 * flick, true)
+				ci.draw_line(m, hit, Skins.lcore(Color(2.0, 1.7, 1.4, 0.9 * a), id), 1.4, true)
+				Skins.FastDraw.circle(ci, hit, 4.0 * flick, Skins.lheat(0.55 * a, 2.2, id))
+				Skins.FastDraw.circle(ci, hit, 1.6, Skins.lcore(Color(2.0, 1.8, 1.6, a), id))
+				for j in 5:
+					var u := fposmod(tt * 2.3 + j * 0.37, 1.0)
+					var dir := Vector2.from_angle(PI + (j - 2) * 0.45 + sin(j * 7.1) * 0.2)
+					var p0 := hit + dir * (3.0 + 16.0 * u) * s * 0.5
+					ci.draw_line(p0, p0 + dir * 3.0 * s * 0.5, Skins.lheat((1.0 - u) * a, 3.0, id), 1.2, true)
+		var xf := Transform2D(0.0, Vector2(s, s), 0.0, c + bob)
+		ci.draw_set_transform_matrix(xf)
+		DArt.set_scale(s)
+		Skins.draw(ci, id, {"heading": 0.0, "tool": [0, 0, 3, 2][k], "open": 1.0, "t": tt + k * 0.7, "thrust": th, "dash": false, "base_xf": xf})
+		DArt.lite = false
+		ci.draw_set_transform_matrix(Transform2D.IDENTITY)
+		ci.draw_string(f, Vector2(rc.position.x + cw * k, rc.end.y - 10), labels[k], HORIZONTAL_ALIGNMENT_CENTER, cw, 13, Pal.ink(0.55 * a))
+
+
+# buy an airframe (and fly it), or fly one already owned
+func _buy_skin(id: String) -> void:
+	if Skins.current() == id:
+		_refuse(Ops.w("正在使用这一款", "ALREADY FLYING THIS ONE"))
+		return
+	if Skins.owns(id):
+		Skins.equip(id)
+		flash = 1.0
+		_buy_fx(sel)
+		say(Ops.w("已换上 %s", "NOW FLYING %s") % Skins.name_of(id))
+		return
+	var why := Skins.buy(id)
+	if why != "":
+		_refuse(why)
+		return
+	var desk: Dictionary = Career.data.get("desk", {})
+	desk["buy"] = int(desk.get("buy", 0)) + 1
+	Career.data.desk = desk
+	if Career.usable():
+		Career.save()
+	flash = 1.0
+	_buy_fx(sel)
+	say(Txt.t("tm_bought") % Skins.name_of(id))
+
+
 # the chosen thing: what it changes, now → after, how you would play differently,
 # and the money: price, what is left after, and what the next contract fee would borrow
 func _detail(a: float) -> void:
@@ -2943,6 +3146,9 @@ func _detail(a: float) -> void:
 	var id: String = it[0]
 	var d := Career.data
 	var ka := Pal.ease_out(clampf((deal_t - 0.12) / 0.35, 0.0, 1.0)) * a
+	if it[1] == "skin":
+		_skin_detail(id, ka)
+		return
 	Hmi.raised(self, r, ka)
 	var x := r.position.x + 32
 	var w := r.size.x - 64
@@ -3165,7 +3371,19 @@ func _bottom(s: Vector2, a: float) -> void:
 			if it.is_empty():
 				return
 			var price: float = float(it[2]) * (qty if it[1] == "item" else 1)
-			if it[1] != "item" and d.upgrades.has(it[0]):
+			if it[1] == "skin":
+				if Skins.current() == str(it[0]):
+					label = "✓ " + Ops.w("使用中", "IN USE")
+					ok = false
+				elif Skins.owns(str(it[0])):
+					label = Ops.w("换上", "FLY THIS ONE") + "   Enter"
+				elif float(d.money) < price:
+					label = Txt.t("tm_buy_n") % Pal.money(price)
+					note = Txt.t("tm_short_n") % Pal.money(price - float(d.money))
+					ok = false
+				else:
+					label = Txt.t("tm_buy_n") % Pal.money(price) + "   Enter"
+			elif it[1] != "item" and d.upgrades.has(it[0]):
 				label = "✓ " + Txt.t("tm_installed")
 				ok = false
 			elif REQUIRES.has(it[0]) and not d.upgrades.has(REQUIRES[it[0]]):

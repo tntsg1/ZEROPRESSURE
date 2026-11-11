@@ -15,6 +15,7 @@ const CATS := ["", "mixed_metal", "ferrous_scrap", "nonferrous_mix", "steel_bill
 var game: Node
 var on_close: Callable
 var on_repair: Callable
+const Back := preload("res://scripts/ui_back.gd")
 var start_page := ""     # "clients" (sell), "feed" (grade 1 feed's sellers), "company:<id>" (a counter)
 var tab := "buy"          # buy | sell | records
 var cat := ""             # the goods filter on the left ("" all)
@@ -206,6 +207,7 @@ class PriceBars extends Control:
 # ---------------------------------------------------------------- building
 
 func _ready() -> void:
+	Back.arrive()
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
@@ -263,7 +265,7 @@ func _ready() -> void:
 	pause_button = key(words("暂停经营", "PAUSE"), toggle_pause)
 	BenchFx.note(pause_button, words("暂停整个港口和市场的时间，慢慢看；再点一次继续", "Stops the port's and the market's clock while you look; press again to go on"))
 	top.add_child(pause_button)
-	top.add_child(key(words("关闭 [Esc]", "CLOSE [Esc]"), close))
+	top.add_child(key(Back.close_text(), _back))
 	# the body: categories on the left, the page in the middle
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -954,16 +956,28 @@ func open_ship_market() -> void:
 	if game == null:
 		return
 	var g = game
-	close()
-	g.open_ship_market.call_deferred()
+	if close():
+		Back.go(_back_entry(), "ship_market", func(): g.open_ship_market())
 
 
 func open_star_map() -> void:
 	if game == null:
 		return
 	var g = game
-	close()
-	g.open_star_map.call_deferred()
+	if close():
+		Back.go(_back_entry(), "star_map", func(): g.open_star_map())
+
+
+# 134 号: how to open the exchange again, for the page it leaves for (scripts/ui_back.gd)
+func _back_entry() -> Dictionary:
+	var g = game
+	return Back.entry("exchange", ["交易行", "THE EXCHANGE"], func(): g.open_exchange())
+
+
+# Esc and the close key: back where the exchange was opened from, else away
+func _back() -> void:
+	if close():
+		Back.back()
 
 
 func close() -> bool:
@@ -990,5 +1004,5 @@ func _unhandled_input(event: InputEvent) -> void:
 		if sell_win.visible:
 			sell_win.visible = false
 		else:
-			close()
+			_back()
 		get_viewport().set_input_as_handled()

@@ -190,6 +190,14 @@ func _run() -> void:
 	check(not intake_early, "no crate came out of the dock's intake before the train had unloaded it")
 	check(crate_out_t < 0.0 or crate_out_t >= arrived_t, "the dock's crate after the train's (%.1f ≥ %.1f)" % [crate_out_t, arrived_t])
 	check(HallMarket.order("OTB").is_empty() or str(HallMarket.order("OTB").state) == "done", "the order collected and paid")
+	# 在站内等 (2026-11-10): having given way it drives back to the stop the drone got off at and waits there
+	var back := false
+	for f in 60 * 90:
+		await process_frame
+		if g.tram.phase == "" and g.tram.at == "trade":
+			back = true
+			break
+	check(back, "having given way, the shuttle came back to the trade port's stop by itself (returns %d)" % Tram.returns_home)
 	g.cam_override = Vector2.INF
 	g.zoom_override = 0.0
 	print("tram_block_freight_check: %d checks, %d failed" % [checks, fails])

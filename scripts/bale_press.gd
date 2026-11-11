@@ -29,7 +29,9 @@ const IRON_HI := Color(0.15, 0.152, 0.162)
 const DARK := Color(0.06, 0.064, 0.072)
 const YEL := Color(0.85, 0.62, 0.2)
 
-static var belt_run := 0.0       # m the belt has run (its cleats)
+static var belt_run := 0.0       # m the belt has run (its cleats), + toward its head (east)
+static var belt_v := 0.0         # m/s its surface moves now, + east (tests: tests/belt_direction_check.gd)
+static var _bx := NAN            # the bale's x on the belt last step
 static var platen := 0.0         # 0 up … 1 at the bale
 static var _seed_parts := {}     # job id -> crumple seeds
 
@@ -125,12 +127,21 @@ static func tick(dt: float) -> void:
 	var ph: Array = ProcessLine.press_phase()
 	var st := str(ph[0])
 	var u := float(ph[1])
-	var belt_v := 0.0
-	if (st == "feed" and u < 0.8) or (st == "approach" and u < 0.9):
-		belt_v = 4.0
-	elif st == "reject":
-		belt_v = -4.0
-	belt_run += belt_v * dt
+	# 传送带方向 (user 2026-11-10): the belt carried the bale down to the chute (−x) while its cleats ran up
+	# (+x), and the other way round on a reject. Now the belt's surface moves exactly as the bale on it
+	# does: the same way, the same distance, no sliding (the cleats are spaced along x: draw)
+	var pr := ProcessLine.press()
+	var cur: Dictionary = pr.get("cur", {}) if not pr.is_empty() else {}
+	var on_belt: bool = not cur.is_empty() and ((st == "feed" and u < 0.72) or st == "approach" or st == "reject")
+	belt_v = 0.0
+	if on_belt:
+		var x := float((_pose(cur, st, u).at as Vector2).x)
+		if not is_nan(_bx):
+			belt_run += x - _bx
+			belt_v = (x - _bx) / maxf(dt, 1e-4)
+		_bx = x
+	else:
+		_bx = NAN
 	var want := 0.0
 	match st:
 		"press": want = clampf((u - 0.05) / 0.85, 0.0, 1.0)

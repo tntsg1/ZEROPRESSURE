@@ -825,21 +825,25 @@ func _draw_glow() -> void:
 	var vol: String = str(ice.cfg.get("volume", ""))
 	if not _main.is_empty() and game.sys.fvol.has(vol):
 		var fv: Dictionary = game.sys.fvol[vol]
-		var fill := clampf(float(fv.amount) / maxf(0.1, float(fv.get("full", 20.0))) * 8.0, 0.0, 1.0)
-		var path: PackedVector2Array = _main[0]
-		if fill > 0.002:
-			for i in range(1, path.size()):
-				lines.append(path[i - 1])
-				lines.append(path[i])
-				lcols.append(Pal.tint(LC.of("water"), 0.14 + 0.3 * fill, 1.0))
+		# the water standing in the main from the pump back, as long as the share of it full
+		# (a body of water in the pipe, not a line: user 2026-11-10 "一条一条线，感觉不好")
+		var fill := clampf(float(fv.amount) / maxf(0.1, float(fv.get("full", 20.0))), 0.0, 1.0)
+		var L: float = (_main[1] as PackedFloat32Array)[(_main[1] as PackedFloat32Array).size() - 1]
+		if fill > 0.0005:
+			var s0: float = L * (1.0 - fill)
+			_band(tv, tc, ti, s0, L, 3.2, Pal.tint(LC.of("water"), 0.28, 1.0), Pal.tint(LC.of("water"), 0.08, 1.0))
+			# its front, a rounded meniscus, and the light running in it toward the pump
+			_fan(tv, tc, ti, _at(s0), 5.0, Pal.tint(LC.of("water"), 0.45, 1.3))
+			var x := s0 + fposmod(_t * 1.2 * Geom.M, 24.0)
+			while x < L:
+				lines.append(_at(x))
+				lines.append(_at(minf(L, x + 6.0)))
+				lcols.append(Pal.tint(LC.of("water"), 0.35, 1.4))
+				x += 24.0
 		for pu in _pulses:
 			var s: float = pu.s
-			for m in 8:
-				var a := _at(maxf(0.0, s - m * 7.0))
-				var b := _at(maxf(0.0, s - (m + 1) * 7.0))
-				lines.append(a)
-				lines.append(b)
-				lcols.append(Pal.tint(LC.of("water"), 1.0 * (1.0 - m / 8.0), 1.5))
+			# a slug of water running down the empty main: a short body, bright at its front
+			_band(tv, tc, ti, maxf(0.0, s - 40.0), s, 3.0, Pal.tint(LC.of("water"), 0.55, 1.4), Pal.tint(LC.of("water"), 0.0, 1.0))
 			_fan(tv, tc, ti, _at(s), 9.0, Pal.tint(LC.of("water"), 0.5, 1.3))
 	for r in _rings:
 		var u: float = float(r[1]) / 1.1
@@ -897,6 +901,37 @@ static func _ring_lines(lines: PackedVector2Array, cols: PackedColorArray, c: Ve
 
 
 # a soft disc of light: bright at the middle, nothing at its edge
+# a body of water along the main from s0 to s1 (px along it): a strip half wide, its core
+# col, its edges edge (the light through a tube of water is brightest down its middle)
+func _band(tv: PackedVector2Array, tc: PackedColorArray, ti: PackedInt32Array, s0: float, s1: float, half: float, col: Color, edge: Color) -> void:
+	if s1 - s0 < 1.0:
+		return
+	var n := clampi(int((s1 - s0) / 12.0), 2, 200)
+	var base := tv.size()
+	for k in n + 1:
+		var s := lerpf(s0, s1, float(k) / n)
+		var p := _at(s)
+		var q := _at(minf(s1, s + 2.0)) if s + 2.0 <= s1 else p
+		var d := (q - _at(maxf(s0, s - 2.0))).normalized()
+		var nn := d.orthogonal() * half
+		tv.append(p - nn)
+		tv.append(p)
+		tv.append(p + nn)
+		tc.append(edge)
+		tc.append(col)
+		tc.append(edge)
+	for k in n:
+		var a := base + k * 3
+		var b := a + 3
+		for m in 2:
+			ti.append(a + m)
+			ti.append(b + m)
+			ti.append(a + m + 1)
+			ti.append(a + m + 1)
+			ti.append(b + m)
+			ti.append(b + m + 1)
+
+
 static func _fan(tv: PackedVector2Array, tc: PackedColorArray, ti: PackedInt32Array, c: Vector2, r: float, col: Color) -> void:
 	var base := tv.size()
 	tv.append(c)

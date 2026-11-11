@@ -1,4 +1,5 @@
 extends Control
+const Back := preload("res://scripts/ui_back.gd")
 # The power district's control screen (48 号; 访谈 Q40: "a full industrial control screen, many
 # gauges and the lines at once; every gauge on a real machine and line"). The single-line
 # diagram — the sets, the main breaker, the bus, the shore line, each feeder's breaker and its
@@ -586,6 +587,7 @@ func _section(parent: Control, text: String) -> void:
 
 
 func _ready() -> void:
+	Back.arrive()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	theme = UiSkin.theme()
 	add_child(UiSkin.Ground.new())
@@ -602,8 +604,8 @@ func _ready() -> void:
 	head.panel = self
 	outer.add_child(head)
 	var close_key := Button.new()
-	close_key.text = w("关闭 [Esc]", "CLOSE [Esc]")
-	close_key.pressed.connect(close)
+	close_key.text = Back.close_text()
+	close_key.pressed.connect(_back)
 	close_key.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
 	close_key.offset_left = -130
 	close_key.offset_right = -12
@@ -994,8 +996,8 @@ func _fill_fixes(ok: bool) -> void:
 	if Port.stage("power") < 2 and (not ok or Grid.headroom(game) < 1.0):
 		acts.append([w("去修动力区（多发电）", "MEND THE POWER DISTRICT"), func():
 			var g = game
-			close()
-			if g != null and is_instance_valid(g): g.open_district.call_deferred("power"), w("关掉这里，去动力区操作台修发电机组；修好能多发电", "Go to the power district's console and mend the sets; more power when mended")])
+			if g != null and is_instance_valid(g): _leave("district:power", func(): g.open_district("power"))
+			else: close(), w("关掉这里，去动力区操作台修发电机组；修好能多发电", "Go to the power district's console and mend the sets; more power when mended")])
 	var sig := str(acts.map(func(a): return a[0]))
 	if sig == _fix_sig:
 		return
@@ -1156,6 +1158,23 @@ func _process(dt: float) -> void:
 		_refresh()
 
 
+# 134 号: how to open this page again, for the page it leaves for; Esc and the close key go back
+# where it was opened from, else away (scripts/ui_back.gd)
+func _back_entry() -> Dictionary:
+	var g = game
+	return Back.entry("power", ["供电控制屏", "THE POWER SCREEN"], func(): g.open_power_screen())
+
+func _leave(to: String, open: Callable) -> void:
+	var e := _back_entry()
+	close()
+	Back.go(e, to, open)
+
+
+func _back() -> void:
+	close()
+	Back.back()
+
+
 func close() -> void:
 	if BenchFx.leaving(self):
 		return
@@ -1170,4 +1189,4 @@ func close() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:
 		get_viewport().set_input_as_handled()
-		close()
+		_back()

@@ -1,4 +1,5 @@
 extends Control
+const Back := preload("res://scripts/ui_back.gd")
 const GuideCopy = preload("res://scripts/onboarding_text.gd")
 const SmelterModel = preload("res://scripts/smelter.gd")
 const ConsoleKit = preload("res://scripts/console_kit.gd")
@@ -56,6 +57,7 @@ var _more_fold: BenchFx.Fold
 # 36 号 (player 2026-10-25: "too many buttons here and there"): one big button that is always
 # the next step; the rest folded under "more"
 func _ready() -> void:
+	Back.arrive()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	# 132 号: a 520 px card on the far side of the furnace, as tall as it needs; the top line, the
 	# temperature big, the power as a per cent, one orange key; the rest under "更多"
@@ -98,8 +100,8 @@ func _ready() -> void:
 	queue_l.modulate = Color(1, 1, 1, 0.75)
 	power_b = button(words("前往动力区","TO THE POWER DISTRICT"), func():
 		var g = service.game
-		close()
-		if g != null and is_instance_valid(g): g.open_power_screen.call_deferred())
+		if g != null and is_instance_valid(g): _leave("power", func(): g.open_power_screen())
+		else: close())
 	power_b.visible = false
 	column.add_child(power_b)
 	more_key = button(words("更多操作 › 测温取样 · 功率调整 · 撤回操作 · 任务队列","MORE ›   SAMPLE · POWER · RETURN · QUEUE"), func(): _more_fold.set_open(not _more_fold.open))
@@ -146,7 +148,7 @@ func _ready() -> void:
 	more.add_child(power_row)
 	more.add_child(button(words("停止运行并重置设备","STOP / RETURN"),func():show_result(service.command("stop"))))
 	column.add_spacer(false)
-	column.add_child(button(words("关闭面板 [Esc]","CLOSE [Esc]"),close))
+	column.add_child(button(Back.close_text() if Back.has_back() else words("关闭面板 [Esc]","CLOSE [Esc]"),_back))
 	_update()
 
 
@@ -295,6 +297,23 @@ func _now(inf: Dictionary, pp: int) -> void:
 	now_line.set_now(false, s if s != "" else words("炉内目前没有钢材，排炉任务正在加工队列中等待", "THE FURNACE IS EMPTY; HEATS ARE QUEUED IN THE QUEUE"))
 
 
+# 134 号: how to open this page again, for the page it leaves for; Esc and the close key go back
+# where it was opened from, else away (scripts/ui_back.gd)
+func _back_entry() -> Dictionary:
+	var g = service.game
+	return Back.entry("heat", ["熔炉操作台", "THE FURNACE DESK"], func(): g.open_heat())
+
+func _leave(to: String, open: Callable) -> void:
+	var e := _back_entry()
+	close()
+	Back.go(e, to, open)
+
+
+func _back() -> void:
+	close()
+	Back.back()
+
+
 func close() -> void:
 	if BenchFx.leaving(self):
 		return
@@ -306,5 +325,5 @@ func close() -> void:
 	if on_close.is_valid(): on_close.call()
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.physical_keycode == KEY_ESCAPE:
-		close()
+		_back()
 		get_viewport().set_input_as_handled()

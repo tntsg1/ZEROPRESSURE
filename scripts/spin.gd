@@ -21,7 +21,16 @@ extends Node2D
 const COAST := {               # s from full speed to stopped (three time constants and a bit)
 	"duct_fan": 20.0, "axial_comp": 40.0, "turbo_pump": 60.0, "turbo": 60.0,
 	"turbopump": 15.0, "reaction_wheel": 90.0, "steam_turbine": 60.0, "gen": 30.0,
+	"turboexpander": 40.0,     # second round (cx_turboexpander_b/c): tens of thousands of rpm
+	"eddy_sorter": 20.0, "mag_separator": 20.0,   # second round (cx_sorter_c): wait for the rotor to stop
 }
+# second round (cx_turbo_pump_b): air let suddenly into a molecular pump still spinning crashes
+# its rotor: its room's pressure jumping INRUSH_KPA over what it was a moment before (a lag of
+# INRUSH_LAG s), from under VAC_KPA
+const INRUSH_KPA := 10.0
+const INRUSH_LAG := 1.0
+const VAC_KPA := 5.0
+const INRUSH_KEEP := 0.3
 const VAC_SLOW := 2.0          # a fan in vacuum coasts this many times as long (no air drag on it)
 const SAFE := 0.06             # under this share of its speed it is as good as stopped
 const REMANENCE := 60.0        # V a generator puts out from its remanence at full speed
@@ -101,6 +110,9 @@ func _physics_process(dt: float) -> void:
 		var p = r.p
 		if p.gone:
 			continue
+		if p.has_meta("inrush"):
+			r.w = 0.0          # its rotor is wrecked: it does not turn again
+			continue
 		var w: float = r.w
 		if _powered(r):
 			w = minf(1.0, w + dt / 3.0)
@@ -109,6 +121,8 @@ func _physics_process(dt: float) -> void:
 			if w < 0.01:
 				w = 0.0
 		r.w = w
+		if r.art == "turbo_pump" and not p.has_meta("inrush"):
+			_inrush(r, dt)
 		r.ang = fposmod(float(r.ang) + w * SPIN_RATE * dt, TAU)
 		if w > 0.0:
 			any = true
@@ -120,6 +134,39 @@ func _physics_process(dt: float) -> void:
 				game.say("rotor_coasting", c, p.tag)
 	if any:
 		queue_redraw()
+
+
+func _room_kpa(p) -> float:
+	var room: String = world.room_at(world.frame(p) * Geom.centroid(p.poly))
+	return game.sys.P(room) if room != "" else 0.0
+
+
+func _inrush(r: Dictionary, dt: float) -> void:
+	var p = r.p
+	var now: float = _room_kpa(p)
+	var lag: float = float(r.get("lag", now))
+	if float(r.w) > SAFE and lag < VAC_KPA and now - lag > INRUSH_KPA and p.intact and p.body == null:
+		p.set_meta("inrush", true)
+		var c: Vector2 = world.frame(p) * Geom.centroid(p.poly)
+		var rad: float = maxf(Geom.bbox(p.poly).size.length() * 0.4, 0.4 * Geom.M)
+		var w: float = r.w
+		r.w = 0.0
+		game._dent(p, minf(p.cond, INRUSH_KEEP), "dv_inrush")
+		game.incident("rotor_inrush", p.tag)
+		game.say("rotor_inrush", c, p.tag)
+		# the blades meet the stator: a shriek, a ring of sparks off the rim, metal dust blown
+		# out of the inlet on the air coming in
+		game.sfx.play("crack", c, 0.9, 1.6)
+		game.sfx.play("clank", c, 0.7, 1.8)
+		game.shake(0.15 + 0.15 * w)
+		for i in 22:
+			var a := randf() * TAU
+			game.fx.spark(c + Vector2.from_angle(a) * rad * 0.7, Vector2.from_angle(a + PI * 0.5) * randf_range(300, 700) * (0.5 + 0.5 * w), randf_range(0.2, 0.45), Pal.heat(1.0, 2.2), 1.4, 10.0, 0.8)
+		game.fx.ring(c, rad * 0.4, rad * 1.6, 0.3, Pal.heat(0.8, 1.8), 1.8)
+		game.fx.burst_shards(c, 8, 260.0, Pal.ink(0.8), 4.0)
+		for i in 10:
+			game.fx.puff(c, Vector2.from_angle(randf() * TAU) * randf_range(40, 140), randf_range(0.6, 1.2), 3.0, 16.0, Pal.ink(0.1))
+	r["lag"] = lag + (now - lag) * clampf(dt / INRUSH_LAG, 0.0, 1.0)
 
 
 # the beam cut into a machine whose rotor still turns: it bursts
@@ -183,6 +230,8 @@ func _draw() -> void:
 		var bb := Geom.bbox(p.poly)
 		var c: Vector2 = xf * bb.get_center()
 		var rad: float = minf(bb.size.x, bb.size.y) * 0.36
+		if r.art in ["eddy_sorter", "mag_separator"]:
+			rad = minf(rad, 1.1 * Geom.M)       # the magnet drum, not the whole machine
 		if rad < 4.0:
 			continue
 		var a0: float = float(r.ang) + xf.get_rotation()

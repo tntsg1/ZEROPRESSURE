@@ -57,14 +57,12 @@ func _clock(s: float) -> String:
 
 func _run() -> void:
 	Txt.zh = true
-	# ---- the opening cards and the belt (the game's own lengths)
-	var hold := 0.0
-	var op = preload("res://scripts/opening.gd").new()
-	for i in op.CARDS.size():
-		hold += op.hold(i)
-	op.free()
-	_add("开场四张卡（按旁白字数停留）", hold)
-	_add("小行星带：拖船找到 TUG-001（过场）", preload("res://scripts/belt_prelude.gd").LENGTH)
+	# ---- 开局重做 (owner 2026-11-10): the cold open's film, then the first cut at the hulk (the
+	# opening cards are in the pause menu now; the belt cut-scene is not played)
+	_add("冷开场电影（任意键可跳过）", preload("res://scripts/cold_open_film.gd").LENGTH)
+	_add("冷开场第一刀（读提示、移鼠标、划一刀）", _read("按住左键，沿虚线切开") + 1.5)
+	_mark("cut")
+	_add("舱压把顶板冲飞（慢动作）", 1.6)
 	# ---- the prologue, its own scene
 	Career.start_new()
 	Career.data.term_open = {}
@@ -77,9 +75,8 @@ func _run() -> void:
 	await _frames(30)
 	var pr = g.prologue
 	var M := Geom.M
-	# fly over
-	var d: float = g.drone.global_position.distance_to(pr.hulk_centre()) / M
-	_add("序章 1 飞过去（%.0f m）" % d, _read(_card(pr)) + _fly(d))
+	# (the flight over is the cold open's: the drone starts at the hulk)
+	var d := 0.0
 	g.drone.global_position = pr.hulk_centre() + Vector2(-5, -6) * M
 	await _frames(4)
 	_add("序章 2 刹停", _read(_card(pr)) + 2.0)
@@ -184,7 +181,7 @@ func _run() -> void:
 	for r in rows:
 		print("  %-44s %6.1f s   累计 %s" % [r[0], r[1], _clock(r[2])])
 	print("  第一次切开：%s   第一笔现金（现场收购）：%s   第一单结算：%s   第一项修缮：%s" % [_clock(marks.cut), _clock(marks.money), _clock(marks.settle), _clock(marks.repair)])
-	check(float(marks.cut) <= 120.0, "first cut within 2 min (%s)" % _clock(marks.cut))
+	check(float(marks.cut) <= 30.0, "开局重做: the first cut within 30 s (%s)" % _clock(marks.cut))
 	check(float(marks.money) <= 300.0, "the first cash, the first machine bought on the spot, within 5 min (%s)" % _clock(marks.money))
 	print("OPENING TIME %s (%d checks, %d failed)" % ["PASS" if fails == 0 else "FAIL", checks, fails])
 	quit(fails)

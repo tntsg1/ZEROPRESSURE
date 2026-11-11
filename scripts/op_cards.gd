@@ -38,6 +38,7 @@ const LINES := {
 	"starmap": ["星图：扫描小行星带找船，看拖船和货船在哪。", "Star map: sweep the belt for hulks, see the tugs and freighters."],
 	"tow": ["在作业艇上：靠近漂浮舱段的拖眼挂上拖缆，拖到船坞外的交付区再摘缆。", "Aboard the work boat: hitch the line to a drifting section's tow eye, tow it to the delivery box off the berth, cast off."],
 	"multi": ["抓钩在单体和范围模式间切换：范围模式一次抓起圈内多件散料。Shift+X 开关防护。", "Switches the grapple between one piece and its field: the field catches several loose pieces at once. Shift+X toggles its guard."],
+	"tunnel": ["量子隧穿开关：开着时，抓钩抓着的件穿过墙壁、船体和设施；关掉或放手时卡在墙里，会等它完全出来再恢复碰撞。", "Quantum tunnelling: on, what the grapple holds passes through walls, hull and facilities; switched off or let go inside a wall, it touches again only once it is clear."],
 	"codex": ["图鉴：见过的设备、危险和做法。", "Codex: the machines, hazards and methods you have met."],
 	"log": ["无线电记录：之前说过的话。", "Radio log: what was said."],
 	"hints": ["开关屏幕提示。", "Turns the on-screen hints on or off."],

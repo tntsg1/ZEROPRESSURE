@@ -14,16 +14,20 @@ var hit_imp := 0.0
 var hit_pos := Vector2.ZERO
 var prev_v := Vector2.ZERO     # its motion at the last upkeep (game.gd: how hard a knock really was)
 var prev_w := 0.0
-# on the drone's grapple (tools.gd, multi_grab.gd). User 2026-11-09 ("无人机经常出现穿模的状况，我不是让它
-# 取消碰撞了吗"), as the crane's hook since 2026-11-08 (load_motion.gd): a piece on the line collides with
-# nothing (mask 0, layer kept so the mouths and the cursor still find it); off the line its collision
-# comes back, and let go inside the ship it eases out (start_ghost) rather than being shoved or wedged
+# on the player's drone grapple (tools.gd, multi_grab.gd). User 2026-11-10 ("主角肯定是要碰撞才好玩"):
+# what the player's own drone carries keeps its collision — it knocks into the hull, the berth and
+# the drone like anything loose (the 11-09 mask-0 carry is withdrawn). Only with the quantum
+# tunnelling upgrade switched on (tools.tunnel_on) it passes through walls, hull and facilities
+# (TUNNEL_MASK: still loose pieces and the drone); off the line, or switched off, inside a wall,
+# it stays untouchable until it is clear (hold_end).
 var tethered := false:
 	set(v):
 		if v == tethered: return
 		tethered = v
 		if v: _carry_begin()
 		else: _carry_end()
+const TUNNEL_MASK := 1 | 2     # tunnelling: loose pieces and the drone, never the hull (8) nor the berth (4)
+var tunneling := false
 var _carried := false
 var capture = null         # recovery zone that is swallowing this body
 var scrap_at := -100000       # dock.gd: when it last looked at whether this is plain scrap (ms)
@@ -241,6 +245,7 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 func _physics_process(dt: float) -> void:
 	if get_meta("arm_parked",false): return
 	_ghost_step(dt)
+	_clear_step(dt)
 	# The solver publishes its result before scene physics callbacks. Repair an
 	# invalid result before the dock, tools and FX read the body this step.
 	var pose := global_transform
@@ -255,31 +260,169 @@ func _physics_process(dt: float) -> void:
 
 func _carry_begin() -> void:
 	# swallowed, on the arm or put away by something else: not ours to change
-	if capture != null or freeze or has_meta("arm") or get_meta("arm_parked", false):
+	if capture != null or freeze or get_meta("arm", false) or get_meta("arm_parked", false):
 		return
-	_carried = true
-	ghost = 0.0
-	collision_mask = 0
+	var t = world.game.tools if world != null and world.game != null else null
+	if t != null and t.has_method("tunnel_on") and t.tunnel_on():
+		set_tunnel(true)
 
 
 func _carry_end() -> void:
-	if not _carried:
+	set_tunnel(false)
+
+
+# the quantum tunnelling upgrade on the player's line (tools.gd toggles it while holding too)
+func set_tunnel(on: bool) -> void:
+	if on == tunneling:
 		return
+	if on:
+		if capture != null or freeze or _carried:
+			return
+		tunneling = true
+		ghost = 0.0
+		clearing = 0.0
+		collision_layer = 1
+		collision_mask = TUNNEL_MASK
+		return
+	tunneling = false
+	if capture != null or freeze or _carried or collision_mask != TUNNEL_MASK:
+		return
+	# out of the tunnel: inside a wall it stays untouchable until clear, then touches again
+	hold_end(true)
+
+
+# ---------------------------------------------------------------- held
+# One way in and out for everything that picks a body up (user 2026-11-10: "你干脆把所有只要抓起来的，
+# 就不要有碰撞了"): the drone's grapple and its range mode (tethered), the crane's hook and the
+# hauler's claw (LoadMotion.grip / let_go) and the arm. Held, the body is on CARRY_LAYER and its mask
+# is empty: nothing has that layer in its mask, so it touches nothing and nothing touches it — the
+# ship, the berth, other pieces, the drone (before, on layer 1 with mask 0, the drone and loose
+# pieces still ran into it as into a wall that could not be moved). Mouths, receivers and the cursor
+# go by outline; the areas that take loads in wait for it to be let go, as before.
+# Let go overlapping a piece, the ship or the drone, it stays untouchable and keeps its way (eased
+# out of the ship if it sits in it at rest), and touches again the moment it is clear: never shot out.
+const CARRY_LAYER := 64
+var clearing := 0.0           # s left for a let-go body to come clear (then it touches, gently)
+var _clear_ease := false
+var _clear_check := 0.0
+var _clear_edges := false     # the berth's edges and facilities count too (a tunnelled load)
+
+
+func held() -> bool:
+	return _carried
+
+
+func hold_begin() -> void:
+	_carried = true
+	tunneling = false
+	ghost = 0.0
+	clearing = 0.0
+	collision_layer = CARRY_LAYER
+	collision_mask = 0
+
+
+func hold_end(edges: bool = false) -> void:
 	_carried = false
-	if capture != null or freeze or has_meta("arm") or get_meta("arm_parked", false) or collision_mask != 0:
-		return
-	collision_mask = MASK
+	_clear_edges = edges
 	var od: Dictionary = world.overlap_dir(pieces)
-	if not od.is_empty():
-		calm = CALM_T
-		if od.ship:
-			start_ghost(od.dir)
+	if od.is_empty() and not _on_drone() and not (edges and _on_edge()):
+		_touch_again()
 		return
-	# across a berth edge (the rail, the floor): it comes off it gently, never shot out
+	collision_layer = CARRY_LAYER
+	collision_mask = 0
+	clearing = _clear_time()
+	_clear_check = 0.1
+	_clear_ease = not od.is_empty() and od.ship and linear_velocity.length() < GHOST_SPEED
+	if _clear_ease:
+		ghost_dir = od.dir
+
+
+# clear of everything (or out of time): its collision back; on a berth edge it comes off gently
+func _touch_again(stuck: bool = false) -> void:
+	clearing = 0.0
+	_clear_ease = false
+	collision_layer = 1
 	collision_mask = 4
-	if test_move(global_transform, Vector2.ZERO, null, 0.0):
+	if stuck or test_move(global_transform, Vector2.ZERO, null, 0.0):
 		calm = CALM_T
 	collision_mask = MASK
+
+
+func _clear_time() -> float:
+	var box := Rect2()
+	var first := true
+	for p in pieces:
+		if not p.gone:
+			var bb := Geom.bbox(world.world_poly(p))
+			box = bb if first else box.merge(bb)
+			first = false
+	return clampf(maxf(box.size.x, box.size.y) / GHOST_SPEED, GHOST_T, GHOST_MAX)
+
+
+func _clear_step(dt: float) -> void:
+	if clearing <= 0.0:
+		return
+	if freeze:
+		return      # let_go unfreezes it at the end of the frame
+	# held again, or swallowed: whoever has it now sets its collision ("arm" only means a machine is
+	# on its way to it — it must not leave the body untouchable for good)
+	if _carried or capture != null or collision_layer != CARRY_LAYER:
+		clearing = 0.0
+		return
+	clearing -= dt
+	if _clear_ease:
+		linear_velocity = ghost_dir * GHOST_SPEED
+		angular_velocity = 0.0
+	_clear_check -= dt
+	if clearing <= 0.0:
+		# out of time still overlapping: it touches again, and eases apart (calm), never shot out
+		_touch_again(not _clear_now())
+	elif _clear_check <= 0.0:
+		_clear_check = 0.1
+		if _clear_now():
+			_touch_again()
+
+
+func _clear_now() -> bool:
+	return world.overlap_dir(pieces).is_empty() and not _on_drone() and not (_clear_edges and _on_edge())
+
+
+# overlapping the berth's edges or a facility (layer 4)
+func _on_edge() -> bool:
+	var l := collision_layer
+	var m := collision_mask
+	collision_layer = 1
+	collision_mask = 4
+	var hit := test_move(global_transform, Vector2.ZERO, null, 0.0)
+	collision_layer = l
+	collision_mask = m
+	return hit
+
+
+func _on_drone() -> bool:
+	var d = _drone()
+	if d == null:
+		return false
+	var at: Vector2 = d.global_position
+	var r: float = Drone.R + 1.0
+	for p in pieces:
+		if p.gone:
+			continue
+		var wp: PackedVector2Array = world.world_poly(p)
+		if wp.size() < 3:
+			continue
+		if Geometry2D.is_point_in_polygon(at, wp):
+			return true
+		for k in wp.size():
+			if Geometry2D.get_closest_point_to_segment(at, wp[k], wp[(k + 1) % wp.size()]).distance_to(at) < r:
+				return true
+	return false
+
+
+func _drone():
+	if world == null or world.game == null or world.game.drone == null or not is_instance_valid(world.game.drone):
+		return null
+	return world.game.drone
 
 
 const GHOST_MAX := 6.0        # s: the longest a let-go piece eases out of the ship (240 px)

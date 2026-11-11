@@ -3309,7 +3309,10 @@ func finish_prologue() -> void:
 	Career.data.seen = seen
 	# user 2026-10-26: "把 TS1 塞到拆第一艘船前面" — the hulk towed home, the base course first,
 	# then the real ship. A career that has not passed it here must (no skipping it)
-	if ts1_due():
+	# 开局重做 (owner 2026-11-10): a new career now strips TUG-001 first, the course after it
+	if TS1_AFTER_FIRST and not _did_first_ship():
+		Career.data.ts1_after = true
+	elif ts1_due():
 		Career.data.ts1_required = true
 	Career.save()
 	if (testing and not cine_in_tests) or bot != null:
@@ -3326,9 +3329,26 @@ func finish_prologue() -> void:
 	add_child(pre)
 
 
-# the base course still owed by this career before its first ship
+# the base course still owed by this career: before its first ship, or (开局重做, a career begun
+# after it: "ts1_after") once its first ship is stripped
+static var TS1_AFTER_FIRST := true
 static func ts1_due() -> bool:
-	return Career.usable() and not Career.data.is_empty() and str(Career.data.get("cert_kind", "")) != "full" and not _did_first_ship()
+	if not Career.usable() or Career.data.is_empty() or str(Career.data.get("cert_kind", "")) == "full":
+		return false
+	return _did_first_ship() if bool(Career.data.get("ts1_after", false)) else not _did_first_ship()
+
+
+# 开局重做: TUG-001 stripped, the course it owes now (no skipping it; a course left part-way goes on)
+static func ts1_after_due() -> bool:
+	return bool(Career.data.get("ts1_after", false)) and ts1_due()
+
+
+static func _to_ts1() -> void:
+	Career.data.ts1_required = true
+	Career.save()
+	start_ship = "ts1"
+	contract = {}
+	SaveGame.load_requested = SaveGame.exists(SaveGame.train_path)
 
 
 static func _did_first_ship() -> bool:
@@ -3460,6 +3480,8 @@ func _to_berth() -> void:
 	Game.start_ship = "berth"
 	Game.contract = {}
 	SaveGame.load_requested = false
+	if career() and Career.usable() and ts1_after_due():
+		_to_ts1()
 	var tree := get_tree()
 	Wipe.go(tree, func(): tree.change_scene_to_file("res://scenes/main.tscn"))
 
@@ -3513,6 +3535,10 @@ static func loadout_route() -> String:
 # the career's contract in hand (the first one after training), or the terminal when there is none
 static func play_career(tree: SceneTree) -> void:
 	Career.load_or_new()
+	if ts1_after_due():
+		_to_ts1()
+		tree.change_scene_to_file("res://scenes/main.tscn")
+		return
 	var waiting: Dictionary = Career.active()
 	var miss := Codex.required(str(waiting.get("ship", ""))) if not waiting.is_empty() else []
 	if not miss.is_empty():
@@ -4028,6 +4054,8 @@ func _check_done() -> void:
 func on_body_freed(b) -> void:
 	if spin != null:
 		spin.on_freed(b)
+	if codex_rules != null:
+		codex_rules.on_freed(b)
 	if bio != null:
 		bio.on_freed(b)
 	if media != null:
@@ -4401,6 +4429,9 @@ func on_cut_into(p, pos: Vector2) -> void:
 	if runaway != null:
 		# a charged battery pierced: thermal runaway (before the arc below empties it)
 		runaway.on_cut(p, pos)
+	if codex_rules != null:
+		# what an electrolyser's or a UV lamp's insides do when the beam goes in (second codex round)
+		codex_rules.on_cut(p, pos)
 	if volts > 30.0:
 		_arc(pos, volts, p)
 		# the arc empties whatever stored it

@@ -8,7 +8,7 @@
 	"clamps": [[3.0,3.15],[7.2,3.15]],
 	"room_names": {"A":"room_tA","M":"room_tM"},
 	"gas": {
-		"rooms": {"A":101.0,"M":98.0},
+		"rooms": {"A":101.0,"M":0.0},
 		"vessels": {
 			"O2": {"V":0.03,"burst":200.0,"kpa":1400.0,"piece":"O2-T"}
 		},
@@ -21,7 +21,7 @@
 			{"cable":"c1","charge":0.9,"drain":0.0004,"kind":"battery","local_volts":48.0,"piece":"BAT-T","switch":"K-T","volts":48.0}
 		],
 		"isolated": [],
-		"lamps": {"A":"LAMP-A","M":"LAMP-M"}
+		"lamps": {"A":"LAMP-A"}
 	},
 	"fluids": {
 		"volumes": {
@@ -42,7 +42,7 @@
 		"class": "WT",
 		"name": ["作业艇","WORK TUG"],
 		"time": 10.0,
-		"rooms": {"A":[0.25,60.0,101.0],"M":[0.3,50.0,100.0]},
+		"rooms": {"A":[0.25,60.0,101.0],"M":[1.0,0.0,0.0]},
 		"vessels": {"O2":[0.3,20.0,140.0,900.0,1500.0]},
 		"charge": {"BAT-T":[0.15,1.0]},
 		"fluids": {"fuel":[0.02,0.14]},
@@ -73,7 +73,7 @@
 			{"do":"deliver","piece":"WINCH-T","zone":"equip"}
 		]
 	},
-	"blueprint": {"hide":["LAMP-A","LAMP-M","WF-1","WF-2","LADDER","PNL-T"]},
+	"blueprint": {"hide":["LAMP-A","WF-1","WF-2","LADDER"]},
 	"pieces": [
 		{"barrier":true,"cut_speed":240.0,"density":2.2,"key":"p1","kind":"hull","mass":1.29523,"poly":[[0.05,1.7],[0.05,-0.335],[0.35,-0.319],[0.35,1.571]]},
 		{"barrier":true,"cut_speed":240.0,"density":2.2,"key":"p2","kind":"hull","mass":1.05973,"poly":[[0.05,-0.335],[0.05,-2.0],[0.35,-1.8653],[0.35,-0.319]]},
@@ -84,7 +84,7 @@
 		{"barrier":true,"cut_speed":240.0,"density":1.5,"door":true,"door_open":false,"key":"HATCH-A","kind":"hatch","mass":0.66617,"open_dir":[0.0,-1.7],"poly":[[5.3,-4.5],[5.475,-3.03],[5.2086,-2.73],[5.0336,-4.2]],"tag":"HATCH-A"},
 		{"barrier":true,"cut_speed":240.0,"density":1.5,"key":"p8","kind":"hull","mass":0.2855,"poly":[[5.475,-3.03],[5.55,-2.4],[5.2836,-2.1],[5.2086,-2.73]]},
 		{"barrier":true,"cut_speed":240.0,"density":1.5,"key":"TOP-1","kind":"hull","mass":0.86848,"poly":[[5.55,-2.4],[7.485,-2.4],[7.2085,-2.1],[5.2836,-2.1]],"tag":"TOP-1"},
-		{"barrier":true,"cut_speed":240.0,"density":1.5,"key":"TOP-2","kind":"hull","mass":1.01323,"poly":[[7.485,-2.4],[9.7425,-2.4],[9.4543,-2.1],[7.2085,-2.1]],"tag":"TOP-2"},
+		{"barrier":true,"cut_speed":240.0,"density":1.5,"key":"TOP-2","kind":"hull","mass":0.2513,"poly":[[7.485,-2.4],[7.78,-2.4],[7.78,-2.1],[7.2085,-2.1]],"tag":"TOP-2"},
 		{"barrier":true,"cut_speed":240.0,"density":1.5,"key":"TOP-3","kind":"hull","mass":1.01323,"poly":[[9.7425,-2.4],[12.0,-2.4],[11.7,-2.1],[9.4543,-2.1]],"tag":"TOP-3"},
 		{"barrier":true,"cut_speed":240.0,"density":1.5,"key":"AFT-1","kind":"hull","mass":1.0998,"poly":[[12.0,-2.4],[12.0,0.2],[11.7,0.188],[11.7,-2.1]],"tag":"AFT-1"},
 		{"barrier":true,"cut_speed":240.0,"density":1.5,"key":"AFT-2","kind":"hull","mass":1.0152,"poly":[[12.0,0.2],[12.0,2.6],[11.7,2.3],[11.7,0.188]],"tag":"AFT-2"},
@@ -124,9 +124,7 @@
 		{"art":"battery","art_size":[1.4,1.0],"art_xf":[1.0,0.0,0.0,1.0,9.5,-2.09999990463257],"cls":"equip","cut_speed":140.0,"density":1.0,"dest":"equip","fragile":0.4,"hazard":"battery","key":"BAT-T","kind":"equip","mass":0.4,"name_key":"p_battery","poly":[[9.5,-2.1],[10.9,-2.1],[10.9,-1.1],[9.5,-1.1]],"room":"M","tag":"BAT-T","value":2000.0},
 		{"art":"swb","art_size":[0.55,1.6],"art_xf":[1.0,0.0,0.0,1.0,11.1000010172526,-2.09999990463257],"cls":"equip","cut_speed":140.0,"density":1.0,"dest":"equip","fragile":0.4,"key":"SWB-T","kind":"equip","mass":0.15,"name_key":"p_s_swb","poly":[[11.1,-2.1],[11.65,-2.1],[11.65,-0.5],[11.1,-0.5]],"room":"M","tag":"SWB-T","value":700.0},
 		{"art":"fueltank","art_size":[1.8,1.7],"art_xf":[1.0,0.0,0.0,1.0,9.8000005086263,0.600000023841858],"cls":"equip","cut_speed":140.0,"density":1.0,"dest":"equip","fragile":0.35,"hazard":"fuel_tank","key":"FT-T","kind":"equip","mass":0.3,"name_key":"p_fueltank","poly":[[9.8,0.6],[11.6,0.6],[11.6,2.3],[9.8,2.3]],"room":"M","tag":"FT-T","value":1000.0},
-		{"art":"lamp","art_size":[0.56,0.16],"art_xf":[1.0,0.0,0.0,1.0,7.92000007629395,-2.09999990463257],"cut_speed":260.0,"density":1.0,"key":"LAMP-M","kind":"fixture","mass":0.04,"name_key":"p_lamp","poly":[[7.92,-2.1],[8.48,-2.1],[8.48,-1.94],[7.92,-1.94]],"room":"M","tag":"LAMP-M"},
-		{"art":"reel","art_size":[1.5,1.6],"art_xf":[1.0,0.0,0.0,1.0,13.3000005086263,0.400000015894572],"cls":"equip","cut_speed":140.0,"density":1.0,"dest":"equip","key":"WINCH-T","kind":"equip","mandatory":true,"mass":1.2,"name_key":"p_winch","poly":[[13.3,0.4],[14.8,0.4],[14.8,2.0],[13.3,2.0]],"tag":"WINCH-T","value":9000.0},
-		{"art":"panel","art_size":[1.6,0.55],"art_xf":[1.0,0.0,0.0,1.0,8.0,-2.95000012715658],"cut_speed":240.0,"density":1.0,"key":"PNL-T","kind":"fixture","mass":0.08,"name_key":"p_panel","poly":[[8.0,-2.95],[9.6,-2.95],[9.6,-2.4],[8.0,-2.4]],"tag":"PNL-T"}
+		{"art":"reel","art_size":[1.5,1.6],"art_xf":[1.0,0.0,0.0,1.0,13.3000005086263,0.400000015894572],"cls":"equip","cut_speed":140.0,"density":1.0,"dest":"equip","key":"WINCH-T","kind":"equip","mandatory":true,"mass":1.2,"name_key":"p_winch","poly":[[13.3,0.4],[14.8,0.4],[14.8,2.0],[13.3,2.0]],"tag":"WINCH-T","value":9000.0}
 	],
 	"joints": [
 		{"a":"p1","at":[0.14,-0.3302],"b":"p2","type":"weld"},
@@ -147,8 +145,6 @@
 		{"a":"p8","at":[5.3635,-2.19],"b":"TOP-1","type":"weld"},
 		{"a":"TOP-1","at":[7.4021,-2.31],"b":"TOP-2","type":"weld"},
 		{"a":"TOP-1","at":[7.2915,-2.19],"b":"TOP-2","type":"weld"},
-		{"a":"TOP-2","at":[9.656,-2.31],"b":"TOP-3","type":"weld"},
-		{"a":"TOP-2","at":[9.5407,-2.19],"b":"TOP-3","type":"weld"},
 		{"a":"TOP-3","at":[11.91,-2.31],"b":"AFT-1","type":"weld"},
 		{"a":"TOP-3","at":[11.79,-2.19],"b":"AFT-1","type":"weld"},
 		{"a":"AFT-1","at":[11.91,0.1964],"b":"AFT-2","type":"weld"},
@@ -228,29 +224,25 @@
 		{"a":"SWB-T","at":[11.65,-0.8],"b":"AFT-1","type":"bolt"},
 		{"a":"FT-T","at":[10.16,2.3],"b":"p14","type":"lock"},
 		{"a":"FT-T","at":[11.24,2.3],"b":"p14","type":"lock"},
-		{"a":"LAMP-M","at":[8.2,-2.1],"b":"TOP-2","type":"bolt"},
 		{"a":"WINCH-T","at":[13.5,2.0],"b":"DECK-T","type":"bolt"},
 		{"a":"WINCH-T","at":[14.6,2.0],"b":"DECK-T","type":"bolt"},
 		{"a":"WINCH-T","at":[13.4,2.0],"b":"DECK-T","type":"lock"},
-		{"a":"WINCH-T","at":[14.7,2.0],"b":"DECK-T","type":"lock"},
-		{"a":"PNL-T","at":[8.3,-2.4],"b":"TOP-2","type":"bolt"},
-		{"a":"PNL-T","at":[9.3,-2.4],"b":"TOP-2","type":"bolt"}
+		{"a":"WINCH-T","at":[14.7,2.0],"b":"DECK-T","type":"lock"}
 	],
 	"lines": [
 		{"a":"BAT-T","b":"SWB-T","id":"c1","kind":"cable","net":"power","pa":[10.9,-1.6],"path":[[10.9,-1.6],[11.1,-1.6]],"pb":[11.1,-1.6]},
 		{"a":"SWB-T","b":"ENG-T","id":"c2","kind":"cable","net":"power","pa":[11.2,-0.55],"path":[[11.2,-0.55],[11.2,-0.3],[9.4,-0.3]],"pb":[9.4,-0.3]},
 		{"a":"SWB-T","b":"NAV-T","id":"c3","kind":"cable","net":"power","pa":[11.3,-2.05],"path":[[11.3,-2.05],[11.3,-1.95],[5.4,-1.95],[5.4,-2.9],[4.95,-2.9]],"pb":[4.95,-2.9]},
 		{"a":"SWB-T","b":"WINCH-T","id":"c4","kind":"cable","net":"power","pa":[11.55,-0.55],"path":[[11.55,-0.55],[11.55,-0.1],[12.4,-0.1],[12.4,0.6],[13.4,0.6]],"pb":[13.4,0.6]},
-		{"a":"SWB-T","b":"LAMP-M","id":"c5","kind":"cable","net":"power","pa":[11.4,-2.05],"path":[[11.4,-2.05],[11.4,-2.0],[8.4,-2.0]],"pb":[8.4,-2.0]},
-		{"a":"LAMP-M","b":"LAMP-A","id":"c6","kind":"cable","net":"power","pa":[8.0,-2.0],"path":[[8.0,-2.0],[6.3,-2.0],[6.3,-1.85],[3.4,-1.85],[3.4,-2.2],[2.6,-2.2]],"pb":[2.6,-2.2]},
+		{"a":"SWB-T","b":"LAMP-A","id":"c5","kind":"cable","net":"power","pa":[11.4,-2.05],"path":[[11.4,-2.05],[11.4,-2.0],[6.3,-2.0],[6.3,-1.85],[3.4,-1.85],[3.4,-2.2],[2.6,-2.2]],"pb":[2.6,-2.2]},
 		{"a":"FT-T","b":"ENG-T","id":"p1","kind":"pipe","net":"fuel","pa":[9.85,1.4],"path":[[9.85,1.4],[9.45,1.4]],"pb":[9.45,1.4]},
 		{"a":"FT-T","b":"POD-T","id":"p2","kind":"pipe","net":"fuel","pa":[10.7,2.25],"path":[[10.7,2.25],[10.7,3.4],[11.0,3.4],[11.0,3.65]],"pb":[11.0,3.65]}
 	],
 	"ctrls": [
 		{"at":[3.2,-4.6],"id":"GAS-A","kind":"port","medium":"gas","piece":"p6","target":"A"},
 		{"at":[7.2,-2.5],"id":"GAS-M","kind":"port","medium":"gas","piece":"TOP-1","target":"M"},
-		{"at":[8.35,-2.68],"id":"K-T","kind":"switch","piece":"PNL-T","state":true,"target":"K-T"},
-		{"at":[8.85,-2.68],"id":"E-T01","kind":"test","medium":"volt","piece":"PNL-T","target":"bus"},
+		{"at":[11.375,-1.75],"hidden_room":"M","id":"K-T","kind":"switch","piece":"SWB-T","state":true,"target":"K-T"},
+		{"at":[11.375,-1.1],"hidden_room":"M","id":"E-T01","kind":"test","medium":"volt","piece":"SWB-T","target":"bus"},
 		{"at":[3.66,0.8],"hidden_room":"A","id":"O2-P","kind":"port","medium":"gas","piece":"O2-T","target":"O2"},
 		{"at":[11.2,2.1],"hidden_room":"M","id":"FUEL-T","kind":"port","medium":"fuel","piece":"FT-T","target":"fuel"},
 		{"at":[6.0,1.3],"id":"DR-AM","kind":"door","piece":"DR-AM","target":"DR-AM"},

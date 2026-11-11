@@ -1,4 +1,5 @@
 extends Control
+const Back := preload("res://scripts/ui_back.gd")
 # 126 号 公司仓库; 128 号 第 1 段 (user 2026-11-04: "三角洲那样真正的格子仓库"): one grid of
 # StoreBook.COLS × ROWS cells (scripts/store_book.gd), every thing lying in the cells its real size
 # takes, drawn as itself (the ship file's line art, filling its cells), no "takes N cells" written.
@@ -90,6 +91,7 @@ func w(zh: String, en: String) -> String:
 
 
 func _ready() -> void:
+	Back.arrive()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	focus_mode = Control.FOCUS_ALL
@@ -325,11 +327,9 @@ func _to_hall(tab: String, pick: String) -> void:
 	if game == null or not is_instance_valid(game) or not game.has_method("open_hall"):
 		return
 	var g = game
+	var e := _back_entry()
 	_close()
-	(func():
-		g.open_hall(tab, pick)
-		if g.console_ui != null and g.console_ui.get("back_to_store") != null:
-			g.console_ui.back_to_store = true).call_deferred()
+	Back.go(e, "exchange", func(): g.open_hall(tab, pick))
 
 
 # tonnes of the picked raw goods a listing still holds ("撤下挂单" in the details)
@@ -675,6 +675,19 @@ func _say(s: String, bad := false) -> void:
 	_msg_bad = bad
 	if bad and game != null and is_instance_valid(game) and game.get("sfx") != null:
 		game.sfx.play("deny")
+
+
+# 134 号: how to open the stores again as they are (the filter; the scroll comes back with the
+# save), for the page they leave for; Esc and the close key go back (scripts/ui_back.gd)
+func _back_entry() -> Dictionary:
+	var g = game
+	var k := kind
+	return Back.entry("store", ["仓库", "THE STORES"], func(): g.open_store(k))
+
+
+func _back() -> void:
+	_close()
+	Back.back()
 
 
 func _close() -> void:
@@ -1181,8 +1194,9 @@ func _press(b: String) -> void:
 		if _queue_link_t > 0.0 and game != null and is_instance_valid(game):
 			var g = game
 			_queue_link_t = 0.0
+			var e := _back_entry()
 			_close()
-			g.get_tree().create_timer(0.5).timeout.connect(_open_queue_on.bind(g))
+			Back.go(e, "queue", func(): g.get_tree().create_timer(0.5).timeout.connect(_open_queue_on.bind(g)))
 		return
 	if b.begins_with("f:"):
 		open_kind(b.substr(2))
@@ -1222,7 +1236,7 @@ func _press(b: String) -> void:
 	elif b in ["trade", "order"]:
 		_say(StoreBook.exchange_shut_text(), true)
 	elif b == "close":
-		_close()
+		_back()
 
 
 func _unhandled_input(ev: InputEvent) -> void:
@@ -1246,7 +1260,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 				_press_id = ""
 				_fits = {}
 			else:
-				_close()
+				_back()
 		KEY_ENTER, KEY_KP_ENTER:
 			_press("sell")
 		KEY_K:
@@ -1320,7 +1334,7 @@ func _draw_head() -> void:
 	var hc := hover_btn == "close"
 	draw_rect(cr2, Color(1, 1, 1, 0.08 if hc else 0.035))
 	draw_rect(cr2, Pal.ink(0.5 if hc else 0.25), false, 1.0)
-	_text(w("关闭  [Esc]", "CLOSE  [Esc]"), cr2.position + Vector2(0, 29), 15, Pal.ink(0.9), font_b, cr2.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(Back.close_text(true), cr2.position + Vector2(0, 29), 15, Pal.ink(0.9), font_b, cr2.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	draw_line(Vector2(PAD, HEAD_H), Vector2(size.x - PAD, HEAD_H), Pal.ink(0.12), 1.0)
 	var line := _line()
 	if line != "":

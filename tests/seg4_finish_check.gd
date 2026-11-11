@@ -195,7 +195,12 @@ func _run() -> void:
 			watched = true
 			break
 	check(watched, "watched: the walk moves on once the furnace melts (%s)" % str(g.industrial_heat.info().title))
-	check(courier_s > 0.0 and courier_s <= 5.0, "the trolley: warehouse to the furnace in %.2f s (≤ 5 s)" % courier_s)
+	# 2026-11-10 引导可达性: the look now passes on the furnace seen (3 s), maybe before the trolley is there
+	for f in 60 * 30:
+		if courier_s > 0.0:
+			break
+		await _tick()
+	check(courier_s > 0.0 and courier_s <= 5.0,"the trolley: warehouse to the furnace in %.2f s (≤ 5 s)" % courier_s)
 	await _shot("6c_walk_watch")
 	if from_stop:
 		# the video ends here: the furnace melting, the walk's card saying so

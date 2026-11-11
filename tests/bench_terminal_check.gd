@@ -65,7 +65,7 @@ func _run() -> void:
 	Cap.save(root, "res://tests/out/bench_terminal_note_go.png")
 	term._open_app(3)
 	await _wait_s(0.6)
-	check(term.tab == term.DRONE_PAGE and term.items().size() == 3 and term._go_live and term._go_rect().has_area(), "the fourth app shows three drone upgrades and its buy button")
+	check(term.tab == term.DRONE_PAGE and term.items().filter(func(it): return it[1] != "skin").size() == 3 and term._go_live and term._go_rect().has_area(), "the fourth app shows three drone upgrades and its buy button")
 	Cap.save(root, "res://tests/out/bench_terminal_drone.png")
 	var funds := float(Career.data.money)
 	term.act()

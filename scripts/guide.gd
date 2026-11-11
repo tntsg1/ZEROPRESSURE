@@ -13,6 +13,7 @@ const GuideCopy = preload("res://scripts/onboarding_text.gd")
 const Smelter = preload("res://scripts/smelter.gd")
 const TASKS := ["sort", "assay", "heat", "clients", "buy_feed", "repair", "build", "transit", "trade", "retain", "collect"]
 
+static var LOOK_ON := true     # 2026-11-10: the look step's ring on the furnace, the fly steps' drawn way (false: as before)
 static var quiet := false      # the dock's machine read-out plates are not drawn (Jev A 1.00)
 
 var game
@@ -172,6 +173,7 @@ func _at(service, path: String, name: String, purpose: String, n: int, of: int, 
 		s.text = purpose
 		s.button = ""
 	else:
+		s.fly = true
 		s.title = w("飞到%s", "FLY TO THE %s") % name
 		s.text = w("出船坞闸口就是拆船区站，按 %s 坐接驳车到加工区；也可以跟着屏幕边上的箭头飞过去。", "Out of the berth's gate is the salvage stop: %s calls the shuttle to the processing district; or follow the arrow at the screen's edge.") % Keys.label("use")
 		s.button = ""
@@ -266,7 +268,20 @@ func _heat_queue() -> Dictionary:
 	var h: Dictionary = Career.data.get("industrial_heat", {})
 	var inf: Dictionary = srv.info()
 	if str(h.get("state", "")) not in ["", "complete", "cancelled", "written_off"]:
-		return _wait(srv, name, purpose, 4, 4, w("往下看：%s", "LOOK DOWN: %s") % str(inf.title), w("机器自己在跑：送料、熔化、出钢浇铸，钢坯自己回仓库。", "It runs by itself: feed, melt, cast; the billets go back to the stores."))
+		var lk := _wait(srv, name, purpose, 4, 4, w("往下看：%s", "LOOK DOWN: %s") % str(inf.title), w("机器自己在跑：送料、熔化、出钢浇铸，钢坯自己回仓库。", "It runs by itself: feed, melt, cast; the billets go back to the stores."))
+		# 2026-11-10 (user: "这个引导是要我飞过去吗？我飞不过去啊"): a look — the ring on the furnace under the
+		# glass, not on the console the drone has just left; nothing to fly to
+		var pl = game.get("plant")
+		if LOOK_ON and pl != null:
+			lk.target = Vector2(float(pl.X) + 1.0, float(pl.F) + 5.0) * Geom.M
+			lk.name = w("电弧炉 · 看就行", "ARC FURNACE · JUST WATCH")   # 占位 (待用户定稿)
+			lk.look = true
+			# the camera looks down at it once (the furnace is off the screen from the console); a move ends it
+			if not bool(start.get("look_cam", false)):
+				start.look_cam = true
+				game.plan_focus = lk.target
+				game.plan_focus_t = 4.5
+		return lk
 	if str(h.get("id", "")) != str(start.get("heat", "")) and str(h.get("state", "")) == "complete":
 		return {"done": w("出钢完成：钢坯已入库", "TAPPED: billets in the warehouse")}
 	if not ProcessQueue.open_entries().is_empty():
@@ -275,6 +290,7 @@ func _heat_queue() -> Dictionary:
 		var s := _at(srv, path, name, purpose, 3, 4, w("按『排一炉』（或按 Enter）", "PRESS 'QUEUE A HEAT' (OR ENTER)"), "")
 		if not _panel(path) and not srv.near():
 			s.n = 1
+			s.fly = true
 			s.title = w("飞上观察廊，到最左边的炉体控制台", "UP ONTO THE GALLERY, TO THE FURNACE CONSOLE AT THE FAR LEFT")
 		elif not _panel(path):
 			s.n = 2
@@ -359,7 +375,7 @@ func _repair() -> Dictionary:
 		return _card(2, 2, w("施工队在修「%s」：还要约 %d 秒", "THE CREW IS ON %s: ~%d s") % [Works.name_of(wj), int(ceil(float(wj.get("left", 0.0))))], w("零件已经交给施工队了，等它修完就能用。", "The parts are with the crew; it works once they are done."))
 	# 86 号 Q9: a fault not seen yet — fly to it; close up it is logged and the step moves on
 	if target != "" and not Repair.found(target):
-		return {"n": 1, "of": 2, "target": RepairShow.spot(target), "name": Repair.name_of(target), "purpose": "", "button": "",
+		return {"n": 1, "of": 2, "target": RepairShow.spot(target), "name": Repair.name_of(target), "purpose": "", "button": "", "fly": true,
 			"title": w("飞去看看「%s」", "FLY OVER TO THE %s") % Repair.name_of(target), "text": w("跟着箭头，飞近就会记进报修。", "Follow the arrow: close up, it is logged.")}
 	var sg := Repair.suggestion() if target == "" else repair_info(target)
 	if target != "":
@@ -450,6 +466,7 @@ func _transit() -> Dictionary:
 		st.title = w("按 %s 叫接驳车", "PRESS %s TO CALL THE SHUTTLE") % Keys.label("use")
 		st.text = st.purpose
 		return st
+	st.fly = true
 	st.title = w("飞到%s", "FLY TO THE %s") % st.name
 	st.text = w("从船坞顶上的闸口出去，站台就在闸口正上方。", "Out through the gate above the berth: the stop is right over it.") if to == "salvage" else w("跟着屏幕边上的箭头。", "Follow the arrow at the screen's edge.")
 	return st
@@ -597,8 +614,32 @@ func _compute() -> Dictionary:
 	return {}
 
 
+# 2026-11-10 引导可达性: a "fly to" step shows the way that can really be flown (scripts/guide_way.gd), as the
+# port walk does — the HUD keeps its ring and its edge arrow
+const GuideWay = preload("res://scripts/guide_way.gd")
+var way = null
+var _way_host: Node2D
+
+
+func _way(dt: float) -> void:
+	var to: Vector2 = step.get("target", Vector2.INF) if task != "" else Vector2.INF
+	var fly: bool = LOOK_ON and task != "" and bool(step.get("fly", false)) and game != null and game.in_berth() 		and game.console_ui == null and game.drone != null and game.drone.visible and to.is_finite()
+	if not fly:
+		if way != null:
+			way.hide()
+		return
+	if way == null:
+		_way_host = Node2D.new()
+		_way_host.name = "GuideTaskWay"
+		game.add_child(_way_host)
+		way = GuideWay.new()
+		way.attach(_way_host)
+	way.update(game, game.drone.global_position, to, dt)
+
+
 func _process(dt: float) -> void:
 	note_t += dt
+	_way(dt)
 	if task == "" or game == null:
 		quiet = false
 		return

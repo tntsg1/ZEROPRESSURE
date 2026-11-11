@@ -632,6 +632,8 @@ static func draw(ci: CanvasItem, art: String, w: float, h: float, p, font: Font)
 	if not _has(art):
 		return false
 	var key := "%s|%d|%d|%s|%s|%d" % [art, roundi(w * 2.0), roundi(h * 2.0), p.name_key if p != null else "", p.tag if p != null else "", 1 if p != null and p.fragile >= 0.85 else 0]
+	if p != null and p.has_meta("liquid_live"):
+		key += "|L"
 	var rec = _cache.get(key)
 	if rec == null:
 		if _cache.size() >= CACHE_MAX:
@@ -1954,8 +1956,11 @@ static func water(ci: CanvasItem, r: Rect2, p, font: Font) -> void:
 	var nw := clampi(int(t.size.x / 6.0), 2, 80)
 	for k in nw + 1:
 		pts.append(Vector2(t.position.x + t.size.x * k / nw, lv + (1.0 if k % 2 == 0 else -1.0)))
-	P(ci, pts, 0.45)
-	F(ci, Rect2(t.position.x, lv, t.size.x, t.end.y - lv), 0.035)
+	# (its real contents drawn live by scripts/tank_fill_fx.gd: no painted level then)
+	var live: bool = p != null and p.has_meta("liquid_live")
+	if not live:
+		P(ci, pts, 0.45)
+		F(ci, Rect2(t.position.x, lv, t.size.x, t.end.y - lv), 0.035)
 	if minf(w, h) < SMALL:
 		return
 	# baffles
@@ -1975,7 +1980,8 @@ static func water(ci: CanvasItem, r: Rect2, p, font: Font) -> void:
 	L(ci, Vector2(t.end.x, t.position.y + t.size.y * 0.1), Vector2(gx, t.position.y + t.size.y * 0.1), 0.4)
 	L(ci, Vector2(t.end.x, t.end.y - t.size.y * 0.1), Vector2(gx, t.end.y - t.size.y * 0.1), 0.4)
 	R(ci, Rect2(gx - 1.5, t.position.y + t.size.y * 0.1, 3.0, t.size.y * 0.8), 0.45)
-	L(ci, Vector2(gx - 1.5, lv), Vector2(gx + 1.5, lv), 0.7, 1.4)
+	if not live:
+		L(ci, Vector2(gx - 1.5, lv), Vector2(gx + 1.5, lv), 0.7, 1.4)
 	# outlet and valve
 	var oy: float = t.end.y - t.size.y * 0.08
 	L(ci, Vector2(t.position.x, oy), Vector2(1, oy), 0.5)

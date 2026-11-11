@@ -150,6 +150,12 @@ static func buy_node(it: Array) -> Dictionary:
 		prerequisites.append(need)
 		var has: bool = d.get("upgrades", {}).has(need)
 		conds.append(_cond(Txt.t("rt_first"), _need_name(need), 1.0 if has else 0.0, has))
+	if Terminal.LATE.has(it[0]):
+		var late: Array = Terminal.LATE[it[0]]
+		var jobs := int(d.get("done", 0))
+		var rep := int(d.get("rep", 0))
+		conds.append(_cond(Txt.t("rt_jobs"), "%d / %d" % [jobs, int(late[0])], 1.0 if owned else float(jobs) / float(late[0]), owned or jobs >= int(late[0])))
+		conds.append(_cond(Txt.t("rt_rep"), "%d / %d" % [rep, int(late[1])], 1.0 if owned else float(rep) / float(late[1]), owned or rep >= int(late[1])))
 	return {"key": "buy:" + str(it[0]), "kind": "buy", "row": ROW_BUY, "id": it[0], "name": Txt.t(it[3]), "price": price,
 		"purchase_kind": it[1],
 		"conds": conds, "done": owned, "ready": not owned and why == "" and conds.all(func(c): return c.ok), "blocked_reason": why, "prerequisites": prerequisites,

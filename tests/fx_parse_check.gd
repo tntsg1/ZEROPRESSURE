@@ -10,7 +10,7 @@ func _initialize() -> void:
 	for f in d.get_files():
 		if f.ends_with("_fx.gd") or f == "mech_fx_kit.gd":
 			names.append(f)
-	for f in ["ice", "flywheel", "thermal", "softshell", "cryo", "furnace", "munitions", "media", "immersion", "sandwich", "drillstring", "coldchain", "tanknet", "dilution", "tether", "composite", "bio", "atmos", "spine", "liquids", "liquid_surface", "liquid_colors", "waterball", "liquid_rounds", "world", "game"]:
+	for f in ["ice", "flywheel", "thermal", "softshell", "cryo", "furnace", "munitions", "media", "immersion", "sandwich", "drillstring", "coldchain", "tanknet", "dilution", "tether", "composite", "bio", "atmos", "spine", "liquids", "liquid_surface", "liquid_colors", "waterball", "liquid_rounds", "boiloff", "art_equip", "world", "game"]:
 		names.append(f + ".gd")
 	for f in names:
 		var s = load("res://scripts/" + f)
