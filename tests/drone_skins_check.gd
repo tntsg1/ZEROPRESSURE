@@ -171,7 +171,7 @@ func _run() -> void:
 	term.set_tab(Terminal.DRONE_PAGE)
 	await _frames(30)
 	var its: Array = term.items()
-	check(its.size() == Terminal.DRONE_UPGRADES + 6 and its[Terminal.DRONE_UPGRADES][1] == "skin", "drone page: three upgrades then six airframes (%d)" % its.size())
+	check(its.size() == Terminal.DRONE_UPGRADES + 8 and its[Terminal.DRONE_UPGRADES][1] == "skin" and its[Terminal.DRONE_UPGRADES + 5][1] == "skin" and its[Terminal.DRONE_UPGRADES + 6][0] == "tunnel" and its[Terminal.DRONE_UPGRADES + 7][0] == "tunnel_body", "drone page: three upgrades, six airframes, then the tunnel upgrade and its body card (%d)" % its.size())
 	var base := Terminal.DRONE_UPGRADES
 	term.sel = base + Skins.ORDER.find("swift")
 	await _frames(20)
@@ -190,6 +190,58 @@ func _run() -> void:
 	check(Skins.current() == "arrowring" and is_equal_approx(float(Career.data.money), 22000.0), "terminal: Enter on the one flown changes nothing")
 	await _frames(20)
 	Cap.save(root, "res://tests/out/drone_skins_terminal_owned_zh.png")
+	# ---- 量子隧穿 on the drone page (2026-11-11): locked with its reasons, then bought
+	var ti: int = term._tunnel_i()
+	check(ti == base + 6 and term.items()[ti][0] == "tunnel" and term._item_rect(ti).has_area(), "the tunnel card: after the airframes, on the drawing")
+	term.sel = ti
+	await _frames(2)
+	var money0 := float(Career.data.money)
+	term.act()
+	check(not Career.data.upgrades.has("tunnel") and is_equal_approx(float(Career.data.money), money0), "tunnel without the 5 t grapple: refused, funds unchanged")
+	check(term._late_why("tunnel").contains("5"), "the reason names the 5 t grapple first (%s)" % term._late_why("tunnel"))
+	Career.data.upgrades["grapple5"] = 1
+	Career.data.done = 3
+	Career.data.rep = 4
+	check(term._late_why("tunnel").contains("20") and term._late_why("tunnel").contains("30"), "then the work done: 20 jobs, reputation 30 (%s)" % term._late_why("tunnel"))
+	await _frames(20)
+	Cap.save(root, "res://tests/out/drone_tunnel_locked_zh.png")
+	term.act()
+	check(not Career.data.upgrades.has("tunnel"), "tunnel short of jobs and reputation: refused")
+	Career.data.done = 20
+	Career.data.rep = 30
+	Career.data.money = 500000.0
+	check(term._late_why("tunnel") == "", "20 jobs, reputation 30, the 5 t grapple: unlocked")
+	term.act()
+	check(Career.data.upgrades.has("tunnel") and is_equal_approx(float(Career.data.money), 20000.0), "tunnel bought on the drone page for $480,000")
+	await _frames(40)
+	Cap.save(root, "res://tests/out/drone_tunnel_fitted_zh.png")
+	# 2026-11-11 量子隧穿·机体: its card under the tunnel's — locked until the tunnel is fitted, then 1 200 000
+	var bi: int = term._tbody_i()
+	check(term.items()[bi][0] == "tunnel_body" and term._item_rect(bi).has_area() and term._item_rect(bi).position.y > term._item_rect(ti).end.y, "the body card: under the tunnel's")
+	check(term._late_why("tunnel_body") == "", "the body tunnelling: unlocked with the tunnel fitted (%s)" % term._late_why("tunnel_body"))
+	Career.data.money = 1000000.0
+	term.sel = bi
+	await _frames(2)
+	term.act()
+	check(not Career.data.upgrades.has("tunnel_body"), "the body tunnelling short of funds: refused")
+	Career.data.money = 1250000.0
+	term.act()
+	check(Career.data.upgrades.has("tunnel_body") and is_equal_approx(float(Career.data.money), 50000.0), "the body tunnelling bought for $1,200,000")
+	await _frames(40)
+	Cap.save(root, "res://tests/out/drone_tunnel_body_fitted_zh.png")
+	term.sel = ti
+	Txt.zh = false
+	term.queue_redraw()
+	await _frames(50)
+	Cap.save(root, "res://tests/out/drone_tunnel_fitted_en.png")
+	Txt.zh = true
+	# the airframes are where they were: pick and fly one after the tunnel card
+	term.sel = base + Skins.ORDER.find("swift")
+	term.act()
+	check(Skins.current() == "swift" and term._shown_skin() == "swift", "after the tunnel: the airframe strip still picks and flies SWIFT")
+	term.sel = base + Skins.ORDER.find("arrowring")
+	term.act()
+	Career.data.money = 22000.0
 	if g.console_ui != null:
 		g.console_ui.close()
 	await _frames(8)

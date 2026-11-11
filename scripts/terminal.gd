@@ -19,13 +19,15 @@ const SHOP := [
 	["pump2", "upgrade", 22000.0, "up_pump", "up_pump_d"],
 	# 2026-11-10 量子隧穿效应: late, dear (LATE), after the 5 t grapple; not on the drone drawing (DRONE_UPGRADES)
 	["tunnel", "upgrade", 480000.0, "up_tunnel", "up_tunnel_d"],
+	# 2026-11-11 量子隧穿·机体: the same stage, dearer, after the grapple's tunnelling (Jev: 120 万)
+	["tunnel_body", "upgrade", 1200000.0, "up_tunnel_body", "up_tunnel_body_d"],
 	["arm", "facility", 65000.0, "fa_arm", "fa_arm_d"],
 	["repair", "item", 3000.0, "it_repair", "it_repair_d"],
 	["ring", "item", 9000.0, "it_ring", "it_ring_d"],
 	["spare", "item", 15000.0, "it_spare", "it_spare_d"],
 	["intel", "item", 6000.0, "it_intel", "it_intel_d"],
 ]
-const FITTED := 5
+const FITTED := 6
 const DRONE_UPGRADES := 3
 # now → after, per upgrade: [label key, now, after, now 0..1, after 0..1] ("sh_" values are Txt keys)
 const STATS := {
@@ -55,8 +57,8 @@ const BERTH := [
 ]
 # a facility that only makes sense with another one bought first
 # late upgrades: [completed jobs, reputation] before they can be bought
-const LATE := {"tunnel": [20, 30]}
-const REQUIRES := {"tunnel": "grapple5", "hauler2": "hauler", "berth120": "berth88", "berth200": "berth120", "berth620": "berth200"}
+const LATE := {"tunnel": [20, 30], "tunnel_body": [20, 30]}
+const REQUIRES := {"tunnel": "grapple5", "tunnel_body": "tunnel", "hauler2": "hauler", "berth120": "berth88", "berth200": "berth120", "berth620": "berth200"}
 # The terminal is one device (P.7 structure A, player 2026-10-18): a home screen
 # of apps; on site the same device, opened by its key or at the berth's
 # computer, with what can't be used there locked and the reason written on it.
@@ -188,6 +190,13 @@ var sfx: Sfx
 var _last_sel := -1
 var _boot_said := 0
 
+
+# 2026-11-10 A-暗1 炭黑 (user picked it from four proposals): the home's keys press in, an orange
+# lip slides to the chosen one, the header knob turns to it; the ground, header and foot keys of
+# the whole terminal take the same look (scripts/ui_kit/charcoal.gd)
+var lip_x := Motion.Spring.new(0.0, 520.0, 0.86)
+var knob_f := Motion.Spring.new(0.0, 260.0, 0.62)
+var _lip_on := false
 
 var _note_key := ""
 var _note_t := 0.0
@@ -335,6 +344,9 @@ func _ready() -> void:
 	exchange_button.visible = Career.data.get("market",false) and Onboarding.shown("market_ops")
 	exchange_button.add_theme_font_override("font",Fonts.get_font("Medium"))
 	exchange_button.add_theme_font_size_override("font_size",18)
+	var xk := Charcoal.split_key(exchange_button.text)
+	exchange_button.text = xk[0]
+	Charcoal.style_button(exchange_button, xk[1])
 	exchange_button.pressed.connect(open_exchange)
 	add_child(exchange_button)
 	# user 2026-10-26: a contract can be ended early here too, while its ship is being stripped
@@ -350,6 +362,7 @@ func _ready() -> void:
 	end_button.visible = overlay and game_ref != null and game_ref.can_end_early()
 	end_button.add_theme_font_override("font", Fonts.get_font("Medium"))
 	end_button.add_theme_font_size_override("font_size", 18)
+	Charcoal.style_button(end_button)
 	end_button.pressed.connect(_end_contract)
 	add_child(end_button)
 	# 108 号 Q12: the three remote jobs along the foot, each with its key; locked ones say why
@@ -371,8 +384,11 @@ func _ready() -> void:
 		rb.custom_minimum_size = Vector2(200, 52)
 		rb.add_theme_font_override("font", Fonts.get_font("Medium"))
 		rb.add_theme_font_size_override("font_size", 16)
-		rb.disabled = not RemoteOps.ok(kind)
-		rb.tooltip_text = RemoteOps.why(kind) if rb.disabled else Ops.w("远程办理，不用跑到现场", "Done from here: no need to go there")
+		var rk := Charcoal.split_key(rb.text)
+		rb.text = rk[0]
+		Charcoal.style_button(rb, rk[1])
+		rb.set_meta("kind", kind)
+		_remote_state(rb)
 		rb.mouse_filter = Control.MOUSE_FILTER_STOP
 		rb.pressed.connect(open_remote.bind(kind))
 		remote_box.add_child(rb)
@@ -516,8 +532,36 @@ func items() -> Array:
 		4: return _supply_items()
 		5: return [] # The growth desk uses native, clipped and focusable controls.
 		7: return _training_rows()
-		DRONE_PAGE: return SHOP.slice(0, DRONE_UPGRADES) + _skin_items()
+		DRONE_PAGE: return SHOP.slice(0, DRONE_UPGRADES) + _skin_items() + [_tunnel_item(), _tunnel_item("tunnel_body")]
 	return []
+
+
+# 2026-11-11 用户：“这个量子隧穿是在哪个升级里面，我都没看到” — the late upgrade gets its own card
+# on the drone page, after the airframes (its index: _tunnel_i())
+func _tunnel_item(id: String = "tunnel") -> Array:
+	for it in SHOP:
+		if it[0] == id:
+			return it
+	return []
+
+
+func _tunnel_i() -> int:
+	return DRONE_UPGRADES + Skins.ORDER.size()
+
+
+# 量子隧穿·机体: its card right under the tunnel's
+func _tbody_i() -> int:
+	return _tunnel_i() + 1
+
+
+# why a late upgrade can't be bought yet ("" when it can): the part it needs first, then the work done
+func _late_why(id: String) -> String:
+	var d := Career.data
+	if REQUIRES.has(id) and not d.get("upgrades", {}).has(REQUIRES[id]):
+		return Ops.w("需要先装上%s", "FIT THE %s FIRST") % Txt.t(_facility_name(REQUIRES[id]))
+	if LATE.has(id) and (int(d.get("done", 0)) < int(LATE[id][0]) or int(d.get("rep", 0)) < int(LATE[id][1])):
+		return Growth.text(["需要完成 %d 单、声望 %d（现在 %d 单、声望 %d）", "Requires %d completed jobs, %d reputation (now %d, %d)"]) % [int(LATE[id][0]), int(LATE[id][1]), int(d.get("done", 0)), int(d.get("rep", 0))]
+	return ""
 
 
 # 2026-11-10 外观款式: the airframes after the three tool upgrades on the drone page
@@ -574,10 +618,31 @@ func _locked(page: int) -> bool:
 	return overlay and not between and page != HOME and not page in ON_SITE
 
 # 108 号: a remote job from the terminal: the terminal folds away and its panel opens
+# 2026-11-10 (user: "电网调度和仓库怎么按不了"): a foot key is never dead — a locked one stays
+# clickable, looks locked (dim, its keycap greyed) and says why when pressed; the state is read
+# again while the terminal is open, so a job unlocked meanwhile opens at once
+func _remote_state(rb: Button) -> void:
+	var kind := str(rb.get_meta("kind", ""))
+	var locked := not RemoteOps.ok(kind)
+	if rb.disabled or not rb.has_meta("locked") or bool(rb.get_meta("locked")) != locked:
+		rb.disabled = false
+		rb.set_meta("locked", locked)
+		rb.add_theme_color_override("font_color", Charcoal.INK3 if locked else Charcoal.INK)
+		rb.add_theme_color_override("font_hover_color", Charcoal.INK2 if locked else Color(1, 1, 1))
+		rb.tooltip_text = RemoteOps.why(kind) if locked else Ops.w("远程办理，不用跑到现场", "Done from here: no need to go there")
+		rb.set_meta("bfx_note", rb.tooltip_text)
+		rb.queue_redraw()
+
+
+var _remote_t := 0.0
+
+
 func open_remote(kind: String) -> void:
 	if game_ref == null or not RemoteOps.ok(kind):
 		shake = 1.0
-		say(RemoteOps.why(kind))
+		say(RemoteOps.why(kind) if RemoteOps.why(kind) != "" else Ops.w("现在打不开", "NOT AVAILABLE NOW"))
+		if sfx != null:
+			sfx.play("deny")
 		return
 	var current_game = game_ref
 	var e := _back_entry()
@@ -749,6 +814,11 @@ func _process(dt: float) -> void:
 	switch_t += dt
 	_step_book()
 	_walk_pin()
+	_remote_t += dt
+	if _remote_t > 0.4 and remote_box != null:
+		_remote_t = 0.0
+		for rb in remote_box.get_children():
+			_remote_state(rb)
 	_step_focus(dt)
 	press_t = maxf(0.0, press_t - dt)
 	if press_t <= 0.0:
@@ -770,6 +840,9 @@ func _process(dt: float) -> void:
 		boot_t += dt
 	if boot_t < 0.85:
 		deal_t = 0.0
+	# the home's panels settle in ~0.6 s; with motion reduced they are simply there
+	if tab == HOME and not UiSkin.motion():
+		deal_t = maxf(deal_t, 10.0)
 	if milestone >= 0.0:
 		milestone += dt
 	_step_motion(dt)
@@ -935,6 +1008,9 @@ func _gui_input(ev: InputEvent) -> void:
 func _unhandled_input(ev: InputEvent) -> void:
 	if ev is InputEventKey and ev.pressed:
 		_goals_t = -1.0
+		# any key while the home's panels are still settling puts them in place (the key still acts)
+		if tab == HOME and deal_t < 0.9:
+			deal_t = 10.0
 	if ev is InputEventKey and ev.pressed and not ev.echo and ev.physical_keycode == KEY_F8 and Career.data.get("market",false):
 		open_exchange()
 		get_viewport().set_input_as_handled()
@@ -1235,6 +1311,17 @@ func _step_motion(dt: float) -> void:
 		money_flash = 1.0 if m > money_roll.target else -1.0
 	if absf(l - loan_roll.target) > 0.5:
 		loan_flash = -1.0 if l < loan_roll.target else 1.0
+	if tab == HOME and sel >= 0 and sel < APPS.size():
+		lip_x.target = _tile_rect(sel).position.x
+		knob_f.target = float(sel)
+		if not _lip_on or not UiSkin.motion():
+			lip_x.snap(lip_x.target)
+			knob_f.snap(knob_f.target)
+		_lip_on = true
+	else:
+		_lip_on = false
+	lip_x.step(dt)
+	knob_f.step(dt)
 	money_roll.set_to(m)
 	loan_roll.set_to(l)
 	money_roll.step(dt)
@@ -1624,6 +1711,9 @@ func buy(it: Array, n: int = 1) -> void:
 	if it[1] != "item" and d.upgrades.has(id):
 		_refuse(Txt.t("tm_owned"))
 		return
+	if tab == DRONE_PAGE and LATE.has(id) and _late_why(id) != "":
+		_refuse(_late_why(id))
+		return
 	if REQUIRES.has(id) and not d.upgrades.has(REQUIRES[id]):
 		_refuse(Txt.t("tm_needs") % Txt.t(_facility_name(REQUIRES[id])))
 		return
@@ -1709,6 +1799,9 @@ func _item_rect(i: int) -> Rect2:
 				return _callout(i)
 			return _facility_rect(i - FITTED)
 		DRONE_PAGE:
+			if i == _tunnel_i() or i == _tbody_i():
+				var sr := _schematic_rect()
+				return Rect2(sr.end.x - 294.0, sr.position.y + 150.0 + (76.0 if i == _tbody_i() else 0.0), 270.0, 66.0)
 			return _callout(i) if i < DRONE_UPGRADES else _skin_rect(i - DRONE_UPGRADES)
 		2:
 			return _finance_rect()
@@ -1797,7 +1890,8 @@ func _next_go_rect() -> Rect2:
 
 func _next_step_card(a: float) -> void:
 	_next_action = false
-	var k := Pal.ease_out(clampf((deal_t - 0.02) / 0.3, 0.0, 1.0)) * a
+	var raw := clampf((deal_t - 0.02) / 0.3, 0.0, 1.0)
+	var k := Pal.ease_out(raw) * a
 	if k <= 0.0:
 		return
 	var r := _next_rect()
@@ -1808,24 +1902,33 @@ func _next_step_card(a: float) -> void:
 		if qc != "":
 			_text(Ops.w("主线 · 第 %d 章 · %s（导览结束后继续）", "MAIN LINE · CHAPTER %d · %s (AFTER THE TOUR)") % [Mainline.index(qc), Mainline.name_of(qc)], r.position + Vector2(34, 34), 15, Pal.ink(0.42 * k), font_b)
 		return
-	r.position.y += (1.0 - k) * 20.0
-	Hmi.raised(self, r, k)
+	# 炭黑: a panel falling into place, a black tab with its lamp on the left
+	r.position.y += Charcoal.settle(raw)
+	r = Charcoal.panel(self, r, k)
+	var tab_w := 150.0
+	Charcoal.slab(self, Rect2(r.position, Vector2(tab_w, r.size.y)), Color(Charcoal.SCREEN, k))
+	draw_rect(Rect2(r.position + Vector2(tab_w - 12, 0), Vector2(12, r.size.y)), Color(Charcoal.SCREEN, k))
+	Charcoal.led(self, r.position + Vector2(28, r.size.y * 0.5), true, k, 5.0)
+	_text(Ops.w("下一步", "NEXT"), r.position + Vector2(48, r.size.y * 0.5 + 7), 20, Pal.ink(k), font_s)
+	var tx := tab_w + 32.0
 	var ch := Mainline.chapter()
 	var st := Mainline.waiting_step() if ch == "" else Mainline.step(ch)
 	if st.is_empty():
-		_text(Ops.w("眼下的事都做完了。", "Everything in hand is done."), r.position + Vector2(34, r.size.y * 0.5 + 10), 26, Pal.ink(0.9 * k), font_s)
+		_text(Ops.w("眼下的事都做完了。", "Everything in hand is done."), r.position + Vector2(tx, r.size.y * 0.5 + 10), 26, Pal.ink(0.9 * k), font_s)
 		return
-	_text(Ops.w("下一步", "NEXT"), r.position + Vector2(34, 42), 16, Color(UiSkin.ACCENT, 0.95 * k), font_b)
 	var head := str(st.get("title", "")) if ch == "" else Ops.w("第 %d 章 · %s", "CHAPTER %d · %s") % [Mainline.index(ch), Mainline.name_of(ch)]
-	_text(head, r.position + Vector2(110, 42), 16, Pal.ink(0.6 * k), font_b)
+	_text(head, r.position + Vector2(tx, 38), 15, Pal.ink(0.6 * k), font_b)
 	var words := str(st.get("text", ""))
-	_next_two = font_s.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x > r.size.x - 320
-	draw_multiline_string(font_s, r.position + Vector2(34, 86), words, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 320, 26, 2, Pal.ink(0.97 * k), TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_GRAPHEME_BOUND)
+	var ww := r.size.x - tx - 280.0
+	_next_two = font_s.get_string_size(words, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x > ww
+	draw_multiline_string(font_s, r.position + Vector2(tx, 80), words, HORIZONTAL_ALIGNMENT_LEFT, ww, 26, 2, Pal.ink(0.97 * k), TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_GRAPHEME_BOUND)
 	_next_action = str(st.get("go", "")) not in ["", "wait"]
 	if _next_action:
 		var g := _next_go_rect()
-		g.position.y += (1.0 - k) * 20.0
+		g.position.y += Charcoal.settle(raw)
 		Hmi.push(self, font_s, g, Ops.w("带我去", "TAKE ME"), true, 1.0 if hover_next else 0.0, k, t, 0.0, "", "")
+
+
 
 
 # ---------------------------------------------------------------- 131 号 追加: the port walk on the terminal
@@ -1967,6 +2070,10 @@ func _facility_name(id: String) -> String:
 	for b in BERTH:
 		if b[0] == id:
 			return b[3]
+	# an upgrade (the tunnel needs the 5 t grapple): its shop name, not its id
+	for it in SHOP:
+		if it[0] == id:
+			return it[3]
 	return id
 
 
@@ -2038,6 +2145,12 @@ func _anchor(i: int) -> Vector2:
 		0: return c + Vector2(0, -Drone.R * DK - 40)
 		1: return c + Vector2(-13.0 * DK, 13.0 * DK) * 0.72
 		2: return Vector2(r.position.x + r.size.x * 0.8, r.position.y + r.size.y * 0.5)
+	if i == _tunnel_i():
+		# the grapple's head at the drone's nose: what it holds is what tunnels
+		return c + Vector2(30.0, 0).rotated(-0.2) * DK
+	if i == _tbody_i():
+		# the drone's own hull: it is what tunnels
+		return c + Vector2(Drone.R * DK * 0.7, Drone.R * DK * 0.55)
 	return Vector2(r.position.x + r.size.x * 0.72, r.position.y + r.size.y * 0.3)
 
 
@@ -2091,6 +2204,21 @@ func _text(s: String, pos: Vector2, size_px: int, col: Color, f: Font = null, al
 	draw_string(fo, Vector2(x, pos.y), s, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px, col)
 
 
+# s cut to fit w px, with an ellipsis when it had to be cut
+func _fit(s: String, f: Font, size_px: int, w: float) -> String:
+	if w <= 0.0 or f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x <= w:
+		return s
+	var lo := 0
+	var hi := s.length()
+	while lo < hi:
+		var mid := (lo + hi + 1) / 2
+		if f.get_string_size(s.substr(0, mid) + "…", HORIZONTAL_ALIGNMENT_LEFT, -1, size_px).x <= w:
+			lo = mid
+		else:
+			hi = mid - 1
+	return s.substr(0, lo) + "…"
+
+
 func _wrap(s: String, pos: Vector2, w: float, size_px: int, col: Color, lines: int = 2) -> void:
 	draw_multiline_string(font, pos, s, HORIZONTAL_ALIGNMENT_LEFT, w, size_px, lines, col)
 
@@ -2101,7 +2229,7 @@ func _draw() -> void:
 	var s := size
 	var lv := clampf(leaving / 0.45, 0.0, 1.0) if leaving >= 0.0 else 0.0
 	# 50 号: the ground of the new look, its warm glow drifting and a light under the pointer
-	UiSkin.draw_ground(self, s, t, get_local_mouse_position())
+	Charcoal.ground(self, s)
 	# the self-test: the power line first, then each part as it comes up
 	Hmi.lamp_test = boot_t > 0.55 and boot_t < 0.95
 	if boot_t < 0.3:
@@ -2237,21 +2365,21 @@ func _step_focus(dt: float) -> void:
 
 
 func _focus_frame(a: float) -> void:
-	if not _has_focus() or _focus_tab != tab:
+	if not _has_focus() or _focus_tab != tab or tab == HOME:
 		return
 	var r := Rect2(focus[0].x, focus[1].x, focus[2].x, focus[3].x)
 	var k := Pal.ease_out(clampf((deal_t - 0.08) / 0.3, 0.0, 1.0)) * a
 	var dim := tab == HOME and _locked(APPS[clampi(sel, 0, APPS.size() - 1)][0])
-	# 50 号: a soft rounded ring in the accent, glowing a little
+	# 炭黑 (2026-11-10): no glow — a thin orange edge round the chosen item and the orange lip
+	# along its bottom, gliding from item to item
 	var ring := StyleBoxFlat.new()
 	ring.draw_center = false
-	ring.set_corner_radius_all(16)
-	ring.set_border_width_all(2)
+	ring.set_corner_radius_all(14)
+	ring.set_border_width_all(1)
 	ring.anti_aliasing = true
-	ring.border_color = Color(UiSkin.ACCENT.r, UiSkin.ACCENT.g, UiSkin.ACCENT.b, k * (0.5 if dim else 1.0))
-	ring.shadow_color = Color(UiSkin.ACCENT.r, UiSkin.ACCENT.g, UiSkin.ACCENT.b, 0.25 * k)
-	ring.shadow_size = 14
+	ring.border_color = Color(Charcoal.ACCENT, 0.75 * k * (0.5 if dim else 1.0))
 	draw_style_box(ring, r)
+	Charcoal.lip(self, Rect2(r.position.x + 22.0, r.end.y - 6.0, r.size.x - 44.0, 3.0), k * (0.5 if dim else 1.0))
 
 
 # the skill book is a control of its own: it slides with the pages
@@ -2295,7 +2423,7 @@ func _self_test(s: Vector2) -> void:
 		var n := int(clampf((boot_t - start) / 0.12, 0.0, 1.0) * lines[i].length())
 		if n <= 0:
 			continue
-		var col := Pal.tint(Pal.AIR, 0.9 * fade, 1.4) if i < lines.size() - 1 else Pal.tint(Pal.FLUID, fade, 1.8)
+		var col := Pal.tint(UiSkin.FIGURE, 0.9 * fade, 1.4) if i < lines.size() - 1 else Pal.tint(UiSkin.FIGURE, fade, 1.8)
 		_text(lines[i].substr(0, n), Vector2(60, y0 + i * 24), 16, col, font_b)
 
 
@@ -2303,7 +2431,7 @@ func _self_test(s: Vector2) -> void:
 # the console the terminal sits in: plate seams, a slow scan
 func _backdrop(s: Vector2, a: float) -> void:
 	# 50 号: the ground is UiSkin's now; only a faint rule under the header
-	draw_line(Vector2(40, 116), Vector2(s.x - 40, 116), Color(1, 1, 1, 0.06 * a), 1.0)
+	Charcoal.groove(self, 40, s.x - 40, 122, a)
 
 
 func _crumb(a: float) -> void:
@@ -2312,7 +2440,7 @@ func _crumb(a: float) -> void:
 		return
 	var pr := Rect2(40, 134, 540, 46)
 	var pin := _page_in()
-	Hmi.plate(self, font_s, pr, "", 20, ka)
+	draw_rect(Rect2(pr.position.x, pr.position.y + 12, 3, 22), Charcoal.accent(ka))
 	var tp := pr.position + Vector2(12, pr.size.y * 0.5 + 20 * 0.36)
 	if pin < 1.0:
 		draw_string(font_s, tp + Vector2(-switch_dir * 16.0 * _page_out(), 0), _where(prev_tab), HORIZONTAL_ALIGNMENT_LEFT, pr.size.x - 24, 20, Color(0.95, 0.96, 1.0, ka * (1.0 - _page_out())))
@@ -2323,12 +2451,10 @@ func _crumb(a: float) -> void:
 		hka = ka * (pin if tab != HOME else 1.0 - _page_out())
 	if tab != HOME or (pin < 1.0 and prev_tab != HOME and hka > 0.01):
 		var hr := _home_rect()
-		if tab_press == HOME and press_t > 0.0:
-			Hmi.sunk(self, hr, hka, Hmi.PANEL_HI)
-		else:
-			Hmi.raised(self, hr, hka, Hmi.PANEL_HI if hover_home else Hmi.PANEL)
-		_text(Txt.t("tm_home_btn"), hr.position + Vector2(18, 30), 18, Pal.ink(0.95 * hka), font_s)
-		_text("ESC", Vector2(hr.end.x - 14, hr.position.y + 30), 14, Pal.ink(0.5 * hka), font_b, 1)
+		var down := 1.0 if tab_press == HOME and press_t > 0.0 else 0.0
+		var hr2 := Charcoal.key(self, hr, hka, down, Charcoal.FACE_HI if hover_home else Charcoal.FACE, 8)
+		_text(Txt.t("tm_home_btn"), hr2.position + Vector2(18, 30), 18, Pal.ink(0.95 * hka), font_s)
+		Charcoal.keycap(self, font_s, Rect2(hr2.end.x - 58, hr2.position.y + 10, 46, 26), "ESC", hka, down)
 	if Onboarding.shown("rep") and tab != HOME:
 		_goal_strip(ka)
 
@@ -2381,7 +2507,7 @@ func _goal_strip(ka: float) -> void:
 		draw_string(font_b, Vector2(g0.position.x + 22, g0.position.y + 39), str(st.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, g0.size.x - 40, 12, Pal.heat(0.9 * ka, 1.2))
 	if gs.is_empty():
 		if off == 0:
-			_text(Txt.t("rt_all_done"), Vector2(r.position.x + 132, r.position.y + 29), 15, Pal.tint(Pal.FLUID, 0.9 * ka, 1.1), font_b)
+			_text(Txt.t("rt_all_done"), Vector2(r.position.x + 132, r.position.y + 29), 15, Pal.tint(UiSkin.FIGURE, 0.9 * ka, 1.1), font_b)
 		return
 	for i in mini(gs.size(), Route.MAX_PINS - off):
 		var n: Dictionary = gs[i]
@@ -2391,7 +2517,7 @@ func _goal_strip(ka: float) -> void:
 			draw_rect(g.grow(-3), Pal.ink(0.05 * ka))
 		var pin: bool = n.get("pinned", false)
 		var ready: bool = n.ready
-		var col := Pal.tint(Pal.FLUID, 0.9 * ka, 1.1) if ready else Pal.heat(ka, 1.3)
+		var col := Pal.tint(UiSkin.FIGURE, 0.9 * ka, 1.1) if ready else Pal.heat(ka, 1.3)
 		Hmi.lamp(self, Vector2(g.position.x + 8, g.get_center().y), col if pin else Pal.ink(0.4 * ka), pin, ka, 5.0)
 		var name: String = ("★ " if pin else "") + str(n.name).split(" · ")[0]
 		var miss := Route.missing(n)
@@ -2432,46 +2558,65 @@ func _open_goal(i: int) -> void:
 func _top(s: Vector2, a: float) -> void:
 	var d := Career.data
 	var ka := a * _bk(0.25, 0.6)
-	# 50 号: no header slab; the title and the figures stand on the ground
+	# 炭黑: the title engraved on the ground, the station and its lamp under it; the figures in
+	# black windows on the right; on the home the selector knob between them
 	var company: String = str(Career.data.get("company", ""))
-	var pr := Rect2(40, 22, 420, 72)
-	Hmi.plate(self, font_s, pr, Txt.t("tm_title"), 28, ka)
+	var title := Txt.t("tm_title")
+	_text(title, Vector2(40, 76), 42, Pal.ink(0.97 * ka), font_s)
 	var onsite := overlay and not between
+	Charcoal.led(self, Vector2(46, 104), true, ka, 4.5, Charcoal.ACCENT if onsite else Color(0.86, 0.88, 0.86))
+	var ol := Txt.t("tm_onsite_short") if onsite else Txt.t("tm_online")
+	_text(ol, Vector2(60, 110), 16, Charcoal.accent(0.95 * ka) if onsite else Pal.ink(0.85 * ka), font_b)
 	if s.x >= 1600.0:
-		_text((company if company != "" else "BERTH 07") + "  ·  CHARON-DISPATCH", Vector2(pr.end.x + 24, 50), 14, Pal.ink(0.6 * ka), font_b)
-		Hmi.lamp(self, Vector2(pr.end.x + 32, 76), Hmi.warn_col() if onsite else Hmi.ok_col(), true, ka, 6.0)
-		_text(Txt.t("tm_onsite_short") if onsite else Txt.t("tm_online"), Vector2(pr.end.x + 48, 82), 15, Pal.heat(0.95 * ka, 1.2) if onsite else Pal.ink(0.75 * ka), font_b)
-	var loan_c := Pal.heat(1.0, 1.3) if float(d.loan) > 0.0 else Pal.ink(0.98)
+		var ow := font_b.get_string_size(ol, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+		_text((company if company != "" else "BERTH 07") + "  ·  CHARON-DISPATCH", Vector2(60 + ow + 18, 110), 15, Pal.ink(0.55 * ka), font_b)
 	var mc := Pal.ink(0.98).lerp(Pal.ink(1.0, 1.5) if money_flash > 0.0 else Pal.heat(1.0, 1.4), absf(money_flash))
-	var cols := [[Txt.t("tm_money"), Pal.money(money_roll.shown), mc, Hmi.ok_col()]]
+	var loan_c := Pal.heat(1.0, 1.3) if float(d.loan) > 0.0 else Pal.ink(0.98)
+	var cols := [[Txt.t("tm_money"), Pal.money(money_roll.shown), mc]]
 	# a new career's header grows with it (28 号): the loan once it matters, the reputation once earned
 	if float(d.get("loan", 0.0)) > 0.0:
-		cols.append([Txt.t("tm_loan"), Pal.money(loan_roll.shown), loan_c.lerp(Pal.ink(1.0, 1.5), maxf(0.0, -loan_flash)), Hmi.warn_col() if float(d.loan) > 0.0 else Hmi.ok_col()])
-		cols.append([Txt.t("tm_due"), Pal.money(minf(Career.INSTALLMENT, float(d.loan)) + snappedf(float(d.loan) * Career.INTEREST, 1.0)), Pal.ink(0.9), Hmi.ok_col()])
-	if Onboarding.shown("rep"):
-		cols.append([Txt.t("tm_rep"), Txt.t("rep_" + Career.level()), Pal.ink(0.98), Hmi.ok_col()])
-	# narrow screens (1280): the four boxes give way so the title plate stays clear
-	var rw := clampf((s.x - pr.end.x - 64.0) / cols.size(), 170.0, 296.0)
+		cols.append([Txt.t("tm_loan"), Pal.money(loan_roll.shown), loan_c.lerp(Pal.ink(1.0, 1.5), maxf(0.0, -loan_flash))])
+		cols.append([Txt.t("tm_due"), Pal.money(minf(Career.INSTALLMENT, float(d.loan)) + snappedf(float(d.loan) * Career.INTEREST, 1.0)), Pal.ink(0.9)])
+	var rep_on := Onboarding.shown("rep")
+	if rep_on:
+		cols.append([Txt.t("tm_rep"), Txt.t("rep_" + Career.level()), Pal.ink(0.98)])
+	# narrow screens (1280): the windows give way so the title stays clear
+	var rw := clampf((s.x - 520.0 - 64.0) / cols.size(), 170.0, 400.0)
+	var x0 := s.x - 40 - cols.size() * rw + 16
 	for i in cols.size():
-		var r := Rect2(s.x - 40 - (cols.size() - i) * rw + 16, 18, rw - 16, 80)
+		var r := Rect2(x0 + i * rw, 16, rw - 16, 96)
 		var ck := a * _bk(0.35 + i * 0.08, 0.7 + i * 0.08)
 		if ck <= 0.0:
 			continue
-		Hmi.readout(self, font_s, font_b, r, cols[i][0], cols[i][1], cols[i][2], cols[i][3], ck)
-	# reputation: how far to the next level, as a gauge under the level box
-	var nx := Career.to_next() if Onboarding.shown("rep") else 0
-	if nx > 0:
-		var lo := 0
-		var hi := 0
-		for l in Career.LEVELS:
-			if int(d.rep) >= int(l[1]):
-				lo = int(l[1])
-			elif hi == 0:
-				hi = int(l[1])
-		var pk := clampf(float(int(d.rep) - lo) / maxf(1.0, hi - lo), 0.0, 1.0)
-		var gk := a * _bk(0.7, 1.0)
-		Hmi.gauge(self, Rect2(s.x - 40 - rw + 16, 101, rw - 16, 10), _smooth("rep", pk), Pal.heat(1.0, 1.3), gk, 12)
-		_text(Txt.t("tm_rep_next") % nx, Vector2(s.x - 40, 126), 12, Pal.ink(0.5 * gk), font, 1)
+		Charcoal.display(self, r, ck)
+		_text(cols[i][0], r.position + Vector2(16, 26), 14, Pal.ink(0.55 * ck), font_b)
+		var is_rep := rep_on and i == cols.size() - 1
+		if not is_rep:
+			var vs := 46 if rw >= 300.0 else 36
+			_text(cols[i][1], Vector2(r.end.x - 18, r.end.y - 20), vs, Color(cols[i][2], cols[i][2].a * ck), font_l, 1)
+			continue
+		_text(cols[i][1], Vector2(r.end.x - 18, r.position.y + 46), 30, Color(cols[i][2], cols[i][2].a * ck), font_b, 1)
+		# how far to the next level: one segment a point
+		var nx := Career.to_next()
+		if nx > 0:
+			var lo := 0
+			var hi := 0
+			for l in Career.LEVELS:
+				if int(d.rep) >= int(l[1]):
+					lo = int(l[1])
+				elif hi == 0:
+					hi = int(l[1])
+			var n := clampi(hi - lo, 1, 24)
+			var have := _smooth("rep", clampf(float(int(d.rep) - lo) / maxf(1.0, hi - lo), 0.0, 1.0)) * n
+			var gk := a * _bk(0.7, 1.0)
+			Charcoal.segments(self, Rect2(r.position.x + 16, r.end.y - 34, r.size.x - 32, 9), have, n, gk)
+			_text(Txt.t("tm_rep_next") % nx, Vector2(r.end.x - 16, r.end.y - 9), 12, Pal.ink(0.5 * gk), font, 1)
+	# the selector knob: on the home, turned to the chosen key
+	if tab == HOME and x0 > 900.0:
+		var kk := ka * _page_in()
+		Charcoal.knob(self, font_b, Vector2(x0 - 120.0, 70.0), knob_f.x, APPS.size(), kk, "", 0.72)
+
+
 
 
 # risk stars pop in one after another
@@ -2584,7 +2729,9 @@ func _market(s: Vector2, a: float) -> void:
 		Hmi.plate(self, font_s, pl, Txt.t(("sc_found" if o.get("found", false) else "sc_bought") if bought else ("sc_drift" if drift else "sc_" + scope)), 21, k)
 		Hmi.lamp(self, Vector2(pl.end.x - 22, pl.get_center().y), Hmi.warn_col() if scope != "full" else Hmi.ok_col(), true, k, 7.0)
 		_text(Txt.t("tm_contract_n") % o.id, Vector2(pl.end.x - 44, pl.get_center().y + 6), 13, Pal.ink(0.5 * k), font, 1)
-		_text("%s  ·  %s  ·  %d m" % [o.reg, (ty.name[0] if Txt.zh else ty.name[1]), int(ty.get("length", 0))], Vector2(x, y + 98), 18, Pal.ink(0.9 * row_k.call(0)), font_s)
+		# 炭黑 v2: the card's number, large (orange on the chosen one), the ship's name after it
+		_text("%02d" % (i + 1), Vector2(x - 2, y + 103), 32, Color(Charcoal.ACCENT, row_k.call(0)) if on else Pal.ink(0.55 * row_k.call(0)), font_l)
+		_text(_fit("%s  ·  %s  ·  %d m" % [o.reg, (ty.name[0] if Txt.zh else ty.name[1]), int(ty.get("length", 0))], font_s, 18, w - 52.0), Vector2(x + 52, y + 98), 18, Pal.ink(0.9 * row_k.call(0)), font_s)
 		# 2 · the screen: the number to choose by, and the ship
 		var sc := Rect2(r.position.x + 18, y + 116, r.size.x - 36, 248)
 		var hk2: float = row_k.call(1)
@@ -2592,7 +2739,7 @@ func _market(s: Vector2, a: float) -> void:
 		var net := _net(o)
 		var cnt := Pal.ease_out(clampf((deal_t - 0.2 - i * 0.07) / 0.7, 0.0, 1.0))
 		_text(Txt.t("tm_net"), sc.position + Vector2(16, 30), 15, Pal.ink(0.6 * hk2), font_b)
-		_text(Pal.money(snappedf(net * cnt, 100.0)), sc.position + Vector2(12, 104), 64, Pal.tint(Pal.AIR, hk2, 1.35) if net >= 0.0 else Pal.heat(0.95 * hk2, 1.3), font_l)
+		_text(Pal.money(snappedf(net * cnt, 100.0)), sc.position + Vector2(12, 104), 64, Pal.tint(UiSkin.FIGURE, hk2, 1.35) if net >= 0.0 else Pal.heat(0.95 * hk2, 1.3), font_l)
 		_text(Txt.t("tm_per_min") % Pal.money(snappedf(_rate(o), 10.0)), Vector2(sc.end.x - 16, sc.position.y + 32), 17, Pal.ink(0.9 * hk2), font_s, 1)
 		_text(Txt.t("tm_minutes") % int(float(o.time) / 60.0), Vector2(sc.end.x - 16, sc.position.y + 56), 14, Pal.ink(0.6 * hk2), font, 1)
 		_thumb(o, Rect2(sc.position.x + 16, sc.position.y + 126, sc.size.x - 32, 108), row_k.call(2))
@@ -2601,7 +2748,10 @@ func _market(s: Vector2, a: float) -> void:
 		_cx_link.erase(i)
 		if not mechs.is_empty():
 			var ln := Txt.t("cxu_brief") + "  " + Codex.title(mechs[0]) + ("  +%d" % (mechs.size() - 1) if mechs.size() > 1 else "")
-			var lw: float = minf(font_b.get_string_size(ln, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x, sc.size.x * 0.55)
+			# never over the big figure (English runs long): cut to what is left of the screen's width
+			var nw := font_l.get_string_size(Pal.money(snappedf(net, 100.0)), HORIZONTAL_ALIGNMENT_LEFT, -1, 64).x
+			var lw: float = minf(font_b.get_string_size(ln, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x, minf(sc.size.x * 0.55, sc.size.x - nw - 70.0))
+			ln = _fit(ln, font_b, 13, lw)
 			var lr := Rect2(sc.end.x - 22 - lw, sc.position.y + 70, lw + 12, 24)
 			_cx_link[i] = lr
 			var hot := lr.has_point(get_local_mouse_position())
@@ -2611,8 +2761,8 @@ func _market(s: Vector2, a: float) -> void:
 		# 3 · risk as a three-step gauge, and the best of the three said plainly
 		var rk2: float = row_k.call(3)
 		_text(Txt.t("tm_risk_h"), Vector2(x, y + 398), 15, Pal.ink(0.6 * rk2), font_b)
-		Hmi.gauge(self, Rect2(x + 56, y + 382, 186, 22), float(o.stars) / 3.0, Pal.heat(1.0, 1.3), rk2, 3)
-		_text(Txt.t("tm_risk_" + str(int(o.stars))), Vector2(x + 256, y + 399), 15, Pal.ink(0.8 * rk2), font_b)
+		Hmi.gauge(self, Rect2(x + 56, y + 382, 150, 22), float(o.stars) / 3.0, Pal.heat(1.0, 1.3), rk2, 3)
+		_text(Txt.t("tm_risk_" + str(int(o.stars))), Vector2(x + 218, y + 399), 15, Pal.ink(0.8 * rk2), font_b)
 		var badges: Array = []
 		if i == best_net and os.size() > 1:
 			badges.append(Txt.t("tm_best_net"))
@@ -2624,14 +2774,14 @@ func _market(s: Vector2, a: float) -> void:
 		for bdg in badges:
 			var bw := font_s.get_string_size(bdg, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 18.0
 			bx -= bw
-			draw_rect(Rect2(bx, y + 380, bw, 26), Pal.tint(Pal.FLUID, 0.9 * rk2, 1.0))
+			draw_rect(Rect2(bx, y + 380, bw, 26), Pal.tint(UiSkin.FIGURE, 0.9 * rk2, 1.0))
 			_text(bdg, Vector2(bx + 9, y + 398), 14, Color(0.03, 0.05, 0.03, rk2), font_s)
 			bx -= 8.0
 		# 4 · what the job is, on the ship
 		var task := Market.scope_text(o) if scope != "full" else Txt.t("tm_task_drift" if drift else "tm_task_full")
 		c_wrap(task, Vector2(x, y + 440), w, 15, Pal.ink(0.88 * row_k.call(3)))
 		if Market.goal_text(o) != "":
-			_text(Market.goal_text(o), Vector2(x, y + 486), 13, Pal.tint(Pal.FLUID, 0.9 * row_k.call(3), 1.1), font_b)
+			_text(Market.goal_text(o), Vector2(x, y + 486), 13, Pal.tint(UiSkin.FIGURE, 0.9 * row_k.call(3), 1.1), font_b)
 		# 5 · the money, line by line
 		var due := Career.due_for(o)
 		var lines := [
@@ -2639,8 +2789,10 @@ func _market(s: Vector2, a: float) -> void:
 			[Txt.t("tm_fee_bought" if bought else ("tm_fee_drift" if drift else "tm_fee")), ("−" + Pal.money(float(o.get("paid", 0.0)))) if bought else "−" + Pal.money(float(o.fee))],
 			[Txt.t("tm_due_c"), "−" + Pal.money(due)],
 		]
+		# 炭黑 v2: the money in a black window of its own
+		Charcoal.display(self, Rect2(x - 12, y + 494, w + 24, 80), row_k.call(4), 8)
 		for jx in lines.size():
-			var yy := y + 516 + jx * 28
+			var yy := y + 515 + jx * 25
 			var jk: float = row_k.call(4 + jx)
 			_text(lines[jx][0], Vector2(x, yy), 14, Pal.ink(0.6 * jk), font)
 			_text(lines[jx][1], Vector2(r.end.x - 28, yy), 16, Pal.ink(0.92 * jk), font_s, 1)
@@ -2651,17 +2803,20 @@ func _market(s: Vector2, a: float) -> void:
 		# 6 · the paperwork: why it was scrapped, what the logs say, what is declared
 		var pk: float = row_k.call(8)
 		draw_line(Vector2(x, y + 596), Vector2(x + w, y + 596), Color(0, 0, 0, 0.5 * pk), 2.0)
+		# the labels' column as wide as its longest label (the English ones ran under the text)
+		var lab_w := maxf(96.0, maxf(font.get_string_size(Txt.t("tm_origin" if drift else "tm_reason"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x, font.get_string_size(Txt.t("tm_logs"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x) + 14.0)
 		_text(Txt.t("tm_origin" if drift else "tm_reason"), Vector2(x, y + 620), 13, Pal.ink(0.55 * pk), font)
-		_text((Txt.t("tm_found_v" if o.get("found", false) else "tm_bought_v") % Pal.money(float(o.get("paid", 0.0)))) if bought else (Txt.t("tm_drift_v") % int(o.get("drift_years", 0)) if drift else Copy.slot(o.reason)), Vector2(x + 96, y + 620), 14, Pal.ink(0.8 * pk), font)
+		_text(_fit((Txt.t("tm_found_v" if o.get("found", false) else "tm_bought_v") % Pal.money(float(o.get("paid", 0.0)))) if bought else (Txt.t("tm_drift_v") % int(o.get("drift_years", 0)) if drift else Copy.slot(o.reason)), font, 14, w - lab_w), Vector2(x + lab_w, y + 620), 14, Pal.ink(0.8 * pk), font)
 		_text(Txt.t("tm_logs"), Vector2(x, y + 646), 13, Pal.ink(0.55 * pk), font)
 		var ly := y + 646.0
+		# 2026-11-10: every line kept inside the card (long logs ran into the next card)
 		for li in mini(2, o.logs.size()):
-			_text("› " + Copy.slot(o.logs[li]), Vector2(x + 96, ly), 14, Pal.tint(Pal.AIR, 0.85 * pk, 1.0), font)
-			ly += 22.0
+			_text(_fit("› " + Copy.slot(o.logs[li]), font, 14, w - lab_w), Vector2(x + lab_w, ly), 14, Pal.tint(UiSkin.FIGURE, 0.85 * pk, 1.0), font)
+			ly += 21.0
 		var parts: Array = []
 		for cg in o.get("cargo", []):
 			parts.append("%s %s" % [cg[0], Txt.cargo(cg[1])])
-		_text(Txt.t("tm_cargo") + "  " + ("  ·  ".join(parts) if not parts.is_empty() else Txt.t("tm_no_cargo")), Vector2(x, ly + 14), 13, Pal.ink(0.7 * pk), font)
+		_text(_fit(Txt.t("tm_cargo") + "  " + ("  ·  ".join(parts) if not parts.is_empty() else Txt.t("tm_no_cargo")), font, 13, w), Vector2(x, ly + 10), 13, Pal.ink(0.7 * pk), font)
 
 		# a survey report bought for this offer: typed in behind a scan line, on its own screen
 		if o.has("intel"):
@@ -2669,12 +2824,13 @@ func _market(s: Vector2, a: float) -> void:
 			var shown := intel_text(o).substr(0, int(it_t * 40.0))
 			var ir := Rect2(r.position.x + 18, r.end.y - 70, r.size.x - 36, 52)
 			Hmi.screen(self, ir, k)
-			_text(Txt.t("tm_intel"), ir.position + Vector2(12, 20), 13, Pal.tint(Pal.AIR, 0.85 * k, 1.0), font)
-			_text(shown, ir.position + Vector2(12, 42), 14, Pal.tint(Pal.AIR, 0.95 * k, 1.2), font)
+			_text(Txt.t("tm_intel"), ir.position + Vector2(12, 20), 13, Pal.tint(UiSkin.FIGURE, 0.85 * k, 1.0), font)
+			_text(shown, ir.position + Vector2(12, 42), 14, Pal.tint(UiSkin.FIGURE, 0.95 * k, 1.2), font)
 			if it_t < 1.0:
-				draw_rect(Rect2(ir.position.x + ir.size.x * it_t, ir.position.y, 2, ir.size.y), Pal.tint(Pal.AIR, (1.0 - it_t) * k, 2.0))
+				draw_rect(Rect2(ir.position.x + ir.size.x * it_t, ir.position.y, 2, ir.size.y), Pal.tint(UiSkin.FIGURE, (1.0 - it_t) * k, 2.0))
 		else:
-			_text(Txt.t("tm_logs_note"), Vector2(x, r.end.y - 18), 13, Pal.ink(0.45 * pk), font)
+			# the caveat sits right of the paperwork's rule, clear of the cargo line
+			_text(_fit(Txt.t("tm_logs_note"), font, 12, w * 0.6), Vector2(x + w, y + 588), 12, Pal.ink(0.45 * pk), font, 1)
 
 
 
@@ -2740,8 +2896,8 @@ func _thumb(o: Dictionary, r: Rect2, a: float) -> void:
 	for m in th.marks:
 		var p: Vector2 = P.call(Vector2(m[0], m[1]))
 		var hot: bool = m[3]
-		draw_rect(Rect2(p - Vector2(5, 5), Vector2(10, 10)), Pal.heat(0.9 * a, 1.2) if hot else Pal.tint(Pal.AIR, 0.85 * a, 1.0), false, 1.4)
-		_text(m[2], p + Vector2(-14, -10), 12, Pal.heat(0.85 * a, 1.1) if hot else Pal.tint(Pal.AIR, 0.75 * a, 1.0), font)
+		draw_rect(Rect2(p - Vector2(5, 5), Vector2(10, 10)), Pal.heat(0.9 * a, 1.2) if hot else Pal.tint(UiSkin.FIGURE, 0.85 * a, 1.0), false, 1.4)
+		_text(m[2], p + Vector2(-14, -10), 12, Pal.heat(0.85 * a, 1.1) if hot else Pal.tint(UiSkin.FIGURE, 0.75 * a, 1.0), font)
 
 
 func _cy(pd: Dictionary) -> float:
@@ -2765,6 +2921,8 @@ func _shop(_s: Vector2, a: float) -> void:
 		_callout_box(i, ka)
 	for i in Skins.ORDER.size():
 		_skin_tile(DRONE_UPGRADES + i, ka)
+	_tunnel_box(_tunnel_i(), ka)
+	_tunnel_box(_tbody_i(), ka, "tunnel_body")
 	# how to read the lamps
 	var ly := sr.position.y + 30
 	var keys := [[Hmi.ok_col(), Txt.t("tm_lamp_have")], [Hmi.can_col(), Txt.t("tm_lamp_can")], [Hmi.warn_col(), Txt.t("tm_lamp_short")]]
@@ -2787,28 +2945,28 @@ func _schematic(sr: Rect2, a: float) -> void:
 	var by := sr.position.y + sr.size.y * 0.24
 	var fy := sr.end.y - 40.0
 	var tx := sr.end.x - 40.0
-	draw_line(Vector2(bx0, fy), Vector2(sr.end.x - 16, fy), Pal.tint(Pal.AIR, 0.5 * a), 1.6)
-	draw_line(Vector2(tx, fy), Vector2(tx, by - 20), Pal.tint(Pal.AIR, 0.5 * a), 1.6)
-	draw_line(Vector2(tx - 12, fy), Vector2(tx - 12, by - 20), Pal.tint(Pal.AIR, 0.3 * a), 1.0)
-	draw_line(Vector2(bx0, by), Vector2(tx, by), Pal.tint(Pal.AIR, 0.5 * a), 1.6)
-	draw_line(Vector2(bx0, by - 12), Vector2(tx, by - 12), Pal.tint(Pal.AIR, 0.3 * a), 1.0)
+	draw_line(Vector2(bx0, fy), Vector2(sr.end.x - 16, fy), Pal.tint(UiSkin.FIGURE, 0.5 * a), 1.6)
+	draw_line(Vector2(tx, fy), Vector2(tx, by - 20), Pal.tint(UiSkin.FIGURE, 0.5 * a), 1.6)
+	draw_line(Vector2(tx - 12, fy), Vector2(tx - 12, by - 20), Pal.tint(UiSkin.FIGURE, 0.3 * a), 1.0)
+	draw_line(Vector2(bx0, by), Vector2(tx, by), Pal.tint(UiSkin.FIGURE, 0.5 * a), 1.6)
+	draw_line(Vector2(bx0, by - 12), Vector2(tx, by - 12), Pal.tint(UiSkin.FIGURE, 0.3 * a), 1.0)
 	var zx := bx0
 	while zx < tx - 12:
-		draw_line(Vector2(zx, by), Vector2(zx + 12, by - 12), Pal.tint(Pal.AIR, 0.22 * a), 1.0)
+		draw_line(Vector2(zx, by), Vector2(zx + 12, by - 12), Pal.tint(UiSkin.FIGURE, 0.22 * a), 1.0)
 		zx += 24.0
-	_text("BERTH 07", Vector2(bx0, by - 22), 14, Pal.tint(Pal.AIR, 0.7 * a), font_b)
+	_text("BERTH 07", Vector2(bx0, by - 22), 14, Pal.tint(UiSkin.FIGURE, 0.7 * a), font_b)
 	# the hose mast from the floor
 	var pa := _anchor(2)
-	draw_line(Vector2(pa.x, fy), Vector2(pa.x, pa.y + 14), Pal.tint(Pal.AIR, 0.5 * a), 1.6)
-	draw_rect(Rect2(pa + Vector2(-16, -10), Vector2(30, 26)), Pal.tint(Pal.AIR, 0.6 * a), false, 1.4)
+	draw_line(Vector2(pa.x, fy), Vector2(pa.x, pa.y + 14), Pal.tint(UiSkin.FIGURE, 0.5 * a), 1.6)
+	draw_rect(Rect2(pa + Vector2(-16, -10), Vector2(30, 26)), Pal.tint(UiSkin.FIGURE, 0.6 * a), false, 1.4)
 	# the drone: the airframe as it flies, drawn four times over in blueprint blue
 	var xf := Transform2D(0.0, Vector2(DK, DK), 0.0, c)
 	draw_set_transform_matrix(xf)
-	DArt.tint = Color(Pal.AIR.r * 1.1 * a, Pal.AIR.g * 1.1 * a, Pal.AIR.b * 1.1 * a)
+	DArt.tint = Color(UiSkin.FIGURE.r * 1.1 * a, UiSkin.FIGURE.g * 1.1 * a, UiSkin.FIGURE.b * 1.1 * a)
 	Skins.draw(self, _shown_skin(), {"heading": -0.2, "tool": 1, "open": 1.0, "t": t, "thrust": Vector2.ZERO, "dash": false, "design": "arrowring", "base_xf": xf})
 	DArt.tint = Color(1, 1, 1)
 	draw_set_transform_matrix(Transform2D.IDENTITY)
-	_text("R-02", c + Vector2(-22, R + 40), 18, Pal.tint(Pal.AIR, 0.85 * a, 1.2), font_s)
+	_text("R-02", c + Vector2(-22, R + 40), 18, Pal.tint(UiSkin.FIGURE, 0.85 * a, 1.2), font_s)
 	# The three tool upgrades on the drone page.
 	for i in DRONE_UPGRADES:
 		var id: String = SHOP[i][0]
@@ -2829,10 +2987,21 @@ func _schematic(sr: Rect2, a: float) -> void:
 		if i == sel:
 			var p := _anchor(i)
 			draw_arc(p, 22.0 + 3.0 * sin(t * 4.0), 0.0, TAU, 32, Pal.heat(0.75 * a, 1.3), 1.6, true)
+	# 量子隧穿: a phase ring round the grapple's head — dashed until fitted, then turning and lit
+	var tp := _anchor(_tunnel_i())
+	var t_have: bool = d.upgrades.has("tunnel")
+	var tcol := Pal.tint(UiSkin.FIGURE, (0.95 if t_have else 0.4) * a, 1.3 if t_have else 1.0)
+	for k2 in 12:
+		var a0 := TAU * k2 / 12.0 + (t * 0.8 if t_have else 0.0)
+		draw_arc(tp, 30.0, a0, a0 + TAU / 12.0 * (0.8 if t_have else 0.45), 6, tcol, 1.6 if t_have else 1.1, true)
+	if t_have:
+		draw_arc(tp, 30.0 + 5.0 * fposmod(t * 0.7, 1.0), 0.0, TAU, 40, Pal.tint(UiSkin.FIGURE, 0.35 * a * (1.0 - fposmod(t * 0.7, 1.0)), 1.3), 1.0, true)
+	if sel == _tunnel_i():
+		draw_arc(tp, 38.0 + 3.0 * sin(t * 4.0), 0.0, TAU, 32, Pal.heat(0.75 * a, 1.3), 1.6, true)
 
 
 func _part(i: int, have: bool, a: float, off: Vector2) -> void:
-	var col := Pal.tint(Pal.AIR, 0.95 * a, 1.3) if have else Pal.tint(Pal.AIR, 0.4 * a)
+	var col := Pal.tint(UiSkin.FIGURE, 0.95 * a, 1.3) if have else Pal.tint(UiSkin.FIGURE, 0.4 * a)
 	var w := 2.0 if have else 1.2
 	var c := _drone_c()
 	match i:
@@ -2841,7 +3010,7 @@ func _part(i: int, have: bool, a: float, off: Vector2) -> void:
 			var top := c + Vector2(0, -Drone.R * DK) + off
 			_line(top, top + Vector2(0, -28), col, w, have)
 			_arc(top + Vector2(0, -32), 20.0, PI * 1.1, PI * 1.9, col, w, have)
-			draw_circle(top + Vector2(0, -44), 5.0, Pal.tint(Pal.AIR, (0.9 if have else 0.3) * a, 1.3))
+			draw_circle(top + Vector2(0, -44), 5.0, Pal.tint(UiSkin.FIGURE, (0.9 if have else 0.3) * a, 1.3))
 		1:
 			# the tractor emitter: a heavy ring round the lens and two coil blocks
 			var cc := c + off
@@ -2904,13 +3073,13 @@ func _callout_box(i: int, a: float) -> void:
 	r.position.x += (1.0 - k) * (-30.0 if r.position.x < size.x * 0.3 else 30.0)
 	var p := _anchor(i)
 	var edge := Vector2(r.end.x if p.x > r.end.x else r.position.x, r.get_center().y)
-	draw_line(edge, p, Pal.tint(Pal.AIR, (0.35 + 0.45 * maxf(hk, sk)) * k), 1.2, true)
-	draw_circle(p, 4.0, Pal.heat(k, 1.3) if sk > 0.5 else Pal.tint(Pal.AIR, 0.9 * k, 1.3))
+	draw_line(edge, p, Pal.tint(UiSkin.FIGURE, (0.35 + 0.45 * maxf(hk, sk)) * k), 1.2, true)
+	draw_circle(p, 4.0, Pal.heat(k, 1.3) if sk > 0.5 else Pal.tint(UiSkin.FIGURE, 0.9 * k, 1.3))
 	Hmi.raised(self, r, k, Hmi.PANEL_LO.lerp(Hmi.PANEL_HI, maxf(hk * 0.6, sk)))
 	Hmi.lamp(self, r.position + Vector2(22, r.size.y * 0.5), Hmi.ok_col() if have else (Hmi.warn_col() if short else Hmi.can_col()), true, k)
 	_text(Txt.t(it[3]), r.position + Vector2(42, 28), 17, Pal.ink(0.96 * k), font_s)
 	if have:
-		_text(Txt.t("tm_installed"), r.position + Vector2(42, 54), 16, Pal.tint(Pal.FLUID, 0.95 * k, 1.1), font_s)
+		_text(Txt.t("tm_installed"), r.position + Vector2(42, 54), 16, Pal.tint(UiSkin.FIGURE, 0.95 * k, 1.1), font_s)
 	else:
 		_text(Pal.money(it[2]), r.position + Vector2(42, 54), 16, Pal.ink((0.9 if not short else 0.55) * k), font_s)
 	if short:
@@ -2931,7 +3100,7 @@ func _fac_cell(i: int, it: Array, a: float) -> void:
 	Hmi.raised(self, r, k, Hmi.PANEL_LO.lerp(Hmi.PANEL_HI, maxf(hk * 0.6, sk)))
 	Hmi.lamp(self, r.position + Vector2(16, 20), Hmi.ok_col() if have else (Hmi.warn_col() if locked or short else Hmi.can_col()), true, k, 5.0)
 	_text(Txt.t(it[3]), r.position + Vector2(30, 26), 14, Pal.ink(0.95 * k), font_s)
-	_text(Txt.t("tm_installed") if have else Pal.money(it[2]), r.position + Vector2(30, r.size.y - 12), 13, Pal.tint(Pal.FLUID, 0.95 * k, 1.1) if have else Pal.ink((0.85 if not short and not locked else 0.45) * k), font_b)
+	_text(Txt.t("tm_installed") if have else Pal.money(it[2]), r.position + Vector2(30, r.size.y - 12), 13, Pal.tint(UiSkin.FIGURE, 0.95 * k, 1.1) if have else Pal.ink((0.85 if not short and not locked else 0.45) * k), font_b)
 
 
 # a consumable: a tile with its mark, its stock window, the price
@@ -2951,12 +3120,12 @@ func _cell(i: int, a: float) -> void:
 	draw_set_transform(Vector2.ZERO)
 	var sw := Rect2(r.end.x - 110, sc.end.y + 16, 92, 60)
 	Hmi.screen(self, sw, k)
-	_text("×%d" % n, sw.get_center() + Vector2(0, 13), 34, Pal.tint(Pal.AIR, 0.95 * k, 1.4) if n > 0 else Pal.ink(0.35 * k), font_s, 0)
+	_text("×%d" % n, sw.get_center() + Vector2(0, 13), 34, Pal.tint(UiSkin.FIGURE, 0.95 * k, 1.4) if n > 0 else Pal.ink(0.35 * k), font_s, 0)
 	_text(Txt.t(it[3]), Vector2(r.position.x + 22, sc.end.y + 46), 24, Pal.ink(0.96 * k), font_s)
 	var afford := float(Career.data.money) >= float(it[2])
 	_text(Pal.money(it[2]), Vector2(r.position.x + 22, sc.end.y + 78), 18, Pal.ink((0.85 if afford else 0.4) * k), font_b)
 	var how: String = Txt.t("tm_use_auto") if it[0] == "spare" else (Txt.t("tm_use_intel_at") if it[0] == "intel" else Txt.t("tm_use") % USE_KEY[it[0]])
-	_text(how, Vector2(r.position.x + 22, r.end.y - 18), 14, Pal.tint(Pal.AIR, 0.85 * k, 1.1), font_b)
+	_text(how, Vector2(r.position.x + 22, r.end.y - 18), 14, Pal.tint(UiSkin.FIGURE, 0.85 * k, 1.1), font_b)
 	if sweep.has(i):
 		_sweep(r, sweep[i])
 
@@ -2983,7 +3152,7 @@ func _icon(id: String, p: Vector2, a: float) -> void:
 		"intel":
 			draw_rect(Rect2(p + Vector2(-13, -18), Vector2(26, 36)), col, false, 1.6)
 			for k in 4:
-				draw_line(p + Vector2(-8, -10 + k * 7), p + Vector2(8 - (k % 2) * 6, -10 + k * 7), Pal.tint(Pal.AIR, 0.9 * a, 1.1), 1.4)
+				draw_line(p + Vector2(-8, -10 + k * 7), p + Vector2(8 - (k % 2) * 6, -10 + k * 7), Pal.tint(UiSkin.FIGURE, 0.9 * a, 1.1), 1.4)
 
 
 func _sweep(r: Rect2, sw: float) -> void:
@@ -2991,6 +3160,43 @@ func _sweep(r: Rect2, sw: float) -> void:
 	var fade := 1.0 - clampf((sw - 0.3) / 0.5, 0.0, 1.0)
 	draw_rect(Rect2(r.position.x, r.position.y, sx - r.position.x, r.size.y), Color(1, 1, 1, 0.05 * fade))
 	draw_rect(Rect2(sx - 2, r.position.y, 2, r.size.y), Pal.heat(fade, 2.0))
+
+
+# the late tunnel upgrade's card: lamp, name, a "late upgrade" tag, then installed (N toggles it),
+# why it is locked, or its price
+func _tunnel_box(i: int, a: float, id: String = "tunnel") -> void:
+	var it := _tunnel_item(id)
+	if it.is_empty():
+		return
+	var r := _item_rect(i)
+	var hk: float = hover_k[i].x if i < hover_k.size() else 0.0
+	var sk: float = sel_k[i].x if i < sel_k.size() else 0.0
+	var d := Career.data
+	var have: bool = d.upgrades.has(it[0])
+	var why := "" if have else _late_why(str(it[0]))
+	var short: bool = not have and why == "" and float(d.money) < float(it[2])
+	var k := Pal.ease_out(clampf((deal_t - (0.25 if id == "tunnel" else 0.31)) / 0.3, 0.0, 1.0)) * a
+	r.position.x += (1.0 - k) * 30.0
+	var p := _anchor(i)
+	draw_line(Vector2(r.position.x, r.get_center().y), p, Pal.tint(UiSkin.FIGURE, (0.35 + 0.45 * maxf(hk, sk)) * k), 1.2, true)
+	draw_circle(p, 4.0, Pal.heat(k, 1.3) if sk > 0.5 else Pal.tint(UiSkin.FIGURE, 0.9 * k, 1.3))
+	Hmi.raised(self, r, k, Hmi.PANEL_LO.lerp(Hmi.PANEL_HI, maxf(hk * 0.6, sk)))
+	Hmi.lamp(self, r.position + Vector2(22, r.size.y * 0.5), Hmi.ok_col() if have else (Hmi.warn_col() if why != "" or short else Hmi.can_col()), true, k)
+	_text(Txt.t(it[3]), r.position + Vector2(42, 28), 17, Pal.ink(0.96 * k), font_s)
+	_text(Ops.w("后期升级", "LATE"), Vector2(r.end.x - 10, r.position.y + 13), 10, Pal.heat(0.85 * k, 1.1), font_b, 1)
+	if have:
+		_text(Ops.w("已安装 · 按 %s 开关", "FITTED · %s ON/OFF") % _tunnel_key(id), r.position + Vector2(42, 54), 15, Pal.tint(Pal.FLUID, 0.95 * k, 1.1), font_s)
+	elif why != "":
+		_text(Pal.money(it[2]) + Ops.w(" · 未解锁", " · LOCKED"), r.position + Vector2(42, 54), 15, Pal.ink(0.5 * k), font_s)
+	else:
+		_text(Pal.money(it[2]), r.position + Vector2(42, 54), 16, Pal.ink((0.9 if not short else 0.55) * k), font_s)
+		if short:
+			_text(Txt.t("tm_short_n") % Pal.money(float(it[2]) - float(d.money)), Vector2(r.end.x - 12, r.position.y + 54), 13, Pal.heat(0.9 * k, 1.1), font_b, 1)
+
+
+# the key that switches it: N for the grapple's, U for the drone's own (or its button on the key strip)
+func _tunnel_key(id: String) -> String:
+	return Keys.label(id)
 
 
 # an airframe in the strip: the craft itself, its name, in use / owned / the price
@@ -3016,10 +3222,10 @@ func _skin_tile(i: int, a: float) -> void:
 	draw_set_transform_matrix(Transform2D.IDENTITY)
 	_text(Skins.name_of(id), Vector2(c.x, r.end.y - 22), 13, Pal.ink(0.95 * k), font_s, 0)
 	var st := Ops.w("使用中", "IN USE") if flown else (Ops.w("已拥有", "OWNED") if have else Pal.money(Skins.price(id)))
-	var sc := Pal.tint(Pal.FLUID, 0.95 * k, 1.1) if flown else (Pal.ink(0.7 * k) if have else Pal.ink((0.9 if not short else 0.45) * k))
+	var sc := Pal.tint(UiSkin.FIGURE, 0.95 * k, 1.1) if flown else (Pal.ink(0.7 * k) if have else Pal.ink((0.9 if not short else 0.45) * k))
 	_text(st, Vector2(c.x, r.end.y - 7), 12, sc, font_b, 0)
 	if flown:
-		draw_rect(r.grow(2.0), Pal.tint(Pal.FLUID, 0.5 * k, 1.1), false, 1.2)
+		draw_rect(r.grow(2.0), Pal.tint(UiSkin.FIGURE, 0.5 * k, 1.1), false, 1.2)
 
 
 # the chosen airframe on the right: three moving previews (flight, braking, grabbing), what it is,
@@ -3031,7 +3237,7 @@ func _skin_detail(id: String, ka: float) -> void:
 	var x := r.position.x + 32
 	var w := r.size.x - 64
 	var pl := Rect2(r.position.x + 18, r.position.y + 18, r.size.x - 36, 44)
-	Hmi.plate(self, font_s, pl, Ops.w("机体外观", "AIRFRAME"), 18, ka, Pal.tint(Pal.AIR, 0.95, 1.2))
+	Hmi.plate(self, font_s, pl, Ops.w("机体外观", "AIRFRAME"), 18, ka, Pal.tint(UiSkin.FIGURE, 0.95, 1.2))
 	var have := Skins.owns(id)
 	var flown := Skins.current() == id
 	var cost := Skins.price(id)
@@ -3044,7 +3250,7 @@ func _skin_detail(id: String, ka: float) -> void:
 	_text(Ops.w("外观不同，数值和手感完全相同", "LOOKS ONLY: SAME NUMBERS, SAME HANDLING"), Vector2(x, sc.end.y + 26), 14, Pal.ink(0.55 * ka), font)
 	if flown:
 		Hmi.lamp(self, Vector2(x + 10, r.end.y - 136), Hmi.ok_col(), true, ka, 9.0)
-		_text(Ops.w("使用中", "IN USE"), Vector2(x + 30, r.end.y - 128), 22, Pal.tint(Pal.FLUID, 0.95 * ka, 1.1), font_s)
+		_text(Ops.w("使用中", "IN USE"), Vector2(x + 30, r.end.y - 128), 22, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.1), font_s)
 		return
 	if have:
 		Hmi.lamp(self, Vector2(x + 10, r.end.y - 136), Hmi.ok_col(), true, ka, 9.0)
@@ -3154,7 +3360,7 @@ func _detail(a: float) -> void:
 	var w := r.size.x - 64
 	var kind := "tm_kind_it" if it[1] == "item" else ("tm_kind_fa" if it[1] == "facility" else "tm_kind_up")
 	var pl := Rect2(r.position.x + 18, r.position.y + 18, r.size.x - 36, 44)
-	Hmi.plate(self, font_s, pl, Txt.t(kind), 18, ka, Pal.tint(Pal.AIR, 0.95, 1.2))
+	Hmi.plate(self, font_s, pl, Txt.t(kind), 18, ka, Pal.tint(UiSkin.FIGURE, 0.95, 1.2))
 	var have0: bool = it[1] != "item" and Career.data.upgrades.has(id)
 	Hmi.lamp(self, Vector2(pl.end.x - 22, pl.get_center().y), Hmi.ok_col() if have0 else (Hmi.warn_col() if float(Career.data.money) < float(it[2]) else Hmi.can_col()), true, ka)
 	var y := r.position.y + 62
@@ -3173,7 +3379,7 @@ func _detail(a: float) -> void:
 			var nowk: float = row[3]
 			var aftk: float = row[4]
 			if have:
-				Hmi.gauge(self, Rect2(x, y + 24, w, 22), aftk, Pal.tint(Pal.FLUID, 1.0, 1.1), ka)
+				Hmi.gauge(self, Rect2(x, y + 24, w, 22), aftk, Pal.tint(UiSkin.FIGURE, 1.0, 1.1), ka)
 			else:
 				Hmi.gauge(self, Rect2(x, y + 24, w, 22), nowk, Pal.ink(0.75), ka, 10, lerpf(nowk, aftk, grow))
 			y += 66
@@ -3182,9 +3388,19 @@ func _detail(a: float) -> void:
 		Hmi.screen(self, sc, ka)
 		if Txt.has("st_" + id):
 			_text(Txt.t("tm_strategy"), sc.position + Vector2(14, 26), 14, Pal.ink(0.6 * ka), font)
-			_wrap(Txt.t("st_" + id), sc.position + Vector2(14, 56), w - 8, 19, Pal.tint(Pal.AIR, 0.95 * ka, 1.2))
+			_wrap(Txt.t("st_" + id), sc.position + Vector2(14, 56), w - 8, 19, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2))
 		elif REQUIRES.has(id) and not d.upgrades.has(REQUIRES[id]):
 			_text(Txt.t("tm_needs") % Txt.t(_facility_name(REQUIRES[id])), sc.position + Vector2(14, 56), 18, Pal.heat(0.95 * ka, 1.2), font_s)
+		if tab == DRONE_PAGE and id == "tunnel_body" and not Txt.has("st_" + id):
+			_text(Txt.t("tm_strategy"), sc.position + Vector2(14, 26), 14, Pal.ink(0.6 * ka), font)
+			_wrap(Ops.w("先装量子隧穿，再装这个。装上后默认开启，按 %s 或右上角「机体」按钮开关。开着时，无人机自己能穿过墙壁、船体、设施和散件；还没泄压的舱室和港区边界仍然挡得住。", "Fit quantum tunnelling first. On once fitted; %s or the BODY button top right switches it. While on, the drone itself passes walls, hulls, facilities and loose pieces; rooms still under pressure and the berth's edge still stop it.") % _tunnel_key(id), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2))
+		if tab == DRONE_PAGE and id == "tunnel" and not Txt.has("st_" + id):
+			_text(Txt.t("tm_strategy"), sc.position + Vector2(14, 26), 14, Pal.ink(0.6 * ka), font)
+			_wrap(Ops.w("装上后默认开启，按 %s 开关。开着时，抓钩抓着的件能直接穿过墙壁和船体拖出来，不用先开路。", "On once fitted; %s switches it. While on, a held piece is dragged straight through walls and hulls: no path to cut first.") % Keys.label("tunnel"), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2))
+		if tab == DRONE_PAGE and LATE.has(id) and not d.upgrades.has(id):
+			var lw := _late_why(id)
+			Hmi.lamp(self, Vector2(x + 8, sc.end.y + 24), Hmi.warn_col() if lw != "" else Hmi.ok_col(), true, ka, 6.0)
+			_text(lw if lw != "" else (Ops.w("条件已满足：%d 单、声望 %d、量子隧穿", "UNLOCKED: %d JOBS, REPUTATION %d, QUANTUM TUNNELLING") if id == "tunnel_body" else Ops.w("条件已满足：%d 单、声望 %d、5 吨牵引抓钩", "UNLOCKED: %d JOBS, REPUTATION %d, THE 5 t GRAPPLE")) % [int(LATE[id][0]), int(LATE[id][1])], Vector2(x + 22, sc.end.y + 30), 15, Pal.heat(0.95 * ka, 1.2) if lw != "" else Pal.tint(Pal.FLUID, 0.9 * ka, 1.1), font_b)
 	else:
 		var n := int(d.items.get(id, 0))
 		_text(Txt.t("tm_stock_n") % n, Vector2(x, y + 4), 18, Pal.ink(0.9 * ka), font_b)
@@ -3193,7 +3409,7 @@ func _detail(a: float) -> void:
 	# the money
 	if have:
 		Hmi.lamp(self, Vector2(x + 10, r.end.y - 136), Hmi.ok_col(), true, ka, 9.0)
-		_text(Txt.t("tm_installed"), Vector2(x + 30, r.end.y - 128), 22, Pal.tint(Pal.FLUID, 0.95 * ka, 1.1), font_s)
+		_text(Txt.t("tm_installed"), Vector2(x + 30, r.end.y - 128), 22, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.1), font_s)
 		return
 	var n2 := qty if it[1] == "item" else 1
 	var price: float = float(it[2]) * n2
@@ -3208,12 +3424,17 @@ func _detail(a: float) -> void:
 			_text("−" if sgn < 0 else "+", qr.get_center() + Vector2(0, 9), 26, Pal.ink(0.95 * ka), font_s, 0)
 		var qw := Rect2(_qty_rect(-1).end.x + 14, _qty_rect(-1).position.y, 74, 48)
 		Hmi.screen(self, qw, ka)
-		_text(str(qty), qw.get_center() + Vector2(0, 11), 30, Pal.tint(Pal.AIR, 0.95 * ka, 1.3), font_s, 0)
-	draw_line(Vector2(x, my - 22), Vector2(x + w, my - 22), Color(0, 0, 0, 0.5 * ka), 2.0)
-	_text(Txt.t("tm_price"), Vector2(x, my), 15, Pal.ink(0.6 * ka), font)
-	_text(Pal.money(price), Vector2(x + w, my), 18, Pal.ink(0.95 * ka), font_b, 1)
-	_text(Txt.t("tm_after"), Vector2(x, my + 30), 15, Pal.ink(0.6 * ka), font)
-	_text(Pal.money(after), Vector2(x + w, my + 30), 18, (Pal.heat(0.95 * ka, 1.2) if after < 0.0 else Pal.ink(0.95 * ka)), font_b, 1)
+		_text(str(qty), qw.get_center() + Vector2(0, 11), 30, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.3), font_s, 0)
+	# 炭黑 v2: the price and what is left after it in one black window, large, the cash after as a scale
+	var pwin := Rect2(x - 10, my - 34, w + 20, 74)
+	Charcoal.display(self, pwin, ka)
+	var half := pwin.size.x * 0.5
+	draw_line(Vector2(pwin.position.x + half, pwin.position.y + 12), Vector2(pwin.position.x + half, pwin.end.y - 12), Color(1, 1, 1, 0.07 * ka), 1.0)
+	_text(Txt.t("tm_price"), pwin.position + Vector2(14, 22), 12, Pal.ink(0.5 * ka), font_b)
+	_text(Pal.money(price), pwin.position + Vector2(12, 52), 28, Color(Charcoal.ACCENT, ka), font_l)
+	_text(Txt.t("tm_after"), pwin.position + Vector2(half + 14, 22), 12, Pal.ink(0.5 * ka), font_b)
+	_text(Pal.money(after), pwin.position + Vector2(half + 12, 52), 28, (Pal.heat(0.95 * ka, 1.2) if after < 0.0 else Pal.ink(0.95 * ka)), font_l)
+	Charcoal.segments(self, Rect2(pwin.position.x + half + 14, pwin.end.y - 11, half - 28, 4), clampf(after / maxf(float(d.money), 1.0), 0.0, 1.0) * 12.0, 12, ka)
 	if after >= 0.0:
 		var fee := _cheapest_fee()
 		if fee > 0.0:
@@ -3284,11 +3505,11 @@ func _berth(s: Vector2, a: float) -> void:
 		_text(Pal.money(rows[i][1]), Vector2(x + w - 230, yy), 17, Pal.ink((0.55 if changed else 0.9) * rk), font_b, 1)
 		if changed:
 			_text("→", Vector2(x + w - 200, yy), 16, Pal.ink(0.45 * rk), font)
-			_text(Pal.money(rows[i][2]), Vector2(x + w, yy), 17, Pal.tint(Pal.AIR, 0.95 * rk, 1.3) if i != 4 else Pal.heat(0.95 * rk, 1.2), font_s, 1)
+			_text(Pal.money(rows[i][2]), Vector2(x + w, yy), 17, Pal.tint(UiSkin.FIGURE, 0.95 * rk, 1.3) if i != 4 else Pal.heat(0.95 * rk, 1.2), font_s, 1)
 		draw_line(Vector2(x, yy + 12), Vector2(x + w, yy + 12), Pal.ink(0.06 * rk), 1.0)
 	if loan <= 0.0:
 		Hmi.lamp(self, Vector2(x + 8, fr.end.y - 136), Hmi.ok_col(), true, k0, 8.0)
-		_text(Txt.t("tm_paid_off"), Vector2(x + 26, fr.end.y - 130), 18, Pal.tint(Pal.FLUID, 0.95 * k0, 1.1), font_s)
+		_text(Txt.t("tm_paid_off"), Vector2(x + 26, fr.end.y - 130), 18, Pal.tint(UiSkin.FIGURE, 0.95 * k0, 1.1), font_s)
 	# the credit (G2): the same amount drawn onto the loan, with its own button
 	var br := _borrow_rect()
 	var can_b: bool = _borrow_amt() > 0.0 and not (overlay and not between)
@@ -3310,7 +3531,7 @@ func _berth(s: Vector2, a: float) -> void:
 		var net := float(h.get("net", 0.0))
 		_text(str(h.get("id", "?")), Vector2(sc.position.x + 16, hy), 16, Pal.ink(0.9 * k1), font_s)
 		_text("%d%%" % int(round(float(h.get("rate", 0.0)) * 100.0)), Vector2(sc.position.x + sc.size.x * 0.55, hy), 15, Pal.ink(0.7 * k1), font_b, 1)
-		_text(("+" if net >= 0.0 else "") + Pal.money(net), Vector2(sc.end.x - 16, hy), 17, Pal.tint(Pal.AIR, 0.95 * k1, 1.3) if net >= 0.0 else Pal.heat(0.95 * k1, 1.3), font_s, 1)
+		_text(("+" if net >= 0.0 else "") + Pal.money(net), Vector2(sc.end.x - 16, hy), 17, Pal.tint(UiSkin.FIGURE, 0.95 * k1, 1.3) if net >= 0.0 else Pal.heat(0.95 * k1, 1.3), font_s, 1)
 		hy += 32
 
 # ---------------------------------------------------------------- the button, the keys, the messages
@@ -3343,7 +3564,7 @@ func _bottom(s: Vector2, a: float) -> void:
 				label = Txt.t("tm_hold") + "   Enter"
 				note = Txt.t("tm_queued")
 			if not o.has("intel") and int(d.items.get("intel", 0)) > 0:
-				_text(Txt.t("tm_use_intel") % int(d.items.intel), Vector2(60, s.y - 84), 14, Pal.tint(Pal.AIR, 0.85 * a, 1.0), font)
+				_text(Txt.t("tm_use_intel") % int(d.items.intel), Vector2(60, s.y - 84), 14, Pal.tint(UiSkin.FIGURE, 0.85 * a, 1.0), font)
 			if float(d.money) < float(o.fee) and not o.get("find", false):
 				note = Txt.t("tm_borrow") % Pal.money(float(o.fee) - float(d.money))
 			# a family of ship never trained for: the special course first (the contract waits)
@@ -3385,6 +3606,12 @@ func _bottom(s: Vector2, a: float) -> void:
 					label = Txt.t("tm_buy_n") % Pal.money(price) + "   Enter"
 			elif it[1] != "item" and d.upgrades.has(it[0]):
 				label = "✓ " + Txt.t("tm_installed")
+				if tab == DRONE_PAGE and str(it[0]) in ["tunnel", "tunnel_body"]:
+					label = "✓ " + Ops.w("已安装 · 按 %s 开关", "FITTED · %s ON/OFF") % _tunnel_key(str(it[0]))
+				ok = false
+			elif tab == DRONE_PAGE and LATE.has(it[0]) and _late_why(str(it[0])) != "":
+				label = Pal.money(price)
+				note = _late_why(str(it[0]))
 				ok = false
 			elif REQUIRES.has(it[0]) and not d.upgrades.has(REQUIRES[it[0]]):
 				label = Pal.money(price)
@@ -3526,7 +3753,7 @@ func _trial_card(o: Dictionary, r: Rect2, k: float, hk: float, sk: float) -> voi
 	var spec: Dictionary = Career.TRIALS.get(tid, {})
 	var ty: Dictionary = Market.type_of(str(o.get("ship", "gr7")))
 	var pl := Rect2(r.position.x + 18, y + 18, r.size.x - 36, 46)
-	Hmi.plate(self, font_s, pl, Txt.t("tm_trial_h"), 21, k, Pal.tint(Pal.AIR, 1.0, 1.2))
+	Hmi.plate(self, font_s, pl, Txt.t("tm_trial_h"), 21, k, Pal.tint(UiSkin.FIGURE, 1.0, 1.2))
 	var done_n: int = int(Career.data.get("trials", {}).get(tid, 0))
 	Hmi.lamp(self, Vector2(pl.end.x - 22, pl.get_center().y), Hmi.ok_col() if done_n > 0 else Hmi.can_col(), true, k, 7.0)
 	var sc := Rect2(r.position.x + 18, y + 80, r.size.x - 36, 300)
@@ -3550,7 +3777,7 @@ func _trial_card(o: Dictionary, r: Rect2, k: float, hk: float, sk: float) -> voi
 	for i in rows.size():
 		_text(rows[i][0], Vector2(x, y + 420 + i * 40), 15, Pal.ink(0.6 * k), font)
 		_text(rows[i][1], Vector2(r.end.x - 28, y + 420 + i * 40), 18, Pal.ink(0.95 * k), font_s, 1)
-	_wrap(Txt.t("trial_" + tid + "_d"), Vector2(x, y + 640), r.size.x - 56, 15, Pal.tint(Pal.AIR, 0.9 * k, 1.1), 3)
+	_wrap(Txt.t("trial_" + tid + "_d"), Vector2(x, y + 640), r.size.x - 56, 15, Pal.tint(UiSkin.FIGURE, 0.9 * k, 1.1), 3)
 
 
 func _next_card(s: Vector2, a: float) -> void:
@@ -3620,7 +3847,7 @@ func _radio(s: Vector2, a: float) -> void:
 	var r := Rect2(s.x * 0.5 - 410, s.y - 230, 820, 64)
 	draw_rect(r, Color(0.02, 0.022, 0.026, 0.9 * k))
 	var term: bool = line.get("who", "liang") == "term"
-	draw_rect(Rect2(r.position, Vector2(3, r.size.y)), Pal.tint(Pal.AIR, k, 1.0) if term else Pal.heat(k, 1.0))
+	draw_rect(Rect2(r.position, Vector2(3, r.size.y)), Pal.tint(UiSkin.FIGURE, k, 1.0) if term else Pal.heat(k, 1.0))
 	_text(Txt.t("tut_term") if term else Txt.t("tut_liang"), r.position + Vector2(18, 22), 12, Pal.ink(0.5 * k), font)
 	draw_multiline_string(font, r.position + Vector2(90, 30), shown, HORIZONTAL_ALIGNMENT_LEFT, 700, 18, 2, Pal.ink(0.95 * k))
 
@@ -3650,10 +3877,15 @@ func _home(s: Vector2, a: float) -> void:
 	if berth_view == null:
 		berth_view = BerthView.new()
 		berth_view.build(game_ref, next_job if not next_job.is_empty() else Career.active())
-	var bvk := Pal.ease_out(clampf((deal_t - 0.12) / 0.45, 0.0, 1.0)) * a
+	var bv_raw := clampf((deal_t - 0.1) / 0.32, 0.0, 1.0)
+	var bvk := Pal.ease_out(bv_raw) * a
 	if bvk > 0.0:
 		var bvr := _bv_rect()
-		bvr.position.y += (1.0 - bvk) * 18.0
+		bvr.position.y += Charcoal.settle(bv_raw)
+		# 炭黑: a raised panel, the drawing in a black window inside it
+		bvr = Charcoal.panel(self, bvr, bvk)
+		berth_view.bare = true
+		Charcoal.display(self, berth_view.screen_rect(bvr), bvk)
 		berth_view.draw(self, bvr, t, bvk, get_local_mouse_position(), font, font_b, font_s)
 	# what waits on the operator
 	var b := _decs_box()
@@ -3674,49 +3906,58 @@ func _home(s: Vector2, a: float) -> void:
 		var r := _dec_rect(i)
 		r.position.x += (1.0 - k) * 18.0
 		OpsSkin.draw_decision(self, f, r, _ops_decs[i], k, 1.0 if i == hover_dec else 0.0, r.size.y < 54.0)
-	# the home apps: one row of keys
+	# the home apps: one row of keys (炭黑: numbered keys that press in when chosen, the page's
+	# live view in a black window on each, an orange lip sliding to the chosen one)
+	var lip_k := 0.0
+	var lip_y := 0.0
+	var lip_w := 0.0
 	for i in APPS.size():
 		var page: int = APPS[i][0]
 		var r := _tile_rect(i)
-		var k := Pal.ease_out(clampf((deal_t - 0.3 - i * 0.03) / 0.3, 0.0, 1.0)) * a
+		var raw := clampf((deal_t - 0.26 - i * 0.05) / 0.3, 0.0, 1.0)
+		var k := Pal.ease_out(raw) * a
 		if k <= 0.0:
 			continue
+		r.position.y += Charcoal.settle(raw)
 		if not Onboarding.page_shown(page):
 			# not opened yet (28 号): an empty slot
-			Hmi.sunk(self, r, k * 0.6)
+			Charcoal.display(self, r.grow(-4), k * 0.6)
 			continue
 		var locked := _locked(page)
 		var hk: float = hover_k[i].x if i < hover_k.size() else 0.0
-		var on := i == sel
-		r.position.y += (1.0 - k) * 20.0 - (hk * 4.0 if not locked else 0.0)
+		var press: float = clampf(sel_k[i].x, 0.0, 1.0) if i < sel_k.size() and not locked else 0.0
+		r.position.y -= hk * 3.0 * (1.0 - press) if not locked else 0.0
 		var ka := k * (0.62 if locked else 1.0)
-		Hmi.raised(self, r, ka, Hmi.PANEL_HI if on and not locked else Hmi.PANEL.lerp(Hmi.PANEL_HI, hk * 0.5))
-		var icon_h := r.size.y - 64.0
-		var sc := Rect2(r.position.x + 10, r.position.y + 10, r.size.x - 20, icon_h)
-		Hmi.screen(self, sc, ka)
+		var fr := Charcoal.key(self, r, ka, press, Charcoal.FACE.lerp(Charcoal.FACE_HI, hk * 0.7))
+		if i == sel:
+			lip_k = ka * (0.5 if locked else 1.0)
+			lip_y = fr.end.y - 9.0
+			lip_w = fr.size.x - 48.0
 		# 107 号 Q4 A: each key's screen shows its page live; a locked one keeps its icon
+		var sc := Rect2(fr.end.x - 230.0, fr.position.y + 18.0, 206.0, maxf(40.0, fr.size.y - 36.0 - 40.0))
+		Charcoal.display(self, sc, ka)
 		if locked or not _tile_live(page, sc, k):
-			_app_icon(page, sc.get_center(), (1.0 if not locked else 0.35) * k, clampf(icon_h / 150.0, 0.25, 0.55))
+			_app_icon(page, sc.get_center(), (1.0 if not locked else 0.35) * k, clampf(sc.size.y / 150.0, 0.25, 0.55))
 		var line := ""
-		var lamp := Hmi.can_col()
+		var lamp := 0      # 0 dark, 1 lit (all is well), 2 lit in the accent (wants you)
 		match page:
 			0:
 				line = (Txt.t("tm_tile_first") % str(next_job.get("id", ""))) if not next_job.is_empty() else (Txt.t("tm_tile_offers") % offers().size() + ((Txt.t("tm_tile_pinned") % str(sj.get("id", ""))) if not sj.is_empty() else ""))
-				lamp = Hmi.warn_col() if not sj.is_empty() or not next_job.is_empty() else Hmi.ok_col()
+				lamp = 2 if not sj.is_empty() or not next_job.is_empty() else 1
 			1:
 				var fixed := 0
 				for it in Repair.ITEMS:
 					if d.upgrades.has(it[0]):
 						fixed += 1
 				line = Txt.t("rp_tile") % [Repair.ITEMS.size() - fixed, fixed, d.get("parts", []).size()]
-				lamp = Hmi.warn_col() if fixed < Repair.ITEMS.size() else Hmi.ok_col()
+				lamp = 2 if fixed < Repair.ITEMS.size() else 1
 			3:
 				var fparts: Array = []
 				for tool in (Consum.TOOLS if Consum.ENABLED else []):
 					var ft: Dictionary = Consum.fitted(tool)
 					fparts.append("%s %s" % [Consum.name_of(tool), (Consum.tier_name(int(ft.tier)) + " %d%%" % int(round(100.0 * float(ft.left) / Consum.capacity(tool, int(ft.tier))))) if not ft.is_empty() else Txt.t("cs_out_short")])
 				line = Txt.t("cs_tile") % [d.get("feats", {}).size(), Gear.FEATS.size()] + "  ·  " + "  ·  ".join(fparts)
-				lamp = Hmi.ok_col()
+				lamp = 1
 			4:
 				var parts: Array = []
 				for it in _supply_items():
@@ -3724,22 +3965,46 @@ func _home(s: Vector2, a: float) -> void:
 				line = "  ·  ".join(parts)
 			2:
 				line = Txt.t("tm_tile_ledger") % [Pal.money(float(d.loan)), Pal.money(minf(Career.INSTALLMENT, float(d.loan)) + snappedf(float(d.loan) * Career.rate(), 1.0))]
-				lamp = Hmi.warn_col() if float(d.loan) > 0.0 else Hmi.ok_col()
+				lamp = 2 if float(d.loan) > 0.0 else 1
 			5:
 				var gs := _goals()
 				line = Txt.t("tm_tile_route") if gs.is_empty() else ("★ " if gs[0].get("pinned", false) else "") + str(gs[0].name).split(" · ")[0] + " · " + Route.missing(gs[0])
 			6:
 				line = Txt.t("tm_tile_radio") % _radio_lines().size()
-				lamp = Hmi.ok_col()
+				lamp = 1
 			7:
 				line = Txt.t("tm_tile_training")
 			DRONE_PAGE:
 				var fitted := SHOP.slice(0, DRONE_UPGRADES).filter(func(it): return d.upgrades.has(it[0])).size()
 				line = Ops.w("工具升级已安装 %d/%d", "TOOL UPGRADES FITTED %d/%d") % [fitted, DRONE_UPGRADES]
-		Hmi.lamp(self, Vector2(r.end.x - 16, sc.end.y + 20), lamp if not locked else Pal.ink(0.3), not locked, k, 5.0)
-		draw_string(font_s, Vector2(r.position.x + 12, sc.end.y + 26), "%d  %s" % [i + 1, Txt.t(APPS[i][1])], HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 40, 18, Pal.ink((0.98 if not locked else 0.45) * k))
+		# the big number turns orange as the key goes down; the name beside the window
+		var num_c := Pal.ink(0.98).lerp(Charcoal.ACCENT, press) if not locked else Pal.ink(0.4)
+		_text(str(i + 1), fr.position + Vector2(22, 64), 56, Color(num_c, num_c.a * k), font_l)
+		var name_w := sc.position.x - fr.position.x - 40.0
+		var nm := Txt.t(APPS[i][1])
+		# the largest size that fits beside the window (English names run long)
+		var ns := 18
+		for fs in [28, 24, 21]:
+			if font_s.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= name_w:
+				ns = fs
+				break
+		draw_string(font_s, fr.position + Vector2(24, 106), nm, HORIZONTAL_ALIGNMENT_LEFT, name_w, ns, Pal.ink((0.98 if not locked else 0.45) * k))
+		# the English name engraved under it (Chinese only), and the page's lamp
+		var cx := fr.position.x + 24.0
+		if Txt.zh and Txt.S.has(APPS[i][1]):
+			var en := str(Txt.S[APPS[i][1]][1]).to_upper()
+			draw_string(font_b, Vector2(cx, fr.position.y + 130), en, HORIZONTAL_ALIGNMENT_LEFT, name_w, 11, Pal.ink(0.42 * k))
+			cx += minf(name_w, font_b.get_string_size(en, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x) + 14.0
+		if not locked:
+			Charcoal.led(self, Vector2(cx + 4, fr.position.y + 126), lamp > 0, k, 3.5, Charcoal.ACCENT if lamp == 2 else Color(0.82, 0.84, 0.82))
+		# the chosen key's own lamp, lit as it goes down
+		if press > 0.02:
+			Charcoal.led(self, Vector2(sc.position.x - 18.0, fr.position.y + 30.0), true, press * k, 4.5)
 		var foot := (Txt.t("tm_locked") + _lock_reason(page)) if locked else line
-		draw_string(font_b, Vector2(r.position.x + 12, sc.end.y + 48), foot, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 24, 12, Pal.heat(0.9 * k, 1.2) if locked else Pal.ink(0.62 * k))
+		draw_string(font_b, Vector2(fr.position.x + 24, fr.end.y - 18), foot, HORIZONTAL_ALIGNMENT_LEFT, fr.size.x - 48, 14, Pal.heat(0.9 * k, 1.2) if locked else Pal.ink(0.6 * k))
+	# the orange lip slides along under the keys to the chosen one
+	if lip_k > 0.0:
+		Charcoal.lip(self, Rect2(lip_x.x + 24.0, lip_y + 2.0, lip_w, 4.0), lip_k)
 
 
 # 107 号 Q4 A (user 2026-10-29: the home's three keys were big screens with a small icon in each):
@@ -3750,7 +4015,7 @@ func _tile_live(page: int, sc: Rect2, a: float) -> bool:
 	var r := sc.grow(-8.0)
 	if r.size.y < 40.0:
 		return false
-	var data_c := Color(UiSkin.DATA)
+	var data_c := Color(0.86, 0.88, 0.88)
 	match page:
 		0:
 			# the radar: rings, a sweeping beam, every signal swept (hulks in the accent), the tugs out
@@ -3878,7 +4143,7 @@ func _perim(r: Rect2, e: float) -> Vector2:
 
 
 func _app_icon(page: int, c: Vector2, a: float, scale_k: float = 1.0) -> void:
-	var col := Pal.tint(Pal.AIR, 0.95 * a, 1.3)
+	var col := Color(0.86, 0.88, 0.88, 0.95 * a)    # 炭黑: the black windows glow white, not blue
 	# drawn smaller (the home screen's keys): the icon about its own centre
 	if scale_k != 1.0:
 		draw_set_transform(c + _page_off, 0.0, Vector2(scale_k, scale_k))
@@ -3955,7 +4220,7 @@ func _radio_page(s: Vector2, a: float) -> void:
 	for n in mini(lines.size(), 16):
 		var ln: Array = lines[lines.size() - 1 - n]
 		var who: String = str(ln[1])
-		_text(Txt.t("who_" + who) if Txt.has("who_" + who) else who, Vector2(sc.position.x + 20, y), 15, Pal.tint(Pal.AIR, 0.9 * k, 1.2), font_s)
+		_text(Txt.t("who_" + who) if Txt.has("who_" + who) else who, Vector2(sc.position.x + 20, y), 15, Pal.tint(UiSkin.FIGURE, 0.9 * k, 1.2), font_s)
 		draw_string(font, Vector2(sc.position.x + 180, y), str(ln[0]), HORIZONTAL_ALIGNMENT_LEFT, sc.size.x - 200, 16, Pal.ink(0.9 * k))
 		y += 34
 
@@ -3991,7 +4256,7 @@ func _training_page(s: Vector2, a: float) -> void:
 				info = ", ".join(codes)
 				var kind: String = str(Codex._certs().get(row[1], ""))
 				lamp = Hmi.ok_col() if kind != "" else Hmi.warn_col()
-				_text(Txt.t("cxu_cert_" + (kind if kind != "" else "none")), Vector2(rr.end.x - 20, rr.get_center().y + 6), 15, Pal.tint(Pal.FLUID, 0.9 * k, 1.0) if kind != "" else Pal.ink(0.5 * k), font_b, 1)
+				_text(Txt.t("cxu_cert_" + (kind if kind != "" else "none")), Vector2(rr.end.x - 20, rr.get_center().y + 6), 15, Pal.tint(UiSkin.FIGURE, 0.9 * k, 1.0) if kind != "" else Pal.ink(0.5 * k), font_b, 1)
 			"codex":
 				name = Txt.t("cxu_book")
 				var have := 0

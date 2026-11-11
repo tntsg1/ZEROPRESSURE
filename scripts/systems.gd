@@ -69,6 +69,8 @@ var bus_tag := ""
 var bus_live := false
 var powered := {}                 # piece id -> true: reached from the bus through live cables
 var iso_powered := {}             # piece id -> volts of its own little network
+var _iso_volts_was := PackedFloat64Array()
+var _iso_n_was := -1
 var aux := false                  # external power plugged into the dock socket
 var remote_sent := false          # a remote stop was sent (and may not have worked)
 var elec_ver := 0
@@ -174,11 +176,23 @@ func setup(g, w, ship: Dictionary) -> void:
 	var fl: Dictionary = cfg.get("fluids", {})
 	# 96 号: what the tug station drew off this hulk before it came in (Q11 B: a share by its stage)
 	var drained := TugYard.drained_of(g)
+	# 2026-11-11: and the leftover LH2 / LOX it drew into its cryo tanks (TugYard.cryo_drained_of)
+	var cryo_drained := TugYard.cryo_drained_of(g)
+	var cryo_nk := {}
+	var cryo_cargo := {}
+	if not cryo_drained.is_empty():
+		for pd in cfg.get("pieces", []):
+			cryo_nk[str(pd.get("tag", pd.get("key", "")))] = str(pd.get("name_key", ""))
+		cryo_cargo = TugYard.cryo_cargo(cfg)
 	for k in fl.get("volumes", {}):
 		var e: Dictionary = fl.volumes[k].duplicate()
 		e.amount = float(e.amount)
 		if drained > 0.0 and str(e.get("fluid", "")) == "fuel":
 			e.amount *= 1.0 - drained
+		if not cryo_drained.is_empty():
+			var ck := TugYard.cryo_kind(str(k), e, str(cryo_nk.get(str(e.get("piece", "")), "")), cryo_cargo)
+			if ck != "":
+				e.amount *= 1.0 - float(cryo_drained.get(ck, 0.0))
 		fvol[k] = e
 		fluid0[e.fluid] = fluid0.get(e.fluid, 0.0) + e.amount
 		fluid_rec[e.fluid] = 0.0
@@ -745,11 +759,21 @@ func _step_elec(dt: float) -> void:
 			var seen := {}
 			_flood(p.id, seen, {})
 			_iso_sets[t] = seen
-	iso_powered = {}
+	# ARK-01 帧率: built again only when the sets or a supply's volts are another (it was every
+	# step, every piece of every isolated network)
+	var iv := PackedFloat64Array()
 	for t in _iso_sets:
-		var v := iso_volts(t)
-		for id in _iso_sets[t]:
-			iso_powered[id] = maxf(float(iso_powered.get(id, 0.0)), v)
+		iv.append(iso_volts(t))
+	if refl or iv != _iso_volts_was or _iso_sets.size() != _iso_n_was or World.ark_old:
+		_iso_volts_was = iv
+		_iso_n_was = _iso_sets.size()
+		iso_powered = {}
+		var k := 0
+		for t in _iso_sets:
+			var v: float = iv[k]
+			k += 1
+			for id in _iso_sets[t]:
+				iso_powered[id] = maxf(float(iso_powered.get(id, 0.0)), v)
 	# rooms whose lamp is on
 	var redraw := false
 	var lamps: Dictionary = cfg.get("power", {}).get("lamps", {})
@@ -791,17 +815,7 @@ func breaker_open(l) -> bool:
 
 # all pieces reachable from piece id through live power cables
 func _flood(start: int, seen: Dictionary, _unused: Dictionary) -> void:
-	if _cable_version != world.electrical_links_version:
-		_cable_index.clear()
-		for lid in world.lines:
-			var line = world.lines[lid]
-			if line.kind != "cable":
-				continue
-			if not _cable_index.has(line.a): _cable_index[line.a] = []
-			if not _cable_index.has(line.b): _cable_index[line.b] = []
-			_cable_index[line.a].append(line)
-			if line.b != line.a: _cable_index[line.b].append(line)
-		_cable_version = world.electrical_links_version
+	_cables()
 	var stack: Array = [start]
 	seen[start] = true
 	while not stack.is_empty():
@@ -916,10 +930,33 @@ func electric_piece(p) -> bool:
 		return false
 	if src.has(p.tag) or iso.has(p.tag) or p.tag == bus_tag:
 		return true
-	for l in world.lines_of(p):
-		if l.kind == "cable":
+	# ARK-01 帧率: the cable index (rebuilt when a line is added or re-ended) instead of every
+	# line on the ship (spin.gd asks this of each rotor every physics step: ~8 ms a frame)
+	if World.ark_old:
+		for l in world.lines_of(p):
+			if l.kind == "cable":
+				return true
+		return false
+	for l in _cables().get(p.id, []):
+		if l.alive and (l.a == p.id or l.b == p.id):
 			return true
 	return false
+
+
+# every power cable by the pieces at its ends (dead ones too: callers check alive)
+func _cables() -> Dictionary:
+	if _cable_version != world.electrical_links_version:
+		_cable_index.clear()
+		for lid in world.lines:
+			var line = world.lines[lid]
+			if line.kind != "cable":
+				continue
+			if not _cable_index.has(line.a): _cable_index[line.a] = []
+			if not _cable_index.has(line.b): _cable_index[line.b] = []
+			_cable_index[line.a].append(line)
+			if line.b != line.a: _cable_index[line.b].append(line)
+		_cable_version = world.electrical_links_version
+	return _cable_index
 
 
 # an isolated supply holds charge and its own switch (if it has one) is closed

@@ -193,7 +193,7 @@ func _tank(vk: String, p, poly: PackedVector2Array, xf_art: Transform2D, look: S
 	var e := {"vol": vk, "p": p, "xf": xf_art, "c": c, "R": R, "rho": rho, "lv": tab, "la": PackedFloat32Array(), "area": area_v, "rin": rin, "look": look,
 		"share": share, "frost": frost, "boil": boil_t, "flow": 0.0, "was": -1.0,
 		"seed": float(hash(vk) % 997) * 0.37, "bb": Geom.bbox(poly)}
-	var v: Dictionary = game.sys.fvol.get(vk, {})
+	var v: Dictionary = game.sys.fvol.get(vk, {}) if game != null and game.get("sys") != null else {}
 	e["full"] = float(v.get("full", 0.0))
 	if e.full <= 0.0:
 		e.full = maxf(0.001, float(v.get("amount", 0.0)))
@@ -379,6 +379,8 @@ func _live(e: Dictionary) -> bool:
 
 
 func _boil(e: Dictionary) -> float:
+	if e.has("boil_k"):
+		return float(e.boil_k)
 	if not LC.misty(e.look):
 		return 0.0
 	if e.boil == "":
@@ -411,7 +413,8 @@ func _port_dir(e: Dictionary, xf: Transform2D) -> Vector2:
 
 # the wall and bubble points of a tank this frame (its own frame), or [] when it holds nothing
 func _shape(e: Dictionary, xf: Transform2D) -> Array:
-	var fr := Engine.get_process_frames()
+	# (a tank that asks for it keeps its shape two frames: the bubble moves slowly)
+	var fr := Engine.get_process_frames() / (2 if e.has("slow") else 1)
 	if int(e.get("_f", -1)) == fr:
 		return e._sh
 	var out := _shape_now(e, xf)
@@ -421,7 +424,8 @@ func _shape(e: Dictionary, xf: Transform2D) -> Array:
 
 
 func _shape_now(e: Dictionary, xf: Transform2D) -> Array:
-	var k := clampf(game.sys.fluid(e.vol) / float(e.full), 0.0, 1.0)
+	# (a tank not of a ship's volumes — the gas plant's — says how full it is itself)
+	var k := clampf(float(e.k_now) if e.has("k_now") else game.sys.fluid(e.vol) / float(e.full), 0.0, 1.0)
 	if k <= 0.003:
 		return []
 	var lv: Array = e.lv
@@ -467,9 +471,16 @@ func _shape_now(e: Dictionary, xf: Transform2D) -> Array:
 	return [W, B, k, 1.0 - th, d]
 
 
+# ARK-01 帧率: zoomed this far out a boiling bubble (1-4 px) is under a fifth of a pixel and the
+# outlet rings under one: they are left out (the whole ship in view drew hundreds of arcs a frame)
+const FAR_ZOOM := 0.14
+var _far := false
+
+
 func _draw() -> void:
 	if _tanks.is_empty() or node == null:
 		return
+	_far = game != null and game.has_method("cam_zoom") and game.cam_zoom() < FAR_ZOOM and not World.ark_old
 	var view := _view()
 	var verts := PackedVector2Array()
 	var cols := PackedColorArray()
@@ -481,74 +492,87 @@ func _draw() -> void:
 		var bb: Rect2 = xf * (e.bb as Rect2)
 		if not view.intersects(bb):
 			continue
-		var sh := _shape(e, xf)
-		if sh.is_empty():
-			if (e.frost as PackedVector2Array).size() > 0:
-				node.draw_multiline(xf * (e.frost as PackedVector2Array), Color(0.9, 0.95, 1.0, 0.22), 1.0)
-			continue
-		var W: PackedVector2Array = xf * (sh[0] as PackedVector2Array)
-		var B: PackedVector2Array = xf * (sh[1] as PackedVector2Array)
-		var look: String = e.look
-		var op := LC.opacity(look)
-		var col := LC.of(look)
-		# (the 2D canvas blends in linear light: a tenth is already a clear grey on screen)
-		var aw := lerpf(0.13, 0.75, op)     # against the wall, where it is deepest
-		var ab := lerpf(0.035, 0.5, op)     # at the meniscus, thin
-		var cw := Color(col.r * 0.8, col.g * 0.8, col.b * 0.8, aw)
-		var cb := Color(col.r, col.g, col.b, ab)
-		var base := verts.size()
-		verts.append_array(W)
-		verts.append_array(B)
-		for i in N:
-			cols.append(cw)
-		for i in N:
-			cols.append(cb)
-		for i in N:
-			var j := (i + 1) % N
-			idx.append(base + i)
-			idx.append(base + j)
-			idx.append(base + N + i)
-			idx.append(base + j)
-			idx.append(base + N + j)
-			idx.append(base + N + i)
-		# the bubble: its gas, white vapour in a cryogen's
-		var bc := Vector2.ZERO
-		for v in B:
-			bc += v
-		bc /= N
-		var gb := verts.size()
-		var gas: float = 0.03 if LC.misty(look) else 0.008
-		verts.append(bc)
-		cols.append(Color(0.92, 0.96, 1.0, gas * 0.15))
-		verts.append_array(B)
-		for i in N:
-			cols.append(Color(0.92, 0.96, 1.0, gas))
-		for i in N:
-			var j := (i + 1) % N
-			idx.append(gb)
-			idx.append(gb + 1 + i)
-			idx.append(gb + 1 + j)
-		# the meniscus round the bubble
-		if (sh[3] as float) > 0.04:
-			var ring := B.duplicate()
-			ring.append(B[0])
-			node.draw_polyline(ring, Color(lerpf(col.r, 1.0, 0.5), lerpf(col.g, 1.0, 0.5), lerpf(col.b, 1.0, 0.5), 0.55), 1.2)
-		# frost on the shell
-		if (e.frost as PackedVector2Array).size() > 0:
-			node.draw_multiline(xf * (e.frost as PackedVector2Array), Color(0.9, 0.95, 1.0, 0.5), 1.0)
-		# boiling: bubbles off the wall into the vapour
-		var boil := _boil(e)
-		if boil > 0.0:
-			var nb := int(4 + 14 * boil)
-			for m in nb:
-				var h := fposmod(sin((m + 1) * 91.7 + float(e.seed)) * 4375.85, 1.0)
-				var i0 := int(h * N) % N
-				var u := fposmod(_t * (0.5 + 0.9 * boil) * (0.7 + 0.6 * h) + h * 7.0, 1.0)
-				var pp: Vector2 = W[i0].lerp(B[i0], u * 0.92 + 0.04)
-				pp += (B[i0] - W[i0]).orthogonal().normalized() * sin(_t * 7.0 + m) * 1.5
-				node.draw_arc(pp, 1.2 + 2.4 * u, 0.0, TAU, 8, Color(0.95, 0.97, 1.0, 0.7 * (1.0 - u * 0.4)), 1.0)
+		emit_liquid(e, xf, node, verts, cols, idx)
 	if not idx.is_empty():
 		RenderingServer.canvas_item_add_triangle_array(node.get_canvas_item(), idx, verts, cols)
+
+
+# one tank's liquid: its triangles added to verts / cols / idx (drawn together by the caller), the
+# meniscus, frost and boiling drawn on ci (scripts/gas_plant.gd uses it for its own tanks)
+func emit_liquid(e: Dictionary, xf: Transform2D, ci: CanvasItem, verts: PackedVector2Array, cols: PackedColorArray, idx: PackedInt32Array) -> void:
+	var sh := _shape(e, xf)
+	if sh.is_empty():
+		if (e.frost as PackedVector2Array).size() > 0:
+			ci.draw_multiline(xf * (e.frost as PackedVector2Array), Color(0.9, 0.95, 1.0, 0.22), -1.0)
+		return
+	var W: PackedVector2Array = xf * (sh[0] as PackedVector2Array)
+	var B: PackedVector2Array = xf * (sh[1] as PackedVector2Array)
+	var look: String = e.look
+	var op := LC.opacity(look)
+	var col := LC.of(look)
+	# (the 2D canvas blends in linear light: a tenth is already a clear grey on screen)
+	var aw := lerpf(0.13, 0.75, op)     # against the wall, where it is deepest
+	var ab := lerpf(0.035, 0.5, op)     # at the meniscus, thin
+	var cw := Color(col.r * 0.8, col.g * 0.8, col.b * 0.8, aw)
+	var cb := Color(col.r, col.g, col.b, ab)
+	# the bubble's centre (the gas fan's middle)
+	var bc := Vector2.ZERO
+	for v in B:
+		bc += v
+	bc /= N
+	# 60 FPS: the colours and the triangles' order never change for a tank — kept once, offset
+	# only when other tanks are already in the list
+	if not e.has("_cl"):
+		var gas: float = 0.03 if LC.misty(look) else 0.008
+		var cl := PackedColorArray()
+		var ix := PackedInt32Array()
+		for i in N:
+			cl.append(cw)
+		for i in N:
+			cl.append(cb)
+		cl.append(Color(0.92, 0.96, 1.0, gas * 0.15))
+		for i in N:
+			cl.append(Color(0.92, 0.96, 1.0, gas))
+		for i in N:
+			var j := (i + 1) % N
+			ix.append_array(PackedInt32Array([i, j, N + i, j, N + j, N + i]))
+		var gb := 2 * N
+		for i in N:
+			ix.append_array(PackedInt32Array([gb, gb + 1 + i, gb + 1 + (i + 1) % N]))
+		e["_cl"] = cl
+		e["_ix"] = ix
+	var base := verts.size()
+	verts.append_array(W)
+	verts.append_array(B)
+	verts.append(bc)
+	verts.append_array(B)
+	cols.append_array(e._cl)
+	if base == 0:
+		idx.append_array(e._ix)
+	else:
+		var ix2: PackedInt32Array = (e._ix as PackedInt32Array).duplicate()
+		for i in ix2.size():
+			ix2[i] += base
+		idx.append_array(ix2)
+	# the meniscus round the bubble
+	if (sh[3] as float) > 0.04:
+		var ring := B.duplicate()
+		ring.append(B[0])
+		ci.draw_polyline(ring, Color(lerpf(col.r, 1.0, 0.5), lerpf(col.g, 1.0, 0.5), lerpf(col.b, 1.0, 0.5), 0.55), -1.0)
+	# frost on the shell
+	if (e.frost as PackedVector2Array).size() > 0:
+		ci.draw_multiline(xf * (e.frost as PackedVector2Array), Color(0.9, 0.95, 1.0, 0.5), -1.0)
+	# boiling: bubbles off the wall into the vapour
+	var boil := _boil(e) if not _far else 0.0
+	if boil > 0.0:
+		var nb := int(4 + 14 * boil)
+		for m in nb:
+			var h := fposmod(sin((m + 1) * 91.7 + float(e.seed)) * 4375.85, 1.0)
+			var i0 := int(h * N) % N
+			var u := fposmod(_t * (0.5 + 0.9 * boil) * (0.7 + 0.6 * h) + h * 7.0, 1.0)
+			var pp: Vector2 = W[i0].lerp(B[i0], u * 0.92 + 0.04)
+			pp += (B[i0] - W[i0]).orthogonal().normalized() * sin(_t * 7.0 + m) * 1.5
+			ci.draw_arc(pp, 1.2 + 2.4 * u, 0.0, TAU, 8, Color(0.95, 0.97, 1.0, 0.7 * (1.0 - u * 0.4)), -1.0)
 
 
 func _draw_glow() -> void:
@@ -564,41 +588,46 @@ func _draw_glow() -> void:
 		var bb: Rect2 = xf * (e.bb as Rect2)
 		if not view.intersects(bb):
 			continue
-		var sh := _shape(e, xf)
-		if sh.is_empty():
-			continue
-		var W: PackedVector2Array = sh[0]
-		var B: PackedVector2Array = sh[1]
-		var col := LC.of(e.look)
-		# a glint on the bubble, up and to the left, as on a ball of gas in liquid
-		if (sh[3] as float) > 0.12:
-			var g := PackedVector2Array()
-			var bc := Vector2.ZERO
-			for v in B:
-				bc += v
-			bc /= N
-			for i in range(int(N * 0.56), int(N * 0.7)):
-				g.append(xf * bc.lerp(B[i], 0.8))
-			glow.draw_polyline(g, Color(1.0, 1.0, 1.0, 0.22), 1.6)
-		# drawn off: the liquid streaming round the wall to the outlet
-		var fl: float = float(e.flow)
-		if fl > 0.03:
-			var pd := _port_dir(e, xf)
-			var ip := int(round(fposmod(pd.angle(), TAU) / TAU * N)) % N
-			for m in 10:
-				var side := 1 if m % 2 == 0 else -1
-				var u := fposmod(_t * 0.8 + m * 0.21, 1.0)
-				var off := int((1.0 - u) * N * 0.45)
-				var i0 := (ip + side * off + N * 4) % N
-				var i1 := (i0 - side * 2 + N * 4) % N
-				var a0: Vector2 = xf * W[i0].lerp(B[i0], 0.5)
-				var a1: Vector2 = xf * W[i1].lerp(B[i1], 0.5)
-				segs.append(a0)
-				segs.append(a1)
-				sc.append(Color(lerpf(col.r, 1.0, 0.3), lerpf(col.g, 1.0, 0.3), lerpf(col.b, 1.0, 0.3), 0.5 * fl * sin(u * PI)))
-			var outlet: Vector2 = xf * W[ip]
-			for k in 2:
-				var u2 := fposmod(_t * 1.5 + k * 0.5, 1.0)
-				glow.draw_arc(outlet, 3.0 + 9.0 * u2, 0.0, TAU, 12, Color(col.r, col.g, col.b, 0.45 * fl * (1.0 - u2)), 1.2)
+		emit_glow(e, xf, glow, segs, sc)
 	if not segs.is_empty():
 		glow.draw_multiline_colors(segs, sc, 1.4)
+
+
+# one tank's glint and outflow on an additive layer (segs / sc drawn together by the caller)
+func emit_glow(e: Dictionary, xf: Transform2D, ci: CanvasItem, segs: PackedVector2Array, sc: PackedColorArray) -> void:
+	var sh := _shape(e, xf)
+	if sh.is_empty():
+		return
+	var W: PackedVector2Array = sh[0]
+	var B: PackedVector2Array = sh[1]
+	var col := LC.of(e.look)
+	# a glint on the bubble, up and to the left, as on a ball of gas in liquid
+	if (sh[3] as float) > 0.12:
+		var g := PackedVector2Array()
+		var bc := Vector2.ZERO
+		for v in B:
+			bc += v
+		bc /= N
+		for i in range(int(N * 0.56), int(N * 0.7)):
+			g.append(xf * bc.lerp(B[i], 0.8))
+		ci.draw_polyline(g, Color(1.0, 1.0, 1.0, 0.22), 1.6)
+	# drawn off: the liquid streaming round the wall to the outlet
+	var fl: float = float(e.flow)
+	if fl > 0.03:
+		var pd := _port_dir(e, xf)
+		var ip := int(round(fposmod(pd.angle(), TAU) / TAU * N)) % N
+		for m in 10:
+			var side := 1 if m % 2 == 0 else -1
+			var u := fposmod(_t * 0.8 + m * 0.21, 1.0)
+			var off := int((1.0 - u) * N * 0.45)
+			var i0 := (ip + side * off + N * 4) % N
+			var i1 := (i0 - side * 2 + N * 4) % N
+			var a0: Vector2 = xf * W[i0].lerp(B[i0], 0.5)
+			var a1: Vector2 = xf * W[i1].lerp(B[i1], 0.5)
+			segs.append(a0)
+			segs.append(a1)
+			sc.append(Color(lerpf(col.r, 1.0, 0.3), lerpf(col.g, 1.0, 0.3), lerpf(col.b, 1.0, 0.3), 0.5 * fl * sin(u * PI)))
+		var outlet: Vector2 = xf * W[ip]
+		for k in (0 if _far else 2):
+			var u2 := fposmod(_t * 1.5 + k * 0.5, 1.0)
+			ci.draw_arc(outlet, 3.0 + 9.0 * u2, 0.0, TAU, 12, Color(col.r, col.g, col.b, 0.45 * fl * (1.0 - u2)), 1.2)

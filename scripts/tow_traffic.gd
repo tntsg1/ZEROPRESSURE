@@ -567,7 +567,20 @@ func _hulk(polys: Array, at: Vector2, stern: Vector2, tug: bool, cut := Rect2())
 		else:
 			all.append(w)
 	for w: PackedVector2Array in all:
-		draw_colored_polygon(w, Color(0.045, 0.048, 0.055))
+		if Pal.solid:
+			# 工业剖面: the closed hull as solid plating lit from the berth's light, its edges
+			# toward the light paler, the far ones in shadow — still nothing of the inside
+			var bb := Geom.bbox(w)
+			var cc := bb.get_center()
+			var rr := maxf(maxf(bb.size.x, bb.size.y) * 0.5, 1.0)
+			var cs := PackedColorArray()
+			for v in w:
+				var g := lerpf(0.55, 1.5, clampf((v - cc).dot(Look.LIGHT_DIR) / rr, -1.0, 1.0) * 0.5 + 0.5)
+				cs.append(Color(0.045 * g, 0.048 * g, 0.055 * g))
+			draw_polygon(w, cs)
+			Cutaway._edge_bands(self, w, 1.0)
+		else:
+			draw_colored_polygon(w, Color(0.045, 0.048, 0.055))
 		var ol := w.duplicate()
 		ol.append(w[0])
 		# a steady line on screen whatever the zoom (a hair of a world line breaks up from afar)

@@ -19,6 +19,7 @@ extends Node
 # Saved: each wheel's rpm, which brakes burnt, which wheels tore loose, which rails went.
 
 const LOOSE_KEEP := 0.5
+const TEAR_TUMBLE := 2.5       # rad/s the housing of a wheel torn loose tumbles at (not the wheel's speed)
 const WHIP_KEEP := 0.6
 
 var game
@@ -166,7 +167,9 @@ func _tear(w: String, why: String) -> void:
 		lost += (b0 - p.cond) * p.value
 		if p.body != null:
 			p.body.linear_velocity = Vector2(6.0, -3.0) * Geom.M
-			p.body.angular_velocity = 12.0
+			# the wheel keeps its own speed inside; the housing is only dragged round by its
+			# bearings (spin.gd on_freed does the same for other rotors): a slow tumble
+			p.body.angular_velocity = TEAR_TUMBLE
 	game.incident("wheel_loose", why)
 	game.say("wheel_loose", at, w)
 	game.note_loss("loss_wheel_loose", w, lost)

@@ -50,7 +50,8 @@ func _run() -> void:
 		kinds[str(a.kind)] = true
 	check(same, "a listing's seller and watchers are the same every time")
 	check(kinds.size() >= 3, "sellers of several kinds on one page (%s)" % str(kinds.keys()))
-	var texts: Array = ui.find_children("*", "Label", true, false).map(func(x): return str(x.text))
+	# 135 号: the status is a lamp tag (Charcoal.LedTag), the rest Labels
+	var texts: Array = ui.find_children("*", "Label", true, false).map(func(x): return str(x.text)) + ui.find_children("*", "", true, false).filter(func(x): return x is Charcoal.LedTag).map(func(x): return str(x.text))
 	check(texts.any(func(t): return t.begins_with("在售 · 已上架")), "cards say they are on sale and how long")
 	check(texts.any(func(t): return t.contains("距离下架还有")), "cards say how long they have left")
 	check(texts.any(func(t): return t.contains("人正在关注")), "cards say who is looking")
@@ -83,7 +84,7 @@ func _run() -> void:
 	Txt.zh = false
 	ui._fill()
 	await _frames(40)
-	var en: Array = ui.find_children("*", "Label", true, false).filter(func(x): return not ui.detail_win.is_ancestor_of(x)).map(func(x): return str(x.text))
+	var en: Array = ui.find_children("*", "", true, false).filter(func(x): return (x is Label or x is Charcoal.LedTag) and not ui.detail_win.is_ancestor_of(x)).map(func(x): return str(x.text))
 	check(en.any(func(t): return t.begins_with("FOR SALE · LISTED FOR")) and not en.any(func(t): return t.contains("距离下架")), "the English page is English")
 	Cap.save(root, "res://tests/out/ship_market_133_list_en.png")
 	ui._detail()

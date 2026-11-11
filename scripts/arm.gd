@@ -177,6 +177,33 @@ func _physics_process(dt: float) -> void:
 				_drop_it()
 
 
+# 2026-11-10 (user: "无人机明明能捡的，还在那傻站了"): the one body the arm, idle, will reach for next
+# (the haulers leave only that one to it; once it is after a body its claim, "arm", keeps it).
+# Worked out once a physics frame.
+# (kept as an instance id: a held reference to a body freed later crashed the engine on quit)
+var _pick_frame := -1
+var _pick_id := 0
+func next_pick():
+	var f := Engine.get_physics_frames()
+	if f != _pick_frame:
+		_pick_frame = f
+		_pick_id = 0
+		if state == "idle" and body == null and not game.auto_paused:
+			var candidates: Array = []
+			for q in queue:
+				if is_instance_valid(q) and q.capture == null:
+					candidates.append(q)
+			if candidates.is_empty(): candidates = game.world.bodies
+			for b in candidates:
+				if takes(b):
+					_pick_id = b.get_instance_id()
+					break
+	if _pick_id == 0:
+		return null
+	var o := instance_from_id(_pick_id)
+	return o if is_instance_valid(o) else null
+
+
 # where it is making for now
 func _heading() -> Vector2:
 	if state == "carry" and not path.is_empty():

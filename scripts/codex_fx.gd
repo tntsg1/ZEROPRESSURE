@@ -111,12 +111,12 @@ static func _bake() -> void:
 static func screen(ci: CanvasItem, r: Rect2, a: float, grid := true) -> void:
 	if _grid == null:
 		_bake()
-	ci.draw_rect(r, Color(0.035, 0.04, 0.047, a))
+	ci.draw_rect(r, Color(0.03, 0.031, 0.034, a))
 	if grid:
 		ci.draw_texture_rect(_grid, r, true, Color(1, 1, 1, a))
-	ci.draw_texture_rect(_ticks_x, Rect2(r.position.x, r.end.y - 4.0, r.size.x, 4.0), true, Color(UiSkin.DATA, 0.35 * a))
-	ci.draw_texture_rect(_ticks_y, Rect2(r.position.x, r.position.y, 4.0, r.size.y), true, Color(UiSkin.DATA, 0.35 * a))
-	brackets(ci, r, Color(UiSkin.DATA, 0.6 * a), 7.0)
+	ci.draw_texture_rect(_ticks_x, Rect2(r.position.x, r.end.y - 4.0, r.size.x, 4.0), true, Color(0.82, 0.83, 0.8, 0.3 * a))
+	ci.draw_texture_rect(_ticks_y, Rect2(r.position.x, r.position.y, 4.0, r.size.y), true, Color(0.82, 0.83, 0.8, 0.3 * a))
+	brackets(ci, r, Color(0.86, 0.87, 0.84, 0.6 * a), 7.0)   # 2026-11-11 炭黑: greyscale (was cyan)
 
 
 
@@ -139,7 +139,7 @@ static func scan(ci: CanvasItem, r: Rect2, a: float, t: float) -> void:
 		var yy := y - i * 2.0
 		if yy < r.position.y or yy > r.end.y:
 			continue
-		ci.draw_line(Vector2(r.position.x + 1, yy), Vector2(r.end.x - 1, yy), Color(UiSkin.DATA, (0.4 if i == 0 else 0.08 * (6 - i) / 6.0) * a), 1.0)
+		ci.draw_line(Vector2(r.position.x + 1, yy), Vector2(r.end.x - 1, yy), Color(0.92, 0.93, 0.9, (0.4 if i == 0 else 0.08 * (6 - i) / 6.0) * a), 1.0)
 
 
 # ---------------------------------------------------------------- heat shimmer (a screen-reading shader)

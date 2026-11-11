@@ -257,7 +257,7 @@ func _max_scroll() -> float:
 # ---------------------------------------------------------------- layout
 
 func _list_rect() -> Rect2:
-	return Rect2(LIST_X, 190.0, LIST_W, size.y - 190.0 - 70.0)
+	return Rect2(LIST_X, 206.0, LIST_W, size.y - 206.0 - 76.0)
 
 
 func _row_rect(i: int) -> Rect2:
@@ -266,51 +266,57 @@ func _row_rect(i: int) -> Rect2:
 
 
 func _tab_rect(i: int) -> Rect2:
-	return Rect2(LIST_X + i * 236.0, 112.0, 226.0, 46.0)
+	return Rect2(LIST_X + i * 244.0, 116.0, 232.0, 56.0)
 
 
 func _filter_rect() -> Rect2:
-	return Rect2(size.x - 400.0, 112.0, 330.0, 46.0)
+	return Rect2(size.x - 400.0, 116.0, 330.0, 56.0)
 
 
 func _close_rect() -> Rect2:
-	return Rect2(size.x - 70.0, 36.0, 34.0, 34.0)
+	# 炭黑 v2: a key with its words and its keycap (was a bare ×)
+	var tw := font_b.get_string_size("关闭" if Txt.zh else "CLOSE", HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x if font_b != null else 40.0
+	var w := tw + 96.0
+	return Rect2(size.x - 60.0 - w, 40.0, w, 48.0)
 
 
 # ---------------------------------------------------------------- draw
 
 func _draw() -> void:
 	var s := size
-	draw_rect(Rect2(Vector2.ZERO, s), Color(0.02, 0.021, 0.025, 1.0))
-	UI.text(self, font_l, Txt.t("cxu_book"), Vector2(LIST_X, 78), 34, Pal.ink(0.95))
-	UI.text(self, font, Txt.t("cxu_book_sub"), Vector2(LIST_X + 4, 100), 13, Pal.ink(0.45))
-	# close
+	# 炭黑 v2: the ground, the book's title; the kinds as numbered keys with their count in a black
+	# window; the close a key with its keycap
+	Charcoal.ground(self, s)
+	UI.text(self, font_l, Txt.t("cxu_book"), Vector2(LIST_X, 80), 38, Pal.ink(0.97))
+	UI.text(self, font, Txt.t("cxu_book_sub"), Vector2(LIST_X + 2, 104), 13, Pal.ink(0.5))
 	var cr := _close_rect()
-	var ca := 0.9 if hover_close else 0.45
-	draw_line(cr.position + Vector2(9, 9), cr.end - Vector2(9, 9), Pal.ink(ca), 2.0, true)
-	draw_line(Vector2(cr.end.x - 9, cr.position.y + 9), Vector2(cr.position.x + 9, cr.end.y - 9), Pal.ink(ca), 2.0, true)
-	# kinds, each with its progress
+	var ck := Charcoal.key(self, cr, 1.0, 0.0, Charcoal.FACE_HI if hover_close else Charcoal.FACE, 9)
+	UI.text(self, font_b, "关闭" if Txt.zh else "CLOSE", ck.position + Vector2(18, 31), 16, Pal.ink(0.95 if hover_close else 0.8))
+	Charcoal.keycap(self, font_b, Rect2(ck.end.x - 60, ck.position.y + 11, 46, 26), "Esc")
 	for i in _ncat():
 		var r := _tab_rect(i)
 		var on := i == cat
 		var n: Vector2i = Codex.count(Codex.CATS[i]) if i < Codex.CATS.size() else Vector2i(GuideCards.seen_ids().size(), GuideCards.CARDS.size())
-		draw_rect(r, Color(0.07, 0.074, 0.084, 1.0) if on else (Color(0.05, 0.053, 0.06, 1.0) if hover_tab == i else Color(0, 0, 0, 0)))
-		draw_rect(Rect2(r.position.x, r.end.y - 3, r.size.x, 3), Pal.heat(1.0, 1.1) if on else Pal.ink(0.12))
-		UI.text(self, font_b, Txt.t("cxu_cat_" + (Codex.CATS[i] if i < Codex.CATS.size() else "guide")), r.position + Vector2(14, 30), 18, Pal.ink(0.95 if on else 0.6))
-		UI.text(self, font, "%d / %d" % [n.x, n.y], Vector2(r.end.x - 12, r.position.y + 30), 14, Pal.ink(0.75 if on else 0.4), 1)
-	# this ship / everything
+		var fr := Charcoal.key(self, r, 1.0, 1.0 if on else 0.0, Charcoal.FACE_HI if hover_tab == i and not on else Charcoal.FACE, 10)
+		if on:
+			Charcoal.lip(self, Rect2(fr.position.x + 12, fr.end.y - 6, fr.size.x - 24, 4))
+		UI.text(self, font_l, "%d" % (i + 1), fr.position + Vector2(14, 37), 24, Charcoal.ACCENT if on else Pal.ink(0.45))
+		UI.text(self, font_b, Txt.t("cxu_cat_" + (Codex.CATS[i] if i < Codex.CATS.size() else "guide")), fr.position + Vector2(40, 35), 17, Pal.ink(0.97 if on else 0.7))
+		var nw := font_b.get_string_size("%d / %d" % [n.x, n.y], HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 18.0
+		var nr := Rect2(fr.end.x - nw - 10, fr.position.y + 14, nw, 26)
+		Charcoal.display(self, nr, 1.0, 5)
+		UI.text(self, font_b, "%d / %d" % [n.x, n.y], nr.position + Vector2(nw * 0.5, 18), 13, Pal.ink(0.92 if on else 0.6), 0)
+	# this ship / everything: a choice key, its lamp lit while it narrows the list
 	if ship != "":
-		var fr := _filter_rect()
-		draw_rect(fr, Color(0.07, 0.074, 0.084, 1.0) if only_ship or hover_filter else Color(0, 0, 0, 0))
-		draw_rect(fr, Pal.ink(0.25), false, 1.0)
-		var box := Rect2(fr.position + Vector2(14, 15), Vector2(16, 16))
-		draw_rect(box, Pal.ink(0.7), false, 1.5)
+		var fr2 := _filter_rect()
+		var fk := Charcoal.key(self, fr2, 1.0, 1.0 if only_ship else 0.0, Charcoal.FACE_HI if hover_filter else Charcoal.FACE, 10)
+		Charcoal.led(self, fk.position + Vector2(22, fk.size.y * 0.5), only_ship, 1.0, 4.5)
 		if only_ship:
-			draw_rect(box.grow(-4), Pal.heat(1.0, 1.1))
-		UI.text(self, font, Txt.t("cxu_ship_only") % _ship_name(), fr.position + Vector2(42, 29), 15, Pal.ink(0.85))
+			Charcoal.lip(self, Rect2(fk.position.x + 12, fk.end.y - 6, fk.size.x - 24, 4))
+		UI.text(self, font, Txt.t("cxu_ship_only") % _ship_name(), fk.position + Vector2(40, 34), 15, Pal.ink(0.9))
 	_list()
 	_detail()
-	UI.text(self, font, Txt.t("cxu_keys") % Keys.label("codex"), Vector2(LIST_X, s.y - 30), 13, Pal.ink(0.4))
+	UI.text(self, font, Txt.t("cxu_keys") % Keys.label("codex"), Vector2(LIST_X, s.y - 30), 13, Pal.ink(0.45))
 
 
 func _ship_name() -> String:
@@ -324,7 +330,7 @@ func _ship_name() -> String:
 func _list() -> void:
 	var lr := _list_rect()
 	var l := rows()
-	draw_rect(lr, Color(0.03, 0.032, 0.037, 1.0))
+	Charcoal.display(self, lr.grow(8.0), 1.0, 10)
 	if l.is_empty():
 		UI.text(self, font, Txt.t("cxu_empty"), lr.position + Vector2(16, 30), 15, Pal.ink(0.4))
 		return
@@ -335,21 +341,21 @@ func _list() -> void:
 		var id: String = l[i]
 		if _guide_tab():
 			if i == sel:
-				draw_rect(r, Color(0.09, 0.094, 0.105, 1.0))
-				draw_rect(Rect2(r.position, Vector2(3, r.size.y)), Pal.heat(1.0, 1.1))
+				draw_rect(r, Charcoal.FACE)
+				draw_rect(Rect2(r.position, Vector2(3, r.size.y)), Charcoal.ACCENT)
 			UI.text(self, font, GuideCards.title(id, ARGS), r.position + Vector2(16, 20), 15, Pal.ink(0.95 if i == sel else 0.75))
 			continue
 		var met := Codex.seen(id)
 		var on := i == sel
 		if on:
-			draw_rect(r, Color(0.09, 0.094, 0.105, 1.0))
-			draw_rect(Rect2(r.position, Vector2(3, r.size.y)), Pal.heat(1.0, 1.1))
+			draw_rect(r, Charcoal.FACE)
+			draw_rect(Rect2(r.position, Vector2(3, r.size.y)), Charcoal.ACCENT)
 		elif i == hover_row:
-			draw_rect(r, Color(0.06, 0.063, 0.07, 1.0))
+			draw_rect(r, Color(0.06, 0.062, 0.068))
 		if met:
 			UI.text(self, font, Codex.title(id), r.position + Vector2(16, 20), 15, Pal.ink(0.95 if on else 0.75))
 			if Codex.is_new(id):
-				draw_circle(Vector2(r.end.x - 18, r.position.y + 14), 4.0, Pal.heat(1.0, 1.2))
+				Charcoal.led(self, Vector2(r.end.x - 18, r.position.y + 14), true, 1.0, 3.5)
 		else:
 			UI.text(self, font, Txt.t("cxu_unmet"), r.position + Vector2(16, 20), 15, Pal.ink(0.25))
 	# the scroll bar
@@ -365,7 +371,7 @@ func _detail() -> void:
 	var x := DET_X
 	var w := size.x - DET_X - 70.0
 	var top := 190.0
-	draw_rect(Rect2(x - 20, top, w + 40, size.y - top - 70.0), Color(0.03, 0.032, 0.037, 1.0))
+	Charcoal.panel(self, Rect2(x - 20, top + 8, w + 40, size.y - top - 84.0), 1.0, 0.0, Charcoal.FACE, 14)
 	if id == "":
 		return
 	if _guide_tab():
@@ -375,14 +381,13 @@ func _detail() -> void:
 			UI.text(self, font, str(s), Vector2(x, yy), 20, Pal.ink(0.8))
 			yy += 40.0
 		var rr := _replay_rect()
-		draw_rect(rr, UiSkin.ACCENT)
+		Charcoal.slab(self, rr, Charcoal.ACCENT, 10)
 		UI.text(self, font_b, Txt.t("cxu_replay"), rr.position + Vector2(rr.size.x * 0.5, 38), 20, Color(0.08, 0.06, 0.05), 0)
 		return
 	var e: Dictionary = CodexData.E[id]
-	var art_box := Rect2(x, top + 24, 420, 300)
+	var art_box := Rect2(x, top + 32, 420, 300)
+	Charcoal.display(self, art_box.grow(6.0), 1.0, 10)
 	if not Codex.seen(id):
-		draw_rect(art_box, Color(0.045, 0.047, 0.053, 1.0))
-		draw_rect(art_box, Pal.ink(0.12), false, 1.0)
 		UI.text(self, font_l, "?", art_box.get_center() + Vector2(0, 26), 72, Pal.ink(0.15), 0)
 		UI.text(self, font_b, Txt.t("cxu_unmet"), Vector2(x + 460, top + 70), 26, Pal.ink(0.4))
 		UI.text(self, font, Txt.t("cxu_unmet_d"), Vector2(x + 460, top + 110), 15, Pal.ink(0.35))
@@ -394,13 +399,15 @@ func _detail() -> void:
 	UI.text(self, font_b, Codex.title(id), Vector2(tx, top + 86), 30, Pal.ink(0.97))
 	var y := top + 120.0
 	for part in ["a", "b", "c"]:
-		var col: Color = Pal.heat(0.95, 1.1) if part == "b" else (Pal.tint(Pal.FLUID, 0.95, 1.0) if part == "c" else Pal.ink(0.55))
-		UI.text(self, font, Txt.t("cxu_" + part), Vector2(tx, y + 16), 13, col)
-		y += _para(Codex.line(id, part), Vector2(tx + 60, y), tw - 60, 16, Pal.ink(0.92), 23.0) + 12.0
+		# 炭黑 v2: each line's lamp — the danger orange, the way white, the plain one dark
+		var col: Color = Charcoal.ACCENT if part == "b" else (Pal.ink(0.95) if part == "c" else Pal.ink(0.55))
+		Charcoal.led(self, Vector2(tx + 4, y + 11), part != "a", 1.0, 3.5, Charcoal.ACCENT if part == "b" else Color(0.92, 0.93, 0.9))
+		UI.text(self, font_b, Txt.t("cxu_" + part), Vector2(tx + 14, y + 16), 12, col)
+		y += _para(Codex.line(id, part), Vector2(tx + 80, y), tw - 80, 16, Pal.ink(0.92), 23.0) + 14.0
 	# the working
 	var wy := maxf(y, top + 350.0) + 14.0 - det_scroll
-	draw_rect(Rect2(x, wy - 18, w, 1), Pal.ink(0.15))
-	UI.text(self, font, Txt.t("cxu_x"), Vector2(x, wy + 6), 13, Pal.ink(0.5))
+	Charcoal.groove(self, x, x + w, wy - 18)
+	UI.text(self, font_b, Txt.t("cxu_x"), Vector2(x, wy + 6), 13, Pal.ink(0.55))
 	_para(Codex.line(id, "x"), Vector2(x, wy + 18), w, 16, Pal.ink(0.82), 25.0)
 	# which ships carry it
 	var where: Array = e.get("ships", [])

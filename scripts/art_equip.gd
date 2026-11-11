@@ -57,6 +57,7 @@ static var _ti: Array = []
 static var _texts: Array = []    # [font, pos, text, width, size, color]
 static var _cache := {}
 static var ext = null          # art_ships.gd: each ship's signature machines (set by Art)
+static var detail = null       # art_detail.gd: the second batch of fine drawings, the cutaway picture's (set by Art)
 const CACHE_MAX := 9000
 
 
@@ -623,7 +624,10 @@ static func door_leaf(ci: CanvasItem, r: Rect2, hinge_left: bool, al: float = 0.
 static func draw(ci: CanvasItem, art: String, w: float, h: float, p, font: Font) -> bool:
 	if p != null:
 		var alt: String = ""
-		if ext != null and ext.BY_NAME.has(p.name_key):
+		# 工业剖面: the devices the old picture drew as a box and a symbol, drawn properly
+		if Pal.solid and detail != null and detail.BY_NAME.has(p.name_key):
+			alt = detail.BY_NAME[p.name_key]
+		elif ext != null and ext.BY_NAME.has(p.name_key):
 			alt = ext.BY_NAME[p.name_key]
 		elif BY_NAME.has(p.name_key):
 			alt = BY_NAME[p.name_key]
@@ -725,7 +729,9 @@ static func _draw_art(ci: CanvasItem, art: String, r: Rect2, p, font: Font) -> v
 		"gun_mount": gun_mount(ci, r)
 		"decoy": decoy(ci, r)
 		_:
-			if ext != null:
+			if detail != null and art in detail.DRAWN:
+				detail.draw(ci, art, r, p, font)
+			elif ext != null:
 				ext._draw_art(ci, art, r, p, font)
 
 
@@ -733,7 +739,7 @@ const DRAWN := ["pump", "cabinet", "swb", "battery", "gen", "env", "filter", "tr
 
 
 static func _has(art: String) -> bool:
-	return art in DRAWN or (ext != null and art in ext.DRAWN)
+	return art in DRAWN or (ext != null and art in ext.DRAWN) or (detail != null and art in detail.DRAWN)
 
 
 # ------------------------------------------------------------------ pump

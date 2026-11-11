@@ -261,7 +261,9 @@ func passed() -> bool:
 		"power":
 			return not bool(game.sys.switch.get("K-T", true)) and game.sys.bus_volts() < 1.0
 		"vent":
-			return game.sys.P("A") < 5.0
+			# 2026-11-10 推进节奏 (user: "放气管子插上去之后，就马上下一个"): the hose on is the step; the
+			# cockpit goes on venting in the background (the winch is outside it: nothing after waits on it)
+			return game.sys.P("A") < 5.0 or NextStep.PACE_ON and game.sys.hoses.has("GAS-A")
 		"cut":
 			return winch_clean()
 		# user 2026-10-26: the winch went into the mouth before the guide saw it held — it waited on
@@ -269,6 +271,11 @@ func passed() -> bool:
 		"grab":
 			return held_equipment() or winch_home()
 		"deliver":
+			# 2026-11-10: handed over (the crane, the arm, a crew drone has it) is as good as in
+			if NextStep.PACE_ON:
+				var wp = _piece(WINCH)
+				if wp != null and wp.body != null and NextStep.held(game, wp.body) and game.tools.held_body != wp.body:
+					return true
 			return _since("deliver_equip") > 0 or winch_home()
 		"scrap":
 			return _since("haul_scrap") > 0 or metal_in > _metal_base
@@ -364,6 +371,11 @@ Whole machines go in from below here and sell as machines. Anything wider will n
 			body.text = rest_text()
 			return
 
+	# 2026-11-10 占位 (待用户定稿): the cockpit venting on in the background
+	if NextStep.PACE_ON and step > STEPS.find("vent") and game.sys.P("A") >= 5.0 and game.sys.hoses.has("GAS-A"):
+		body.text += w("
+后台 · 驾驶舱泄压中：%.0f kPa", "
+BACKGROUND · THE COCKPIT VENTING: %.0f kPa") % game.sys.P("A")
 	if _why != "" and _why_t < WHY_S and STEPS[step] != "rest":
 		body.text = _why + "\n" + body.text
 	if step_t >= STUCK_1 and STEPS[step] == "scrap":

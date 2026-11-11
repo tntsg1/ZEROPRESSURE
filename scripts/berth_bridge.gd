@@ -18,6 +18,7 @@ var t := 0.0
 var _key := ""
 var _a := Vector2.ZERO         # the top of the bridge (the salvage door), world px
 var _b := Vector2.ZERO         # its foot (the boom's top over the gate)
+var _draw_view := Rect2()
 
 
 func _ready() -> void:
@@ -45,7 +46,14 @@ func _process(dt: float) -> void:
 	var e := _ends()
 	_a = e[0]
 	_b = e[1]
-	if ViewCull.sees(game, Rect2(_a, Vector2.ZERO).expand(_b).grow(10.0 * Geom.M)):
+	visible = ViewCull.sees(game, Rect2(_a, Vector2.ZERO).expand(_b).grow(10.0 * Geom.M))
+	var v := ViewCull.view(game)
+	var key := str([_a, _b, roundi(log(maxf(game.cam_zoom(), 0.02)) * 200.0), Txt.zh, ViewCull.off])
+	# All bridge lamps are steady (their old sine never reached zero). Retain the
+	# picture until its geometry, text, line width or visible section changes.
+	if visible and (key != _key or not _draw_view.encloses(v)):
+		_key = key
+		_draw_view = v.grow(8.0 * Geom.M)
 		queue_redraw()
 
 
@@ -83,6 +91,8 @@ func _draw() -> void:
 			var q0: Vector2 = oa.lerp(ob, k0)
 			var p1: Vector2 = wa.lerp(wb, k1)
 			var q1: Vector2 = oa.lerp(ob, k1)
+			if not ViewCull.off and not _draw_view.intersects(Rect2(p0, Vector2.ZERO).expand(q0).expand(p1).expand(q1).grow(M)):
+				continue
 			draw_line(p0, q0, Pal.ink(0.3), lw)
 			draw_line(q0 if i % 2 == 0 else p0, p1 if i % 2 == 0 else q1, Pal.ink(0.24), lw)
 			# a node plate with its bolts at every joint on the inner chord
@@ -109,7 +119,8 @@ func _draw() -> void:
 	var cl := 0.0
 	while cl < len:
 		var cp: Vector2 = a + dir * cl
-		draw_line(cp + nrm * lo * (hw + gd), cp + nrm * lo * (hw + gd + 1.3 * M), Pal.ink(0.16), lw)
+		if ViewCull.off or _draw_view.has_point(cp):
+			draw_line(cp + nrm * lo * (hw + gd), cp + nrm * lo * (hw + gd + 1.3 * M), Pal.ink(0.16), lw)
 		cl += 3.0 * M
 	# ---- outside the right girder: the maintenance walkway, its handrail, ladders down to it
 	var ro := 1.0
@@ -120,14 +131,16 @@ func _draw() -> void:
 	var post := 0.0
 	while post < len:
 		var pp: Vector2 = a + dir * post
-		draw_line(pp + nrm * ro * (hw + gd + 0.9 * M), pp + nrm * ro * (hw + gd + 1.6 * M), Pal.ink(0.16), lw)
+		if ViewCull.off or _draw_view.has_point(pp):
+			draw_line(pp + nrm * ro * (hw + gd + 0.9 * M), pp + nrm * ro * (hw + gd + 1.6 * M), Pal.ink(0.16), lw)
 		post += 1.5 * M
 	var lad := LADDER_EVERY * M * 0.5
 	while lad < len:
 		var lp: Vector2 = a + dir * lad
-		for rr in 4:
-			var rp: Vector2 = lp + dir * (rr - 1.5) * 0.35 * M
-			draw_line(rp + nrm * ro * hw, rp + nrm * ro * (hw + gd + 0.9 * M), Pal.ink(0.2), lw)
+		if ViewCull.off or _draw_view.has_point(lp):
+			for rr in 4:
+				var rp: Vector2 = lp + dir * (rr - 1.5) * 0.35 * M
+				draw_line(rp + nrm * ro * hw, rp + nrm * ro * (hw + gd + 0.9 * M), Pal.ink(0.2), lw)
 		lad += LADDER_EVERY * M
 	# ---- the lamps on the inner chords, their light thrown in across the deck
 	var lmp := LAMP_EVERY * M * 0.5
@@ -135,6 +148,8 @@ func _draw() -> void:
 	while lmp < len:
 		for sd in [-1.0, 1.0]:
 			var lp: Vector2 = a + dir * lmp + nrm * sd * (hw - 0.3 * M)
+			if not ViewCull.off and not _draw_view.grow(4.0 * M).has_point(lp):
+				continue
 			var on := lit and (0.92 + 0.08 * sin(t * 2.3 + k)) > 0.0
 			draw_circle(lp, 0.2 * M, Pal.ink(0.85 if on else 0.3, 1.4))
 			if on:

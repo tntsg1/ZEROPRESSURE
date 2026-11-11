@@ -33,11 +33,16 @@ var tick_over4 := 0
 func _ready() -> void:
 	z_index = 4
 	z_as_relative = false
+	# 火车看不见 (2026-11-10): the trains are meshes; the engine's own bounds for them missed the screen when
+	# the camera was close in on the hub, and the whole layer was culled — no train drawn at all (seen from
+	# far out it was). Its bounds are the whole port: what is off the screen is skipped in _draw itself
+	RenderingServer.canvas_item_set_custom_rect(get_canvas_item(), true, Rect2(-1.0e6, -1.0e6, 2.0e6, 2.0e6))
 	FW.reset()
 	FW.on = true
 	W.trains_feed = true
 	FW.tram = game.tram if game != null else null
 	Tram.avoid = FW.avoid_cost
+	Tram.wait_est = FW.est_wait
 	if FW.tram != null:
 		FW.passenger_arrived(FW.tram)
 	art = HubArt.new()
@@ -65,6 +70,7 @@ func _exit_tree() -> void:
 	W.trains_feed = false
 	FW.tram = null
 	Tram.avoid = Callable()
+	Tram.wait_est = Callable()
 
 
 func active() -> bool:

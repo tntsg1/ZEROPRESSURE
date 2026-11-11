@@ -3,6 +3,7 @@ extends CanvasLayer
 const FastDraw = preload("res://scripts/fast_draw.gd")
 const CoreAsset = preload("res://scripts/core_asset.gd")
 const GuideCards = preload("res://scripts/guide_cards.gd")
+const HudKeys = preload("res://scripts/hud_keys.gd")
 # Screen-space layer: contract panel, income, toolbar, drone status, cursor
 # labels, measurement tags, messages, hints, the contract card, the pause
 # menu and the settlement. Everything moves on springs and real time.
@@ -69,6 +70,7 @@ var cur_t := 0.0
 var cur_last := []
 var cur_out := 9.0
 var minimap: Control        # the berth map, bottom right (P.6)
+var keys_band: Control      # 2026-11-11: the function keys, top right (scripts/hud_keys.gd)
 var stock_last := {}
 var stock_pop := 9.0
 var stock_hit := ""
@@ -100,6 +102,10 @@ func _ready() -> void:
 	minimap = preload("res://scripts/minimap.gd").new()
 	minimap.visible = false
 	add_child(minimap)
+	# 2026-11-11 现场 HUD 方案 1 (user's pick): every function as a key, top right (scripts/hud_keys.gd)
+	keys_band = preload("res://scripts/hud_keys.gd").new()
+	keys_band.hud = self
+	add_child(keys_band)
 	# the on-site guide's two keys (27 号): end it, or take its step's action (open the exchange)
 	for i in 3:
 		var b := Button.new()
@@ -142,7 +148,9 @@ func to_screen(w: Vector2) -> Vector2:
 
 func pointer_over_ui() -> bool:
 	var m := c.get_local_mouse_position()
-	return _toolbar_rect().has_point(m) or _item_at(m) != "" or (game.training and TutorialHud.OVERVIEW_RECT.has_point(m)) or (game.codex_hud != null and game.codex_hud.pointer_over_card())
+	if keys_band != null and keys_band.pointer_over():
+		return true
+	return _toolbar_rect().has_point(m) or _item_at(m) != "" or (game.training and TutorialHud.overview_now.has_point(m)) or (game.codex_hud != null and game.codex_hud.pointer_over_card())
 
 
 # the consumables this contract carries: one tile each, above the drone panel
@@ -215,6 +223,8 @@ func keep_out() -> Array:
 		_ko.append((fr[k] as Rect2).grow_individual(10.0, 34.0, 10.0, 34.0))
 	if asset_rect.has_area():
 		_ko.append(asset_rect.grow(10.0))
+	if keys_band != null and keys_band.band_rect().has_area():
+		_ko.append(keys_band.band_rect().grow(10.0))
 	if Look.on and game.look != null:
 		_ko.append(Rect2(size().x * 0.5 - 340.0, 8.0, 680.0, 86.0))
 	return _ko
@@ -224,9 +234,12 @@ func keep_out() -> Array:
 # [offset, alpha]. Pushed no further than MAX_PUSH; what can't get clear fades.
 const MAX_PUSH := 360.0
 func clear_of(r: Rect2) -> Array:
-	var zones := keep_out()
+	# 2026-11-11: the function keys top right are not pushed round (a sign squeezed between them and the
+	# contract's take crowded both): what lies under them fades instead, below
+	var band: Rect2 = keys_band.band_rect().grow(10.0) if keys_band != null else Rect2()
+	var zones: Array = keep_out().filter(func(z): return not (band.has_area() and z == band))
 	var off := Vector2.ZERO
-	if zones.is_empty():
+	if zones.is_empty() and not band.has_area():
 		return [off, 1.0]
 	var s := size()
 	for it in 4:
@@ -254,7 +267,11 @@ func clear_of(r: Rect2) -> Array:
 	for z in zones:
 		if fin.intersects(z):
 			hit = maxf(hit, fin.intersection(z).get_area() / maxf(fin.get_area(), 1.0))
-	return [off, 1.0 - clampf(hit * 1.6, 0.0, 0.9)]
+	var al := 1.0 - clampf(hit * 1.6, 0.0, 0.9)
+	if band.has_area() and fin.intersects(band):
+		# under the keys: almost gone (the keys read clean; it comes back as the view moves on)
+		al = minf(al, 0.1)
+	return [off, al]
 
 
 func menu_changed() -> void:
@@ -875,7 +892,10 @@ func _draw_hud_body() -> void:
 			_xform(Vector2(-(1.0 - _in(0) * (1.0 - Pal.ease_io(bpk))) * 420.0, 0.0))
 			# booting: the edge and plate first, the content only once it is uncovered
 			if _boot(0) < 0.45:
-				UI.panel(c, _contract_rect(), 0.82, 0.0, Pal.HEAT, _boot(0))
+				if HudKeys.ON:
+					Charcoal.frost(c, _contract_rect(), _boot(0), 12)
+				else:
+					UI.panel(c, _contract_rect(), 0.82, 0.0, Pal.HEAT, _boot(0))
 			else:
 				_contract_panel()
 				UI.boot_cover(c, _contract_rect(), _boot(0))
@@ -1341,7 +1361,11 @@ func _contract_panel() -> void:
 	var by0 := maxf(y + 120, y + 56 + items0.size() * 24 + 18)
 	var lrow := 0.0 if g.training or g.exam != null else 24.0     # the "pieces left" row
 	var ph := by0 - y + 80.0 + lrow + (56.0 if g.scope() != "full" else 0.0)
-	UI.panel(c, Rect2(x - 18, y - 30, 340, ph), 0.82, 0.0, Pal.HEAT, _boot(0))
+	# 2026-11-11 (user: "左上角可以弄得稍微有一点透明或者之类的质感"): a frosted plate with its lit lip
+	if HudKeys.ON:
+		Charcoal.frost(c, Rect2(x - 18, y - 30, 340, ph), _boot(0), 12)
+	else:
+		UI.panel(c, Rect2(x - 18, y - 30, 340, ph), 0.82, 0.0, Pal.HEAT, _boot(0))
 	_text(g.txt("contract") + " " + g.ship.get("contract", ""), Vector2(x, y), 13, Pal.ink(0.5), font)
 	var kinds: Array = []
 	if g.scope() != "full":
@@ -1431,6 +1455,33 @@ func _contract_panel() -> void:
 	_recall(x, ry)
 
 
+var _board_top := -1.0
+var _board_ms := 0
+
+
+# a line held to a width (Charcoal.fit_line): the type steps down first, then the end is cut with "…"
+func _fit_line(s: String, f: Font, px: int, wd: float) -> Array:
+	return Charcoal.fit_line(f, s, wd, px)
+
+
+# where the training cards and notes under the contract panel end (0 when there are none); the same
+# rows _contract_panel() and _recall() lay out
+func _recall_bottom() -> float:
+	var g = game
+	var asst = g.assist
+	if asst == null or (asst.cards.is_empty() and asst.notes.is_empty()):
+		return 0.0
+	var y := 46.0
+	var items0: Array = _title_items()
+	var by := maxf(y + 120, y + 56 + items0.size() * 24 + 18)
+	var lrow := 0.0 if g.training or g.exam != null else 24.0
+	var yy := by + 70 + lrow + (36.0 if g.scope() != "full" else 0.0)
+	yy += asst.cards.size() * 54.0
+	if not asst.notes.is_empty():
+		yy += 44.0 + (asst.notes.size() - 1) * 18.0 + 6.0
+	return yy
+
+
 # training recall cards slide in, then fold into the notes under the contract
 func _recall(x: float, y: float) -> void:
 	var asst = game.assist
@@ -1443,15 +1494,20 @@ func _recall(x: float, y: float) -> void:
 		var r := Rect2(x - (1.0 - k) * 40.0, yy, 300, 46)
 		c.draw_style_box(UiSkin.box("panel", k), r)
 		c.draw_rect(Rect2(r.position + Vector2(8, 9), Vector2(3, r.size.y - 18)), Color(UiSkin.DATA, k))
-		_text(game.txt("rc_title") + " · " + game.txt("rc_l") % cd[0], r.position + Vector2(14, 18), 13, Pal.tint(Pal.AIR, 0.9 * k, 1.1), font)
-		_text(game.txt(cd[1]), r.position + Vector2(14, 37), 15, Pal.ink(0.92 * k), font_b)
+		# 2026-11-11: held to the card's width (the English title ran past its edge)
+		var hl: Array = _fit_line(game.txt("rc_title") + " · " + game.txt("rc_l") % cd[0], font, 13, r.size.x - 24.0)
+		_text(str(hl[0]), r.position + Vector2(14, 18), int(hl[1]), Pal.tint(Pal.AIR, 0.9 * k, 1.1), font)
+		var sl: Array = _fit_line(game.txt(cd[1]), font_b, 15, r.size.x - 24.0)
+		_text(str(sl[0]), r.position + Vector2(14, 37), int(sl[1]), Pal.ink(0.92 * k), font_b)
 		yy += 54
 	if asst.notes.is_empty():
 		return
-	_text(game.txt("notes"), Vector2(x, yy + 10), 13, Pal.ink(0.5), font)
+	# 2026-11-11: a line lower, clear of the camera's "TASK" label over it; each note held to the panel's width
+	_text(game.txt("notes"), Vector2(x, yy + 24), 13, Pal.ink(0.5), font)
 	for i in asst.notes.size():
 		var n: Array = asst.notes[i]
-		_text("%s  ·  %s" % [game.txt(n[1]), game.txt("rc_l") % n[0]], Vector2(x, yy + 30 + i * 18), 13, Pal.ink(0.5), font)
+		var nl: Array = _fit_line("%s  ·  %s" % [game.txt(n[1]), game.txt("rc_l") % n[0]], font, 13, 322.0)
+		_text(str(nl[0]), Vector2(x, yy + 44 + i * 18), int(nl[1]), Pal.ink(0.5), font)
 
 
 func _credits(s: Vector2) -> void:
@@ -1703,6 +1759,9 @@ func _machines(s: Vector2) -> void:
 	var ps: Array = g.plan.status() if g.plan != null and Game.G4_OPEN else []
 	if g.arm == null and g.hauler == null and g.crane == null and ps.is_empty():
 		return
+	# 2026-11-11: the J key and the plan's line are in the function keys now (scripts/hud_keys.gd)
+	if keys_band != null and keys_band.shown():
+		return
 	var x := s.x - 40.0
 	var y := 290.0
 	var h := 40.0 + (44.0 if not ps.is_empty() else 0.0)
@@ -1725,7 +1784,11 @@ func _toolbar(s: Vector2) -> void:
 		var on: float = slot_glow[i]
 		# 54 号: the slots are the new skin's rounded panels; the one in hand lifts and warms
 		rect.position.y -= 4.0 * on
-		c.draw_style_box(UiSkin.box("panel", 1.0, on), rect)
+		# 2026-11-11 (user: "下面这 5 个功能切换键最好弄得透明一点"): frosted, the slot in hand fuller with its lip lit
+		if HudKeys.ON:
+			Charcoal.frost(c, rect, 1.0, 10, on, 0.42 + 0.3 * on)
+		else:
+			c.draw_style_box(UiSkin.box("panel", 1.0, on), rect)
 		if on > 0.5 and tool_pulse < 0.45:
 			var e := Pal.ease_out(tool_pulse / 0.45)
 			c.draw_style_box(UiSkin.box("ring", 1.0 - e), rect.grow(2.0 + 9.0 * e))
@@ -2530,7 +2593,7 @@ func _menu_items() -> Array:
 func _menu_rect(i: int) -> Rect2:
 	var s := size()
 	var n := _menu_items().size()
-	return Rect2(s.x * 0.5 - 220, s.y * 0.5 - (n * 58 - 10) * 0.5 + i * 58, 440, 48)
+	return Rect2(s.x * 0.5 - 260, s.y * 0.5 - (n * 80 - 12) * 0.5 + i * 80, 520, 68)
 
 
 func _menu_hover() -> void:
@@ -2598,18 +2661,32 @@ func _menu(s: Vector2) -> void:
 		c.draw_rect(Rect2(Vector2.ZERO, s), Color(UiSkin.BG1.r, UiSkin.BG1.g, UiSkin.BG1.b, 0.92 * k))
 		_keys_page(s, k)
 		return
-	# 51 号: the new look — the world dimmed under the ground's tint, glass keys, the accent on hover
-	c.draw_rect(Rect2(Vector2.ZERO, s), Color(UiSkin.BG1.r, UiSkin.BG1.g, UiSkin.BG1.b, 0.9 * k))
+	# 炭黑 v2 (still the keys and nothing else, as the user set): the world under the charcoal ground;
+	# each key a raised charcoal key — its number large, its words, a lamp lit and the orange lip under
+	# the pointer; a key asking to be pressed again to confirm turns orange
+	c.draw_rect(Rect2(Vector2.ZERO, s), Color(Charcoal.BG, 0.9 * k))
 	var items := _menu_items()
+	var fl: Font = Fonts.get_font("Light")
 	for i in items.size():
 		var r := _menu_rect(i)
 		var rk := Motion.stagger(menu_k.x * 0.6, i, 0.04, 0.2)
 		r.position.y += (1.0 - rk) * 20.0
 		var hov := i == menu_hover
-		if hov:
-			r.position.y -= 2.0
-		c.draw_style_box(UiSkin.box("raised", k * rk, 1.0 if hov else 0.0), r.grow(-2.0))
-		_text(items[i][1], Vector2(r.get_center().x, r.position.y + 32), 20, Pal.ink((0.95 if i == menu_hover else 0.6) * k * rk), font, 0)
+		var a := k * rk
+		var asking: bool = (str(items[i][0]) == "end" and menu_confirm == 1) or (str(items[i][0]) == "title" and menu_confirm == 4)
+		var fr: Rect2
+		if asking:
+			Charcoal.slab(c, r, Color(Charcoal.ACCENT, a), 12)
+			fr = r
+		else:
+			fr = Charcoal.key(c, r, a, 0.0, Charcoal.FACE_HI if hov else Charcoal.FACE, 12)
+		var ink := Color(0.06, 0.05, 0.04, a) if asking else Pal.ink((0.97 if hov else 0.75) * a)
+		c.draw_string(fl, fr.position + Vector2(26, 46), "%d" % (i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 30, ink if asking else (Color(Charcoal.ACCENT, a) if hov else Pal.ink(0.45 * a)))
+		c.draw_string(font_b, fr.position + Vector2(70, 43), str(items[i][1]), HORIZONTAL_ALIGNMENT_LEFT, fr.size.x - 120.0, 21, ink)
+		if not asking:
+			Charcoal.led(c, Vector2(fr.end.x - 30, fr.position.y + fr.size.y * 0.5), hov, a, 5.0)
+			if hov:
+				Charcoal.lip(c, Rect2(fr.position.x + 16, fr.end.y - 6, fr.size.x - 32, 4), a)
 	if menu_confirm == 1:
 		_text(game.txt("end_warn"), Vector2(s.x * 0.5, _menu_rect(items.size()).position.y + 24), 14, Pal.heat(0.85 * k, 1.0), font, 0)
 
@@ -2747,17 +2824,21 @@ func _settlement128(s: Vector2, e: float) -> void:
 	# sized to what is on it: the cell rows (25 a row) and the overflow note
 	var sheet_h: float = 690.0 + (50.0 if StoreBook.used_with(StoreBook.inbox()) > StoreBook.cap() else 0.0)
 	var sheet := Rect2(cx - 400, maxf(40.0, (s.y - sheet_h) * 0.5) + (1.0 - pk) * 40.0, 800, sheet_h)
-	c.draw_rect(sheet, Color(0.022, 0.024, 0.029, 0.98 * pk))
-	c.draw_rect(sheet, Pal.ink(0.1 * pk), false, 1.0)
-	c.draw_rect(Rect2(sheet.position, Vector2(sheet.size.x * pk, 2)), Color(UiSkin.ACCENT, pk))
+	# 炭黑 v2: a charcoal plate; its figures in black windows
+	Charcoal.panel(c, sheet, pk, 0.0, Charcoal.FACE, 16)
 	var x0 := sheet.position.x + 48.0
 	var x1 := sheet.end.x - 48.0
 	var y := sheet.position.y + 54.0
 	# the head: done, the contract, the recovery rate
-	_text(Ops.w("拆解完成", "STRIPPED") if not end_early else g.txt("e_early"), Vector2(x0, y), 22, Pal.ink(0.95 * a), font_b)
+	_text(Ops.w("拆解完成", "STRIPPED") if not end_early else g.txt("e_early"), Vector2(x0, y + 4), 32, Pal.ink(0.97 * a), font_l)
 	var rk := clampf((e - 0.3) / 1.1, 0.0, 1.0)
-	_text("%s %.1f%%" % [Ops.w("回收率", "RECOVERED"), g.recovery_rate() * 100.0 * Pal.ease_out(rk)], Vector2(x1, y), 22, Pal.ink(0.95 * a), font_b, 1)
-	y += 30.0
+	var rate: float = g.recovery_rate() * Pal.ease_out(rk)
+	var rw := Rect2(x1 - 236, y - 36, 236, 78)
+	Charcoal.display(c, rw, a, 9)
+	_text(Ops.w("回收率", "RECOVERED"), rw.position + Vector2(14, 21), 12, Pal.ink(0.5 * a), font_b)
+	_text("%.1f%%" % (rate * 100.0), Vector2(rw.end.x - 14, rw.position.y + 54), 32, Pal.ink(0.98 * a), font_l, 1)
+	Charcoal.segments(c, Rect2(rw.position.x + 14, rw.end.y - 13, rw.size.x - 28, 5), rate * 20.0, 20, a)
+	y += 34.0
 	var tl := (g.txt("e_contract") + " " + str(g.ship.get("contract", ""))).strip_edges() + " · " + (g.txt("e_must_ok") if g.all_mandatory_ok() else g.txt("e_must_no")) + " · " + g.txt("e_time") + " " + _clock(g.playtime)
 	_text(tl, Vector2(x0, y), 14, Pal.ink(0.5 * a), font)
 	y += 44.0
@@ -2776,24 +2857,30 @@ func _settlement128(s: Vector2, e: float) -> void:
 		var tk := Pal.back(clampf((e - 0.6 - i * 0.12) / 0.3, 0.0, 1.0), 2.0)
 		var tr := Rect2(x0 + i * (tw + 14.0), y + (1.0 - tk) * 14.0, tw, 112)
 		var some: bool = counts[i] > 0.0005
-		c.draw_rect(tr, Color(1, 1, 1, 0.035 * tk))
-		c.draw_rect(tr, Pal.ink((0.3 if some else 0.12) * tk), false, 1.0)
-		if some:
-			c.draw_rect(Rect2(tr.position, Vector2(3, tr.size.y)), Color(UiSkin.ACCENT, 0.9 * tk))
-		_text(StoreBook.cat_name(str(tiles[i][0])), tr.position + Vector2(18, 30), 15, Pal.ink(0.7 * tk), font_b)
-		_text(str(tiles[i][1]), tr.position + Vector2(18, 72), 30, Pal.ink((0.97 if some else 0.35) * tk), font_l)
-		_text(str(tiles[i][2]), tr.position + Vector2(18, 98), 12, Pal.ink(0.42 * tk), font)
+		Charcoal.display(c, tr, tk, 9)
+		Charcoal.led(c, Vector2(tr.end.x - 18, tr.position.y + 22), some, tk, 4.0, Color(0.92, 0.93, 0.9))
+		_text("%02d" % (i + 1), tr.position + Vector2(16, 28), 13, Color(Charcoal.ACCENT, tk) if some else Pal.ink(0.35 * tk), font_b)
+		_text(StoreBook.cat_name(str(tiles[i][0])), tr.position + Vector2(42, 28), 14, Pal.ink(0.7 * tk), font_b)
+		_text(str(tiles[i][1]), tr.position + Vector2(14, 74), 34, Pal.ink((0.97 if some else 0.3) * tk), font_l)
+		_text(str(tiles[i][2]), tr.position + Vector2(16, 100), 12, Pal.ink(0.45 * tk), font)
 	y += 150.0
 	var k2 := clampf((e - 1.1) / 0.4, 0.0, 1.0)
 	var roll := Pal.ease_out(clampf((e - 1.1) / 0.9, 0.0, 1.0))
-	_text(Ops.w("按回收价", "AT RECYCLING PRICE"), Vector2(x0, y), 14, Pal.ink(0.5 * k2), font)
-	_text(Pal.money(float(h.get("recycle", 0.0)) * roll), Vector2(x0, y + 38), 32, Pal.ink(0.95 * k2), font_l)
-	_text(Ops.w("现在卖给回收站，立刻到账", "SOLD TO THE RECYCLING STATION NOW, PAID AT ONCE"), Vector2(x0, y + 62), 12, Pal.ink(0.4 * k2), font)
-	var xm := cx + 20.0
-	_text(Ops.w("按市价", "AT MARKET PRICE"), Vector2(xm, y), 14, Pal.ink(0.5 * k2), font)
-	_text(Pal.money(float(h.get("market", 0.0)) * roll), Vector2(xm, y + 38), 32, Pal.ink(0.95 * k2), font_l)
-	_text(Ops.w("修好贸易港后，交易行和订单按这个价收", "WHAT THE EXCHANGE AND ORDERS PAY, ONCE THE TRADE PORT IS MENDED"), Vector2(xm, y + 62), 12, Pal.ink(0.4 * k2), font)
-	y += 96.0
+	var xm := cx + 7.0
+	var pw := (x1 - x0 - 14.0) * 0.5
+	for pi in 2:
+		var px := x0 if pi == 0 else xm
+		var pr := Rect2(px, y - 22, pw, 96)
+		Charcoal.display(c, pr, k2, 9)
+		_text(Ops.w("按回收价", "AT RECYCLING PRICE") if pi == 0 else Ops.w("按市价", "AT MARKET PRICE"), pr.position + Vector2(14, 22), 12, Pal.ink(0.5 * k2), font_b)
+		_text(Pal.money(float(h.get("recycle" if pi == 0 else "market", 0.0)) * roll), pr.position + Vector2(12, 62), 34, Color(Charcoal.ACCENT, k2) if pi == 0 else Pal.ink(0.97 * k2), font_l)
+		# the note at the window's foot, smaller until it fits whole (the English one runs long)
+		var note := Ops.w("现在卖给回收站，立刻到账", "SOLD TO THE RECYCLING STATION NOW, PAID AT ONCE") if pi == 0 else Ops.w("修好贸易港后，交易行和订单按这个价收", "WHAT THE EXCHANGE AND ORDERS PAY, ONCE THE TRADE PORT IS MENDED")
+		var npx := 11
+		while npx > 8 and font.get_string_size(note, HORIZONTAL_ALIGNMENT_LEFT, -1, npx).x > pw - 24.0:
+			npx -= 1
+		_text(note, pr.position + Vector2(14, 84), npx, Pal.ink(0.45 * k2), font)
+	y += 100.0
 	# the cash: what is in the account, and the first machine bought on the spot (in one line)
 	var spot := float(r.get("spot_paid", 0.0))
 	var cl := Ops.w("资金 %s", "CASH %s") % Pal.money(float(r.get("money", 0.0)))
@@ -2801,7 +2888,7 @@ func _settlement128(s: Vector2, e: float) -> void:
 		cl += Ops.w("  ·  其中拆船时回收站现场收购一件 +%s", "  ·  OF WHICH ONE MACHINE BOUGHT ON THE SPOT +%s") % Pal.money(spot)
 	_text(cl, Vector2(x0, y), 14, Pal.ink(0.6 * k2), font)
 	y += 22.0
-	c.draw_line(Vector2(x0, y), Vector2(x1, y), Pal.ink(0.12 * k2), 1.0)
+	Charcoal.groove(c, x0, x1, y, k2)
 	y += 40.0
 	# ---- the warehouse's cells
 	var k3 := clampf((e - 1.5) / 0.4, 0.0, 1.0)
@@ -2818,21 +2905,26 @@ func _settlement128(s: Vector2, e: float) -> void:
 	var bw := x1 - x0
 	var bh := 22.0
 	var total := float(maxi(cap, after))
-	c.draw_rect(Rect2(x0, y, bw, bh), Color(1, 1, 1, 0.05 * k3))
-	var wn := bw * float(now) / total
-	var wa := bw * float(after - now) / total * fill
-	c.draw_rect(Rect2(x0, y, wn, bh), Color(Pal.ink(0.45), k3))
-	var cap_x := x0 + bw * float(cap) / total
-	c.draw_rect(Rect2(x0 + wn, y, minf(wa, maxf(0.0, cap_x - x0 - wn)), bh), Color(UiSkin.ACCENT, 0.9 * k3))
-	if x0 + wn + wa > cap_x:
-		c.draw_rect(Rect2(cap_x, y, x0 + wn + wa - cap_x, bh), Color(Pal.heat(1.0, 1.2), k3))
-		c.draw_line(Vector2(cap_x, y - 4), Vector2(cap_x, y + bh + 4), Pal.ink(0.9 * k3), 2.0)
-	for i in range(1, 8):
-		c.draw_line(Vector2(x0 + bw * i / 8.0, y), Vector2(x0 + bw * i / 8.0, y + bh), Color(0, 0, 0, 0.35 * k3), 1.0)
-	y += bh + 24.0
-	c.draw_rect(Rect2(x0, y - 10, 12, 10), Color(Pal.ink(0.45), k3))
+	Charcoal.display(c, Rect2(x0 - 8, y - 8, bw + 16, bh + 16), k3, 7)
+	# 32 segments (one a row of the warehouse's cells); a segment lit by what fills it
+	var nseg := 32
+	var sw := bw / nseg
+	var shown_after := float(now) + float(after - now) * fill
+	for i in nseg:
+		var u0 := total * i / nseg
+		var col := Color(0.16, 0.165, 0.175)
+		if u0 < float(now):
+			col = Pal.ink(0.6)
+		elif u0 < shown_after:
+			col = Charcoal.ACCENT if u0 < float(cap) else Pal.heat(1.0, 1.25)
+		c.draw_rect(Rect2(x0 + i * sw + 1.5, y + 2, sw - 3.0, bh - 4), Color(col, k3))
+	if after > cap:
+		var cap_x := x0 + bw * float(cap) / total
+		c.draw_line(Vector2(cap_x, y - 6), Vector2(cap_x, y + bh + 6), Pal.ink(0.9 * k3), 2.0)
+	y += bh + 30.0
+	c.draw_rect(Rect2(x0, y - 10, 12, 10), Color(Pal.ink(0.6), k3))
 	_text(Ops.w("已有 %d 格", "IN STORE %d") % now, Vector2(x0 + 18, y), 12, Pal.ink(0.5 * k3), font)
-	c.draw_rect(Rect2(x0 + 130, y - 10, 12, 10), Color(UiSkin.ACCENT, 0.9 * k3))
+	c.draw_rect(Rect2(x0 + 130, y - 10, 12, 10), Color(Charcoal.ACCENT, k3))
 	_text(Ops.w("这一单约 %d 格", "THIS JOB ~%d") % maxi(0, after - now), Vector2(x0 + 148, y), 12, Pal.ink(0.5 * k3), font)
 	_text(Ops.w("仓库 %d×%d 格 · 每格约 1 米 · 原料一捆 2 吨 · 零件一盒 %d 个", "%d×%d CELLS · ABOUT 1 m EACH · RAW 2 t A BUNDLE · PARTS %d A BOX") % [StoreBook.COLS, StoreBook.rows(), StoreBook.PART_STACK], Vector2(x1, y), 12, Pal.ink(0.4 * k3), font, 1)
 	if over > 0:
@@ -2849,15 +2941,17 @@ func _settlement128(s: Vector2, e: float) -> void:
 		end_go_rect = br
 		var hov := br.has_point(c.get_local_mouse_position())
 		var pulse := 0.5 + 0.5 * sin(t * 3.0)
-		c.draw_rect(br, Color(UiSkin.ACCENT, (0.3 if hov else 0.16 + 0.06 * pulse) * gk))
-		c.draw_rect(br, Color(UiSkin.ACCENT, 0.95 * gk), false, 1.5)
+		Charcoal.slab(c, br.grow(2.0 if hov else 0.0), Color(Charcoal.ACCENT.lightened(0.08 * pulse + (0.1 if hov else 0.0)), gk), 12)
 		var label := Ops.w("入库", "PUT IT AWAY") if over <= 0 else Ops.w("去仓库腾位置", "GO AND MAKE ROOM")
-		_text(label, Vector2(br.get_center().x, br.position.y + 40), 24, Pal.ink(0.98 * gk), font_b, 0)
+		_text(label, Vector2(br.get_center().x, br.position.y + 40), 24, Color(0.06, 0.05, 0.04, gk), font_b, 0)
 		_text(Ops.w("按任意键或点这里", "ANY KEY OR CLICK"), Vector2(br.get_center().x, br.end.y + 22), 12, Pal.ink(0.42 * gk), font, 0)
-		var dl := Ops.w("详细：钱款、贷款、工具  [D] %s", "DETAILS: CASH, LOAN, GEAR  [D] %s") % ("▴" if end_detail else "▾")
+		var dl := Ops.w("详细：钱款、贷款、工具 %s", "DETAILS: CASH, LOAN, GEAR %s") % ("▴" if end_detail else "▾")
 		var dw := font.get_string_size(dl, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
-		end_detail_rect = Rect2(x1 - dw - 8, sheet.end.y - 40, dw + 16, 28)
-		_text(dl, Vector2(x1, sheet.end.y - 20), 13, Pal.ink((0.8 if end_detail_rect.has_point(c.get_local_mouse_position()) else 0.45) * gk), font, 1)
+		end_detail_rect = Rect2(x1 - dw - 76, sheet.end.y - 50, dw + 76, 36)
+		var dh := end_detail_rect.has_point(c.get_local_mouse_position())
+		var dk := Charcoal.key(c, end_detail_rect, gk, 1.0 if end_detail else 0.0, Charcoal.FACE_HI if dh else Charcoal.FACE, 8)
+		_text(dl, dk.position + Vector2(14, 23), 13, Pal.ink((0.95 if dh else 0.7) * gk), font)
+		Charcoal.keycap(c, font_b, Rect2(dk.end.x - 44, dk.position.y + 6, 32, 24), "D", gk)
 	# the review of what was lost (left); the details (right) when asked
 	if e > 1.6:
 		_review(Vector2(sheet.position.x - 30 - 430, sheet.position.y + 40), e - 1.6)
@@ -2875,7 +2969,8 @@ func _settlement128(s: Vector2, e: float) -> void:
 func _end_details(r: Rect2) -> void:
 	var rows := career_rows()
 	r.size.y = 70.0 + rows.size() * 28.0
-	UI.panel(c, r, 1.0, 0.0, Pal.FLUID)
+	Charcoal.panel(c, r, 1.0, 0.0, Charcoal.FACE, 14)
+	Charcoal.display(c, Rect2(r.position.x + 12, r.position.y + 48, r.size.x - 24, r.size.y - 60), 1.0, 8)
 	_text(Ops.w("详细", "DETAILS"), r.position + Vector2(22, 34), 16, Pal.ink(0.9), font_b)
 	var y := r.position.y + 66.0
 	for row in rows:
@@ -2908,14 +3003,16 @@ func _review(at: Vector2, e: float) -> void:
 	var h: float = 84.0 + maxf(1, rows.size()) * 44.0 + g.mandatory_lost.size() * 30.0 + (40.0 if not rows.is_empty() else 0.0)
 	var a := clampf(e / 0.4, 0.0, 1.0)
 	var r := Rect2(at, Vector2(430, h))
-	UI.panel(c, r, a, 1.0, Pal.HEAT if not rows.is_empty() or not g.mandatory_lost.is_empty() else Pal.FLUID)
-	_text(g.txt("rv_title"), r.position + Vector2(24, 36), 18, Pal.ink(0.95 * a), font_b)
+	var lost: bool = not rows.is_empty() or not g.mandatory_lost.is_empty()
+	Charcoal.panel(c, r, a, 0.0, Charcoal.FACE, 14)
+	Charcoal.led(c, r.position + Vector2(28, 30), true, a, 5.0, Charcoal.ACCENT if lost else Color(0.92, 0.93, 0.9))
+	_text(g.txt("rv_title"), r.position + Vector2(44, 36), 18, Pal.ink(0.95 * a), font_b)
 	var y := r.position.y + 66.0
 	for tg in g.mandatory_lost:
 		_text(g.txt("rv_mandatory") % [tg, g.txt(g.mandatory_lost[tg])], Vector2(r.position.x + 24, y + 6), 15, Pal.heat(0.95 * a, 1.2), font_b)
 		y += 30.0
 	if rows.is_empty():
-		_text(g.txt("rv_none"), Vector2(r.position.x + 24, y + 14), 15, Pal.tint(Pal.FLUID, 0.9 * a, 1.1), font)
+		_text(g.txt("rv_none"), Vector2(r.position.x + 24, y + 14), 15, Pal.ink(0.85 * a), font)
 		return
 	var total := 0.0
 	for i in rows.size():
@@ -3115,13 +3212,27 @@ func _grade_col(g: float, a: float) -> Color:
 # doesn't list (it marks its own with the same diamond)
 var _board_names := {}
 var _board_frame := -1
+# 帧率 (2026-11-11): the asset board worked out once a frame (the title row and the board both
+# asked for it: ~0.2 ms each on a mid-size ship)
+var _board_memo := {}
+var _board_memo_f := -1
+
+
+func _board() -> Dictionary:
+	var f := Engine.get_process_frames()
+	if f != _board_memo_f or World.ark_old:
+		_board_memo_f = f
+		_board_memo = CoreAsset.board(game)
+	return _board_memo
+
+
 func _title_items() -> Array:
 	var f := Engine.get_process_frames()
 	if f != _board_frame:
 		_board_frame = f
 		_board_names.clear()
 		if not game.training and game.exam == null and not game.in_berth():
-			for row in CoreAsset.board(game).get("rows", []):
+			for row in _board().get("rows", []):
 				_board_names[str(row.name)] = true
 	var out: Array = []
 	for it in game.mandatory_items():
@@ -3147,7 +3258,7 @@ func _must_dia(dc: Vector2, i: int, r: float) -> void:
 
 # on the job, under the contract panel: each corner's pull, progress and grade, and the last losses
 func _asset_board(cr: Rect2) -> void:
-	var b: Dictionary = CoreAsset.board(game)
+	var b: Dictionary = _board()
 	asset_rect = Rect2()
 	if b.is_empty():
 		return
@@ -3171,7 +3282,9 @@ func _asset_board(cr: Rect2) -> void:
 		for row in rows:
 			if row.get("alert", false) and str(row.get("fix", "")) != "":
 				fixes += 1
-	var nx_h := (42.0 + nx_how * 17.0 + maxf(0, nx_title_lines - 1) * 20.0) if not nx.is_empty() else 0.0
+	# 2026-11-10 推进节奏: what goes on in the background (venting, a unit on its way, a to-do), a line each
+	var nx_bg: Array = (nx.get("bg", []) as Array).slice(0, 3) if not nx.is_empty() else []
+	var nx_h := (42.0 + nx_how * 17.0 + maxf(0, nx_title_lines - 1) * 20.0 + nx_bg.size() * 17.0) if not nx.is_empty() else 0.0
 	# 112 号: a long warning wraps inside the board instead of running past its edge
 	var warn_w := cr.size.x - 34.0
 	var warn_n := 0
@@ -3180,9 +3293,27 @@ func _asset_board(cr: Rect2) -> void:
 	var h := 64.0 + (18.0 if two else 0.0) + nx_h + rows.size() * 24.0 + fixes * 17.0 + warn_n * 17.0 + (10.0 + recent.size() * 20.0 if not recent.is_empty() else 0.0)
 	# The camera OSD labels the contract panel below its bottom edge. Reserve a
 	# separate line for that label before starting the asset board.
-	var r := Rect2(cr.position.x, cr.end.y + 38.0, cr.size.x, h)
+	# 2026-11-11: under the training notes when there are any (they run below the contract panel and
+	# the board used to start over them: "储气罐 · 还记得 TS-1 第 4 课吗" on "核心资产 · LNG 货与罐")
+	var top := cr.end.y + 38.0
+	var rb := _recall_bottom()
+	if rb > 0.0:
+		top = maxf(top, rb + 30.0)
+	# eased (~0.25 s) when the notes above it change height, not a jump; at once with motion reduced
+	var now_ms := Time.get_ticks_msec()
+	var bdt := clampf((now_ms - _board_ms) / 1000.0, 0.0, 0.1)
+	_board_ms = now_ms
+	if _board_top < 0.0 or not UiSkin.motion() or absf(_board_top - top) < 0.5:
+		_board_top = top
+	else:
+		_board_top = lerpf(_board_top, top, 1.0 - exp(-bdt * 14.0))
+	top = _board_top
+	var r := Rect2(cr.position.x, top, cr.size.x, h)
 	asset_rect = r
-	UI.panel(c, r, 0.82, 0.0, UiSkin.ACCENT, 1.0)
+	if HudKeys.ON:
+		Charcoal.frost(c, r, 1.0, 12)
+	else:
+		UI.panel(c, r, 0.82, 0.0, UiSkin.ACCENT, 1.0)
 	var x := r.position.x + 18.0
 	var y := r.position.y + 24.0
 	_text(head, Vector2(x, y), 13, Pal.ink(0.55), font)
@@ -3205,6 +3336,13 @@ func _asset_board(cr: Rect2) -> void:
 		if nx_how > 0:
 			_mtext(str(nx.how), Vector2(x, y + 12.0), r.size.x - 40.0, 12, -1, Pal.ink(0.62))
 			y += nx_how * 17.0
+		for bgi in nx_bg:
+			# 占位 (待用户定稿): "后台 · " before what is under way, "待办 · " lines as they are
+			var bl: String = str(bgi.t) if str(bgi.kind) == "todo" else Ops.w("后台 · ", "BACKGROUND · ") + str(bgi.t)
+			var bc: Color = Pal.heat(0.75, 1.1) if str(bgi.kind) == "todo" else Pal.ink(0.5)
+			c.draw_arc(Vector2(x + 4.0, y + 25.0), 3.5, 0.0, TAU, 12, Color(UiSkin.ACCENT, 0.7), 1.2, true)
+			_text(bl, Vector2(x + 14.0, y + 29.0), 12, bc, font, -1, r.size.x - 54.0)
+			y += 17.0
 		y += 22.0
 	for wl in warn:
 		var wn := _wrapped_lines(str(wl), warn_w, 12)
@@ -3307,8 +3445,8 @@ func _asset_review(s: Vector2, e: float) -> void:
 	var y := s.y * 0.5 - 300.0
 	var lines: int = 6 + (rv.units as Array).size() + (rv.lost as Array).size() + (rv.reasons as Array).size() * 2
 	var r := Rect2(x, y, w, 120.0 + lines * 22.0)
-	c.draw_rect(r, Color(0.022, 0.024, 0.029, 0.97 * a))
-	c.draw_rect(Rect2(r.position, Vector2(r.size.x, 2)), Color(UiSkin.ACCENT, a))
+	Charcoal.panel(c, r, a, 0.0, Charcoal.FACE, 14)
+	Charcoal.led(c, Vector2(r.end.x - 24, r.position.y + 28), true, a, 4.5, Color(0.92, 0.93, 0.9))
 	var px := x + 22.0
 	var py := y + 34.0
 	_text(Ops.w("%s复盘", "%s · REVIEW") % rv.name, Vector2(px, py), 16, Pal.ink(0.7 * a), font)

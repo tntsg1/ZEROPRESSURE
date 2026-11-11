@@ -55,6 +55,7 @@ func _ready() -> void:
 	skin.set_color("font_hover_color", "Button", Pal.ink(0.98))
 	skin.set_color("font_pressed_color", "Button", Pal.ink(1.0))
 	skin.set_color("font_disabled_color", "Button", Pal.ink(0.4))
+	UiSkin.scroll_into(skin)
 	theme = skin
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

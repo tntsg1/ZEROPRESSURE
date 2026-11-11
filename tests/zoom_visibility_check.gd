@@ -46,12 +46,12 @@ func _grab() -> Image:
 # pixels round the screen point that change when `node` is hidden
 func _diff(node: CanvasItem, world: Vector2, half_px: float) -> int:
 	var a := _grab()
-	node.set_process(false)
-	node.visible = false
+	# only the node's own drawing (the bodies), not its children's (floor lifts, cards): with the children
+	# counted a layer that drew none of its trains still "showed" (火车看不见 2026-11-10)
+	node.self_modulate.a = 0.0
 	await _frames(2)
 	var b := _grab()
-	node.visible = true
-	node.set_process(true)
+	node.self_modulate.a = 1.0
 	await _frames(2)
 	var sp: Vector2 = g.get_viewport().get_canvas_transform() * world
 	var sz := Vector2(a.get_width(), a.get_height())

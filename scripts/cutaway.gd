@@ -15,6 +15,24 @@ extends RefCounted
 const FastDraw = preload("res://scripts/fast_draw.gd")
 const Depth3 = preload("res://scripts/cutaway_depth.gd")   # Material Depth Pass
 static var skip := {}   # tests: parts of the picture left out to measure them (vol, extra, rooms)
+# How quiet the background is (user 2026-11-10: the back walls' grid "很花", it drowned the machines
+# and the drone). 0 the first cut; 1 no hold frames, no wall grid, the wall a near-flat dark face;
+# 2 also the decks and bulkheads at a quarter of the foreground's line, ribs and struts fainter and
+# thinner; 3 quieter still. The pick: CALM (tests/calm_shot.gd shoots them side by side).
+const CALM := 2
+static var calm := CALM
+
+
+# the line strength a structure / frame member gets at the current calm level (1 = as designed)
+static func _calm_k(m: String) -> float:
+	if calm < 2:
+		return 1.0
+	match m:
+		"structure":
+			return 0.62 if calm == 2 else 0.45     # 0.38 -> 0.24 (a quarter of the hull's 0.96) / 0.17
+		"frame":
+			return 0.55 if calm == 2 else 0.38     # 0.30 -> 0.16 / 0.11
+	return 1.0
 const W1 := 2.4     # px: tier 1 line
 const W2 := 1.3     # px: tier 2
 const W3 := 1.0     # px: tier 3
@@ -101,7 +119,7 @@ static func style(w, p) -> Array:
 	var m := material(p)
 	var mt: Array = MATS[m]
 	var fill: Color = mt[0]
-	var line := Pal.ink(mt[3])
+	var line := Pal.ink(mt[3] * _calm_k(m))
 	var lw := W2
 	var rim = null
 	match m:
@@ -208,8 +226,11 @@ static func _add_lit(fp: PackedVector2Array, fc: PackedColorArray, fi: PackedInt
 
 
 static func draw_pieces(w, ci: CanvasItem, list: Array, part: String) -> void:
+	if part == "shade" and skip.has("shade"):
+		return
 	if part == "block":
-		_draw_block(w, ci, list)
+		if not skip.has("block"):
+			_draw_block(w, ci, list)
 		return
 	# shadows first (under every fill), then rims, then faces
 	var sp := PackedVector2Array()
@@ -243,14 +264,14 @@ static func draw_pieces(w, ci: CanvasItem, list: Array, part: String) -> void:
 		var rr := maxf(maxf(bb.size.x, bb.size.y) * 0.5, 1.0)
 		var tier := _tier(p)
 		var heavy: bool = m in ["engine", "reactor", "tank", "cargo"] or (m == "armor" and p.cls == "equip")
-		if not tri.is_empty() and part in ["all", "fill"]:
+		if not tri.is_empty() and part in ["all", "fill", "shade"]:
 			if not skip.has("extra") and (p.cls in ["equip", "fixture"] or p.kind in ["door", "fixture"]):
 				_add_poly(sp, scol, si, Transform2D(0.0, sh_off) * poly, tri, Color(0, 0, 0, 0.6 if heavy else 0.4), false, cc, rr)
 			if tier == 1 and not skip.has("extra"):
 				# the plate's side, seen because the light is up and to the left: the same
 				# outline pushed a few pixels away from the light, near black, under everything
 				_add_poly(sp, scol, si, Transform2D(0.0, -Look.LIGHT_DIR * EDGE) * poly, tri, Color(0.022, 0.023, 0.026, 1.0), false, cc, rr)
-			if st[3] != null:
+			if st[3] != null and not skip.has("fillx"):
 				_add_poly(fp, fc, fi, poly, tri, st[3], true, cc, rr, 0.85, 1.1)
 				for q in _inner(p):
 					_add_lit(fp, fc, fi, xf * (q[0] as PackedVector2Array), q[1], mt, cc, rr)
@@ -295,9 +316,10 @@ static func draw_pieces(w, ci: CanvasItem, list: Array, part: String) -> void:
 							cols[3].append(Pal.ink(0.16))
 		if p.art != "" or p.has_meta("cuts") or (p.mat != "" and str(Mat.of(p).get("pattern", "")) != "") or p.kind in ["hull", "hatch", "keel", "beam"]:
 			arts.append([p, poly, off, m])
-	if part in ["all", "fill"]:
+	if part in ["all", "shade"]:
 		if not si.is_empty():
 			RenderingServer.canvas_item_add_triangle_array(ci.get_canvas_item(), si, sp, scol)
+	if part in ["all", "fill"]:
 		if not fi.is_empty():
 			RenderingServer.canvas_item_add_triangle_array(ci.get_canvas_item(), fi, fp, fc)
 	if part in ["all", "line"]:
@@ -307,11 +329,15 @@ static func draw_pieces(w, ci: CanvasItem, list: Array, part: String) -> void:
 	elif part == "line_far":
 		var all_s := PackedVector2Array()
 		var all_c := PackedColorArray()
-		for k in [3, 2, 1, 0]:
+		# far out: no tier-3 hairlines, inner rims or machine outlines (all under a pixel, 60 FPS)
+		for k in [2, 1, 0]:
 			all_s.append_array(segs[k])
 			all_c.append_array(cols[k])
-		all_s.append_array(eq_s)
-		all_c.append_array(eq_c)
+		if skip.has("farfull"):
+			all_s.append_array(segs[3])
+			all_c.append_array(cols[3])
+			all_s.append_array(eq_s)
+			all_c.append_array(eq_c)
 		if not all_s.is_empty():
 			ci.draw_multiline_colors(all_s, all_c, -1.0)
 	if not part in ["all", "art"] or arts.is_empty():
@@ -393,17 +419,21 @@ static func _draw_block(w, ci: CanvasItem, list: Array) -> void:
 			poly = Transform2D(0.0, off) * poly
 		var m := material(p)
 		if p.cls == "equip" and p.art != "" and m in FAR_BLOCK:
-			var d: Array = _vol_data(w, p, poly, m)
-			var cols: PackedColorArray = d[1]
-			tp.append_array(d[0])
-			# opaque, and a step brighter than up close: at this size it is a block of tone
-			var gk: float = {"engine": 1.25, "reactor": 1.2, "tank": 1.0, "cargo": 0.82}[m] * lerpf(1.0, 0.5, (1.0 - _big_k(Geom.bbox(poly))) / 0.45)
-			for c in cols:
+			# 60 FPS (ARK-01 whole-ship view): one lit block of the material's tone per machine —
+			# at this size the banded profiles and the layer detail are under a pixel anyway
+			var tri: PackedInt32Array = w._tri_cached(p)
+			if tri.is_empty():
+				continue
+			var mt: Array = MATS[m]
+			var bb := Geom.bbox(poly)
+			var cc := bb.get_center()
+			var rr := maxf(maxf(bb.size.x, bb.size.y) * 0.5, 1.0)
+			var gk: float = {"engine": 1.25, "reactor": 1.2, "tank": 1.0, "cargo": 0.82}[m] * lerpf(1.0, 0.5, (1.0 - _big_k(bb)) / 0.45)
+			for k in tri:
+				var v := poly[k]
+				var c := _tone(mt, clampf((v - cc).dot(Look.LIGHT_DIR) / rr, -1.0, 1.0) * 0.8)
+				tp.append(v)
 				tc.append(Color(minf(c.r * gk, 1.0), minf(c.g * gk, 1.0), minf(c.b * gk, 1.0), 1.0))
-			if m in ["engine", "reactor", "tank"]:
-				var dd: Array = Depth3.detail(w, p, poly, m)
-				tp.append_array(dd[0])
-				tc.append_array(dd[1])
 		elif _tier(p) == 1 and p.cls != "equip":
 			var n := poly.size()
 			if n < 3:
@@ -418,7 +448,8 @@ static func _draw_block(w, ci: CanvasItem, list: Array) -> void:
 				var a := poly[i]
 				var b := poly[(i + 1) % n]
 				var ln := a.distance_to(b)
-				if ln < 2.0:
+				# 60 FPS: only the long edges read this far out (a plate's short ends are under a pixel)
+				if ln < 1.5 * Geom.M:
 					continue
 				var nrm := (b - a).orthogonal() / ln * sgn    # outward
 				var f := nrm.dot(Look.LIGHT_DIR)
@@ -636,15 +667,38 @@ static func _dress_build(poly: PackedVector2Array, bb: Rect2) -> Array:
 
 # the compartments: a lit back wall, darker into the corners (the light falls off away from
 # the lamp side), and a band of shadow along the walls where the hull's thickness hides it
+# how much of a room's back wall shows, from the fraction of its shell still there (and whether
+# its panel grid is drawn): the rule tests/strip_back_check.gd holds the picture to
+# User 2026-11-10 (PS-12, its lower half taken off): "这个背景看起来很突兀，出戏". A room's wall
+# goes with the plating round it: whole down to 95 % of its shell, gone below 35 % (only the real
+# structure still there is drawn — keel, the neighbouring bulkheads' stubs, the cut edges); its
+# panel grid only while the room is still near whole.
+static func back_k(f: float) -> float:
+	if skip.has("backfix"):    # tests: the rule before this fix, for the before / after pictures
+		return pow(clampf(f, 0.0, 1.0), 0.6)
+	var t := clampf((f - 0.35) / 0.6, 0.0, 1.0)
+	return t * t * (3.0 - 2.0 * t)
+
+
+static func back_grid(f: float) -> bool:
+	if calm >= 1 and not skip.has("backfix"):
+		return false
+	return f > 0.85 or skip.has("backfix")
+
+
 static func back_rooms(w) -> void:
+	if skip.has("back"):
+		return
 	var shells: Dictionary = w._room_shells()
 	var bl: Node2D = w.back_layer
 	for n in w.rooms:
 		var r = w.rooms[n]
 		var poly: PackedVector2Array = r.poly
 		var k := 1.0
+		var f := 1.0
 		if r.has("shell0") and r.shell0 > 0.0:
-			k = pow(clampf(shells[n] / r.shell0, 0.0, 1.0), 0.6)
+			f = clampf(shells[n] / r.shell0, 0.0, 1.0)
+			k = back_k(f)
 		if k < 0.02:
 			continue
 		if not r.revealed:
@@ -656,27 +710,38 @@ static func back_rooms(w) -> void:
 		var cs := PackedColorArray()
 		for v in poly:
 			var lk := clampf((v - cc).dot(Look.LIGHT_DIR) / rr, -1.0, 1.0)
-			var g := lerpf(0.7, 1.25, lk * 0.5 + 0.5)
-			cs.append(Color(Pal.ROOM_LIT.r * g, Pal.ROOM_LIT.g * g, Pal.ROOM_LIT.b * g, k))
+			var g := lerpf(0.7, 1.25, lk * 0.5 + 0.5) if calm < 1 else lerpf(0.9, 1.08, lk * 0.5 + 0.5)
+			var wl: Color = Color(0.075, 0.078, 0.088) if skip.has("backfix") else Pal.ROOM_LIT
+			cs.append(Color(wl.r * g, wl.g * g, wl.b * g, k))
 		bl.draw_polygon(poly, cs)
 		var ring := PackedVector2Array(poly)
 		ring.append(poly[0])
 		bl.draw_polyline(ring, Color(0, 0, 0, 0.16 * k), 34.0)
 		bl.draw_polyline(ring, Color(0, 0, 0, 0.28 * k), 14.0)
-		var rs: Array = Depth3.room(w, r, false) if not skip.has("rooms") else [PackedVector2Array(), PackedColorArray()]
+		var rs: Array = Depth3.room(w, r, false) if not skip.has("rooms") and calm < 1 else [PackedVector2Array(), PackedColorArray()]
 		if not (rs[0] as PackedVector2Array).is_empty():
-			RenderingServer.canvas_item_add_triangle_array(bl.get_canvas_item(), PackedInt32Array(), rs[0], rs[1])
+			var rc: PackedColorArray = rs[1]
+			if k < 0.99 and not skip.has("backfix"):
+				# the hold's frames fade with its wall
+				rc = PackedColorArray()
+				for c in (rs[1] as PackedColorArray):
+					rc.append(Color(c.r, c.g, c.b, c.a * k))
+			RenderingServer.canvas_item_add_triangle_array(bl.get_canvas_item(), PackedInt32Array(), rs[0], rc)
+		if not back_grid(f):
+			continue
 		if not r.has("grid"):
 			r.grid = w._room_grid(r)
 		if r.grid[0].size() >= 2:
-			bl.draw_multiline(r.grid[0], Pal.ink(0.028 * k), 1.0)
+			bl.draw_multiline(r.grid[0], Pal.ink(0.02 * k), 1.0)
 		if r.grid[1].size() >= 2:
-			bl.draw_multiline(r.grid[1], Pal.ink(0.018 * k), 1.0)
+			bl.draw_multiline(r.grid[1], Pal.ink(0.012 * k), 1.0)
 
 
 # a closed compartment seen from outside: the side plating, lit like the hull, with a few
 # sparse diagonal strokes (not a hatch of hundreds) to say "closed"
 static func cover(w) -> void:
+	if skip.has("cover"):
+		return
 	var cl: Node2D = w.cover_layer
 	var hatch := PackedVector2Array()
 	for n in w.rooms:
@@ -695,10 +760,9 @@ static func cover(w) -> void:
 		cl.draw_polygon(poly, cs)
 		# v3 全景可读: the plating's edges — a pale band inside the edges toward the light, a deep
 		# shadow inside the far ones (the hull's thickness hides the light there)
-		var rs: Array = Depth3.room(w, r, true) if not skip.has("rooms") else [PackedVector2Array(), PackedColorArray()]
+		var rs: Array = Depth3.room(w, r, true) if not skip.has("rooms") and calm < 1 else [PackedVector2Array(), PackedColorArray()]
 		if not (rs[0] as PackedVector2Array).is_empty():
 			RenderingServer.canvas_item_add_triangle_array(cl.get_canvas_item(), PackedInt32Array(), rs[0], rs[1])
-		_edge_bands(cl, poly, 0.75)
 		var s := maxf(Geom.M * 2.4, (bb.size.x + bb.size.y) / 14.0)
 		var x := bb.position.x - bb.size.y
 		while x < bb.end.x:
@@ -710,6 +774,14 @@ static func cover(w) -> void:
 			x += s
 	if not hatch.is_empty():
 		cl.draw_multiline(hatch, Pal.ink(0.035), 1.0)
+	# the plating's light and shade bands on a child node world.gd hides far out (60 FPS)
+	var bn: Node2D = w.get_meta("cover_bands") if w.has_meta("cover_bands") else null
+	if bn == null:
+		bn = Node2D.new()
+		bn.draw.connect(func() -> void: cover_bands(w, bn))
+		cl.add_child(bn)
+		w.set_meta("cover_bands", bn)
+	bn.queue_redraw()
 	return
 
 
@@ -748,6 +820,15 @@ static func _edge_bands(ci: CanvasItem, poly: PackedVector2Array, k: float) -> v
 		ci.draw_multiline_colors(sh, shc, 32.0)
 	if not lit.is_empty():
 		ci.draw_multiline_colors(lit, lc, 14.0)
+
+
+static func cover_bands(w, bn: Node2D) -> void:
+	if not Pal.solid:
+		return
+	for n in w.rooms:
+		var r = w.rooms[n]
+		if not r.revealed:
+			_edge_bands(bn, r.poly, 0.75 if calm < 3 else 0.4)
 
 
 # a pipe run: a round bar, not two lines — dark edges, a mid body, a thin highlight on the

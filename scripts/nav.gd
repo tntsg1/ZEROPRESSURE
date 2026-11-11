@@ -56,7 +56,7 @@ func _fresh(_force := false) -> void:
 	# busy machine the wall-clock gap let a plate just cut free be routed on a grid from before
 	# its supports were cut (no route), and how often depended on the machine's load
 	var now := Engine.get_physics_frames()
-	if dirty and (w == 0 or now - _built_frame >= int(REBUILD_GAP * 30.0)):
+	if dirty and (w == 0 or now - _built_frame >= int(REBUILD_GAP * 30.0 * Look.TICKS / 120.0)):   # the same game time at any physics rate
 		dirty = false
 		_built_frame = now
 		_build()

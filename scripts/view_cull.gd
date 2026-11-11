@@ -5,16 +5,17 @@ class_name ViewCull
 # is redrawn that same frame, every detail as before. The margin keeps a part that is just coming
 # into the picture drawn already.
 
-const MARGIN_M := 40.0      # m round the view
+const MARGIN_PX := 64.0    # screen pixels, independent of world scale and zoom
 const PortStructure = preload("res://scripts/port_structure.gd")
 
 
 static func view(game) -> Rect2:
 	if game == null or not is_instance_valid(game) or game.get("cam") == null or not is_instance_valid(game.cam):
 		return Rect2()
-	var z: float = maxf(0.02, game.cam_zoom())
-	var size: Vector2 = game.get_viewport().get_visible_rect().size / z
-	return Rect2(game.cam.position - size * 0.5, size)
+	# Use the presented canvas, including camera roll, smoothing and viewport stretch.
+	# Transforming all four corners gives a conservative AABB for a rotated camera.
+	var vp: Viewport = game.get_viewport()
+	return vp.get_canvas_transform().affine_inverse() * vp.get_visible_rect()
 
 
 static var off := false    # the frame-rate tests' before/after pictures: everything drawn as before
@@ -27,7 +28,7 @@ static func sees(game, r: Rect2) -> bool:
 	var v := view(game)
 	if v.size == Vector2.ZERO:
 		return true
-	return v.grow(MARGIN_M * Geom.M).intersects(r)
+	return v.grow(MARGIN_PX / maxf(0.02, game.cam_zoom())).intersects(r, true)
 
 
 static func sees_zone(game, zone: String, extra_m := 0.0) -> bool:

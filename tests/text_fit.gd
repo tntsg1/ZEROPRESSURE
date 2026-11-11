@@ -115,6 +115,27 @@ func _fit(where: String, texts: Array, size: int, max_w: float, weight: String =
 			over.append("%s: %d px > %d  \"%s\"" % [where, int(w), int(max_w), t.substr(0, 60)])
 
 
+# 2026-11-10 (user: the grid screen's "返回动力区操作台 [Esc]" ran off the right edge): the trail's close
+# key (scripts/ui_back.gd) in both languages, for every page it can name. The keys grow with their
+# words now; the head bars (grid, exchange, stores, queue) keep 520 px for it before it would meet
+# the cash or the console's status, so the words (with the key's padding) must fit in that
+func _fit_back_keys() -> void:
+	var was := Txt.zh
+	var texts: Array = []
+	for zh in [true, false]:
+		Txt.zh = zh
+		var labels := [["仓库", "THE STORES"], ["交易行", "THE EXCHANGE"], ["熔炉操作台", "THE FURNACE DESK"], ["轧机控制台", "THE MILL DESK"],
+			["零件架", "THE PARTS RACK"], ["供电控制屏", "THE POWER SCREEN"], ["加工队列", "THE PROCESS QUEUE"], ["货架", "THE RACKS"],
+			["二手船市", "HULK MARKET"], ["星图", "STAR MAP"], ["船坞终端", "THE BERTH TERMINAL"]]
+		for z in ["salvage", "process", "trade", "power", "cargo", "tug"]:
+			var nm := Port.name_of(z)
+			labels.append([nm + "操作台", nm + " CONSOLE"])
+		for l in labels:
+			texts.append(("返回%s [Esc]" % l[0]) if zh else ("BACK TO %s  [Esc]" % l[1]))
+	Txt.zh = was
+	_fit("back key (ui_back trail)", texts, 16, 484, "Medium")
+
+
 func _keys(keys: Array) -> Array:
 	var out: Array = []
 	for k in keys:
@@ -179,7 +200,37 @@ func _fit_codex() -> void:
 			for st in l.get("steps", []):
 				steps.append(st.text.zh)
 				steps.append(st.text.en)
-	_fit("course task line", steps, 17, 560)
+	_fit_task_card()
+
+
+# 2026-11-10: the course card (scripts/tutorial_hud.gd) wraps each step at its real width and steps the type down;
+# what must hold is the wrapped height at the smallest size: <= STEP_MAX_H for the current step, <= HEAD_MAX_H for
+# the lesson title (with its "LESSON n" prefix), and the three stacked safety rows together <= SAFE_MAX_H
+func _fit_task_card() -> void:
+	var fb: Font = Fonts.get_font("Medium")
+	for f in DirAccess.get_files_at("res://ships"):
+		if not f.ends_with("_course.json"):
+			continue
+		var cj: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://ships/" + f))
+		for l in cj.get("lessons", []):
+			var safety: Array = {"SP_C1": ["kpa", "valve", "thaw"], "SP_L1": ["bleed", "pins", "pivot"]}.get(str(l.get("id", "")), [])
+			for lang in ["zh", "en"]:
+				var pre := "第 9 课  " if lang == "zh" else "LESSON 9  "
+				var hb := TutorialHud.block(fb, pre + str(l.title[lang]), TutorialHud.STEP_W, TutorialHud.HEAD_MAX_H, TutorialHud.HEAD_SIZES)
+				checked += 1
+				if hb.h > TutorialHud.HEAD_MAX_H:
+					over.append("course card title: %d px tall > %d  \"%s\"" % [int(hb.h), int(TutorialHud.HEAD_MAX_H), str(l.title[lang]).substr(0, 60)])
+				var rows_h := 0.0
+				for st in l.get("steps", []):
+					var s := str(st.text[lang])
+					var sb := TutorialHud.block(fb, s, TutorialHud.STEP_W - 18.0, TutorialHud.STEP_MAX_H, TutorialHud.STEP_SIZES)
+					checked += 1
+					if sb.h > TutorialHud.STEP_MAX_H:
+						over.append("course card step: %d px tall > %d  \"%s\"" % [int(sb.h), int(TutorialHud.STEP_MAX_H), s.substr(0, 60)])
+					if str(st.get("id", "")) in safety:
+						rows_h += TutorialHud.block(fb, s, TutorialHud.STEP_W - 20.0, 9999.0, [14]).h + 10.0
+				if rows_h > TutorialHud.SAFE_MAX_H:
+					over.append("course card safety rows: %d px tall > %d  (%s %s)" % [int(rows_h), int(TutorialHud.SAFE_MAX_H), f, lang])
 
 
 func _fit_all() -> void:
@@ -208,6 +259,7 @@ func _fit_all() -> void:
 	_fit("shop item", _prefixed("up_") + _prefixed("it_") + _prefixed("fa_"), 17, 1000, "Medium")
 	_fit("terminal keys and messages", _keys(["tm_keys", "tm_borrow", "tm_short", "tm_bought", "tm_none", "tm_later", "tm_owned"]), 16, 1300)
 	_fit("terminal button", _keys(["tm_take", "tm_buy"]), 20, 260, "Medium")
+	_fit_back_keys()
 	_fit("terminal repay row", _keys(["tm_repay"]), 17, 1000, "Medium")
 	_fit("terminal repay row", _keys(["tm_repay_d"]), 13, 1100)
 	_fit("survey report (2 lines)", _prefixed("in_"), 14, 1000)
@@ -299,8 +351,9 @@ func _fit_all() -> void:
 		for s in l.steps:
 			steps.append(s.text.zh)
 			steps.append(s.text.en)
-	_fit("task list step", steps, 17, 560)
-	_fit("task list lesson", heads, 22, 520, "Medium")
+	# the course card now wraps: its steps and lesson titles are checked by _fit_task_card
+	steps.clear()
+	heads.clear()
 
 
 func _sub(lines: Array) -> Array:

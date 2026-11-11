@@ -41,6 +41,7 @@ func _off(p: Vector2) -> float:
 	return best / Geom.M
 
 
+var _told := {}
 func _note(who: String, where: String, p: Vector2) -> void:
 	var d := _off(p)
 	var k := who + " @ " + where
@@ -53,9 +54,31 @@ func _sample(where: String) -> void:
 	for i in 4:
 		_note("shuttle bogie %d" % i, where, g.tram._bob[i])
 	for tr in FW.trains:
+		var ci := 0
 		for car in g.freight.poses(tr):
+			var bi := 0
 			for b in car[4]:
 				_note("freight #%d" % int(tr.id), "running" if tr.moving else "standing", b[0])
+				# the first time one stands well off: what the train was doing
+				if _off(b[0]) > 0.5 and not _told.has(int(tr.id)):
+					_told[int(tr.id)] = true
+					var tl := 0.0
+					var pv: Vector2 = tr.pos
+					for q in tr.trail:
+						tl += pv.distance_to(q)
+						pv = q
+					print("    OFF #%d car %d bogie %d %.2f m: %s place=%s step=%s/%s lf=%s v=%.1f trail %.1f m (%d pts) path %d head %s" % [int(tr.id), ci, bi, _off(b[0]), str(tr.status), str(tr.place), str(tr.step.get("do", "")), str(tr.step.get("place", "")), str(tr.lf), float(tr.speed) / Geom.M, tl / Geom.M, (tr.trail as Array).size(), (tr.path as Array).size(), str(((tr.pos as Vector2) - PortStructure.centre()) / Geom.M)])
+					var cc := PortStructure.centre()
+					var pp := []
+					for q in (tr.path as Array).slice(0, 5):
+						pp.append(str((((q as Vector2) - cc) / Geom.M).snapped(Vector2(0.01, 0.01))))
+					var tt := []
+					for q in (tr.trail as Array).slice(0, 3):
+						tt.append(str((((q as Vector2) - cc) / Geom.M).snapped(Vector2(0.01, 0.01))))
+					print("      heading %.1f° hold %.2f legs %d path %s trail %s" % [rad_to_deg(float(tr.heading)), float(tr.hold), (tr.legs as Array).size(), str(pp), str(tt)])
+					print("      took %s" % str(tr.get("took", {})))
+				bi += 1
+			ci += 1
 
 
 func _ride(from: String, to: String) -> bool:
@@ -75,6 +98,19 @@ func _ride(from: String, to: String) -> bool:
 	for f in 30:
 		await _frames(1)
 		_sample("standing at %s" % to)
+	if g.tram.at != to:
+		# what held it: the car, and every train
+		print("  ride %s→%s did not arrive: car phase=%s at=%s pending=%d" % [from, to, str(g.tram.phase), str(g.tram.at), FW.pending.size()])
+		var owners := {}
+		for k in FW.pending.keys():
+			var o = FW.claims.get(k)
+			var key := "free" if o == null else ("car" if int(o) == FW.PASSENGER else "#%d" % int(o))
+			owners[key] = int(owners.get(key, 0)) + 1
+		print("    the car's wanted cells held by: %s" % str(owners))
+		for tr in FW.trains:
+			print("    #%d place=%s step=%s/%s moving=%s status=%s blocker=%s/%.1f s" % [int(tr.id), str(tr.place), str(tr.step.get("do", "")), str(tr.step.get("place", "")), str(tr.moving), str(tr.status), str(tr.get("blocker")), float(tr.get("blocked_t", 0.0))])
+			var ccx := PortStructure.centre()
+			print("      head r %.2f at %.0f°, rear r %.2f at %.0f°, heading %.0f°, lf %s, path %d, legs %d" % [((tr.pos as Vector2) - ccx).length() / Geom.M, rad_to_deg(((tr.pos as Vector2) - ccx).angle()), (FW.behind(tr, 8.7 * Geom.M) - ccx).length() / Geom.M, rad_to_deg((FW.behind(tr, 8.7 * Geom.M) - ccx).angle()), rad_to_deg(float(tr.heading)), str(tr.lf), (tr.path as Array).size(), (tr.legs as Array).size()])
 	return ok and g.tram.at == to
 
 

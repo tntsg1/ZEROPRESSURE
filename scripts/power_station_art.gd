@@ -19,6 +19,7 @@ extends RefCounted
 
 const MeshPen = preload("res://scripts/mesh_pen.gd")
 const FastDraw = preload("res://scripts/fast_draw.gd")
+const CA = preload("res://scripts/console_art.gd")
 const W = preload("res://scripts/power_works.gd")
 
 const FLOOR := 26.8
@@ -223,8 +224,9 @@ func still(ci: CanvasItem, stage: int, lod: int) -> void:
 				_text(ci, Vector2(bx + PX - 0.36, 4.95), w("稳压器", "PZR"), 0.26, _ink(0.55))
 				_text(ci, Vector2(bx + 7.4, 15.5), w("主泵", "RCP"), 0.28, _ink(0.55))
 		else:
-			_text(ci, Vector2(bx + 1.2, 9.4), w("第 3 套机组机位", "UNIT 3 BAY"), 0.6, _ink(0.55))
-			_text(ci, Vector2(bx + 1.2, 10.3), w("扩建动力区第 2 期时安装", "FITTED AT POWER STAGE 2"), 0.38, Pal.heat(0.7, 1.0))
+			# a stencil on the bay's wall (background, CA.bg): not a sign to read from afar
+			_text(ci, Vector2(bx + 1.2, 9.4), w("第 3 套机组机位", "UNIT 3 BAY"), 0.42, CA.bg(_ink(0.55)))
+			_text(ci, Vector2(bx + 1.2, 10.0), w("扩建动力区第 2 期时安装", "FITTED AT POWER STAGE 2"), 0.28, CA.bg(Pal.heat(0.7, 1.0)))
 	_text(ci, Vector2(39.0, 6.25), w("高压缸", "HP"), 0.34, _ink(0.55))
 	_text(ci, Vector2(44.6, 5.55), w("低压缸", "LP"), 0.34, _ink(0.55))
 	_text(ci, Vector2(GEN.position.x + 0.2, GEN.position.y - 0.2), w("发电机", "GENERATOR"), 0.34, _ink(0.6))
@@ -465,14 +467,17 @@ func _empty_bay(p, bx: float, lod: int) -> void:
 		p.rect(Rect2(at - Vector2(0.35, 0.12), Vector2(0.7, 0.24)), Pal.heat(0.55, 1.0))
 
 
-# the main control screen's frame (its content is drawn live)
+# the main control screen's frame (its content is drawn live). 2026-11-10 (user: what nobody can use must
+# read as background): set into the wall like a gauge panel — a flat plate bolted flush, no hangers, no
+# bright bezel; the console under it is the one to use (scripts/console_art.gd has the two looks)
 func _screen_frame(p, lod: int) -> void:
-	p.rect(SCREEN.grow(0.25), Color(0.07, 0.074, 0.08))
-	p.rect(SCREEN, Color(0.015, 0.018, 0.022))
-	p.rect(SCREEN.grow(0.25), _ink(0.45), false, 0.08)
-	# its bracket to the ceiling
-	p.line(Vector2(SCREEN.position.x + 1.0, 0.0), Vector2(SCREEN.position.x + 1.0, SCREEN.position.y - 0.25), _ink(0.3), 0.1)
-	p.line(Vector2(SCREEN.end.x - 1.0, 0.0), Vector2(SCREEN.end.x - 1.0, SCREEN.position.y - 0.25), _ink(0.3), 0.1)
+	p.rect(SCREEN.grow(0.45), FACE)
+	p.rect(SCREEN.grow(0.45), _ink(0.2), false, 0.05)
+	p.rect(SCREEN, CA.BG_GLASS)
+	p.rect(SCREEN, _ink(0.14), false, 0.04)
+	if lod >= 1:
+		for c in [SCREEN.position, Vector2(SCREEN.end.x, SCREEN.position.y), SCREEN.end, Vector2(SCREEN.position.x, SCREEN.end.y)]:
+			p.bolt(c + (SCREEN.get_center() - c).normalized() * -0.3, 0.06, _ink(0.3))
 
 
 # the turbine-generator on its deck: HP and LP casings with the crossover, bearings, the shaft, the
@@ -856,42 +861,46 @@ func _screen(ci: CanvasItem, t: float, stage: int) -> void:
 	var y := SCREEN.position.y + 0.8
 	var dim := _ink(0.55)
 	if stage < 1:
-		var blink := 0.6 + 0.4 * absf(sin(t * 2.2))
-		_text(ci, Vector2(x, y), w("反应堆停堆", "REACTORS DOWN"), 0.6, Color(1.0, 0.45, 0.35, blink))
-		_text(ci, Vector2(x, y + 0.85), w("应急燃料电池供电", "ON THE FUEL CELLS"), 0.42, Pal.heat(0.85, 1.1))
-		_text(ci, Vector2(x, y + 1.85), "%.1f / 6 MW" % W.fc, 0.62, Pal.tint(Pal.VOLT, 0.95, 1.2))
+		_bt(ci, Vector2(x, y), w("反应堆停堆", "REACTORS DOWN"), 0.6, Color(1.0, 0.45, 0.35))
+		_bt(ci, Vector2(x, y + 0.85), w("应急燃料电池供电", "ON THE FUEL CELLS"), 0.42, Pal.heat(0.85, 1.1))
+		_bt(ci, Vector2(x, y + 1.85), "%.1f / 6 MW" % W.fc, 0.62, Pal.tint(Pal.VOLT, 0.95, 1.2))
 		_bar(ci, Vector2(x, y + 2.25), SCREEN.size.x - 0.7, clampf(W.fc / 6.0, 0.0, 1.0))
-		_text(ci, Vector2(x, y + 3.3), w("修好动力区（第 1 期）：", "MEND THE POWER DISTRICT (STAGE 1):"), 0.34, _ink(0.8), HORIZONTAL_ALIGNMENT_LEFT, SCREEN.size.x - 0.6)
-		_text(ci, Vector2(x, y + 3.85), w("两座堆启动 → 30 MW", "TWO REACTORS → 30 MW"), 0.34, _ink(0.8))
-		_text(ci, Vector2(x, y + 4.4), w("各区有电，干活更快", "THE DISTRICTS RUN FASTER"), 0.34, _ink(0.8))
-		_text(ci, Vector2(x, y + 5.3), w("船坞终端 → 成长与建设", "BERTH TERMINAL → GROWTH"), 0.32, Color(UiSkin.ACCENT))
-		_text(ci, Vector2(x, y + 5.75), w("→ 零压港 → 动力区", "→ THE PORT → POWER"), 0.32, Color(UiSkin.ACCENT))
+		_bt(ci, Vector2(x, y + 3.3), w("修好动力区（第 1 期）：", "MEND THE POWER DISTRICT (STAGE 1):"), 0.34, _ink(0.8), HORIZONTAL_ALIGNMENT_LEFT, SCREEN.size.x - 0.6)
+		_bt(ci, Vector2(x, y + 3.85), w("两座堆启动 → 30 MW", "TWO REACTORS → 30 MW"), 0.34, _ink(0.8))
+		_bt(ci, Vector2(x, y + 4.4), w("各区有电，干活更快", "THE DISTRICTS RUN FASTER"), 0.34, _ink(0.8))
+		_bt(ci, Vector2(x, y + 5.3), w("船坞终端 → 成长与建设", "BERTH TERMINAL → GROWTH"), 0.32, Color(UiSkin.ACCENT))
+		_bt(ci, Vector2(x, y + 5.75), w("→ 零压港 → 动力区", "→ THE PORT → POWER"), 0.32, Color(UiSkin.ACCENT))
 	else:
-		_text(ci, Vector2(x, y), w("运行中 · %d 套机组", "RUNNING · %d UNITS") % W.units, 0.5, Color(UiSkin.DATA))
-		_text(ci, Vector2(x, y + 1.0), "%.1f / %.0f MW" % [W.own, W.cap], 0.62, Pal.tint(Pal.VOLT, 0.95, 1.2))
+		_bt(ci, Vector2(x, y), w("运行中 · %d 套机组", "RUNNING · %d UNITS") % W.units, 0.5, Color(UiSkin.DATA))
+		_bt(ci, Vector2(x, y + 1.0), "%.1f / %.0f MW" % [W.own, W.cap], 0.62, Pal.tint(Pal.VOLT, 0.95, 1.2))
 		_bar(ci, Vector2(x, y + 1.4), SCREEN.size.x - 0.7, W.frac())
-		_text(ci, Vector2(x, y + 2.45), w("负荷 %d%% · %.2f Hz", "LOAD %d%% · %.2f Hz") % [int(round(W.frac() * 100.0)), W.hz], 0.36, _ink(0.85))
+		_bt(ci, Vector2(x, y + 2.45), w("负荷 %d%% · %.2f Hz", "LOAD %d%% · %.2f Hz") % [int(round(W.frac() * 100.0)), W.hz], 0.36, _ink(0.85))
 		var q := 0.0
 		for i in 3:
 			q += float(W.q_th[i])
-		_text(ci, Vector2(x, y + 3.05), w("堆热功率 %.0f MWt", "REACTOR HEAT %.0f MWt") % q, 0.34, Pal.heat(0.85, 1.1))
-		_text(ci, Vector2(x, y + 3.6), w("蒸汽 %.0f kg/s · 冷凝器 %.0f °C", "STEAM %.0f kg/s · COND %.0f °C") % [W.steam_kgs(), W.t_cond], 0.32, _ink(0.75))
-		_text(ci, Vector2(x, y + 4.1), w("散热板 %.0f °C · 排热 %.0f MW", "RADIATORS %.0f °C · %.0f MW OUT") % [W.rad_t, W.rejected()], 0.32, _ink(0.75))
-		_text(ci, Vector2(x, y + 4.65), w("电池 %.1f MW", "BATTERIES %.1f MW") % preload("res://scripts/power_supply.gd").batt_now if preload("res://scripts/power_supply.gd").batt_now > 0.05 else w("电池 未用", "BATTERIES IDLE"), 0.34, Pal.heat(0.85, 1.1) if W.shore > 0.05 else dim)
-		_text(ci, Vector2(x, y + 5.45), w("最近切换", "LAST CHANGEOVERS"), 0.3, dim)
+		_bt(ci, Vector2(x, y + 3.05), w("堆热功率 %.0f MWt", "REACTOR HEAT %.0f MWt") % q, 0.34, Pal.heat(0.85, 1.1))
+		_bt(ci, Vector2(x, y + 3.6), w("蒸汽 %.0f kg/s · 冷凝器 %.0f °C", "STEAM %.0f kg/s · COND %.0f °C") % [W.steam_kgs(), W.t_cond], 0.32, _ink(0.75))
+		_bt(ci, Vector2(x, y + 4.1), w("散热板 %.0f °C · 排热 %.0f MW", "RADIATORS %.0f °C · %.0f MW OUT") % [W.rad_t, W.rejected()], 0.32, _ink(0.75))
+		_bt(ci, Vector2(x, y + 4.65), w("电池 %.1f MW", "BATTERIES %.1f MW") % preload("res://scripts/power_supply.gd").batt_now if preload("res://scripts/power_supply.gd").batt_now > 0.05 else w("电池 未用", "BATTERIES IDLE"), 0.34, Pal.heat(0.85, 1.1) if W.shore > 0.05 else dim)
+		_bt(ci, Vector2(x, y + 5.45), w("最近切换", "LAST CHANGEOVERS"), 0.3, dim)
 		var ly := y + 5.95
 		if W.log.is_empty():
-			_text(ci, Vector2(x, ly), w("无", "NONE"), 0.28, dim)
+			_bt(ci, Vector2(x, ly), w("无", "NONE"), 0.28, dim)
 		for e in W.log:
 			var ago := int((W.t - float(e[0])) / 60.0)
-			_text(ci, Vector2(x, ly), w("%d 分钟前 · %s", "%d MIN AGO · %s") % [ago, str(e[1])], 0.26, _ink(0.7), HORIZONTAL_ALIGNMENT_LEFT, SCREEN.size.x - 0.6)
+			_bt(ci, Vector2(x, ly), w("%d 分钟前 · %s", "%d MIN AGO · %s") % [ago, str(e[1])], 0.26, _ink(0.7), HORIZONTAL_ALIGNMENT_LEFT, SCREEN.size.x - 0.6)
 			ly += 0.85
 
 
 func _bar(ci: CanvasItem, at: Vector2, width: float, k: float) -> void:
-	var rr := Rect2(_p(at), Vector2(width, 0.28) * m)
-	ci.draw_rect(rr, _ink(0.12))
-	ci.draw_rect(Rect2(rr.position, Vector2(rr.size.x * k, rr.size.y)), Pal.heat(0.9, 1.2) if k > 0.85 else Color(UiSkin.DATA))
+	var rr := Rect2(_p(at), Vector2(width, 0.2) * m)
+	ci.draw_rect(rr, _ink(0.07))
+	ci.draw_rect(Rect2(rr.position, Vector2(rr.size.x * k, rr.size.y)), CA.bg(Pal.heat(0.9, 1.2) if k > 0.85 else Color(UiSkin.DATA)))
+
+
+# the wall panel's words: smaller, and in the background instrument's dim cool grey (CA.bg)
+func _bt(ci, at: Vector2, s: String, size_m: float, col: Color, align := HORIZONTAL_ALIGNMENT_LEFT, width_m := -1.0) -> void:
+	_text(ci, at, s, size_m * 0.72, CA.bg(col), align, width_m)
 
 
 # ================================================================== the hover cards

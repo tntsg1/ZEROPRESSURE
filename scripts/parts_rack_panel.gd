@@ -75,6 +75,8 @@ func _ready() -> void:
 	all_b = _button("SellAll", func(): _sell_all())
 	close_b = _button("Close", _back)
 	close_b.text = Back.close_text()
+	Charcoal.style_button(close_b)
+	Charcoal.key_text(close_b)
 	UiSkin.accent_button(sell_b)
 	overlay = Control.new()
 	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -317,7 +319,7 @@ func _list_sel() -> void:
 		if game != null:
 			game.sfx.play("deny")
 		return
-	_fly(w("挂牌", "LISTED") if on else w("撤牌", "WITHDRAWN"), UiSkin.DATA)
+	_fly(w("挂牌", "LISTED") if on else w("撤牌", "WITHDRAWN"), Charcoal.ACCENT)
 	_say(w("%s 已挂牌，约 2 分钟卖出", "%s LISTED; SELLS IN ABOUT 2 MIN") % _part_name(part) if on else w("%s 已撤牌，放回架上", "%s WITHDRAWN") % _part_name(part), true)
 	if game != null:
 		game.sfx.play("ok" if on else "switch")
@@ -603,10 +605,11 @@ func _beam(r: Rect2, a: float) -> void:
 
 static func _class_col(cls: String) -> Color:
 	match cls:
-		"sail": return Color(UiSkin.DATA)
-		"power": return Pal.heat(1.0, 1.15)
-		"thermal": return Color(1.0, 0.78, 0.35)
-		"drive": return Pal.tint(Pal.FLUID, 1.0, 1.1)
+		# 2026-11-11 炭黑: no blue, green or yellow — white, orange and two greys tell the shelves apart
+		"sail": return Pal.ink(0.92)
+		"power": return Charcoal.ACCENT
+		"thermal": return Pal.ink(0.68)
+		"drive": return Pal.ink(0.45)
 	return Pal.ink(0.8)
 
 
@@ -682,7 +685,7 @@ func _crate(ci: Control, r: Rect2, part: Dictionary, a: float, on: bool, hov: bo
 	# the condition bar along the foot, the line a repair needs marked on it
 	var bar := Rect2(r.position.x + 20.0, r.end.y - 34.0, inner, 4.0)
 	ci.draw_rect(bar, Color(0, 0, 0, 0.5 * a))
-	var bc := Color(UiSkin.DATA) if usable else Pal.heat(0.9, 1.1)
+	var bc := Pal.ink(0.92) if usable else Pal.heat(0.9, 1.1)
 	ci.draw_rect(Rect2(bar.position, Vector2(bar.size.x * cond, bar.size.y)), bc * Color(1, 1, 1, a))
 	var tx := bar.position.x + bar.size.x * Repair.COND_MIN
 	ci.draw_line(Vector2(tx, bar.position.y - 3.0), Vector2(tx, bar.end.y + 3.0), Pal.ink(0.7 * a), 1.0)
@@ -692,7 +695,7 @@ func _crate(ci: Control, r: Rect2, part: Dictionary, a: float, on: bool, hov: bo
 	var pc := Pal.ink(0.92 * a)
 	if listed:
 		price = "%d s" % int(ceil(Repair.LIST_T - float(part.listed.t)))
-		pc = Color(UiSkin.DATA, a)
+		pc = Color(Charcoal.ACCENT, a)
 	ci.draw_string(font_s, Vector2(bar.position.x, r.end.y - 13.0), price, HORIZONTAL_ALIGNMENT_RIGHT, bar.size.x, 14, pc)
 	if not usable:
 		# a stamp across the lid: refurbish first
@@ -707,7 +710,7 @@ func _crate(ci: Control, r: Rect2, part: Dictionary, a: float, on: bool, hov: bo
 		var tag_c := hook + Vector2(sin(sw), cos(sw)) * 26.0
 		ci.draw_line(hook, tag_c, Pal.ink(0.6 * a), 1.0)
 		ci.draw_set_transform(tag_c, sw, Vector2.ONE)
-		ci.draw_rect(Rect2(-22, 0, 44, 18), Color(UiSkin.DATA, 0.9 * a))
+		ci.draw_rect(Rect2(-22, 0, 44, 18), Color(Charcoal.ACCENT, 0.95 * a))
 		ci.draw_string(font_s, Vector2(-22, 13), w("挂牌", "LISTED"), HORIZONTAL_ALIGNMENT_CENTER, 44, 11, Color(0.02, 0.05, 0.06, a))
 		ci.draw_set_transform(Vector2.ZERO)
 
@@ -834,7 +837,7 @@ func _draw_detail(a: float) -> void:
 		_text("%d%%" % int(round(cond * 100.0)), Vector2(x, y), 22, (Pal.ink(0.95) if usable else Pal.heat(0.95, 1.2)) * Color(1, 1, 1, a), font_s, wmax, HORIZONTAL_ALIGNMENT_RIGHT)
 		var g := Rect2(x, y + 14.0, wmax, 8.0)
 		draw_rect(g, Color(0, 0, 0, 0.45 * a))
-		draw_rect(Rect2(g.position, Vector2(g.size.x * cond, g.size.y)), (Color(UiSkin.DATA) if usable else Pal.heat(0.9, 1.1)) * Color(1, 1, 1, a))
+		draw_rect(Rect2(g.position, Vector2(g.size.x * cond, g.size.y)), (Pal.ink(0.92) if usable else Pal.heat(0.9, 1.1)) * Color(1, 1, 1, a))
 		var tx := g.position.x + g.size.x * Repair.COND_MIN
 		draw_line(Vector2(tx, g.position.y - 4.0), Vector2(tx, g.end.y + 4.0), Pal.ink(0.8 * a), 1.5)
 		_text(w("修缮线 %d%%", "REPAIR LINE %d%%") % int(Repair.COND_MIN * 100.0), Vector2(tx - 40.0, g.end.y + 20.0), 12, Pal.ink(0.5 * a), font_b)

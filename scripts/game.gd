@@ -4203,6 +4203,9 @@ func _bodies_upkeep(dt: float) -> void:
 			dv = stop
 			if b.hit_imp <= 0.0:
 				b.hit_pos = b.global_position + b.prev_v.normalized() * 0.5 * Geom.M
+		# tunnelling on the player's line (量子隧穿): it passes everything, so nothing knocks it (2026-11-11)
+		if dv > 55.0 and b.tunneling:
+			dv = 0.0
 		if dv > 55.0 and b.age > 0.4 and b.age - float(b.get_meta("imp_t", -9.0)) > IMPACT_GAP:
 			b.set_meta("imp_t", b.age)
 			_impact(b, dv)

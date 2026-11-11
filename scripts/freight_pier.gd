@@ -8,6 +8,7 @@ extends Node2D
 # berth; goods on the apron are not stock until they reach the receiver.
 # The node also runs the shipping clock in every career scene: ships fly during contracts (Q25).
 
+const CanvasBatch = preload("res://scripts/canvas_batch.gd")
 const Loads = preload("res://scripts/load_motion.gd")
 const DECK_Y := -0.625        # m from the yard's centre: the deck's axis, level with the yard's east gate
 const DECK_HALF := 1.5
@@ -27,6 +28,9 @@ var _save_t := 0.0
 var _dirty := false
 var _market_t := 9.0
 var font: Font
+var deck_layer: Node2D
+var _deck_key := ""
+var _deck_pen: RefCounted
 
 
 func active() -> bool:
@@ -37,6 +41,10 @@ func _ready() -> void:
 	z_index = 2
 	font = Fonts.get_font("Medium")
 	process_physics_priority = 5
+	deck_layer = Node2D.new()
+	deck_layer.show_behind_parent = true
+	deck_layer.draw.connect(_draw_deck_static)
+	add_child(deck_layer)
 
 
 # ---------------------------------------------------------------- geometry (yard-local metres → world px)
@@ -113,6 +121,11 @@ func _physics_process(dt: float) -> void:
 	visible = active()
 	if not visible or yard == null:
 		return
+	deck_layer.visible = ViewCull.sees(game, Rect2(_px(Vector2(DECK_X0, DECK_Y - 12.0)), Vector2(_deck_x1() - DECK_X0 + 80.0, 24.0) * Geom.M))
+	var key := str([yard.global_position, _deck_x1(), Shipping.slots(), roundi(log(maxf(game.cam_zoom(), 0.02)) * 200.0), Txt.zh])
+	if deck_layer.visible and key != _deck_key:
+		_deck_key = key
+		deck_layer.queue_redraw()
 	_sync_hulls(dt)
 	_sync_pieces()
 	_receive()
@@ -344,46 +357,8 @@ func _draw() -> void:
 	var z: float = maxf(game.cam_zoom(), 0.02)
 	var lw := 1.0 / z
 	var ink := Pal.ink(0.5)
-	# the deck: a girder walkway with bollards
-	var d0 := _px(Vector2(DECK_X0, DECK_Y - DECK_HALF)) - global_position
-	var d1 := _px(Vector2(_deck_x1(), DECK_Y + DECK_HALF)) - global_position
-	draw_rect(Rect2(d0, d1 - d0), Color(0.04, 0.045, 0.05))
-	draw_rect(Rect2(d0, d1 - d0), ink, false, 1.5 * lw)
-	var x := DECK_X0 + 2.0
-	while x < _deck_x1():
-		var a := _px(Vector2(x, DECK_Y - DECK_HALF)) - global_position
-		draw_line(a, a + Vector2(0, DECK_HALF * 2.0 * m), Pal.ink(0.12), lw)
-		x += 3.0
-	# the apron and the loading table
-	for r in [Rect2(Vector2(8.6, DECK_Y + DECK_HALF + 0.2), Vector2(19.6, 6.0)), Rect2(Vector2(8.6, DECK_Y - DECK_HALF - 6.2), Vector2(19.6, 6.0))]:
-		var pr := Rect2(_px(r.position) - global_position, r.size * m)
-		draw_rect(pr, Color(0.035, 0.04, 0.045))
-		draw_rect(pr, Pal.ink(0.3), false, lw)
-		var hx := pr.position.x
-		while hx < pr.end.x - 0.6 * m:
-			draw_line(Vector2(hx, pr.end.y - 0.3 * m), Vector2(hx + 0.6 * m, pr.end.y), Pal.heat(0.3, 1.0), lw)
-			hx += 1.6 * m
-	if z >= 0.12:
-		_label(_px(Vector2(9.0, DECK_Y + DECK_HALF + 6.9)) - global_position, Shipping.w("卸货平台 · 待入库", "UNLOADING APRON · NOT YET STOCK"), Pal.ink(0.6), z)
-		_label(_px(Vector2(9.0, DECK_Y - DECK_HALF - 6.6)) - global_position, Shipping.w("出货台", "LOADING TABLE"), Pal.ink(0.6), z)
-		# 46 号: the pier says what it is
-		_label(_px(Vector2(30.0, DECK_Y - DECK_HALF - 1.2)) - global_position, Shipping.w("货运码头 · 栈桥", "CARGO PIER"), Pal.tint(Pal.AIR, 0.7, 1.2), z)
-	# the berths
-	for k in Shipping.slots():
-		var bx := _px(Vector2(SLOT_X + SLOT_PITCH * k, DECK_Y + DECK_HALF)) - global_position
-		draw_line(bx, bx + Vector2(80.0 * m, 0), Pal.tint(Pal.AIR, 0.35, 1.2), 2.0 * lw)
-		if z >= 0.12:
-			_label(bx + Vector2(0, 1.6 * m), Shipping.w("%d 号船位", "BERTH %d") % (k + 1), Pal.tint(Pal.AIR, 0.7, 1.2), z)
-	# the crane's gantry over the deck once the cargo district stands
-	if Port.stage("cargo") >= 1:
-		var g0 := _px(Vector2(DECK_X0, DECK_Y)) - global_position
-		var g1 := _px(Vector2(_deck_x1(), DECK_Y)) - global_position
-		draw_line(g0, g1, Pal.heat(0.35, 1.0), 2.0 * lw)
-		if not crane.is_empty() and bodies.has(crane.key) and is_instance_valid(bodies[crane.key]):
-			var bp: Vector2 = bodies[crane.key].global_position - global_position
-			var tp := Vector2(bp.x, g0.y)
-			draw_rect(Rect2(tp - Vector2(0.8, 0.4) * m, Vector2(1.6, 0.8) * m), Pal.heat(0.8, 1.3))
-			draw_line(tp, bp, Pal.ink(0.7), lw * 1.5)
+	if ViewCull.sees(game, Rect2(_px(Vector2(DECK_X0, DECK_Y - 12.0)), Vector2(_deck_x1() - DECK_X0 + 80.0, 24.0) * m)):
+		_draw_deck(z)
 	# the hulls
 	for id in hulls:
 		var hd: Dictionary = hulls[id]
@@ -409,6 +384,63 @@ func _draw() -> void:
 		qi += 1
 
 
+func _draw_deck(z: float) -> void:
+	var m := Geom.M
+	var lw := 1.0 / z
+	# the crane's gantry over the deck once the cargo district stands
+	if Port.stage("cargo") >= 1:
+		var g0 := _px(Vector2(DECK_X0, DECK_Y)) - global_position
+		var g1 := _px(Vector2(_deck_x1(), DECK_Y)) - global_position
+		draw_line(g0, g1, Pal.heat(0.35, 1.0), 2.0 * lw)
+		if not crane.is_empty() and bodies.has(crane.key) and is_instance_valid(bodies[crane.key]):
+			var bp: Vector2 = bodies[crane.key].global_position - global_position
+			var tp := Vector2(bp.x, g0.y)
+			draw_rect(Rect2(tp - Vector2(0.8, 0.4) * m, Vector2(1.6, 0.8) * m), Pal.heat(0.8, 1.3))
+			draw_line(tp, bp, Pal.ink(0.7), lw * 1.5)
+
+
+func _draw_deck_static() -> void:
+	if not active() or yard == null:
+		return
+	_deck_pen = CanvasBatch.new(deck_layer)
+	var z: float = maxf(game.cam_zoom(), 0.02)
+	var m := Geom.M
+	var lw := 1.0 / z
+	var ink := Pal.ink(0.5)
+	# the deck: a girder walkway with bollards
+	var d0 := _px(Vector2(DECK_X0, DECK_Y - DECK_HALF)) - global_position
+	var d1 := _px(Vector2(_deck_x1(), DECK_Y + DECK_HALF)) - global_position
+	_deck_pen.draw_rect(Rect2(d0, d1 - d0), Color(0.04, 0.045, 0.05))
+	_deck_pen.draw_rect(Rect2(d0, d1 - d0), ink, false, 1.5 * lw)
+	var x := DECK_X0 + 2.0
+	while x < _deck_x1():
+		var a := _px(Vector2(x, DECK_Y - DECK_HALF)) - global_position
+		_deck_pen.draw_line(a, a + Vector2(0, DECK_HALF * 2.0 * m), Pal.ink(0.12), lw)
+		x += 3.0
+	# the apron and the loading table
+	for r in [Rect2(Vector2(8.6, DECK_Y + DECK_HALF + 0.2), Vector2(19.6, 6.0)), Rect2(Vector2(8.6, DECK_Y - DECK_HALF - 6.2), Vector2(19.6, 6.0))]:
+		var pr := Rect2(_px(r.position) - global_position, r.size * m)
+		_deck_pen.draw_rect(pr, Color(0.035, 0.04, 0.045))
+		_deck_pen.draw_rect(pr, Pal.ink(0.3), false, lw)
+		var hx := pr.position.x
+		while hx < pr.end.x - 0.6 * m:
+			_deck_pen.draw_line(Vector2(hx, pr.end.y - 0.3 * m), Vector2(hx + 0.6 * m, pr.end.y), Pal.heat(0.3, 1.0), lw)
+			hx += 1.6 * m
+	if z >= 0.12:
+		_deck_label(_px(Vector2(9.0, DECK_Y + DECK_HALF + 6.9)) - global_position, Shipping.w("卸货平台 · 待入库", "UNLOADING APRON · NOT YET STOCK"), Pal.ink(0.6), z)
+		_deck_label(_px(Vector2(9.0, DECK_Y - DECK_HALF - 6.6)) - global_position, Shipping.w("出货台", "LOADING TABLE"), Pal.ink(0.6), z)
+		# 46 号: the pier says what it is
+		_deck_label(_px(Vector2(30.0, DECK_Y - DECK_HALF - 1.2)) - global_position, Shipping.w("货运码头 · 栈桥", "CARGO PIER"), Pal.tint(Pal.AIR, 0.7, 1.2), z)
+	# the berths
+	for k in Shipping.slots():
+		var bx := _px(Vector2(SLOT_X + SLOT_PITCH * k, DECK_Y + DECK_HALF)) - global_position
+		_deck_pen.draw_line(bx, bx + Vector2(80.0 * m, 0), Pal.tint(Pal.AIR, 0.35, 1.2), 2.0 * lw)
+		if z >= 0.12:
+			_deck_label(bx + Vector2(0, 1.6 * m), Shipping.w("%d 号船位", "BERTH %d") % (k + 1), Pal.tint(Pal.AIR, 0.7, 1.2), z)
+	_deck_pen.flush()
+	_deck_pen = null
+
+
 func _ship(id: String) -> Dictionary:
 	for s in Shipping.data().ships:
 		if str(s.id) == id:
@@ -421,6 +453,8 @@ func _ship(id: String) -> Dictionary:
 func _hull(c: Vector2, length: float, slot: int, s: Dictionary, burning: bool, outbound: bool, z: float) -> void:
 	var m := Geom.M
 	var h := hull_h(length)
+	if not ViewCull.sees(game, Rect2(c + global_position - Vector2(length * 0.5 + 12.0, h * 0.5 + 5.0) * m, Vector2(length + 24.0, h + 10.0) * m)):
+		return
 	var lw := 1.0 / z
 	var hull := Rect2(c - Vector2(length, h) * 0.5 * m, Vector2(length, h) * m)
 	var col := Color(0.075, 0.08, 0.09)
@@ -468,3 +502,9 @@ func _label(at: Vector2, text: String, col: Color, z: float) -> void:
 	draw_set_transform(at, 0, Vector2.ONE / z)
 	draw_string(font, Vector2.ZERO, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, col)
 	draw_set_transform(Vector2.ZERO)
+
+
+func _deck_label(at: Vector2, text: String, col: Color, z: float) -> void:
+	_deck_pen.draw_set_transform(at, 0, Vector2.ONE / z)
+	_deck_pen.draw_string(font, Vector2.ZERO, text, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, col)
+	_deck_pen.draw_set_transform(Vector2.ZERO)

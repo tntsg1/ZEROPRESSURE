@@ -112,8 +112,8 @@
 			"id": "SP_C1",
 			"mode": "lockstep",
 			"title": {
-				"zh": "安全阀结冰：冷却与抽取",
-				"en": "A FROZEN RELIEF: DRAW IT DOWN COLD"
+				"zh": "安全阀结冰：解冻与液体回收",
+				"en": "A FROZEN RELIEF VALVE: THAW IT AND RECOVER THE LIQUID"
 			},
 			"done_flag": "SP_C1_COMPLETE",
 			"guard": {
@@ -157,8 +157,8 @@
 				{
 					"id": "kpa",
 					"text": {
-						"zh": "① 测压：读取 TP-1 的罐内压力，确认压力是否持续上升。",
-						"en": "MEASURE (1): TANK PRESSURE TP-1 (IT CLIMBS BY ITSELF)"
+						"zh": "这次要处理的是一台低温储罐，安全阀已经结冰，罐内的压力可能还在不断上升。先别急着拆卸，我们得确认储罐目前的情况。按 1 使用测量工具，查看压力表（TP-1）的读数，注意一下罐内压力有没有持续上升。如果压力还在增加，后面的操作就得更加小心了。",
+						"en": "THIS TIME YOU ARE DEALING WITH A CRYOGENIC STORAGE TANK. ITS RELIEF VALVE HAS FROZEN AND THE PRESSURE IN THE TANK MAY STILL BE RISING. DON’T RUSH TO TAKE IT APART; FIRST WE NEED TO CHECK THE TANK’S CURRENT CONDITION. PRESS 1 TO USE THE MEASURE TOOL AND READ PRESSURE GAUGE TP-1, AND NOTE WHETHER THE PRESSURE IN THE TANK KEEPS RISING. IF IT IS STILL INCREASING, THE STEPS THAT FOLLOW NEED MORE CARE."
 					},
 					"tools": [
 						1
@@ -179,8 +179,8 @@
 				{
 					"id": "valve",
 					"text": {
-						"zh": "② 测温：测量安全阀 VT-1 的温度。",
-						"en": "MEASURE (1): RELIEF VALVE TEMPERATURE VT-1"
+						"zh": "接下来检查安全阀的温度。按 1 使用测量工具，测量安全阀（VT-1），看看它现在有多冷。安全阀如果被冰冻住，就可能无法正常释放压力，所以我们需要先把结冰的问题处理好，才能继续回收罐内的液体。",
+						"en": "NEXT CHECK THE TEMPERATURE OF THE RELIEF VALVE. PRESS 1 TO USE THE MEASURE TOOL ON RELIEF VALVE VT-1 AND SEE HOW COLD IT IS. A FROZEN RELIEF VALVE MAY BE UNABLE TO RELEASE PRESSURE PROPERLY, SO WE MUST DEAL WITH THE ICE BEFORE WE CAN GO ON TO RECOVER THE LIQUID IN THE TANK."
 					},
 					"tools": [
 						1
@@ -200,8 +200,8 @@
 				{
 					"id": "thaw",
 					"text": {
-						"zh": "③ 解冻：安全阀已结冰。启动加热器 RVH-1（按 4），保持冷头供电。",
-						"en": "FROZEN: VALVE HEATER RVH-1 ON (4); CRYOCOOLER STAYS POWERED"
+						"zh": "现在已经确认安全阀结冰了，我们得先让它恢复正常。找到安全阀加热器（RVH-1），按 4 启动加热，让阀门慢慢解冻。注意，冷头现在还需要保持供电，千万不要提前关闭。我们只需要给安全阀解冻，暂时不用让整个储罐升温。",
+						"en": "THE RELIEF VALVE IS NOW CONFIRMED FROZEN, SO WE NEED TO GET IT WORKING AGAIN. FIND RELIEF VALVE HEATER RVH-1 AND PRESS 4 TO START HEATING, LETTING THE VALVE THAW SLOWLY. NOTE THAT THE COLD HEAD STILL NEEDS POWER, SO DON’T SWITCH IT OFF EARLY. WE ONLY NEED TO THAW THE RELIEF VALVE; THERE IS NO NEED TO WARM THE WHOLE TANK FOR NOW."
 					},
 					"tools": [
 						1,
@@ -221,8 +221,8 @@
 				{
 					"id": "hose",
 					"text": {
-						"zh": "气液回收（5）：软管接 PT-1 抽液",
-						"en": "HOSE (5): ON PT-1, DRAW THE CARGO OFF"
+						"zh": "安全阀的问题处理好了，接下来开始回收储罐里的液体。找到储罐的抽取接口（PT-1），按 5 连接回收软管，把里面剩余的液体抽出来。这些低温液体还有回收价值，完整回收以后也能减少浪费，所以先把罐内清空，再考虑拆卸。",
+						"en": "THE RELIEF VALVE IS SORTED, SO NOW WE START RECOVERING THE LIQUID IN THE TANK. FIND THE TANK’S DRAW PORT PT-1 AND PRESS 5 TO CONNECT THE RECOVERY HOSE AND DRAW OFF THE LIQUID THAT REMAINS. THIS CRYOGENIC LIQUID IS WORTH RECOVERING, AND RECOVERING ALL OF IT REDUCES WASTE, SO EMPTY THE TANK FIRST AND ONLY THEN THINK ABOUT REMOVING IT."
 					},
 					"tools": [
 						1,
@@ -238,8 +238,8 @@
 				{
 					"id": "draw",
 					"text": {
-						"zh": "等罐抽空（按住 = 加速）",
-						"en": "WAIT: THE TANK EMPTY (HOLD = TO SPEED UP)"
+						"zh": "回收已经开始了，现在稍微等待一下，让软管把储罐里剩余的液体全部抽走。注意查看储罐的状态，确认里面已经抽空以后才能继续拆卸。如果觉得等待时间太长，可以按住 = 加快时间，不过在储罐清空之前，先不要动固定螺栓。",
+						"en": "RECOVERY HAS STARTED. NOW WAIT A MOMENT FOR THE HOSE TO DRAW OFF ALL THE LIQUID LEFT IN THE TANK. WATCH THE TANK’S STATUS AND CONFIRM IT IS EMPTY BEFORE YOU GO ON TO REMOVE IT. IF THE WAIT SEEMS TOO LONG YOU CAN HOLD = TO SPEED UP TIME, BUT DON’T TOUCH THE MOUNTING BOLTS UNTIL THE TANK HAS BEEN EMPTIED."
 					},
 					"tools": [
 						1,
@@ -256,8 +256,8 @@
 				{
 					"id": "free",
 					"text": {
-						"zh": "拆下罐 TK-1 的螺栓（4）",
-						"en": "WRENCH (4): UNBOLT TANK TK-1"
+						"zh": "储罐已经抽空，现在可以开始拆卸了。找到储罐（TK-1）上的固定螺栓，按 4 将它们拆下来。前面的解冻和回收步骤都已经完成，这时候再拆卸就安全多了。尽量保持储罐完整，后面还可以直接回收。",
+						"en": "THE TANK HAS BEEN EMPTIED, SO YOU CAN START REMOVING IT NOW. FIND THE MOUNTING BOLTS ON TANK TK-1 AND PRESS 4 TO REMOVE THEM. THE THAWING AND RECOVERY STEPS ARE ALL DONE, SO REMOVING IT NOW IS MUCH SAFER. KEEP THE TANK AS INTACT AS YOU CAN, SINCE IT CAN BE RECOVERED AS IT IS AFTERWARDS."
 					},
 					"tools": [
 						3,
@@ -274,8 +274,8 @@
 				{
 					"id": "deliver",
 					"text": {
-						"zh": "空罐送进回收口",
-						"en": "THE EMPTY TANK TO A MOUTH"
+						"zh": "很好，储罐已经拆下来了。接下来把空罐（TK-1）送到设备回收口，这次训练就完成了。以后遇到安全阀结冰的低温储罐，记得先检查压力和温度，保持冷头供电，给安全阀解冻以后再回收里面的液体。等储罐完全抽空，才能拆卸固定螺栓。顺序记清楚了，处理这类设备就容易多了。",
+						"en": "GOOD, THE TANK IS OFF. NOW DELIVER THE EMPTY TANK (TK-1) TO THE EQUIPMENT MOUTH AND THIS TRAINING IS COMPLETE. NEXT TIME YOU MEET A CRYOGENIC TANK WITH A FROZEN RELIEF VALVE, REMEMBER TO CHECK PRESSURE AND TEMPERATURE FIRST, KEEP THE COLD HEAD POWERED, AND RECOVER THE LIQUID INSIDE ONLY AFTER THAWING THE RELIEF VALVE. ONLY WHEN THE TANK IS COMPLETELY EMPTY CAN YOU REMOVE THE MOUNTING BOLTS. ONCE YOU HAVE THE ORDER DOWN, THIS KIND OF EQUIPMENT GETS MUCH EASIER."
 					},
 					"tools": [
 						3,
@@ -301,8 +301,8 @@
 			"id": "SP_C2",
 			"mode": "lockstep",
 			"title": {
-				"zh": "稀释制冷机：按序回温",
-				"en": "THE DILUTION FRIDGE: WARM IT IN ORDER"
+				"zh": "稀释制冷机：按顺序回温",
+				"en": "THE DILUTION FRIDGE: WARM IT UP IN ORDER"
 			},
 			"done_flag": "SP_C2_COMPLETE",
 			"guard": {
@@ -358,8 +358,8 @@
 				{
 					"id": "mxt",
 					"text": {
-						"zh": "测量（1）：读混合室温度 MXT",
-						"en": "MEASURE (1): MIXING CHAMBER MXT"
+						"zh": "这次要拆卸的是稀释制冷机里面的芯片封装。这套设备的工作温度非常低，拆卸之前必须让它慢慢恢复到合适的温度。我们先检查一下，按 1 使用测量工具，查看混合室的温度读数（MXT），看看现在距离正常温度还有多远。",
+						"en": "THIS TIME YOU WILL REMOVE THE CHIP PACKAGE INSIDE A DILUTION REFRIGERATOR. THIS EQUIPMENT RUNS AT AN EXTREMELY LOW TEMPERATURE, AND BEFORE REMOVAL IT MUST BE WARMED SLOWLY BACK TO A SUITABLE TEMPERATURE. LET’S CHECK FIRST: PRESS 1 TO USE THE MEASURE TOOL AND READ THE MIXING CHAMBER TEMPERATURE (MXT) TO SEE HOW FAR IT IS FROM NORMAL TEMPERATURE."
 					},
 					"tools": [
 						1
@@ -380,8 +380,8 @@
 				{
 					"id": "circ",
 					"text": {
-						"zh": "① 停循环泵 CIRC（4）",
-						"en": "① CIRCULATION CIRC OFF (4)"
+						"zh": "接下来先停止制冷机内部的气体循环。找到循环泵（CIRC），按 4 将它关闭。现在还不用着急处理其他设备，我们得先把循环停下来，才能继续回收里面的混合气体。",
+						"en": "NEXT, FIRST STOP THE GAS CIRCULATION INSIDE THE REFRIGERATOR. FIND CIRCULATION PUMP (CIRC) AND PRESS 4 TO SWITCH IT OFF. THERE’S NO NEED TO RUSH TO THE OTHER EQUIPMENT YET; WE MUST STOP THE CIRCULATION FIRST BEFORE WE CAN GO ON TO RECOVER THE MIXTURE INSIDE."
 					},
 					"tools": [
 						1,
@@ -401,8 +401,8 @@
 				{
 					"id": "mix",
 					"text": {
-						"zh": "② 软管接 MIXP 回收混合气，压力降到 20 kPa 以下（5）",
-						"en": "② HOSE ON MIXP: RECOVER THE MIXTURE BELOW 20 kPa (5)"
+						"zh": "循环泵已经停止，现在该回收混合气体了。找到混合气接口（MIXP），按 5 连接回收软管，把里面剩余的混合气体回收出来。注意查看压力读数，必须降到 20 kPa 以下才能继续。混合气体本身也有回收价值，直接排掉就太浪费了。",
+						"en": "THE CIRCULATION PUMP HAS STOPPED, SO IT IS TIME TO RECOVER THE MIXTURE GAS. FIND THE MIXTURE PORT (MIXP) AND PRESS 5 TO CONNECT THE RECOVERY HOSE, THEN RECOVER THE MIXTURE THAT REMAINS INSIDE. WATCH THE PRESSURE READING; IT MUST DROP BELOW 20 kPa BEFORE YOU CAN CONTINUE. THE MIXTURE GAS IS ITSELF WORTH RECOVERING, AND VENTING IT OUTRIGHT WOULD BE A WASTE."
 					},
 					"tools": [
 						1,
@@ -423,8 +423,8 @@
 				{
 					"id": "pt",
 					"text": {
-						"zh": "③ 停脉管冷头 PT（4）",
-						"en": "③ PULSE TUBE PT OFF (4)"
+						"zh": "混合气体已经回收得差不多了，接下来可以关闭脉管冷头。找到脉管冷头（PT），按 4 停止运行。这样设备就不会继续主动制冷了，混合室的温度也会开始慢慢回升。",
+						"en": "THE MIXTURE GAS HAS MOSTLY BEEN RECOVERED, SO NOW YOU CAN SWITCH OFF THE PULSE-TUBE COLD HEAD. FIND PULSE-TUBE COLD HEAD (PT) AND PRESS 4 TO STOP IT. THE EQUIPMENT WILL THEN STOP ACTIVELY COOLING, AND THE MIXING CHAMBER TEMPERATURE WILL BEGIN TO CLIMB SLOWLY."
 					},
 					"tools": [
 						1,
@@ -444,8 +444,8 @@
 				{
 					"id": "warm",
 					"text": {
-						"zh": "④ 等混合室自己回温过 30 K（按住 = 加速）",
-						"en": "④ WAIT: IT WARMS PAST 30 K BY ITSELF (HOLD = TO SPEED UP)"
+						"zh": "现在先不要打开加热器，让混合室自己慢慢回温一段时间。等温度升到 30 K 以上，我们才能进行下一步。这个过程可能会稍微慢一点，可以按住 = 加快时间，不过在温度达到要求之前，先别急着使用加热器。",
+						"en": "DON’T SWITCH ON THE HEATERS YET. LET THE MIXING CHAMBER WARM UP BY ITSELF FOR A WHILE. ONLY WHEN THE TEMPERATURE RISES ABOVE 30 K CAN WE TAKE THE NEXT STEP. THIS MAY BE A LITTLE SLOW, SO YOU CAN HOLD = TO SPEED UP TIME, BUT DON’T USE THE HEATERS BEFORE THE TEMPERATURE REACHES THE REQUIRED LEVEL."
 					},
 					"tools": [
 						1
@@ -463,8 +463,8 @@
 				{
 					"id": "heat",
 					"text": {
-						"zh": "⑤ 现在才开加热 HEAT（4）",
-						"en": "⑤ ONLY NOW THE HEATERS HEAT ON (4)"
+						"zh": "混合室温度已经超过 30 K，现在可以开始主动加热了。找到加热器（HEAT），按 4 将它打开。前面先让设备自然回温，就是为了避免温度太低时直接加热，导致设备内部的部件受到损伤。现在按照正常顺序继续就可以了。",
+						"en": "THE MIXING CHAMBER TEMPERATURE HAS PASSED 30 K, SO NOW YOU CAN START ACTIVE HEATING. FIND THE HEATERS (HEAT) AND PRESS 4 TO SWITCH THEM ON. WE LET THE EQUIPMENT WARM NATURALLY AT FIRST TO AVOID HEATING IT DIRECTLY WHEN IT IS TOO COLD, WHICH WOULD DAMAGE THE PARTS INSIDE. NOW JUST CONTINUE IN THE NORMAL ORDER."
 					},
 					"tools": [
 						1,
@@ -484,8 +484,8 @@
 				{
 					"id": "room",
 					"text": {
-						"zh": "⑥ 等回到 250 K 以上（按住 = 加速）",
-						"en": "⑥ WAIT: ABOVE 250 K (HOLD = TO SPEED UP)"
+						"zh": "接下来还需要等待混合室继续升温。注意查看温度读数，等温度达到 250 K 以上，才能进行后面的拆卸。如果不想一直等待，可以按住 = 加快时间。现在准备工作已经完成了，我们只需要确认温度达到要求。",
+						"en": "NEXT YOU STILL NEED TO WAIT FOR THE MIXING CHAMBER TO KEEP WARMING. WATCH THE TEMPERATURE READING; ONLY WHEN IT REACHES ABOVE 250 K CAN YOU PROCEED WITH THE REMOVAL THAT FOLLOWS. IF YOU DON’T WANT TO KEEP WAITING YOU CAN HOLD = TO SPEED UP TIME. THE PREPARATION IS NOW DONE, AND WE JUST NEED TO CONFIRM THE TEMPERATURE HAS REACHED THE REQUIREMENT."
 					},
 					"tools": [
 						1
@@ -503,8 +503,8 @@
 				{
 					"id": "lock",
 					"text": {
-						"zh": "⑦ 锁住隔振台 VI-LOCK（4）",
-						"en": "⑦ LOCK THE ISOLATION TABLE VI-LOCK (4)"
+						"zh": "温度已经达到要求，接下来还差最后一项准备工作。芯片封装安装在隔振台上，拆卸时如果隔振台还可以自由活动，就容易碰坏里面的精密部件。找到隔振台锁定装置（VI-LOCK），按 4 将隔振台固定好，确认锁定以后再拆卸芯片。",
+						"en": "THE TEMPERATURE HAS REACHED THE REQUIREMENT, BUT ONE LAST PREPARATION REMAINS. THE CHIP PACKAGE IS MOUNTED ON A VIBRATION-ISOLATION TABLE, AND IF THE TABLE CAN STILL MOVE FREELY DURING REMOVAL, IT IS EASY TO KNOCK AND DAMAGE THE PRECISION PARTS INSIDE. FIND ISOLATION-TABLE LOCK VI-LOCK AND PRESS 4 TO FIX THE TABLE IN PLACE, AND ONLY AFTER CONFIRMING THE LOCK REMOVE THE CHIP."
 					},
 					"tools": [
 						1,
@@ -527,8 +527,8 @@
 				{
 					"id": "free",
 					"text": {
-						"zh": "拆下芯片封装 QPU（4）",
-						"en": "WRENCH (4): UNBOLT THE CHIP PACKAGE QPU"
+						"zh": "好了，现在可以拆卸芯片封装了。找到芯片封装（QPU），按 4 将它从设备上完整拆下来。这个部件比较精密，完整回收的价值也更高，所以前面的准备工作一步都不能省。以后再碰到稀释制冷机，记得先停止循环、回收混合气，再关闭冷头，等设备自然回温到 30 K 以上才能打开加热器。等温度达到 250 K 以后，把隔振台锁好，就可以安全拆卸芯片封装了。",
+						"en": "ALL SET, NOW YOU CAN REMOVE THE CHIP PACKAGE. FIND CHIP PACKAGE (QPU) AND PRESS 4 TO TAKE IT OFF THE EQUIPMENT WHOLE. THIS PART IS DELICATE AND IS WORTH MORE RECOVERED WHOLE, SO NOT ONE OF THE PREPARATION STEPS CAN BE SKIPPED. NEXT TIME YOU MEET A DILUTION REFRIGERATOR, REMEMBER TO STOP THE CIRCULATION AND RECOVER THE MIXTURE FIRST, THEN SWITCH OFF THE COLD HEAD, AND ONLY SWITCH ON THE HEATERS ONCE THE EQUIPMENT HAS WARMED NATURALLY ABOVE 30 K. ONCE THE TEMPERATURE REACHES 250 K, LOCK THE ISOLATION TABLE AND YOU CAN REMOVE THE CHIP PACKAGE SAFELY."
 					},
 					"tools": [
 						3,

@@ -85,8 +85,8 @@
 				{
 					"id": "brief",
 					"text": {
-						"zh": "看一眼训练件：按 I 可以随时查图鉴",
-						"en": "LOOK OVER THE RIG: I OPENS THE CODEX ANY TIME"
+						"zh": "开始训练之前，可以先看看这次要拆的船上都有哪些设备。如果遇到不认识的部件，可以随时按 I 打开图鉴，查看它的具体用途和拆卸方法。",
+						"en": "BEFORE TRAINING STARTS, YOU CAN TAKE A LOOK AT WHAT EQUIPMENT THE SHIP YOU’LL BE TAKING APART HAS ON BOARD. IF YOU MEET A PART YOU DON’T RECOGNISE, PRESS I AT ANY TIME TO OPEN THE CODEX AND SEE WHAT IT IS FOR AND HOW TO REMOVE IT."
 					},
 					"tools": [],
 					"done": {
@@ -154,8 +154,8 @@
 				{
 					"id": "battery",
 					"text": {
-						"zh": "① 先处理小船自己的危险：断开它的电池 SK（4）",
-						"en": "① ITS OWN DANGERS FIRST: ITS BATTERY SK OFF (4)"
+						"zh": "这次要把里面的小船完整拆出来，不过小船上还有一块电池。先找到电池 SK，把上面的 4 个连接点全部断开，确认电池已经断开以后，再处理固定小船的托架。（4）",
+						"en": "THIS TIME YOU WILL TAKE THE SMALL BOAT INSIDE OUT WHOLE, BUT THE BOAT HAS A BATTERY OF ITS OWN. FIRST FIND BATTERY SK, DISCONNECT ALL 4 CONNECTION POINTS ON IT, AND ONLY AFTER CONFIRMING THE BATTERY IS DISCONNECTED DEAL WITH THE CRADLE HOLDING THE BOAT. (4)"
 					},
 					"tools": [
 						1,
@@ -179,8 +179,8 @@
 				{
 					"id": "stern",
 					"text": {
-						"zh": "② 托架锁从船尾松起：CL-1（4）",
-						"en": "② THE CRADLE LOCKS FROM THE STERN: CL-1 (4)"
+						"zh": "接下来要把小船从托架上松开。先从船尾开始，找到 CL-1，把上面的 4 个锁定装置全部解除。船首的固定装置暂时留着，等船尾处理完以后再拆。（4）",
+						"en": "NEXT THE BOAT MUST BE RELEASED FROM THE CRADLE. START AT THE STERN: FIND CL-1 AND RELEASE ALL 4 LOCKS ON IT. LEAVE THE BOW FASTENERS FOR NOW AND REMOVE THEM ONLY AFTER THE STERN IS DONE. (4)"
 					},
 					"tools": [
 						1,
@@ -200,8 +200,8 @@
 				{
 					"id": "bow",
 					"text": {
-						"zh": "③ 再松船首的 CL-2（4）",
-						"en": "③ THEN THE BOW'S CL-2 (4)"
+						"zh": "船尾已经松开了，现在可以处理船首的托架锁 CL-2。把剩下的 4 个锁定装置全部解除，这样小船就可以从托架上取出来了。（4）",
+						"en": "THE STERN IS LOOSE, SO NOW YOU CAN DEAL WITH BOW CRADLE LOCK CL-2. RELEASE ALL THE REMAINING 4 LOCKS, AND THE BOAT CAN COME OUT OF THE CRADLE. (4)"
 					},
 					"tools": [
 						1,
@@ -221,8 +221,8 @@
 				{
 					"id": "door",
 					"text": {
-						"zh": "④ 打开首门 BOW（4）",
-						"en": "④ OPEN THE BOW DOOR BOW (4)"
+						"zh": "接下来找到船首的舱门 BOW，把 4 个锁定装置全部打开，给小船留出足够的出口。注意检查舱门有没有完全打开，避免拖船的时候发生碰撞。（4）",
+						"en": "NEXT FIND BOW DOOR BOW AND OPEN ALL 4 LOCKS, LEAVING THE BOAT ENOUGH ROOM TO GET OUT. CHECK THAT THE DOOR IS FULLY OPEN SO NOTHING COLLIDES WHEN THE BOAT IS TOWED OUT. (4)"
 					},
 					"tools": [
 						1,
@@ -242,8 +242,8 @@
 				{
 					"id": "winch",
 					"text": {
-						"zh": "⑤ 开绞车 WINCH：整艘拖出（一块外壳都别切）",
-						"en": "⑤ THE WINCH: OUT IT GOES, WHOLE (CUT NONE OF ITS HULL)"
+						"zh": "现在可以启动绞车 WINCH，把小船慢慢从船舱里面拖出来了。这次训练要求整艘小船完整回收，所以不要切割小船的外壳，尽量保持所有部件完好，成功拖出来就算完成训练。",
+						"en": "NOW YOU CAN START WINCH AND SLOWLY HAUL THE BOAT OUT OF THE HOLD. THIS TRAINING REQUIRES THE WHOLE BOAT TO BE RECOVERED, SO DON’T CUT THE BOAT’S HULL; KEEP ALL ITS PARTS INTACT, AND SUCCESSFULLY HAULING IT OUT COMPLETES THE TRAINING."
 					},
 					"tools": [
 						1,
@@ -271,8 +271,8 @@
 			"id": "SP_I2",
 			"mode": "lockstep",
 			"title": {
-				"zh": "库门：两路电都断，才扳释放杆",
-				"en": "THE VAULT: BOTH SUPPLIES DEAD, THEN THE LEVER"
+				"zh": "库门：切断两路电源，再打开库门",
+				"en": "THE VAULT: CUT BOTH POWER SUPPLIES, THEN OPEN THE VAULT DOOR"
 			},
 			"done_flag": "SP_I2_COMPLETE",
 			"guard": {
@@ -325,8 +325,8 @@
 				{
 					"id": "test",
 					"text": {
-						"zh": "测量（1）：门锁电磁铁的验电点 E-L",
-						"en": "MEASURE (1): THE LOCK SOLENOID'S TEST POINT E-L"
+						"zh": "先检查一下门锁有没有通电。找到门锁电磁铁的验电点 E-L，测量一下当前的电压，确认门锁现在的供电情况。（1）",
+						"en": "FIRST CHECK WHETHER THE DOOR LOCK HAS POWER. FIND LOCK SOLENOID TEST POINT E-L AND MEASURE THE CURRENT VOLTAGE TO CONFIRM THE LOCK’S POWER SUPPLY. (1)"
 					},
 					"tools": [
 						1
@@ -347,8 +347,8 @@
 				{
 					"id": "main",
 					"text": {
-						"zh": "① 断开主开关 K-B（4）",
-						"en": "① THE MAIN SWITCH K-B OFF (4)"
+						"zh": "找到主电源开关 K-B，把开关断开，先切断库门的主电源。（4）",
+						"en": "FIND MAIN POWER SWITCH K-B AND OPEN IT, CUTTING THE VAULT DOOR’S MAIN POWER FIRST. (4)"
 					},
 					"tools": [
 						1,
@@ -368,8 +368,8 @@
 				{
 					"id": "retest",
 					"text": {
-						"zh": "再测 E-L：还带电？",
-						"en": "MEASURE E-L AGAIN: STILL LIVE?"
+						"zh": "现在回到验电点 E-L，再测量一次电压。奇怪，主电源已经断开了，门锁怎么还有电？看来还有别的地方在供电。",
+						"en": "NOW GO BACK TO TEST POINT E-L AND MEASURE THE VOLTAGE AGAIN. STRANGE: THE MAIN POWER IS ALREADY OFF, SO WHY DOES THE LOCK STILL HAVE POWER? SOMETHING ELSE MUST BE SUPPLYING IT."
 					},
 					"tools": [
 						1
@@ -390,8 +390,8 @@
 				{
 					"id": "backup",
 					"text": {
-						"zh": "② 备用电源在倒灌：断开门锁备用电源 K-LB（4）",
-						"en": "② THE BACKUP FEEDS IT: THE LOCK BACKUP K-LB OFF (4)"
+						"zh": "原来是备用电源还在给门锁供电。找到门锁备用电源开关 K-LB，把它也断开，这样才能把两路电源全部切断。（4）",
+						"en": "IT TURNS OUT THE BACKUP POWER IS STILL FEEDING THE DOOR LOCK. FIND LOCK BACKUP POWER SWITCH K-LB AND OPEN IT TOO, SO THAT BOTH POWER SUPPLIES ARE CUT. (4)"
 					},
 					"tools": [
 						1,
@@ -411,8 +411,8 @@
 				{
 					"id": "verify",
 					"text": {
-						"zh": "再测 E-L，确认 0 V",
-						"en": "MEASURE E-L: CONFIRM 0 V"
+						"zh": "再去测量一次 E-L，确认电压已经降到 0 V。只有确认门锁完全断电以后，才能继续操作。",
+						"en": "MEASURE E-L ONCE MORE AND CONFIRM THE VOLTAGE HAS DROPPED TO 0 V. ONLY WHEN YOU HAVE CONFIRMED THE LOCK IS COMPLETELY DEAD CAN YOU CONTINUE."
 					},
 					"tools": [
 						1
@@ -431,8 +431,8 @@
 				{
 					"id": "lever",
 					"text": {
-						"zh": "③ 扳释放杆 MR-1（4）",
-						"en": "③ THROW THE RELEASE LEVER MR-1 (4)"
+						"zh": "现在两路电源都已经断开，可以操作机械释放杆了。找到 MR-1，把释放杆扳下来，解除库门的锁定。（4）",
+						"en": "BOTH POWER SUPPLIES ARE NOW CUT, SO YOU CAN OPERATE THE MECHANICAL RELEASE LEVER. FIND MR-1 AND PULL THE LEVER DOWN TO UNLOCK THE VAULT DOOR. (4)"
 					},
 					"tools": [
 						1,
@@ -452,8 +452,8 @@
 				{
 					"id": "open",
 					"text": {
-						"zh": "④ 打开库门 VD-1（4，不需要电）",
-						"en": "④ OPEN THE VAULT DOOR VD-1 (4, NO POWER NEEDED)"
+						"zh": "门锁已经解除，现在可以直接打开库门 VD-1。这道门可以手动打开，不需要重新接通电源。（4）",
+						"en": "THE LOCK IS RELEASED, SO NOW YOU CAN OPEN VAULT DOOR VD-1 DIRECTLY. THIS DOOR CAN BE OPENED BY HAND, WITHOUT RECONNECTING POWER. (4)"
 					},
 					"tools": [
 						1,
@@ -473,8 +473,8 @@
 				{
 					"id": "box",
 					"text": {
-						"zh": "拆下保管箱 SDB-1（4）",
-						"en": "WRENCH (4): FREE THE DEPOSIT BOXES SDB-1"
+						"zh": "进入库房以后，找到保管箱 SDB-1，把固定保管箱的 4 个连接件全部拆下来。拆卸的时候小心一点，尽量保留整个箱体。（4）",
+						"en": "ONCE INSIDE THE VAULT, FIND DEPOSIT BOXES SDB-1 AND REMOVE ALL 4 CONNECTORS HOLDING THEM IN PLACE. BE CAREFUL WHILE REMOVING THEM AND KEEP THE WHOLE BOX INTACT AS YOU CAN. (4)"
 					},
 					"tools": [
 						3,
@@ -491,8 +491,8 @@
 				{
 					"id": "deliver",
 					"text": {
-						"zh": "保管箱整件送进设备回收口",
-						"en": "THE BOXES, WHOLE, TO THE EQUIPMENT BAY"
+						"zh": "保管箱拆下来以后，把它完整运送到设备回收口就可以了。记得检查一下箱体有没有损坏，完整回收才能拿到应有的回收收益。",
+						"en": "ONCE THE DEPOSIT BOXES ARE OFF, JUST DELIVER THEM WHOLE TO THE EQUIPMENT MOUTH. REMEMBER TO CHECK THE BOXES FOR DAMAGE, BECAUSE ONLY A WHOLE RECOVERY EARNS THE PROPER RECOVERY PAYOUT."
 					},
 					"tools": [
 						3,

@@ -27,6 +27,8 @@ func _initialize() -> void:
 	want_shots = "shots" in OS.get_cmdline_user_args()
 	if DisplayServer.get_name() != "headless":
 		root.add_child(preload("res://tests/test_window.gd").new())
+	# (the old rules, for comparison: -- nophase)
+	Tram.phase_through = not "nophase" in OS.get_cmdline_user_args()
 	_run.call_deferred()
 
 
@@ -166,7 +168,7 @@ func _run() -> void:
 				g.zoom_override = 1920.0 / maxf(110.0 * Geom.M, trade_px.distance_to(tr.pos) * 1.4)
 				await _frames(30)
 				await _snap("1_wait")
-			elif not shot.has("in") and tram_left_t > 0.0 and not tr.is_empty() and arrived == 0 and (tr.pos as Vector2).distance_to(trade_px) < 45.0 * Geom.M and bool(tr.moving):
+			elif not shot.has("in") and (tram_left_t > 0.0 or Tram.phase_through) and not tr.is_empty() and arrived == 0 and (tr.pos as Vector2).distance_to(trade_px) < 45.0 * Geom.M and bool(tr.moving):
 				shot["in"] = true
 				await _snap("2_coming_in")
 			elif not shot.has("unload") and unload_seen and arrived == 0:
@@ -185,14 +187,18 @@ func _run() -> void:
 	print("  shuttle left at %.1f s, crate unloaded at %.1f s, intake let it out at %.1f s, client ship at %.1f s; longest step %.2f m" % [tram_left_t, arrived_t, crate_out_t, ship_t, max_step])
 	check(jumps == 0, "no train ever jumped (longest step %.2f m a frame)" % max_step)
 	check(gone_frames == 0, "the trains drawn every frame (%d frames not)" % gone_frames)
-	check(tram_left_t > 0.0, "the shuttle gave way, seen driving off, with the drone beside it (%d)" % Tram.yields_near)
+	# 相位接驳 (2026-11-11): the shuttle passes through freight; it stays at its stop, the train runs in through it
+	if Tram.phase_through:
+		check(tram_left_t < 0.0 and Tram.yields_near == 0, "phase shuttle: it stayed at its stop, the train came in through it (gave way %d)" % Tram.yields_near)
+	else:
+		check(tram_left_t > 0.0, "the shuttle gave way, seen driving off, with the drone beside it (%d)" % Tram.yields_near)
 	check(arrived_t > 0.0 and unload_seen, "the train came in to the trade port's stop and unloaded (%.1f s)" % arrived_t)
 	check(not intake_early, "no crate came out of the dock's intake before the train had unloaded it")
 	check(crate_out_t < 0.0 or crate_out_t >= arrived_t, "the dock's crate after the train's (%.1f ≥ %.1f)" % [crate_out_t, arrived_t])
 	check(HallMarket.order("OTB").is_empty() or str(HallMarket.order("OTB").state) == "done", "the order collected and paid")
 	# 在站内等 (2026-11-10): having given way it drives back to the stop the drone got off at and waits there
-	var back := false
-	for f in 60 * 90:
+	var back: bool = Tram.phase_through and g.tram.phase == "" and g.tram.at == "trade"
+	for f in (0 if back else 60 * 90):
 		await process_frame
 		if g.tram.phase == "" and g.tram.at == "trade":
 			back = true

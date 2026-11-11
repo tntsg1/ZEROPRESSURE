@@ -40,7 +40,7 @@ var _chunks := {}               # [part, strip index] -> Node2D
 # outline, the equipment art, the fixings on top. Zoomed far out (the whole
 # ship on the screen) the art fades away: at that size its lines and lettering
 # are below a pixel, and it was half of what such a view drew.
-const PASSES := ["fill", "block", "line", "line_far", "art", "joint"]   # block: 工业剖面 far-out tone (Pal.solid only)
+const PASSES := ["shade", "fill", "block", "line", "line_far", "art", "joint"]   # shade, block: 工业剖面 only (shadows; far-out tone)
 const LINE_FAR := 0.3                     # zoom under which outlines are hairlines (line_far)
 const ART_FADE := Vector2(0.6, 0.75)    # zoom: gone below .x, whole above .y
 var _pass_roots := {}
@@ -69,6 +69,9 @@ var bodies: Array = []
 var anim_doors := false
 var font: Font
 static var prof := {}
+# ARK-01 帧率专项 (2026-11-11): true runs the code paths from before it (tests/ark_fps_probe.gd ab=N times
+# the two in turn in one run); the results are the same either way
+static var ark_old := OS.get_environment("ZP_ARK_OLD") == "1"  # regression A/B: run a test with the old paths
 
 
 static var acc_sum := {}
@@ -116,6 +119,44 @@ func _init() -> void:
 	cut_light = preload("res://scripts/cutaway_light.gd").new()
 	cut_light.world = self
 	add_child(cut_light)
+	# 2026-11-11: what a segment line means, under the pointer (scripts/seg_hint.gd)
+	seg_hint = preload("res://scripts/seg_hint.gd").new()
+	seg_hint.world = self
+	add_child(seg_hint)
+
+
+var seg_hint: Node2D
+var _whole := {}          # ship key -> {tag: true}: the units the next step says to take whole
+
+
+# 2026-11-11 (user: "罐子左边的红色虚线是什么意思"): a unit the next step says to take off whole
+# ("维护工具（4）拧下它的固定件，别用激光切") while it is still on the ship: its segment lines go dark grey
+func whole_take(p) -> bool:
+	if p == null or p.body != null or str(p.tag) == "" or game == null:
+		return false
+	var CA = load("res://scripts/core_asset.gd")
+	if not CA.has(game):
+		return false
+	var key: String = CA.ship_key(game)
+	if not _whole.has(key):
+		var d := {}
+		for t in CA._units(game):
+			d[str(t)] = true
+		_whole = {key: d}
+	return _whole[key].has(str(p.tag))
+
+
+# the intact pieces with segment lines that are drawn (for the pointer's tag)
+func list_with_segments() -> Array:
+	var out: Array = []
+	for id in pieces:
+		var p = pieces[id]
+		if p.gone or not p.intact or not p.has_meta("segments"):
+			continue
+		if p.room != "" and rooms.has(p.room) and not rooms[p.room].revealed and p.body == null:
+			continue
+		out.append(p)
+	return out
 
 
 # the cut-up equipment still on the ship: piece id -> a node whose own drawing (the
@@ -534,6 +575,42 @@ func _pick_cands(wpos: Vector2) -> Array:
 		ranked.append([_rank.get(p.id, -1), p])
 	ranked.sort_custom(func(a, b): return a[0] > b[0])
 	return ranked.map(func(e): return e[1])
+
+
+# ARK-01 帧率: every piece that could be within rad of a world point, in draw order (the same
+# order a walk through `order` meets them): the attached ones from the picking grid's cells, the
+# loose ones off their bodies. The laser's equipment warning walked all ~2,000 of ARK-01's pieces
+# every frame it cut (2.5 ms).
+func pieces_near(wpos: Vector2, rad: float) -> Array:
+	if not _pick_ready:
+		_pick_ready = true
+		for id in order:
+			pick_touch(pieces[id])
+	var c0 := Vector2i(((wpos - Vector2(rad, rad)) / PICK_CELL).floor())
+	var c1 := Vector2i(((wpos + Vector2(rad, rad)) / PICK_CELL).floor())
+	var seen := {}
+	var cand: Array = []
+	for x in range(c0.x, c1.x + 1):
+		for y in range(c0.y, c1.y + 1):
+			for id in _pick.get(Vector2i(x, y), {}):
+				if seen.has(id):
+					continue
+				seen[id] = true
+				var p = pieces.get(id)
+				if p != null and not p.gone and p.body == null:
+					cand.append(p)
+	for b in bodies:
+		if is_instance_valid(b):
+			for q in b.pieces:
+				if not q.gone:
+					cand.append(q)
+	if _rank_n != order.size():
+		_rank = {}
+		for i in order.size():
+			_rank[order[i]] = i
+		_rank_n = order.size()
+	cand.sort_custom(func(a, b): return int(_rank.get(a.id, -1)) < int(_rank.get(b.id, -1)))
+	return cand
 
 
 # 60 FPS (2026-10-27): a piece's bounds, worked out again only when its outline is another (the
@@ -1324,6 +1401,11 @@ func _process(dt: float) -> void:
 		var far_out: bool = game.cam_zoom() < LINE_FAR
 		_pass_roots["line"].visible = not far_out
 		_pass_roots["line_far"].visible = far_out
+		# 工业剖面: the shadows and plate sides are under two pixels this far out (60 FPS, ARK-01)
+		if _pass_roots.has("shade"):
+			_pass_roots["shade"].visible = Pal.solid and not far_out
+		if has_meta("cover_bands"):
+			(get_meta("cover_bands") as Node2D).visible = Pal.solid and not far_out
 	# 60 FPS: bolt heads and weld beads are under a pixel far out (ARK-01's thousands of them were
 	# the zoomed-out frame); they fade with the equipment art
 	if _pass_roots.has("joint") and game != null:
@@ -2260,7 +2342,8 @@ func draw_joints_of(ci: CanvasItem, list: Array, js = null) -> void:
 				dashes.append(a.lerp(b, float(k) / n))
 				dashes.append(a.lerp(b, float(k + 1) / n))
 		if not dashes.is_empty():
-			ci.draw_multiline(dashes, Pal.heat(0.55, 1.1), 1.4)
+			# a part to take off whole: its lines dark grey, not the cutting orange (seg_hint.gd says why)
+			ci.draw_multiline(dashes, Pal.ink(0.2) if whole_take(p) else Pal.heat(0.55, 1.1), 1.4)
 	if not seams.is_empty():
 		ci.draw_multiline(seams, Pal.ink(0.55), 1.4)
 	if not cracks.is_empty():

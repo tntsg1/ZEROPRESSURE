@@ -188,8 +188,45 @@ func _tow_au(id: String) -> Vector2:
 	for a in ShipMarket.data().assets:
 		if str(a.id) == id and str(a.state) == "towing":
 			var k := clampf((Shipping.day() - float(a.run.depart)) / maxf(ShipMarket.tow_span(a), 0.0001), 0.0, 1.0)
-			return Orbits.on_transfer(a.run, k)
+			return _path_at(_tow_path(a), k)
 	return Vector2.INF
+
+
+# user 2026-11-10 (截图：回港航线绕了大半圈，箭头停在空白处，零压港在别处): the tug flies a shortened span
+# (ShipMarket.tow_span: the first tow at most FIRST_S), but a.run is the arc worked out for the true
+# flight, which ends on the port's place run.tof days on. The route drawn is the arc flown: from the
+# hulk's station on the departure day to the port on the day the tug docks, in exactly the span.
+var _tow_paths := {}
+
+
+func _tow_path(a: Dictionary) -> Dictionary:
+	var run: Dictionary = a.run
+	var span := ShipMarket.tow_span(a)
+	var key := "%s@%s@%s" % [str(a.id), str(run.depart), str(span)]
+	if _tow_paths.has(key):
+		return _tow_paths[key]
+	var arr := Orbits.pos(Orbits.PORT, float(run.depart) + span)
+	var path := {}
+	if span > 0.0:
+		var v := Orbits.lambert(run.r1, [arr.x, arr.y], span)
+		if is_finite(v[0]) and is_finite(v[1]):
+			var end := Orbits.propagate(run.r1, [v[0], v[1]], span)
+			if Vector2(end[0] - arr.x, end[1] - arr.y).length() < 1e-3:
+				path = {"r1": run.r1, "v1": [v[0], v[1]], "tof": span, "depart": float(run.depart)}
+	if path.is_empty():
+		# no clean arc in that time: the true arc bent so that its ends are the station and the port
+		var e := Orbits.on_transfer(run, 1.0)
+		path = {"r1": run.r1, "v1": run.v1, "tof": float(run.tof), "depart": float(run.depart), "warp": [arr.x - e.x, arr.y - e.y]}
+	_tow_paths[key] = path
+	return path
+
+
+# a point a share u of the way along a route (an arc, or an arc bent onto its ends)
+func _path_at(run: Dictionary, u: float) -> Vector2:
+	var p := Orbits.on_transfer(run, u)
+	if run.has("warp"):
+		p += Vector2(float(run.warp[0]), float(run.warp[1])) * clampf(u, 0.0, 1.0)
+	return p
 
 
 func _process(dt: float) -> void:
@@ -647,7 +684,7 @@ func _arc(run: Dictionary, k: float, col: Color, lit: bool, t: float, n := 48, d
 		var u := float(j) / n
 		if u > drawn:
 			break
-		var p := _to(Orbits.on_transfer(run, u))
+		var p := _to(_path_at(run, u))
 		if u <= k:
 			done.append(p)
 		elif prev.is_finite() and fmod(u * 40.0 - t * 2.0, 1.0) < 0.5:
@@ -655,7 +692,7 @@ func _arc(run: Dictionary, k: float, col: Color, lit: bool, t: float, n := 48, d
 			dash.append(p)
 		prev = p
 	if k > 0.0 and k < 1.0 and k <= drawn:
-		done.append(_to(Orbits.on_transfer(run, k)))
+		done.append(_to(_path_at(run, k)))
 	if done.size() >= 2:
 		cv.draw_polyline(done, Color(col, 0.8), 2.2 if lit else 1.4, true)
 	if dash.size() >= 2:
@@ -823,25 +860,25 @@ func _draw_tows(day: float, t: float) -> void:
 			_tow_seen[id] = t
 			_sfx("starmap_route")
 		var age := t - float(_tow_seen[id])
-		var run: Dictionary = a.run
+		var run: Dictionary = _tow_path(a)
 		var k := clampf((day - float(run.depart)) / maxf(ShipMarket.tow_span(a), 0.0001), 0.0, 1.0)
 		var col := UiSkin.ACCENT
 		var f1 := Mo.draw_on(age)
 		_arc(run, k, col, true, t, 64, f1)
 		if f1 > 0.0 and f1 < 1.0:
-			var tip := _to(Orbits.on_transfer(run, f1))
+			var tip := _to(_path_at(run, f1))
 			cv.draw_texture_rect(UiSkin.glow_tex(), Rect2(tip - Vector2(12, 12), Vector2(24, 24)), false, Color(col, 0.7))
 			cv.draw_circle(tip, 4.0, col)
 			cv.draw_circle(tip, 1.7, Color(1.0, 0.95, 0.9))
 		var ah := Mo.arrow_open(age)
 		if ah > 0.01:
-			var e := _to(Orbits.on_transfer(run, 1.0))
-			var eb := _to(Orbits.on_transfer(run, 0.985))
+			var e := _to(_path_at(run, 1.0))
+			var eb := _to(_path_at(run, 0.985))
 			var d := (e - eb).normalized() if e != eb else Vector2.RIGHT
 			var n := d.orthogonal()
 			cv.draw_polyline(PackedVector2Array([e - d * 9.0 * ah + n * 7.0 * ah, e + d * 1.5, e - d * 9.0 * ah - n * 7.0 * ah]), Color(col, 0.85), 1.6, true)
-		var at := _to(Orbits.on_transfer(run, k))
-		var back := _to(Orbits.on_transfer(run, maxf(0.0, k - 0.03)))
+		var at := _to(_path_at(run, k))
+		var back := _to(_path_at(run, maxf(0.0, k - 0.03)))
 		var dir := (at - back).normalized() if at != back else Vector2.RIGHT
 		cv.draw_texture_rect(UiSkin.glow_tex(), Rect2(at - Vector2(22, 22), Vector2(44, 44)), false, Color(col, 0.5))
 		# the burn: a hot core and a longer soft plume flickering

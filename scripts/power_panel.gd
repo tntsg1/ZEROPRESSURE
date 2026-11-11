@@ -81,8 +81,8 @@ class SingleLine extends Control:
 		var bus_y := size.y * 0.42
 		var x0 := 40.0
 		var x1 := size.x - 40.0
-		draw_line(Vector2(x0, bus_y), Vector2(x1, bus_y), Pal.tint(Pal.AIR, 0.9, 1.2), 5.0)
-		draw_string(font, Vector2(x0, bus_y - 10), panel.w("全港总线", "MAIN LINE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.tint(Pal.AIR, 0.9, 1.2))
+		draw_line(Vector2(x0, bus_y), Vector2(x1, bus_y), Pal.tint(UiSkin.FIGURE, 0.9, 1.2), 5.0)
+		draw_string(font, Vector2(x0, bus_y - 10), panel.w("全港总线", "MAIN LINE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.tint(UiSkin.FIGURE, 0.9, 1.2))
 		# the sets above the bus, each through its breaker
 		var n: int = r.units
 		for i in n:
@@ -92,7 +92,7 @@ class SingleLine extends Control:
 			draw_string(font, gc + Vector2(-10, 6), "G%d" % (i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, ink)
 			_breaker(Vector2(gx, (74.0 + bus_y) * 0.5), true)
 			draw_line(gc + Vector2(0, 24), Vector2(gx, bus_y), ink, 2.0)
-			draw_string(font, gc + Vector2(30, -4), "%.1f MW" % float(r.per), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.tint(Pal.FLUID, 0.95, 1.2))
+			draw_string(font, gc + Vector2(30, -4), "%.1f MW" % float(r.per), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.tint(UiSkin.FIGURE, 0.95, 1.2))
 		# the shore line at the right end
 		var sx := x1 - 60.0
 		if panel.PS5.ENABLED:
@@ -117,7 +117,7 @@ class SingleLine extends Control:
 					load = l
 			var fx := x0 + step * (i + 0.5)
 			var on := not load.is_empty() and str(load.get("state", "")) in ["run", "base"]
-			var col := Pal.tint(Pal.FLUID, 0.95, 1.2) if on else Pal.ink(0.35)
+			var col := Pal.tint(UiSkin.FIGURE, 0.95, 1.2) if on else Pal.ink(0.35)
 			draw_line(Vector2(fx, bus_y), Vector2(fx, size.y - 60), col, 2.0)
 			_breaker(Vector2(fx, bus_y + 40), on)
 			draw_rect(Rect2(Vector2(fx - 16, size.y - 60), Vector2(32, 20)), col, false, 2.0)
@@ -131,7 +131,7 @@ class SingleLine extends Control:
 		draw_rect(Rect2(c - Vector2(9, 9), Vector2(18, 18)), Color(0.02, 0.025, 0.03))
 		draw_rect(Rect2(c - Vector2(9, 9), Vector2(18, 18)), Pal.ink(0.7), false, 1.5)
 		if closed:
-			draw_line(c + Vector2(0, -9), c + Vector2(0, 9), Pal.tint(Pal.FLUID, 1.0, 1.3), 3.0)
+			draw_line(c + Vector2(0, -9), c + Vector2(0, 9), Pal.tint(UiSkin.FIGURE, 1.0, 1.3), 3.0)
 		else:
 			draw_line(c + Vector2(0, 9), c + Vector2(7, -7), Pal.heat(0.9, 1.2), 3.0)
 
@@ -171,7 +171,7 @@ class Gauge extends Control:
 		# the needle: a short tail behind the pivot, a soft glow under it, a ringed cap
 		var tip := c + Vector2.from_angle(na) * (rad - 9)
 		var tail := c - Vector2.from_angle(na) * 9.0
-		var ncol := Pal.tint(Pal.FLUID, 1.0, 1.3) if f < 0.85 else Pal.heat(1.0, 1.25)
+		var ncol := Pal.tint(UiSkin.FIGURE, 1.0, 1.3) if f < 0.85 else Pal.heat(1.0, 1.25)
 		needle.draw_line(tail, tip, Color(ncol, 0.18), 6.0)
 		needle.draw_line(tail, tip, ncol, 2.0, true)
 		needle.draw_circle(c, 5.5, Color(0.03, 0.035, 0.04))
@@ -230,7 +230,7 @@ class Trend extends Control:
 			var pts := PackedVector2Array()
 			for i in h.size():
 				pts.append(Vector2(size.x * (1.0 - float(h.size() - 1 - i) / 299.0), y_of.call(float(h[i]))))
-			draw_polyline(pts, Pal.tint(Pal.FLUID, 0.95, 1.2), 2.0)
+			draw_polyline(pts, Pal.tint(UiSkin.FIGURE, 0.95, 1.2), 2.0)
 		draw_string(font, Vector2(6, size.y - 4), "-5 min", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.5))
 		draw_string(font, Vector2(size.x - 40, size.y - 4), "now", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.5))
 
@@ -255,6 +255,7 @@ class HeadBar extends Control:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		custom_minimum_size = Vector2(0, 60)
 		title = BenchFx.RiseText.new("", Fonts.get_font("SemiBold"), 20, Pal.ink(0.97))
+		title.underline = false
 		add_child(title)
 	func _notification(what: int) -> void:
 		if what == NOTIFICATION_RESIZED:
@@ -262,7 +263,7 @@ class HeadBar extends Control:
 			title.size = Vector2(maxf(10.0, size.x - 500.0), 30)
 	func _draw() -> void:
 		var fm := Fonts.get_font("Medium")
-		draw_style_box(UiSkin.box("screen", 1.0), Rect2(Vector2.ZERO, size))
+		Charcoal.panel(self, Rect2(Vector2.ZERO, size), 1.0, 0.0, Charcoal.FACE, 12)
 		var code := "PWR-1"
 		var cw := fm.get_string_size(code, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x + 20.0
 		var cr := Rect2(18, size.y * 0.5 - 11, cw, 22)
@@ -272,9 +273,14 @@ class HeadBar extends Control:
 		title.set_text(panel.w("港口供电控制屏", "PORT POWER CONTROL"))
 		var st: String = panel.w("控制台已连接", "CONSOLE ONLINE")
 		var sw := fm.get_string_size(st, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
-		var x := size.x - 170.0 - sw
-		draw_circle(Vector2(x - 12, size.y * 0.5), 4.0, Hmi.ok_col())
-		draw_string(fm, Vector2(x, size.y * 0.5 + 5), st, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Hmi.ok_col())
+		# left of the close key, however wide its words made it
+		var key_x := size.x - 170.0
+		for ch in get_children():
+			if ch is Button and ch.visible:
+				key_x = minf(key_x, ch.position.x)
+		var x := key_x - 24.0 - sw
+		Charcoal.led(self, Vector2(x - 12, size.y * 0.5), true, 1.0, 4.5, Color(0.92, 0.93, 0.9))
+		draw_string(fm, Vector2(x, size.y * 0.5 + 5), st, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.ink(0.8))
 
 
 # what we can supply, what is asked, the bar: own in green, bought in orange, the gap hatched
@@ -288,7 +294,7 @@ class SupplyCard extends Control:
 	static var _hatch: Texture2D
 	func _init() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
-		custom_minimum_size = Vector2(0, 168)
+		custom_minimum_size = Vector2(0, 188)
 	func put(av: float, dm: float, ow: float, bo: float, bs: float) -> void:
 		avail.go(av)
 		ask.go(dm)
@@ -321,30 +327,36 @@ class SupplyCard extends Control:
 		var fm := Fonts.get_font("Medium")
 		var fb := Fonts.get_font("SemiBold")
 		var fr := Fonts.get_font("Regular")
-		draw_style_box(UiSkin.box("raised", 1.0), Rect2(Vector2.ZERO, size))
+		# 炭黑 v2: a plate; the two figures each in a black window, large; the bar in a slot under them
+		Charcoal.panel(self, Rect2(Vector2.ZERO, size), 1.0, 0.0, Charcoal.FACE, 14)
 		var pad := 22.0
+		var fl := Fonts.get_font("Light")
+		var hw := (size.x - pad * 3.0) * 0.5
+		Charcoal.display(self, Rect2(pad - 6, 12, hw + 6, 82), 1.0, 9)
+		Charcoal.display(self, Rect2(pad * 2.0 + hw, 12, hw + 6, 82), 1.0, 9)
+		fb = fl
 		var a := avail.value()
 		var d := ask.value()
 		var o := own.value()
 		var b := bought.value()
 		draw_string(fm, Vector2(pad, 34), panel.w("可用供电", "AVAILABLE"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Pal.ink(0.6))
 		var big := "%.1f" % a
-		draw_string(fb, Vector2(pad, 78), big, HORIZONTAL_ALIGNMENT_LEFT, -1, 38, Pal.ink(0.98))
-		draw_string(fm, Vector2(pad + fb.get_string_size(big, HORIZONTAL_ALIGNMENT_LEFT, -1, 38).x + 10.0, 78), "MW", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Pal.ink(0.6))
+		draw_string(fb, Vector2(pad + 4, 80), big, HORIZONTAL_ALIGNMENT_LEFT, -1, 44, Pal.ink(0.98))
+		draw_string(fm, Vector2(pad + 4 + fb.get_string_size(big, HORIZONTAL_ALIGNMENT_LEFT, -1, 44).x + 10.0, 80), "MW", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Pal.ink(0.6))
 		var rx := size.x - pad
 		draw_string(fm, Vector2(rx - 200, 34), panel.w("总需求", "ASKED"), HORIZONTAL_ALIGNMENT_RIGHT, 200, 13, Pal.ink(0.6))
 		var mw_w := fm.get_string_size("MW", HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
 		var dbig := "%.1f" % d
-		draw_string(fm, Vector2(rx - mw_w, 78), "MW", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Pal.ink(0.6))
-		draw_string(fb, Vector2(rx - mw_w - 10.0 - 300.0, 78), dbig, HORIZONTAL_ALIGNMENT_RIGHT, 300, 38, Pal.ink(0.98))
+		draw_string(fm, Vector2(rx - mw_w, 80), "MW", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Pal.ink(0.6))
+		draw_string(fb, Vector2(rx - mw_w - 10.0 - 300.0, 80), dbig, HORIZONTAL_ALIGNMENT_RIGHT, 300, 44, Charcoal.ACCENT if d > a + 0.05 else Pal.ink(0.98))
 		# the bar: as wide as the larger of what is asked and what we could give
 		var span := maxf(maxf(d, a), 0.1)
-		var r := Rect2(pad, 98, size.x - pad * 2.0, 18)
-		# the track: sunk, a hairline edge
-		draw_style_box(UiSkin.solid(Color(0, 0, 0, 0.42), 4, 0.0), r)
+		var r := Rect2(pad, 116, size.x - pad * 2.0, 18)
+		# the track: a black slot
+		Charcoal.display(self, r.grow(3.0), 1.0, 5)
 		var x := r.position.x
 		var ow_w := r.size.x * clampf(o / span, 0.0, 1.0)
-		var green := Pal.tint(Pal.FLUID, 0.85, 1.15)
+		var green := Pal.tint(UiSkin.FIGURE, 0.85, 1.15)
 		if ow_w > 0.5:
 			var gr0 := Rect2(x, r.position.y, ow_w, r.size.y)
 			draw_rect(gr0, green)
@@ -381,7 +393,7 @@ class SupplyCard extends Control:
 		# the legend
 		var ly := r.end.y + 34.0
 		var lx := pad
-		var legend := [[Pal.tint(Pal.FLUID, 0.8, 1.15), panel.w("自有 %.0f MW", "OWN %.0f MW") % o, Pal.ink(0.65)], [UiSkin.ACCENT, panel.w("外购 %.0f MW", "BOUGHT %.0f MW") % b, UiSkin.ACCENT if b > 0.05 else Pal.ink(0.65)]]
+		var legend := [[Pal.tint(UiSkin.FIGURE, 0.8, 1.15), panel.w("自有 %.0f MW", "OWN %.0f MW") % o, Pal.ink(0.65)], [UiSkin.ACCENT, panel.w("外购 %.0f MW", "BOUGHT %.0f MW") % b, UiSkin.ACCENT if b > 0.05 else Pal.ink(0.65)]]
 		if panel.PS5.ENABLED:
 			var bn: float = panel.PS5.batt_now
 			legend[1] = [Pal.tint(Pal.VOLT, 0.9, 1.3), panel.w("其中电池 %.1f MW", "OF IT BATTERIES %.1f MW") % bn, Pal.tint(Pal.VOLT, 0.9, 1.3) if bn > 0.05 else Pal.ink(0.65)]
@@ -434,9 +446,9 @@ class Banner extends Control:
 		add_child(sub_l)
 	func _notification(what: int) -> void:
 		if what == NOTIFICATION_RESIZED:
-			head_l.size = Vector2(size.x - 40, 28)
-			sub_l.position = Vector2(24, 46)
-			sub_l.size = Vector2(size.x - 40, 22)
+			head_l.size = Vector2(size.x - 72, 28)
+			sub_l.position = Vector2(56, 46)
+			sub_l.size = Vector2(size.x - 72, 22)
 	func _process(_dt: float) -> void:
 		if _bad.busy() or BenchFx.now() - _head_t0 < 0.5 or (not ok and BenchFx.on()):
 			queue_redraw()
@@ -445,16 +457,13 @@ class Banner extends Control:
 		var fr := Fonts.get_font("Regular")
 		var k := clampf(_bad.value(), 0.0, 1.0)
 		var col: Color = Hmi.ok_col().lerp(UiSkin.ACCENT, k)
-		var box := UiSkin.solid(Color(0, 0, 0, 0.22).lerp(Color(UiSkin.ACCENT, 0.16), k), 10, 0.0)
-		box.border_color = Color(1, 1, 1, 0.05).lerp(Color(UiSkin.ACCENT, 0.4), k)
-		box.set_border_width_all(1)
-		draw_style_box(box, Rect2(Vector2.ZERO, size))
-		# the edge breathes slowly while short
+		# 炭黑 v2: a black window, a big lamp at its left — white while it is enough, orange (breathing) short
+		Charcoal.display(self, Rect2(Vector2.ZERO, size), 1.0, 10)
 		var br := 1.0 if ok or not BenchFx.on() else 0.7 + 0.3 * absf(sin(BenchFx.now() * 2.2))
-		draw_rect(Rect2(0, 0, 4, size.y), Color(col, br))
+		Charcoal.led(self, Vector2(30, size.y * 0.5), true, br, 5.5, Color(0.92, 0.93, 0.9).lerp(Charcoal.ACCENT, k))
 		# a new verdict rises 10 px into place as it fades up (0.35 s, cubic out)
 		var hk := BenchFx.e_out((BenchFx.now() - _head_t0) / 0.35) if BenchFx.on() else 1.0
-		head_l.position = Vector2(24, 12 + 10.0 * (1.0 - hk))
+		head_l.position = Vector2(56, 12 + 10.0 * (1.0 - hk))
 		head_l.modulate.a = hk
 		sub_l.add_theme_color_override("font_color", Pal.ink(0.75).lerp(UiSkin.ACCENT.lightened(0.35), k))
 
@@ -508,7 +517,7 @@ class GroupCard extends Control:
 		if want <= 0.0:
 			return [panel.w("现在不用电", "NOT USING POWER"), Pal.ink(0.5)]
 		if got >= want * 0.98:
-			return [panel.w("供电正常", "POWERED"), Hmi.ok_col()]
+			return [panel.w("供电正常", "POWERED"), Color(0.92, 0.93, 0.9)]
 		if got <= 0.01:
 			return [panel.w("暂时无电", "NO POWER FOR NOW"), UiSkin.ACCENT]
 		return [Grid.short_label(int(floor(100.0 * got / maxf(0.001, want)))), UiSkin.ACCENT]
@@ -524,30 +533,30 @@ class GroupCard extends Control:
 		for gy in 3:
 			for gx in 2:
 				draw_circle(Vector2(size.x - 100 + gx * 7, size.y * 0.5 - 7 + gy * 7), 1.6, Pal.ink(0.6 if lifted else 0.3))
-		draw_string(fb, Vector2(0, 28), title, HORIZONTAL_ALIGNMENT_LEFT, size.x * ROW_X[1] - 20, 17, Pal.ink(0.96))
+		# 炭黑 v2: its place in the order, large
+		draw_string(Fonts.get_font("Light"), Vector2(0, 44), "%02d" % place, HORIZONTAL_ALIGNMENT_LEFT, -1, 32, Charcoal.ACCENT if lifted else Pal.ink(0.6))
+		draw_set_transform(Vector2(58, 0))
+		draw_string(fb, Vector2(0, 28), title, HORIZONTAL_ALIGNMENT_LEFT, size.x * ROW_X[1] - 78, 17, Pal.ink(0.96))
 		var st := state()
 		var x := 0.0
 		if work != "":
 			var wt := work + " · "
 			draw_string(fr, Vector2(0, 51), wt, HORIZONTAL_ALIGNMENT_LEFT, size.x * ROW_X[1] - 20, 13, Pal.ink(0.55))
 			x = fr.get_string_size(wt, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
-		# the state, a small lamp before it
-		draw_circle(Vector2(x + 3.5, 46.5), 3.0, st[1])
-		if want > 0.0 and got < want * 0.98:
-			draw_circle(Vector2(x + 3.5, 46.5), 6.0, Color(st[1], 0.18))
-		draw_string(fr, Vector2(x + 12.0, 51), st[0], HORIZONTAL_ALIGNMENT_LEFT, maxf(10.0, size.x * ROW_X[1] - 32 - x), 13, st[1])
+		# the state, its lamp before it
+		Charcoal.led(self, Vector2(x + 4.0, 46.5), want > 0.0, 1.0, 3.5, st[1])
+		draw_string(fr, Vector2(x + 14.0, 51), st[0], HORIZONTAL_ALIGNMENT_LEFT, maxf(10.0, size.x * ROW_X[1] - 92 - x), 13, st[1])
+		draw_set_transform(Vector2.ZERO)
 
 		var wv := _want.value()
 		var gv := _got.value()
 		draw_string(fm, Vector2(size.x * ROW_X[1], 40), "%.1f MW" % wv, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Pal.ink(0.92) if want > 0.0 else Pal.ink(0.45))
-		var gc: Color = Pal.ink(0.45) if want <= 0.0 else (Hmi.ok_col() if got >= want * 0.98 else UiSkin.ACCENT)
+		var gc: Color = Pal.ink(0.45) if want <= 0.0 else (Pal.ink(0.95) if got >= want * 0.98 else UiSkin.ACCENT)
 		draw_string(fm, Vector2(size.x * ROW_X[2], 36), "%.1f MW" % gv, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, gc)
 		# a thin bar of what it gets of what it asks, under the figure
 		if want > 0.0:
 			var bw := minf(140.0, size.x * (1.0 - ROW_X[2]) - 110.0)
-			var br := Rect2(size.x * ROW_X[2], 45, bw, 3)
-			draw_rect(br, Color(1, 1, 1, 0.08))
-			draw_rect(Rect2(br.position, Vector2(bw * clampf(gv / maxf(0.001, wv), 0.0, 1.0), 3)), gc)
+			Charcoal.segments(self, Rect2(size.x * ROW_X[2], 44, bw, 5), clampf(gv / maxf(0.001, wv), 0.0, 1.0) * 10.0, 10)
 
 
 # the rule, on an ice-blue edge
@@ -558,9 +567,9 @@ class RuleNote extends Control:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		custom_minimum_size = Vector2(0, 46)
 	func _draw() -> void:
-		draw_rect(Rect2(Vector2.ZERO, size), Color(UiSkin.DATA, 0.05))
-		draw_rect(Rect2(0, 0, 3, size.y), Color(UiSkin.DATA, 0.85))
-		draw_string(Fonts.get_font("Regular"), Vector2(20, size.y * 0.5 + 5), text, HORIZONTAL_ALIGNMENT_LEFT, size.x - 30, 14, Pal.ink(0.82))
+		Charcoal.display(self, Rect2(Vector2.ZERO, size), 1.0, 8)
+		Charcoal.led(self, Vector2(20, size.y * 0.5), true, 1.0, 3.5, Color(0.92, 0.93, 0.9))
+		draw_string(Fonts.get_font("Regular"), Vector2(36, size.y * 0.5 + 5), text, HORIZONTAL_ALIGNMENT_LEFT, size.x - 50, 14, Pal.ink(0.82))
 
 
 # ---------------------------------------------------------------- building
@@ -604,13 +613,19 @@ func _ready() -> void:
 	head.panel = self
 	outer.add_child(head)
 	var close_key := Button.new()
-	close_key.text = Back.close_text()
+	# 2026-11-10 (user: "右上角都已经弄出去了"): the trail's text runs long ("返回动力区操作台 [Esc]",
+	# "BACK TO POWER DISTRICT CONSOLE [Esc]"); the key grows leftwards with its words, its key on a cap
+	var ck := Charcoal.split_key(Back.close_text())
+	close_key.text = ck[0]
+	Charcoal.style_button(close_key, ck[1])
+	close_key.add_theme_font_size_override("font_size", 16)
 	close_key.pressed.connect(_back)
 	close_key.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
-	close_key.offset_left = -130
+	close_key.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	close_key.offset_left = -12
 	close_key.offset_right = -12
-	close_key.offset_top = -20
-	close_key.offset_bottom = 20
+	close_key.offset_top = -21
+	close_key.offset_bottom = 21
 	head.add_child(close_key)
 	scroll = ScrollContainer.new()
 	scroll.set_meta("bfx_skip", true)
@@ -631,6 +646,7 @@ func _ready() -> void:
 	var kicker := _label("05 / DISPATCH DESK", 12, 0.5)
 	tcol.add_child(kicker)
 	var big := BenchFx.RiseText.new(w("供电调度", "POWER DISPATCH"), Fonts.get_font("SemiBold"), 28, Pal.ink(0.98))
+	big.underline = false   # 2026-11-10: the orange stroke under the titles read as a spelling squiggle
 	big.custom_minimum_size = Vector2(320, 40)
 	tcol.add_child(big)
 	tcol.add_child(_label(w("一张工作台看懂供需、来源和优先级。", "Supply, demand, sources and order on one desk."), 15, 0.6))
@@ -646,7 +662,9 @@ func _ready() -> void:
 	for b in [furnace_run, furnace_pause]:
 		b.toggle_mode = true
 		b.button_group = fg
-		b.custom_minimum_size = Vector2(0, 42)
+		b.custom_minimum_size = Vector2(0, 50)
+		var on_run: bool = b == furnace_run
+		Charcoal.style_choice(b, func(): return bool(Grid.ctl().defer) != on_run)
 		keys.add_child(b)
 	# (the old "hold new heats" switch: the furnace asks for no power while it is set)
 	# 2026-11-04 (user): at once, no confirm; the note says what happens to the heat in the furnace
@@ -662,6 +680,10 @@ func _ready() -> void:
 		# 2026-11-04 (人性化 规则 2): spending takes effect at once, no confirm; a note says what happened
 		_set_line("auto" if str(Grid.ctl().line) == "auto_shore" else "auto_shore"))
 	keys.add_child(shore_key)
+	# room between the last key and the screen's edge (they sat against it)
+	var edge := Control.new()
+	edge.custom_minimum_size = Vector2(12, 0)
+	keys.add_child(edge)
 	# 128 号 第 5 段 (草图): the battery order card replaces the bought-power switch; the sets' overload
 	if PS5.ENABLED:
 		shore_key.visible = false
@@ -688,7 +710,7 @@ func _ready() -> void:
 	rcol.add_child(fixes)
 	# 3. who gets what, in order
 	var table := PanelContainer.new()
-	table.add_theme_stylebox_override("panel", UiSkin.glass(0.03, 0.07, 14, 22.0))
+	table.add_theme_stylebox_override("panel", Charcoal.side_box(22.0))
 	column.add_child(table)
 	var tv := VBoxContainer.new()
 	tv.add_theme_constant_override("separation", 0)
@@ -718,7 +740,7 @@ func _ready() -> void:
 	else:
 		column.add_child(RuleNote.new(w("调度规则：先满足基础用电，再按顺序给部门分配；外购电打开时可额外提供最多 %.0f MW。", "THE RULE: THE BASE LOAD FIRST, THEN EACH DISTRICT IN ORDER; WITH BOUGHT POWER ON, UP TO %.0f MW MORE.") % Grid.SHORE_MAX))
 	msg = _label("", 15)
-	msg.add_theme_color_override("font_color", Pal.tint(Pal.AIR, 0.9, 1.2))
+	msg.add_theme_color_override("font_color", Pal.tint(UiSkin.FIGURE, 0.9, 1.2))
 	column.add_child(msg)
 	# 5. folded: the old screen's extra hands and the plant itself
 	details_key = Button.new()
@@ -729,6 +751,7 @@ func _ready() -> void:
 		details_fold.set_open(open)
 		if open and not BenchFx.on():
 			_show_details.call_deferred())
+	Charcoal.style_button(details_key)
 	column.add_child(details_key)
 	details = VBoxContainer.new()
 	details.visible = false
@@ -1072,7 +1095,14 @@ func _fill_order() -> void:
 			var b := Button.new()
 			b.text = str(d[1])
 			b.tooltip_text = str(d[2])
-			b.custom_minimum_size = Vector2(36, 34)
+			b.custom_minimum_size = Vector2(40, 34)
+			Charcoal.style_button(b)
+			b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+			for st in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
+				var sb: StyleBoxFlat = (b.get_theme_stylebox(st) as StyleBoxFlat).duplicate()
+				sb.content_margin_left = 4.0
+				sb.content_margin_right = 4.0
+				b.add_theme_stylebox_override(st, sb)
 			b.disabled = (i == 0 and int(d[0]) < 0) or (i == rows.size() - 1 and int(d[0]) > 0)
 			BenchFx.note(b, w("往前调一位：电力不足时先拿电", "Up one: gets power first when underpowered") if int(d[0]) < 0 else w("往后调一位：电力不足时先让给前面", "Down one: gives way when underpowered"), w("已经排在第一", "Already first") if int(d[0]) < 0 else w("已经排在最后", "Already last"))
 			b.tooltip_text = ""

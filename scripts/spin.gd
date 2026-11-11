@@ -40,6 +40,7 @@ var game
 var world
 var rotors: Array = []         # {p, art, w (0..1), ang, said}
 var _skip := {}                # pieces another mechanism spins (flywheel.gd, rings.gd)
+var _turning := false
 
 
 func setup(g) -> void:
@@ -114,7 +115,8 @@ func _physics_process(dt: float) -> void:
 			r.w = 0.0          # its rotor is wrecked: it does not turn again
 			continue
 		var w: float = r.w
-		if _powered(r):
+		var fed := _powered(r)
+		if fed:
 			w = minf(1.0, w + dt / 3.0)
 		else:
 			w *= exp(-dt / _tau(r))
@@ -127,12 +129,20 @@ func _physics_process(dt: float) -> void:
 		if w > 0.0:
 			any = true
 		# coasting near the drone: say it once
-		if w > SAFE and not _powered(r) and not r.said and game.drone.alive:
+		if w > SAFE and not (_powered(r) if World.ark_old else fed) and not r.said and game.drone.alive:
 			var c: Vector2 = world.frame(p) * Geom.centroid(p.poly)
 			if game.drone.global_position.distance_to(c) < 3.0 * Geom.M:
 				r.said = true
 				game.say("rotor_coasting", c, p.tag)
-	if any:
+	_turning = any
+	if any and World.ark_old:
+		queue_redraw()
+
+
+# ARK-01 帧率: redrawn once a frame (it was every physics step) and so also while the camera
+# moves at a crawl of game time (hitstop, slow motion), the view culling always current
+func _process(_dt: float) -> void:
+	if _turning:
 		queue_redraw()
 
 
@@ -221,6 +231,12 @@ func on_freed(b) -> void:
 
 
 func _draw() -> void:
+	# ARK-01 帧率: only the rotors in the camera's view (redrawn every frame while any turns,
+	# so one coming into view is drawn that same frame)
+	var view := ViewCull.view(game) if not (ViewCull.off or World.ark_old) else Rect2()
+	if view.size != Vector2.ZERO:
+		view = view.grow(ViewCull.MARGIN_PX / maxf(0.02, game.cam_zoom()))
+	var zoom: float = game.cam_zoom() if game != null else 1.0
 	for r in rotors:
 		var w: float = r.w
 		var p = r.p
@@ -234,9 +250,19 @@ func _draw() -> void:
 			rad = minf(rad, 1.1 * Geom.M)       # the magnet drum, not the whole machine
 		if rad < 4.0:
 			continue
+		if view.size != Vector2.ZERO and not view.intersects(Rect2(c - Vector2(rad, rad), Vector2(rad, rad) * 2.0)):
+			continue
 		var a0: float = float(r.ang) + xf.get_rotation()
 		var blades := 6
 		var al: float = 0.25 + 0.45 * w
+		# ARK-01 帧率: a few screen pixels across (the whole ship in view) its blades are under a
+		# pixel wide: the blur alone, one plain disc (was 14 antialiased strokes)
+		if rad * zoom < 6.0 and not World.ark_old:
+			if w > 0.35:
+				draw_circle(c, rad * 1.45, Pal.ink(0.12 * w))
+			else:
+				draw_circle(c, rad * 0.5, Pal.ink(0.15 * al))
+			continue
 		# fast: a blurred disc with streaks; slower: each blade stands out
 		if w > 0.35:
 			draw_arc(c, rad, 0.0, TAU, 40, Pal.ink(0.12 * w), rad * 0.9, true)

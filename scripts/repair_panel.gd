@@ -76,6 +76,7 @@ func _ready() -> void:
 	skin.set_color("font_hover_color", "Button", Pal.ink(0.98))
 	skin.set_color("font_pressed_color", "Button", Pal.ink(1.0))
 	skin.set_color("font_disabled_color", "Button", Pal.ink(0.4))
+	UiSkin.scroll_into(skin)
 	theme = skin
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -85,9 +86,20 @@ func _ready() -> void:
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 12)
 	margin.add_child(column)
+	var head_row := HBoxContainer.new()
+	head_row.add_theme_constant_override("separation", 24)
+	column.add_child(head_row)
 	heading = label("", 28)
 	heading.add_theme_font_override("font", _font_b)
-	column.add_child(heading)
+	heading.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	heading.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	head_row.add_child(heading)
+	# 2026-11-10 炭黑 v2: what the berth stands at, in a black window with its lamps
+	status_bar = Control.new()
+	status_bar.custom_minimum_size = Vector2(620, 78)
+	status_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	status_bar.draw.connect(_draw_status)
+	head_row.add_child(status_bar)
 	# the berth
 	var frame := PanelContainer.new()
 	frame.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -105,10 +117,29 @@ func _ready() -> void:
 	plan_head = label(words("扩建计划", "EXPANSION PLANS"), 18)
 	plan_head.add_theme_font_override("font", _font_b)
 	column.add_child(plan_head)
+	# 2026-11-10: the row scrolls sideways — ‹ › keys at its ends, its edges fading where more lies
+	var prow := HBoxContainer.new()
+	prow.add_theme_constant_override("separation", 8)
+	column.add_child(prow)
+	plan_prev = _page_key("prev", -1)
+	prow.add_child(plan_prev)
+	var pwrap := MarginContainer.new()
+	pwrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	prow.add_child(pwrap)
 	var ps := ScrollContainer.new()
 	ps.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	ps.custom_minimum_size.y = 92
-	column.add_child(ps)
+	ps.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_SHOW_NEVER
+	ps.custom_minimum_size.y = 112
+	pwrap.add_child(ps)
+	plan_scroll = ps
+	plan_fade = Control.new()
+	plan_fade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plan_fade.draw.connect(_draw_fade)
+	pwrap.add_child(plan_fade)
+	ps.get_h_scroll_bar().value_changed.connect(func(_v): _plan_edges())
+	ps.get_h_scroll_bar().changed.connect(_plan_edges)
+	plan_next = _page_key("next", 1)
+	prow.add_child(plan_next)
 	plan_box = HBoxContainer.new()
 	plan_box.add_theme_constant_override("separation", 10)
 	ps.add_child(plan_box)
@@ -137,6 +168,117 @@ func clear(node: Node) -> void:
 		ch.queue_free()
 
 
+var status_bar: Control
+
+
+func _draw_status() -> void:
+	var r := Rect2(Vector2.ZERO, status_bar.size)
+	Charcoal.display(status_bar, r)
+	var open := 0
+	var mended := 0
+	for id in Repair.FAULTS:
+		if Repair.done(id):
+			mended += 1
+		elif Repair.found(id):
+			open += 1
+	var ps := Repair.plans()
+	var ready := 0
+	for id in ps:
+		if Repair.parts_for(id).ok and float(Career.data.get("money", 0.0)) >= Repair.price(id, true):
+			ready += 1
+	var cells := [[words("报修", "LOGGED"), "%d" % open, open > 0, Charcoal.ACCENT],
+		[words("已修", "MENDED"), "%d / %d" % [mended, Repair.FAULTS.size()], mended > 0, Color(0.86, 0.88, 0.86)],
+		[words("扩建计划 · 料够", "PLANS · READY"), "%d / %d" % [ready, ps.size()], ready > 0, Color(0.86, 0.88, 0.86)]]
+	var cw := r.size.x / 3.0
+	var fl: Font = Fonts.get_font("Light")
+	for i in 3:
+		var cx := i * cw
+		if i > 0:
+			status_bar.draw_line(Vector2(cx, 12), Vector2(cx, r.size.y - 12), Color(1, 1, 1, 0.07), 1.0)
+		Charcoal.led(status_bar, Vector2(cx + 18, 24), bool(cells[i][2]), 1.0, 4.0, cells[i][3])
+		status_bar.draw_string(_font, Vector2(cx + 30, 29), str(cells[i][0]), HORIZONTAL_ALIGNMENT_LEFT, cw - 36.0, 13, Pal.ink(0.55))
+		status_bar.draw_string(fl, Vector2(cx + 16, 64), str(cells[i][1]), HORIZONTAL_ALIGNMENT_LEFT, cw - 24.0, 30, Pal.ink(0.96))
+	if i_seg_ok():
+		Charcoal.segments(status_bar, Rect2(cw + 100, 52, cw - 116, 7), float(mended) / maxf(1.0, Repair.FAULTS.size()) * 12.0, 12)
+
+
+func i_seg_ok() -> bool:
+	return status_bar != null and status_bar.size.x > 400.0
+
+
+var head_counts := [0, 0]
+var plan_scroll: ScrollContainer
+var plan_fade: Control
+var plan_prev: Button
+var plan_next: Button
+var _plan_tw: Tween
+
+
+func _page_key(t: String, dir: int) -> Button:
+	var b := Button.new()
+	# the chevron drawn, not typed (no glyph needed)
+	b.text = ""
+	b.set_meta("page_dir", t)
+	b.draw.connect(func():
+		var c := b.size * 0.5 + Vector2(0, 2.0 if b.button_pressed else 0.0)
+		var d := -1.0 if dir < 0 else 1.0
+		b.draw_polyline(PackedVector2Array([c + Vector2(-5 * d, -11), c + Vector2(5 * d, 0), c + Vector2(-5 * d, 11)]), Pal.ink(0.3 if b.disabled else 0.92), 2.5, true))
+	b.custom_minimum_size = Vector2(44, 96)
+	b.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	b.add_theme_font_size_override("font_size", 28)
+	Charcoal.style_button(b)
+	b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	for st in ["normal", "hover", "pressed", "hover_pressed", "disabled"]:
+		var sb: StyleBoxFlat = (b.get_theme_stylebox(st) as StyleBoxFlat).duplicate()
+		sb.content_margin_left = 4.0
+		sb.content_margin_right = 4.0
+		b.add_theme_stylebox_override(st, sb)
+	b.tooltip_text = words("上一页", "Previous") if dir < 0 else words("下一页", "Next")
+	b.pressed.connect(func(): plan_page(dir))
+	return b
+
+
+# a page of plans sideways (what shows of the row, less one card so the last stays in sight)
+func plan_page(dir: int) -> void:
+	if plan_scroll == null:
+		return
+	var bar := plan_scroll.get_h_scroll_bar()
+	var step := maxf(260.0, plan_scroll.size.x - 260.0)
+	var to := clampf(bar.value + dir * step, 0.0, maxf(0.0, bar.max_value - bar.page))
+	if _plan_tw != null and _plan_tw.is_valid():
+		_plan_tw.kill()
+	_plan_tw = create_tween()
+	_plan_tw.tween_property(plan_scroll, "scroll_horizontal", int(to), 0.28).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+
+func _plan_edges() -> void:
+	if plan_scroll == null:
+		return
+	var bar := plan_scroll.get_h_scroll_bar()
+	var more := bar.max_value - bar.page > 1.0
+	if plan_prev != null:
+		plan_prev.disabled = not more or bar.value <= 1.0
+		plan_prev.visible = more
+		plan_next.disabled = not more or bar.value >= bar.max_value - bar.page - 1.0
+		plan_next.visible = more
+	plan_fade.queue_redraw()
+
+
+# the row's ends fade into the page where cards lie beyond them
+func _draw_fade() -> void:
+	if plan_scroll == null:
+		return
+	var bar := plan_scroll.get_h_scroll_bar()
+	var s := plan_fade.size
+	var bg := Charcoal.BG
+	var clear := Color(bg, 0.0)
+	var fw := 72.0
+	if bar.value > 1.0:
+		plan_fade.draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(fw, 0), Vector2(fw, s.y), Vector2(0, s.y)]), PackedColorArray([bg, clear, clear, bg]))
+	if bar.value < bar.max_value - bar.page - 1.0:
+		plan_fade.draw_polygon(PackedVector2Array([Vector2(s.x - fw, 0), Vector2(s.x, 0), Vector2(s.x, s.y), Vector2(s.x - fw, s.y)]), PackedColorArray([clear, bg, bg, clear]))
+
+
 func refresh() -> void:
 	var open := 0
 	var mended := 0
@@ -145,10 +287,14 @@ func refresh() -> void:
 			mended += 1
 		elif Repair.found(id):
 			open += 1
-	heading.text = words("船坞   ·   报修 %d 处   ·   已修 %d 处", "BERTH   ·   %d FAULTS LOGGED   ·   %d MENDED") % [open, mended]
+	# 2026-11-10: the heading is the page's name alone; the counts are in the status window at its right
+	heading.text = words("船坞", "BERTH")
+	head_counts = [open, mended]
 	_refresh_plans()
 	_refresh_card()
 	map.queue_redraw()
+	if status_bar != null:
+		status_bar.queue_redraw()
 
 
 # ---------------------------------------------------------------- the plans row
@@ -166,11 +312,29 @@ func _refresh_plans() -> void:
 			tail = words(" · 加工区", " · PROCESSING")
 		var ready: bool = pf.ok and float(Career.data.get("money", 0.0)) >= Repair.price(id, true)
 		var b := Button.new()
-		b.text = "%s%s\n%s  %s" % [Repair.name_of(id), tail, ("◆ " + words("料够", "READY")) if ready else ("◇ " + words("缺料", "SHORT")), Pal.money(Repair.price(id, true))]
+		# 炭黑 v2: the words are drawn on the key (number, name, lamp, price window); the tooltip keeps them
+		b.text = ""
+		b.tooltip_text = "%s%s · %s · %s" % [Repair.name_of(id), tail, words("料够", "READY") if ready else words("缺料", "SHORT"), Pal.money(Repair.price(id, true))]
 		b.toggle_mode = true
 		b.button_pressed = id == selected
-		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		b.custom_minimum_size = Vector2(230, 74)
+		b.custom_minimum_size = Vector2(250, 96)
+		var n_i := ps.find(id) + 1
+		var nm := Repair.name_of(id) + tail
+		var price := Pal.money(Repair.price(id, true))
+		var rdy := ready
+		b.draw.connect(func():
+			var down := 4.0 if b.button_pressed else 0.0
+			var fl: Font = Fonts.get_font("Light")
+			b.draw_string(fl, Vector2(14, 40 + down), "%02d" % n_i, HORIZONTAL_ALIGNMENT_LEFT, -1, 28, Charcoal.ACCENT if b.button_pressed else Pal.ink(0.55))
+			Charcoal.led(b, Vector2(b.size.x - 20, 20 + down), rdy, 1.0, 4.0, Color(0.86, 0.88, 0.86))
+			b.draw_string(_font_b, Vector2(62, 32 + down), nm, HORIZONTAL_ALIGNMENT_LEFT, b.size.x - 96.0, 15, Pal.ink(0.96))
+			b.draw_string(_font, Vector2(62, 52 + down), words("料够", "READY") if rdy else words("缺料", "SHORT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.75) if rdy else Color(Charcoal.ACCENT, 0.9))
+			var pw := Rect2(12, b.size.y - 34 + down, b.size.x - 24, 24)
+			Charcoal.display(b, pw, 1.0, 5)
+			var tw := _font_b.get_string_size(price, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+			b.draw_string(_font_b, Vector2(pw.end.x - 10 - tw, pw.position.y + 17), price, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.ink(0.95))
+			if b.button_pressed:
+				Charcoal.lip(b, Rect2(16, b.size.y - 6 + down * 0.0, b.size.x - 32, 3)))
 		b.set_meta("id", id)
 		b.pressed.connect(_toggle.bind(id))
 		plan_box.add_child(b)
@@ -361,7 +525,7 @@ func _draw_map() -> void:
 	_box(Rect2(Dock.BAY - Vector2(1.2, 1.0), Vector2(2.4, 2.0)), Pal.ink(0.45))
 	_tag(words("无人机舱", "DRONE BAY"), Dock.BAY + Vector2(-1.2, -1.4))
 	var cr := Rect2(Consoles.SPOTS[0][1], Consoles.SIZE)
-	_box(cr, Pal.tint(Pal.AIR, 0.7, 1.2), 1.4, Pal.tint(Pal.AIR, 0.15, 1.0))
+	_box(cr, Pal.tint(UiSkin.FIGURE, 0.7, 1.2), 1.4, Pal.tint(UiSkin.FIGURE, 0.15, 1.0))
 	_tag(words("终端", "TERMINAL"), cr.position + Vector2(cr.size.x + 0.4, 0.9))
 	if Consoles.rack_on():
 		var rr := Rect2(Consoles.RACK, Consoles.RACK_SIZE)
@@ -493,7 +657,7 @@ func _refresh_card() -> void:
 	# one line under the keys: the crew at work, on site, or what stops it
 	var wj := Works.current()
 	if not wj.is_empty() and str(wj.get("id", "")) == id:
-		card_box.add_child(label(words("施工中 · 还要约 %d 秒", "BEING BUILT · ABOUT %d s") % int(ceil(float(wj.get("left", 0.0)))), 14, Pal.tint(Pal.AIR, 0.9, 1.2)))
+		card_box.add_child(label(words("施工中 · 还要约 %d 秒", "BEING BUILT · ABOUT %d s") % int(ceil(float(wj.get("left", 0.0)))), 14, Pal.tint(UiSkin.FIGURE, 0.9, 1.2)))
 	elif onsite:
 		card_box.add_child(label(Txt.t("tm_lock_equip"), 14, Hmi.warn_col()))
 	elif Works.busy():

@@ -72,15 +72,12 @@ static func arrow(ci: CanvasItem, from: Vector2, to: Vector2, z: float, col: Col
 # the guide's card (top right): a dark plate with a thin rule of the guide's colour along its top,
 # square-ish corners, no side bar; the same for the three guides
 static func card_box(col: Color) -> StyleBoxFlat:
-	var b := StyleBoxFlat.new()
-	b.bg_color = Color(0.025, 0.029, 0.036, 0.84)
-	b.set_corner_radius_all(3)
-	b.border_width_top = 2
-	b.border_color = Color(col.r, col.g, col.b, 0.9)
+	# 2026-11-11 炭黑: the charcoal plate (as the prologue's card) with the guide's colour along its top
+	var b := Charcoal.side_box(18.0)
+	b.border_width_top = 3
+	b.border_color = Color(col.r, col.g, col.b, 1.0)
 	b.content_margin_left = 20
 	b.content_margin_right = 18
 	b.content_margin_top = 12
 	b.content_margin_bottom = 14
-	b.shadow_color = Color(0, 0, 0, 0.35)
-	b.shadow_size = 10
 	return b

@@ -20,6 +20,7 @@ const KINDS := [["stuck", "卡住了", "STUCK"], ["bug", "有 bug", "A BUG"], ["
 static var shot: Image = null          # the frame before the pause menu came up (game.toggle_menu)
 static var fail_in_tests := false      # tests: the send fails as if offline
 static var url_override := ""          # tests: another address
+static var outbox := OUTBOX            # tests: a folder of their own (never the player's outbox)
 static var last_flush := {}            # {"sent": n, "left": n} after the last flush
 
 var game = null
@@ -116,8 +117,8 @@ static func post(host: Node, p: Dictionary) -> Dictionary:
 
 
 static func keep(p: Dictionary) -> String:
-	DirAccess.make_dir_recursive_absolute(OUTBOX)
-	var path := OUTBOX.path_join("fb_%d_%d.json" % [int(Time.get_unix_time_from_system()), randi() % 100000])
+	DirAccess.make_dir_recursive_absolute(outbox)
+	var path := outbox.path_join("fb_%d_%d.json" % [int(Time.get_unix_time_from_system()), randi() % 100000])
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	if f == null:
 		return ""
@@ -128,11 +129,11 @@ static func keep(p: Dictionary) -> String:
 
 static func waiting() -> Array:
 	var out: Array = []
-	if not DirAccess.dir_exists_absolute(OUTBOX):
+	if not DirAccess.dir_exists_absolute(outbox):
 		return out
-	for f in DirAccess.get_files_at(OUTBOX):
+	for f in DirAccess.get_files_at(outbox):
 		if f.ends_with(".json"):
-			out.append(OUTBOX.path_join(f))
+			out.append(outbox.path_join(f))
 	out.sort()
 	return out
 
@@ -181,15 +182,11 @@ func _ready() -> void:
 	root = Control.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_STOP
-	root.draw.connect(func(): root.draw_rect(Rect2(Vector2.ZERO, root.get_viewport_rect().size), Color(0.02, 0.022, 0.026, 0.9)))
+	root.draw.connect(func(): root.draw_rect(Rect2(Vector2.ZERO, root.get_viewport_rect().size), Color(Charcoal.BG, 0.92)))
 	add_child(root)
 	var pane := PanelContainer.new()
-	var sb := UiSkin.solid(Color(0.043, 0.048, 0.057, 1.0), 14, 30.0)
-	sb.set_border_width_all(1)
-	sb.border_color = Color(1, 1, 1, 0.08)
-	sb.shadow_color = Color(0, 0, 0, 0.55)
-	sb.shadow_size = 24
-	pane.add_theme_stylebox_override("panel", sb)
+	# 2026-11-11 炭黑 v2: a charcoal plate; the kinds as choice keys with their lamps; the words in a black window
+	pane.add_theme_stylebox_override("panel", Charcoal.side_box(30.0))
 	pane.custom_minimum_size = Vector2(980, 0)
 	pane.set_anchors_preset(Control.PRESET_CENTER)
 	pane.grow_horizontal = Control.GROW_DIRECTION_BOTH
@@ -213,13 +210,9 @@ func _ready() -> void:
 		b.focus_mode = Control.FOCUS_NONE
 		b.custom_minimum_size = Vector2(150, 50)
 		b.add_theme_font_size_override("font_size", 20)
-		# the picked kind outlined in the accent (the orange fill stays the send key's alone)
-		var on := UiSkin.solid(Color(UiSkin.ACCENT, 0.12), 8, 10.0)
-		on.set_border_width_all(2)
-		on.border_color = UiSkin.ACCENT
-		b.add_theme_stylebox_override("pressed", on)
-		b.add_theme_stylebox_override("hover_pressed", on)
-		b.add_theme_color_override("font_pressed_color", Color(1, 1, 1))
+		# the picked kind: lamp lit and the orange lip (the orange fill stays the send key's alone)
+		var kk := str(k[0])
+		Charcoal.style_choice(b, func(): return kind == kk)
 		b.pressed.connect(_pick.bind(str(k[0])))
 		krow.add_child(b)
 		kind_b[str(k[0])] = b
@@ -229,6 +222,12 @@ func _ready() -> void:
 	text_in.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	text_in.placeholder_text = Gt.w("写在这里……（Shift+Enter 换行）", "Write here… (Shift+Enter for a new line)")
 	text_in.add_theme_font_size_override("font_size", 22)
+	var tb := Charcoal.well_box(18.0)
+	text_in.add_theme_stylebox_override("normal", tb)
+	var tf := tb.duplicate()
+	tf.border_width_bottom = 2
+	tf.border_color = Charcoal.ACCENT
+	text_in.add_theme_stylebox_override("focus", tf)
 	text_in.text_changed.connect(_typed)
 	col.add_child(text_in)
 	count_l = Kit.text("0 / %d" % MAX_TEXT, 16, 0.45)
@@ -248,6 +247,8 @@ func _ready() -> void:
 	row.add_child(send_b)
 	back_b = Kit.key(Gt.w("取消（Esc）", "CANCEL (Esc)"), close, 20)
 	back_b.custom_minimum_size = Vector2(220, 58)
+	Charcoal.style_button(back_b)
+	back_b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	back_b.focus_mode = Control.FOCUS_NONE
 	row.add_child(back_b)
 	text_in.grab_focus.call_deferred()
@@ -260,6 +261,8 @@ func _exit_tree() -> void:
 
 func _pick(k: String) -> void:
 	kind = k
+	for b in kind_b.values():
+		b.queue_redraw()
 
 
 func _typed() -> void:
@@ -310,7 +313,7 @@ func send() -> void:
 	send_b.disabled = false
 	if d.get("ok", false):
 		result = "sent"
-		note_l.add_theme_color_override("font_color", Color(0.55, 0.95, 0.6))
+		note_l.add_theme_color_override("font_color", Pal.ink(0.97))
 		note_l.text = Gt.w("已发送，谢谢！按 Enter 或 Esc 回到菜单。", "Sent. Thank you! Enter or Esc goes back.")
 		send_b.text = Gt.w("好的（Enter）", "OK (Enter)")
 		text_in.editable = false

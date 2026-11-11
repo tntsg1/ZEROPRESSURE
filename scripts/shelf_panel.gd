@@ -25,9 +25,8 @@ func rows() -> Array:
 func _ready() -> void:
 	Back.arrive()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var accent := Pal.tint(Pal.AIR, 1.0, 1.2)
-	var column := OpsSkin.pane(self, accent, 520.0)
-	column.add_child(OpsSkin.Plate.new("RACK-" + side, w("%s货架 · %s", "%s RACKS · %s") % [w("左边", "LEFT") if side == "A" else w("右边", "RIGHT"), "%s1–%s4" % [side, side]], w("货运区 · 只管这一边的四排 · 全部东西按 F3 看公司仓库", "CARGO · THIS SIDE'S FOUR ROWS ONLY · F3: EVERYTHING"), accent))
+	var column := OpsSkin.pane(self, Charcoal.ACCENT, 520.0)
+	column.add_child(OpsSkin.Plate.new("RACK-" + side, w("%s货架 · %s", "%s RACKS · %s") % [w("左边", "LEFT") if side == "A" else w("右边", "RIGHT"), "%s1–%s4" % [side, side]], w("货运区 · 只管这一边的四排 · 全部东西按 F3 看公司仓库", "CARGO · THIS SIDE'S FOUR ROWS ONLY · F3: EVERYTHING"), Charcoal.ACCENT))
 	rows_box = VBoxContainer.new()
 	rows_box.add_theme_constant_override("separation", 8)
 	column.add_child(rows_box)
@@ -39,7 +38,9 @@ func _ready() -> void:
 		parts_b.name = "PartsRack"
 		parts_b.text = w("零件架 · %d 件", "PARTS RACK · %d") % Career.data.get("parts", []).size()
 		BenchFx.note(parts_b, w("打开零件架：看架上有哪些零件、成色多少", "Open the parts rack: what is on it, in what condition"))
-		parts_b.custom_minimum_size.y = 42
+		parts_b.custom_minimum_size.y = 46
+		Charcoal.style_button(parts_b)
+		parts_b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		parts_b.pressed.connect(func():
 			var g = game
 			if g != null: _leave("rack", func(): g.open_parts_rack())
@@ -47,8 +48,10 @@ func _ready() -> void:
 		column.add_child(parts_b)
 	var close_b := Button.new()
 	close_b.text = Back.close_text()
-	close_b.custom_minimum_size.y = 42
+	close_b.custom_minimum_size.y = 46
 	close_b.pressed.connect(_back)
+	Charcoal.style_button(close_b)
+	Charcoal.key_text(close_b)
 	column.add_child(close_b)
 	_fill()
 
@@ -75,11 +78,22 @@ func _fill() -> void:
 	var use: Array = Warehouse.rows()
 	var st := _stock()
 	for i in rows():
+		# 2026-11-11 炭黑 v2: each row a black window — its code large, what it holds, its lamp lit
+		# while something is on it; the choice of goods a dark key (was a light grey glass card)
 		var card := PanelContainer.new()
-		card.add_theme_stylebox_override("panel", UiSkin.glass(0.04, 0.2, 12, 10.0))
+		card.add_theme_stylebox_override("panel", Charcoal.well_box(14.0))
 		card.name = "Row" + Warehouse.ROWS[i]
+		var rowh := HBoxContainer.new()
+		rowh.add_theme_constant_override("separation", 14)
+		card.add_child(rowh)
+		var code := OpsSkin.label(str(Warehouse.ROWS[i]), 30)
+		code.add_theme_font_override("font", Fonts.get_font("Light"))
+		code.custom_minimum_size.x = 48
+		code.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		rowh.add_child(code)
 		var col := VBoxContainer.new()
-		card.add_child(col)
+		col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		rowh.add_child(col)
 		var head := HBoxContainer.new()
 		col.add_child(head)
 		var nm := OpsSkin.label(Warehouse.row_text(i, game), 16)
@@ -96,12 +110,14 @@ func _fill() -> void:
 			message.text = (w("%s 改放%s。", "%s NOW HOLDS %s.") % [Warehouse.ROWS[idx], Warehouse.use_name(Warehouse.USES[j])]) if res.ok else str(res.reason)
 			_sig = ""
 			_fill.call_deferred())
+		Charcoal.style_button(pick)
 		head.add_child(pick)
 		var held: Array = []
 		for k in st:
 			if float(st[k]) > 0.004 and Warehouse.row_for(str(k)) == i:
 				held.append("%s %.2f t" % [Ops.item_name(str(k)), float(st[k])])
-		col.add_child(OpsSkin.label(w("上面：", "ON IT: ") + (("、" if Txt.zh else ", ").join(held) if not held.is_empty() else w("空着", "EMPTY")), 14, 0.75))
+		col.add_child(OpsSkin.label(w("上面：", "ON IT: ") + (("、" if Txt.zh else ", ").join(held) if not held.is_empty() else w("空着", "EMPTY")), 14, 0.9 if not held.is_empty() else 0.5))
+		code.add_theme_color_override("font_color", Charcoal.ACCENT if not held.is_empty() else Pal.ink(0.55))
 		rows_box.add_child(card)
 
 

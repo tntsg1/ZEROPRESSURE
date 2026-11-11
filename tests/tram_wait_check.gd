@@ -6,9 +6,8 @@ extends "res://tests/guide_check.gd"
 #   2. with a freight train sent to the trade port: the car gives way only when the train is really held
 #      up by it, is seen driving off (no jump), the train gets in, and the car comes back to the trade
 #      port's stop by itself and waits there;
-#   3. every stop to every other: a reversal is planned only where the track makes one (five pairs of
-#      neighbouring stops whose turnouts overlap on the loop: the short way runs past the switch and backs
-#      in), never more than one; rides really made change ends just as often as planned.
+#   3. every stop to every other: no reversal planned (the turnouts are short enough, 16°, that no two
+#      neighbouring stops' overlap); rides really made change ends just as often as planned: never.
 #   tools/run_test.sh tests/tram_wait_check.gd --fixed-fps 60 [-- shots]
 const FW = preload("res://scripts/freight_works.gd")
 const OUT := "res://tests/out/tram_wait_%s.png"
@@ -78,7 +77,8 @@ func _run() -> void:
 	await _frames(30)
 	# 3a. every pair, planned: a reversal only where the track makes one (the short way between two
 	# neighbouring stops whose turnouts overlap on the loop), and then just one
-	var forced := {"process-ring": true, "power-tug": true, "process-tug": true, "cargo-trade": true, "cargo-salvage": true}
+	# 道岔缩短 (2026-11-10): with 16° turnouts no pair is forced any more
+	var forced := {}
 	var bad: Array = []
 	for a in Tram.stations():
 		for b in Tram.stations():
@@ -88,7 +88,7 @@ func _run() -> void:
 			var n := Tram.plan(a, b).size() - 1
 			if n > 1 or (n == 1 and not forced.has(key)):
 				bad.append("%s→%s %d" % [a, b, n])
-	check(bad.is_empty(), "a reversal only between the five pairs of neighbouring stops whose turnouts overlap, and at most one (%s)" % str(bad))
+	check(bad.is_empty(), "every stop to every other goes straight, no reversal (%s)" % str(bad))
 	# 1. no freight: off at the trade port, the car waits there 60 s
 	FW.on = false
 	await _ride("ring", "trade")

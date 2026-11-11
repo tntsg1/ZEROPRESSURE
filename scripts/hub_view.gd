@@ -84,7 +84,7 @@ func _process(dt: float) -> void:
 		return
 	art.c = PortStructure.centre()
 	art.m = PortStructure.M()
-	var k := "%d" % Works.stage
+	var k := "%d%s" % [Works.stage, Pal.solid]
 	if k != _still_key:
 		_still_key = k
 		still.queue_redraw()

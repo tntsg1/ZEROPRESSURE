@@ -5,6 +5,7 @@ class_name Art
 
 const EQ = preload("res://scripts/art_equip.gd")
 const SH = preload("res://scripts/art_ships.gd")
+const DT = preload("res://scripts/art_detail.gd")
 
 static func L(ci: CanvasItem, a: Vector2, b: Vector2, al: float = 0.5, wd: float = 1.0) -> void:
 	EQ.L(ci, a, b, al, wd)
@@ -23,6 +24,7 @@ static func draw(ci: CanvasItem, art: String, s: Vector2, p, font: Font) -> void
 	var h := s.y
 	if EQ.ext == null:
 		EQ.ext = SH
+		EQ.detail = DT
 	if EQ.draw(ci, art, w, h, p, font):
 		return
 	if art == "" or art == "window":

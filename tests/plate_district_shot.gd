@@ -45,7 +45,7 @@ func _run() -> void:
 	spots.append(["cargo_mouth", preload("res://scripts/cargo_floor.gd").mouth("A")])
 	var gal = preload("res://scripts/process_gallery.gd")
 	if gal.on():
-		spots.append(["gallery_cast", gal.term("cast")])
+		spots.append(["gallery_furnace", gal.term("furnace")])
 	for sp in spots:
 		var id: String = sp[0]
 		var at: Vector2 = sp[1]

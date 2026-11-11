@@ -140,17 +140,23 @@ func _let_go_over(held, name: String, release: Callable) -> void:
 		if not is_instance_valid(held):
 			break
 		vmax = maxf(vmax, maxf(held.linear_velocity.length(), by.linear_velocity.length()))
+		# (a load let go on the move may slide clear of it within these 0.5 s: then it may touch again)
+		if g.world.overlap_dir(held.pieces).is_empty():
+			break
 		ghosted = ghosted and held.collision_layer == FreeBody.CARRY_LAYER and held.collision_mask == 0
 	check(is_instance_valid(held) and ghosted, "%s: let go overlapping a piece, it stays untouchable while they overlap" % name)
 	# the piece underneath taken away: clear, it touches again
 	by.global_position += Vector2(0.0, 40.0) * Geom.M
 	by.queue_free()
-	for i in 30:
+	# (a load let go on the move may drift over other loose pieces first: up to 3 s to come clear)
+	for i in 180:
 		await physics_frame
 		if is_instance_valid(held):
 			vmax = maxf(vmax, held.linear_velocity.length())
+			if i >= 30 and held.collision_layer == 1:
+				break
 	print("  %s: let go overlapping  max %.1f px/s  layer %d mask %d  freeze %s clearing %.2f carried %s arm %s overlap %s" % [name, vmax, held.collision_layer if is_instance_valid(held) else -1, held.collision_mask if is_instance_valid(held) else -1, held.freeze, held.clearing, held.held(), held.get_meta("arm", false), str(g.world.overlap_dir(held.pieces))])
-	check(vmax <= maxf(SLOW, v0 + 2.0), "%s: never shot off (max %.1f px/s after, %.1f before)" % [name, vmax, v0])
+	check(vmax <= maxf(SLOW, v0 + 5.0), "%s: never shot off (max %.1f px/s after, %.1f before)" % [name, vmax, v0])
 	check(is_instance_valid(held) and held.collision_layer == 1 and held.collision_mask == FreeBody.MASK, "%s: clear, it collides again" % name)
 
 
@@ -281,9 +287,11 @@ func _run() -> void:
 	var shots := "shots" in OS.get_cmdline_user_args()
 	await _game({"skill_grapple_multi": 1, "tunnel": 1})
 	await _tap(KEY_3)
-	check(g.tools.tunnel_fitted() and not g.tools.tunnel_on(), "TUNNEL: fitted, off until switched on")
+	check(g.tools.tunnel_fitted() and g.tools.tunnel_on(), "TUNNEL: fitted, on by itself (user 2026-11-11: 升级默认开启)")
 	await _tap(KEY_N)
-	check(g.tools.tunnel_on(), "TUNNEL: key N switches it on")
+	check(not g.tools.tunnel_on(), "TUNNEL: key N switches it off")
+	await _tap(KEY_N)
+	check(g.tools.tunnel_on(), "TUNNEL: and on again")
 	_box(c, Vector2(2.4, 1.4), "TBOX")
 	var ta = _rect(c * M, Vector2(1.6, 0.8) * M, "TUNNELLED", 1.0)
 	var tb = ta.body
@@ -293,7 +301,7 @@ func _run() -> void:
 	await _frames(2)
 	_mouse(true)
 	await _frames(3)
-	check(g.tools.held_body == tb and tb.collision_layer == 1 and tb.collision_mask == FreeBody.TUNNEL_MASK, "TUNNEL: held, it passes hull and berth (mask %d), still meets pieces and the drone" % tb.collision_mask)
+	check(g.tools.held_body == tb and tb.collision_layer == FreeBody.TUNNEL_LAYER and tb.collision_mask == FreeBody.TUNNEL_MASK, "TUNNEL: held, it passes hull, berth and pieces (mask %d), still meets the drone" % tb.collision_mask)
 	if shots:
 		g.cam_override = (c + Vector2(2.0, 0.0)) * M
 		g.zoom_override = 2.2

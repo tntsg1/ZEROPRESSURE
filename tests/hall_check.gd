@@ -14,6 +14,8 @@ const PS = preload("res://scripts/port_structure.gd")
 const CS = preload("res://scripts/client_ships.gd")
 const FW = preload("res://scripts/freight_works.gd")
 var want_shots := false
+var lang_en := false    # "en": the shots in English (炭黑 rollout before/after), named …_en
+var tag := ""           # "tag=x": the shots named hall_x_<name>
 
 
 func _initialize() -> void:
@@ -21,6 +23,10 @@ func _initialize() -> void:
 	SaveGame.path = "user://zp_test_hall_save.json"
 	SaveGame.allow_test = true
 	want_shots = "shots" in OS.get_cmdline_user_args()
+	lang_en = "en" in OS.get_cmdline_user_args()
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("tag="):
+			tag = a.substr(4) + "_"
 	if DisplayServer.get_name() != "headless":
 		root.add_child(preload("res://tests/test_window.gd").new())
 	_run.call_deferred()
@@ -30,7 +36,7 @@ func _snap(name: String) -> void:
 	if not want_shots:
 		return
 	await _frames(3)
-	Cap.save(root, OUT % name)
+	Cap.save(root, OUT % (tag + name + ("_en" if lang_en else "")))
 
 
 func _part(uid: String, nk: String, v: float, tag: String, mass: float) -> Dictionary:
@@ -223,8 +229,18 @@ func _screen() -> void:
 	check(sp.trade_open() and sp.trade_net(sp._item("p:s1")) > 0.0, "the stores' exchange key is live: ~%s" % Pal.money(sp.trade_net(sp._item("p:s1"))))
 	sp.close() if sp.has_method("close") else sp._close()
 	await _frames(10)
+	Txt.zh = not lang_en
 	g.open_hall("sell", "p:s1")
-	await _frames(30)
+	# the frames while it opens (炭黑 rollout: not slower than before)
+	var ft: Array = []
+	var last := Time.get_ticks_usec()
+	for i in 30:
+		await process_frame
+		var now := Time.get_ticks_usec()
+		ft.append((now - last) / 1000.0)
+		last = now
+	ft.sort()
+	print("HALL_FRAMES mean=%.2f p95=%.2f max=%.2f" % [ft.reduce(func(x, y): return x + y, 0.0) / ft.size(), ft[int(ft.size() * 0.95)], ft[-1]])
 	var hp = g.console_ui
 	check(hp != null and hp.get_script() == preload("res://scripts/hall_panel.gd"), "F8 / the stores open the new exchange page")
 	hp.custom = false

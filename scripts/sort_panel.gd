@@ -4,10 +4,10 @@ extends "res://scripts/heat_panel.gd"
 # melted in the arc furnace; "sort only" and the drives are under "more"
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var column := OpsSkin.pane(self, Pal.tint(Pal.AIR, 1.0, 1.2), 420.0)
+	var column := OpsSkin.pane(self, Charcoal.ACCENT, 420.0)
 	plate = OpsSkin.Plate.new("MGS-07", words("分选线 · 全线加工","SORTING LINE · THROUGH"), words("压块 → 撕碎 → 磁选 → 线上化验 → 电弧炉
 有色料回仓库 · 电费按电网","PRESS / SHRED / MAGNETS / IN-LINE ASSAY / ARC FURNACE
-NONFERROUS TO THE WAREHOUSE"), Pal.tint(Pal.AIR, 1.0, 1.2))
+NONFERROUS TO THE WAREHOUSE"), Charcoal.ACCENT)
 	column.add_child(plate)
 	readout = OpsSkin.as_screen(label("", 17))
 	readout.custom_minimum_size.y = 110

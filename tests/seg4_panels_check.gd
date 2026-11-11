@@ -81,8 +81,8 @@ func _run() -> void:
 	# ---- the processing console
 	Career.data.upgrades["gas_line"] = 1
 	Career.data.upgrades["lox_tank"] = 1
-	GasLine.receive({"o2": 13.0, "n2": 45.0}, "TUG-001")
-	GasLine.receive({"o2": 52.0, "n2": 174.0}, "S09-001")
+	GasLine.receive({"o2": 13.0, "n2": 45.0}, "TUG-001", false)   # 2026-11-11: at the drum already (not piped)
+	GasLine.receive({"o2": 52.0, "n2": 174.0}, "S09-001", false)   # 2026-11-11: at the drum already (not piped)
 	GasLine.data().o2.ind = 420.0
 	GasLine.data().lox.kg = 3600.0
 	g.open_district("process")

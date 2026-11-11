@@ -89,24 +89,21 @@ static func pane(host: Control, accent: Color, width: float = W_PANE) -> VBoxCon
 	host.theme = theme()
 	var pane := PanelContainer.new()
 	pane.name = "Pane"
-	pane.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
+	# 2026-11-10 炭黑 (user: "绿油油的也不好看啊，重做"): one matte charcoal slab, top right, as tall as
+	# what it holds (no long empty glass down the screen); it scrolls only when the page is taller
+	pane.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	pane.offset_left = -width - 24.0
 	pane.offset_right = -24
 	pane.offset_top = 24
-	pane.offset_bottom = -24
-	# 51 号: a glass side panel with round corners, a thin accent line on top, a soft shadow
-	var box := UiSkin.solid(Color(0.09, 0.105, 0.12, 0.94), 20, 18.0)
-	box.set_border_width_all(1)
-	box.border_width_top = 2
-	box.border_color = Color(accent.r, accent.g, accent.b, 0.3)
-	box.shadow_color = Color(0, 0, 0, 0.5)
-	box.shadow_size = 24
-	pane.add_theme_stylebox_override("panel", box)
+	pane.offset_bottom = host.get_viewport_rect().size.y - 24.0 if host.is_inside_tree() else 1032.0
+	# a page wider than asked grows to the left, never off the screen's right edge
+	pane.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	pane.add_theme_stylebox_override("panel", Charcoal.side_box())
 	host.add_child(pane)
 	# 91 号 (控制台统一): the content scrolls; the close key stays at the pane's foot on every
 	# console, not wherever the page's content happens to end
 	var outer := VBoxContainer.new()
-	outer.add_theme_constant_override("separation", 12)
+	outer.add_theme_constant_override("separation", 14)
 	pane.add_child(outer)
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -120,6 +117,10 @@ static func pane(host: Control, accent: Color, width: float = W_PANE) -> VBoxCon
 	column.add_theme_constant_override("separation", 10)
 	scroll.add_child(column)
 	column.child_entered_tree.connect(func(n: Node) -> void: _pin_close.call_deferred(n, foot))
+	var fit := func() -> void: _fit_height(pane, column, foot, outer)
+	column.minimum_size_changed.connect(fit)
+	foot.minimum_size_changed.connect(fit)
+	fit.call_deferred()
 	# 2026-11-04 (BenchFx): every side console comes in, lights its keys, remembers itself, steps back
 	# with Esc and takes the interface scale — once the page has filled its column (the star map has
 	# its own motion)
@@ -127,6 +128,17 @@ static func pane(host: Control, accent: Color, width: float = W_PANE) -> VBoxCon
 		BenchFx.dress.call_deferred(host, [column], pane)
 	return column
 
+
+# the pane as tall as its column and foot, at most the screen less its margins (a site desk's card
+# sizes itself: ConsoleKit.card_fit)
+static func _fit_height(pane: PanelContainer, column: Control, foot: Control, outer: VBoxContainer) -> void:
+	if not is_instance_valid(pane) or not pane.is_inside_tree() or pane.has_meta("card_left") or pane.has_meta("full_height"):
+		return
+	var host := pane.get_parent() as Control
+	var vh: float = host.size.y if host != null and host.size.y > 10.0 else pane.get_viewport_rect().size.y
+	var sb := pane.get_theme_stylebox("panel")
+	var want: float = column.get_combined_minimum_size().y + foot.get_combined_minimum_size().y + float(outer.get_theme_constant("separation")) + sb.get_minimum_size().y
+	pane.offset_bottom = pane.offset_top + minf(ceilf(want), vh - pane.offset_top - 24.0)
 
 
 static func _pin_close(n: Node, foot: HBoxContainer) -> void:
@@ -137,6 +149,10 @@ static func _pin_close(n: Node, foot: HBoxContainer) -> void:
 			old.queue_free()
 	n.reparent(foot)
 	(n as Button).size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# 炭黑: the close key is a dark key, its words left, "Esc" on a keycap at the right
+	(n as Button).custom_minimum_size.y = maxf((n as Button).custom_minimum_size.y, 46.0)
+	(n as Button).alignment = HORIZONTAL_ALIGNMENT_LEFT
+	Charcoal.key_text(n as Button)
 
 
 static func label(value: String, size_px: int = 18, ink: float = 0.92) -> Label:
@@ -150,10 +166,63 @@ static func label(value: String, size_px: int = 18, ink: float = 0.92) -> Label:
 
 # a label set into the console as a dark screen (a machine's live figures)
 static func as_screen(l: Label) -> Label:
-	var inset := UiSkin.solid(Color(0, 0, 0, 0.25), 12, 14.0)
-	l.add_theme_stylebox_override("normal", inset)
-	l.add_theme_color_override("font_color", UiSkin.INK)
+	l.add_theme_stylebox_override("normal", Charcoal.well_box(14.0))
+	l.add_theme_color_override("font_color", Charcoal.INK)
 	return l
+
+
+# 2026-11-10 炭黑: the old data blue and "fine" green read as white; warnings stay orange
+static func is_warn(c) -> bool:
+	if not c is Color:
+		return false
+	var k: Color = c
+	return k.r > 0.8 and k.g < 0.75 and k.b < 0.5
+
+
+static func figure_col(c) -> Color:
+	if not c is Color:
+		return UiSkin.FIGURE
+	var k: Color = c
+	if is_warn(k):
+		return Charcoal.ACCENT
+	if k.r > 0.9 and k.g < 0.45:
+		return k
+	# a tint (blue, green, the ok white): the figures' white, at its alpha
+	return Color(UiSkin.FIGURE, k.a)
+
+
+# a value with a figure in it ("6.000 t", "2 / 2", "$4,860"), not just words ("已经建造完成")
+static func has_figure(v: String) -> bool:
+	for ch in v:
+		if ch >= "0" and ch <= "9":
+			return true
+	return false
+
+
+# 2026-11-10 炭黑: a line of words with its lamp in front — "✓ …" / "○ …" lines become a lit white lamp
+# (done) or a lit orange one (still lacking); the mark itself is dropped from the words
+static func lamp_label(l: Label, state: String = "") -> Label:
+	var t := l.text.strip_edges()
+	if state == "":
+		state = "ok" if t.begins_with("✓") else ("warn" if t.begins_with("○") else "idle")
+	if t.begins_with("✓") or t.begins_with("○"):
+		l.text = t.substr(1).strip_edges()
+	var sb := StyleBoxEmpty.new()
+	sb.content_margin_left = 22.0
+	l.add_theme_stylebox_override("normal", sb)
+	l.modulate = Color(1, 1, 1)
+	l.add_theme_color_override("font_color", Charcoal.ACCENT if state in ["warn", "danger"] else Charcoal.INK)
+	l.set_meta("lamp_state", state)
+	if not l.draw.is_connected(_lamp_label_draw.bind(l)):
+		l.draw.connect(_lamp_label_draw.bind(l))
+	return l
+
+
+static func _lamp_label_draw(l: Label) -> void:
+	var state := str(l.get_meta("lamp_state", "idle"))
+	var px := l.get_theme_font_size("font_size")
+	var lh: float = float(l.get_line_height()) if l.get_line_count() > 0 else float(px) * 1.4
+	Charcoal.led(l, Vector2(8, lh * 0.5 + 1.0), state != "idle", 1.0, 3.5, Charcoal.ACCENT if state in ["warn", "danger"] else Color(0.92, 0.93, 0.9))
 
 
 # ---------------------------------------------------------------- drawn parts
@@ -189,6 +258,16 @@ class Plate extends Control:
 			var x := _title_x()
 			_title.position = Vector2(x, 6)
 			_title.size = Vector2(maxf(10.0, size.x - x - 40.0), 34)
+			# a title too long for the plate steps its type down (English names ran off: "DESTINATI")
+			var tpx := 24
+			while tpx > 17 and OpsSkin.fonts()[2].get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, tpx).x > _title.size.x:
+				tpx -= 1
+			_title.px = tpx
+			if sub != "":
+				var sh: float = OpsSkin.fonts()[0].get_multiline_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, maxf(10.0, size.x - 8.0), 14).y
+				var want := maxf(92.0, 52.0 + sh + 12.0)
+				if absf(custom_minimum_size.y - want) > 0.5:
+					custom_minimum_size.y = want
 
 	func set_lamp(state: String) -> void:
 		if state != lamp:
@@ -198,23 +277,23 @@ class Plate extends Control:
 	func _draw() -> void:
 		var f := OpsSkin.fonts()
 		var r := Rect2(Vector2.ZERO, size)
-		# 51 号: no slab — the code in a round pill tinted with the console's colour, the title light
+		# 2026-11-10 炭黑: the code engraved on a black tag (no tinted pill), the title white, the
+		# console's lamp an LED (orange = waiting on you), an engraved groove under it all
 		var x := 4.0
 		if code != "":
-			var cw: float = f[1].get_string_size(code, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 22.0
-			var cr := Rect2(x, 15, cw, 24)
-			var pill := UiSkin.solid(Color(accent.r, accent.g, accent.b, 0.18), 12, 0.0)
-			draw_style_box(pill, cr)
-			draw_string(f[1], cr.position + Vector2(11, 17), code, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(accent.r, accent.g, accent.b, 1.0).lightened(0.3))
+			var cw: float = f[1].get_string_size(code, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 20.0
+			var cr := Rect2(x, 16, cw, 23)
+			Charcoal.slab(self, cr, Charcoal.SCREEN, 5)
+			draw_line(Vector2(cr.position.x + 5, cr.end.y + 0.5), Vector2(cr.end.x - 5, cr.end.y + 0.5), Color(1, 1, 1, 0.05), 1.0)
+			draw_string(f[1], cr.position + Vector2(10, 16.5), code, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Charcoal.INK2)
 			x = cr.end.x + 12.0
 		_title.set_text(title)
 		if sub != "":
-			var y := 64.0
-			for line in sub.split("\n"):
-				draw_string(f[0], Vector2(14, y), line, HORIZONTAL_ALIGNMENT_LEFT, size.x - 28.0, 14, Pal.ink(0.6))
-				y += 18.0
-		Hmi.lamp(self, Vector2(size.x - 22, 27), OpsSkin.lamp_col(lamp), lamp != "idle", 1.0, 6.0)
-		draw_line(Vector2(4, size.y - 1), Vector2(size.x - 4, size.y - 1), Color(1, 1, 1, 0.07), 1.0)
+			# 炭黑: a long line wraps to a second rather than being cut (the plate grows to hold it)
+			draw_multiline_string(f[0], Vector2(4, 66.0), sub, HORIZONTAL_ALIGNMENT_LEFT, size.x - 8.0, 14, -1, Charcoal.INK2)
+		var lc := Charcoal.ACCENT if lamp in ["warn", "danger"] else Color(0.92, 0.93, 0.9)
+		Charcoal.led(self, Vector2(size.x - 14, 28), lamp != "idle", 1.0, 4.5, lc)
+		Charcoal.groove(self, 2, size.x - 2, size.y - 2)
 
 
 # a dark screen of figures: rows of [label, value] or [label, value, colour]
@@ -233,21 +312,36 @@ class Readout extends Control:
 		custom_minimum_size.y = 16.0 + pitch * maxi(1, rows.size())
 		queue_redraw()
 
+	# 2026-11-10 炭黑: a recessed black window; figures white (no data blue), a status that is only words
+	# ("已经建造完成") a lamp and the word; orange only for what waits on you
 	func _draw() -> void:
 		var f := OpsSkin.fonts()
-		Hmi.screen(self, Rect2(Vector2.ZERO, size))
+		Charcoal.display(self, Rect2(Vector2(3, 3), size - Vector2(6, 6)), 1.0, 7)
 		var y := 8.0 + pitch * 0.5 + 6.0
 		for row in rows:
 			var lab := str(row[0])
 			var val := str(row[1]) if row.size() > 1 else ""
-			var col: Color = row[2] if row.size() > 2 else Pal.tint(Pal.AIR, 1.0, 1.3)
+			var col: Color = OpsSkin.figure_col(row[2]) if row.size() > 2 else UiSkin.FIGURE
+			var warn: bool = row.size() > 2 and OpsSkin.is_warn(row[2])
 			if val == "":
-				# a heading row (or a sentence): one line across, dimmer
-				draw_string(f[1], Vector2(12, y), lab, HORIZONTAL_ALIGNMENT_LEFT, size.x - 24.0, 15, col if row.size() > 2 else Pal.ink(0.75))
+				# a heading row (or a sentence): one line across, dimmer; a coloured one gets its lamp
+				var x := 16.0
+				if row.size() > 2:
+					Charcoal.led(self, Vector2(x + 4, y - 5), true, 1.0, 3.5, Charcoal.ACCENT if warn else Color(0.92, 0.93, 0.9))
+					x += 16.0
+				draw_string(f[1], Vector2(x, y), lab, HORIZONTAL_ALIGNMENT_LEFT, size.x - x - 14.0, 15, col if row.size() > 2 else Charcoal.INK2)
+			elif not OpsSkin.has_figure(val):
+				# words only: a lamp and the word, right-aligned (lit orange when it waits on you)
+				draw_string(f[0], Vector2(16, y), lab, HORIZONTAL_ALIGNMENT_LEFT, size.x * 0.5, 15, Charcoal.INK2)
+				var vw: float = f[1].get_string_size(val, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+				var room := size.x * 0.48
+				var vx := size.x - 16.0 - minf(vw, room)
+				Charcoal.led(self, Vector2(vx - 12.0, y - 5), true, 1.0, 3.5, Charcoal.ACCENT if warn else Color(0.92, 0.93, 0.9))
+				draw_string(f[1], Vector2(vx, y), val, HORIZONTAL_ALIGNMENT_LEFT, room, 15, Charcoal.ACCENT if warn else Charcoal.INK)
 			else:
-				draw_string(f[0], Vector2(12, y), lab, HORIZONTAL_ALIGNMENT_LEFT, size.x * 0.55, 15, Pal.ink(0.6))
+				draw_string(f[0], Vector2(16, y), lab, HORIZONTAL_ALIGNMENT_LEFT, size.x * 0.55, 15, Charcoal.INK2)
 				var vw: float = f[2].get_string_size(val, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
-				draw_string(f[2], Vector2(size.x - 12.0 - minf(vw, size.x * 0.6), y + 1.0), val, HORIZONTAL_ALIGNMENT_LEFT, size.x * 0.6, 18, col)
+				draw_string(f[2], Vector2(size.x - 16.0 - minf(vw, size.x * 0.6), y + 1.0), val, HORIZONTAL_ALIGNMENT_LEFT, size.x * 0.6, 18, col)
 			y += pitch
 
 
@@ -262,7 +356,7 @@ class Section extends Control:
 		custom_minimum_size.y = 28
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		# 2026-11-04 (BenchFx #005): the label rises as the console comes in, its rule drawing out after it
-		_label = BenchFx.RiseText.new(t, OpsSkin.fonts()[1], 13, Pal.ink(0.55))
+		_label = BenchFx.RiseText.new(t, OpsSkin.fonts()[1], 13, Charcoal.INK3.lightened(0.15))
 		_label.position = Vector2(0, 2)
 		_label.size = Vector2(OpsSkin.fonts()[1].get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 4.0, 21)
 		add_child(_label)
@@ -284,7 +378,7 @@ class Section extends Control:
 		if k < 1.0:
 			set_process(true)
 		if k > 0.0:
-			draw_line(Vector2(tw + 10.0, 14), Vector2(lerpf(tw + 10.0, size.x, k), 14), Color(1, 1, 1, 0.1), 1.0)
+			Charcoal.groove(self, tw + 10.0, lerpf(tw + 10.0, size.x, k), 13.5)
 
 
 # the overview's cells and decisions as a control (the ring's business console)
@@ -336,7 +430,8 @@ static func draw_cell(ci: CanvasItem, f: Array, r: Rect2, cell: Dictionary, a: f
 	Hmi.lamp(ci, Vector2(r.end.x - 20, r.position.y + 20), lamp_col(state), state != "idle", a, 6.0)
 	var sc := Rect2(r.position.x + 10, r.position.y + 38, r.size.x - 20, r.size.y - 48)
 	Hmi.screen(ci, sc, a)
-	var vcol := Pal.tint(Pal.AIR, a, 1.35) if state != "warn" else lamp_col(state)
+	# 2026-11-10 炭黑: the figure white (was the data blue); a warning stays orange
+	var vcol := UiSkin.FIGURE if state != "warn" else lamp_col(state)
 	vcol.a = a
 	var vs := 20 if compact else 28
 	ci.draw_string(f[2], sc.position + Vector2(10, vs + 6), str(cell.get("value", "")), HORIZONTAL_ALIGNMENT_LEFT, sc.size.x - 20, vs, vcol)

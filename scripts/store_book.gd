@@ -566,6 +566,13 @@ static func tidy(first := "") -> void:
 			return ca < cb
 		if int(a.cells) != int(b.cells):
 			return int(a.cells) > int(b.cells)
+		# 2026-11-10: things of one kind lie together (a stack), the cheapest first
+		var ka := stack_key(a)
+		var kb := stack_key(b)
+		if ka != kb:
+			return ka < kb
+		if float(a.get("market", 0.0)) != float(b.get("market", 0.0)):
+			return float(a.get("market", 0.0)) < float(b.get("market", 0.0))
 		return str(a.id) < str(b.id))
 	var occ := PackedByteArray()
 	occ.resize(COLS * rows())
@@ -936,3 +943,29 @@ static func mark(key: String) -> void:
 	seen[key] = true
 	Career.data.seen = seen
 	Career.save()
+
+
+# 2026-11-10 同类成叠 (user: "只要有很多物品是同样的种类，都可以像钢卷、钢材一样长按…滑块选择"): what counts
+# as one kind — a stack the quantity slider works on. Each thing still lies in its own cells (the grid's
+# real-size rule; no save changes). "" for what never stacks (the waiting column, boxes of spares).
+#   raw bundles: the same raw key · machines (spares off ships): the same kind (name_key) and the same
+#   state (fit for repairs / too worn) — prices may differ, the slider shows their range · goods: the
+#   same class and kind · tanks: the same fluid · bales: bales of one size
+static func stack_key(u: Dictionary) -> String:
+	if u.is_empty() or u.get("inbox", false) or u.get("steel", false):
+		return ""
+	var id := str(u.get("id", ""))
+	if id.begins_with("r:"):
+		return "r|" + str(u.get("key", ""))
+	if id.begins_with("p:"):
+		var p: Dictionary = u.get("part", {})
+		var nk := str(p.get("nk", p.get("tag", "")))
+		return "p|%s|%s" % [nk, "ok" if float(p.get("cond", 0.0)) >= Repair.COND_MIN else "worn"]
+	if id.begins_with("g:"):
+		var gd: Dictionary = u.get("good", {})
+		if str(gd.get("fluid", "")) != "":
+			return "f|" + str(gd.fluid)
+		if gd.get("bale", false):
+			return "b|%dx%d" % [int(u.get("w", 1)), int(u.get("h", 1))]
+		return "g|%s|%s" % [str(u.get("cat", "")), str(gd.get("nk", gd.get("tag", "")))]
+	return ""

@@ -26,10 +26,9 @@ func button(value: String, callback: Callable) -> Button:
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	var accent := Pal.tint(Pal.FLUID, 1.0, 1.2)
-	var column := OpsSkin.pane(self, accent, 440.0)
+	var column := OpsSkin.pane(self, Charcoal.ACCENT, 440.0)
 	plate = OpsSkin.Plate.new("XRF-07", words("化验位 · 取样光谱", "ASSAY · SAMPLE SPECTROMETER"),
-		words("整批锁在仓库，只读样品 · 每批 %s（试行）\n黑色炉料杂质 ≤ %d%% 升为等级 1", "THE LOT STAYS IN STOCK, A SAMPLE IS READ · %s A LOT (PROVISIONAL)\nFERROUS FEED ≤ %d%% IMPURITY BECOMES GRADE 1") % [(Pal.money(service.fee()) if service.fee() > 0.0 else words("训练单免费", "FREE ON THE TRAINING RUN")), int(round(service.LIMIT * 100.0))], accent)
+		words("整批锁在仓库，只读样品 · 每批 %s（试行）\n黑色炉料杂质 ≤ %d%% 升为等级 1", "THE LOT STAYS IN STOCK, A SAMPLE IS READ · %s A LOT (PROVISIONAL)\nFERROUS FEED ≤ %d%% IMPURITY BECOMES GRADE 1") % [(Pal.money(service.fee()) if service.fee() > 0.0 else words("训练单免费", "FREE ON THE TRAINING RUN")), int(round(service.LIMIT * 100.0))], Charcoal.ACCENT)
 	column.add_child(plate)
 	screen = OpsSkin.Readout.new()
 	column.add_child(screen)

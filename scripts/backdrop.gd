@@ -25,6 +25,8 @@ var builds := 0           # still parts built so far (tests: nothing rebuilds wh
 var dyn: Node2D
 var star_layer: Node2D
 var lines_mat: ShaderMaterial
+var _ambient_key: Array = []
+var _next_redraw_ms := 0
 
 
 func _init() -> void:
@@ -81,11 +83,15 @@ func _key(part: String, lit: Dictionary) -> String:
 	match part:
 		"base": return JSON.stringify(lit)
 		"ark": return "on"
-	return "%d|%s" % [int(lit.get(part, 0)), str(PortArt.inside == part)]
+	# 工业剖面: the hulls drawn in the cutaway picture rebuild when F9 switches it
+	return "%d|%s|%s" % [int(lit.get(part, 0)), str(PortArt.inside == part), str(Pal.solid) + str(PortArt.light_scheme) + str(PortArt.hull_style)]
 
 
 func _process(_dt: float) -> void:
-	queue_redraw()
+	var now := Time.get_ticks_msec()
+	var view_key := [get_viewport().get_canvas_transform(), get_viewport_rect().size, ViewCull.off]
+	var redraw := game == null or game.cam_zoom() >= 0.2 or view_key != _ambient_key or now >= _next_redraw_ms
+	_ambient_key = view_key
 	if halo == null:
 		halo = Node2D.new()
 		var m := CanvasItemMaterial.new()
@@ -104,13 +110,20 @@ func _process(_dt: float) -> void:
 		if keys.get(part, "") != k:
 			keys[part] = k
 			parts[part].queue_redraw()
-	dyn.queue_redraw()
-	star_layer.queue_redraw()
-	halo.queue_redraw()
+			redraw = true
 	var sk := "%s|%s|%s" % [str(_shows_port()), str(legacy), str(Look.on)]
 	if sk != _station_key:
 		_station_key = sk
 		station.queue_redraw()
+		redraw = true
+	# Tiny, slow scenery can reuse its last commands while a distant camera is
+	# still. A moving/zooming camera refreshes immediately, as does a state change.
+	if redraw:
+		_next_redraw_ms = now + 33
+		queue_redraw()
+		dyn.queue_redraw()
+		star_layer.queue_redraw()
+		halo.queue_redraw()
 
 
 # a still part, built once into its node's retained mesh

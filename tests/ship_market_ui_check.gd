@@ -15,7 +15,8 @@ func _initialize() -> void:
 
 
 func _cards(ui) -> Array:
-	return ui.find_children("*", "ShipThumb", true, false).filter(func(c): return c.is_visible_in_tree() and not ui.detail_win.is_ancestor_of(c))
+	# 135 号: a card's picture is the ship drawn as the berth draws it (scripts/ship_thumbs.gd View)
+	return ui.find_children("*", "", true, false).filter(func(c): return c.has_method("set_ship") and c.is_visible_in_tree() and not ui.detail_win.is_ancestor_of(c))
 
 
 func _run() -> void:
@@ -53,8 +54,8 @@ func _run() -> void:
 	check(ui != null and n == 15 and kept_in and ui._items.size() > 15 and _cards(ui).size() >= 6 and _cards(ui).size() <= 30, "the market opens with its fifteen kept listings among %d, %d cards built" % [ui._items.size(), _cards(ui).size()])
 	var outlined := true
 	for c in _cards(ui):
-		outlined = outlined and not ShipThumb.shape_of(c.offer).outline.is_empty()
-	check(outlined, "every picture is the ship's own outline")
+		outlined = outlined and c.ship != "" and preload("res://scripts/ship_thumbs.gd").texture(c.ship) != null
+	check(outlined, "every picture is the ship's own baked drawing")
 	Cap.save(root, "res://tests/out/ship_market_cards_zh.png")
 	ui._cat("small")
 	await _frames(3)
@@ -94,7 +95,7 @@ func _run() -> void:
 	await _frames(4)
 	var resale := false
 	for b in ui.find_children("*", "Button", true, false):
-		if str(b.text) == "挂牌转售":
+		if str(b.text).begins_with("挂牌转售"):
 			resale = true
 	check(resale and _cards(ui).size() == 1, "my ships: its card, with resale")
 	Cap.save(root, "res://tests/out/ship_market_mine_zh.png")

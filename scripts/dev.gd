@@ -163,10 +163,7 @@ func _input(ev: InputEvent) -> void:
 	if ev is InputEventMouseMotion:
 		mouse = ev.position
 	_handle_key(ev)
-	if Txt.dev and not workbench_open and ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
-		if Rect2(c.size.x - 350, 18, 330, 36).has_point(ev.position):
-			set_open(true)
-			get_viewport().set_input_as_handled()
+	# user 2026-11-10: the bench opens by key only (F12); clicking the DEV badge no longer opens it
 
 
 func set_open(open: bool) -> void:

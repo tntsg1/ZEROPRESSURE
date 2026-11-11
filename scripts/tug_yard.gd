@@ -232,6 +232,120 @@ static func prepped(a: Dictionary, share: float) -> void:
 	var got := fuel_of(ship_of(a)) * share
 	a.prep = {"drained": share, "m3": got}
 	set_tank(tank() + got)
+	_cryo_drawn(a, share)
+
+
+# ---------------------------------------------------------------- 2026-11-11: the cryo collection tanks
+# (user: "要，按我说的改" — the hulk's leftover LH2 and LOX are drawn off as it comes in, into the
+# station's own cryogenic tanks, LH2 and LOX apart, and piped on to the processing district's gas
+# line, scripts/gas_line.gd's cryo transfer). The same share by stage as the propellant. Only what is
+# left in a ship's propellant / service tanks (Jev B 0.99): a tank that is a ship's cargo with a
+# mechanism of its own (HG-170's boil-off tanks) stays aboard for the berth.
+#   Career.data.tug_cryo = {"lh2": kg, "lox": kg} (an old save has none: both empty)
+const LH2_KG := 1500.0                   # what the collection tanks hold
+const LOX_KG := 6000.0
+const RHO := {"lh2": 71.0, "lox": 1141.0}
+const LH2_PIECES := ["p_lh2_tank", "p_sp_lh2_tank"]
+const LOX_PIECES := ["p_lox_tank", "p_ark_lox_tank"]
+
+
+static func cryo_cap(kind: String) -> float:
+	return LH2_KG if kind == "lh2" else LOX_KG
+
+
+# a fluid volume of a ship file: "lh2", "lox" or "" (piece_nk: its piece's name key)
+static func cryo_kind(vk: String, v: Dictionary, piece_nk: String, cargo: Dictionary) -> String:
+	if cargo.has(vk):
+		return ""
+	var look := str(v.get("look", ""))
+	var fl := str(v.get("fluid", ""))
+	if look == "lh2" or fl == "lh2" or piece_nk in LH2_PIECES:
+		return "lh2"
+	if look == "lox" or fl == "lox" or piece_nk in LOX_PIECES:
+		return "lox"
+	return ""
+
+
+# the volumes of a ship that are its own mechanism's cargo (left aboard)
+static func cryo_cargo(d: Dictionary) -> Dictionary:
+	var out := {}
+	for t in d.get("boiloff", {}).get("tanks", {}):
+		out[str(d.boiloff.tanks[t].get("vol", ""))] = true
+	return out
+
+
+# m³ of leftover LH2 / LOX a ship carries: {"lh2": m³, "lox": m³}
+static func cryo_of(ship: String) -> Dictionary:
+	var out := {"lh2": 0.0, "lox": 0.0}
+	if ship == "":
+		return out
+	var d := Ship.load_data(ship)
+	var nk := {}
+	for pd in d.get("pieces", []):
+		nk[str(pd.get("tag", pd.get("key", "")))] = str(pd.get("name_key", ""))
+	var cargo := cryo_cargo(d)
+	var vols: Dictionary = d.get("fluids", {}).get("volumes", {})
+	for k in vols:
+		var kind := cryo_kind(str(k), vols[k], str(nk.get(str(vols[k].get("piece", "")), "")), cargo)
+		if kind != "":
+			out[kind] = float(out[kind]) + float(vols[k].get("amount", 0.0))
+	return out
+
+
+# the two tanks' levels as console lines (placeholder words, 〔〕)
+static func cryo_lines() -> Array:
+	var c := cryo()
+	var out: Array = []
+	for kind in ["lh2", "lox"]:
+		var piping := GasLine.cryo_piping(kind) if GasLine.built() else 0.0
+		var s := w("〔低温收集罐〕%s %.0f / %.0f kg", "CRYO TANK %s %.0f / %.0f kg") % [w("液氢", "LH2") if kind == "lh2" else w("液氧", "LOX"), float(c[kind]), cryo_cap(kind)]
+		if piping > 0.0:
+			s += w(" · 〔管道转运中〕%.0f kg", " · PIPING %.0f kg") % piping
+		out.append(s)
+	return out
+
+
+static func cryo() -> Dictionary:
+	if not Career.usable() or Career.data.is_empty():
+		return {"lh2": 0.0, "lox": 0.0}
+	var c: Dictionary = Career.data.get("tug_cryo", {})
+	return {"lh2": float(c.get("lh2", 0.0)), "lox": float(c.get("lox", 0.0))}
+
+
+static func set_cryo(kind: String, kg: float) -> void:
+	if not Career.usable() or Career.data.is_empty():
+		return
+	var c: Dictionary = Career.data.get("tug_cryo", {})
+	c[kind] = clampf(kg, 0.0, cryo_cap(kind))
+	Career.data.tug_cryo = c
+
+
+# the share of each kind drawn off (less than the stage's share when the tank was nearly full)
+static func _cryo_drawn(a: Dictionary, share: float) -> void:
+	if share <= 0.0:
+		return
+	var have := cryo_of(ship_of(a))
+	var drawn := {}
+	for kind in ["lh2", "lox"]:
+		var m3 := float(have[kind])
+		if m3 <= 0.0:
+			continue
+		var room := cryo_cap(kind) - float(cryo()[kind])
+		var kg := minf(m3 * share * float(RHO[kind]), maxf(0.0, room))
+		if kg <= 0.0:
+			continue
+		set_cryo(kind, float(cryo()[kind]) + kg)
+		drawn[kind] = kg / float(RHO[kind]) / m3
+	if not drawn.is_empty():
+		a.prep["cryo"] = drawn
+
+
+# what share of each kind was drawn off the hulk this game is stripping: {"lh2": share, "lox": share}
+static func cryo_drained_of(g) -> Dictionary:
+	if g == null or not is_instance_valid(g) or g.get("job") == null or not Career.usable() or Career.data.is_empty() or not Career.data.has("ship_market"):
+		return {}
+	var a := ShipMarket.asset(str(g.job.get("id", "")))
+	return a.get("prep", {}).get("cryo", {}) if not a.is_empty() else {}
 
 
 # the share drawn off the hulk this game is stripping (0 for anything not brought in through the mouth)

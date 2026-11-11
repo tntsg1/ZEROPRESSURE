@@ -181,7 +181,7 @@ func _draw() -> void:
 	var y := s.y * 0.5 - 210.0
 	_t(Gt.w("零压拆船厂 · 公测版", "ZERO PRESSURE · PUBLIC TEST"), Vector2(cx, y), 34, Color(1, 1, 1, 0.95), font_b)
 	y += 44.0
-	_t(Gt.w("第一小时 · 需要联网 · %s", "THE FIRST HOUR · ONLINE · %s") % Gt.VERSION, Vector2(cx, y), 15, Color(1, 1, 1, 0.5), font)
+	_t(Gt.w("公测版 · 需要联网 · %s", "PUBLIC TEST · ONLINE · %s") % Gt.VERSION, Vector2(cx, y), 15, Color(1, 1, 1, 0.5), font)
 	y += 46.0
 	var lines: Array = []
 	if not Gt.CODES:

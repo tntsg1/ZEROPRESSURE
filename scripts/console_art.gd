@@ -25,6 +25,23 @@ static func w(zh: String, en: String) -> String:
 	return zh if Txt.zh else en
 
 
+# 2026-11-10 (user: the screens nobody can use must read as background at a glance): the colour of a
+# background instrument's words and bars — a console's cyan screen and bright figures say "press me";
+# a wall gauge's are a cool, grey, dim version of the same colour (under half its brightness and
+# saturation), so it reads as a far-off meter. Alarm reds stay reddish but dim.
+const BG_TINT := Color(0.62, 0.68, 0.76)
+static func bg(c: Color, k := 1.0) -> Color:
+	var l := clampf(c.r * 0.2126 + c.g * 0.7152 + c.b * 0.0722, 0.0, 1.0)
+	var grey := BG_TINT * (0.2 + 0.5 * l)
+	var warm := c.r > c.g * 1.6 and c.r > c.b * 1.6
+	var out := grey.lerp(Color(minf(c.r, 1.0) * 0.55, minf(c.g, 1.0) * 0.4, minf(c.b, 1.0) * 0.4), 0.35 if warm else 0.0)
+	return Color(out.r * k, out.g * k, out.b * k, c.a)
+
+
+# a background screen's glass: darker than a console's and not cyan
+const BG_GLASS := Color(0.028, 0.033, 0.04)
+
+
 static func lamp_col(state: String, t: float) -> Color:
 	match state:
 		"ok", "run": return Pal.tint(Pal.FLUID, 0.95, 1.3)

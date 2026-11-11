@@ -14,19 +14,36 @@ const DArt = preload("res://scripts/drone_art.gd")
 # the terminal's look (P.7, industrial HMI): keys standing out of the console
 static func _key_box(state: String) -> StyleBoxFlat:
 	# 51 号: the new look's glass key — the edge warms on hover and focus, deeper when pressed
+	# 2026-11-10 炭黑: a dark key — raised, lighter under the pointer, sunk when held (a toggled
+	# key stays down with the orange lip), an orange ring for the keyboard's focus
 	var box: StyleBoxFlat
 	match state:
-		"pressed": box = UiSkin.glass(0.12, 0.55, 12, 10.0, UiSkin.ACCENT)
-		"hover", "focus": box = UiSkin.glass(0.08, 0.35, 12, 10.0, UiSkin.ACCENT)
-		"disabled": box = UiSkin.glass(0.02, 0.04, 12, 10.0)
-		_: box = UiSkin.glass(0.05, 0.1, 12, 10.0)
+		"pressed":
+			box = UiSkin.key_box(Charcoal.FACE_DN, 0.35, 1.0, 0.0)
+			box.border_width_top = 0
+			box.border_width_bottom = 3
+			box.border_color = Charcoal.ACCENT
+		"hover": box = UiSkin.key_box(Charcoal.FACE_HI, 0.7, 4.0, 0.11)
+		"focus":
+			box = StyleBoxFlat.new()
+			box.draw_center = false
+			box.set_corner_radius_all(10)
+			box.set_border_width_all(2)
+			box.border_color = Color(Charcoal.ACCENT, 0.85)
+			box.expand_margin_left = 2
+			box.expand_margin_right = 2
+			box.expand_margin_top = 2
+			box.expand_margin_bottom = 2
+		"disabled": box = UiSkin.key_box(Color(Charcoal.FACE, 0.55), 0.3, 2.0, 0.03)
+		_: box = UiSkin.key_box(Charcoal.FACE, 0.7, 4.0, 0.07)
 	box.content_margin_left = 44
 	box.content_margin_right = 16
 	return box
 
 
 static func _plate_box() -> StyleBoxFlat:
-	var box := UiSkin.solid(Color(0, 0, 0, 0.25), 10, 6.0)
+	# 炭黑: a recessed black window
+	var box := UiSkin.well(6.0)
 	box.content_margin_left = 12
 	box.content_margin_right = 12
 	return box

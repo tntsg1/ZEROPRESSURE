@@ -114,11 +114,20 @@ func auto_takes(b) -> bool:
 		return false
 	if t - float(b.get_meta("arm_drop", -99.0)) < 5.0:
 		return false
-	if game.arm != null and (game.arm.body == b or game.arm.takes(b)):
+	# 2026-11-10 ("明明能捡的，还在那傻站了"): it used to leave anything the arm *could* take to the
+	# arm, which carries one at a time and slowly: with the arm fitted the haulers stood by a heap of
+	# scrap. Now only the one the arm is about to reach for is left to it (what it is after is claimed).
+	if game.arm != null and (game.arm.body == b or game.arm.next_pick() == b):
 		return false
 	if _other_has(b) or game.dock.in_buffer(b):
 		return false
-	return game.dock.is_scrap(b)
+	# 2026-11-11 (user, MY-48: "我明明都用螺丝盘螺下来了，无人机还是不来弄…不管鼠标有没有点无人机，都把所有这些
+	# 飘在空中的全部放到回收站里面去"): with the machines on, every loose body goes to its own mouth
+	# unasked — whole equipment to the equipment mouth, hazards to the hazard mouth, scrap to the
+	# furnace; a mark only puts it first. (A training course or an exam keeps the old rule: scrap only.)
+	if game.training or game.exam != null:
+		return game.dock.is_scrap(b)
+	return Dock.for_load(_zone_for(b), b) != ""
 
 
 # the other hauler is already after it
@@ -144,6 +153,60 @@ func toggle(b) -> String:
 	b.remove_meta("no_way_till")
 	queue.append(b)
 	return "hauler_marked"
+
+
+# 2026-11-10 ("明明能捡的，还在那傻站了" — and when it truly cannot, say so on site): why no hauling
+# drone will ever take this loose body, as the mark key's own words ("" when one can). Only what no
+# waiting mends: too heavy, or no mouth takes it whole.
+func refuse_reason(b) -> String:
+	if not is_instance_valid(b) or b.capture != null or b.pieces.is_empty():
+		return ""
+	if b.total_mass() > MAX_T:
+		# the crane comes for it by itself (Crane.auto_pick): nothing to say
+		if game.crane != null and b.total_mass() <= Methods.crane_t() and not game.manual_only() and not b.get_meta("crane_skip", false) and game.crane._zone_for(b) != "":
+			return ""
+		return "crane_heavy" if game.crane != null and b.total_mass() > Methods.crane_t() else "hauler_heavy"
+	if Dock.for_load(_zone_for(b), b) == "":
+		return "hauler_no_mouth"
+	return ""
+
+
+# the words for refuse_reason, by the pointer: how heavy it is and what would take it
+func refuse_text(b) -> String:
+	var why := refuse_reason(b)
+	if why == "hauler_heavy":
+		return game.txt("hauler_heavy_n") % ("%.1f" % b.total_mass())
+	return game.txt(why) if why != "" else ""
+
+
+# the loose bodies the haulers will not take, drawn with a small "no" sign (no words on the work)
+func _draw_refused() -> void:
+	if game == null or game.world == null or game.cam == null:
+		return
+	var z: float = maxf(0.05, game.cam_zoom())
+	var view := get_viewport_rect().size / z
+	var vr := Rect2(game.cam.position - view * 0.5, view)
+	var col := Pal.heat(0.75, 1.1)
+	for b in game.world.bodies:
+		if not is_instance_valid(b) or b.freeze or b.capture != null or b.linear_velocity.length() > 40.0:
+			continue
+		if b == game.tools.held_body or b.get_meta("arm", false):
+			continue
+		var c: Vector2 = b.global_transform * b.center_of_mass
+		if not vr.has_point(c):
+			continue
+		var why := refuse_reason(b)
+		if why == "":
+			continue
+		var r := 7.0 / z
+		var at := c + Vector2(0, -12.0 / z)
+		draw_arc(at, r, 0.0, TAU, 20, col, 1.4 / z, true)
+		draw_line(at + Vector2(-r, r).rotated(0.0) * 0.7, at + Vector2(r, -r) * 0.7, col, 1.4 / z, true)
+		# what sort of no: a weight under it (too heavy) or a mouth too narrow
+		if why in ["hauler_heavy", "crane_heavy"]:
+			draw_colored_polygon(PackedVector2Array([at + Vector2(-4, 11) / z, at + Vector2(4, 11) / z, at + Vector2(5.5, 16) / z, at + Vector2(-5.5, 16) / z]), col)
+		else:
+			draw_polyline(PackedVector2Array([at + Vector2(-6, 10) / z, at + Vector2(-6, 15) / z, at + Vector2(6, 15) / z, at + Vector2(6, 10) / z]), col, 1.4 / z, true)
 
 
 func _zone_for(b) -> String:
@@ -179,9 +242,16 @@ func _physics_process(dt: float) -> void:
 			queue.erase(b)
 	# A deliberate operator/package command takes precedence over an unasked
 	# pickup. Only yield before gripping; an actual carried load finishes first.
-	if state == "reach" and auto_pickup and not queue.is_empty():
-		if is_instance_valid(body): body.set_meta("no_way_till",t+6.0)
-		_done()
+	# 2026-11-11 (user: "我右边刚拆下来一个零件，这无人机无动于衷"): marking the very piece it was already
+	# after made it drop that piece and put it off for 6 s — both haulers stood by. Now a mark on what
+	# it is after just makes it a marked job; it yields only for a marked piece it can take now, and
+	# puts nothing off (the other hauler may take what it leaves).
+	if state == "reach" and auto_pickup:
+		if queue.has(body):
+			queue.erase(body)
+			auto_pickup = false
+		elif _queued_takeable() != null:
+			_done()
 	if game.auto_paused:
 		if body != null:
 			halt()
@@ -236,8 +306,10 @@ func _physics_process(dt: float) -> void:
 					_set_off(b)
 					queue.erase(b)
 					break
-			# nothing marked: loose scrap that is plainly scrap, the arm's or not
-			if state == "idle" and queue.is_empty():
+			# nothing marked it can take now: loose scrap that is plainly scrap, the arm's or not
+			# (2026-11-11: a marked piece it cannot take yet — the other hauler's, put off — no longer
+			# keeps both haulers off every other piece in the berth)
+			if state == "idle":
 				for b in game.world.bodies:
 					if auto_takes(b) and _reachable(b) and _delivery_reachable(b):
 						_set_off(b,true)
@@ -301,6 +373,14 @@ func _physics_process(dt: float) -> void:
 				_done()
 
 
+# the first marked piece this hauler can set off for now (null when none)
+func _queued_takeable():
+	for b in queue:
+		if is_instance_valid(b) and b.capture == null and can_take(b) and _reachable(b) and not _other_has(b):
+			return b
+	return null
+
+
 # off after b: claimed for this hauler, a fresh way planned
 func _set_off(b, automatic: bool = false) -> void:
 	body = b
@@ -321,9 +401,8 @@ func _reachable(b) -> bool:
 # job waits. A native join sweep rejects grid projections through a closed
 # shell. Marked jobs keep their explicit wait-and-clear behavior.
 func _delivery_reachable(b) -> bool:
-	if b.ghost > 0.0:
-		b.set_meta("no_way_till",t+2.0)
-		return false
+	# (2026-11-10: a body still easing out of the ship is taken as it is: gripped, it collides with
+	# nothing anyway (FreeBody.hold_begin); waiting 2 s for it to come clear only left the hauler idle)
 	var center: Vector2 = b.global_transform*b.center_of_mass
 	var to_zone := Dock.for_load(_zone_for(b),b)
 	if to_zone == "":
@@ -545,6 +624,8 @@ func _process(dt: float) -> void:
 
 
 func _draw() -> void:
+	if who == "hauler":
+		_draw_refused()
 	# marks on the queued pieces
 	for i in queue.size():
 		var b = queue[i]

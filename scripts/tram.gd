@@ -17,6 +17,12 @@ const FastDraw = preload("res://scripts/fast_draw.gd")
 # 130 号: freight trains share the rails (scripts/freight_works.gd); the shuttle comes first, but it
 # sets off only with its whole route clear of them, and throws its switches only then
 const FW = preload("res://scripts/freight_works.gd")
+# 相位接驳 (user 2026-11-11: "你干脆把车改成‘能量子隧穿’的，从开局就可以量子隧穿"): from the start the shuttle
+# passes through the freight trains: it asks the block system for nothing and holds nothing, the freight
+# never waits or gives way for it, it never waits for freight or for points a freight train has thrown —
+# it takes the shortest way at once and runs through a train it meets, drawn tunnelling
+# (scripts/tram_phase_fx.gd). false: the old rules (it waits, freight gives way, it may go round)
+static var phase_through := true
 static var avoid := Callable()   # extra cost of a candidate ride (freight standing on it)
 
 var game
@@ -232,9 +238,15 @@ var _boa_p := [0.0, 0.0, 0.0, 0.0]
 var _th := [INF, INF]        # each car's direction of travel at the last step (lean)
 
 
+var phase_fx = null            # 相位接驳: draws it tunnelling through a freight train (scripts/tram_phase_fx.gd)
+
+
 func _ready() -> void:
 	z_index = 4
 	z_as_relative = false
+	phase_fx = preload("res://scripts/tram_phase_fx.gd").new()
+	phase_fx.tram = self
+	add_child(phase_fx)
 	position_px = station_at(at)
 	_settle(at)
 	if lines_mat == null:
@@ -286,8 +298,14 @@ func _stop_px(zone: String) -> Vector2:
 # loop round the hub on a turnout curve; the car runs round the loop the short way and leaves
 # on the other district's turnout. No corner sharper than the turnouts.
 const LOOP_R := 21.5           # m: the loop's radius inside the hub (just inside its rim)
-const TURNOUT := 0.8           # rad along the loop a turnout takes to join it (a long, easy curve)
-const TURNOUT_BERTH := 0.5     # 97 号: the berth line's (0.8 put its points on the processing line's)
+# 道岔缩短 (user 2026-11-10: "为什么每道闸要占46度呢？你把那个弯改更弯一点就行了，反正可以为了游戏性牺牲一点真实性"):
+# 0.8 rad (46°) was a long, easy tail onto the loop, a choice — the tightest bend is where the cubic turns off
+# the line, 7.2 m round at 46°, 6.0 m at 16° (5.5 m/s there on A_LAT). Five pairs of neighbouring stops sit
+# 38–52° apart round the loop, so with 46° (the berth's 28.6°) their turnouts overlapped and the short way
+# between them ran past the switch and backed in. At 16° every pair has plain loop between its turnouts
+# (tug–process, the closest at 38°, keeps 6°): every ride goes straight, no reversal (tests/tram_route_probe)
+const TURNOUT := 0.28          # rad along the loop a turnout takes to join it (16°)
+const TURNOUT_BERTH := 0.28    # 97 号: the berth line's (was 0.5; 0.8 put its points on the processing line's)
 const TURN_IN := 6.0           # m up the corridor from the rim where a turnout begins
 
 
@@ -418,20 +436,59 @@ static func _plan(from: String, to: String, s1: float, s2: float, opt: String) -
 static func plan(from: String, to: String, live := false) -> Array:
 	var best: Array = []
 	var best_cost := INF
+	var cands: Array = []
 	for s1: float in [1.0, -1.0]:
 		for s2: float in [1.0, -1.0]:
 			var opts: Array = ["a"] if s1 == s2 or from == "ring" else ["a", "b"]
 			for opt in opts:
 				var lg := _plan(from, to, s1, s2, opt)
 				var cost := REVERSE_COST * (lg.size() - 1)
+				var length := 0.0
 				for l in lg:
-					cost += Art.length(l.pts) / Geom.M
-				if live and avoid.is_valid():
+					length += Art.length(l.pts) / Geom.M
+				cost += length
+				if live and wait_est.is_valid() and not phase_through:
+					cands.append({"lg": lg, "t": ride_s(length, lg.size() - 1), "w": float(wait_est.call(lg))})
+					continue
+				if live and avoid.is_valid() and not phase_through:
 					cost += float(avoid.call(lg))
 				if cost < best_cost - 0.01:
 					best = lg
 					best_cost = cost
-	return best
+	if cands.is_empty():
+		return best
+	return choose(cands)
+
+
+# 绕路先走 (user 2026-11-11: "如果稍微绕点远路，让列车马上出发的话，也可以"): of the ways there, the one that gets
+# there first, the wait for freight counted in; a way free now that never changes ends is taken over it
+# while it takes no more than DETOUR_X times as long as waiting and going the short way
+const DETOUR_X := 1.5
+const RIDE_V := 14.0           # m/s: about how fast a ride goes, start to stop (tests/tram_feel_check)
+const REVERSE_S := 6.0         # s a change of ends costs (stop, the driver walks through, off again)
+static var wait_est := Callable()   # seconds the freight holding a way would keep the shuttle waiting
+static var last_choice := {}         # tests: what the last live plan weighed
+
+
+static func ride_s(length_m: float, reversals: int) -> float:
+	return length_m / RIDE_V + REVERSE_S * reversals
+
+
+static func choose(cands: Array) -> Array:
+	var best: Dictionary = {}
+	for c in cands:
+		if best.is_empty() or float(c.t) + float(c.w) < float(best.t) + float(best.w) - 0.01:
+			best = c
+	var pick := best
+	if float(best.w) > 0.0:
+		var free: Dictionary = {}
+		for c in cands:
+			if float(c.w) <= 0.0 and (c.lg as Array).size() == 1 and (free.is_empty() or float(c.t) < float(free.t)):
+				free = c
+		if not free.is_empty() and float(free.t) <= DETOUR_X * (float(best.t) + float(best.w)):
+			pick = free
+	last_choice = {"t": float(pick.t), "w": float(pick.w), "best_t": float(best.t), "best_w": float(best.w), "detour": pick != best}
+	return pick.lg
 
 
 static func route(from: String, to: String) -> Array:
@@ -518,6 +575,9 @@ var _held_last := -1.0
 
 
 func _maybe_clear() -> void:
+	if phase_through:
+		FW.tram_clear = false
+		return
 	if not FW.tram_clear:
 		if _held_last >= 0.0 and t - _held_last > FW.WAIT_MAX + 1.0:
 			_held_since = -1.0
@@ -712,6 +772,46 @@ func _set_path(points: Array) -> void:
 			_reverse()
 
 
+# 道岔缩短 (2026-11-10): `n` points on from `at` heading `fwd`, `step` px apart, along the curve the trail
+# behind `at` shows (its turn over the last 3 m) — not straight on: past a stop on a tight turnout a straight
+# line left the cars standing off the rails
+static func run_on(at: Vector2, fwd: Vector2, trail: Array, n: int, step: float) -> Array:
+	var M := Geom.M
+	var pts: Array = [at]
+	var acc := 0.0
+	var prev := at
+	for p in trail:
+		acc += prev.distance_to(p)
+		prev = p
+		pts.append(p)
+		if acc >= 3.0 * M:
+			break
+	var k := 0.0
+	if pts.size() >= 5 and acc > 1.0 * M:
+		# the bend over each half of it: a steady curve both agree on; a corner (a stop's line meeting its
+		# corridor) does not — then straight on
+		var np := pts.size()
+		var p0: Vector2 = pts[0]
+		var p1: Vector2 = pts[np / 4]
+		var p2: Vector2 = pts[np / 2]
+		var p3: Vector2 = pts[(3 * np) / 4]
+		var p4: Vector2 = pts[np - 1]
+		var k1 := (p2 - p3).angle_to(p1 - p2) / maxf(p1.distance_to(p3) * 0.5, 1.0)
+		var k2 := (p3 - p4).angle_to(p2 - p3) / maxf(p2.distance_to(p4) * 0.5, 1.0)
+		var k0 := (p1 - p2).angle_to(p0 - p1) / maxf(p0.distance_to(p2) * 0.5, 1.0)
+		if signf(k0) == signf(k1) and signf(k1) == signf(k2):
+			k = signf(k1) * minf(absf(k0), minf(absf(k1), absf(k2)))
+		k = clampf(k, -1.0 / (3.0 * M), 1.0 / (3.0 * M))
+	var out: Array = []
+	var h := fwd.angle()
+	var q := at
+	for i in n:
+		h += k * step
+		q += Vector2.from_angle(h) * step
+		out.append(q)
+	return out
+
+
 func _reverse() -> void:
 	var M := Geom.M
 	var rear := _rear_now()
@@ -731,6 +831,8 @@ func _reverse() -> void:
 	var nt: Array = []
 	for i in range(seg.size() - 1, -1, -1):
 		nt.append(seg[i])
+	# straight on (its stops are at the ends of straight lines; run_on is the freight trains', which change
+	# ends on the loop and its turnouts)
 	for k in range(1, 9):
 		nt.append(position_px + fwd * k * 0.5 * M)
 	trail = nt
@@ -743,6 +845,94 @@ func _reverse() -> void:
 		path.pop_front()
 		if not limits.is_empty():
 			limits.pop_front()
+
+
+# 车里卡住 (user 2026-11-11: "我在车里怎么动不了了？卡住了，这车也没给我运啊"): on board and standing — a few
+# seconds on, the car says why (wait_reason, a line on the HUD), and E or Esc lets the drone off
+const HELD_SAY_S := 0.5        # 上车 1 秒内 (user 2026-11-11): held this long, the car says why and about how long
+var wait_reason := ""
+var held_s := 0.0
+var _held_said := -100.0
+var _held_est := 0.0
+
+
+func _held(dt: float, why: String) -> void:
+	if why == "" or not riding:
+		held_s = 0.0
+		wait_reason = ""
+		_held_said = -100.0
+		return
+	if held_s <= 0.0:
+		# about how long, worked out once as it stops (the freight holding its way)
+		var all: Array = [{"pts": [position_px] + path}] + legs
+		_held_est = float(wait_est.call(all)) if wait_est.is_valid() else 0.0
+	held_s += dt
+	# (worked out again every few seconds: the trains in the way move on, or get held themselves)
+	if wait_est.is_valid() and (fmod(held_s, 3.0) < dt or held_s > _held_est):
+		_held_est = held_s + float(wait_est.call([{"pts": [position_px] + path}] + legs))
+	if held_s < HELD_SAY_S:
+		return
+	var what := ""
+	match why:
+		"freight":
+			what = w("等货车让路", "WAITING FOR A FREIGHT TRAIN TO MAKE WAY")
+			var tr = FW.trains[FW.why] if FW.why >= 0 and FW.why < FW.trains.size() else null
+			if tr != null:
+				if float(tr.get("blocked_t", 0.0)) > 0.0:
+					what = w("等前方货车进出中央环", "WAITING FOR FREIGHT TRAINS AT THE HUB RING")
+				elif tr.moving:
+					what = w("等货车驶出道岔", "WAITING FOR A FREIGHT TRAIN TO CLEAR THE POINTS")
+				elif str(tr.step.get("do", "")) in ["push", "take"] or str(tr.step.get("ph", "")) == "pushing":
+					what = w("等货车装卸完", "WAITING FOR A FREIGHT TRAIN TO FINISH LOADING")
+		"switch":
+			what = w("等道岔扳好", "WAITING FOR THE SWITCHES")
+		_:
+			what = w("司机换端", "THE DRIVER IS CHANGING ENDS")
+	var left := maxf(1.0, _held_est - held_s) if _held_est > 0.0 else maxf(1.0, 3.0 - fmod(held_s, 3.0))
+	wait_reason = w("%s · 约 %d 秒", "%s · ABOUT %d S") % [what, int(ceil(left))]
+	if t - _held_said > 2.0 and game != null and game.get("hud") != null:
+		_held_said = t
+		game.hud.show_hint(w("接驳车%s · 按 E 下车", "SHUTTLE: %s · E TO GET OFF") % wait_reason)
+
+
+# the drone gets off where the car stands (held up): at a stop onto its platform, else beside the car;
+# the car's ride is given up (its asked-for route let go), it stays where it is
+func get_off_now() -> bool:
+	if not riding or phase != "ride" or speed > 0.05 * Geom.M:
+		return false
+	var here := ""
+	for z in stations():
+		if position_px.distance_to(station_at(z)) < 2.0 * Geom.M:
+			here = z
+	if FW.on:
+		FW.pending = {}
+		FW.passenger_arrived(self)
+	legs = []
+	path = []
+	limits = []
+	dest = ""
+	at = here
+	stop = here
+	if here != "":
+		position_px = station_at(here)
+	slide_from = position_px
+	dwell = 0.0
+	held_s = 0.0
+	wait_reason = ""
+	phase = "alight"
+	return true
+
+
+func _input(event: InputEvent) -> void:
+	if not riding or phase != "ride" or held_s < HELD_SAY_S:
+		return
+	var key := false
+	if event is InputEventKey:
+		var ek := event as InputEventKey
+		key = ek.pressed and not ek.echo and (ek.physical_keycode == KEY_ESCAPE or ek.physical_keycode == KEY_E)
+	if key or event.is_action_pressed("use"):
+		if get_off_now():
+			get_viewport().set_input_as_handled()
 
 
 func _begin_board() -> void:
@@ -798,18 +988,22 @@ func _advance(dt: float) -> bool:
 	# its ends changed and its switches set before it sets off, so it is never running when one says wait;
 	# if one ever did, it brakes on its hardest S-curve rather than stop dead
 	var stand := false
+	var why := ""
 	if FW.on:
 		if not FW.passenger_go(self):
 			stand = true
+			why = "freight"
 			_replan(dt)
 		else:
 			for id in _leg_sw:
 				if float(sw_to.get(id, -1.0)) != float(_leg_sw[id]):
 					sw_to[id] = float(_leg_sw[id])
 					_points_dirty = true
-	if not stand and (_hold > 0.0 or not _set_ready()):
+	if not stand and (_hold > 0.0 or (not phase_through and not _set_ready())):
+		why = "ends" if _hold > 0.0 else "switch"
 		_hold -= dt
 		stand = true
+	_held(dt, why if stand and speed <= 0.01 else "")
 	var was := speed
 	if stand:
 		if speed <= 0.0:
@@ -951,6 +1145,19 @@ func _ahead(dist: float) -> Vector2:
 		left -= seg
 		prev = wp
 	return prev + Vector2.from_angle(heading) * left
+
+
+# the two cars' outlines now (px), as drawn (scripts/tram_phase_fx.gd)
+func car_polys() -> Array:
+	var out: Array = []
+	if _bob.size() < 4:
+		return out
+	var f := Engine.get_physics_interpolation_fraction()
+	for c in 2:
+		var cab: Vector2 = (_bob_p[c * 2] as Vector2).lerp(_bob[c * 2], f)
+		var inner: Vector2 = (_bob_p[c * 2 + 1] as Vector2).lerp(_bob[c * 2 + 1], f)
+		out.append(preload("res://scripts/tram_phase_fx.gd").rect_poly((cab + inner) * 0.5, (cab - inner).angle(), Art.CAR_L * Geom.M, Art.CAR_W * Geom.M))
+	return out
 
 
 func _rear_now() -> Vector2:

@@ -9,6 +9,7 @@ const MeshPen = preload("res://scripts/mesh_pen.gd")
 const FastDraw = preload("res://scripts/fast_draw.gd")
 const TW = preload("res://scripts/trade_works.gd")
 const TH = preload("res://scripts/trade_hall.gd")
+const CA = preload("res://scripts/console_art.gd")
 
 const FLOOR := 26.8
 const BOARD := Rect2(18.0, 0.5, 36.0, 5.9)
@@ -99,13 +100,14 @@ func _still(p, on: bool, lod: int) -> void:
 	_dock_frame(p, on, lod)
 
 
+# 2026-11-10 (user: what nobody can use must read as background): the board is set into the south wall
+# like a station's departure board seen from the floor — flush, no hangers, dark glass, a dull bezel
 func _board_frame(p, lod: int) -> void:
 	var b := BOARD
-	p.rect(b.grow(0.25), FACE)
-	p.rect(b, Color(0.03, 0.036, 0.042))
-	p.rect(b.grow(0.25), _ink(0.6), false, 0.08)
-	for hx in [b.position.x + 3.0, b.end.x - 3.0]:
-		p.line(Vector2(hx, 0.0), Vector2(hx, b.position.y - 0.25), _ink(0.45), 0.1)
+	p.rect(b.grow(0.35), FACE)
+	p.rect(b, CA.BG_GLASS)
+	p.rect(b.grow(0.35), _ink(0.22), false, 0.05)
+	p.rect(b, _ink(0.12), false, 0.03)
 	if lod >= 1:
 		# the bezel's screws, the panel seams of the LED wall
 		for k in range(1, 6):
@@ -564,18 +566,18 @@ func _outside(ci: CanvasItem, t: float, names: Dictionary) -> void:
 # the quote board: each goods' best bid and ask, the last price, its history (Q9), the depth on each side
 func board(ci: CanvasItem, rows: Array) -> void:
 	var b := BOARD
-	_text(ci, b.position + Vector2(0.7, 0.85), w("报价大屏 · 港内三家与小行星带商人", "QUOTES · THE PORT'S THREE AND THE BELT'S MERCHANTS"), 0.55, Pal.ink(0.95), true)
+	_bt(ci, b.position + Vector2(0.7, 0.85), w("报价大屏 · 港内三家与小行星带商人", "QUOTES · THE PORT'S THREE AND THE BELT'S MERCHANTS"), 0.55, Pal.ink(0.95), true)
 	var cols := [0.7, 10.5, 15.0, 19.5, 24.0, 31.0]
 	var heads := [w("商品", "GOODS"), w("最高收价", "BEST BID"), w("最低卖价", "BEST ASK"), w("上次成交", "LAST"), w("走势（每格 1 分钟）", "TREND (1 MIN / STEP)"), w("买 / 卖 深度", "BID / ASK DEPTH")]
 	for k in heads.size():
-		_text(ci, b.position + Vector2(cols[k], 1.6), str(heads[k]), 0.34, Pal.ink(0.5))
+		_bt(ci, b.position + Vector2(cols[k], 1.6), str(heads[k]), 0.34, Pal.ink(0.5))
 	var yy := 2.3
 	for row in rows.slice(0, 6):
 		var y := b.position.y + yy
-		_text(ci, Vector2(b.position.x + cols[0], y), (w("加急 ", "RUSH ") if row.rush else "") + str(row.name), 0.42, Pal.ink(0.9))
-		_text(ci, Vector2(b.position.x + cols[1], y), Pal.money(float(row.bid)) if float(row.bid) > 0.0 else "—", 0.44, UiSkin.DATA, true)
-		_text(ci, Vector2(b.position.x + cols[2], y), Pal.money(float(row.ask)) if float(row.ask) < INF else "—", 0.44, UiSkin.ACCENT, true)
-		_text(ci, Vector2(b.position.x + cols[3], y), Pal.money(float(row.last)) if float(row.last) > 0.0 else "—", 0.4, Pal.ink(0.75))
+		_bt(ci, Vector2(b.position.x + cols[0], y), (w("加急 ", "RUSH ") if row.rush else "") + str(row.name), 0.42, Pal.ink(0.9))
+		_bt(ci, Vector2(b.position.x + cols[1], y), Pal.money(float(row.bid)) if float(row.bid) > 0.0 else "—", 0.44, UiSkin.DATA, true)
+		_bt(ci, Vector2(b.position.x + cols[2], y), Pal.money(float(row.ask)) if float(row.ask) < INF else "—", 0.44, UiSkin.ACCENT, true)
+		_bt(ci, Vector2(b.position.x + cols[3], y), Pal.money(float(row.last)) if float(row.last) > 0.0 else "—", 0.4, Pal.ink(0.75))
 		_spark(ci, Rect2(b.position.x + cols[4], y - 0.45, 6.3, 0.5), TW.history(str(row.key)))
 		_depth(ci, Rect2(b.position.x + cols[5], y - 0.42, 4.6, 0.42), float(row.bid_t), float(row.ask_t))
 		yy += 0.62
@@ -585,7 +587,7 @@ func board(ci: CanvasItem, rows: Array) -> void:
 func _spark(ci: CanvasItem, rr: Rect2, h: Array) -> void:
 	ci.draw_line(_p(Vector2(rr.position.x, rr.end.y)), _p(rr.end), Color(1, 1, 1, 0.08), 1.0)
 	if h.size() < 2:
-		_text(ci, Vector2(rr.position.x, rr.end.y - 0.05), w("记录中…", "RECORDING…"), 0.28, Pal.ink(0.35))
+		_bt(ci, Vector2(rr.position.x, rr.end.y - 0.05), w("记录中…", "RECORDING…"), 0.28, Pal.ink(0.35))
 		return
 	var lo := INF
 	var hi := -INF
@@ -605,18 +607,18 @@ func _spark(ci: CanvasItem, rr: Rect2, h: Array) -> void:
 				continue
 			pts.append(_p(Vector2(rr.position.x + rr.size.x * k / float(TW.HIST_N - 1), rr.end.y - (v - lo) / span * rr.size.y)))
 		if pts.size() >= 2:
-			FastDraw.polyline(ci, pts, UiSkin.DATA if side == 0 else UiSkin.ACCENT, 1.4)
+			FastDraw.polyline(ci, pts, CA.bg(UiSkin.DATA if side == 0 else UiSkin.ACCENT), 1.1)
 
 
 # how many tonnes are bid and offered: a bar each way from the middle
 func _depth(ci: CanvasItem, rr: Rect2, bid_t: float, ask_t: float) -> void:
 	var mid := rr.position.x + rr.size.x * 0.5
 	var k := rr.size.x * 0.5 / maxf(5.0, maxf(bid_t, ask_t))
-	ci.draw_rect(Rect2(_p(Vector2(mid - bid_t * k, rr.position.y)), Vector2(bid_t * k, rr.size.y) * m), Color(UiSkin.DATA, 0.7))
-	ci.draw_rect(Rect2(_p(Vector2(mid, rr.position.y)), Vector2(ask_t * k, rr.size.y) * m), Color(UiSkin.ACCENT, 0.7))
-	ci.draw_line(_p(Vector2(mid, rr.position.y - 0.05)), _p(Vector2(mid, rr.end.y + 0.05)), _ink(0.5), 1.0)
-	_text(ci, Vector2(mid - 2.3, rr.end.y + 0.0), "%.1f" % bid_t, 0.26, Pal.ink(0.6))
-	_text(ci, Vector2(mid + 1.6, rr.end.y + 0.0), "%.1f" % ask_t, 0.26, Pal.ink(0.6))
+	ci.draw_rect(Rect2(_p(Vector2(mid - bid_t * k, rr.position.y)), Vector2(bid_t * k, rr.size.y) * m), CA.bg(Color(UiSkin.DATA, 0.7)))
+	ci.draw_rect(Rect2(_p(Vector2(mid, rr.position.y)), Vector2(ask_t * k, rr.size.y) * m), CA.bg(Color(UiSkin.ACCENT, 0.7)))
+	ci.draw_line(_p(Vector2(mid, rr.position.y - 0.05)), _p(Vector2(mid, rr.end.y + 0.05)), _ink(0.25), 1.0)
+	_bt(ci, Vector2(mid - 2.3, rr.end.y + 0.0), "%.1f" % bid_t, 0.26, Pal.ink(0.6))
+	_bt(ci, Vector2(mid + 1.6, rr.end.y + 0.0), "%.1f" % ask_t, 0.26, Pal.ink(0.6))
 
 
 # the counters' signs: the company and its main business in one line, a rush tag; and the
@@ -664,7 +666,7 @@ func ticker(ci: CanvasItem, t: float) -> void:
 	var y := BOARD.end.y - 0.25
 	ci.draw_rect(Rect2(_p(Vector2(BOARD.position.x + 0.2, y - 0.5)), Vector2(BOARD.size.x - 0.4, 0.6) * m), Color(0.01, 0.02, 0.025, 0.9))
 	if trades.is_empty():
-		_text(ci, Vector2(BOARD.position.x + 0.5, y - 0.05), w("成交 · 今天还没有成交", "DEALS · NONE YET TODAY"), 0.32, Pal.ink(0.45))
+		_bt(ci, Vector2(BOARD.position.x + 0.5, y - 0.05), w("成交 · 今天还没有成交", "DEALS · NONE YET TODAY"), 0.32, Pal.ink(0.45))
 		return
 	var last: Array = trades.slice(maxi(0, trades.size() - 6))
 	var idx := int(t / 3.5) % last.size()
@@ -672,8 +674,13 @@ func ticker(ci: CanvasItem, t: float) -> void:
 	var u := clampf(fmod(t, 3.5) / 0.4, 0.0, 1.0)
 	var who := "%s → %s" % [str(tr.get("seller", "")), str(tr.get("buyer", ""))]
 	var s := w("成交 · ", "DEAL · ") + "%s %.2f t @ %s/t" % [Ops.item_name(preload("res://scripts/industrial_exchange.gd").lot_key(str(tr.item), int(tr.grade))), float(tr.quantity), Pal.money(float(tr.unit_price))]
-	_text(ci, Vector2(BOARD.position.x + 0.5 + (1.0 - Pal.ease_out(u)) * 3.0, y - 0.05), s, 0.32, Pal.tint(Pal.AIR, 0.85 * u, 1.1))
-	_text(ci, Vector2(BOARD.end.x - 0.5, y - 0.05), "%d / %d" % [idx + 1, last.size()], 0.28, Pal.ink(0.4), false, HORIZONTAL_ALIGNMENT_RIGHT, 3.0)
+	_bt(ci, Vector2(BOARD.position.x + 0.5 + (1.0 - Pal.ease_out(u)) * 3.0, y - 0.05), s, 0.32, Pal.tint(Pal.AIR, 0.85 * u, 1.1))
+	_bt(ci, Vector2(BOARD.end.x - 0.5, y - 0.05), "%d / %d" % [idx + 1, last.size()], 0.28, Pal.ink(0.4), false, HORIZONTAL_ALIGNMENT_RIGHT, 3.0)
+
+
+# the board's words: smaller, and in the background instrument's dim cool grey (CA.bg)
+func _bt(ci, at: Vector2, s: String, size_m: float, col: Color, b := false, align := HORIZONTAL_ALIGNMENT_LEFT, width_m := -1.0) -> void:
+	_text(ci, at, s, size_m * 0.8, CA.bg(col), false, align, width_m)
 
 
 # ================================================================== the hover cards

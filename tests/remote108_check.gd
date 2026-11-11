@@ -71,7 +71,8 @@ func _run() -> void:
 	for b in box.get_children():
 		# 132 号: the hover note (BenchFx) carries the reason now, not the plain tooltip
 		var why := str(b.get_meta("bfx_note", b.tooltip_text))
-		if b.disabled and why != "":
+		# 炭黑 (2026-11-10): a locked key stays clickable (it says why); "locked" is its mark
+		if (b.disabled or b.get_meta("locked", false)) and why != "":
 			locked += 1
 	# 128 号 第 1 段: the parts rack is part of the stores page (RemoteOps.kinds() leaves it out), the queue
 	# has no key (第 4 段): the stores and the grid are left, both locked on a new career

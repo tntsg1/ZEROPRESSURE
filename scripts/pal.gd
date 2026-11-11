@@ -7,14 +7,16 @@ class_name Pal
 # 127 号 (user 2026-11-04: "设备上那一堆字完全没有必要，只要看它很酷就行"): the words drawn on the
 # machines (part names, explanations, name plates) are off; screens and the [E] prompts stay
 static var labels := false
-# 工业剖面样片 (2026-11-10, design/美术方向_工业剖面_样片.md): solid hull fills, plate thickness,
-# three line tiers, local light. Off by default until the owner signs the sample off
-static var solid := false
+# 工业剖面 (2026-11-10, design/美术方向_工业剖面_样片.md): solid hull fills, plate thickness,
+# materials, local light, a quiet background (Cutaway.calm 2: the owner, 2026-11-10, "都推广").
+# On by default; F9 switches to the old line picture for comparison. Never saved, so every save,
+# old or new, opens in this picture
+static var solid := true
 
 # the cutaway tiers (only read while solid is on)
 const SHELL := Color(0.29, 0.298, 0.32)       # the hull's own grey (tens of tonnes, not a drawing)
 const SHELL_DK := Color(0.085, 0.088, 0.098)    # its shaded side
-const ROOM_LIT := Color(0.075, 0.078, 0.088)     # a revealed compartment's back wall
+const ROOM_LIT := Color(0.042, 0.044, 0.05)      # a revealed compartment's back wall (under the equipment's tone)
 const T1 := 0.96    # tier 1: the hull's outline
 const T2 := 0.55    # tier 2: structure and equipment
 const T3 := 0.22    # tier 3: bolts, seams, helper lines

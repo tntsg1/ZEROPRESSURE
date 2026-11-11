@@ -10,8 +10,12 @@ var finished := false
 
 
 func _initialize() -> void:
+	# own test saves only (2026-11-11): the career, the save, the training save and the settings
+	Career.path = "user://zp_menu_test_career.json"
 	SaveGame.path = "user://zp_menu_test_save.json"
 	SaveGame.train_path = "user://zp_menu_test_training.json"
+	SaveGame.allow_test = true
+	Txt.cfg_path = "user://zp_menu_test_settings.cfg"
 	root.add_child(preload("res://tests/test_window.gd").new())
 	_run()
 
@@ -79,7 +83,7 @@ func _run() -> void:
 			if n.scene_file_path.ends_with("title.tscn") or n.scene_file_path.ends_with("main.tscn"):
 				n.queue_free()
 		await _frames(3)
-	for f in ["user://zp_menu_test_save.json", "user://zp_menu_test_training.json"]:
+	for f in ["user://zp_menu_test_save.json", "user://zp_menu_test_training.json", "user://zp_menu_test_career.json", "user://zp_menu_test_settings.cfg"]:
 		for ext in ["", ".bak", ".tmp"]:
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(f + ext))
 	print("MENU %s  (%d failed)" % ["PASS" if fails == 0 else "FAIL", fails])

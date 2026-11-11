@@ -1,7 +1,7 @@
 class_name Demo
 extends RefCounted
 # The playtest build (user 2026-10-30: "a a a b a … 做成联网的 … a c"):
-#   Q1 A  the first hour only: an end card at 60 minutes played, or once the main line reaches the 88 m
+#   Q1 A  (2026-11-11: now 5 hours) an end card at LIMIT_S played, or once the main line reaches the 88 m
 #         berth chapter, whichever comes first
 #   Q2 A  Chinese and English, by the system language (the settings switch it)
 #   Q3 A  the playtest recorder on by default, told on the gate, switchable in the settings
@@ -26,9 +26,9 @@ extends RefCounted
 #   Q4 A  feedback from the pause menu at any time (scripts/demo_feedback.gd)
 
 const URL := "https://playtest.stellarascensiongame.com"
-const VERSION := "0.9-公测-20261109"
+const VERSION := "0.9-公测-20261111"
 const CODES := false                  # the 10-30 code gate; the public build registers the machine instead
-const LIMIT_S := 3600.0               # the first hour
+const LIMIT_S := 18000.0              # 5 hours (user 2026-11-11 "5个小时，或者是两个小时")
 const GRACE_S := 3 * 86400            # offline, a machine that checked in within this still plays
 const CFG := "user://playtest_activation.cfg"
 # every ship file in the pack: what fits the 50 m berth (the 88 m chapter ends the playtest), the

@@ -328,7 +328,9 @@ func _init() -> void:
 	for k in ZONES:
 		zone_state[k] = {"glow": 0.0, "busy": 0.0, "reject": 0.0, "eat": 0.0}
 	bounds_body = StaticBody2D.new()
-	bounds_body.collision_layer = 4
+	# (128: the berth's edge on its own as well — the drone tunnelling through everything else
+	# (body_tunnel.gd) still meets it)
+	bounds_body.collision_layer = 4 | 128
 	bounds_body.collision_mask = 0
 	var pm := PhysicsMaterial.new()
 	pm.bounce = 0.4
@@ -592,13 +594,15 @@ func _physics_process(dt: float) -> void:
 	# 60 FPS (2026-10-27): each loose piece is worked every other physics step (120 Hz), half of
 	# them one step and half the next, its pushes given as the impulse of both steps — the same
 	# field at 60 Hz, half the work (250 pieces near the mouths took 9 ms a frame)
-	var parity := Engine.get_physics_frames() % 2
-	var sdt := dt * 2.0
+	# (at 60 Hz every piece is worked every step: the same 60 Hz field)
+	var every := 2 if Look.TICKS >= 120 else 1
+	var parity := Engine.get_physics_frames() % every
+	var sdt := dt * every
 	for b in world.bodies.duplicate():
 		if not is_instance_valid(b):
 			continue
 		var held: bool = held_b == b
-		if not held and int(b.get_instance_id() >> 3) % 2 != parity:
+		if not held and int(b.get_instance_id() >> 3) % every != parity:
 			continue
 		if b.capture != null or b.get_meta("arm_parked",false) or b.has_meta("crew_part"):
 			continue
@@ -1217,14 +1221,28 @@ func _draw_static_body(ci) -> void:
 	var low := -5.0 - LIFT
 	var wall := PackedVector2Array([Vector2(TOWER_X + 0.6, RAIL_Y) * M, Vector2(ARM_X1, RAIL_Y) * M, Vector2(ARM_X1 + 4.0, low) * M,
 		Vector2(FLOOR_X1 - 6.0, low) * M, Vector2(FLOOR_X1 - 2.0, FLOOR_Y) * M, Vector2(TOWER_X + 0.6, FLOOR_Y) * M])
-	FastDraw.poly(ci, wall, Color(0.015, 0.017, 0.021, 0.92))
+	# 工业剖面 (Pal.solid): the back wall a quiet dark face, lit a little from above, its ribs only
+	# a step of tone (no lines across the bay), the drawn lines kept for the real structure
+	var cutw := Pal.solid
+	if cutw:
+		var wc := PackedColorArray()
+		for v in wall:
+			wc.append(Color(0.03, 0.033, 0.04, 0.95).lerp(Color(0.012, 0.013, 0.016, 0.95), clampf((v.y / M - RAIL_Y) / (FLOOR_Y - RAIL_Y), 0.0, 1.0)))
+		ci.draw_polygon(wall, wc)
+	else:
+		FastDraw.poly(ci, wall, Color(0.015, 0.017, 0.021, 0.92))
 	var wx := TOWER_X + 6.0
-	while wx < FLOOR_X1 - 6.0:
+	while wx < FLOOR_X1 - 6.0 and cutw:
+		var top := RAIL_Y if wx <= ARM_X1 else (low if wx >= ARM_X1 + 4.0 else lerpf(RAIL_Y, low, (wx - ARM_X1) / 4.0))
+		ci.draw_rect(Rect2(Vector2(wx - 0.25, top) * M, Vector2(0.5 * M, (FLOOR_Y - top) * M)), Color(0.04, 0.043, 0.05, 0.9))
+		ci.draw_rect(Rect2(Vector2(wx + 0.25, top) * M, Vector2(0.35 * M, (FLOOR_Y - top) * M)), Color(0, 0, 0, 0.35))
+		wx += 6.0
+	while wx < FLOOR_X1 - 6.0 and not cutw:
 		var top := RAIL_Y if wx <= ARM_X1 else (low if wx >= ARM_X1 + 4.0 else lerpf(RAIL_Y, low, (wx - ARM_X1) / 4.0))
 		ci.draw_rect(Rect2(Vector2(wx - 0.18, top) * M, Vector2(0.36 * M, (FLOOR_Y - top) * M)), Color(0.017, 0.019, 0.024))
 		ci.draw_line(Vector2(wx - 0.18, top) * M, Vector2(wx - 0.18, FLOOR_Y) * M, Pal.ink(0.07), 1.0)
 		wx += 6.0
-	for sy in [-5.0, 2.0]:
+	for sy in ([] if cutw else [-5.0, 2.0]):
 		ci.draw_line(Vector2(TOWER_X + 0.6, sy) * M, Vector2(FLOOR_X1 - 6.0 + (sy + 5.0) / 14.0 * 4.0, sy) * M, Pal.ink(0.05), 1.0)
 	# a strip of small lit ports high on the wall
 	var px := TOWER_X + 2.0
@@ -1233,7 +1251,7 @@ func _draw_static_body(ci) -> void:
 		px += 1.2
 	var wcl := wall.duplicate()
 	wcl.append(wall[0])
-	FastDraw.polyline(ci, wcl, Pal.ink(0.16), 1.2, true)
+	FastDraw.polyline(ci, wcl, Pal.ink(0.1 if cutw else 0.16), 1.2, true)
 	ci.draw_string(font_b, Vector2(TOWER_X + 1.2, 2.6) * M, "07", HORIZONTAL_ALIGNMENT_LEFT, -1, int(4.4 * M), Pal.ink(0.035))
 	# the berth: floor platform with legs into the dark, the tower, the arm
 	_truss(Rect2(TOWER_X * M, FLOOR_Y * M, (FLOOR_X1 - TOWER_X) * M, 0.6 * M))
@@ -1334,7 +1352,7 @@ func _draw_static_body(ci) -> void:
 	# the launch pad: the drone's outline painted on it (nose to the door), with landing marks
 	var pc := bc + Vector2(-46, 0)
 	var pad := PackedVector2Array()
-	for v in preload("res://scripts/drone_art.gd").ARROW:
+	for v in preload("res://scripts/drone_skins.gd").hull(preload("res://scripts/drone_skins.gd").current()):
 		pad.append(pc + (v as Vector2) * 1.25)
 	pad.append(pad[0])
 	FastDraw.polyline(ci, pad, Pal.ink(0.3), 1.4, true)
@@ -2339,6 +2357,9 @@ func _trough_live(cb) -> void:
 # kind once (2026-10-18 performance work).
 func _truss(r: Rect2) -> void:
 	var ci = _sb if _sb != null else static_node
+	if Pal.solid:
+		_truss_cut(ci, r, false)
+		return
 	ci.draw_rect(r, Color(0.052, 0.055, 0.062))
 	ci.draw_rect(Rect2(r.position, Vector2(r.size.x, r.size.y * 0.22)), Color(0.075, 0.079, 0.088))
 	ci.draw_rect(Rect2(Vector2(r.position.x, r.end.y - r.size.y * 0.18), Vector2(r.size.x, r.size.y * 0.18)), Color(0.04, 0.042, 0.048))
@@ -2370,6 +2391,9 @@ func _truss(r: Rect2) -> void:
 
 func _truss_v(r: Rect2) -> void:
 	var ci = _sb if _sb != null else static_node
+	if Pal.solid:
+		_truss_cut(ci, r, true)
+		return
 	ci.draw_rect(r, Color(0.052, 0.055, 0.062))
 	ci.draw_rect(Rect2(r.position, Vector2(r.size.x * 0.22, r.size.y)), Color(0.075, 0.079, 0.088))
 	var posts := PackedVector2Array()
@@ -2393,6 +2417,57 @@ func _truss_v(r: Rect2) -> void:
 		_dots(ci, rivets, 1.4, Pal.ink(0.35))
 	ci.draw_line(r.position, Vector2(r.position.x, r.end.y), Pal.ink(0.6), 1.6)
 	ci.draw_line(Vector2(r.end.x, r.position.y), r.end, Pal.ink(0.28), 1.2)
+
+
+# 工业剖面: a plated girder as a solid member — its shadow on the wall behind, a face lit from
+# above / the left and shaded away from it, a bright flange on the lit edge, the posts and
+# diagonals a quiet step of tone (not lines across it), rivets only on the lit flange
+func _truss_cut(ci, r: Rect2, vert: bool) -> void:
+	var M := Geom.M
+	if not _far:
+		ci.draw_rect(Rect2(r.position + Vector2(0.25, 0.35) * M, r.size), Color(0, 0, 0, 0.45))
+	var lit := Color(0.3, 0.31, 0.335)
+	var dark := Color(0.1, 0.104, 0.115)
+	# the face in three bands of tone, lit side to shaded side
+	ci.draw_rect(r, dark)
+	if vert:
+		ci.draw_rect(Rect2(r.position, Vector2(r.size.x * 0.62, r.size.y)), dark.lerp(lit, 0.55))
+		ci.draw_rect(Rect2(r.position, Vector2(r.size.x * 0.28, r.size.y)), lit)
+	else:
+		ci.draw_rect(Rect2(r.position, Vector2(r.size.x, r.size.y * 0.62)), dark.lerp(lit, 0.55))
+		ci.draw_rect(Rect2(r.position, Vector2(r.size.x, r.size.y * 0.28)), lit)
+	var webs := PackedVector2Array()
+	var step := r.size.x if vert else r.size.y
+	var k := 0
+	if vert:
+		var y := r.position.y
+		while y < r.end.y:
+			var ny := minf(y + step, r.end.y)
+			webs.append_array([Vector2(r.position.x + 2, y), Vector2(r.end.x - 2, ny)] if k % 2 == 0 else [Vector2(r.end.x - 2, y), Vector2(r.position.x + 2, ny)])
+			y = ny
+			k += 1
+	else:
+		var x := r.position.x
+		while x < r.end.x:
+			var nx := minf(x + step, r.end.x)
+			webs.append_array([Vector2(x, r.position.y + 2), Vector2(nx, r.end.y - 2)] if k % 2 == 0 else [Vector2(x, r.end.y - 2), Vector2(nx, r.position.y + 2)])
+			x = nx
+			k += 1
+	if not _far:
+		ci.draw_multiline(webs, Pal.ink(0.16), 1.2)
+	if vert:
+		ci.draw_line(r.position, Vector2(r.position.x, r.end.y), Pal.ink(0.7), 1.8)
+		ci.draw_line(Vector2(r.end.x, r.position.y), r.end, Color(0, 0, 0, 0.6), 1.6)
+	else:
+		ci.draw_line(r.position, Vector2(r.end.x, r.position.y), Pal.ink(0.72), 1.8)
+		ci.draw_line(Vector2(r.position.x, r.end.y), r.end, Color(0, 0, 0, 0.6), 1.6)
+		if not _far:
+			var rv := PackedVector2Array()
+			var x2 := r.position.x + 12.0
+			while x2 < r.end.x:
+				rv.append(Vector2(x2, r.position.y + 3.5))
+				x2 += 24.0
+			_dots(ci, rv, 1.2, Pal.ink(0.32))
 
 
 # many small round dots of one colour in one call (hexagons, as small as these are)
@@ -2450,9 +2525,8 @@ func _vis_x() -> Vector2:
 		return Vector2(-INF, INF)
 	var inv := get_global_transform_with_canvas().affine_inverse()
 	var r := vp.get_visible_rect()
-	var a: Vector2 = inv * r.position
-	var b: Vector2 = inv * r.end
-	return Vector2(minf(a.x, b.x) - 80.0, maxf(a.x, b.x) + 80.0)
+	var view: Rect2 = inv * r
+	return Vector2(view.position.x - 80.0, view.end.x + 80.0)
 
 
 const FLOODS := [9.5, 19.0]      # m along the boom: lamps that light the ship from above
@@ -2570,9 +2644,7 @@ func _furnace_seen() -> bool:
 		return true
 	var inv := get_global_transform_with_canvas().affine_inverse()
 	var r := vp.get_visible_rect()
-	var a: Vector2 = inv * r.position
-	var b: Vector2 = inv * r.end
-	var view := Rect2(a, b - a).abs()
+	var view: Rect2 = inv * r
 	var M := Geom.M
 	return view.intersects(Rect2(Vector2(furnace_x - 13.0, FLOOR_Y) * M, Vector2(31.0, 11.0) * M))
 

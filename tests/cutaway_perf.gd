@@ -27,6 +27,7 @@ func _run() -> void:
 	var sid := "gr7"
 	var rounds := 6
 	var frames := 120
+	var whole := false    # the camera out on the whole ship (where the user saw ARK at 9 FPS)
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("ship="):
 			sid = a.substr(5)
@@ -35,6 +36,8 @@ func _run() -> void:
 		elif a.begins_with("skip="):
 			for k in a.substr(5).split(","):
 				Cutaway.skip[k] = true
+		elif a == "whole":
+			whole = true
 		elif a.begins_with("frames="):
 			frames = int(a.substr(7))
 	Txt.zh = true
@@ -62,6 +65,16 @@ func _run() -> void:
 				tgt = p
 	var at: Vector2 = Geom.centroid(tgt.poly)
 	var dp := at + Vector2(-3.0, -3.5) * Geom.M
+	var zz: float = Game.CAM_ZOOM
+	if whole:
+		var sb := Rect2()
+		var f0 := true
+		for id in g.world.order:
+			var b := Geom.bbox(g.world.pieces[id].poly)
+			sb = b if f0 else sb.merge(b)
+			f0 = false
+		at = sb.get_center()
+		zz = minf(1920.0 * 0.86 / sb.size.x, 1080.0 * 0.8 / sb.size.y)
 	var vp := root.get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp, true)
 	var res := {}
@@ -77,15 +90,15 @@ func _run() -> void:
 			Pal.solid = on
 			g.world.redraw_all(true)
 			var t0 := Time.get_ticks_usec()
-			_park(g, dp, at, Game.CAM_ZOOM)
+			_park(g, dp, at, zz)
 			await process_frame
 			toggles[on].append(Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0)
 			for i in 20:
-				_park(g, dp, at, Game.CAM_ZOOM)
+				_park(g, dp, at, zz)
 				await process_frame
 			var d: Dictionary = res[[scen, on]]
 			for i in frames:
-				_park(g, dp, at, Game.CAM_ZOOM)
+				_park(g, dp, at, zz)
 				var t1 := Time.get_ticks_usec()
 				await process_frame
 				d.frame.append((Time.get_ticks_usec() - t1) / 1000.0)
@@ -101,12 +114,17 @@ func _run() -> void:
 			print("%s solid %s  frame p50 %.2f p95 %.2f p99 %.2f · process p50 %.2f p95 %.2f · render cpu p50 %.2f p95 %.2f · gpu p50 %.2f p95 %.2f" % [
 				scen, "on " if on else "off", _pct(d.frame, 0.5), _pct(d.frame, 0.95), _pct(d.frame, 0.99),
 				_pct(d.proc, 0.5), _pct(d.proc, 0.95), _pct(d.cpu, 0.5), _pct(d.cpu, 0.95), _pct(d.gpu, 0.5), _pct(d.gpu, 0.95)])
-	var row := "ROW %s" % sid
+	var row := "ROW %s%s" % [sid, " whole" if whole else ""]
 	for scen in ["idle", "cut"]:
 		for on in [false, true]:
 			var d: Dictionary = res[[scen, on]]
-			row += " %s_%s %.2f %.2f %.2f %.2f %.2f" % [scen, "on" if on else "off", _pct(d.frame, 0.5), _pct(d.frame, 0.99), _pct(d.proc, 0.5), _pct(d.cpu, 0.5), _pct(d.gpu, 0.5)]
+			var mean: float = 0.0
+			for x in d.frame:
+				mean += x
+			mean /= maxf(d.frame.size(), 1)
+			row += " %s_%s mean %.2f p95 %.2f p99 %.2f rcpu %.2f" % [scen, "on" if on else "off", mean, _pct(d.frame, 0.95), _pct(d.frame, 0.99), _pct(d.cpu, 0.5)]
 	print(row)
+	print("zoom %.3f" % zz)
 	var CL = load("res://scripts/cutaway_light.gd")
 	print("stand redraws %d, %.1f ms total" % [CL.stand_draws, CL.stand_us / 1000.0])
 	for on in [false, true]:

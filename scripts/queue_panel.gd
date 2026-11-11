@@ -21,9 +21,8 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	var accent := Pal.tint(Pal.AIR, 1.0, 1.2)
-	var column := OpsSkin.pane(self, accent, 720.0)
-	column.add_child(OpsSkin.Plate.new("QUEUE", w("加工排队", "PROCESSING QUEUE"), w("远程 · 炉台和轧机照这个顺序取料", "REMOTE · THE FURNACE AND THE MILL TAKE THEM IN THIS ORDER"), accent))
+	var column := OpsSkin.pane(self, Charcoal.ACCENT, 720.0)
+	column.add_child(OpsSkin.Plate.new("QUEUE", w("加工排队", "PROCESSING QUEUE"), w("远程 · 炉台和轧机照这个顺序取料", "REMOTE · THE FURNACE AND THE MILL TAKE THEM IN THIS ORDER"), Charcoal.ACCENT))
 	list = VBoxContainer.new()
 	list.add_theme_constant_override("separation", 8)
 	column.add_child(list)

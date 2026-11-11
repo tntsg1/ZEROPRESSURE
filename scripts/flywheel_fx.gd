@@ -78,6 +78,9 @@ func _process(dt: float) -> void:
 		return
 	_t += dt
 	for w in fw.cfg.wheels:
+		if fw.loose.has(w):
+			_w[w] = Pal.damp(float(_w[w]), _vis(w), 4.0, dt)
+			_ang[w] = fposmod(float(_ang[w]) + float(_w[w]) * dt, TAU)
 		var p = _wheel(w)
 		if p == null:
 			if _ids.has(w):
@@ -112,6 +115,27 @@ func _process(dt: float) -> void:
 func _draw() -> void:
 	if fw == null or not fw.active():
 		return
+	# a wheel torn loose still turns inside its housing (magnetic bearings, a vacuum: it coasts
+	# for days); the housing tumbles slowly with the body, the wheel's blur keeps its own speed
+	for w in fw.cfg.wheels:
+		if not fw.loose.has(w):
+			continue
+		var q = world.tag(w)
+		if q == null or q.gone or q.body == null or float(fw.rpm.get(w, 0.0)) <= 0.01:
+			continue
+		var qxf: Transform2D = world.frame(q)
+		var qc: Vector2 = qxf * Geom.centroid(q.poly)
+		var qb := Geom.bbox(q.poly)
+		var qr: float = minf(qb.size.x, qb.size.y) * 0.46
+		var qs: float = clampf(float(_w.get(w, 0.0)) / VIS_MAX, 0.0, 1.0)
+		for k in 7:
+			var rr := qr * (0.32 + 0.1 * k)
+			var a0 := float(_ang[w]) + k * 0.93
+			var L := 0.12 + 1.5 * qs
+			for m in 2:
+				var aa := a0 + m * PI
+				draw_arc(qc, rr, aa - L, aa, 14, Pal.ink((0.06 + 0.22 * qs) * (1.0 - k * 0.06)), 1.2)
+		draw_arc(qc, qr * 0.985, 0.0, TAU, 48, Pal.ink(0.08 + 0.2 * qs), 1.0)
 	for w in fw.cfg.wheels:
 		var p = _wheel(w)
 		if p == null or not world.live.has(p.id):
@@ -119,10 +143,10 @@ func _draw() -> void:
 		var c := Geom.centroid(p.poly)
 		var r := Geom.bbox(p.poly).size.x * 0.5
 		var spd: float = float(_w[w]) / VIS_MAX
-		# the wheel itself, turned to its angle (its own art turns with it)
-		draw_set_transform_matrix(Transform2D(float(_ang[w]), c) * Transform2D(0.0, -c))
-		world.draw_pieces(self, [p])
-		draw_set_transform_matrix(Transform2D.IDENTITY)
+		# the vacuum housing stays put on the ship; only the wheel drawn inside it turns to its
+		# angle (user 2026-11-10: "它整个方形也在转" — the housing's fill and outline used to be
+		# turned with it)
+		_draw_wheel(p, c, float(_ang[w]))
 		# at speed: streaks round it (the eye can't follow its spokes, only their blur)
 		if spd > 0.02:
 			for k in 7:
@@ -134,6 +158,31 @@ func _draw() -> void:
 					draw_arc(c, rr, aa - L, aa, 14, Pal.ink((0.06 + 0.22 * spd) * (1.0 - k * 0.06)), 1.2)
 			# the hum: a bright band on the rim
 			draw_arc(c, r * 0.985, 0.0, TAU, 48, Pal.ink(0.08 + 0.2 * spd), 1.0)
+
+
+# the housing drawn still (its ground and outline, and in the cutaway look its material's
+# shading), the wheel's own drawing turned to its angle between them. Not world.draw_pieces
+# with "art" under a turn: in the cutaway look that part carries the housing's shading and
+# outline too, so the square would turn with the wheel.
+func _draw_wheel(p, c: Vector2, ang: float) -> void:
+	world.draw_pieces(self, [p], "fill")
+	world.draw_pieces(self, [p], "line")
+	if p.art != "":
+		draw_set_transform_matrix(Transform2D(ang, c) * Transform2D(0.0, -c))
+		Art.EQ.batch_begin()
+		Art.EQ.bxf = p.art_xf
+		Art.draw(self, p.art, p.art_size, p, world.font)
+		Art.EQ.bxf = Transform2D.IDENTITY
+		Art.EQ.batch_end(self)
+		draw_set_transform_matrix(Transform2D.IDENTITY)
+		if Pal.solid:
+			Art.EQ.batch_begin()
+			Cutaway._volume(world, p, p.poly, str(Cutaway.style(world, p)[4]))
+			Art.EQ.batch_end(self)
+	var ol: PackedVector2Array = p.poly.duplicate()
+	if ol.size() > 2:
+		ol.append(ol[0])
+		draw_polyline(ol, Pal.ink(0.62), 1.5, true)
 
 
 func _draw_glow() -> void:

@@ -48,7 +48,7 @@ func _run() -> void:
 	check("buffer" in ps and "berth88" in ps and "gas_line" in ps and not "hauler" in ps and not "lights" in ps, "the plans: what has its prerequisites done, no faults (%s)" % str(ps))
 	var term = await _page()
 	var pg = term.repair_panel
-	check(pg.heading.text.contains("报修 0 处"), "the heading: nothing logged (%s)" % pg.heading.text)
+	check(int(pg.head_counts[0]) == 0 and pg.heading.text == "船坞", "the status window: nothing logged (%s)" % str(pg.head_counts))
 	check(pg.buttons.size() == ps.size(), "one card per plan (%d)" % pg.buttons.size())
 	check(pg.find_children("*", "Button", true, false).all(func(b): return not str(b.text).begins_with(Txt.t("rp_sell"))), "no parts shelf on the page")
 	pg._map_input(_click_at(pg._spot("lights")))
@@ -79,7 +79,7 @@ func _run() -> void:
 	# the found fault's card
 	term = await _page()
 	pg = term.repair_panel
-	check(pg.heading.text.contains("报修 1 处"), "the heading: one logged (%s)" % pg.heading.text)
+	check(int(pg.head_counts[0]) == 1, "the status window: one logged (%s)" % str(pg.head_counts))
 	pg._map_input(_click_at(pg._spot("lights")))
 	await _frames(10)
 	check(pg.card.visible and pg.selected == "lights", "a red mark opens its card")
@@ -115,7 +115,11 @@ func _run() -> void:
 	var port: Dictionary = Career.data.get("port", {})
 	port["cargo"] = 1
 	Career.data.port = port
-	check(not Consoles.rack_on(), "the cargo district mended: the berth rack is gone")
+	# 128 号: with the warehouse (StoreBook.ON) the rack is its counter and stays, mended or not
+	if StoreBook.ON:
+		check(Consoles.rack_on(), "the cargo district mended: the rack stays (the warehouse counter, 128 号)")
+	else:
+		check(not Consoles.rack_on(), "the cargo district mended: the berth rack is gone")
 	g.open_shelf("A")
 	await _frames(10)
 	check(g.console_ui != null and g.console_ui.find_child("PartsRack", true, false) != null, "and its left racks hold the parts")
@@ -126,7 +130,8 @@ func _run() -> void:
 	term = await _page()
 	var lp := LoadoutPanel.open(term, func(): pass, func(): pass)
 	await _frames(10)
-	check(lp.find_child("Fitted_scan_kit", true, false) != null, "the loadout page sells the drone's upgrades")
+	# the drone's own upgrades moved to the terminal's drone page (the loadout leaves them out)
+	check(lp.find_child("Fitted_scan_kit", true, false) == null and term.SHOP.slice(0, term.DRONE_UPGRADES).any(func(it): return it[0] == "scan_kit"), "the drone's upgrades are sold on the drone page, not the loadout")
 	lp.queue_free()
 	await _shut()
 	# an old career (its first ship stripped) knew the faults already

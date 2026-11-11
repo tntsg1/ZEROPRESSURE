@@ -9,7 +9,7 @@ const FastDraw = preload("res://scripts/fast_draw.gd")
 # times a second.
 
 const W := 330.0
-const PAD := 8.0
+const PAD := 12.0             # 炭黑: room for the bezel round the black window
 const SHIP_EVERY := 0.5       # s between checks that the ship changed
 const LIVE_EVERY := 1.0 / 20.0
 
@@ -207,12 +207,7 @@ func _map_poly(poly: PackedVector2Array) -> PackedVector2Array:
 
 
 func _draw_ship() -> void:
-	# 91 号: on site the map is part of the camera HUD — see-through, no card round it
-	if Look.on and game != null and game.look != null:
-		ship_layer.draw_rect(Rect2(Vector2.ZERO, map_size), Color(0.0, 0.0, 0.0, 0.32))
-	else:
-		ship_layer.draw_rect(Rect2(Vector2.ZERO, map_size), Color(0.018, 0.02, 0.024, 0.97))
-		UI.panel(ship_layer, Rect2(Vector2.ZERO, map_size), 0.9)
+	_bezel(ship_layer)
 	# the berth: floor, boom and rail, trough
 	var fl0 := to_map(Vector2(Dock.TOWER_X, Dock.FLOOR_Y) * Geom.M)
 	var fl1 := to_map(Vector2(Dock.FLOOR_X1, Dock.FLOOR_Y) * Geom.M)
@@ -221,7 +216,7 @@ func _draw_ship() -> void:
 	ship_layer.draw_line(to_map(Vector2(Dock.TOWER_X + 0.3, -12.6) * Geom.M), fl0, Pal.ink(0.3), 1.4)
 	var tr0 := to_map(Vector2(Dock.TROUGH_X0, Dock.TROUGH_Y) * Geom.M)
 	var tr1 := to_map(Vector2(Dock.TROUGH_X1, Dock.TROUGH_Y) * Geom.M)
-	ship_layer.draw_line(tr0, tr1, Pal.heat(0.3, 1.1), 1.0)
+	ship_layer.draw_line(tr0, tr1, Pal.ink(0.22), 1.0)
 	if not _idx.is_empty():
 		RenderingServer.canvas_item_add_triangle_array(ship_layer.get_canvas_item(), _idx, _pts, _cols)
 	# 109 号: the same corners and title strip, with a scale, as the station's map
@@ -287,22 +282,27 @@ func _draw_live() -> void:
 				var a := from.lerp(to, (i + ph) / maxf(1.0, n))
 				var b2 := from.lerp(to, minf(1.0, (i + 1 + ph) / maxf(1.0, n)))
 				ci.draw_line(a, b2, col, 1.8)
-		FastDraw.arc(ci, to, 6.0 + 2.0 * sin(t * 6.0), 0.0, TAU, 16, col, 1.6, true)
+		# the target: an orange ring breathing round the mouth it goes to, a lamp at its heart
+		FastDraw.arc(ci, to, 6.0 + 2.0 * sin(t * 6.0), 0.0, TAU, 16, Color(Charcoal.ACCENT, 0.9), 1.4, true)
+		Charcoal.led(ci, to, true, 1.0, 2.4)
 	# the view
 	var vs: Vector2 = get_viewport_rect().size
 	var cam = game.cam
 	if cam != null and cam.zoom.x > 0.0:
 		var half: Vector2 = vs * 0.5 / cam.zoom.x
 		var r := Rect2(to_map(cam.global_position - half), (half * 2.0) / Geom.M * scale_m)
-		r = r.intersection(Rect2(Vector2(1, 1), map_size - Vector2(2, 2)))
+		r = r.intersection(window_rect().grow(-1.0))
 		if r.has_area():
-			ci.draw_rect(r, Pal.ink(0.4), false, 1.0)
+			ci.draw_rect(r, Color(1, 1, 1, 0.22), false, 1.0)
 	# the drone
 	if game.drone != null:
 		var dp := to_map(game.drone.global_position)
 		var pulse := 0.5 + 0.5 * sin(t * 5.0)
-		FastDraw.circle(ci, dp, 5.0 + 2.0 * pulse, Pal.tint(Pal.AIR, 0.18 * (1.0 - pulse), 1.2))
-		FastDraw.circle(ci, dp, 2.8, Pal.tint(Pal.AIR, 1.0, 1.4))
+		# 炭黑: you are the orange mark, its heading an arrow (as on the station's map)
+		var v: Vector2 = game.drone.linear_velocity
+		var dir := v.normalized() if v.length() > 8.0 else Vector2.UP.rotated(game.drone.rotation)
+		FastDraw.circle(ci, dp, 5.0 + 3.0 * pulse, Color(Charcoal.ACCENT, 0.16 * (1.0 - pulse)))
+		FastDraw.poly(ci, PackedVector2Array([dp + dir * 6.5, dp + dir.orthogonal() * 3.4 - dir * 2.8, dp - dir.orthogonal() * 3.4 - dir * 2.8]), Charcoal.ACCENT)
 
 
 
@@ -382,7 +382,20 @@ func _here() -> String:
 
 
 func _see_through() -> bool:
-	return Look.on and game != null and game.look != null
+	# 2026-11-10 炭黑 (user: "右下角的扫描也很难看"): the map is a solid instrument now, on site too —
+	# the scene (trusses, rails, the mouths' signs) no longer shows through it
+	return false
+
+
+# the map's body: a charcoal bezel with its thickness and shadow, a black window inside it, the
+# title and the scale engraved on the bezel's foot
+func window_rect() -> Rect2:
+	return Rect2(Vector2(5, 5), map_size - Vector2(10, 10 + TITLE_H))
+
+
+func _bezel(ci: CanvasItem) -> void:
+	Charcoal.panel(ci, Rect2(Vector2.ZERO, map_size), 1.0, 0.0, Charcoal.FACE, 9)
+	Charcoal.display(ci, window_rect(), 1.0, 5)
 
 
 # what the still layer shows; a change redraws it
@@ -404,23 +417,11 @@ static func _codes() -> Dictionary:
 
 # the map's corners: a bracket at each, ticks along the top, the title strip along the foot with a scale
 func _frame(ci: CanvasItem, title: String, k_px_m: float) -> void:
-	var r := Rect2(Vector2(3, 3), map_size - Vector2(6, 6))
-	var col := Pal.ink(0.42)
-	var L := 9.0 if not _see_through() else 0.0   # on site the camera HUD frames the map itself
-	for cx: float in [0.0, 1.0]:
-		for cy: float in [0.0, 1.0]:
-			var p := r.position + r.size * Vector2(cx, cy)
-			var sx := 1.0 if cx == 0.0 else -1.0
-			var sy := 1.0 if cy == 0.0 else -1.0
-			ci.draw_line(p, p + Vector2(L * sx, 0), col, 1.2)
-			ci.draw_line(p, p + Vector2(0, L * sy), col, 1.2)
-	for i in range(1, 12):
-		var x := r.position.x + r.size.x * i / 12.0
-		ci.draw_line(Vector2(x, r.position.y), Vector2(x, r.position.y + (4.0 if i % 3 == 0 else 2.0)), Pal.ink(0.2), 1.0)
 	var font: Font = game.hud.font
-	var ty := map_size.y - 7.0
-	ci.draw_line(Vector2(PAD, map_size.y - TITLE_H - 2.0), Vector2(map_size.x - PAD, map_size.y - TITLE_H - 2.0), Pal.ink(0.12), 1.0)
-	ci.draw_string(font, Vector2(PAD + 2.0, ty), title, HORIZONTAL_ALIGNMENT_LEFT, map_size.x - 110.0, 11, Pal.ink(0.6))
+	var ty := map_size.y - 8.0
+	# the scanning lamp, then the title (where you are), engraved on the bezel's foot
+	Charcoal.led(ci, Vector2(PAD + 2.0, ty - 4.0), true, 1.0, 2.6, Color(0.92, 0.93, 0.9))
+	ci.draw_string(font, Vector2(PAD + 10.0, ty), title, HORIZONTAL_ALIGNMENT_LEFT, map_size.x - 120.0, 11, Charcoal.INK2)
 	# a scale bar: a round number of metres no longer than 60 px
 	if k_px_m > 0.0:
 		var metres := 10.0
@@ -431,21 +432,17 @@ func _frame(ci: CanvasItem, title: String, k_px_m: float) -> void:
 		var x1 := map_size.x - PAD - 2.0
 		var x0 := x1 - bw
 		var by := ty - 4.0
-		ci.draw_line(Vector2(x0, by), Vector2(x1, by), Pal.ink(0.6), 1.2)
-		for x: float in [x0, x0 + bw * 0.5, x1]:
-			ci.draw_line(Vector2(x, by - 3.0), Vector2(x, by + (2.0 if x != x0 + bw * 0.5 else 0.0)), Pal.ink(0.6), 1.0)
-		ci.draw_string(font, Vector2(x0 - 46.0, ty), "%d m" % int(metres), HORIZONTAL_ALIGNMENT_RIGHT, 42.0, 10, Pal.ink(0.5))
+		ci.draw_line(Vector2(x0, by), Vector2(x1, by), Charcoal.INK2, 1.0)
+		for x: float in [x0, x1]:
+			ci.draw_line(Vector2(x, by - 3.0), Vector2(x, by + 2.0), Charcoal.INK2, 1.0)
+		ci.draw_string(font, Vector2(x0 - 46.0, ty), "%d m" % int(metres), HORIZONTAL_ALIGNMENT_RIGHT, 42.0, 10, Charcoal.INK3)
 
 
 func _draw_port() -> void:
 	var ci := port_layer
 	var font: Font = game.hud.font
 	var full := Rect2(Vector2.ZERO, map_size)
-	if _see_through():
-		ci.draw_rect(full, Color(0.0, 0.0, 0.0, 0.42))
-	else:
-		ci.draw_rect(full, Color(0.018, 0.02, 0.024, 0.97))
-		UI.panel(ci, full, 0.9)
+	_bezel(ci)
 	var c := PortStructure.centre()
 	var m := PortStructure.M()
 	var k := _port_k
@@ -457,11 +454,11 @@ func _draw_port() -> void:
 	if step >= 6.0:
 		var x := fposmod(cp.x - area.position.x, step) + area.position.x
 		while x < area.end.x:
-			ci.draw_line(Vector2(x, area.position.y), Vector2(x, area.end.y), Pal.ink(0.035), 1.0)
+			ci.draw_line(Vector2(x, area.position.y), Vector2(x, area.end.y), Pal.ink(0.022), 1.0)
 			x += step
 		var y := fposmod(cp.y - area.position.y, step) + area.position.y
 		while y < area.end.y:
-			ci.draw_line(Vector2(area.position.x, y), Vector2(area.end.x, y), Pal.ink(0.035), 1.0)
+			ci.draw_line(Vector2(area.position.x, y), Vector2(area.end.x, y), Pal.ink(0.022), 1.0)
 			y += step
 	# range rings round the hub, every 40 m, dashed
 	for ring: int in [1, 2, 3]:
@@ -478,19 +475,19 @@ func _draw_port() -> void:
 		var pd := pmap(d[0])
 		var wpx := maxf(3.0, PortStructure.HALF * 2.0 * m * k)
 		var nrm := (pd - pa).normalized().orthogonal() * wpx * 0.5
-		ci.draw_line(pa, pd, Color(0.06, 0.066, 0.076), wpx)
+		ci.draw_line(pa, pd, Color(0.075, 0.077, 0.083), wpx)
 		var ec := Pal.ink(0.32 if Port.stage(zone) >= 1 else 0.16)
 		ci.draw_line(pa + nrm, pd + nrm, ec, 1.0)
 		ci.draw_line(pa - nrm, pd - nrm, ec, 1.0)
 	# the hub: its rim, the carousel's pit, the core
 	var hr := PortArt.HUB_R * m * k
-	FastDraw.circle(ci, cp, hr, Color(0.05, 0.055, 0.065))
-	FastDraw.arc(ci, cp, hr, 0.0, TAU, 48, UiSkin.ACCENT if here == "ring" else Pal.ink(0.42), 1.3, true)
+	FastDraw.circle(ci, cp, hr, Color(0.07, 0.072, 0.078))
+	FastDraw.arc(ci, cp, hr, 0.0, TAU, 48, Charcoal.ACCENT if here == "ring" else Pal.ink(0.42), 1.3, true)
 	FastDraw.arc(ci, cp, 14.6 * m * k, 0.0, TAU, 40, Pal.ink(0.2), 1.0, true)
 	FastDraw.arc(ci, cp, 8.4 * m * k, 0.0, TAU, 32, Pal.ink(0.2), 1.0, true)
-	FastDraw.circle(ci, cp, 2.2 * m * k + 1.0, Pal.heat(0.5, 1.0) if Port.stage("ring") >= 1 else Pal.ink(0.25))
+	FastDraw.circle(ci, cp, 2.2 * m * k + 1.0, Pal.ink(0.55) if Port.stage("ring") >= 1 else Pal.ink(0.25))
 	# the shuttle's rails and its stops (the ones it may ride to lit)
-	var rail := Pal.tint(Pal.FLUID, 0.4, 1.1)
+	var rail := Pal.ink(0.2)
 	FastDraw.arc(ci, cp, Tram.LOOP_R * m * k, 0.0, TAU, 40, rail, 1.0)
 	var known := Tram.found()
 	for s in Tram.stations():
@@ -501,10 +498,10 @@ func _draw_port() -> void:
 	for s in Tram.stations():
 		var sp := pmap(Tram.station_at(s))
 		var on: bool = s in known
-		ci.draw_rect(Rect2(sp - Vector2(2.5, 2.5), Vector2(5, 5)), Pal.tint(Pal.FLUID, 0.95, 1.2) if on else Color(0.05, 0.055, 0.065))
-		ci.draw_rect(Rect2(sp - Vector2(2.5, 2.5), Vector2(5, 5)), Pal.tint(Pal.FLUID, 0.95 if on else 0.4, 1.2), false, 1.0)
+		ci.draw_rect(Rect2(sp - Vector2(2, 2), Vector2(4, 4)), Pal.ink(0.7) if on else Color(0.05, 0.052, 0.058))
+		if not on:
+			ci.draw_rect(Rect2(sp - Vector2(2, 2), Vector2(4, 4)), Pal.ink(0.3), false, 1.0)
 	# the districts: a block each, its code, its name, a pip for each stage built; a dead one hatched
-	var codes := _codes()
 	for zone in Port.ZONES:
 		if zone in ["ring", "salvage"]:
 			continue
@@ -512,7 +509,9 @@ func _draw_port() -> void:
 		var mr := Rect2(pmap(b.position), b.size * k)
 		var lit: bool = zone == here
 		var st := Port.stage(zone)
-		ci.draw_rect(mr, Color(UiSkin.ACCENT, 0.14) if lit else Color(0.055, 0.06, 0.07))
+		# 炭黑: a district a dark block and its name in small clear type (no code tags, no stage pips);
+		# the one you are in: an orange edge and its lamp
+		ci.draw_rect(mr, Color(0.095, 0.097, 0.105) if st > 0 else Color(0.06, 0.062, 0.068))
 		if st == 0:
 			var hx := mr.position.x - mr.size.y
 			while hx < mr.end.x:
@@ -523,19 +522,21 @@ func _draw_port() -> void:
 					if sg.size() >= 2:
 						ci.draw_line(sg[0], sg[1], Pal.ink(0.06), 1.0)
 				hx += 6.0
-		ci.draw_rect(mr, Color(UiSkin.ACCENT, 0.95) if lit else Pal.ink(0.42 if st > 0 else 0.2), false, 1.0)
-		for i in 2:
-			var pip := Rect2(Vector2(mr.end.x - 7.0 - i * 6.0, mr.position.y + 3.0), Vector2(4, 4))
-			ci.draw_rect(pip, Pal.tint(Pal.FLUID, 0.9, 1.2) if st > 1 - i else Pal.ink(0.12))
-		if mr.size.x > 30.0:
-			ci.draw_string(font, Vector2(mr.position.x + 3.0, mr.position.y + 9.0), codes.get(zone, ""), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Pal.ink(0.42))
-			ci.draw_string(font, Vector2(mr.position.x, mr.get_center().y + 7.0), Port.name_of(zone), HORIZONTAL_ALIGNMENT_CENTER, mr.size.x, 10, Pal.ink(0.92 if lit else 0.62))
+		if lit:
+			ci.draw_rect(mr, Color(Charcoal.ACCENT, 0.95), false, 1.2)
+		# the English names are too long for a block this small: the short ones (as the guide cards have)
+		var nm: String = Port.name_of(zone) if Txt.zh else str({"power": "POWER", "process": "PROCESS", "cargo": "CARGO", "tug": "TUGS", "trade": "TRADE"}.get(zone, Port.name_of(zone)))
+		var nw: float = font.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x
+		var tx := mr.get_center().x - nw * 0.5 + (5.0 if lit else 0.0)
+		if lit:
+			Charcoal.led(ci, Vector2(tx - 8.0, mr.get_center().y + 0.5), true, 1.0, 2.6)
+		ci.draw_string(font, Vector2(tx, mr.get_center().y + 4.0), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Charcoal.INK if lit else (Charcoal.INK2 if st > 0 else Charcoal.INK3))
 	# the berth
 	var br := Rect2(pmap(berth_px().position), berth_px().size * k)
-	ci.draw_rect(br, Color(UiSkin.ACCENT, 0.1) if here == "salvage" else Color(0.04, 0.044, 0.05))
-	ci.draw_rect(br, Pal.ink(0.32), false, 1.0)
-	ci.draw_string(font, br.position + Vector2(4, 10), codes.salvage, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Pal.ink(0.42))
-	ci.draw_string(font, br.position + Vector2(4, 21), Ops.w("七号坞", "BERTH 07"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Pal.ink(0.55))
+	ci.draw_rect(br, Color(0.075, 0.077, 0.083))
+	if here == "salvage":
+		ci.draw_rect(br, Color(Charcoal.ACCENT, 0.95), false, 1.2)
+	ci.draw_string(font, br.position + Vector2(5, 13), Ops.w("七号坞", "BERTH 07"), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Charcoal.INK if here == "salvage" else Charcoal.INK2)
 	var title := Ops.w("零压港 · 港站全图", "ZERO PRESSURE PORT") if mode == "port" else Ops.w("站外 · 港站周边", "OUTSIDE THE STATION")
 	if here != "" and mode == "port":
 		title += " · " + (Ops.w("中央环", "THE RING") if here == "ring" else Port.name_of(here))
@@ -572,8 +573,8 @@ func _draw_port_live() -> void:
 	var reach := minf(minf(cp.x - area.position.x, area.end.x - cp.x), minf(cp.y - area.position.y, area.end.y - cp.y))
 	var sa := fmod(t * 1.1, TAU)
 	if reach > 20.0:
-		_sweep(ci, cp, reach, sa, 0.9, Pal.tint(Pal.AIR, 0.08, 1.1))
-		FastDraw.arc(ci, cp, reach, 0.0, TAU, 48, Pal.tint(Pal.AIR, 0.12, 1.0), 1.0)
+		# 炭黑: one fine sweep line, no tinted wedge
+		ci.draw_line(cp, cp + Vector2.from_angle(sa) * reach, Color(1, 1, 1, 0.12), 1.0)
 	for zone in Port.ZONES:
 		if zone in ["ring", "salvage"] or Port.stage(zone) < 1:
 			continue
@@ -581,7 +582,7 @@ func _draw_port_live() -> void:
 		var behind := wrapf(sa - (pmap(b.get_center()) - cp).angle(), 0.0, TAU)
 		if behind < 1.4:
 			var e := behind / 1.4
-			ci.draw_rect(Rect2(pmap(b.position), b.size * k).grow(2.0 + 5.0 * e), Pal.tint(Pal.AIR, 0.5 * (1.0 - e), 1.2), false, 1.0)
+			ci.draw_rect(Rect2(pmap(b.position), b.size * k).grow(1.0 + 3.0 * e), Color(1, 1, 1, 0.22 * (1.0 - e)), false, 1.0)
 	# power down the corridors: in from the power district, out to each by what it draws
 	for zone in Port.ZONES:
 		if zone in ["ring", "salvage"]:
@@ -594,7 +595,7 @@ func _draw_port_live() -> void:
 		var pd := pmap(d[0])
 		var L := pa.distance_to(pd)
 		var gap := 9.0
-		var vc := Pal.tint(Pal.VOLT, 0.5 + 0.45 * clampf(mw / 12.0, 0.0, 1.0), 1.4)
+		var vc := Color(1, 1, 1, 0.3 + 0.35 * clampf(mw / 12.0, 0.0, 1.0))
 		var dd := fmod(t * (10.0 + 6.0 * sqrt(mw)), gap)
 		while dd < L:
 			var f := dd / L if zone != "power" else 1.0 - dd / L
@@ -605,14 +606,14 @@ func _draw_port_live() -> void:
 	for i in HubW.SLOTS:
 		var u := Vector2.from_angle(HubW.theta + i * HubW.PITCH)
 		var loaded: bool = i < HubW.cradles.size() and HubW.cradles[i] != null
-		ci.draw_line(cp + u * (cr - 1.5), cp + u * (cr + 1.5), Pal.heat(0.95, 1.3) if loaded else Pal.ink(0.35), 2.0 if loaded else 1.0)
+		ci.draw_line(cp + u * (cr - 1.5), cp + u * (cr + 1.5), Pal.ink(0.9) if loaded else Pal.ink(0.3), 2.0 if loaded else 1.0)
 	# where the operator is: brackets closing in round it
 	var pulse := 0.5 + 0.5 * sin(t * 4.0)
 	if here == "ring":
 		var hr := PortArt.HUB_R * m * k + 3.0 + 2.0 * pulse
 		for i in 4:
 			var a0 := TAU * i / 4.0 + PI / 4.0
-			FastDraw.arc(ci, cp, hr, a0 - 0.25, a0 + 0.25, 6, Color(UiSkin.ACCENT, 0.9), 1.5)
+			FastDraw.arc(ci, cp, hr, a0 - 0.25, a0 + 0.25, 6, Color(Charcoal.ACCENT, 0.9), 1.5)
 	elif here != "":
 		var b := PortStructure.box(here) if here != "salvage" else berth_px()
 		var mr := Rect2(pmap(b.position), b.size * k).grow(2.0 + 2.0 * pulse)
@@ -621,8 +622,8 @@ func _draw_port_live() -> void:
 				var p := mr.position + mr.size * Vector2(cx, cy)
 				var sx := 1.0 if cx == 0.0 else -1.0
 				var sy := 1.0 if cy == 0.0 else -1.0
-				ci.draw_line(p, p + Vector2(6.0 * sx, 0), Color(UiSkin.ACCENT, 0.95), 1.5)
-				ci.draw_line(p, p + Vector2(0, 6.0 * sy), Color(UiSkin.ACCENT, 0.95), 1.5)
+				ci.draw_line(p, p + Vector2(6.0 * sx, 0), Color(Charcoal.ACCENT, 0.95), 1.5)
+				ci.draw_line(p, p + Vector2(0, 6.0 * sy), Color(Charcoal.ACCENT, 0.95), 1.5)
 	# the shuttle, and where it has just been
 	if game.tram != null and is_instance_valid(game.tram):
 		var tp := pmap(game.tram.position_px)
@@ -631,17 +632,16 @@ func _draw_port_live() -> void:
 			if _trail.size() > 28:
 				_trail.pop_front()
 		for i in range(1, _trail.size()):
-			ci.draw_line(_trail[i - 1], _trail[i], Pal.tint(Pal.FLUID, 0.6 * float(i) / _trail.size(), 1.2), 2.0)
-		ci.draw_rect(Rect2(tp - Vector2(3.5, 3.5), Vector2(7, 7)), Pal.ink(0.95, 1.4))
-		ci.draw_rect(Rect2(tp - Vector2(5.5, 5.5), Vector2(11, 11)), Pal.tint(Pal.FLUID, 0.5, 1.2), false, 1.0)
+			ci.draw_line(_trail[i - 1], _trail[i], Pal.ink(0.45 * float(i) / _trail.size()), 2.0)
+		ci.draw_rect(Rect2(tp - Vector2(3, 3), Vector2(6, 6)), Pal.ink(0.95))
 	# 130 号: the freight trains, a short bar each along the rails
 	var FW = preload("res://scripts/freight_works.gd")
 	if FW.on:
 		for tr in FW.trains:
 			var hp := pmap(tr.pos)
 			var bp2 := pmap(FW.behind(tr, 8.7 * Geom.M))
-			ci.draw_line(hp, bp2, Pal.heat(0.9, 1.2), 3.0)
-			ci.draw_rect(Rect2(hp - Vector2(2, 2), Vector2(4, 4)), Pal.ink(0.9, 1.3))
+			ci.draw_line(hp, bp2, Pal.ink(0.6), 3.0)
+			ci.draw_rect(Rect2(hp - Vector2(2, 2), Vector2(4, 4)), Pal.ink(0.95))
 	# 货船穿模 (user 2026-11-10: "完全看不到货船在哪里"): the trade port's freighters — a hull bar, its
 	# bow lit, and a ring breathing round it while it comes in or lies alongside
 	if HallMarket.open():
@@ -653,24 +653,25 @@ func _draw_port_live() -> void:
 			var sp := pmap(tb.position + (e.at as Vector2) * m)
 			var hl := maxf(3.0, float(e.len) * 0.5 * m * k)
 			var fl := signf(float(e.flip)) if absf(float(e.flip)) > 0.04 else 1.0
-			ci.draw_line(sp - Vector2(hl * fl, 0), sp + Vector2(hl * fl, 0), Color(UiSkin.ACCENT, 0.95), 3.0)
+			ci.draw_line(sp - Vector2(hl * fl, 0), sp + Vector2(hl * fl, 0), Pal.ink(0.75), 3.0)
 			ci.draw_rect(Rect2(sp - Vector2(hl * fl, 0) - Vector2(1.5, 1.5), Vector2(3, 3)), Pal.ink(0.95, 1.3))
 			if str(e.phase) != "out":
-				FastDraw.arc(ci, sp, 6.0 + 4.0 * pulse, 0.0, TAU, 16, Color(UiSkin.ACCENT, 0.7 * (1.0 - pulse)), 1.0)
+				FastDraw.arc(ci, sp, 6.0 + 4.0 * pulse, 0.0, TAU, 16, Color(1, 1, 1, 0.5 * (1.0 - pulse)), 1.0)
 	# the work boat
 	if game.boat != null and is_instance_valid(game.boat):
 		var bp := pmap(game.boat.global_position)
-		ci.draw_rect(Rect2(bp - Vector2(4, 2.5), Vector2(8, 5)), Pal.tint(Pal.AIR, 0.8, 1.2))
+		ci.draw_rect(Rect2(bp - Vector2(4, 2.5), Vector2(8, 5)), Pal.ink(0.85))
 	# the drone: the view it has, its heading, a ring breathing round it
 	if game.drone != null:
 		var dp := pmap(game.drone.global_position)
 		if game.cam != null and game.cam_zoom() > 0.0:
 			var half: Vector2 = get_viewport_rect().size * 0.5 / game.cam_zoom()
-			var vr := Rect2(pmap(game.cam.global_position - half), half * 2.0 * k)
-			ci.draw_rect(vr, Pal.tint(Pal.AIR, 0.05, 1.0))
-			ci.draw_rect(vr, Pal.tint(Pal.AIR, 0.4, 1.1), false, 1.0)
+			var vr := Rect2(pmap(game.cam.global_position - half), half * 2.0 * k).intersection(window_rect().grow(-1.0))
+			ci.draw_rect(vr, Color(1, 1, 1, 0.03))
+			ci.draw_rect(vr, Color(1, 1, 1, 0.22), false, 1.0)
 		var v: Vector2 = game.drone.linear_velocity
 		var dir := v.normalized() if v.length() > 8.0 else Vector2.UP.rotated(game.drone.rotation)
-		FastDraw.circle(ci, dp, 6.0 + 4.0 * pulse, Pal.tint(Pal.AIR, 0.16 * (1.0 - pulse), 1.2))
-		FastDraw.poly(ci, PackedVector2Array([dp + dir * 7.0, dp + dir.orthogonal() * 3.5 - dir * 3.0, dp - dir.orthogonal() * 3.5 - dir * 3.0]), Pal.tint(Pal.AIR, 1.0, 1.4))
+		# 炭黑: you are the orange mark — a soft halo, the arrow of your heading
+		FastDraw.circle(ci, dp, 6.0 + 4.0 * pulse, Color(Charcoal.ACCENT, 0.16 * (1.0 - pulse)))
+		FastDraw.poly(ci, PackedVector2Array([dp + dir * 7.5, dp + dir.orthogonal() * 3.8 - dir * 3.2, dp - dir.orthogonal() * 3.8 - dir * 3.2]), Charcoal.ACCENT)
 	draw_us = lerpf(draw_us, float(Time.get_ticks_usec() - t0), 0.1)

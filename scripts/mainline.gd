@@ -281,6 +281,9 @@ static func step(id: String = "") -> Dictionary:
 			if not a.is_empty():
 				return {"text": w("开始拆 %s：%s 开终端，在“找船”里开工。", "Start on %s: %s, pick it under Find Ships.") % [str(a.get("id", "")), Keys.label("terminal")], "go": "contracts"}
 			var sj: Dictionary = Career.story_job()
+			# no story contract pinned (its id was left blank: "take  under Find Ships"): any job
+			if str(sj.get("id", "")) == "":
+				return {"text": w("%s 开终端，在“找船”里接一单。", "%s: take a job under Find Ships.") % Keys.label("terminal"), "go": "contracts"}
 			return {"text": w("%s 开终端，在“找船”里接 %s。", "%s: take %s under Find Ships.") % [Keys.label("terminal"), str(sj.get("id", ""))], "go": "contracts"}
 		"lights":
 			var ls := _repair_step("lights")

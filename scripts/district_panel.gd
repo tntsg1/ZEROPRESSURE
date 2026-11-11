@@ -81,7 +81,9 @@ func _ready() -> void:
 		_detail_fold = BenchFx.fold(detail_box)
 		_detail_fold.on_toggle = func(open: bool): detail_key.text = words("详细 ▴", "DETAILS ▴") if open else words("详细 ▾", "DETAILS ▾")
 		BenchFx.note(detail_key, words("展开或收起动力区的详细数字", "Show or hide the power district's figures"))
-	column.add_child(OpsSkin.Section.new(words("操作", "CONTROLS")))
+	# 2026-11-10 炭黑: no "操作" heading over nothing (the cargo console has no keys of its own)
+	if not _actions().is_empty():
+		column.add_child(OpsSkin.Section.new(words("操作", "CONTROLS")))
 	for b in _actions():
 		var ab := button(b[0], b[1])
 		if b.size() > 2:
@@ -183,7 +185,7 @@ func _fill_repair() -> void:
 		c.queue_free()
 	_primary_set = false
 	if st >= 2:
-		repair_box.add_child(label(words("两期修缮都已经完成了。", "BOTH STAGES DONE."), 15))
+		repair_box.add_child(OpsSkin.lamp_label(label(words("两期修缮都已经完成了。", "BOTH STAGES DONE."), 15), "ok"))
 		return
 	var needs := Port.needs(zone, st + 1)
 	var pf := Repair.parts_for_needs(needs)
@@ -199,13 +201,11 @@ func _fill_repair() -> void:
 			ok = have >= int(needs[cls])
 			line = "%s  %s  %d / %d" % ["✓" if ok else "○", Repair.class_name_of(cls), have, int(needs[cls])]
 		var l := label(line, 15)
-		l.modulate = Hmi.ok_col() if ok else Hmi.warn_col()
-		repair_box.add_child(l)
+		repair_box.add_child(OpsSkin.lamp_label(l))
 	for dep in Port.DEPS.get(zone, []):
 		if Port.stage(str(dep[0])) < int(dep[1]):
 			var l2 := label("○  " + Txt.t("rt_first") + "  " + Port.name_of(str(dep[0])), 15)
-			l2.modulate = Hmi.warn_col()
-			repair_box.add_child(l2)
+			repair_box.add_child(OpsSkin.lamp_label(l2))
 	for with_parts in [true, false]:
 		var why := Port.reason(zone, with_parts)
 		var b := button("%s  %s" % [Txt.t("rp_fix_parts") if with_parts else Txt.t("rp_fix_cash"), Pal.money(Port.cash(zone, st + 1, with_parts))], _order.bind(with_parts))
@@ -233,22 +233,19 @@ func _fill_bill() -> void:
 	for c in repair_box.get_children():
 		c.queue_free()
 	if st >= 2:
-		repair_box.add_child(label(words("两期修缮都已经完成了。", "BOTH STAGES DONE."), 15))
+		repair_box.add_child(OpsSkin.lamp_label(label(words("两期修缮都已经完成了。", "BOTH STAGES DONE."), 15), "ok"))
 		return
 	for row in b.get("rows", []):
 		var ok := int(row.buy) == 0
 		var l := label("%s  %s  %d / %d%s" % ["✓" if ok else "○", str(row.name), int(row.own), int(row.need), "" if ok else words("  · 不足的零件会按照市场价格购买", "  · the rest bought")], 15)
-		l.modulate = Hmi.ok_col() if ok else Pal.ink(0.8)
-		repair_box.add_child(l)
+		repair_box.add_child(OpsSkin.lamp_label(l))
 	var sd: Dictionary = b.get("steel", {})
 	var lt := label("%s  %s  %.1f / %.1f t" % ["✓" if float(sd.get("buy", 0.0)) < 0.05 else "○", words("修缮所需钢材", "REPAIR STEEL"), float(sd.get("own", 0.0)), float(sd.get("need", 0.0))], 15)
-	lt.modulate = Hmi.ok_col() if float(sd.get("buy", 0.0)) < 0.05 else Pal.ink(0.8)
-	repair_box.add_child(lt)
+	repair_box.add_child(OpsSkin.lamp_label(lt))
 	for dep in Port.DEPS.get(zone, []):
 		if Port.stage(str(dep[0])) < int(dep[1]):
 			var l2 := label("○  " + Txt.t("rt_first") + "  " + Port.name_of(str(dep[0])), 15)
-			l2.modulate = Hmi.warn_col()
-			repair_box.add_child(l2)
+			repair_box.add_child(OpsSkin.lamp_label(l2))
 	var why := Port.reason(zone, true)
 	if why == "" and not Port.deps_ok(zone) and st == 0:
 		why = Txt.t("tm_needs") % Port.name_of(str(Port.DEPS[zone][0][0]))
@@ -467,6 +464,9 @@ func _then(what: Callable, to := "") -> void:
 
 
 func _process(dt: float) -> void:
+	# 2026-11-10 炭黑: an empty message line takes no room (it left a gap above the close key)
+	if message != null and message.visible != (message.text != ""):
+		message.visible = message.text != ""
 	_refresh += dt
 	if _refresh < 0.5:
 		return
@@ -528,6 +528,7 @@ func _fill() -> void:
 			# 72 号: the yard and the tugs (the old big-ship queue is retired)
 			for part in TugYard.status().split(" · "):
 				lines.append(part)
+			lines.append_array(TugYard.cryo_lines())     # 2026-11-11: the cryo collection tanks
 			for a in TugYard.taken():
 				lines.append("%s  %s" % [str(a.id), {"towing": words("正在运输途中", "ON THE WAY"), "arrived": words("第 %d 号泊位" % (int(a.get("yard", 0)) + 1), "BERTH %d" % (int(a.get("yard", 0)) + 1)), "held": words("目前停靠在港口", "HELD")}.get(str(a.state), str(a.state))])
 		"process":
@@ -690,14 +691,7 @@ func _process_layout() -> bool:
 	# 132 号: 730 px at most, the machines stay in view
 	var half := ConsoleKit.W_SIDE
 	var column := OpsSkin.pane(self, accent, half)
-	var pane := get_node_or_null("Pane") as PanelContainer
-	if pane != null:
-		var solid := UiSkin.solid(Color(0.043, 0.048, 0.057, 1.0), 14, 22.0)
-		solid.set_border_width_all(1)
-		solid.border_color = Color(1, 1, 1, 0.08)
-		solid.shadow_color = Color(0, 0, 0, 0.55)
-		solid.shadow_size = 24
-		pane.add_theme_stylebox_override("panel", solid)
+	# 2026-11-10 炭黑: the pane is OpsSkin's charcoal slab as it is
 	column.add_theme_constant_override("separation", 16)
 	plate = OpsSkin.Plate.new(CODES.process, words("加工区 · 气体处理", "PROCESSING · GAS"), "", accent)
 	column.add_child(ConsoleKit.header(words("加工区 · 气体处理线", "PROCESSING · GAS LINE"), CODES.process + words(" · 业务管理终端", " · CONSOLE")))
@@ -782,7 +776,13 @@ func _process_layout() -> bool:
 
 
 func _card_box() -> StyleBoxFlat:
-	var b := UiSkin.solid(Color(0.075, 0.085, 0.1, 1.0), 10, 20.0)
+	# 2026-11-10 炭黑: a raised charcoal card a step lighter than the pane, with its shadow
+	var b := UiSkin.solid(Charcoal.FACE_HI, 10, 20.0)
+	b.shadow_color = Color(0, 0, 0, 0.6)
+	b.shadow_size = 10
+	b.shadow_offset = Vector2(0, 4)
+	b.border_width_top = 1
+	b.border_color = Color(1, 1, 1, 0.07)
 	return b
 
 
@@ -792,10 +792,12 @@ func _draw_tanks() -> void:
 	var o2 := float(d.get("o2", {}).get("ind", 0.0)) + float(d.get("o2", {}).get("ok", 0.0)) + float(d.get("o2", {}).get("ls", 0.0))
 	var lox := float(d.get("lox", {}).get("kg", 0.0))
 	var lh2 := float(Career.data.get("gas", {}).get("lh2", {}).get("kg", 0.0))
-	var items := [[words("气态氧气", "GAS O₂"), o2, maxf(5000.0, o2 * 1.25), Pal.tint(Pal.AIR, 0.9, 1.3)], [words("液态氧气", "LOX"), lox, GasLine.TANK_CAP, Pal.tint(Pal.FLUID, 0.95, 1.3)], [words("液态氢气", "LH₂"), lh2, 8000.0, Color(0.75, 0.85, 1.0)]]
+	# 2026-11-10 炭黑: the three tanks in one black window, their fills white (no data blue / green)
+	var items := [[words("气态氧气", "GAS O₂"), o2, maxf(5000.0, o2 * 1.25), UiSkin.FIGURE], [words("液态氧气", "LOX"), lox, GasLine.TANK_CAP, UiSkin.FIGURE], [words("液态氢气", "LH₂"), lh2, 8000.0, UiSkin.FIGURE]]
 	var f := Fonts.get_font("Medium")
 	var fb := Fonts.get_font("SemiBold")
 	var sz := tanks.size
+	Charcoal.display(tanks, Rect2(Vector2(3, 3), sz - Vector2(6, 6)), 1.0, 9)
 	var tw := minf(70.0, sz.x / 3.0 - 40.0)
 	var th := sz.y - 96.0
 	for i in 3:
@@ -813,7 +815,7 @@ func _draw_tanks() -> void:
 				pts.append(Vector2(cx + cos(a) * rad, r.end.y - rad + sin(a) * rad))
 			pts.append(Vector2(cx - rad, maxf(fill_top, r.position.y + rad)))
 			pts.append(Vector2(cx + rad, maxf(fill_top, r.position.y + rad)))
-			tanks.draw_colored_polygon(pts, Color(col, 0.55))
+			tanks.draw_colored_polygon(pts, Color(col, 0.28))
 			tanks.draw_line(Vector2(cx - rad + 2, maxf(fill_top, r.position.y + rad)), Vector2(cx + rad - 2, maxf(fill_top, r.position.y + rad)), Color(col, 0.95), 2.0)
 		else:
 			# empty: a thin pool of light on the bottom
@@ -919,6 +921,9 @@ func _trade_layout() -> bool:
 	ConsoleKit.orange(trade_key, 24)
 	# ---- the companies, folded into one line
 	org_key = ConsoleKit.key("", func(): org_fold.set_open(not org_fold.open))
+	# 2026-11-10: the companies' line keeps the pane's width (it pushed the pane off the screen)
+	org_key.clip_text = true
+	org_key.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	org_key.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	org_key.custom_minimum_size.y = 64
 	column.add_child(org_key)

@@ -21,7 +21,7 @@ const Card = preload("res://scripts/guide_card.gd")
 const GAP_S := 20.0            # game seconds between two cards
 const STOP_MS := 0.5           # a district card waits for the drone below this (m/s)
 const ZONES := ["power", "trade", "process", "cargo", "tug", "ring"]
-const ORDER := ["power_short", "first_trip", "store_full", "order_due", "first_listing", "first_mould", "first_equip", "first_strip",
+const ORDER := ["phase_shuttle", "power_short", "first_trip", "store_full", "order_due", "first_listing", "first_mould", "first_equip", "first_strip",
 	"zone_power", "zone_trade", "zone_process", "zone_cargo", "zone_tug", "zone_ring"]
 const CONSOLES := ["console_trade", "console_hall", "console_queue", "console_gas", "console_heat", "console_mill"]
 
@@ -83,6 +83,12 @@ const CARDS := {
 		["超载太久，发电机烧热停了。", "Overloaded too long, the set overheated and stopped."],
 		["不修它不会自己起来。", "It will not come back by itself."],
 		["飞过去，拿维护工具（4）修一下。", "Fly there and use the maintenance tool (4) on it."]]},
+	# 相位接驳 (user 2026-11-11): the first time the player sees the shuttle run through a freight train
+	# (scripts/tram_phase_fx.gd). Placeholder words: the author writes them in data/台词.txt
+	"phase_shuttle": {"t": ["相位接驳", "PHASE SHUTTLE"], "art": "phase", "go": "", "l": [
+		["接驳车开着相位层，和货运列车不在同一个相位里。", "The shuttle runs phase-shifted: it is not in the freight trains' phase."],
+		["碰到货车，它直接隧穿过去，谁也不用让谁。", "Meeting a freight train, it tunnels straight through. Nobody gives way."],
+		["上车就走，最短的路，不用等车。", "Get on and it goes, the shortest way. No waiting for trains."]]},
 	"console_trade": {"t": ["贸易港终端", "TRADE PORT CONSOLE"], "art": "console", "go": "", "l": [
 		["码头来客人，在这儿谈。", "Visitors at the pier are dealt with here."],
 		["三家公司的长期合同，也在这儿签。", "The three companies' standing contracts are signed here."],
@@ -166,6 +172,12 @@ static func mark(id: String) -> void:
 		mc[ch] = true
 		Career.data.main_card = mc
 	Career.save()
+
+
+# a moment the game itself saw (the shuttle's first crossing): the card comes when the others allow
+static func note(id: String, args := {}) -> void:
+	if CARDS.has(id) and not seen(id) and not _pend.has(id):
+		_pend[id] = args
 
 
 # would this card come up now if its moment came (on, not seen yet)? — the overload's own
@@ -274,6 +286,8 @@ static func _due(game, id: String) -> Variant:
 			return {} if ProcessLine.changing() else null
 		"first_equip":
 			return _pend.get("first_equip", null)
+		"phase_shuttle":
+			return _pend.get("phase_shuttle", null)
 		"first_strip":
 			return {} if not game.in_berth() and not game.job.is_empty() and game.career() else null
 	if id.begins_with("zone_"):

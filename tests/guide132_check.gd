@@ -109,7 +109,7 @@ func _run() -> void:
 	GC.test_due["power_short"] = {"n": 19, "who": "拆船区排第一，先拿满；加工区功率 8%，贸易港功率 0%。", "groups": [["拆船区", 100], ["加工区", 8], ["贸易港", 0]]}
 	GC._gap = 999.0
 	await _card_case("power_short", "short of power")
-	check(GC.title("power_short", {"n": 19}) == "电力不足—功率 19%", "the title says 电力不足—功率 19%%")
+	check(GC.title("power_short", {"n": 19}) == "电力不足—当前功率 19%", "the title says 电力不足—当前功率 19%%")
 	# ---- 3 the first trip: a real moment, "带我去" leads to the set
 	GC._gap = 999.0
 	PS5.d().gens.tg.trip = true
@@ -222,7 +222,7 @@ func _run() -> void:
 	# ---- 10 the processing console
 	Career.data.upgrades["gas_line"] = 1
 	Career.data.upgrades["lox_tank"] = 1
-	GasLine.receive({"o2": 13.0, "n2": 45.0}, "TUG-001")
+	GasLine.receive({"o2": 13.0, "n2": 45.0}, "TUG-001", false)   # 2026-11-11: at the drum already (not piped)
 	GasLine.data().o2.ind = 420.0
 	GasLine.data().lox.kg = 3600.0
 	g.open_district("process")

@@ -111,8 +111,8 @@ def mobile(src, out, mb):
     dur = float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", path],
                                capture_output=True, text=True, check=True).stdout.strip())
     kbps = int(mb * 8 * 1024 * 0.94 / dur)
-    common = ["-vf", "fps=30,scale=1280:720:flags=lanczos", "-c:v", "libx264", "-preset", "slow", "-b:v", "%dk" % kbps,
-              "-maxrate", "%dk" % int(kbps * 1.6), "-bufsize", "%dk" % (kbps * 2), "-pix_fmt", "yuv420p", "-r", "30"]
+    common = ["-vf", "fps=24,scale=1280:720:flags=lanczos", "-c:v", "libx264", "-preset", "veryslow", "-b:v", "%dk" % kbps,
+              "-maxrate", "%dk" % int(kbps * 1.6), "-bufsize", "%dk" % (kbps * 2), "-pix_fmt", "yuv420p", "-r", "24"]
     log = "%s/pass_%s" % (TMP, out)
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", path] + common + ["-pass", "1", "-passlogfile", log, "-an", "-f", "mp4", "NUL"], check=True)
     subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", path] + common + ["-pass", "2", "-passlogfile", log, "-movflags", "+faststart", "%s/%s.mp4" % (OUT, out)], check=True)

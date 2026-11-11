@@ -13,6 +13,8 @@ const LIGHT := Vector2(-0.45, -0.89)
 
 var ok := false
 var mode := "empty"            # live | next | empty
+# 2026-11-10 炭黑: the terminal draws the panel and a black window under the drawing itself
+var bare := false
 var title := ""
 var sub := ""
 var rate := -1.0
@@ -116,7 +118,7 @@ func _build_live(game) -> void:
 			tri_c.append(Color(f0.r * g, f0.g * g, f0.b * g))
 		var lc := Pal.ink(0.42)
 		if eq:
-			lc = Color(UiSkin.DATA, 0.85)
+			lc = Color(UiSkin.FIGURE, 0.85)
 		if haz:
 			lc = Color(UiSkin.ACCENT, 0.9)
 		_outline(segs, poly, seg_c, lc)
@@ -146,11 +148,20 @@ static func _outline(out: PackedVector2Array, poly: PackedVector2Array, cols = n
 
 
 # r: where it goes; t: the terminal's clock; a: its fade-in; m: the pointer
+# where the drawing itself lies inside r (the terminal puts its black window there)
+func screen_rect(r: Rect2) -> Rect2:
+	var view := Rect2(r.position.x + 24, r.position.y + 86, r.size.x - 48 - (230 if mode == "live" else 0), r.size.y - 110)
+	if bounds.size.x <= 0.0 and mode == "empty" and not facilities.is_empty():
+		return Rect2(view.position + Vector2(0, 6), Vector2(view.size.x - 380.0 - 40.0, view.size.y - 30.0)).grow(10.0)
+	return view
+
+
 func draw(ci: CanvasItem, r: Rect2, t: float, a: float, m: Vector2, font: Font, font_b: Font, font_s: Font) -> void:
 	if not ok or a <= 0.0:
 		return
 	# the panel: a sunk screen with the berth's floor line and its frame
-	ci.draw_style_box(UiSkin.box("sunk", a), r)
+	if not bare:
+		ci.draw_style_box(UiSkin.box("sunk", a), r)
 	var head := Rect2(r.position + Vector2(24, 18), Vector2(r.size.x - 48, 54))
 	ci.draw_string(font_s, head.position + Vector2(0, 22), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Pal.ink(0.95 * a))
 	ci.draw_string(font, head.position + Vector2(0, 48), sub, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 360, 14, Pal.ink(0.55 * a))
@@ -199,8 +210,8 @@ func draw(ci: CanvasItem, r: Rect2, t: float, a: float, m: Vector2, font: Font, 
 	ci.draw_set_transform_matrix(Transform2D.IDENTITY)
 	# the scan line sweeping across
 	var sx := view.position.x + view.size.x * fposmod(t / 4.2, 1.0)
-	ci.draw_rect(Rect2(sx - 40, view.position.y, 40, view.size.y - 8), Color(UiSkin.DATA, 0.035 * a))
-	ci.draw_line(Vector2(sx, view.position.y), Vector2(sx, floor_y - 2), Color(UiSkin.DATA, 0.35 * a), 1.0)
+	ci.draw_rect(Rect2(sx - 40, view.position.y, 40, view.size.y - 8), Color(UiSkin.FIGURE, 0.035 * a))
+	ci.draw_line(Vector2(sx, view.position.y), Vector2(sx, floor_y - 2), Color(UiSkin.FIGURE, 0.35 * a), 1.0)
 	# the hazards breathe; the dearest units are named down the right
 	var mw := _xf.affine_inverse() * m
 	hover = -1
@@ -223,12 +234,12 @@ func draw(ci: CanvasItem, r: Rect2, t: float, a: float, m: Vector2, font: Font, 
 			# a numbered tag on the unit, the same number by its price in the list
 			var num := str(int(mk.top) + 1)
 			var ring := 9.0 + 2.0 * sin(t * 2.0 + mk.top)
-			FastDraw.circle(ci, p, ring, Color(UiSkin.DATA, 0.12 * a))
-			FastDraw.arc(ci, p, ring, 0.0, TAU, 24, Color(UiSkin.DATA, 0.8 * a), 1.2, true)
-			ci.draw_string(font_b, p + Vector2(-4, 5), num, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(UiSkin.DATA, a))
-			FastDraw.arc(ci, Vector2(col_x - 14, y - 2), 9.0, 0.0, TAU, 24, Color(UiSkin.DATA, 0.8 * a), 1.2, true)
-			ci.draw_string(font_b, Vector2(col_x - 18, y + 3), num, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(UiSkin.DATA, a))
-			ci.draw_string(font_b, Vector2(col_x + 4, y + 4), Pal.money(float(mk.value)), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(UiSkin.DATA, 0.95 * a))
+			FastDraw.circle(ci, p, ring, Color(UiSkin.FIGURE, 0.12 * a))
+			FastDraw.arc(ci, p, ring, 0.0, TAU, 24, Color(UiSkin.FIGURE, 0.8 * a), 1.2, true)
+			ci.draw_string(font_b, p + Vector2(-4, 5), num, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(UiSkin.FIGURE, a))
+			FastDraw.arc(ci, Vector2(col_x - 14, y - 2), 9.0, 0.0, TAU, 24, Color(UiSkin.FIGURE, 0.8 * a), 1.2, true)
+			ci.draw_string(font_b, Vector2(col_x - 18, y + 3), num, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(UiSkin.FIGURE, a))
+			ci.draw_string(font_b, Vector2(col_x + 4, y + 4), Pal.money(float(mk.value)), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(UiSkin.FIGURE, 0.95 * a))
 			ci.draw_string(font, Vector2(col_x + 4, y + 26), str(mk.name), HORIZONTAL_ALIGNMENT_LEFT, 196, 13, Pal.ink(0.7 * a))
 	if mode == "live" and hazards > 0:
 		var y2 := view.position.y + 18.0 + row * 64.0
@@ -241,7 +252,7 @@ func draw(ci: CanvasItem, r: Rect2, t: float, a: float, m: Vector2, font: Font, 
 		for q in (mk.poly as PackedVector2Array):
 			hi.append(_xf * q)
 		hi.append(hi[0])
-		var hc := Color(UiSkin.ACCENT, a) if mk.kind == "hazard" else Color(UiSkin.DATA, a)
+		var hc := Color(UiSkin.ACCENT, a) if mk.kind == "hazard" else Color(UiSkin.FIGURE, a)
 		FastDraw.polyline(ci, hi, hc, 2.0, true)
 		var label := str(mk.name) + ("  ·  " + Pal.money(float(mk.value)) if mk.kind == "value" else "  ·  " + Ops.w("危险", "HAZARD"))
 		var tw := font_b.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 24.0
@@ -366,8 +377,8 @@ func _draw_empty(ci: CanvasItem, view: Rect2, t: float, a: float, font: Font, fo
 		hx0 += 7.0
 	var tr0: Vector2 = P.call(Vector2(Dock.TOWER_X + 2.0, Dock.TROUGH_Y))
 	var tr1: Vector2 = P.call(Vector2(Dock.TROUGH_X1, Dock.FLOOR_Y))
-	ci.draw_rect(Rect2(tr0, tr1 - tr0), Color(UiSkin.DATA, 0.04 * a))
-	ci.draw_line(tr0, Vector2(tr1.x, tr0.y), Color(UiSkin.DATA, 0.25 * a), 1.0)
+	ci.draw_rect(Rect2(tr0, tr1 - tr0), Color(UiSkin.FIGURE, 0.04 * a))
+	ci.draw_line(tr0, Vector2(tr1.x, tr0.y), Color(UiSkin.FIGURE, 0.25 * a), 1.0)
 	var np: Vector2 = P.call(Dock.NET)
 	var nr := Rect2(np - Vector2(5.0, 1.0) * sc, Vector2(10.0, 1.0) * sc)
 	for q in int(nr.size.x / 6.0):
@@ -377,7 +388,7 @@ func _draw_empty(ci: CanvasItem, view: Rect2, t: float, a: float, font: Font, fo
 	var mouth_names := {"equip": Ops.w("设备口", "EQUIP"), "metal": Ops.w("金属口", "METAL"), "hazard": Ops.w("危险品口", "HAZARD")}
 	for id in ["equip", "metal", "hazard"]:
 		var mp: Vector2 = P.call(Dock.zpos(id) / Geom.M)
-		var mc := Color(UiSkin.ACCENT) if id == "hazard" else Color(UiSkin.DATA)
+		var mc := Color(UiSkin.ACCENT) if id == "hazard" else Color(UiSkin.FIGURE)
 		ci.draw_rect(Rect2(mp - Vector2(15, 4), Vector2(30, 8)), Color(mc, 0.22 * a))
 		ci.draw_rect(Rect2(mp - Vector2(15, 4), Vector2(30, 8)), Color(mc, 0.85 * a), false, 1.0)
 		ci.draw_line(mp + Vector2(-9, 0), mp + Vector2(9, 0), Color(mc, (0.4 + 0.3 * sin(t * 2.0 + mp.x)) * a), 2.0)
@@ -403,8 +414,8 @@ func _draw_empty(ci: CanvasItem, view: Rect2, t: float, a: float, font: Font, fo
 		listed += 1
 	# the scan line
 	var sx := draw_r.position.x + draw_r.size.x * fposmod(t / 4.2, 1.0)
-	ci.draw_rect(Rect2(sx - 40, draw_r.position.y, 40, draw_r.size.y), Color(UiSkin.DATA, 0.03 * a))
-	ci.draw_line(Vector2(sx, draw_r.position.y), Vector2(sx, draw_r.end.y), Color(UiSkin.DATA, 0.25 * a), 1.0)
+	ci.draw_rect(Rect2(sx - 40, draw_r.position.y, 40, draw_r.size.y), Color(UiSkin.FIGURE, 0.03 * a))
+	ci.draw_line(Vector2(sx, draw_r.position.y), Vector2(sx, draw_r.end.y), Color(UiSkin.FIGURE, 0.25 * a), 1.0)
 	# the right column: what waits in the tug yard, then the berth's list in two columns
 	var cx := view.end.x - col_w
 	ci.draw_line(Vector2(cx - 24, view.position.y), Vector2(cx - 24, view.end.y - 6), Pal.ink(0.08 * a), 1.0)
@@ -427,7 +438,7 @@ func _draw_empty(ci: CanvasItem, view: Rect2, t: float, a: float, font: Font, fo
 	y += 8.0
 	var bar := Rect2(cx, y, col_w - 20.0, 3.0)
 	ci.draw_rect(bar, Pal.ink(0.1 * a))
-	ci.draw_rect(Rect2(bar.position, Vector2(bar.size.x * fixed / maxf(1.0, facilities.size()), 3.0)), Color(UiSkin.DATA, 0.8 * a))
+	ci.draw_rect(Rect2(bar.position, Vector2(bar.size.x * fixed / maxf(1.0, facilities.size()), 3.0)), Color(UiSkin.FIGURE, 0.8 * a))
 	y += 26.0
 	var half := (col_w - 20.0) * 0.5
 	var rows := int(ceil(facilities.size() / 2.0))
@@ -439,4 +450,11 @@ func _draw_empty(ci: CanvasItem, view: Rect2, t: float, a: float, font: Font, fo
 			continue
 		var fx := cx + (i / rows) * half
 		var c2 := Pal.ink(0.72 * a) if f[1] else Color(UiSkin.ACCENT, 0.92 * a)
-		ci.draw_string(font, Vector2(fx, fy), ("✓ " if f[1] else "· ") + str(f[0]), HORIZONTAL_ALIGNMENT_LEFT, half - 8.0, 15, c2)
+		# long (English) names step down a size, then end in an ellipsis, never cut mid-letter
+		var fs := 15
+		var fs_txt := ("✓ " if f[1] else "· ") + str(f[0])
+		while fs > 12 and font.get_string_size(fs_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > half - 8.0:
+			fs -= 1
+		while fs_txt.length() > 4 and font.get_string_size(fs_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > half - 8.0:
+			fs_txt = fs_txt.substr(0, fs_txt.length() - 2) + "…"
+		ci.draw_string(font, Vector2(fx, fy), fs_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, c2)

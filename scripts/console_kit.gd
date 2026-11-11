@@ -1,4 +1,5 @@
 extends RefCounted
+const KeyFx = preload("res://scripts/ui_kit/key_fx.gd")
 # 132 号 控制台规范 (design/132_控制台规范与情境引导_草图稿_2026-11-07.md §一; user 2026-11-07 "全按推荐"):
 #   字号 — body and keys 20 at least, readings 24–32, page notes 16 at the smallest;
 #   one orange main key a page, on Enter; the rest under "更多 ›";
@@ -52,10 +53,8 @@ class NowLine extends Control:
 		return head(use) + text
 
 	func _fit() -> void:
-		var f := Fonts.get_font("Medium")
-		var wd := maxf(80.0, size.x - 32.0)
-		var hh := f.get_multiline_string_size(full(), HORIZONTAL_ALIGNMENT_LEFT, wd, 20).y
-		var want := maxf(50.0, hh + 20.0)
+		# the same measure as paint() draws with: a wrapped English line grows the box, never overlaps
+		var want := maxf(50.0, text_h(size.x, use, text, 20) + 20.0)
 		if absf(want - _h) > 0.5:
 			_h = want
 			custom_minimum_size.y = want
@@ -63,26 +62,31 @@ class NowLine extends Control:
 	func _draw() -> void:
 		paint(self, Rect2(Vector2.ZERO, size), use, text, 20)
 
+	# the words' column: right of the lamp and the head, 16 px short of the window's edge
+	static func text_w(width: float, u: bool, px: int) -> float:
+		var hw := Fonts.get_font("SemiBold").get_string_size(head(u), HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+		return maxf(60.0, width - 34.0 - hw - 16.0)
+
+	static func text_h(width: float, u: bool, t: String, px: int) -> float:
+		return Fonts.get_font("Medium").get_multiline_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, text_w(width, u, px), px).y
+
 	# the line on any canvas (returns its height)
 	static func paint(ci: CanvasItem, r: Rect2, u: bool, t: String, px: int) -> float:
 		var fb := Fonts.get_font("SemiBold")
 		var f := Fonts.get_font("Medium")
 		var hd := head(u)
 		var hw := fb.get_string_size(hd, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
-		var tw := r.size.x - 32.0 - hw
-		var lines := f.get_multiline_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, tw, px).y
+		var tw := text_w(r.size.x, u, px)
+		var lines := text_h(r.size.x, u, t, px)
 		var h := maxf(r.size.y, lines + 20.0)
 		var rr := Rect2(r.position, Vector2(r.size.x, h))
-		var acc := UiSkin.ACCENT
-		if u:
-			ci.draw_rect(rr, Color(acc, 0.15))
-			ci.draw_rect(rr, Color(acc, 0.9), false, 1.5)
-		else:
-			ci.draw_rect(rr, Color(1, 1, 1, 0.045))
-			ci.draw_rect(rr, Pal.ink(0.22), false, 1.0)
+		# 2026-11-10 炭黑: the line sits in a recessed black window; "worth doing now" lights its lamp
+		# and says so in orange, "nothing needed" is a dark lens and grey words
+		Charcoal.display(ci, rr.grow(-2), 1.0, 7)
+		Charcoal.led(ci, Vector2(rr.position.x + 18.0, rr.position.y + 10.0 + px * 0.6), u, 1.0, 4.5)
 		var base := rr.position.y + 10.0 + px * 0.95
-		ci.draw_string(fb, Vector2(rr.position.x + 16.0, base), hd, HORIZONTAL_ALIGNMENT_LEFT, -1, px, acc.lightened(0.1) if u else Pal.ink(0.55))
-		ci.draw_multiline_string(f, Vector2(rr.position.x + 16.0 + hw, base), t, HORIZONTAL_ALIGNMENT_LEFT, tw, px, -1, Pal.ink(0.96 if u else 0.62))
+		ci.draw_string(fb, Vector2(rr.position.x + 34.0, base), hd, HORIZONTAL_ALIGNMENT_LEFT, -1, px, Charcoal.ACCENT if u else Charcoal.INK2)
+		ci.draw_multiline_string(f, Vector2(rr.position.x + 34.0 + hw, base), t, HORIZONTAL_ALIGNMENT_LEFT, tw, px, -1, Charcoal.INK if u else Charcoal.INK2)
 		return h
 
 
@@ -95,15 +99,24 @@ static func draw_now(ci: CanvasItem, r: Rect2, use: bool, text: String, px: int 
 static func orange(b: Button, px: int = 22) -> void:
 	b.add_theme_font_size_override("font_size", px)
 	b.add_theme_font_override("font", Fonts.get_font("SemiBold"))
+	# 2026-11-10 炭黑: the one orange key — the accent face with a firm shadow, sinking when held
 	for st in ["normal", "hover", "pressed", "focus"]:
-		var kb := UiSkin.solid(UiSkin.ACCENT.lightened(0.1) if st == "hover" else (UiSkin.ACCENT.darkened(0.12) if st == "pressed" else UiSkin.ACCENT), 8, 12.0)
+		var face := Charcoal.ACCENT.lightened(0.08) if st == "hover" else (Charcoal.ACCENT.darkened(0.14) if st == "pressed" else Charcoal.ACCENT)
+		var kb := UiSkin.solid(face, 8, 12.0)
+		kb.shadow_color = Color(0, 0, 0, 0.35 if st == "pressed" else 0.7)
+		kb.shadow_size = 8
+		kb.shadow_offset = Vector2(0, 1.0 if st == "pressed" else 4.0)
+		kb.border_width_top = 1
+		kb.border_color = Color(1, 1, 1, 0.0 if st == "pressed" else 0.28)
 		b.add_theme_stylebox_override(st, kb)
-	b.add_theme_stylebox_override("disabled", UiSkin.solid(Color(1, 1, 1, 0.05), 8, 12.0))
+	var dk := UiSkin.solid(Color(Charcoal.FACE, 0.6), 8, 12.0)
+	b.add_theme_stylebox_override("disabled", dk)
 	for fc in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
 		b.add_theme_color_override(fc, ORANGE_INK)
-	b.add_theme_color_override("font_disabled_color", Pal.ink(0.45))
+	b.add_theme_color_override("font_disabled_color", Color(Charcoal.INK3, 0.9))
 	b.custom_minimum_size.y = maxf(b.custom_minimum_size.y, 58.0)
 	BenchFx.primary(b)
+	KeyFx.attach(b)   # 用户选定 A+B (scripts/ui_kit/key_fx.gd)
 
 
 # back to a plain key (a key that was the main one a moment ago)
@@ -123,13 +136,13 @@ static func header(title: String, code: String) -> HBoxContainer:
 	t.text = title
 	t.add_theme_font_override("font", Fonts.get_font("SemiBold"))
 	t.add_theme_font_size_override("font_size", 30)
-	t.add_theme_color_override("font_color", Pal.ink(0.97))
+	t.add_theme_color_override("font_color", Charcoal.INK)
 	t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(t)
 	var c := Label.new()
 	c.text = code
 	c.add_theme_font_size_override("font_size", 14)
-	c.add_theme_color_override("font_color", Pal.ink(0.35))
+	c.add_theme_color_override("font_color", Charcoal.INK3)
 	c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(c)
 	return row
@@ -150,20 +163,14 @@ static func key(value: String, cb: Callable, px: int = BODY) -> Button:
 	b.custom_minimum_size.y = 48
 	b.add_theme_font_size_override("font_size", px)
 	b.pressed.connect(cb)
+	KeyFx.attach(b)   # 用户选定 A+B (scripts/ui_kit/key_fx.gd)
 	return b
 
 
 # a solid dark side pane at most W_SIDE wide (the right of the screen)
 static func solid(host: Control, width: float = W_SIDE) -> VBoxContainer:
 	var column := OpsSkin.pane(host, Pal.tint(Pal.AIR, 1.0, 1.2), width)
-	var pane := host.get_node_or_null("Pane") as PanelContainer
-	if pane != null:
-		var box := UiSkin.solid(Color(0.043, 0.048, 0.057, 1.0), 14, 22.0)
-		box.set_border_width_all(1)
-		box.border_color = Color(1, 1, 1, 0.08)
-		box.shadow_color = Color(0, 0, 0, 0.55)
-		box.shadow_size = 24
-		pane.add_theme_stylebox_override("panel", box)
+	# 2026-11-10 炭黑: the same charcoal slab as every side console (OpsSkin.pane)
 	column.add_theme_constant_override("separation", 14)
 	return column
 

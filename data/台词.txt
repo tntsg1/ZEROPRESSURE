@@ -1023,18 +1023,18 @@
 
 [G_zone_power_1]
 # 讲解卡第 1 行 · 第一次进动力区 · 一句
-中：全港的电从这儿出。
-英：The port's power comes from here.
+中：整个港口的电力都靠这里供应，平时拆船用的各种设备，也都得靠这边发电才能正常工作。
+英：The whole port draws its power from here; every machine you strip ships with runs on what is generated here.
 
 [G_zone_power_2]
 # 讲解卡第 2 行 · 第一次进动力区 · 一句
-中：电力不足时，炉子、吊车、叉车都按功率百分比干活。
-英：Underpowered, the furnace, cranes and forklifts work at that per cent.
+中：要是供电不够，炉子、吊车和叉车的工作效率都会跟着下降。电力只有一半，它们就只能发挥一半的功率，干活自然也会慢很多。
+英：Short of power, the furnace, cranes and forklifts all slow down. At half power they work at half strength, and everything takes much longer.
 
 [G_zone_power_3]
 # 讲解卡第 3 行 · 第一次进动力区 · 一句
-中：修好发电机，或者先买块电池顶着。
-英：Mend the sets, or buy a battery block meanwhile.
+中：有条件的话，最好早点把发电机修好。要是手头经费不够，也可以先买几块电池应急，等以后有钱了再慢慢修。
+英：Mend the generators early if you can. Short of money, buy a few batteries to tide you over and mend them later.
 
 [G_zone_trade_t]
 # 讲解卡标题 · 第一次进贸易港 · 一行
@@ -1043,18 +1043,18 @@
 
 [G_zone_trade_1]
 # 讲解卡第 1 行 · 第一次进贸易港 · 一句
-中：买卖都在这儿做。
-英：Buying and selling happen here.
+中：以后拆船回收的各种材料，都可以拿到这里出售，港口需要的东西也能从这里购买。
+英：Everything you salvage can be sold here, and whatever the port needs can be bought here.
 
 [G_zone_trade_2]
 # 讲解卡第 2 行 · 第一次进贸易港 · 一句
-中：没修好以前，东西只能卖给回收站，打六折。
-英：Until it is mended, goods go to the recycler at sixty per cent.
+中：不过贸易港现在还没修好，回收的材料暂时只能卖给回收站，而且人家只肯出市场价的六成。虽然少赚了不少，好歹还能先换点钱回来。
+英：Until the trade port is mended, salvage can only go to the recycler, who pays sixty per cent of market. You earn less, but it is cash in hand.
 
 [G_zone_trade_3]
 # 讲解卡第 3 行 · 第一次进贸易港 · 一句
-中：修好它，按市价卖。
-英：Mend it and sell at market.
+中：等你把贸易港修好以后，就能直接按照市场价格出售材料了。拆下来的东西能多卖点钱，后面买设备、修港口也能宽裕一些。
+英：Once it is mended you sell at market price. Your salvage earns more, and buying machines and mending the port gets easier.
 
 [G_zone_process_t]
 # 讲解卡标题 · 第一次进加工区 · 一行
@@ -1063,18 +1063,18 @@
 
 [G_zone_process_1]
 # 讲解卡第 1 行 · 第一次进加工区 · 一句
-中：钢锭在这儿炼成钢坯，再轧成钢板。
-英：Ingots become billets here, billets become plate.
+中：钢锭可以在这里炼成钢坯，再把钢坯轧成钢板。
+英：Ingots are made into billets here, and billets are rolled into plate.
 
 [G_zone_process_2]
 # 讲解卡第 2 行 · 第一次进加工区 · 一句
-中：炼过的比原料值钱。
-英：Worked steel pays more than raw.
+中：加工后的材料能卖出更高的价格。
+英：Worked material sells for more.
 
 [G_zone_process_3]
 # 讲解卡第 3 行 · 第一次进加工区 · 一句
-中：先去最左边的炉台，排一炉。
-英：Go to the furnace desk at the far left and queue a heat.
+中：先到最左边的炉台，安排一炉钢坯生产。
+英：Go to the furnace desk at the far left and queue a heat of billets.
 
 [G_zone_cargo_t]
 # 讲解卡标题 · 第一次进货运区 · 一行
@@ -1083,18 +1083,18 @@
 
 [G_zone_cargo_1]
 # 讲解卡第 1 行 · 第一次进货运区 · 一句
-中：拆回来的东西都放这儿。
-英：Everything you salvage is kept here.
+中：从船上拆下来的材料和设备，都会存放在这里。
+英：Material and machines stripped from ships are kept here.
 
 [G_zone_cargo_2]
 # 讲解卡第 2 行 · 第一次进货运区 · 一句
-中：格子满了，下一艘就拆不了。
-英：When the cells are full, the next ship cannot be taken.
+中：货运区的储物格全部占满以后，就没法继续拆下一艘船了。
+英：Once every storage cell is full, you cannot strip the next ship.
 
 [G_zone_cargo_3]
 # 讲解卡第 3 行 · 第一次进货运区 · 一句
-中：到两边货架口按 E 看库存。
-英：Press E at a rack mouth to see the stock.
+中：走到两边的货架入口，按 E 就能查看库存。
+英：Go to a rack entrance on either side and press E to see the stock.
 
 [G_zone_tug_t]
 # 讲解卡标题 · 第一次进拖船站 · 一行
@@ -1103,18 +1103,18 @@
 
 [G_zone_tug_1]
 # 讲解卡第 1 行 · 第一次进拖船站 · 一句
-中：拖船从这儿出去，把船拖回来。
-英：Tugs leave from here and bring hulks home.
+中：拖船会从这里出发，把需要拆解的船只拖回船厂。
+英：Tugs leave from here and tow the ships to be stripped back to the yard.
 
 [G_zone_tug_2]
 # 讲解卡第 2 行 · 第一次进拖船站 · 一句
-中：租的拖船只拖得动 44 米以下的。
-英：A rented tug tows nothing over 44 m.
+中：目前租用的拖船只能拖动长度小于 44 米的船只。
+英：A rented tug can only tow ships under 44 m.
 
 [G_zone_tug_3]
 # 讲解卡第 3 行 · 第一次进拖船站 · 一句
-中：修好它，大船自己拖。
-英：Mend it and tow the big ones yourself.
+中：等修好自己的拖船以后，就可以把更大的船只拖回来了。
+英：Mend your own tug and you can bring bigger ships home.
 
 [G_zone_ring_t]
 # 讲解卡标题 · 第一次进中央转运环 · 一行
@@ -1123,58 +1123,58 @@
 
 [G_zone_ring_1]
 # 讲解卡第 1 行 · 第一次进中央转运环 · 一句
-中：六条走廊在这儿碰头。
-英：Six corridors meet here.
+中：船厂的六条主要走廊都连接着这里，可以从这里前往其他区域。
+英：The yard's six main corridors all meet here; from here you can reach every district.
 
 [G_zone_ring_2]
 # 讲解卡第 2 行 · 第一次进中央转运环 · 一句
-中：坐接驳车，去哪个区都是 10 秒左右。
-英：The shuttle takes you to any district in about 10 s.
+中：乘坐接驳车前往其他区域，路上大约只需要 10 秒。
+英：The shuttle takes about 10 s to any other district.
 
 [G_zone_ring_3]
 # 讲解卡第 3 行 · 第一次进中央转运环 · 一句
-中：最后要让它重新转起来。
-英：In the end it has to turn again.
+中：后面还需要把中央转运环修好，让它重新运转起来。
+英：Later the ring itself has to be mended and set turning again.
 
 [G_first_strip_t]
 # 讲解卡标题 · 第一单开工 · 一行
-中：开工
-英：FIRST STRIP
+中：开始拆解
+英：STRIPPING BEGINS
 
 [G_first_strip_1]
 # 讲解卡第 1 行 · 第一单开工 · 一句
-中：先断电，再泄压，最后动刀。
-英：Power off, then vent, then cut.
+中：拆船之前先切断电源，再释放内部压力，确认安全以后才能开始切割。
+英：Before stripping, cut the power, then vent the pressure; cut only once it is safe.
 
 [G_first_strip_2]
 # 讲解卡第 2 行 · 第一单开工 · 一句
-中：左上角一条一条告诉你下一步。
-英：The top left tells you each next step.
+中：左上角会显示当前的操作步骤，按照提示一步一步完成就行。
+英：The top left shows the current step; follow it one step at a time.
 
 [G_first_strip_3]
 # 讲解卡第 3 行 · 第一单开工 · 一句
-中：拆坏了扣钱，慢点没事。
-英：Breaking things costs money. Slow is fine.
+中：拆坏设备会扣除收入，不用着急，慢慢拆也没关系。
+英：Breaking machines costs you money. No need to hurry; slow is fine.
 
 [G_first_equip_t]
 # 讲解卡标题 · 第一次拆下整件设备 · 一行
-中：整件设备
+中：完整设备
 英：A WHOLE MACHINE
 
 [G_first_equip_1]
 # 讲解卡第 1 行 · 第一次拆下整件设备 · 一句
-中：整件拆下来的比碎料值钱。
-英：A machine taken off whole is worth more than scrap.
+中：拆下来的设备如果保持完整，就能卖出比普通废料更高的价格。
+英：A machine taken off whole sells for more than ordinary scrap.
 
 [G_first_equip_2]
 # 讲解卡第 2 行 · 第一次拆下整件设备 · 一句
-中：送设备回收口，按设备价算。
-英：The equipment mouth pays the machine's price.
+中：把完整设备送到设备回收口，就会按照设备的价格计算收入。
+英：Send it to the equipment mouth and it is paid at the machine's price.
 
 [G_first_equip_3]
 # 讲解卡第 3 行 · 第一次拆下整件设备 · 一句
-中：结算时留着修港，或者直接卖。
-英：At settlement keep it for mending, or sell it.
+中：结算的时候可以选择留下设备，用来修复船厂，也可以直接出售换取资金。
+英：At settlement you can keep it to mend the yard, or sell it for cash.
 
 [G_store_full_t]
 # 讲解卡标题 · 仓库第一次用到八成 · 一行
@@ -1183,48 +1183,48 @@
 
 [G_store_full_1]
 # 讲解卡第 1 行 · 仓库第一次用到八成 · 一句
-中：仓库用了八成。
+中：目前仓库已经使用了 80% 的储存空间。
 英：The stores are 80 % full.
 
 [G_store_full_2]
 # 讲解卡第 2 行 · 仓库第一次用到八成 · 一句
-中：再拆一艘，可能放不下。
-英：The next ship may not fit.
+中：剩下的空间可能放不下下一艘船拆出来的材料和设备。
+英：What is left may not hold everything from the next ship.
 
 [G_store_full_3]
 # 讲解卡第 3 行 · 仓库第一次用到八成 · 一句
-中：卖掉一些，或者修货运区扩仓。
-英：Sell some, or mend the cargo district for more room.
+中：可以先出售一部分库存，或者修复货运区来扩大仓库容量。
+英：Sell some stock, or mend the cargo district to enlarge the stores.
 
 [G_first_listing_t]
 # 讲解卡标题 · 修好贸易港后第一次挂单 · 一行
-中：挂上了
+中：商品已上架
 英：LISTED
 
 [G_first_listing_1]
 # 讲解卡第 1 行 · 修好贸易港后第一次挂单 · 一句
-中：货挂到交易行了。
-英：It is on the exchange.
+中：你的商品已经成功上架到交易行，接下来等待买家购买就行。
+英：Your goods are on the exchange; now wait for a buyer.
 
 [G_first_listing_2]
 # 讲解卡第 2 行 · 修好贸易港后第一次挂单 · 一句
-中：有人买就成交，钱当场到账。
-英：When someone buys, the cash is in at once.
+中：有买家愿意按照你的价格购买时，交易就会完成，货款也会立即到账。
+英：When a buyer takes your price, the sale completes and the money arrives at once.
 
 [G_first_listing_3]
 # 讲解卡第 3 行 · 修好贸易港后第一次挂单 · 一句
-中：价挂太高没人买，看旁边的市价。
-英：Asked too high, nobody buys. Watch the market price beside it.
+中：如果定价太高，商品可能一直卖不出去，可以参考旁边的市场价格调整售价。
+英：Priced too high, it may never sell; check the market price beside it and adjust.
 
 [G_power_short_t]
 # 讲解卡标题 · 第一次电力不足 · 一行
-中：电力不足—功率 {n}%
+中：电力不足—当前功率 {n}%
 英：UNDERPOWERED — {n}% POWER
 
 [G_power_short_1]
 # 讲解卡第 1 行 · 第一次电力不足 · 一句
-中：发电机顶不住，全港功率只有 {n}%。
-英：The sets cannot keep up: the port has {n}% of its power.
+中：目前发电机的供电能力不够，整个船厂只能维持 {n}% 的功率。
+英：The generators cannot keep up: the whole yard runs at {n}% power.
 
 [G_power_short_2]
 # 讲解卡第 2 行 · 第一次电力不足 · 一句
@@ -1233,128 +1233,148 @@
 
 [G_power_short_3]
 # 讲解卡第 3 行 · 第一次电力不足 · 一句
-中：去动力区，买块电池，或者修发电机。
-英：Go to the power district: buy a battery, or mend the sets.
+中：可以前往动力区购买电池补充电力，或者修复发电机，提高船厂的供电能力。
+英：Go to the power district to buy batteries, or mend the generators to raise the supply.
 
 [G_order_due_t]
 # 讲解卡标题 · 订单第一次快到期 · 一行
-中：订单快到期
+中：订单即将到期
 英：ORDER ABOUT TO LAPSE
 
 [G_order_due_1]
 # 讲解卡第 1 行 · 订单第一次快到期 · 一句
-中：{client}那单还剩 {m} 分钟。
-英：{client}'s order has {m} min left.
+中：{client} 的订单还剩 {m} 分钟，需要尽快完成交付。
+英：{client}'s order has {m} min left; deliver soon.
 
 [G_order_due_2]
 # 讲解卡第 2 行 · 订单第一次快到期 · 一句
-中：过期这单就没了，长期合同还扣信誉。
-英：Lapsed, it is gone; a standing contract also costs reputation.
+中：超过规定时间以后，订单就会失效。如果是长期合同，还会扣除信誉。
+英：Past the deadline the order lapses; a standing contract also costs reputation.
 
 [G_order_due_3]
 # 讲解卡第 3 行 · 订单第一次快到期 · 一句
-中：仓库有货就去交，没货就排一炉。
-英：Deliver from stock, or queue a heat.
+中：如果仓库里已经有需要的材料，就可以直接交付。材料不够的话，赶紧去加工区安排生产。
+英：If the stores hold what it needs, deliver now. If not, queue production in the processing district.
 
 [G_first_mould_t]
 # 讲解卡标题 · 第一次换模 · 一行
-中：换模
+中：更换模具
 英：MOULD CHANGE
 
 [G_first_mould_1]
 # 讲解卡第 1 行 · 第一次换模 · 一句
-中：下一炉要的模具不一样，吊车在换。
-英：The next heat wants another mould; the crane is changing it.
+中：下一炉需要使用不同的模具，吊车正在更换模具。
+英：The next heat needs a different mould; the crane is changing it.
 
 [G_first_mould_2]
 # 讲解卡第 2 行 · 第一次换模 · 一句
-中：换一次，炉子停十来秒。
-英：Each change stops the furnace about ten seconds.
+中：每次更换模具，炉台都需要暂停生产十几秒。
+英：Each change stops the furnace for ten-odd seconds.
 
 [G_first_mould_3]
 # 讲解卡第 3 行 · 第一次换模 · 一句
-中：同一种排在一起炼，少换几次。
-英：Queue the same mould together and change less.
+中：尽量把需要相同模具的生产任务安排在一起，这样就能减少更换次数，节省生产时间。
+英：Group jobs that use the same mould to change less often and save time.
 
 [G_first_trip_t]
 # 讲解卡标题 · 发电机第一次超载跳闸 · 一行
 中：发电机跳闸了
-英：A SET HAS TRIPPED
+英：GENERATOR TRIPPED
 
 [G_first_trip_1]
 # 讲解卡第 1 行 · 发电机第一次超载跳闸 · 一句
-中：超载太久，发电机烧热停了。
-英：Overloaded too long, the set overheated and stopped.
+中：发电机持续超负荷运行，温度过高，已经自动停止工作。
+英：The generator ran overloaded too long, overheated and shut itself down.
 
 [G_first_trip_2]
 # 讲解卡第 2 行 · 发电机第一次超载跳闸 · 一句
-中：不修它不会自己起来。
-英：It will not come back by itself.
+中：发电机需要维修才能重新启动，等待也无法恢复供电。
+英：It must be repaired to restart; waiting will not bring the power back.
 
 [G_first_trip_3]
 # 讲解卡第 3 行 · 发电机第一次超载跳闸 · 一句
-中：飞过去，拿维护工具（4）修一下。
-英：Fly there and use the maintenance tool (4) on it.
+中：前往动力区，按 4 切换到维护工具，靠近发电机进行维修。
+英：Go to the power district, press 4 for the maintenance tool and repair it up close.
+
+[G_phase_shuttle_t]
+# 讲解卡标题 · 一行
+中：相位接驳
+英：PHASE SHUTTLE
+
+[G_phase_shuttle_1]
+# 讲解卡第 1 行 · 一句
+中：接驳车开着相位层，和货运列车不在同一个相位里。
+英：The shuttle runs phase-shifted: it is not in the freight trains' phase.
+
+[G_phase_shuttle_2]
+# 讲解卡第 2 行 · 一句
+中：碰到货车，它直接隧穿过去，谁也不用让谁。
+英：Meeting a freight train, it tunnels straight through. Nobody gives way.
+
+[G_phase_shuttle_3]
+# 讲解卡第 3 行 · 一句
+中：上车就走，最短的路，不用等车。
+英：Get on and it goes, the shortest way. No waiting for trains.
 
 [G_console_trade_t]
 # 讲解卡标题 · 第一次打开贸易港终端 · 一行
 中：贸易港终端
-英：TRADE PORT CONSOLE
+英：TRADE PORT TERMINAL
 
 [G_console_trade_1]
 # 讲解卡第 1 行 · 第一次打开贸易港终端 · 一句
-中：码头来客人，在这儿谈。
-英：Visitors at the pier are dealt with here.
+中：有商船来到码头以后，可以在这里和他们商谈交易。
+英：When a trader docks, you deal with them here.
 
 [G_console_trade_2]
 # 讲解卡第 2 行 · 第一次打开贸易港终端 · 一句
-中：三家公司的长期合同，也在这儿签。
-英：The three companies' standing contracts are signed here.
+中：你也可以在这里和三家公司签订长期合同。
+英：You can also sign standing contracts with the three companies here.
 
 [G_console_trade_3]
 # 讲解卡第 3 行 · 第一次打开贸易港终端 · 一句
-中：顶上那行说“用得上”再来，平时不用管。
-英：Come when the top line says it is worth it. Otherwise leave it.
+中：平时不用一直查看，等上方提示有需要处理的事务时，再过来就可以了。
+英：No need to keep checking; come back when the line at the top says something needs you.
 
 [G_console_hall_t]
 # 讲解卡标题 · 第一次打开交易行 · 一行
 中：交易行
-英：THE EXCHANGE
+英：EXCHANGE
 
 [G_console_hall_1]
 # 讲解卡第 1 行 · 第一次打开交易行 · 一句
-中：卖货、买零件、交订单，都在这儿。
-英：Sell, buy parts and fill orders here.
+中：你可以在这里出售材料、购买零件，也可以完成客户的订单。
+英：Sell material, buy parts and fill client orders here.
 
 [G_console_hall_2]
 # 讲解卡第 2 行 · 第一次打开交易行 · 一句
-中：卖：挑货，填价，挂出去。
-英：Sell: pick it, set the price, list it.
+中：出售材料时，先选择要卖的货物，再填写价格，就可以把货物挂到交易行了。
+英：To sell, pick the goods, set a price and list them on the exchange.
 
 [G_console_hall_3]
 # 讲解卡第 3 行 · 第一次打开交易行 · 一句
-中：订单是别人点名要的货，比市价高。
-英：Orders are goods someone asks for, above market.
+中：客户订单会指定需要的货物和数量，完成订单通常能获得比市场出售更高的收入。
+英：A client order names the goods and amount; filling it usually pays more than the market.
 
 [G_console_queue_t]
 # 讲解卡标题 · 第一次打开加工队列 · 一行
 中：加工队列
-英：PROCESSING QUEUE
+英：PROCESS QUEUE
 
 [G_console_queue_1]
 # 讲解卡第 1 行 · 第一次打开加工队列 · 一句
-中：炉子按这张单子一炉一炉炼。
-英：The furnace works down this list, heat by heat.
+中：加工炉会按照队列中的顺序进行生产，每完成一炉，就会开始下一炉。
+英：The furnace works through the queue in order, starting the next heat as each one finishes.
 
 [G_console_queue_2]
 # 讲解卡第 2 行 · 第一次打开加工队列 · 一句
-中：排一炉，炉子自己装料、熔化、浇铸。
-英：Queue a heat: it charges, melts and casts by itself.
+中：添加加工任务以后，炉台会自动完成装料、熔化和浇铸，不需要手动操作。
+英：Once a job is added the furnace charges, melts and casts by itself; nothing to do by hand.
 
 [G_console_queue_3]
 # 讲解卡第 3 行 · 第一次打开加工队列 · 一句
-中：拖动换先后，同一种模具排一起。
-英：Drag to reorder; keep the same mould together.
+中：可以拖动加工任务调整生产顺序，尽量把使用相同模具的任务安排在一起。
+英：Drag jobs to reorder them, and keep jobs with the same mould together.
 
 [G_console_gas_t]
 # 讲解卡标题 · 第一次打开加工区业务终端 · 一行
@@ -1363,18 +1383,18 @@
 
 [G_console_gas_1]
 # 讲解卡第 1 行 · 第一次打开加工区业务终端 · 一句
-中：拆船抽回来的气，在这儿分离、液化。
-英：Gas drawn from ships is separated and liquefied here.
+中：从船上回收的气体会送到这里，经过分离和液化处理以后储存在气罐中。
+英：Gas recovered from ships comes here, is separated and liquefied, and is kept in the tanks.
 
 [G_console_gas_2]
 # 讲解卡第 2 行 · 第一次打开加工区业务终端 · 一句
-中：罐里有货，过路船来要就卖。
-英：With stock in the tanks, sell to passing ships that ask.
+中：只要储罐里还有气体，就可以出售给船厂。
+英：As long as the tanks hold gas, it can be sold to the shipyard.
 
 [G_console_gas_3]
 # 讲解卡第 3 行 · 第一次打开加工区业务终端 · 一句
-中：平时不用管，顶上那行亮了再来。
-英：Leave it until the top line lights up.
+中：平时不需要专门操作，等上方出现提示以后，再过来查看就行。
+英：Nothing to do day to day; come and look when a note appears at the top.
 
 [G_console_heat_t]
 # 讲解卡标题 · 第一次打开炉台 · 一行
@@ -1383,18 +1403,18 @@
 
 [G_console_heat_1]
 # 讲解卡第 1 行 · 第一次打开炉台 · 一句
-中：电弧炉的现场开关。
-英：The arc furnace's own desk.
+中：这里是电弧炉的操作台，可以查看炉台的运行情况。
+英：This is the arc furnace's console, where you see how the furnace is running.
 
 [G_console_heat_2]
 # 讲解卡第 2 行 · 第一次打开炉台 · 一句
-中：排好的炉子自己炼，这儿看温度、出钢。
-英：Queued heats run by themselves; here you watch the heat and tap.
+中：已经安排好的加工任务会自动进行，你可以在这里查看炉内温度和出钢情况。
+英：Queued jobs run on their own; here you watch the temperature and the tapping.
 
 [G_console_heat_3]
 # 讲解卡第 3 行 · 第一次打开炉台 · 一句
-中：第一炉要你在这儿亲手出一次钢。
-英：The first heat is tapped by hand, here.
+中：第一次炼钢需要你亲自操作，等钢水准备好以后，在这里完成出钢。
+英：The first heat is yours to run: when the steel is ready, tap it here.
 
 [G_console_mill_t]
 # 讲解卡标题 · 第一次打开轧机 · 一行
@@ -1403,18 +1423,18 @@
 
 [G_console_mill_1]
 # 讲解卡第 1 行 · 第一次打开轧机 · 一句
-中：钢坯在这儿轧成钢板或型材。
-英：Billets are rolled into plate or sections here.
+中：加工好的钢坯可以送到这里，轧制成钢板或者其他型材。
+英：Finished billets come here to be rolled into plate or other sections.
 
 [G_console_mill_2]
 # 讲解卡第 2 行 · 第一次打开轧机 · 一句
-中：点一种，按 Enter 开轧。
-英：Pick one and press Enter to roll.
+中：选择需要生产的材料类型，然后按 Enter 开始轧制。
+英：Choose what to make, then press Enter to start rolling.
 
 [G_console_mill_3]
 # 讲解卡第 3 行 · 第一次打开轧机 · 一句
-中：开着连续轧，钢坯一到就轧。
-英：With rolling on, each billet is rolled as it comes.
+中：轧机启动以后会持续运行，后面只要有新的钢坯送过来，就会自动进行轧制。
+英：Once started the mill keeps running, rolling each new billet as it arrives.
 
 
 ############################################################

@@ -31,6 +31,14 @@ const MIXED_PRICE := 60.0          # $ a tonne of known mixed gas from the belt 
 const SUPPLY_MAX_T := 10.0         # t an order
 const SUPPLY_S := 60.0             # s the supplier's freighter takes
 const AUTO_AFTER := 2              # batches separated by hand before automation may be set
+# 2026-11-11 (user: "我在拆船厂拆船收集的气体，存进罐子后，会通过管道流到加工区"): a ship's gas
+# goes from the berth's recovery receiver along the port's pipe rack to the line's feed drum
+# (scripts/gas_pipes.gd draws it); it can be separated once it has arrived. 0: at once (old tests).
+static var TRANSIT_S := 30.0
+# 2026-11-11 (user: "要，按我说的改"): the tug station's cryo collection tanks (TugYard.cryo) are
+# piped on to the line's LH2 / LOX tanks, CRYO_S s a charge; d.cryo_pipe = [{kind, kg, t_left, t_total}]
+static var CRYO_S := 25.0
+const LH2_CAP := 8000.0            # kg the line's LH2 tank takes (the console's gauge)
 
 
 static func w(zh: String, en: String) -> String:
@@ -102,7 +110,7 @@ static func batch(id: String) -> Dictionary:
 # ---------------------------------------------------------------- where the gas comes from
 
 # a ship's hoses at settlement: one batch, with where it came from and what is in it
-static func receive(take: Dictionary, src: String) -> Dictionary:
+static func receive(take: Dictionary, src: String, by_pipe := true) -> Dictionary:
 	var kg := {}
 	for sp in ["o2", "n2", "ar", "co2", "h2", "he"]:
 		if float(take.get(sp, 0.0)) > 0.0:
@@ -113,6 +121,10 @@ static func receive(take: Dictionary, src: String) -> Dictionary:
 	d.n = int(d.n) + 1
 	var b := {"id": "GAS-%03d" % int(d.n), "src": src, "kg": kg, "bio": float(take.get("bio", 0.0)), "certified": false,
 		"hazard": "fuel" if float(kg.get("h2", 0.0)) > 0.0 else "", "state": "raw"}
+	if by_pipe and TRANSIT_S > 0.0:
+		b.state = "transit"
+		b.t_left = TRANSIT_S
+		b.t_total = TRANSIT_S
 	d.batches.append(b)
 	return b
 
@@ -366,9 +378,18 @@ static func advance(game, dt: float) -> Array:
 		if float(o.left) <= 0.0:
 			d.orders.erase(o)
 			var tkg := float(o.t) * 1000.0
-			var b := receive({"o2": tkg * 0.21, "n2": tkg * 0.78, "ar": tkg * 0.01}, w("小行星带气体供应商", "BELT GAS SUPPLIER"))
+			var b := receive({"o2": tkg * 0.21, "n2": tkg * 0.78, "ar": tkg * 0.01}, w("小行星带气体供应商", "BELT GAS SUPPLIER"), false)
 			b.certified = true
 			said.append(w("外购的 %.1f 吨混合气到了：%s", "%.1f t OF MIXED GAS IN: %s") % [float(o.t), str(b.id)])
+	_cryo_pipe(dt, said)
+	# a ship's gas on its way along the pipe rack to the feed drum
+	for b in d.batches:
+		if str(b.state) == "transit":
+			b.t_left = float(b.get("t_left", 0.0)) - dt
+			if float(b.t_left) <= 0.0:
+				b.state = "raw"
+				b.erase("t_left")
+				said.append(w("%s 经管道送到加工区进气罐", "%s IN AT THE FEED DRUM") % str(b.id))
 	# what its machines draw is paid for (own sets at fuel cost, the shore line dear)
 	if game != null and is_instance_valid(game):
 		for l in grid_loads():
@@ -464,8 +485,58 @@ static func status() -> String:
 		float(d.o2.ind) + float(d.o2.ok) + float(d.o2.ls), float(d.o2.ls), float(d.n2), float(d.lox.kg), TANK_CAP, grade_name(str(d.lox.grade)), float(d.residue), float(d.waste)]
 
 
+# the tug station's LH2 / LOX on their way to the line's tanks (kg), by kind
+static func cryo_piping(kind: String) -> float:
+	var kg := 0.0
+	for c in data().get("cryo_pipe", []):
+		if str(c.kind) == kind:
+			kg += float(c.kg)
+	return kg
+
+
+static func _room(kind: String) -> float:
+	var d := data()
+	if kind == "lox":
+		return 0.0 if not tank_built() else maxf(0.0, TANK_CAP - float(d.lox.kg) - cryo_piping("lox"))
+	return maxf(0.0, LH2_CAP - float(d.get("lh2", {}).get("kg", 0.0)) - cryo_piping("lh2"))
+
+
+static func _cryo_pipe(dt: float, said: Array) -> void:
+	var d := data()
+	if not d.has("cryo_pipe"):
+		d.cryo_pipe = []
+	# a tank with something in it and nothing of its kind on the way: it is sent, what fits
+	for kind in ["lh2", "lox"]:
+		var have := float(TugYard.cryo()[kind])
+		if have < 1.0 or cryo_piping(kind) > 0.0:
+			continue
+		var kg := minf(have, _room(kind))
+		if kg < 1.0:
+			continue
+		TugYard.set_cryo(kind, have - kg)
+		d.cryo_pipe.append({"kind": kind, "kg": kg, "t_left": CRYO_S, "t_total": CRYO_S})
+	for c in d.cryo_pipe.duplicate():
+		c.t_left = float(c.t_left) - dt
+		if float(c.t_left) > 0.0:
+			continue
+		d.cryo_pipe.erase(c)
+		if str(c.kind) == "lox":
+			d.lox.grade = "ind"           # off a hulk: industrial until tested
+			d.lox.kg = float(d.lox.kg) + float(c.kg)
+		else:
+			if not d.has("lh2"):
+				d.lh2 = {"kg": 0.0}
+			d.lh2.kg = float(d.lh2.get("kg", 0.0)) + float(c.kg)
+		said.append(w("拖船站的%s %.0f kg 经管道送到加工区储罐", "%.0f kg OF %s IN FROM THE TUG STATION") % ([("液氢" if str(c.kind) == "lh2" else "液氧"), float(c.kg)] if Txt.zh else [float(c.kg), str(c.kind).to_upper()]))
+
+
 static func job_text() -> String:
 	var parts: Array = []
+	for c in data().get("cryo_pipe", []):
+		parts.append(w("管道转运 %s %.0f kg · %d%%", "PIPING %s %.0f kg · %d%%") % [("液氢" if str(c.kind) == "lh2" else "液氧") if Txt.zh else str(c.kind).to_upper(), float(c.kg), int(100.0 * (1.0 - float(c.t_left) / maxf(0.01, float(c.t_total))))])
+	for b in data().batches:
+		if str(b.state) == "transit":
+			parts.append(w("管道转运 %s · %d%%", "PIPING %s · %d%%") % [str(b.id), int(100.0 * (1.0 - float(b.get("t_left", 0.0)) / maxf(0.01, float(b.get("t_total", TRANSIT_S)))))])
 	var j: Dictionary = data().job
 	if not j.is_empty():
 		parts.append(w("分离 %s · %d%%", "SEPARATING %s · %d%%") % [str(j.id), int(100.0 * (1.0 - float(j.left) / maxf(0.01, float(j.total))))])

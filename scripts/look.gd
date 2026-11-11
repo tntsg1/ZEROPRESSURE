@@ -17,7 +17,10 @@ const LIGHT_DIR := Vector2(-0.45, -0.89)   # where the berth's light comes from 
 const SLOW := 0.25                         # the big-piece slow motion (30 physics steps a second)
 const SLOW_T := 0.6                        # its length, real seconds
 const SLOW_MASS := 3.0                     # t: a piece this heavy coming free is a moment
-const TICKS := 120
+# the physics step's rate, from project.godot (physics/common/physics_ticks_per_second: 60 since
+# 2026-11-11, user: "改 60 Hz 试试"; set that line back to 120 for the old step). ZP_PHYS_HZ in
+# the environment overrides it (tests: the same run at both rates)
+static var TICKS: int = int(OS.get_environment("ZP_PHYS_HZ")) if OS.get_environment("ZP_PHYS_HZ") != "" else int(ProjectSettings.get_setting("physics/common/physics_ticks_per_second", 120))
 
 var game
 var post: CanvasLayer
@@ -510,8 +513,8 @@ func _draw_osd() -> void:
 		var h := 5.0 + i * 3.6
 		var bc := ink if not weak else hot
 		c.draw_rect(Rect2(bx + i * 7.0, y - h, 4.5, h), bc if i < bars else Color(1, 1, 1, 0.14))
-	var dbm := -48.0 - (1.0 - signal_k) * 46.0 + sin(feed_t * 7.0) * 1.5
-	_ot(c, fr, Vector2(bx + 44.0, y), "%d dBm" % int(dbm), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, ink if not weak else hot)
+	# user 2026-11-10: the readout beside the bars shows the current frame rate (was a fake dBm)
+	_ot(c, fr, Vector2(bx + 44.0, y), "%d FPS" % int(round(Engine.get_frames_per_second())), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, ink if not weak else hot)
 	_ot(c, fr, Vector2(bx + 128.0, y), "%d m  ·  %s" % [int(dist), link_name], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, dim)
 	_ot(c, fr, Vector2(bar.end.x - 26.0, y), "▾" if hl < 0.5 else "▴", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(1, 1, 1, 0.35 + 0.5 * hl))
 	if weak and fposmod(feed_t, 0.8) < 0.5:
@@ -677,13 +680,14 @@ func _nav_sweep(c: CanvasItem, r: Rect2, k: float) -> void:
 	var ctr := r.get_center()
 	var rad := r.size.length() * 0.5
 	var a := fposmod(feed_t * 1.4, TAU)
-	for i in 10:
-		var a0 := a - i * 0.06
-		var al := 0.12 * (1.0 - i / 10.0) * (0.6 + 0.4 * k)
-		var tip := ctr + Vector2.from_angle(a0) * rad
-		var cl := Geometry2D.clip_polyline_with_polygon(PackedVector2Array([ctr, tip]), PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), r.end, Vector2(r.position.x, r.end.y)]))
-		for seg in cl:
-			FastDraw.polyline(c, seg, Color(UiSkin.DATA, al), 2.0)
+	# 2026-11-10 炭黑 (user: "右下角的扫描也很难看"): one fine white sweep line inside the map's black
+	# window, no blue wedge of ten lines over it
+	var inner := r.grow(-6.0)
+	inner.size.y -= 18.0
+	var tip := ctr + Vector2.from_angle(a) * rad
+	var cl := Geometry2D.clip_polyline_with_polygon(PackedVector2Array([ctr, tip]), PackedVector2Array([inner.position, Vector2(inner.end.x, inner.position.y), inner.end, Vector2(inner.position.x, inner.end.y)]))
+	for seg in cl:
+		FastDraw.polyline(c, seg, Color(1, 1, 1, 0.1 + 0.08 * k), 1.0)
 
 # OSD text: burned into the picture, outlined in black like a drone's on-screen display
 # 117 号 (Q4 A): a panel's name, set over whatever the hull runs behind it — a wide soft halo first,
@@ -872,7 +876,7 @@ func _unhandled_key_input(ev: InputEvent) -> void:
 		if game.crane != null:
 			game.crane.queue_redraw()
 		if game.hud != null and game.hud.has_method("show_hint"):
-			game.hud.show_hint("画面：工业剖面样片" if Pal.solid else "画面：当前")
+			game.hud.show_hint("画面：工业剖面" if Pal.solid else "画面：旧画风（对照）")
 		get_viewport().set_input_as_handled()
 
 

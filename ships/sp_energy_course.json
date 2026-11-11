@@ -90,8 +90,8 @@
 				{
 					"id": "brief",
 					"text": {
-						"zh": "看一眼训练件：按 I 可以随时查图鉴",
-						"en": "LOOK OVER THE RIG: I OPENS THE CODEX ANY TIME"
+						"zh": "正式开始之前，先熟悉一下这次要拆卸的设备。超导线圈和飞轮都储存着不少能量，直接拆卸很容易出问题。遇到不认识的零件，可以随时按 I 打开图鉴，查看设备的用途和操作说明，不用急着把所有东西都记下来。",
+						"en": "BEFORE WE START, GET TO KNOW THE EQUIPMENT YOU WILL BE TAKING APART. THE SUPERCONDUCTING COIL AND THE FLYWHEEL BOTH STORE A LOT OF ENERGY, AND TAKING THEM APART DIRECTLY EASILY GOES WRONG. IF YOU MEET A PART YOU DON’T RECOGNISE, PRESS I AT ANY TIME TO OPEN THE CODEX AND SEE WHAT THE DEVICE IS FOR AND HOW TO OPERATE IT. THERE’S NO NEED TO MEMORISE EVERYTHING AT ONCE."
 					},
 					"tools": [],
 					"done": {
@@ -107,8 +107,8 @@
 			"id": "SP_E1",
 			"mode": "lockstep",
 			"title": {
-				"zh": "超导线圈：先泄能，后断冷",
-				"en": "THE COIL: DUMP FIRST, WARM LATER"
+				"zh": "超导线圈：释放储能后再拆卸",
+				"en": "THE COIL: DUMP THE ENERGY FIRST, THEN REMOVE IT"
 			},
 			"done_flag": "SP_E1_COMPLETE",
 			"guard": {
@@ -148,8 +148,8 @@
 				{
 					"id": "field",
 					"text": {
-						"zh": "测量（1）：读失超保护台的储能 FIELD",
-						"en": "MEASURE (1): READ THE STORED FIELD AT FIELD"
+						"zh": "这次要拆的是一组超导线圈，虽然设备已经停止工作，但线圈里面可能还储存着大量能量。我们先检查一下，按 1 使用测量工具，查看失超保护台上的储能读数（FIELD），确认还有多少能量没有释放。",
+						"en": "THIS TIME YOU WILL REMOVE A SET OF SUPERCONDUCTING COILS. EVEN THOUGH THE EQUIPMENT HAS STOPPED WORKING, THE COILS MAY STILL HOLD A LOT OF ENERGY. LET’S CHECK FIRST: PRESS 1 TO USE THE MEASURE TOOL AND READ THE STORED-ENERGY READING (FIELD) ON THE QUENCH-PROTECTION STATION TO CONFIRM HOW MUCH ENERGY HAS NOT YET BEEN RELEASED."
 					},
 					"tools": [
 						1
@@ -170,8 +170,8 @@
 				{
 					"id": "dump",
 					"text": {
-						"zh": "合上泄能开关 DUMP（4）；冷箱保持供电",
-						"en": "WRENCH (4): CLOSE THE DUMP SWITCH; KEEP THE COLD BOX POWERED"
+						"zh": "接下来要把线圈储存的能量安全释放掉。找到泄能开关（DUMP），按 4 将开关闭合，让线圈开始释放储能。注意，旁边的冷箱还需要继续供电，现在先不要关闭冷却系统，等线圈的储能降下来以后再考虑断电。",
+						"en": "NEXT THE ENERGY STORED IN THE COIL MUST BE RELEASED SAFELY. FIND THE DUMP SWITCH (DUMP) AND PRESS 4 TO CLOSE IT, LETTING THE COIL START RELEASING ITS STORED ENERGY. NOTE THAT THE COLD BOX BESIDE IT STILL NEEDS POWER; DON’T SWITCH OFF THE COOLING SYSTEM NOW, AND ONLY THINK ABOUT CUTTING ITS POWER AFTER THE COIL’S STORED ENERGY HAS DROPPED."
 					},
 					"tools": [
 						1,
@@ -191,8 +191,8 @@
 				{
 					"id": "wait",
 					"text": {
-						"zh": "等储能降到 5% 以下（按住 = 加速）",
-						"en": "WAIT: STORED FIELD UNDER 5 % (HOLD = TO SPEED UP)"
+						"zh": "现在需要等待一段时间，让线圈慢慢释放剩余的能量。等储能读数降到 5% 以下，我们才能继续拆卸。如果不想一直等待，可以按住 = 加快时间，不过记得确认读数已经达到要求。",
+						"en": "NOW YOU NEED TO WAIT A WHILE FOR THE COIL TO RELEASE THE REMAINING ENERGY SLOWLY. ONLY WHEN THE STORED-ENERGY READING DROPS BELOW 5% CAN WE CONTINUE WITH REMOVAL. IF YOU DON’T WANT TO KEEP WAITING YOU CAN HOLD = TO SPEED UP TIME, BUT REMEMBER TO CONFIRM THE READING HAS REACHED THE REQUIREMENT."
 					},
 					"tools": [
 						1,
@@ -214,8 +214,8 @@
 				{
 					"id": "free",
 					"text": {
-						"zh": "拆下线圈 TC-1 的螺栓（4）",
-						"en": "WRENCH (4): UNBOLT COIL TC-1"
+						"zh": "储能已经降到安全范围，现在可以开始拆卸线圈了。找到超导线圈（TC-1）上的固定螺栓，按 4 进行拆卸。前面的泄能步骤已经完成，只要按照正常顺序操作，就可以把线圈完整取下来。",
+						"en": "THE STORED ENERGY HAS DROPPED INTO A SAFE RANGE, SO YOU CAN START REMOVING THE COIL NOW. FIND THE MOUNTING BOLTS ON SUPERCONDUCTING COIL TC-1 AND PRESS 4 TO REMOVE THEM. THE ENERGY-DUMP STEP IS DONE, SO AS LONG AS YOU FOLLOW THE NORMAL ORDER YOU CAN TAKE THE COIL OFF WHOLE."
 					},
 					"tools": [
 						3,
@@ -232,8 +232,8 @@
 				{
 					"id": "deliver",
 					"text": {
-						"zh": "线圈完整送进设备回收口",
-						"en": "THE COIL, WHOLE, TO THE EQUIPMENT BAY"
+						"zh": "很好，线圈已经完整拆下来了。接下来把超导线圈（TC-1）送到设备回收口，完整的线圈还有回收价值，没必要把它切成废料。以后遇到类似设备，记得先释放储能，冷却系统要保持正常工作，确认安全以后再进行拆卸。",
+						"en": "GOOD, THE COIL IS OFF WHOLE. NOW DELIVER SUPERCONDUCTING COIL TC-1 TO THE EQUIPMENT MOUTH. A WHOLE COIL IS WORTH RECOVERING, SO THERE’S NO NEED TO CUT IT INTO SCRAP. NEXT TIME YOU MEET SIMILAR EQUIPMENT, REMEMBER TO RELEASE THE STORED ENERGY FIRST, KEEP THE COOLING SYSTEM RUNNING NORMALLY, AND ONLY REMOVE IT ONCE IT IS CONFIRMED SAFE."
 					},
 					"tools": [
 						3,
@@ -259,8 +259,8 @@
 			"id": "SP_E2",
 			"mode": "lockstep",
 			"title": {
-				"zh": "飞轮：先冷却，后刹车",
-				"en": "THE FLYWHEEL: COOLING, THEN BRAKE"
+				"zh": "飞轮：启动刹车冷却后再减速",
+				"en": "THE FLYWHEEL: START BRAKE COOLING, THEN SLOW IT DOWN"
 			},
 			"done_flag": "SP_E2_COMPLETE",
 			"guard": {
@@ -300,8 +300,8 @@
 				{
 					"id": "rpm",
 					"text": {
-						"zh": "测量（1）：读转速表 RPM-1",
-						"en": "MEASURE (1): READ THE TACHOMETER RPM-1"
+						"zh": "接下来要处理的是飞轮。这种设备即使已经断开动力，内部的飞轮也可能还在高速旋转，所以拆卸之前得先确认转速。按 1 使用测量工具，查看转速表（RPM-1）上的读数，看看飞轮现在转得有多快。",
+						"en": "NEXT UP IS THE FLYWHEEL. EVEN WITH ITS POWER DISCONNECTED, THIS KIND OF EQUIPMENT MAY HAVE A FLYWHEEL INSIDE THAT IS STILL SPINNING AT HIGH SPEED, SO YOU MUST CONFIRM ITS SPEED BEFORE REMOVAL. PRESS 1 TO USE THE MEASURE TOOL AND READ TACHOMETER RPM-1 TO SEE HOW FAST THE FLYWHEEL IS TURNING NOW."
 					},
 					"tools": [
 						1
@@ -322,8 +322,8 @@
 				{
 					"id": "cool",
 					"text": {
-						"zh": "先打开刹车冷却 CV-1（4）",
-						"en": "WRENCH (4): BRAKE COOLING CV-1 ON FIRST"
+						"zh": "飞轮还在旋转，接下来我们需要使用刹车让它减速。不过先别急着启动刹车，高速旋转的飞轮在制动时会产生大量热量，冷却不足可能会损坏设备。先找到刹车冷却阀（CV-1），按 4 打开冷却系统，准备好以后再进行下一步。",
+						"en": "THE FLYWHEEL IS STILL SPINNING, SO NEXT WE NEED TO USE THE BRAKE TO SLOW IT DOWN. BUT DON’T START THE BRAKE YET: A FLYWHEEL SPINNING AT HIGH SPEED PRODUCES A LOT OF HEAT WHEN BRAKED, AND INSUFFICIENT COOLING MAY DAMAGE THE EQUIPMENT. FIRST FIND BRAKE COOLING VALVE (CV-1) AND PRESS 4 TO OPEN THE COOLING SYSTEM, AND MOVE ON ONCE IT IS READY."
 					},
 					"tools": [
 						1,
@@ -343,8 +343,8 @@
 				{
 					"id": "brake",
 					"text": {
-						"zh": "再上刹车 BR-1（4）",
-						"en": "WRENCH (4): THEN THE BRAKE BR-1"
+						"zh": "冷却系统已经打开，现在可以启动刹车了。找到刹车装置（BR-1），按 4 启动制动，让飞轮逐渐降低转速。有冷却系统帮忙带走制动时产生的热量，我们就能安全地完成减速。",
+						"en": "THE COOLING SYSTEM IS OPEN, SO YOU CAN START THE BRAKE NOW. FIND BRAKE UNIT (BR-1) AND PRESS 4 TO APPLY THE BRAKE, LETTING THE FLYWHEEL SLOW DOWN GRADUALLY. WITH THE COOLING SYSTEM CARRYING AWAY THE HEAT PRODUCED BY BRAKING, WE CAN SLOW IT DOWN SAFELY."
 					},
 					"tools": [
 						1,
@@ -364,8 +364,8 @@
 				{
 					"id": "wait",
 					"text": {
-						"zh": "等转速降到 300 rpm 以下（按住 = 加速）",
-						"en": "WAIT: UNDER 300 rpm (HOLD = TO SPEED UP)"
+						"zh": "接下来稍微等待一下，飞轮需要一点时间才能完全减速。注意查看转速表，等读数降到 300 rpm 以下，才能继续拆卸。觉得等待时间太长的话，可以按住 = 加快时间，但不要在转速还没达标的时候动手。",
+						"en": "NEXT WAIT A LITTLE; THE FLYWHEEL NEEDS SOME TIME TO SLOW DOWN COMPLETELY. WATCH THE TACHOMETER, AND ONLY WHEN THE READING DROPS BELOW 300 rpm CAN YOU CONTINUE WITH REMOVAL. IF THE WAIT SEEMS TOO LONG YOU CAN HOLD = TO SPEED UP TIME, BUT DON’T START WORK BEFORE THE SPEED HAS REACHED THE TARGET."
 					},
 					"tools": [
 						1,
@@ -387,8 +387,8 @@
 				{
 					"id": "free",
 					"text": {
-						"zh": "拆下飞轮 FW-1 的螺栓（4）",
-						"en": "WRENCH (4): UNBOLT FLYWHEEL FW-1"
+						"zh": "转速已经降到要求范围，现在可以拆卸飞轮了。找到飞轮（FW-1）上的固定螺栓，按 4 逐个拆下来。飞轮本身还有回收价值，拆卸的时候尽量保持完整，后面回收也能多拿一些收益。",
+						"en": "THE SPEED HAS DROPPED INTO THE REQUIRED RANGE, SO YOU CAN REMOVE THE FLYWHEEL NOW. FIND THE MOUNTING BOLTS ON FLYWHEEL FW-1 AND PRESS 4 TO REMOVE THEM ONE BY ONE. THE FLYWHEEL ITSELF IS WORTH RECOVERING, SO KEEP IT AS INTACT AS YOU CAN WHILE REMOVING IT, AND YOU’LL GET MORE FOR IT WHEN IT IS RECOVERED."
 					},
 					"tools": [
 						3,
@@ -405,8 +405,8 @@
 				{
 					"id": "deliver",
 					"text": {
-						"zh": "飞轮完整送进设备回收口",
-						"en": "THE FLYWHEEL, WHOLE, TO THE EQUIPMENT BAY"
+						"zh": "最后，把拆下来的飞轮（FW-1）完整送到设备回收口，这次训练就完成了。以后碰到还在旋转的飞轮，记得先检查转速，再打开刹车冷却，之后才能启动刹车，等转速降到安全范围以后再拆卸。按照这个顺序操作，既能避免设备损坏，也能保住完整回收的收益。",
+						"en": "FINALLY, DELIVER THE REMOVED FLYWHEEL (FW-1) WHOLE TO THE EQUIPMENT MOUTH AND THIS TRAINING IS COMPLETE. NEXT TIME YOU MEET A FLYWHEEL THAT IS STILL SPINNING, REMEMBER TO CHECK ITS SPEED FIRST, THEN OPEN THE BRAKE COOLING, AND ONLY THEN START THE BRAKE, REMOVING IT ONLY WHEN THE SPEED HAS DROPPED INTO A SAFE RANGE. FOLLOWING THIS ORDER AVOIDS DAMAGING THE EQUIPMENT AND KEEPS THE PAYOUT FOR A WHOLE RECOVERY."
 					},
 					"tools": [
 						3,

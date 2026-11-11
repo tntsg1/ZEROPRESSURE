@@ -48,7 +48,7 @@ func _run() -> void:
 	root.add_child(panel)
 	await _frames(4)
 	var card: Button = panel._listing_card(l)
-	var texts := card.find_children("*", "Label", true, false).map(func(x): return str(x.text))
+	var texts := card.find_children("*", "", true, false).filter(func(x): return x is Label or x is Charcoal.LedTag).map(func(x): return str(x.text))
 	check(texts.any(func(t): return t.contains("试试新拆法") and t.contains(Methods.name_of("pump"))), "its card is marked 试试新拆法 · %s" % Methods.name_of("pump"))
 	panel.queue_free()
 	Shipping.data().day = float(l.expires) + 1.0

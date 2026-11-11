@@ -132,6 +132,10 @@ func _draw() -> void:
 func _draw_glow() -> void:
 	if sp == null or not sp.active():
 		return
+	# ARK-01 帧率: redrawn every frame, so only what is in the camera's view (0.5 ms a frame)
+	var view := ViewCull.view(game) if not (ViewCull.off or World.ark_old) else Rect2()
+	if view.size != Vector2.ZERO:
+		view = view.grow(ViewCull.MARGIN_PX / maxf(0.02, game.cam_zoom()) + 40.0)
 	for seg in sp.cfg.get("order", []):
 		if sp.torn.has(seg):
 			var t: float = float(_torn_t.get(seg, 99.0))
@@ -153,6 +157,19 @@ func _draw_glow() -> void:
 			if sp.cut.has(c.tag):
 				continue
 			var poly: PackedVector2Array = world.world_poly(c)
+			if view.size != Vector2.ZERO and not view.intersects(Geom.bbox(poly)):
+				continue
 			var col := Color(1.0, 0.7, 0.25).lerp(Pal.heat(1.0, 1.4), k)
-			Kit.fill(glow, poly, Color(col.r, col.g, col.b, (0.15 + 0.35 * k) * pulse))
+			var fc := Color(col.r, col.g, col.b, (0.15 + 0.35 * k) * pulse)
+			if World.ark_old:
+				Kit.fill(glow, poly, fc)
+			else:
+				# ARK-01 帧率: the chord's triangles as the world keeps them (an attached chord's
+				# world outline is its own), not worked out again every frame
+				var tri: PackedInt32Array = world._tri_cached(c)
+				if not tri.is_empty():
+					var fcs := PackedColorArray()
+					fcs.resize(poly.size())
+					fcs.fill(fc)
+					RenderingServer.canvas_item_add_triangle_array(glow.get_canvas_item(), tri, poly, fcs)
 			Kit.outline(glow, poly, Color(col.r, col.g, col.b, (0.4 + 0.5 * k) * pulse), 1.6)

@@ -3,6 +3,7 @@ class_name Fonts
 # and the system's CJK font behind that.
 
 static var _cache := {}
+static var watch: Node            # scripts/font_watch.gd under the root: redraws all when a glyph cache is rebuilt
 
 
 static func get_font(weight: String = "Regular") -> Font:
@@ -26,4 +27,16 @@ static func get_font(weight: String = "Regular") -> Font:
 	fb.append(sys)
 	f.fallbacks = fb
 	_cache[weight] = f
+	_watch(f)
 	return f
+
+
+static func _watch(f: Font) -> void:
+	if watch == null or not is_instance_valid(watch):
+		var tree := Engine.get_main_loop() as SceneTree
+		if tree == null or tree.root == null:
+			return
+		watch = preload("res://scripts/font_watch.gd").new()
+		watch.name = "FontWatch"
+		tree.root.add_child.call_deferred(watch)
+	watch.watch(f)

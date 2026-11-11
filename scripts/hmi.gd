@@ -1,4 +1,7 @@
 class_name Hmi
+# 2026-11-10 炭黑: the boxes come from UiSkin.box (now the dark instrument look); lamps are
+# Charcoal LEDs; "fine / fitted" lamps glow white rather than green (orange stays for warnings
+# and what is chosen); readouts sit in recessed black windows.
 # The berth terminal's look. Was the industrial HMI (P.7, 2026-10-18); since 50 号 (player
 # 2026-10-25 picked "minimal future") the same calls draw the new look: glass panels with round
 # corners that warm and lift when pointed at, soft inset screens, plain titles with an accent
@@ -21,7 +24,7 @@ static var lamp_test := false
 
 
 static func ok_col(a: float = 1.0) -> Color:
-	return Pal.tint(Pal.FLUID, a, 1.12)
+	return Color(0.86, 0.88, 0.86, a)
 
 
 static func warn_col(a: float = 1.0) -> Color:
@@ -75,11 +78,7 @@ static func plate(ci: CanvasItem, font: Font, r: Rect2, s: String, size: int, a:
 # a status lamp: lit with a soft glow, or an empty ring
 static func lamp(ci: CanvasItem, p: Vector2, col: Color, on: bool, a: float = 1.0, r: float = 7.0) -> void:
 	var lit := on or lamp_test
-	if lit:
-		ci.draw_circle(p, r + 5.0, Color(col.r, col.g, col.b, 0.16 * a))
-		ci.draw_circle(p, r * 0.75, Color(col.r, col.g, col.b, col.a * a))
-	else:
-		ci.draw_arc(p, r * 0.75, 0.0, TAU, 20, Color(1, 1, 1, 0.25 * a), 1.2, true)
+	Charcoal.led(ci, p, lit, a * col.a if lit else a, r * 0.72, Color(col.r, col.g, col.b))
 
 
 # a thin bar gauge: how full (0..1) in col on a faint track; `to` (when above frac) after it in the accent
@@ -108,11 +107,17 @@ static func push(ci: CanvasItem, font: Font, r: Rect2, label: String, ok: bool, 
 		ci.draw_style_box(UiSkin.box("sunk", a, 0.3), r)
 	var ink := Color(0.1, 0.05, 0.02) if ok else Pal.ink(0.5)
 	var lx := r.position.x + 28.0
+	# room on the right only for the key's name when there is one ("TAKE ME" was cut to "TAKE M")
+	var rpad := (font.get_string_size(key, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 44.0) if key != "" and ok else 20.0
 	var lh := 28 if r.size.y >= 64.0 else 21
+	# a label that won't fit steps down a little before it would be cut
+	var room := r.end.x - (r.position.x + 28.0) - ((font.get_string_size(key, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 44.0) if key != "" and ok else 20.0)
+	while lh > 15 and font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, lh).x > room:
+		lh -= 1
 	var ly := r.position.y + r.size.y * 0.5 + lh * 0.36 - (8.0 if note != "" else 0.0)
 	if old != "" and swap < 1.0:
-		ci.draw_string(font, Vector2(lx, ly - 8.0 * swap), old, HORIZONTAL_ALIGNMENT_LEFT, r.end.x - lx - 90.0, lh, Color(ink.r, ink.g, ink.b, a * (1.0 - swap)))
-	ci.draw_string(font, Vector2(lx, ly + 8.0 * (1.0 - swap)), label, HORIZONTAL_ALIGNMENT_LEFT, r.end.x - lx - 90.0, lh, Color(ink.r, ink.g, ink.b, a * swap))
+		ci.draw_string(font, Vector2(lx, ly - 8.0 * swap), old, HORIZONTAL_ALIGNMENT_LEFT, r.end.x - lx - rpad, lh, Color(ink.r, ink.g, ink.b, a * (1.0 - swap)))
+	ci.draw_string(font, Vector2(lx, ly + 8.0 * (1.0 - swap)), label, HORIZONTAL_ALIGNMENT_LEFT, r.end.x - lx - rpad, lh, Color(ink.r, ink.g, ink.b, a * swap))
 	if note != "":
 		ci.draw_string(font, Vector2(lx, r.position.y + r.size.y * 0.5 + 22.0), note, HORIZONTAL_ALIGNMENT_LEFT, r.end.x - lx - 20.0, 14, Color(0.15, 0.07, 0.02, a) if ok else warn_col(0.9 * a))
 	if key != "" and ok:
@@ -132,7 +137,7 @@ static func rocker(ci: CanvasItem, font: Font, r: Rect2, label: String, on: bool
 
 # a figure on its card: the label small and dim, the figure large and light, its lamp
 static func readout(ci: CanvasItem, font_s: Font, font: Font, r: Rect2, label: String, value: String, col: Color, lamp_col: Color, a: float, size: int = 32) -> void:
-	raised(ci, r, a)
+	Charcoal.display(ci, r, a)
 	ci.draw_string(font, r.position + Vector2(16, 26), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.ink(0.55 * a))
 	var vw := font_s.get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
 	ci.draw_string(font_s, Vector2(r.end.x - 16 - vw, r.end.y - 14), value, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(col.r, col.g, col.b, col.a * a))

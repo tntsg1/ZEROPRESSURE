@@ -542,6 +542,15 @@ class Btn extends RefCounted:
 		if hv and not was_hover:
 			BenchFx._sfx(rig.panel, "bench_hover", 0.35)
 		was_hover = hv
+		# 2026-11-11 用户选定 A+B: a key KeyFx moves (scripts/ui_kit/key_fx.gd) has no lift and no pointer
+		# light of its own here (they would double); the main key's slow breathing stays
+		if b.has_meta("kfx"):
+			if q != 0.0 or set_n != null:
+				q = 0.0
+				_style(0.0)
+				BenchFx.offset(b, "lift", Vector2.ZERO)
+			hv = false
+			press_t = -9.0
 		if not mo:
 			if q != 0.0 or set_n != null:
 				q = 0.0
@@ -745,7 +754,10 @@ static func leave(panel: Control) -> bool:
 	panel.propagate_call("set_process_unhandled_input", [false])
 	panel.propagate_call("set_process_unhandled_key_input", [false])
 	panel.propagate_call("set_process_shortcut_input", [false])
-	var tw := panel.get_tree().create_tween().set_parallel(true)
+	# 2026-11-10 (user: "电网调度和仓库按不了"): the next page usually pauses the tree as it opens
+	# (the terminal does); a scene tween stops with it, so the leaving picture froze at full strength
+	# on its own layer above that page, deaf to input — it must run its 0.22 s to the end regardless
+	var tw := panel.get_tree().create_tween().set_parallel(true).set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	tw.tween_property(panel, "modulate:a", 0.0, LEAVE_S).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
 	var slide: Control = rig.slide if rig != null else null
 	if slide != null and is_instance_valid(slide):
@@ -1048,6 +1060,7 @@ class RiseText extends Control:
 	var col := Color(1, 1, 1)
 	var t0 := -99.0
 	var ink: Control
+	var underline := true   # the orange stroke drawn under it as it comes in (2026-11-10: off where it read as a squiggle)
 
 	func _init(s := "", f: Font = null, size_px := 24, c := Color(1, 1, 1)) -> void:
 		text = s
@@ -1102,7 +1115,7 @@ class RiseText extends Control:
 		var base := size.y - 4.0
 		ink.draw_string(font, Vector2(0, base + drop * (px * 1.2)), text, HORIZONTAL_ALIGNMENT_LEFT, size.x, px, col)
 		var lk := BenchFx.e_io((s - 0.1) / 0.4) * (1.0 - BenchFx.e_io((s - 2.05) / 0.25))
-		if lk > 0.0 and t0 < 1e8:
+		if lk > 0.0 and t0 < 1e8 and underline:
 			var tw := minf(size.x, font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x)
 			ink.draw_rect(Rect2(tw * 0.5 * (1.0 - lk), size.y - 2.0, tw * lk, 1.5), Color(UiSkin.ACCENT, 0.9))
 

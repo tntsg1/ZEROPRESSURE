@@ -75,8 +75,12 @@ var t := 0.0
 var add_node: Node2D
 # 2026-11-10: the quantum tunnelling upgrade ("量子隧穿效应", Terminal.SHOP "tunnel"): fitted, N switches
 # it; on, what the player's grapple holds passes through walls, hull and facilities (FreeBody.set_tunnel)
-var tunnel := false
+# (user 2026-11-11: "升级默认开启" — on once bought, an old save's too: the switch is not saved)
+var tunnel := true
 var tunnel_fx: Node2D
+# 2026-11-11 量子隧穿·机体 (Terminal.SHOP "tunnel_body"): the drone itself passes everything; key U or
+# the key strip's button; on by default once bought
+var body_tunnel: Node
 
 
 func tunnel_fitted() -> bool:
@@ -117,6 +121,11 @@ func _unhandled_input(ev: InputEvent) -> void:
 	if Keys.pressed(ev, "tunnel"):
 		toggle_tunnel()
 		get_viewport().set_input_as_handled()
+	# the drone's own tunnelling: its own key (U; user 2026-11-11: not Shift+N — Shift is the dash)
+	# and the key strip's "机体" button
+	elif Keys.pressed(ev, "tunnel_body"):
+		body_tunnel.toggle()
+		get_viewport().set_input_as_handled()
 
 
 func _init() -> void:
@@ -133,6 +142,9 @@ func _init() -> void:
 	tunnel_fx = preload("res://scripts/tunnel_fx.gd").new()
 	tunnel_fx.tools = self
 	add_child(tunnel_fx)
+	body_tunnel = preload("res://scripts/body_tunnel.gd").new()
+	body_tunnel.tools = self
+	add_child(body_tunnel)
 
 
 # how far the tool in hand reaches
@@ -816,6 +828,35 @@ func _surface_entry(target: Vector2, hidden_target: bool) -> Vector2:
 const WARN_NEAR := 36.0           # px (0.75 m) from the unit's edge
 
 func _warn_equipment() -> void:
+	if World.ark_old:
+		_warn_equipment_old()
+		return
+	var best = null
+	# the fine lens warns earlier (scripts/consum.gd)
+	var near := WARN_NEAR * (Consum.FINE_WARN if Consum.is_fine(game, "lens") else 1.0)
+	var bd := near
+	# ARK-01 帧率: only the pieces the picking grid has near the beam (in the same order)
+	for q in world.pieces_near(front, near + 2.0):
+		if q.gone or q.cls != "equip" or not q.intact:
+			continue
+		var lp: Vector2 = world.frame(q).affine_inverse() * front - world.door_offset(q)
+		var bb := Geom.bbox(q.poly).grow(near)
+		if not bb.has_point(lp):
+			continue
+		var d := 0.0 if Geometry2D.is_point_in_polygon(lp, q.poly) else Geom.dist_to_boundary(lp, q.poly)
+		if d <= bd:
+			bd = d
+			best = q
+	if best == null:
+		return
+	var fresh: bool = warn.is_empty() or warn.piece != best.id or t - warn.t > 2.0
+	warn = {"piece": best.id, "t": t, "d": bd}
+	if fresh:
+		game.on_laser_near_equipment(best, front)
+
+
+# the walk through every piece it was (World.ark_old: the before/after timing)
+func _warn_equipment_old() -> void:
 	var best = null
 	# the fine lens warns earlier (scripts/consum.gd)
 	var near := WARN_NEAR * (Consum.FINE_WARN if Consum.is_fine(game, "lens") else 1.0)
@@ -1399,6 +1440,14 @@ func _draw() -> void:
 			FastDraw.circle(self, tip, 2.5 / z, Pal.ink(1.0))
 	# cursor
 	_cursor(z)
+	# 2026-11-10: a loose piece no hauling drone will take: why, by the pointer (hauler.refuse_reason)
+	if game.hauler != null and hover.get("kind", "") == "piece" and hover.get("piece") != null:
+		var hb = hover.piece.body
+		if hb != null and is_instance_valid(hb):
+			var why: String = game.hauler.refuse_text(hb)
+			if why != "":
+				var font: Font = game.hud.font if game.hud != null and "font" in game.hud else ThemeDB.fallback_font
+				_readout(font, aim + Vector2(16.0 / z, 26.0 / z), z, why, Pal.heat(0.95, 1.2))
 	# the unit the beam is about to cut into, outlined in red
 	if tool == 2 and not warn.is_empty() and t - warn.t < 0.25:
 		var bp = world.pieces.get(warn.piece)

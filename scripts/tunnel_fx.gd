@@ -21,7 +21,7 @@ var tools
 var t := 0.0
 var rings: Array = []         # {p, r, life, age, halo}
 var watch := {}               # body instance id -> {"b", "hist": [[polys...]], "ht", "rt", "in", "c", "st", "e"}
-var stats := {"inside": 0, "rings": 0, "halos": 0, "entries": 0, "exits": 0}
+var stats := {"inside": 0, "rings": 0, "halos": 0, "entries": 0, "exits": 0, "drone_in": 0, "drone_entries": 0, "drone_exits": 0, "flames": 0}
 
 
 func _init() -> void:
@@ -50,8 +50,22 @@ func _candidates() -> Array:
 				out.append(h.body)
 	for id in watch:
 		var b = watch[id].b
-		if is_instance_valid(b) and not out.has(b) and b.clearing > 0.0:
+		if is_instance_valid(b) and not (b is Drone) and not out.has(b) and b.clearing > 0.0:
 			out.append(b)
+	# 2026-11-11 量子隧穿·机体: the drone itself, tunnelling or easing out of a wall after
+	var bt = tools.body_tunnel
+	var d = tools.drone
+	if bt != null and bt.showing() and d != null and is_instance_valid(d) and d.alive:
+		out.append(d)
+	return out
+
+
+# the drone's outline (its hull, round)
+func _drone_poly(d) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	var c: Vector2 = d.global_position
+	for k in 20:
+		out.append(c + Vector2.from_angle(TAU * k / 20.0) * Drone.R)
 	return out
 
 
@@ -68,10 +82,26 @@ func _process(dt: float) -> void:
 		if not watch.has(id):
 			watch[id] = {"b": b, "hist": [], "ht": 0.0, "rt": 0.0, "in": false, "c": Vector2.ZERO, "st": 0.0, "e": 0.0, "parts": [], "polys": [], "cross": []}
 		var w: Dictionary = watch[id]
+		var is_drone: bool = b is Drone
 		var polys: Array = []
-		for p in b.pieces:
-			if not p.gone:
-				polys.append(game.world.world_poly(p))
+		if is_drone:
+			polys.append(_drone_poly(b))
+			# the jets' echoes: where it burned, and which way (drone.thrust), a moment ago
+			if not w.has("fl"):
+				w["fl"] = []
+			w["ft"] = float(w.get("ft", 0.0)) - dt
+			if w.ft <= 0.0:
+				w.ft = 0.035
+				if b.thrust.length() > 0.1:
+					w.fl.push_back([b.global_position, b.thrust.normalized(), 0.0])
+			for f in w.fl:
+				f[2] += dt
+			w.fl = w.fl.filter(func(f): return f[2] < 0.42)
+			stats.flames = w.fl.size()
+		else:
+			for p in b.pieces:
+				if not p.gone:
+					polys.append(game.world.world_poly(p))
 		w.polys = polys
 		var parts := _inside(game, polys)
 		w.parts = parts
@@ -85,15 +115,22 @@ func _process(dt: float) -> void:
 				c += Geom.centroid(it.part)
 				n += 1
 			w.c = c / maxf(1.0, n)
+		if is_drone and now_in:
+			stats.drone_in += 1
 		if now_in and not w.in:
 			_halo(w.c)
 			stats.entries += 1
-			game.sfx.play("holo", w.c, 0.8, 0.5)
-			game.sfx.play("reveal", w.c, 0.45, 1.9)
+			if is_drone:
+				stats.drone_entries += 1
+			# the drone's own crossing a little lower and fuller than a load's
+			game.sfx.play("holo", w.c, 0.9 if is_drone else 0.8, 0.42 if is_drone else 0.5)
+			game.sfx.play("reveal", w.c, 0.5 if is_drone else 0.45, 1.6 if is_drone else 1.9)
 		elif w.in and not now_in:
 			_halo(w.c)
 			stats.exits += 1
-			game.sfx.play("mirror_lock", w.c, 0.5, 1.6)
+			if is_drone:
+				stats.drone_exits += 1
+			game.sfx.play("mirror_lock", w.c, 0.55 if is_drone else 0.5, 1.35 if is_drone else 1.6)
 		w.in = now_in
 		# echoes: where it was a moment ago
 		w.ht = float(w.ht) - dt
@@ -218,6 +255,17 @@ func _draw() -> void:
 		if e <= 0.01:
 			continue
 		var b = w.b
+		# the drone: the whole time it tunnels, its hull is the two-layer wave packet, and its jets
+		# leave pixel echoes behind (only the load's parts inside a wall get the rest)
+		if is_instance_valid(b) and b is Drone:
+			e = maxf(e, 0.55)
+			for f in w.get("fl", []):
+				var age: float = f[2] / 0.42
+				var at: Vector2 = f[0]
+				var back: Vector2 = -f[1]
+				var fa := (1.0 - age) * 0.5
+				var tip := at + back * (Drone.R + (14.0 + 18.0 * age) / z)
+				_quant(PackedVector2Array([at + back * Drone.R, tip]), q, Pal.tint(air if int(f[2] * 60.0) % 2 == 0 else violet, fa, 1.4), Vector2.ZERO, 0.2 + 0.5 * age)
 		var v: Vector2 = b.linear_velocity if is_instance_valid(b) else Vector2.ZERO
 		var u := v.normalized() if v.length() > 5.0 else Vector2.RIGHT
 		var perp := Vector2(-u.y, u.x)

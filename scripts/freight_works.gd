@@ -84,6 +84,11 @@ const AUTH_AHEAD := 25.0
 const DEADLOCK_T := 3.0
 static var show_blocks := false   # draw who holds which track (scripts/freight_view.gd)
 const REVERSE_COST := 25.0
+# 多掉一次头 (2026-11-10): a way that begins by changing ends where it stands costs this much more again —
+# a train already facing the way it can go waits for its block (another train on it is worth 40 m) rather
+# than turning round on the spot and changing ends once more on the loop (tests/track_bogie_check)
+const REVERSE_HERE_COST := 80.0
+static var push_pull_fix := true   # tests: false for the picture of before (多掉一次头 2026-11-10)
 const PASSENGER := -1
 
 static var on := false
@@ -98,6 +103,18 @@ static var why := -9   # tests: the train the shuttle last waited for
 static var prof := {}  # tests: the slowest µs seen in each part of a step
 static var _p_pts: Array = []
 static var _pending_t := 0.0
+# tests: the 2026-11-11 freight fixes one by one (on), to compare with how it was
+static var fix_red := true      # no waiting at a signal for a train standing there looking for a way
+static var fix_up := true       # bound for its district, rear up its turnout, no way round: back up it
+static var fix_where := true    # off the loop: the district by the line it is on, not the nearest stop
+# 车里卡住 (user 2026-11-11): the shuttle's asked-for way comes first for PRIORITY_S; not away by then, the
+# freight goes its own way for PRIORITY_OFF_S (a ring of trains each waiting on the next, the last on the
+# shuttle's way, untangles as it does with no shuttle at all), then the shuttle comes first again
+const PRIORITY_S := 8.0
+const PRIORITY_OFF_S := 12.0
+static var _prio_since := 0.0
+static var prio_off_n := 0      # tests: times the shuttle's first call had to lapse
+static var _lapsed := false
 static var queue: Array = []   # shipments waiting for a train: {from, to, key, use, name, look}
 static var tram = null         # the shuttle (it works the switches), null in headless tests
 static var tram_clear := false # a freight train is held up by the shuttle standing idle at its stop
@@ -518,8 +535,37 @@ static func _starts(tr: Dictionary) -> Array:
 	else:
 		var th := angle_of(tr.pos)
 		var d := _dir_on_loop(tr)
+		# 多掉一次头 (2026-11-10): stopped part-way down a turnout (a signal, a back-off) and sent somewhere
+		# new — the way starts along the rails it was running, down to where they meet the loop; a straight
+		# line from the turnout to the loop was a chord across, the lead bogie half a metre off the rails
+		if absf((tr.pos as Vector2).distance_to(centre()) - R()) > 0.3 * M():
+			var pts: Array = [tr.pos]
+			var join := Vector2.INF
+			var prev: Vector2 = tr.pos
+			for q in (tr.path as Array):
+				pts.append(q)
+				if absf((q as Vector2).distance_to(centre()) - R()) < 0.05 * M() and (q as Vector2).distance_to(prev) > 0.0:
+					join = q
+					break
+				prev = q
+			if join != Vector2.INF and pts.size() >= 2:
+				var tv: Vector2 = join - (pts[pts.size() - 2] as Vector2)
+				var sj := 1.0 if (join - centre()).cross(tv) > 0.0 else -1.0
+				out.append({"pts": pts, "a": angle_of(join), "s": sj, "sw": {}, "rev": false})
+				return out
 		for s: float in [1.0, -1.0]:
-			out.append({"pts": [tr.pos], "a": th, "s": s, "sw": {}, "rev": s != d})
+			if s == d or not push_pull_fix:
+				out.append({"pts": [tr.pos], "a": th, "s": s, "sw": {}, "rev": s != d})
+			else:
+				# 多掉一次头 (2026-11-10): changing ends where it stands, the far car leads — the way on starts
+				# there, a train's length back (_reverse), not at the old head: counted from the old head a
+				# switch still under the train looked a few metres off, and the path cut across to a turnout's
+				# top (the lead bogie 1 m off the rails, tests/track_bogie_check)
+				var rp := behind(tr, 8.7 * M())
+				# its far end still up a turnout: changing ends leads back up that turnout, not round the loop
+				if absf(rp.distance_to(centre()) - R()) > 0.3 * M():
+					continue
+				out.append({"pts": [rp], "a": angle_of(rp), "s": s, "sw": {}, "rev": true})
 	return out
 
 
@@ -595,14 +641,19 @@ static func _routes_from(tr: Dictionary, place: String, wagons: Array = []) -> A
 					var ar1 := _arc2(float(st.a), s1, span1, inner)
 					m1.merge(ar1[1], true)
 					legs.append({"pts": (st.pts as Array) + (ar1[0] as Array), "sw": m1})
-					var span2 := Tram._span(r, float(en.a), s2)
+					# 多掉一次头 (2026-11-10): push-pull — having changed ends at r the far car leads, a train's
+					# length (_reverse: 8.7 m) back towards where it came from. The way on starts there: a switch
+					# the train still stands over is a lap away, not a few metres (the old count from r let a
+					# train back over its own turnout, its path cut across to the turnout's top: 1 m off the rails)
+					var rh: float = r - s1 * 8.7 * M() / R() if push_pull_fix else r
+					var span2 := Tram._span(rh, float(en.a), s2)
 					var m2: Dictionary = (en.sw as Dictionary).duplicate()
-					Tram._passed(r, s2, span2, m2)
-					var ar2 := _arc2(r, s2, span2, inner)
+					Tram._passed(rh, s2, span2, m2)
+					var ar2 := _arc2(rh, s2, span2, inner)
 					if inner and float(ar1[1].get("p1:a", 0.0)) == 0.0 and float(ar2[1].get("p1:a", 0.0)) == 0.0:
 						continue
 					m2.merge(ar2[1], true)
-					legs.append({"pts": [Tram._loop_pt(r)] + (ar2[0] as Array) + (en.tail as Array), "sw": m2})
+					legs.append({"pts": [Tram._loop_pt(rh)] + (ar2[0] as Array) + (en.tail as Array), "sw": m2})
 					revs += 1
 					lf = not lf
 				# a degenerate leg (standing where it is going)
@@ -630,13 +681,22 @@ static func _routes_from(tr: Dictionary, place: String, wagons: Array = []) -> A
 						if ban.has(c[1]):
 							bad = true
 							break
+					# 多掉一次头 (2026-11-10): with 16° turnouts a hatch is 6 m from its line's points — a train
+					# come straight down its line would stand at it half up the turnout, and could only change
+					# ends from there back up it; it stands at a hatch wholly on the loop (the way round past the
+					# hatch and back in) — every bogie on the loop's rails
+					if not bad:
+						for q in _tail_pts(legs[-1].pts, (body_back(tr) + body_front(tr)) * M()):
+							if absf((q as Vector2).distance_to(centre()) - R()) > 0.3 * M():
+								bad = true
+								break
 					if bad:
 						if debug:
 							print("        route %s s1=%d s2=%d inner=%s -> %s banned" % [opt, s1, s2, inner, place])
 						continue
 				if debug:
 					print("        route %s s1=%d s2=%d inner=%s -> %s cost %.0f" % [opt, s1, s2, inner, place, length / M() + REVERSE_COST * revs])
-				out.append({"legs": legs, "xp": xp, "cost": length / M() + REVERSE_COST * revs + (3.0 if inner else 0.0), "lf": lf, "s": s2, "place": place, "need": need})
+				out.append({"legs": legs, "xp": xp, "cost": length / M() + REVERSE_COST * revs + (REVERSE_HERE_COST if st.rev else 0.0) + (3.0 if inner else 0.0), "lf": lf, "s": s2, "place": place, "need": need, "rev0": bool(st.rev)})
 	out.sort_custom(func(a, b): return float(a.cost) < float(b.cost))
 	return out
 
@@ -674,7 +734,7 @@ static func _tail_pts(pts: Array, length: float) -> Array:
 static func _free(tr_id: int, cl: Array, body: Array, mind_pending := true) -> bool:
 	for c in cl:
 		var k: Vector2i = c[1]
-		if mind_pending and pending.has(k) and tr_id != PASSENGER:
+		if mind_pending and tr_id != PASSENGER and _wants(k):
 			return false
 		var o = claims.get(k)
 		if o != null and int(o) != tr_id:
@@ -715,6 +775,16 @@ static func _tram_body(tr) -> Array:
 static func passenger_request(tr, legs: Array) -> void:
 	if not on:
 		return
+	# 相位接驳 (user 2026-11-11): the shuttle runs through freight; it asks for nothing
+	if Tram.phase_through:
+		pending = {}
+		follow = {}
+		_p_pts = []
+		_release(PASSENGER)
+		return
+	# (asked again while still waiting, the way changed: the wait goes on from when it began)
+	if pending.is_empty():
+		_prio_since = t
 	pending = {}
 	follow = {}
 	_p_pts = []
@@ -729,9 +799,21 @@ static func passenger_request(tr, legs: Array) -> void:
 	_pending_t = t
 
 
+# freight minds the shuttle's asked-for way now (see PRIORITY_S)
+static func prio() -> bool:
+	if pending.is_empty():
+		return false
+	return fmod(t - _prio_since, PRIORITY_S + PRIORITY_OFF_S) < PRIORITY_S
+
+
+# cell k is on the way the shuttle has asked for, and freight is to keep off it now
+static func _wants(k: Vector2i) -> bool:
+	return pending.has(k) and prio()
+
+
 # true when the shuttle may go (its route claimed)
 static func passenger_go(tr) -> bool:
-	if not on or pending.is_empty():
+	if not on or pending.is_empty() or Tram.phase_through:
 		return true
 	var ahead := {}
 	for k in pending:
@@ -765,6 +847,8 @@ static func passenger_arrived(tr) -> void:
 		return
 	follow = {}
 	_release(PASSENGER)
+	if Tram.phase_through:
+		return
 	_claim(PASSENGER, _tram_body(tr))
 
 
@@ -782,7 +866,15 @@ static func _set_path(tr: Dictionary, points: Array) -> void:
 	tr.path = pts
 	tr.limits = lim
 	if not pts.is_empty():
-		var d := ((pts[0] as Vector2) - (tr.pos as Vector2)).normalized()
+		# 道岔缩短 (2026-11-10): the way the leg runs, judged 1.5 m along it — its first point can lie a
+		# hand's breadth behind a head that crept past it, and a reversal on that dropped the rails really
+		# ahead (the car's front bogie then stood 1.3 m off a tight turnout: tests/track_bogie_check)
+		var probe: Vector2 = pts[pts.size() - 1]
+		for q in pts:
+			if (q as Vector2).distance_to(tr.pos) >= 1.5 * M():
+				probe = q
+				break
+		var d := (probe - (tr.pos as Vector2)).normalized()
 		if d.dot(Vector2.from_angle(float(tr.heading))) < -0.5:
 			_reverse(tr)
 
@@ -805,18 +897,66 @@ static func _reverse(tr: Dictionary) -> void:
 	var nt: Array = []
 	for i in range(seg.size() - 1, -1, -1):
 		nt.append(seg[i])
-	for k in range(1, 17):
-		nt.append((tr.pos as Vector2) + fwd * k * 0.25 * M())
+	# 道岔缩短 (2026-11-10): the rails the cars still stand on past where the head stopped, laid on along the
+	# curve it was running (a straight ran 1.3 m off a 6 m turnout: tests/track_bogie_check)
+	# (only on the hub's loop and its turnouts: at a district's stop the line runs straight to its buffer, and
+	# the curve of the corner behind would bend it 0.3 m off)
+	if (tr.pos as Vector2).distance_to(centre()) < (PortArt.HUB_R + Tram.TURN_IN + 2.0) * M():
+		nt.append_array(Tram.run_on(tr.pos, fwd, tr.trail, 16, 0.25 * M()))
+	else:
+		for k in range(1, 17):
+			nt.append((tr.pos as Vector2) + fwd * k * 0.25 * M())
 	tr.trail = nt
 	tr.pos = rear
-	tr.heading = (-fwd).angle()
+	# the new lead faces out of the body along the rails it stands on (on a curve not the old heading turned
+	# round: 23° out on the loop, and its front bogie was drawn a metre off the rails)
+	var out_dir := -fwd
+	for q in nt:
+		if ((q as Vector2) - rear).length() >= 0.6 * M():
+			out_dir = (rear - (q as Vector2)).normalized()
+			break
+	tr.heading = out_dir.angle()
 	tr.lf = not bool(tr.lf)
 	tr.hold = maxf(float(tr.hold), HOLD)
+	# the rails the new lead already stands past: up to where it stands along the path (道岔缩短 2026-11-10:
+	# not "everything behind its nose" — beside a tight turnout that also dropped rails still ahead, and the
+	# path jumped across to the turnout's top: the car's front bogie stood 1.3 m off)
 	var path: Array = tr.path
-	while not path.is_empty() and ((path[0] as Vector2) - (tr.pos as Vector2)).dot(-fwd) <= 0.0:
+	var cut := _past_on(path, tr.pos, out_dir)
+	for i in cut:
 		path.pop_front()
 		if not (tr.limits as Array).is_empty():
 			(tr.limits as Array).pop_front()
+
+
+# how many of `path`'s first points lie behind `at` along it (heading `fwd`): those before the nearest
+# stretch, and that stretch's start too when `at` is already past it
+static func _past_on(path: Array, at: Vector2, fwd: Vector2) -> int:
+	if path.is_empty():
+		return 0
+	var best := INF
+	var bi := -1
+	var prev := at
+	for i in range(path.size()):
+		var a: Vector2 = path[i - 1] if i > 0 else path[0]
+		var b: Vector2 = path[i]
+		var ab := b - a
+		var t := clampf((at - a).dot(ab) / maxf(ab.length_squared(), 1e-6), 0.0, 1.0) if i > 0 else 0.0
+		var d := at.distance_to(a + ab * t)
+		# only stretches running the way it now heads
+		if i > 0 and ab.length() > 0.001 and ab.normalized().dot(fwd) < 0.0:
+			continue
+		if d < best:
+			best = d
+			bi = i
+	if bi < 0 or best > 3.0 * M():
+		# nothing near: the old rule, everything behind its nose
+		var n := 0
+		while n < path.size() and ((path[n] as Vector2) - at).dot(fwd) <= 0.0:
+			n += 1
+		return n
+	# path[bi] is the end of the nearest stretch: everything before it is behind
+	return bi
 
 
 # along the rails: true once at the end of the path. Speeds up and brakes gently (jerk-limited),
@@ -1178,7 +1318,7 @@ static func _hard_blocked(id: int, cl: Array, mind_pending: bool) -> bool:
 		var o = claims.get(k)
 		if o != null and (int(o) == PASSENGER or parked.has(int(o))):
 			return true
-		if mind_pending and pending.has(k):
+		if mind_pending and _wants(k):
 			return true
 	return false
 
@@ -1277,6 +1417,21 @@ static func _free_behind(tr: Dictionary) -> void:
 
 
 # ------------------------------------------------------------------ the steps of a job
+# the way still ahead of train `tr` (this leg) crosses the way the shuttle asks for
+static func _path_hits_pending(tr: Dictionary) -> bool:
+	for c in cells([tr.pos] + (tr.path as Array)):
+		if pending.has(c[1]):
+			return true
+	return false
+
+
+# standing still with nowhere routed to go yet (looking for a way): no signal waits on it to clear
+static func _waiting_itself(o: Dictionary) -> bool:
+	if o.moving or str(o.step.get("ph", "")) == "pushing":
+		return false
+	return str(o.step.get("do", "")) == "go" and not bool(o.step.get("routed", false))
+
+
 # go to a place: claim a route, run it, stand and lock. true when there
 static func _go(tr: Dictionary, st: Dictionary, dt: float) -> bool:
 	if str(tr.place) == str(st.place):
@@ -1316,7 +1471,8 @@ static func _go(tr: Dictionary, st: Dictionary, dt: float) -> bool:
 			if not more.is_empty():
 				cands = cands + more
 				cands.sort_custom(func(a, b): return float(a.cost) < float(b.cost))
-		var mind := not bool(st.get("must", false))
+		# (and not when the shuttle is waiting for this very train: out of its way is sooner)
+		var mind := not bool(st.get("must", false)) and not _bumped_out(tr) and not (why == int(tr.id) and not pending.is_empty())
 		var best_c := INF
 		var built := float(Time.get_ticks_usec() - _pt0)
 		prof.routes = maxf(float(prof.get("routes", 0.0)), built)
@@ -1352,7 +1508,7 @@ static func _go(tr: Dictionary, st: Dictionary, dt: float) -> bool:
 			var at_red := false
 			for c in rc_of(rt):
 				var k: Vector2i = c[1]
-				if (mind and pending.has(k)) or follow.has(k):
+				if (mind and _wants(k)) or follow.has(k):
 					bad = true
 					break
 				var o = claims.get(k)
@@ -1367,6 +1523,13 @@ static func _go(tr: Dictionary, st: Dictionary, dt: float) -> bool:
 					bad = true
 					break
 				if float(c[0]) <= lim_first:
+					# 车里卡住 (2026-11-11): a signal is worth waiting at for a train that will clear it
+					# (running, or at work at a hatch); not for one standing there waiting for a way
+					# itself: two trains each waiting at the other's signal never went (the shuttle with
+					# them). That way is out; the next one round goes
+					if fix_red and oi >= 0 and oi < trains.size() and _waiting_itself(trains[oi]):
+						bad = true
+						break
 					at_red = true
 				if oi != seen:
 					seen = oi
@@ -1388,6 +1551,14 @@ static func _go(tr: Dictionary, st: Dictionary, dt: float) -> bool:
 			ok = {}
 			st.retry = 0.0
 		prof.choose = maxf(float(prof.get("choose", 0.0)), float(Time.get_ticks_usec() - _pt0))
+		# 车里卡住 (2026-11-11): bound for a district's stop with its rear still up that district's turnout
+		# (no change of ends counted from there: off the loop), and no way round free: straight back up it
+		# (three trains at the berth's hatch, each waiting on the others, the shuttle on all three)
+		if fix_up and ok.is_empty() and not out_of_time and str(st.place).begins_with("d:") and body_ok:
+			var up := _up_turnout(tr)
+			if not up.is_empty() and "d:" + str(up.z) == str(st.place):
+				_run_up(tr, up, w("倒回走廊回站", "BACKING UP ITS LINE TO THE STOP"))
+				return false
 		if ok.is_empty():
 			# held up by the shuttle standing idle: ask it to go back to the hub (scripts/tram.gd)
 			if tram != null and is_instance_valid(tram) and str(tram.phase) == "" and str(tram.at) != "ring":
@@ -1442,6 +1613,12 @@ static func _go(tr: Dictionary, st: Dictionary, dt: float) -> bool:
 		tr.need = float(ok.get("need", 0.0))
 		tr.s_run = 0.0
 		tr.legs = (ok.legs as Array).duplicate()
+		# tests: the way it took (tests/track_bogie_check prints it when a bogie stands off the rails)
+		var dbg := []
+		for lg in ok.legs:
+			var lp: Array = lg.pts
+			dbg.append([TramArt.length(lp) / M(), ((lp[0] as Vector2) - centre()) / M(), ((lp[mini(1, lp.size() - 1)] as Vector2) - centre()) / M()])
+		tr.took = {"cost": float(ok.cost), "rev0": bool(ok.get("rev0", false)), "legs": dbg}
 		_extend(tr, mind)
 		tr.route_from = str(tr.place)
 		var rp: Array = []
@@ -1509,6 +1686,11 @@ static func _extend(tr: Dictionary, mind_pending: bool, dt := 0.0) -> void:
 	# waits for it either way; stopping here would keep both waiting)
 	if mind_pending and _leaving_pending(tr):
 		mind_pending = false
+	# 车里卡住 (user 2026-11-11): the shuttle waiting for this very train (it holds blocks the shuttle wants,
+	# e.g. ahead of it down the berth's corridor) while it waits at the blocks the shuttle asked for: each
+	# waited on the other for good. The train goes on (it is in the way either way; out of it is sooner)
+	if mind_pending and not pending.is_empty() and why == id:
+		mind_pending = false
 	var want := float(tr.s_run) + float(tr.speed) * float(tr.speed) / (2.0 * A_BRAKE * Mx) + AUTH_AHEAD * Mx
 	var held_up := false
 	while i < rc.size() and float(rc[i][0]) <= want:
@@ -1566,7 +1748,7 @@ static func _extend(tr: Dictionary, mind_pending: bool, dt := 0.0) -> void:
 				clear = false
 				tr.blocker = int(o)
 				break
-			if (mind_pending and pending.has(k)) or follow.has(k):
+			if (mind_pending and _wants(k)) or follow.has(k):
 				clear = false
 				tr.blocker = PASSENGER
 				break
@@ -1953,6 +2135,31 @@ static func _near_first(tr: Dictionary) -> Array:
 	return out
 
 
+# 插队上限 (user 2026-11-11: "同一列货车最多被插队 2 次"): the shuttle with the drone aboard comes first and
+# freight gives way, but a train made to give way BUMP_MAX times within BUMP_WINDOW s goes its own way next
+# (it no longer minds the way the shuttle asks for, only what the shuttle really holds): no train starves
+const BUMP_MAX := 2
+const BUMP_WINDOW := 90.0
+static var bumps_capped := 0   # tests: times a train had given way enough and went its own way
+
+
+static func _bump(tr: Dictionary) -> void:
+	var bl: Array = tr.get("bumps", [])
+	bl.append(t)
+	tr.bumps = bl
+
+
+static func _bumped_out(tr: Dictionary) -> bool:
+	var bl: Array = tr.get("bumps", [])
+	while not bl.is_empty() and t - float(bl[0]) > BUMP_WINDOW:
+		bl.pop_front()
+	tr.bumps = bl
+	if bl.size() >= BUMP_MAX and not bool(tr.get("capped", false)):
+		bumps_capped += 1
+	tr.capped = bl.size() >= BUMP_MAX
+	return bl.size() >= BUMP_MAX
+
+
 # a train in the shuttle's way leaves for somewhere out of it
 static func _yield(tr: Dictionary, allow_cross := false) -> bool:
 	# on the loop: slide along it the short way, just clear of the shuttle's route
@@ -2039,12 +2246,22 @@ static func _yield(tr: Dictionary, allow_cross := false) -> bool:
 # nobody else holds; the train runs there and stands (it plans again from there afterwards)
 static func _slide_clear(tr: Dictionary) -> bool:
 	var Mx := M()
+	# 多掉一次头 (2026-11-10): sliding is along the loop — a head still on a turnout would cut straight across
+	# to it (the lead bogie half a metre off the rails); such a train makes room another way
+	if absf((tr.pos as Vector2).distance_to(centre()) - R()) > 0.3 * Mx:
+		return false
+	# sliding back it changes ends and the far end leads: only when that end too is on the loop (stopped at a
+	# hatch near a turnout its rear can still be up the turnout — then it slides on the way it faces)
+	var back_ok := absf(behind(tr, 8.7 * Mx).distance_to(centre()) - R()) <= 0.3 * Mx
+	var facing := _dir_on_loop(tr)
 	var th := angle_of(tr.pos)
 	var L := (body_back(tr) + body_front(tr) + 1.5) * Mx
 	var step := 0.5 * Mx
 	var best_x := INF
 	var best_s := 0.0
 	for sd: float in [1.0, -1.0]:
+		if sd != facing and not back_ok:
+			continue
 		var run := 0.0
 		var x := step
 		while x < 60.0 * Mx:
@@ -2062,18 +2279,29 @@ static func _slide_clear(tr: Dictionary) -> bool:
 						best_s = sd
 					break
 			x += step
+	var leg := {}
+	var home := ""
 	if best_x == INF:
-		return false
-	var span := best_x / R()
-	var sw := {}
-	Tram._passed(th, best_s, span, sw)
+		# 多掉一次头 (2026-11-10): facing into the shuttle's way with its rear still up the turnout it came down —
+		# back up that turnout and its line to its district's stop, along its own rails, off the loop (refusing
+		# this locked the shuttle and the train against each other: tests/track_bogie_check)
+		if back_ok:
+			return false
+		leg = _up_turnout(tr)
+		if leg.is_empty():
+			return false
+		home = str(leg.z)
+	else:
+		var span := best_x / R()
+		var sw := {}
+		Tram._passed(th, best_s, span, sw)
+		leg = {"pts": [tr.pos] + Tram._arc(th, best_s, span), "sw": sw}
 	yields += 1
 	for zz in W.reserved.keys():
 		_unreserve(tr, str(zz))
 	tr.pushing = {}
 	tr.creeping = false
 	_release(int(tr.id))
-	var leg := {"pts": [tr.pos] + Tram._arc(th, best_s, span), "sw": sw}
 	var cl: Array = body_cells(tr)
 	cl.append_array(cells(leg.pts))
 	_claim(int(tr.id), cl)
@@ -2086,9 +2314,75 @@ static func _slide_clear(tr: Dictionary) -> bool:
 	tr.leg_s = []
 	_next_leg(tr)
 	tr.steps = []
-	tr.step = {"do": "go", "place": ":slide", "routed": true, "cut": true, "must": true, "t": 0.0, "say": w("给接驳车让路", "MAKING WAY FOR THE SHUTTLE")}
+	if home != "":
+		# a stop of its own at the end: arrived, it stands there (d:) and its job is thought out from there
+		tr.step = {"do": "go", "place": "d:" + home, "routed": true, "must": true, "t": 0.0, "say": w("给接驳车让路", "MAKING WAY FOR THE SHUTTLE")}
+	else:
+		tr.step = {"do": "go", "place": ":slide", "routed": true, "cut": true, "must": true, "t": 0.0, "say": w("给接驳车让路", "MAKING WAY FOR THE SHUTTLE")}
 	tr.status = w("给接驳车让路", "MAKING WAY FOR THE SHUTTLE")
 	return true
+
+
+# run `up` (_up_turnout) to the district's stop and stand there (its job thought out again from there)
+static func _run_up(tr: Dictionary, up: Dictionary, say: String) -> void:
+	for zz in W.reserved.keys():
+		_unreserve(tr, str(zz))
+	tr.pushing = {}
+	tr.creeping = false
+	_release(int(tr.id))
+	var cl: Array = body_cells(tr)
+	cl.append_array(cells(up.pts))
+	_claim(int(tr.id), cl)
+	_set_route(tr, cl)
+	tr.s_run = 0.0
+	tr.legs = [{"pts": up.pts, "sw": up.sw}]
+	tr.place = ""
+	tr.auth_full = true
+	tr.auth_left = INF
+	tr.leg_s = []
+	tr.wait = 0.0
+	_next_leg(tr)
+	tr.step = {"do": "go", "place": "d:" + str(up.z), "routed": true, "must": true, "t": 0.0, "say": say}
+	tr.status = say
+
+
+# its rear on one of its district's turnouts: the way back up it from there to the rim, then the line to the
+# district's freight stop — {pts, sw, z} starting at its rear (it changes ends there first), or {} when its
+# rear is not on a turnout or any of that way is taken (by a train, or wanted by the shuttle)
+static func _up_turnout(tr: Dictionary) -> Dictionary:
+	var rp := behind(tr, 8.7 * M())
+	for z in EXT_ZONES + ["salvage"]:
+		for sd: float in [1.0, -1.0]:
+			var tp: Array = Tram._turnout(z, sd)
+			var hit := -1
+			for i in range(1, tp.size()):
+				var a: Vector2 = tp[i - 1]
+				var b: Vector2 = tp[i]
+				var ab := b - a
+				var t := clampf((rp - a).dot(ab) / maxf(ab.length_squared(), 1e-6), 0.0, 1.0)
+				if rp.distance_to(a + ab * t) < 0.3 * M():
+					hit = i - 1
+					break
+			if hit < 0:
+				continue
+			# the turnout runs rim → loop: back from the rear to the rim, then the stop's line rim → its head
+			var pts: Array = [rp]
+			for j in range(hit, -1, -1):
+				pts.append(tp[j])
+			var line: Array = (_dstop(z).line as Array).duplicate()
+			line.reverse()
+			pts.append_array(line.slice(1))
+			for c in cells(pts):
+				var o = claims.get(c[1])
+				if (o != null and int(o) != int(tr.id)) or _wants(c[1]):
+					return {}
+			var sw := {}
+			sw[z + ":f"] = 1.0 if sd > 0.0 else 0.0
+			sw[z + (":+" if sd > 0.0 else ":-")] = 1.0
+			if z == "salvage":
+				sw["salvage:s"] = 1.0
+			return {"pts": pts, "sw": sw, "z": z}
+	return {}
 
 
 # where a train stands now as a place (after a yield or an abort)
@@ -2102,10 +2396,31 @@ static func _where(tr: Dictionary) -> String:
 				bd = d
 				best = z
 		return "h:" + best
+	# off the loop: the district whose line (or turnout) it stands on — not the nearest stop: down at the
+	# foot of the cargo district's line the berth's stop is nearer, and a train there was taken to stand at
+	# the berth (车里卡住 2026-11-11: it then gave way and planned as if in the wrong corridor, for good)
 	var best2 := ""
 	var bd2 := INF
+	var p: Vector2 = tr.pos
+	if not fix_where:
+		for z in ZONES:
+			var d0: float = p.distance_to(_dstop(z).head)
+			if d0 < bd2:
+				bd2 = d0
+				best2 = z
+		return "d:" + best2
 	for z in ZONES:
-		var d2: float = (tr.pos as Vector2).distance_to(_dstop(z).head)
+		var ln: Array = (_dstop(z).line as Array).duplicate()
+		for sd: float in [1.0, -1.0]:
+			ln.append_array(Tram._turnout(z, sd))
+		var d2: float = p.distance_to(_dstop(z).head)
+		for i in range(1, ln.size()):
+			var a: Vector2 = ln[i - 1]
+			var ab: Vector2 = (ln[i] as Vector2) - a
+			if ab.length_squared() < 1e-6:
+				continue
+			var k := clampf((p - a).dot(ab) / ab.length_squared(), 0.0, 1.0)
+			d2 = minf(d2, p.distance_to(a + ab * k))
 		if d2 < bd2:
 			bd2 = d2
 			best2 = z
@@ -2344,13 +2659,25 @@ static func tick(dt: float) -> void:
 	_lift_unserved()
 	# the shuttle waiting on freight: whatever stands in its way leaves, and a train on its way into
 	# the shuttle's route stops short of it (on the loop) and goes on once the shuttle has passed
-	if not pending.is_empty():
+	if not pending.is_empty() and not prio() and not _lapsed:
+		_lapsed = true
+		prio_off_n += 1
+	elif prio():
+		_lapsed = false
+	if prio():
 		for tr in trains:
-			if tr.moving and not bool(tr.step.get("must", false)) and str(tr.step.get("do", "")) == "go":
+			if tr.moving and not bool(tr.step.get("must", false)) and str(tr.step.get("do", "")) == "go" and not _bumped_out(tr):
+				var cut0 := bool(tr.step.get("cut", false))
 				_cut_short(tr, tr.step)
+				if not cut0 and bool(tr.step.get("cut", false)):
+					_bump(tr)
 		for tr in trains:
 			# creeping up to a signal the shuttle's route holds at danger: as good as standing
-			if tr.moving and ((tr.get("blocker") != null and int(tr.blocker) == PASSENGER) or bool(tr.step.get("cut", false))) and float(tr.speed) < 0.3 * M() and str(tr.step.get("place", "")) != ":slide":
+			# (车里卡住 2026-11-11: stopped short for the shuttle, a train held there for good — the rest of its cut
+			# way stops short of the shuttle's way as it was then; it runs on to its end unless the shuttle's
+			# way asked for now crosses what is left: one cut for an earlier ride, standing in the corridor
+			# for minutes, held a ring of three trains and the shuttle)
+			if tr.moving and ((tr.get("blocker") != null and int(tr.blocker) == PASSENGER) or (bool(tr.step.get("cut", false)) and _path_hits_pending(tr))) and float(tr.speed) < 0.3 * M() and str(tr.step.get("place", "")) != ":slide":
 				tr.speed = 0.0
 				tr.acc = 0.0
 				tr.moving = false
@@ -2373,9 +2700,14 @@ static func tick(dt: float) -> void:
 			if hit and (float(tr.get("yield_t", 0.0)) <= 0.0 or float(tr.get("blocked_t", 0.0)) > 0.0):
 				# a clean way out of the shuttle's route at once; across it only once the shuttle has
 				# waited a while with no other way round
+				# (a train that gave way enough is not stopped on its way again; standing at work in the
+				# shuttle's way it still moves off: nothing else would ever clear it)
+				if _bumped_out(tr) and str(tr.step.get("do", "")) == "go":
+					continue
 				if _yield(tr, t - _pending_t > 3.0):
 					tr.yield_t = 1.5
 					tr.blocked_t = 0.0
+					_bump(tr)
 	for tr in trains:
 		var _s0 := Time.get_ticks_usec()
 		_step(tr, dt)
@@ -2691,6 +3023,48 @@ static func says(tr: Dictionary) -> Dictionary:
 
 
 # the shuttle choosing its way: a ride over freight standing still costs more (it would wait for it)
+# 绕路先走 (user 2026-11-11: "如果稍微绕点远路，让列车马上出发的话，也可以"): about how long the shuttle would
+# wait for the freight holding any of this way (0: free now). A train running along clears in a few
+# seconds; one standing has to move off first; one at a hatch with a crate on the move longer still
+const WAIT_MOVING_S := 5.0
+const WAIT_STANDING_S := 10.0
+const WAIT_WORKING_S := 15.0
+static func est_wait(lg: Array) -> float:
+	if not on or claims.is_empty():
+		return 0.0
+	var hit := {}
+	var s0 := 0.0
+	for l in lg:
+		for c in cells(l.pts, s0, 1.0):
+			var o = claims.get(c[1])
+			if o != null and int(o) != PASSENGER:
+				hit[int(o)] = true
+		s0 += TramArt.length(l.pts)
+	var most := 0.0
+	var n := 0
+	for tr in trains:
+		if not hit.has(int(tr.id)):
+			continue
+		n += 1
+		most = maxf(most, _train_wait(tr, 0))
+	return most + 2.0 * maxf(0.0, n - 1)
+
+
+# about how long until train `tr` is out of the way: held at a signal by another train, that one's time
+# as well (a chain of them adds up: the honest figure the car shows, not "about 1 s" for half a minute)
+static func _train_wait(tr: Dictionary, depth: int) -> float:
+	var s := WAIT_STANDING_S
+	var working := str(tr.step.get("ph", "")) == "pushing" or str(tr.step.get("do", "")) in ["push", "take"]
+	if working:
+		s = WAIT_WORKING_S
+	elif tr.moving and float(tr.get("blocked_t", 0.0)) <= 0.0:
+		s = WAIT_MOVING_S
+	var bl = tr.get("blocker")
+	if depth < 3 and float(tr.get("blocked_t", 0.0)) > 0.0 and bl != null and int(bl) >= 0 and int(bl) < trains.size() and int(bl) != int(tr.id):
+		s += _train_wait(trains[int(bl)], depth + 1)
+	return s
+
+
 static func avoid_cost(lg: Array) -> float:
 	if not on or claims.is_empty():
 		return 0.0

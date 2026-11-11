@@ -63,7 +63,7 @@ func _run() -> void:
 		if l.is_empty():
 			l = ShipMarket._drafts.get(str(c.get_meta("id")), {})
 		var h := str(Face.headline(l).text)
-		if h != "" and c.find_children("*", "Label", true, false).any(func(x): return str(x.text) == h):
+		if h != "" and c.find_children("*", "Label", true, false).any(func(x): return str(x.text) == h or str(x.text) == "“%s”" % h):
 			heads += 1
 	check(heads == cards.size(), "every card leads with the seller's headline (%d/%d)" % [heads, cards.size()])
 	Cap.save(root, "res://tests/out/ship_market_feed_top_zh.png")

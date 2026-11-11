@@ -85,8 +85,8 @@
 				{
 					"id": "brief",
 					"text": {
-						"zh": "看一眼训练件：按 I 可以随时查图鉴",
-						"en": "LOOK OVER THE RIG: I OPENS THE CODEX ANY TIME"
+						"zh": "开始训练之前，可以先检查一下这次需要拆除的设备。如果遇到不认识的部件，可以随时按 I 打开图鉴，查看部件的用途和拆除方法。",
+						"en": "BEFORE TRAINING STARTS, YOU CAN FIRST CHECK THE EQUIPMENT YOU NEED TO REMOVE THIS TIME. IF YOU MEET A PART YOU DON’T RECOGNISE, PRESS I AT ANY TIME TO OPEN THE CODEX AND SEE WHAT THE PART IS FOR AND HOW TO REMOVE IT."
 					},
 					"tools": [],
 					"done": {
@@ -148,8 +148,8 @@
 				{
 					"id": "tension",
 					"text": {
-						"zh": "测量（1）：读枢轴张力 TN-1",
-						"en": "MEASURE (1): PIVOT TENSION TN-1"
+						"zh": "先测量一下枢轴 TN-1 的张力，确认折叠臂目前承受的拉力。里面还有预紧力，直接拆除固定部件可能会发生意外。（1）",
+						"en": "FIRST MEASURE THE TENSION AT PIVOT TN-1 TO CONFIRM THE PULL THE FOLDING ARM IS UNDER RIGHT NOW. IT STILL HAS PRELOAD INSIDE, SO REMOVING THE FASTENERS DIRECTLY MAY CAUSE AN ACCIDENT. (1)"
 					},
 					"tools": [
 						1
@@ -170,8 +170,8 @@
 				{
 					"id": "bleed",
 					"text": {
-						"zh": "① 泄压：连接 G-ACC，将蓄能器压力降至 30 kPa 以下。（5）",
-						"en": "① BLEED: CONNECT G-ACC; REDUCE PRESSURE BELOW 30 kPa. (5)"
+						"zh": "找到蓄能器的 G-ACC 接口，连接泄压软管，把内部压力慢慢降低到 30 kPa 以下。等压力降到安全范围以后，再继续拆除其他部件。（5）",
+						"en": "FIND THE ACCUMULATOR’S PORT G-ACC, CONNECT THE RELIEF HOSE, AND SLOWLY LOWER THE PRESSURE INSIDE TO BELOW 30 kPa. ONCE THE PRESSURE IS IN THE SAFE RANGE, CONTINUE REMOVING THE OTHER PARTS. (5)"
 					},
 					"tools": [
 						1,
@@ -192,8 +192,8 @@
 				{
 					"id": "pins",
 					"text": {
-						"zh": "② 拔销：拆下两根锁销 PIN-1、PIN-2。（4）",
-						"en": "② PINS: REMOVE BOTH LOCKING PINS, PIN-1 AND PIN-2. (4)"
+						"zh": "接下来需要拆除两根锁销，分别是 PIN-1 和 PIN-2。确认蓄能器已经完成泄压以后，再把这两根锁销取下来。（4）",
+						"en": "NEXT YOU NEED TO REMOVE TWO LOCKING PINS, PIN-1 AND PIN-2. ONCE YOU HAVE CONFIRMED THE ACCUMULATOR HAS BEEN DEPRESSURISED, TAKE OUT BOTH PINS. (4)"
 					},
 					"tools": [
 						1,
@@ -220,8 +220,8 @@
 				{
 					"id": "pivot",
 					"text": {
-						"zh": "③ 拆解：最后拆除枢轴 PIV-1。（4）",
-						"en": "③ DISMANTLE: REMOVE THE PIVOT PIV-1 LAST. (4)"
+						"zh": "两根锁销都拆除以后，就可以处理枢轴 PIV-1 了。找到对应的位置，把枢轴拆下来，完成折叠臂的拆解。（4）",
+						"en": "ONCE BOTH LOCKING PINS ARE OUT, YOU CAN DEAL WITH PIVOT PIV-1. FIND IT, TAKE THE PIVOT OFF, AND THE FOLDING ARM IS DISMANTLED. (4)"
 					},
 					"tools": [
 						1,
@@ -239,8 +239,8 @@
 				{
 					"id": "deliver",
 					"text": {
-						"zh": "折叠臂完整送进设备回收口",
-						"en": "THE ARM, WHOLE, TO THE EQUIPMENT BAY"
+						"zh": "现在可以回收折叠臂了。尽量保持整个部件完整，把它搬运到设备回收口并送进去，这一课的训练就完成了。",
+						"en": "NOW YOU CAN RECOVER THE FOLDING ARM. KEEP THE WHOLE PART INTACT AS YOU CAN, MOVE IT TO THE EQUIPMENT MOUTH AND DELIVER IT IN, AND THIS LESSON’S TRAINING IS COMPLETE."
 					},
 					"tools": [
 						3,
@@ -266,8 +266,8 @@
 			"id": "SP_L2",
 			"mode": "lockstep",
 			"title": {
-				"zh": "锁轨货物：开门、解锁、让它滑出来",
-				"en": "RAIL-LOCKED CARGO: GATE, LOCK, LET IT RUN OUT"
+				"zh": "锁轨货物：开门、解锁、回收货箱",
+				"en": "RAIL-LOCKED CARGO: OPEN THE GATE, UNLOCK, RECOVER THE CRATE"
 			},
 			"done_flag": "SP_L2_COMPLETE",
 			"guard": {
@@ -307,8 +307,8 @@
 				{
 					"id": "gate",
 					"text": {
-						"zh": "① 先打开轨道尽头的挡门 GATE（4，要有电）",
-						"en": "① OPEN THE GATE AT THE RAIL'S END FIRST: GATE (4, NEEDS POWER)"
+						"zh": "先找到轨道尽头的挡门 GATE，确认电力供应正常以后，把挡门上的 4 个锁定装置全部打开。挡门没有打开之前，先别急着松开货箱。（4）",
+						"en": "FIRST FIND GATE AT THE END OF THE RAIL, AND ONCE YOU HAVE CONFIRMED POWER IS NORMAL, OPEN ALL 4 LOCKS ON THE GATE. UNTIL THE GATE IS OPEN, DON’T RUSH TO RELEASE THE CRATE. (4)"
 					},
 					"tools": [
 						1,
@@ -332,8 +332,8 @@
 				{
 					"id": "release",
 					"text": {
-						"zh": "② 松开轨道锁 LK-1（4）：货箱沿轨道自己滑出",
-						"en": "② RELEASE THE RAIL LOCK LK-1 (4): THE CRATE RUNS OUT BY ITSELF"
+						"zh": "接下来找到轨道锁 LK-1，把上面的 4 个锁定装置全部松开。货箱失去固定以后，就会沿着轨道滑出去，记得提前做好接货准备。（4）",
+						"en": "NEXT FIND RAIL LOCK LK-1 AND RELEASE ALL 4 LOCKS ON IT. ONCE THE CRATE LOSES ITS FASTENING IT WILL SLIDE OUT ALONG THE RAIL, SO REMEMBER TO GET READY TO CATCH IT. (4)"
 					},
 					"tools": [
 						1,
@@ -353,8 +353,8 @@
 				{
 					"id": "catch",
 					"text": {
-						"zh": "接住货箱，完整送进设备回收口",
-						"en": "CATCH THE CRATE, DELIVER IT WHOLE TO THE EQUIPMENT BAY"
+						"zh": "等货箱沿着轨道滑出来以后，想办法把它接住，尽量别让货箱撞坏。接下来把整个货箱送进设备回收口，保持完整回收就可以完成训练。",
+						"en": "ONCE THE CRATE HAS SLID OUT ALONG THE RAIL, FIND A WAY TO CATCH IT AND TRY NOT TO LET IT CRASH AND BREAK. THEN DELIVER THE WHOLE CRATE TO THE EQUIPMENT MOUTH, AND RECOVERING IT INTACT COMPLETES THE TRAINING."
 					},
 					"tools": [
 						3,

@@ -23,7 +23,58 @@ static func on(_g) -> bool:
 	return Txt.hint_tier != "hardcore"
 
 
+# 2026-11-10 推进节奏 (user: "只要有无人机拿住了，就开始下一个……放气管子插上去之后，就马上下一个……引导与
+# 引导之间最好离近一点"): what is under way goes on in the background and the next step comes at once —
+#   carried   a unit held (the grapple, a crew drone, the arm, the crane): the step is past; let go short of a
+#             mouth it is a to-do in the background, the main step again only when nothing else is left
+#   hosed     a port with the hose on (a room venting, a line draining): the step is past while there is
+#             something else to do that does not wait on it — the other safety work, or (a plain ship) a unit
+#             in a room already safe; the knife still waits for the pressure ("等泄压完成")
+#   near      among the safety work, and among a plain ship's units, the nearest to the drone first
+# The background is in of(g).bg: [{kind: "hose"|"carry"|"todo", t, at}]. PACE_ON false: the guide as before.
+static var PACE_ON := true
+static var _skip_todo := false
+static var _bg: Array = []
+static var _memo_f := -1
+static var _memo_g = null
+static var _memo: Dictionary = {}
+
+
 static func of(g) -> Dictionary:
+	if not PACE_ON:
+		return _of(g)
+	var f := Engine.get_process_frames() + Engine.get_physics_frames() * 100000
+	if f == _memo_f and _memo_g == g and is_instance_valid(g):
+		return _memo
+	_bg = []
+	_skip_todo = true
+	var st := _of(g)
+	_skip_todo = false
+	if st.is_empty() and _bg.any(func(b): return b.kind == "todo"):
+		# nothing else left: what was put down short of a mouth is the step now
+		_bg = _bg.filter(func(b): return b.kind != "todo")
+		var keep := _bg.duplicate()
+		st = _of(g)
+		_bg = keep
+	if not st.is_empty() and st.get("wait", false) and _hosed(g, st.at) != "":
+		var alt := _nearest(g, _safety_list(g) + (_unit_list(g) if _plain_ship(g) else []))
+		if not alt.is_empty():
+			_bg.append({"kind": "hose", "t": str(st.t), "at": st.at})
+			st = alt
+		else:
+			# 占位 (待用户定稿): nothing to do meanwhile that does not wait on it
+			st = st.duplicate()
+			st.how = str(st.how) + (w(" · 等泄压完成", " · WAIT FOR IT TO FINISH") if str(st.how) != "" else w("等泄压完成", "WAIT FOR IT TO FINISH"))
+	if not st.is_empty():
+		st = st.duplicate()
+		st.bg = _bg.duplicate()
+	_memo_f = f
+	_memo_g = g
+	_memo = st
+	return st
+
+
+static func _of(g) -> Dictionary:
 	if g == null or g.world == null or g.sys == null or not on(g) or not CoreAsset.has(g) or g.store_guide_on():
 		return {}
 	# 用户定案（IC-120 的 A 方案推广到所有船，图鉴对标第二轮）: a pump whose line the hose has
@@ -116,6 +167,152 @@ static func of(g) -> Dictionary:
 
 static func _step(t: String, how: String, at: Vector2, wait := false) -> Dictionary:
 	return {"t": t, "how": how, "at": at, "wait": wait}
+
+
+# ---------------------------------------------------------------- the pace (2026-11-10)
+
+static func _drone(g) -> Vector2:
+	return g.drone.global_position if g.get("drone") != null and is_instance_valid(g.drone) else Vector2.INF
+
+
+# the nearest to the drone of these steps (waits last; none: {})
+static func _nearest(g, list: Array) -> Dictionary:
+	var me := _drone(g)
+	var best := {}
+	var bd := INF
+	for st in list:
+		if st.is_empty() or st.get("wait", false):
+			continue
+		var at: Vector2 = st.at
+		var d := me.distance_to(at) if me.is_finite() and at.is_finite() else 1e9
+		if d < bd:
+			bd = d
+			best = st
+	return best
+
+
+# the port with the hose on at this point ("" none)
+static func _hosed(g, at: Vector2) -> String:
+	if not at.is_finite():
+		return ""
+	for id in g.sys.hoses:
+		var c = _ctrl(g, str(id))
+		if c != null and g.world.ctrl_alive(c) and _ctrl_at(g, str(id)).distance_to(at) < 0.5:
+			return str(id)
+	return ""
+
+
+# held by anything: the grapple (one or a group), a crew drone, the arm, the crane
+static func held(g, body) -> bool:
+	if body == null or not is_instance_valid(body):
+		return false
+	if body.has_method("held") and body.held():
+		return true
+	var tl = g.get("tools")
+	if tl != null and is_instance_valid(tl):
+		if tl.held_body == body:
+			return true
+		if tl.multi != null:
+			for h in tl.multi.held:
+				if h.get("body") == body:
+					return true
+	return false
+
+
+static func _grabbed(g) -> Dictionary:
+	if not g.has_meta("ns_grabbed"):
+		g.set_meta("ns_grabbed", {})
+	return g.get_meta("ns_grabbed")
+
+
+# the ships whose steps are the safety work, then their units in any order (scripts: _plain, _vented_first)
+static func _plain_ship(g) -> bool:
+	return CoreAsset.ship_key(g) in ["tug", "pod", "s09", "st40", "my48", "hb86"]
+
+
+# every piece of safety work that can be done now, each as its step (venting under way is not one)
+static func _safety_list(g) -> Array:
+	var out: Array = []
+	var s = g.sys
+	for n in g.world.rooms:
+		if s.P(n) > LOW:
+			var port := _gas_port(g, n)
+			if port == "" or s.hoses.has(port):
+				continue
+			var r := _reach(g, port)
+			if not r.is_empty():
+				out.append(r)
+				continue
+			var jm := _unjam(g, port)
+			if not jm.is_empty():
+				out.append(jm)
+				continue
+			out.append(_step(w("抽空 %s：接 %s", "VENT %s AT %s") % [_room(g, n), port], w("气液回收（5）对着接口，现在 %.0f kPa", "hose (5) on the port, %.0f kPa now") % s.P(n), _ctrl_at(g, port)))
+	# the power stays on while anything is being pumped out (a ship's own pump runs on its bus — VT-80's MMH)
+	# (a room venting through the berth's hose needs no ship power: only a line being pumped counts)
+	var pumping := false
+	for hid in s.hoses:
+		var hc = _ctrl(g, str(hid))
+		if hc != null and s.fvol.has(str(hc.target)):
+			pumping = true
+	for tg in s.src_order:
+		var src: Dictionary = s.src[tg]
+		if src.kind == "gen" and src.running and not pumping:
+			for id in g.world.ctrls:
+				var c = g.world.ctrls[id]
+				if c.kind in ["remote", "stop"] and str(c.target) == str(tg) and g.world.ctrl_alive(c) and _reach(g, str(id)).is_empty():
+					out.append(_step(w("停发电机：%s", "STOP THE GENERATOR: %s") % id, w("维护工具（4）", "wrench (4)"), _ctrl_at(g, str(id))))
+	for id in g.world.ctrls:
+		var c = g.world.ctrls[id]
+		if c.kind == "switch" and s.on(str(id)) and str(id).begins_with("K-") and g.world.ctrl_alive(c) and not pumping and _reach(g, str(id)).is_empty():
+			out.append(_step(w("断电：拨 %s", "POWER OFF: %s") % id, w("维护工具（4）拨到关", "wrench (4), off"), _ctrl_at(g, str(id))))
+	# a capacitor bleeds only with nothing else holding the bus up (systems.gd): after the power is off
+	var power_left := false
+	for tg in s.src_order:
+		if s.src[tg].kind == "gen" and s.src[tg].running:
+			power_left = true
+	for id in g.world.ctrls:
+		var c = g.world.ctrls[id]
+		if c.kind == "switch" and s.on(str(id)) and str(id).begins_with("K-") and g.world.ctrl_alive(c):
+			power_left = true
+	for tg in s.src_order:
+		var src: Dictionary = s.src[tg]
+		if src.kind == "cap" and src.charge > 0.05 and not power_left:
+			for id in g.world.ctrls:
+				var c = g.world.ctrls[id]
+				if c.kind == "discharge" and g.world.ctrl_alive(c) and not c.state and _reach(g, str(id)).is_empty():
+					out.append(_step(w("放掉电容：%s", "DRAIN THE CAPACITOR: %s") % id, w("维护工具（4）", "wrench (4)"), _ctrl_at(g, str(id))))
+	var own := {}
+	for gr in CoreAsset.spec(g).get("groups", []):
+		for t in gr.tags:
+			own[str(t)] = true
+	for k in s.fvol:
+		if own.has(str(s.fvol[k].get("piece", ""))) or s.fvol[k].amount <= 0.02:
+			continue
+		for id in g.world.ctrls:
+			var c = g.world.ctrls[id]
+			if c.kind == "port" and str(c.target) == str(k) and g.world.ctrl_alive(c) and not s.hoses.has(str(id)) and _reach(g, str(id)).is_empty():
+				var what: String = FLUIDS.get(str(s.fvol[k].fluid), FLUIDS.get(str(c.medium), [w("管路里的液体", "THE LINE")]))[0 if Txt.zh else 1] if FLUIDS.has(str(s.fvol[k].fluid)) or FLUIDS.has(str(c.medium)) else w("管路里的液体", "THE LINE")
+				out.append(_step(w("抽空%s：接 %s", "DRAIN %s AT %s") % [what, id], w("气液回收（5）对着接口", "hose (5) on the port"), _ctrl_at(g, str(id))))
+	return out
+
+
+# a plain ship's units that can come off now: not held, not in a room still shut or under pressure
+static func _unit_list(g) -> Array:
+	var out: Array = []
+	for gr in CoreAsset.spec(g).get("groups", []):
+		for t in gr.tags:
+			var p = CoreAsset._unit(g, str(t))
+			if p == null or p.gone or not p.intact:
+				continue
+			var at := Geom.centroid(g.world.world_poly(p))
+			var room: String = g.world.room_at(at)
+			if room != "" and (g.world.room_hidden(room) or g.sys.P(room) > LOW):
+				continue
+			var st := _take(g, str(t))
+			if not st.is_empty():
+				out.append(st)
+	return out
 
 
 # ---------------------------------------------------------------- shared
@@ -253,6 +450,12 @@ static func _unjam(g, id: String) -> Dictionary:
 
 # the ship made safe, then its units one by one
 static func _units_after(g, safe: Dictionary) -> Dictionary:
+	if PACE_ON and (safe.is_empty() or safe.get("wait", false) and _hosed(g, safe.at) != ""):
+		var u := _nearest(g, _unit_list(g))
+		if not u.is_empty():
+			if not safe.is_empty():
+				_bg.append({"kind": "hose", "t": str(safe.t), "at": safe.at})
+			return u
 	if not safe.is_empty():
 		return safe
 	for gr in CoreAsset.spec(g).get("groups", []):
@@ -304,6 +507,16 @@ static func _take(g, tag: String, fix: String = "") -> Dictionary:
 	if p == null or p.gone or not p.intact:
 		return {}
 	var at := Geom.centroid(g.world.world_poly(p))
+	if PACE_ON and p.body != null:
+		if held(g, p.body):
+			# taken: on its way; the next step comes now
+			_grabbed(g)[tag] = true
+			_bg.append({"kind": "carry", "t": w("%s 送回收中", "%s ON ITS WAY TO A MOUTH") % tag, "at": at})   # 占位
+			return {}
+		if _skip_todo and _grabbed(g).has(tag):
+			# put down short of a mouth: a to-do in the background, not the main step while there is other work
+			_bg.append({"kind": "todo", "t": w("待办：把 %s 送进回收口", "TO DO: %s INTO A MOUTH") % tag, "at": at})   # 占位
+			return {}
 	if p.body == null:
 		return _step(w("拆下 %s", "TAKE %s OFF") % tag, fix if fix != "" else w("维护工具（4）拧下它的固定件，别用激光切", "wrench (4) on its fixings, never the laser"), at)
 	var mass: float = p.body.total_mass() if p.body != null else p.mass
@@ -328,6 +541,14 @@ static func _take(g, tag: String, fix: String = "") -> Dictionary:
 # the ship made safe before the knife, as the careful method says: every room vented, the
 # generator stopped, the capacitors drained, the fuel out, the power off
 static func _make_safe(g) -> Dictionary:
+	if PACE_ON:
+		var near := _nearest(g, _safety_list(g))
+		if not near.is_empty():
+			for n in g.world.rooms:
+				var port := _gas_port(g, n)
+				if g.sys.P(n) > LOW and port != "" and g.sys.hoses.has(port):
+					_bg.append({"kind": "hose", "t": w("%s 泄压中：%.0f kPa", "VENTING %s: %.0f kPa") % [_room(g, n), g.sys.P(n)], "at": _ctrl_at(g, port)})
+			return near
 	var s = g.sys
 	for n in g.world.rooms:
 		if s.P(n) > LOW:

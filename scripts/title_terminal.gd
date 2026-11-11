@@ -115,12 +115,23 @@ func _ready() -> void:
 	# Engineering layers sit behind the native title drawing, so annotations
 	# remain legible and the save-screen fade covers them continuously.
 	var background := ColorRect.new()
-	background.color = UiSkin.BG1
+	background.color = Charcoal.BG
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background.show_behind_parent = true
 	add_child(background)
 	move_child(background, 0)
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# 2026-11-10 炭黑 v2: the black windows (the sheet, the districts, the company, the three figures)
+	# on a layer of their own over the ground and under the drawings, so the ship's plots and the
+	# port's retained layer draw inside them
+	windows = Control.new()
+	windows.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	windows.show_behind_parent = true
+	windows.draw.connect(_draw_windows)
+	add_child(windows)
+	move_child(windows, 1)
+	windows.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	windows.resized.connect(windows.queue_redraw)
 	hull_plot = Plot.new()
 	hull_plot.show_behind_parent = true
 	add_child(hull_plot)
@@ -246,6 +257,8 @@ func _process(dt: float) -> void:
 	pointer_on_sheet = sheet_mode == "ship" and PLATE.has_point(pointer_ui) and not busy and not _using_keys
 	inspect_hot.target = 1.0 if pointer_on_sheet or pinned or zone_hover in ["ruler", "map", "detail"] else 0.0
 	_port_layer()
+	if windows != null and _win_mode != sheet_mode:
+		windows.queue_redraw()
 	drift.target = ((pointer_ui - PLATE.get_center()) / PLATE.size).clamp(Vector2(-1,-1), Vector2(1,1)) * Vector2(9, 6) if level == 2 and not busy and not pinned else Vector2.ZERO
 	if not pinned:
 		inspect_at.target = _main_xf().affine_inverse() * pointer_ui if pointer_on_sheet else sheet_bounds.get_center()
@@ -374,6 +387,25 @@ func _gui_input(ev: InputEvent) -> void:
 		for i in _items().size():
 			if _item_rect(i).has_point(ev.position): hover = i
 	super._gui_input(ev)
+
+
+var windows: Control
+var _win_mode := ""
+
+
+func _draw_windows() -> void:
+	if font == null:
+		return
+	windows.draw_set_transform(_origin_ui(), 0.0, Vector2.ONE * _scale_ui())
+	Charcoal.ground(windows, Vector2(1600, 900))
+	Charcoal.display(windows, PLATE.grow(12.0), 1.0, 10)
+	_win_mode = sheet_mode
+	if sheet_mode == "port":
+		Charcoal.display(windows, Rect2(516, 614, 552, 166), 1.0, 9)
+		Charcoal.display(windows, Rect2(1096, 614, 456, 166), 1.0, 9)
+	for x in [516.0, 883.0, 1248.0]:
+		Charcoal.display(windows, Rect2(x, 796, 352 if x < 1248.0 else 304, 66), 1.0, 8)
+	windows.draw_set_transform(Vector2.ZERO)
 
 
 func _scale_ui() -> float:
@@ -584,8 +616,8 @@ func _drawing() -> void:
 	for entry in [[526, words("图纸图层 · 单击切换", "LAYERS / CLICK TO CYCLE"), layer_name],
 		[893, words("接口标记 · 单击切换", "CONTROLS / CLICK TO TOGGLE"), words("显示", "VISIBLE") + " · %d" % sheet_ports.size() if show_ports else words("隐藏", "HIDDEN") + " · %d" % sheet_ports.size()],
 		[1258, words("作业状态", "WORK STATUS"), _status(data, active)]]:
-		_text(entry[1], Vector2(entry[0], 815), 12, 0.35)
-		_text(entry[2], Vector2(entry[0], 845), 17, 0.8, false, 290)
+		_text(entry[1], Vector2(entry[0] + 4, 817), 12, 0.45)
+		_text(entry[2], Vector2(entry[0] + 4, 849), 20, 0.95, false, 290)
 
 
 # the player's port as the sheet: the compact station drawn by PortArt at the stages the
@@ -728,8 +760,7 @@ func _port_drawing() -> void:
 		_text(Port.name_of(z), Vector2(532, ry + 12), 12, 0.75, false, 120)
 		for k in 2:
 			var on: bool = n > k
-			draw_circle(Vector2(668.5 + k * 14, ry + 8.5), 4.5, UiSkin.ACCENT if on else Pal.ink(0.12), true, -1.0, true)
-			draw_arc(Vector2(668.5 + k * 14, ry + 8.5), 4.5, 0.0, TAU, 16, Pal.ink(0.35), 1.0, true)
+			Charcoal.led(self, Vector2(668.5 + k * 14, ry + 8.5), on, 1.0, 4.0)
 		var note: String = Txt.t("pt_done") if n >= 2 else Port.desc_of(z, n + 1)
 		_text(note, Vector2(700, ry + 12), 11, 0.45, false, 340)
 		row += 1
@@ -750,13 +781,12 @@ func _port_drawing() -> void:
 			lines.append(words("上次游玩  ", "LAST PLAYED  ") + Time.get_datetime_string_from_unix_time(int(home_stamps[recent_slot]), true).replace("T", " "))
 	for i in lines.size():
 		_text(lines[i], Vector2(1110, 660 + i * 18), 12, 0.7, false, 428)
-	_rule(787)
 	var active2: Dictionary = data.get("active", {})
 	for entry in [[526, words("图纸 · 单击标题切换", "SHEET / CLICK THE HEAD"), words("零压港 / ARK-01", "THE PORT / ARK-01")],
 		[893, words("七区工程", "DISTRICT WORKS"), "%d / %d %s" % [built, Port.ZONES.size() * 2, words("阶段已建", "STAGES BUILT")]],
 		[1258, words("作业状态", "WORK STATUS"), _status(data, active2)]]:
-		_text(entry[1], Vector2(entry[0], 815), 12, 0.35)
-		_text(entry[2], Vector2(entry[0], 845), 17, 0.8, false, 290)
+		_text(entry[1], Vector2(entry[0] + 4, 817), 12, 0.45)
+		_text(entry[2], Vector2(entry[0] + 4, 849), 20, 0.95, false, 290)
 
 
 func _status(data: Dictionary, active: Dictionary) -> String:
@@ -773,7 +803,7 @@ func _draw() -> void:
 	_text("BERTH 07  /  SALVAGE CONTROL", Vector2(48, 40), 12, 0.65)
 	# the developer badge sits top right when it is on: the status lamp moves out of its way
 	var sx := 1435.0 if not Txt.dev else 1180.0
-	draw_rect(Rect2(sx, 29, 7, 7), Pal.HEAT)
+	Charcoal.led(self, Vector2(sx + 3.5, 32.5), scan_time >= 0.9, 1.0, 4.5)
 	_text(words("系统就绪", "SYSTEM READY") if scan_time >= 0.9 else words("扫描中", "SCANNING"), Vector2(sx + 19, 39), 12, 0.6)
 	_rule(58, 48, 1552, 0.25)
 	var entered := _opening()
@@ -786,8 +816,8 @@ func _draw() -> void:
 	var items := _items()
 	var rail := Rect2(48, rail_y.x, 402, rail_h.x)
 	# 54 号: the menu rail as the new skin's raised glass, a rounded warm bar at its left
-	draw_style_box(UiSkin.box("raised", entered), rail)
-	draw_rect(Rect2(rail.position + Vector2(8, 14), Vector2(3, rail.size.y - 28)), Color(UiSkin.ACCENT, entered))
+	Charcoal.panel(self, rail, entered, 0.0, Charcoal.FACE_HI, 12)
+	Charcoal.lip(self, Rect2(rail.position.x + 8, rail.position.y + 14, 4, rail.size.y - 28), entered)
 	for i in items.size():
 		var r := _row(i)
 		var selected := i == (hover if hover >= 0 else kb_sel)
@@ -796,7 +826,7 @@ func _draw() -> void:
 		var alpha := (0.58 + hk * 0.37) * ia
 		r.position.x += 8 * hk + (1.0 - ia) * -18
 		if i == press_i: r.position.x -= 4.0 * sin(press_t / 0.18 * PI)
-		_text("%02d" % (i + 1), r.position + Vector2(20, 36), 22, alpha)
+		draw_string(Fonts.get_font("Light"), r.position + Vector2(20, 38), "%02d" % (i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(Charcoal.ACCENT, ia) if selected else Pal.ink(alpha * 0.8))
 		_text(items[i][1], r.position + Vector2(88, 37), 25, alpha, selected, 276)
 		if hk > 0.001:
 			var arrow := r.position + Vector2(-10 * (1.0 - hk), 0)
@@ -813,7 +843,10 @@ func _draw() -> void:
 	_text("ZERO PRESSURE  /  ENGINEERING ACCESS", Vector2(1190, 888), 11, 0.3)
 	draw_set_transform(Vector2.ZERO)
 	if vk > 0.001:
-		draw_rect(Rect2(Vector2.ZERO, size), Color(UiSkin.BG1, minf(1.0, vk * 1.5)))
+		# 2026-11-11 炭黑 v2: the save cards over the charcoal ground
+		draw_rect(Rect2(Vector2.ZERO, size), Color(Charcoal.BG, minf(1.0, vk * 1.5)))
+		if vk > 0.66:
+			Charcoal.ground(self, size, minf(1.0, (vk - 0.66) * 3.0))
 		_draw_slots(size, vk)
 		if full_slots:
 			_center(words("存档已满：请先在此管理存档", "ALL SLOTS FULL — MANAGE YOUR SAVES HERE"), Vector2(size.x * 0.5, _slot_rect(0).position.y - 70), 20, Pal.ink(0.8), font)

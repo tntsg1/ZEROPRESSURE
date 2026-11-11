@@ -26,6 +26,8 @@ var _live: Array = []          # each card's clock: the time up / left, every se
 var _dlive: Array = []         # the open window's clock
 const Face := preload("res://scripts/listing_face.gd")
 const Back := preload("res://scripts/ui_back.gd")
+const Thumbs := preload("res://scripts/ship_thumbs.gd")
+const PriceInput := preload("res://scripts/ui_kit/price_input.gd")
 
 
 func w(zh: String, en: String) -> String:
@@ -75,8 +77,12 @@ func _ready() -> void:
 	Back.arrive()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	theme = UiSkin.theme()
-	# 51 号: the new look's ground (gradient, drifting glow, the pointer's light)
-	add_child(UiSkin.Ground.new())
+	# 135 号: the A-暗1 charcoal ground (scripts/ui_kit/charcoal.gd)
+	var ground := Control.new()
+	ground.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ground.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ground.draw.connect(func(): Charcoal.ground(ground, ground.size))
+	add_child(ground)
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	for side in ["left", "right", "top", "bottom"]:
@@ -87,27 +93,43 @@ func _ready() -> void:
 	margin.add_child(column)
 	var top := HBoxContainer.new()
 	column.add_child(top)
-	var title := _label(w("零压港 · 船市", "ZERO PRESSURE PORT · HULK MARKET"), 22, 0.95)
+	top.add_theme_constant_override("separation", 12)
+	var title := _label(w("零压港 · 船市", "ZERO PRESSURE PORT · HULK MARKET"), 28, 0.97)
+	title.add_theme_color_override("font_color", Charcoal.INK)
+	title.autowrap_mode = TextServer.AUTOWRAP_OFF
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	top.add_child(title)
-	var bal := _label(w("可用资金 ", "FUNDS ") + Pal.money(float(Career.data.money)), 18)
+	# the funds in a black window
+	var well := PanelContainer.new()
+	well.add_theme_stylebox_override("panel", Charcoal.well_box(12.0))
+	well.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top.add_child(well)
+	var bal := _label(w("可用资金  ", "FUNDS  ") + Pal.money(float(Career.data.money)), 18)
 	bal.autowrap_mode = TextServer.AUTOWRAP_OFF
-	bal.add_theme_color_override("font_color", Pal.tint(Pal.AIR, 0.95, 1.2))
-	top.add_child(bal)
+	bal.add_theme_color_override("font_color", Charcoal.INK)
+	well.add_child(bal)
 	# came from the exchange: the back key says so, no second key to it
 	if not (Back.has_back() and str(Back.stack[-1].key) == "exchange"):
-		top.add_child(_btn(w("回交易行", "TO THE EXCHANGE"), _to_exchange))
-	top.add_child(_btn(Back.close_text(), _back))
+		var ex := _btn(w("回交易行", "TO THE EXCHANGE"), _to_exchange, 44.0)
+		Charcoal.style_button(ex)
+		top.add_child(ex)
+	var bk := _btn(Back.close_text(), _back, 44.0)
+	bk.custom_minimum_size.x = 200
+	Charcoal.style_button(bk)
+	Charcoal.key_text(bk)
+	top.add_child(bk)
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 14)
 	column.add_child(body)
 	var side := VBoxContainer.new()
-	side.custom_minimum_size.x = 190
-	side.add_theme_constant_override("separation", 6)
+	side.custom_minimum_size.x = 200
+	side.add_theme_constant_override("separation", 10)
 	body.add_child(side)
 	for c in [["all", w("全部挂牌", "ALL LISTINGS")], ["small", w("小型（≤ 40 m）", "SMALL (≤ 40 m)")], ["mid", w("中型（40–70 m）", "MID (40–70 m)")], ["large", w("大型（≥ 70 m）", "LARGE (≥ 70 m)")], ["mine", w("我的船", "MY SHIPS")]]:
-		var b := _btn(str(c[1]), _cat.bind(str(c[0])))
+		var b := _btn(str(c[1]), _cat.bind(str(c[0])), 46.0)
+		var ck: String = c[0]
+		Charcoal.style_choice(b, func(): return cat == ck)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		cat_keys[c[0]] = b
 		side.add_child(b)
@@ -128,16 +150,13 @@ func _ready() -> void:
 	dimmer.visible = false
 	add_child(dimmer)
 	detail_win = PanelContainer.new()
-	var win := UiSkin.solid(Color("171b21"), 22, 24.0)
-	win.border_color = Color(1, 1, 1, 0.1)
-	win.set_border_width_all(1)
-	win.shadow_color = Color(0, 0, 0, 0.6)
+	var win := Charcoal.side_box(24.0)
 	win.shadow_size = 40
 	detail_win.add_theme_stylebox_override("panel", win)
 	detail_win.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	detail_win.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	detail_win.grow_vertical = Control.GROW_DIRECTION_BOTH
-	detail_win.custom_minimum_size = Vector2(1180, 600)
+	detail_win.custom_minimum_size = Vector2(1180, 820)
 	detail_win.visible = false
 	add_child(detail_win)
 	detail = VBoxContainer.new()
@@ -155,6 +174,8 @@ func _signature() -> String:
 
 
 func _process(dt: float) -> void:
+	if not Thumbs.queue.is_empty() and not Thumbs.busy:
+		Thumbs.pump(self)
 	if _was_open and not detail_win.visible:
 		_redo(chosen)
 	_was_open = detail_win.visible
@@ -218,14 +239,14 @@ func _fill() -> void:
 	_stamp = _signature()
 	for id in _spins:
 		if is_instance_valid(_spins[id]):
-			_resale_price[id] = (_spins[id] as SpinBox).value
+			_resale_price[id] = float(_spins[id].value)
 	_spins.clear()
 	_live.clear()
 	_cards.clear()
 	_spare.clear()
 	feed_area = null
 	for c in cat_keys:
-		cat_keys[c].add_theme_stylebox_override("normal", _box(Color(0.07, 0.09, 0.1), Pal.tint(Pal.AIR, 0.8, 1.1) if c == cat else Pal.ink(0.2), 8.0))
+		cat_keys[c].queue_redraw()
 	for ch in main.get_children():
 		main.remove_child(ch)
 		ch.queue_free()
@@ -243,7 +264,8 @@ func _fill() -> void:
 # wait behind 刷新 so the page does not move under the pointer; one that ran out while the page was
 # open says so on its card and is gone at the next read.
 
-const CARD_H := 340.0
+const CARD_H := 384.0
+const PIC_H := 122.0
 const GAP := 12.0
 const COLS := 3
 const PRICE_POOL := 240
@@ -265,6 +287,7 @@ var _pool_all: Array = []
 var _tow_s := {}              # station -> its arc home (the cards' tow line, the nearest-first order)
 var _want_scroll := -1
 var _was_open := false
+var _right_scroll: ScrollContainer
 
 
 func _in_cat(ship: String) -> bool:
@@ -287,8 +310,9 @@ func _feed_page() -> void:
 	bar.add_child(sl)
 	sort_keys.clear()
 	for k in [["mix", w("综合", "BEST MATCH")], ["price", w("价格从低到高", "PRICE: LOW FIRST")], ["near", w("离港近", "NEAREST")], ["new", w("刚上架", "NEWEST")]]:
-		var b := _btn(str(k[1]), _sort.bind(str(k[0])), 34.0)
-		b.add_theme_stylebox_override("normal", _box(Color(0.07, 0.09, 0.1), Pal.tint(Pal.AIR, 0.8, 1.1) if k[0] == sort else Pal.ink(0.2), 8.0))
+		var b := _btn(str(k[1]), _sort.bind(str(k[0])), 40.0)
+		var sk: String = k[0]
+		Charcoal.style_choice(b, func(): return sort == sk)
 		sort_keys[k[0]] = b
 		bar.add_child(b)
 	var sp := Control.new()
@@ -298,7 +322,8 @@ func _feed_page() -> void:
 	new_btn = _btn(w("刷新", "REFRESH"), func():
 		_snap = -1.0
 		_scroll.scroll_vertical = 0
-		_fill(), 34.0)
+		_fill(), 40.0)
+	Charcoal.style_button(new_btn)
 	bar.add_child(new_btn)
 	feed_area = Control.new()
 	feed_area.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -552,57 +577,69 @@ func _listing_card(l: Dictionary) -> Button:
 	return b
 
 
-# 133 号: a card's nodes, made once; the feed fills the same few again and again as the page
-# scrolls (a card entering the tree costs several milliseconds, refilling it a fraction of that)
+# 133/135 号: a card's nodes, made once; the feed fills the same few again and again as the page
+# scrolls. 135 号 (user 2026-11-10: the A-暗1 charcoal look): one raised charcoal key per listing,
+# in three tiers — the ship (its name, class and length, the seller's ad, its picture in a black
+# window); the seller and the price (the price in its own window); where it lies and who looks
 func _card_shell() -> Button:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(380, CARD_H)
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.pressed.connect(func(): _open(str(b.get_meta("id", ""))))
-	UiSkin.hover_lift(b, 14.0)
+	Charcoal.style_card(b, 0.0)
 	var R := {}
 	var v := VBoxContainer.new()
 	v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	v.offset_left = 14
-	v.offset_right = -14
-	v.offset_top = 10
-	v.offset_bottom = -12
+	v.offset_left = 16
+	v.offset_right = -16
+	v.offset_top = 12
+	v.offset_bottom = -14
 	v.add_theme_constant_override("separation", 4)
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	b.add_child(v)
-	# the strip: on sale, how long up, how long left (or why it cannot be bought)
+	# the strip: on sale (a lamp), how long up | how long left (or why it cannot be bought)
 	var strip := _hrow()
 	v.add_child(strip)
-	R.dot = _label("●", 11)
-	R.dot.autowrap_mode = TextServer.AUTOWRAP_OFF
-	R.dot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	strip.add_child(R.dot)
-	R.on = _label("", 13, 0.7)
-	R.on.autowrap_mode = TextServer.AUTOWRAP_OFF
+	R.on = Charcoal.LedTag.new("", Charcoal.ACCENT, 13)
 	R.on.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	strip.add_child(R.on)
 	R.left = _label("", 13, 0.55)
 	R.left.autowrap_mode = TextServer.AUTOWRAP_OFF
 	strip.add_child(R.left)
-	# 133 号: the seller's own headline leads the card, the way a shop titles its goods
-	R.ad = _label("", 19, 0.97)
-	R.ad.max_lines_visible = 2
-	R.ad.custom_minimum_size.y = 24
-	v.add_child(R.ad)
-	R.t = _label("", 14, 0.55)
+	# tier one: the ship
+	var head := _hrow(10)
+	v.add_child(head)
+	R.t = _label("", 20, 0.97)
 	R.t.autowrap_mode = TextServer.AUTOWRAP_OFF
 	R.t.clip_text = true
-	v.add_child(R.t)
-	# 108 号: a showcase says which method it is laid out for, on a line of its own
-	R.sc = _label("", 14)
-	R.sc.add_theme_color_override("font_color", UiSkin.ACCENT)
+	R.t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	head.add_child(R.t)
+	R.reg = _label("", 13, 0.5)
+	R.reg.autowrap_mode = TextServer.AUTOWRAP_OFF
+	R.reg.size_flags_vertical = Control.SIZE_SHRINK_END
+	head.add_child(R.reg)
+	# the seller's own headline, in their words
+	R.ad = _label("", 15, 0.82)
+	R.ad.autowrap_mode = TextServer.AUTOWRAP_OFF
+	R.ad.clip_text = true
+	v.add_child(R.ad)
+	# 108 号: a showcase says which method it is laid out for, on a lamp tag
+	R.sc = Charcoal.LedTag.new("", Charcoal.ACCENT, 13)
 	v.add_child(R.sc)
-	R.pic = ShipThumb.new({})
+	R.pic = Thumbs.View.new()
+	R.pic.custom_minimum_size = Vector2(0, PIC_H)
 	R.pic.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	v.add_child(R.pic)
-	# who sells it
+	# tier two: who sells it and what they say | the price in its window
+	var mid := _hrow(12)
+	v.add_child(mid)
+	var who_col := VBoxContainer.new()
+	who_col.add_theme_constant_override("separation", 3)
+	who_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	who_col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mid.add_child(who_col)
 	var who := _hrow(8)
-	v.add_child(who)
+	who_col.add_child(who)
 	R.kind = _chip("")
 	who.add_child(R.kind)
 	R.nm = _label("", 15, 0.9)
@@ -612,45 +649,51 @@ func _card_shell() -> Button:
 	who.add_child(R.nm)
 	R.st = _label("", 12, 0.45)
 	R.st.autowrap_mode = TextServer.AUTOWRAP_OFF
-	who.add_child(R.st)
-	# what the seller says against the rating (only what is on the page)
+	R.st.clip_text = true
+	who_col.add_child(R.st)
 	var said := _hrow(8)
-	v.add_child(said)
-	R.cl = _label("", 13, 0.65)
+	who_col.add_child(said)
+	R.cl = _label("", 12, 0.62)
 	R.cl.autowrap_mode = TextServer.AUTOWRAP_OFF
 	R.cl.clip_text = true
 	R.cl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	said.add_child(R.cl)
-	R.rt = _label("", 13, 0.8)
+	R.rt = _label("", 12, 0.8)
 	R.rt.autowrap_mode = TextServer.AUTOWRAP_OFF
 	said.add_child(R.rt)
-	v.add_child(_rule())
-	# where it lies, the tow, who is looking | the price
-	var foot := _hrow(10)
-	v.add_child(foot)
-	var info := VBoxContainer.new()
-	info.add_theme_constant_override("separation", 1)
-	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	foot.add_child(info)
-	R.where = _label("", 13, 0.6)
-	R.where.autowrap_mode = TextServer.AUTOWRAP_OFF
-	info.add_child(R.where)
-	R.heat = _label("", 13, 0.6)
-	R.heat.autowrap_mode = TextServer.AUTOWRAP_OFF
-	info.add_child(R.heat)
+	var win := PanelContainer.new()
+	win.add_theme_stylebox_override("panel", Charcoal.well_box(10.0))
+	win.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	win.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	mid.add_child(win)
 	var pr := VBoxContainer.new()
-	pr.add_theme_constant_override("separation", -4)
+	pr.add_theme_constant_override("separation", -2)
 	pr.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	foot.add_child(pr)
-	R.p = _label("", 26, 0.97)
+	win.add_child(pr)
+	R.p = _label("", 24, 0.97)
 	R.p.autowrap_mode = TextServer.AUTOWRAP_OFF
 	R.p.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	pr.add_child(R.p)
-	R.off = _label("", 12, 0.5)
+	R.off = _label("", 12, 0.6)
 	R.off.autowrap_mode = TextServer.AUTOWRAP_OFF
 	R.off.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	R.off.add_theme_color_override("font_color", Charcoal.ACCENT)
 	pr.add_child(R.off)
+	# a seller's title allowance on a line of its own (one long line widened the card)
+	R.off2 = _label("", 11, 0.6)
+	R.off2.autowrap_mode = TextServer.AUTOWRAP_OFF
+	R.off2.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	R.off2.add_theme_color_override("font_color", Charcoal.ACCENT)
+	pr.add_child(R.off2)
+	v.add_child(_rule())
+	# tier three: where it lies, the tow, who is looking (smaller, still clear)
+	R.where = _label("", 12, 0.62)
+	R.where.autowrap_mode = TextServer.AUTOWRAP_OFF
+	R.where.clip_text = true
+	v.add_child(R.where)
+	R.heat = _label("", 12, 0.5)
+	R.heat.autowrap_mode = TextServer.AUTOWRAP_OFF
+	v.add_child(R.heat)
 	b.set_meta("R", R)
 	return b
 
@@ -668,19 +711,20 @@ func _card_fill(b: Button, l: Dictionary) -> void:
 	b.disabled = false
 	b.modulate.a = 1.0
 	var fits := ShipMarket.fits(l)
-	R.dot.add_theme_color_override("font_color", UiSkin.ACCENT if fits else Pal.ink(0.35))
 	var tag := ""
 	if not fits:
 		tag = w("坞长不够", "TOO LONG")
 	elif TugYard.full():
 		tag = w("拖船站满了", "YARD FULL")
-	var on: Label = R.on
+	var on: Charcoal.LedTag = R.on
 	var left: Label = R.left
 	var tick := func():
-		_put(on, _status(l))
+		on.set_text(_status(l))
+		on.lit = fits
+		on.col = Charcoal.ACCENT if fits else Charcoal.INK2
 		if Face.left_s(l) <= 0.0 and not l.has("hold"):
 			_put(left, w("已下架", "GONE"))
-			left.add_theme_color_override("font_color", Pal.ink(0.4))
+			left.add_theme_color_override("font_color", Charcoal.INK3)
 			b.disabled = true
 			b.modulate.a = 0.45
 			return
@@ -691,20 +735,26 @@ func _card_fill(b: Button, l: Dictionary) -> void:
 		else:
 			_put(left, Face.left_text(l))
 		var hot := tag != "" or Face.rush(l) or l.has("hold")
-		left.add_theme_color_override("font_color", UiSkin.ACCENT if hot else Pal.ink(0.55))
+		left.add_theme_color_override("font_color", Charcoal.ACCENT if hot else Charcoal.INK2)
 	tick.call()
 	_live.erase(b.get_meta("tick", Callable()))
 	_live.append(tick)
 	b.set_meta("tick", tick)
-	_put(R.ad, str(Face.headline(l).text))
-	_put(R.t, ship_name(l) + "  ·  " + str(l.offer.reg))
+	_put(R.t, ship_name(l))
+	_put(R.reg, str(l.offer.reg))
+	_put(R.ad, "“%s”" % str(Face.headline(l).text))
 	R.sc.visible = l.has("showcase")
 	if l.has("showcase"):
-		_put(R.sc, w("试试新拆法 · %s", "TRY THE NEW METHOD · %s") % Methods.name_of(str(l.showcase)))
-	R.pic.offer = l.offer
-	R.pic.tags = []
+		R.sc.set_text(w("试试新拆法 · %s", "TRY THE NEW METHOD · %s") % Methods.name_of(str(l.showcase)))
+	R.pic.set_ship(str(l.offer.ship))
 	R.pic.dim = not fits
-	R.pic.custom_minimum_size = Vector2(0, 70 if l.has("showcase") else 84)
+	R.pic.note = tag
+	R.pic.tags = []
+	for cat2 in ["structure", "systems"]:
+		if (l.get("inspected", {}) as Dictionary).has(cat2):
+			for trap in l.inspected[cat2]:
+				R.pic.tags.append(ShipMarket.trap_name(trap))
+	R.pic.custom_minimum_size = Vector2(0, PIC_H - (24 if l.has("showcase") else 0))
 	R.pic.queue_redraw()
 	var s := Face.seller(l)
 	_put(R.kind, str(s.kind_name))
@@ -713,15 +763,18 @@ func _card_fill(b: Button, l: Dictionary) -> void:
 	_put(R.cl, Face.claim_line(l))
 	if Face.clash(l):
 		_put(R.rt, w("评级 %d/10 · 与实际情况不符", "RATING %d/10 · DOESN'T MATCH") % int(l.rating.score))
-		R.rt.add_theme_color_override("font_color", UiSkin.ACCENT)
+		R.rt.add_theme_color_override("font_color", Charcoal.ACCENT)
 	else:
 		_put(R.rt, w("评级 %d/10", "RATING %d/10") % int(l.rating.score))
-		R.rt.add_theme_color_override("font_color", Pal.ink(0.8))
+		R.rt.add_theme_color_override("font_color", Charcoal.INK)
 	var q := ShipMarket.tow_quote(l, _run(int(l.station)))
 	_put(R.where, w("位置：%s · 预计拖回需要 %d 秒 · 拖运费用 %s", "LOCATION: %s · TOW TIME ~%d SEC · TOW COST %s") % [Orbits.name_of(Orbits.station(int(l.station))), int(ShipMarket.fast_days(float(q.run.tof)) / Orbits.DAYS_PER_S), Pal.money(float(q.fee))])
 	_put(R.heat, _interest(l))
 	_put(R.p, Pal.money(float(l.price)))
-	_put(R.off, _under(l))
+	var parts := _under(l).split(" · ", true, 1)
+	_put(R.off, parts[0])
+	_put(R.off2, parts[1] if parts.size() > 1 else "")
+	R.off2.visible = parts.size() > 1
 
 
 # "● 在售 · 已上架 4 分钟", or the hold, or a refused offer
@@ -817,7 +870,11 @@ func _detail() -> void:
 	tick.call()
 	_dlive.append(tick)
 	hv.add_child(_label("%s  ·  %s" % [ship_name(l), str(l.offer.reg)], 24, 0.97))
-	head.add_child(_btn(w("关闭", "CLOSE"), func(): detail_win.visible = false))
+	var shut := _btn(w("关闭 [Esc]", "CLOSE [Esc]"), func(): detail_win.visible = false, 44.0)
+	shut.custom_minimum_size.x = 150
+	Charcoal.style_button(shut)
+	Charcoal.key_text(shut)
+	head.add_child(shut)
 	var row := _hrow(22)
 	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	detail.add_child(row)
@@ -826,7 +883,8 @@ func _detail() -> void:
 	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left.add_theme_constant_override("separation", 8)
 	row.add_child(left)
-	var pic := ShipThumb.new(l.offer)
+	var pic := Thumbs.View.new()
+	pic.set_ship(str(l.offer.ship))
 	pic.custom_minimum_size = Vector2(640, 260)
 	pic.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	for cat2 in ["structure", "systems"]:
@@ -844,10 +902,18 @@ func _detail() -> void:
 			vl.add_theme_color_override("font_color", UiSkin.ACCENT)
 		left.add_child(vl)
 	# right: who sells it, the price, how to buy, the big buy
+	# 136 号: the window keeps to the screen; what the right side holds beyond it scrolls there
+	var rs := ScrollContainer.new()
+	rs.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	rs.custom_minimum_size = Vector2(480, 0)
+	rs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	row.add_child(rs)
+	_right_scroll = rs
 	var right := VBoxContainer.new()
-	right.custom_minimum_size.x = 460
+	right.custom_minimum_size.x = 464
+	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.add_theme_constant_override("separation", 8)
-	row.add_child(right)
+	rs.add_child(right)
 	var s := Face.seller(l)
 	var who := _hrow(8)
 	right.add_child(who)
@@ -919,7 +985,11 @@ func _detail() -> void:
 		UiSkin.accent_button(buy)
 	right.add_child(buy)
 	right.add_child(note)
-	var more_key := _btn(w("更多 ▾（还价 · 保留报价 · 拖运 · 机构记录）", "MORE ▾ (OFFER · HOLD · TOW · AGENCY)"), func(): more_box.visible = not more_box.visible)
+	var more_key := _btn(w("更多 ▾（还价 · 保留报价 · 拖运 · 机构记录）", "MORE ▾ (OFFER · HOLD · TOW · AGENCY)"), func():
+		more_box.visible = not more_box.visible
+		if more_box.visible:
+			(func(): if is_instance_valid(_right_scroll): _right_scroll.ensure_control_visible(more_box.get_child(more_box.get_child_count() - 1))).call_deferred())
+	Charcoal.style_button(more_key)
 	right.add_child(more_key)
 	more_box = VBoxContainer.new()
 	more_box.visible = false
@@ -1015,19 +1085,27 @@ func _more(l: Dictionary, q: Dictionary) -> void:
 	if l.get("haggled", false):
 		more_box.add_child(_label(w("卖家已拒绝过你的还价，只能按标价买。", "THE SELLER TURNED YOUR OFFER DOWN."), 14, 0.7))
 	else:
-		var hr := HBoxContainer.new()
-		more_box.add_child(hr)
-		var offer := SpinBox.new()
-		offer.min_value = ceilf(float(l.price) * ShipMarket.HAGGLE_MIN / 100.0) * 100.0
-		offer.max_value = float(l.price)
-		offer.step = 100.0
-		offer.prefix = "$"
-		offer.value = snappedf(float(l.price) * 0.9, 100.0)
-		offer.custom_minimum_size.x = 160
-		hr.add_child(offer)
+		# 136 号: the counter-offer as a price you set (scripts/ui_kit/price_input.gd): type it, step it
+		# with − / + or the wheel, or take a quick stop; Enter or the key offers it
+		var ask := float(l.price)
+		var lo := ceilf(ask * ShipMarket.HAGGLE_MIN / 100.0) * 100.0
+		more_box.add_child(_label(w("你的还价（只有一次机会）", "YOUR COUNTER-OFFER (ONE CHANCE)"), 13, 0.5))
+		var offer = PriceInput.new()
+		offer.max_value = ask
+		offer.setup(ask, snappedf(ask * 0.9, 100.0), [
+			[w("要价 −5%", "ASK −5%"), snappedf(ask * 0.95, 100.0)], [w("−10%", "−10%"), snappedf(ask * 0.9, 100.0)],
+			[w("−15%", "−15%"), snappedf(ask * 0.85, 100.0)], [w("最低 −20%", "LOWEST −20%"), lo]],
+			func(v: float) -> Array:
+				var under := int(round((1.0 - v / ask) * 100.0))
+				if v >= ask:
+					return [w("等于要价：卖家一定同意", "THE ASK: THE SELLER TAKES IT"), false]
+				if v < lo:
+					return [w("比要价低 %d%% · 低于要价的 80%%，卖家不会接受", "%d%% UNDER · BELOW 80%% OF THE ASK: THE SELLER WON'T TAKE IT") % under, true]
+				return [w("比要价低 %d%% · 压得越多，越可能被拒（拒了就只能按标价买）", "%d%% UNDER · THE LOWER, THE LIKELIER A NO (THEN ONLY THE ASK)") % under, under >= 15])
+		more_box.add_child(offer)
 		var gid := str(l.id)
-		hr.add_child(_btn(w("还价（只有一次）", "OFFER (ONCE)"), func():
-			var r := ShipMarket.haggle(gid, offer.value)
+		var send := func(v: float):
+			var r := ShipMarket.haggle(gid, v)
 			if r.ok and r.get("accepted", true) and ShipMarket.listing(gid).is_empty():
 				chosen = ""
 				detail_win.visible = false
@@ -1035,7 +1113,12 @@ func _more(l: Dictionary, q: Dictionary) -> void:
 				msg.text = w("卖家同意了，已成交，拖船出发。", "ACCEPTED: BOUGHT, THE TUG IS ON ITS WAY.")
 			else:
 				_detail()
-				msg.text = w("卖家拒绝了，不再谈。", "THE SELLER SAYS NO.") if r.ok else str(r.reason)))
+				msg.text = w("卖家拒绝了，不再谈。", "THE SELLER SAYS NO.") if r.ok else str(r.reason)
+		var go := _btn(w("还价（只有一次） [Enter]", "OFFER (ONCE) [Enter]"), func(): send.call(offer.value), 44.0)
+		Charcoal.style_button(go)
+		Charcoal.key_text(go)
+		more_box.add_child(go)
+		offer.submitted.connect(func(v): send.call(v))
 
 
 # ---------------------------------------------------------------- my ships
@@ -1057,13 +1140,14 @@ func _mine() -> void:
 func _mine_card(a: Dictionary) -> PanelContainer:
 	var card := PanelContainer.new()
 	card.custom_minimum_size = Vector2(380, 0)
-	card.add_theme_stylebox_override("panel", UiSkin.glass(0.04, 0.08, 16, 12.0))
+	card.add_theme_stylebox_override("panel", Charcoal.side_box(16.0))
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 6)
 	card.add_child(v)
 	v.add_child(_label(ship_name(a.listing), 17, 0.9))
-	var pic := ShipThumb.new(a.listing.offer)
-	pic.custom_minimum_size = Vector2(0, 110)
+	var pic := Thumbs.View.new()
+	pic.set_ship(str(a.listing.offer.ship))
+	pic.custom_minimum_size = Vector2(0, 120)
 	pic.dim = str(a.state) in ["stripped", "sold"]
 	v.add_child(pic)
 	var state := ""
@@ -1114,21 +1198,36 @@ func _mine_card(a: Dictionary) -> PanelContainer:
 		else:
 			var band := ShipMarket.interest(a)
 			v.add_child(_label(w("买家意向约 %s–%s", "BUYERS: ABOUT %s–%s") % [Pal.money(float(band[0])), Pal.money(float(band[1]))], 14, 0.7))
-			var hr := HBoxContainer.new()
-			v.add_child(hr)
-			var spin := SpinBox.new()
+			# 136 号: the resale price as a price you set (scripts/ui_kit/price_input.gd)
+			var b0 := float(band[0])
+			var b1 := float(band[1])
+			var spin = PriceInput.new()
 			spin.min_value = 1000.0
-			spin.max_value = maxf(10000.0, float(band[1]) * 3.0)
-			spin.step = 100.0
-			spin.prefix = "$"
-			spin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			spin.value = float(_resale_price.get(id, snappedf((float(band[0]) + float(band[1])) * 0.5, 100.0)))
+			spin.max_value = maxf(10000.0, b1 * 3.0)
+			spin.setup((b0 + b1) * 0.5, float(_resale_price.get(id, snappedf((b0 + b1) * 0.5, 100.0))), [
+				[w("意向下沿", "LOW END"), snappedf(b0, 100.0)], [w("意向中间", "MIDDLE"), snappedf((b0 + b1) * 0.5, 100.0)], [w("意向上沿", "HIGH END"), snappedf(b1, 100.0)]],
+				func(v: float) -> Array:
+					if v > b1:
+						return [w("高于买家意向：可能一直卖不出去（可以随时撤下）", "OVER WHAT BUYERS WANT: IT MAY NOT SELL (TAKE IT DOWN ANY TIME)"), true]
+					if v < b0:
+						return [w("低于买家意向：很快卖掉，但少赚", "UNDER WHAT BUYERS WANT: QUICK, BUT FOR LESS"), false]
+					return [w("在买家意向之内：一两分钟内有人买", "WITHIN WHAT BUYERS WANT: A BUYER IN A MINUTE OR TWO"), false])
 			_spins[id] = spin
-			hr.add_child(spin)
-			hr.add_child(_btn(w("挂牌转售", "LIST FOR RESALE"), func():
-				var r := ShipMarket.resell(id, spin.value)
+			v.add_child(spin)
+			var list_it := func(price: float):
+				var r := ShipMarket.resell(id, price)
 				msg.text = w("挂出去了。价格合适的话一两分钟内有人买，钱当场到账（扣 3% 佣金）。", "LISTED. AT A FAIR PRICE A BUYER COMES IN A MINUTE OR TWO.") if r.ok else str(r.reason)
-				_fill()))
+				_fill()
+			var lb := _btn(w("挂牌转售 [Enter]", "LIST FOR RESALE [Enter]"), func(): list_it.call(spin.value), 44.0)
+			Charcoal.style_button(lb)
+			Charcoal.key_text(lb)
+			v.add_child(lb)
+			spin.submitted.connect(func(pv): list_it.call(pv))
+	# 135 号: its keys dark like the rest of the page (the price box styles its own)
+	for b in card.find_children("*", "Button", true, false):
+		if not b.has_meta("charcoal_key") and not b.get_parent().get_parent() is PriceInput and not b.get_parent() is PriceInput:
+			Charcoal.style_button(b)
+			Charcoal.key_text(b)
 	return card
 
 

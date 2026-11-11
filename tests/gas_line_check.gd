@@ -34,6 +34,9 @@ func _mass_out(d: Dictionary) -> float:
 
 
 func _run() -> void:
+	# 2026-11-11: a ship's gas is piped to the line first (GasLine.TRANSIT_S); these checks are of
+	# the line itself, so it arrives at once here (the pipe run: tests/gas_route_shot.gd)
+	GasLine.TRANSIT_S = 0.0
 	Txt.zh = true
 	Career.data = Career.fresh()
 	Career.data.market = true

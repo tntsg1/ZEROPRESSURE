@@ -25,6 +25,7 @@ var k := 0.0
 var hover := ""
 var _btns := {}
 var _done := false
+var _at := Vector2(-9999, -9999)   # the pointer, from its own events
 
 
 func w(zh: String, en: String) -> String:
@@ -41,16 +42,37 @@ func _ready() -> void:
 		game.sfx.play("menu", Vector2.INF, 0.8)
 
 
+# 2026-11-10 炭黑: the card as tall as its words need (three lines of any length), the drawing
+# giving way first when the screen is short
+var _th := {}                       # width -> the words' height (measured once, not each frame)
+
+
+func _text_h(wd: float) -> float:
+	var key := "%d|%d" % [int(wd), lines.size()]
+	if _th.has(key):
+		return _th[key]
+	var f := Fonts.get_font("Medium")
+	var h := 54.0
+	for ln in lines:
+		h += maxf(40.0, f.get_multiline_string_size(str(ln), HORIZONTAL_ALIGNMENT_LEFT, Charcoal.fit_width(f, str(ln), wd, 26), 26).y + 16.0)
+	_th[key] = h
+	return h
+
+
 func card_rect() -> Rect2:
 	var s := size
 	var cw := minf(W_MAX, s.x - 80.0)
-	var ch := minf(H, s.y - 60.0)
+	var th := _text_h(cw - 80.0)
+	# head 64 · drawing · gap 64 · title and lines · the key's row 100
+	var art_h := clampf(s.y - 60.0 - (64.0 + 64.0 + th + 100.0), 220.0, ART_H)
+	var ch := minf(64.0 + art_h + 64.0 + th + 100.0, s.y - 40.0)
 	return Rect2(Vector2((s.x - cw) * 0.5, (s.y - ch) * 0.5 + (1.0 - k) * 30.0), Vector2(cw, ch))
 
 
 func art_rect() -> Rect2:
 	var r := card_rect()
-	return Rect2(r.position + Vector2(40, 64), Vector2(r.size.x - 80, minf(ART_H, r.size.y * 0.5)))
+	var th := _text_h(r.size.x - 80.0)
+	return Rect2(r.position + Vector2(40, 64), Vector2(r.size.x - 80, clampf(r.size.y - 64.0 - 64.0 - th - 100.0, 200.0, ART_H)))
 
 
 func close(take: bool) -> void:
@@ -69,8 +91,12 @@ func _input(ev: InputEvent) -> void:
 		elif ev.physical_keycode == KEY_ESCAPE:
 			close(false)
 		get_viewport().set_input_as_handled()
+	elif ev is InputEventMouseMotion:
+		# (the pointer from its own events: a pushed or replayed click is not where the OS pointer is)
+		_at = get_global_transform_with_canvas().affine_inverse() * (ev as InputEventMouseMotion).position
 	elif ev is InputEventMouseButton and ev.pressed and ev.button_index == MOUSE_BUTTON_LEFT:
-		var m := get_local_mouse_position()
+		var m: Vector2 = get_global_transform_with_canvas().affine_inverse() * (ev as InputEventMouseButton).position
+		_at = m
 		if _btns.has("ok") and (_btns.ok as Rect2).has_point(m):
 			close(false)
 		get_viewport().set_input_as_handled()
@@ -81,7 +107,7 @@ func _input(ev: InputEvent) -> void:
 func _process(dt: float) -> void:
 	t += dt
 	k = move_toward(k, 1.0, dt / 0.3) if BenchFx.on() else 1.0
-	var m := get_local_mouse_position()
+	var m := _at
 	hover = ""
 	for b in _btns:
 		if (_btns[b] as Rect2).has_point(m):
@@ -97,33 +123,33 @@ func _draw() -> void:
 	var e := BenchFx.e_out(k) if BenchFx.on() else 1.0
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.72 * e))
 	draw_string(fb, Vector2(40, 52), w("已暂停", "PAUSED"), HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Pal.ink(0.55 * e))
-	var r := card_rect()
-	var box := UiSkin.solid(Color(0.07, 0.082, 0.1, 0.985 * e), 16, 0.0)
-	box.set_border_width_all(2)
-	box.border_color = Color(UiSkin.DATA, 0.45 * e)
-	box.shadow_color = Color(0, 0, 0, 0.6 * e)
-	box.shadow_size = 30
-	draw_style_box(box, r)
-	draw_string(fb, r.position + Vector2(40, 44), w("重看", "AGAIN") if replay else w("第一次遇到", "FIRST TIME"), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(UiSkin.ACCENT, e))
-	draw_string(f, Vector2(r.end.x - 40, r.position.y + 44), w("图鉴「讲解」里能重看", "SEE IT AGAIN IN THE BOOK'S GUIDES"), HORIZONTAL_ALIGNMENT_RIGHT, r.size.x * 0.6, 16, Pal.ink(0.45 * e))
-	var ar := art_rect()
-	CodexFx.screen(self, ar, e)
+	# 2026-11-10 炭黑: one matte charcoal slab (no blue rim); the drawing in a black window; the words
+	# white and grey; orange only for the lamp of a first meeting and what the drawing marks
+	var r := Charcoal.panel(self, card_rect(), e)
+	Charcoal.led(self, r.position + Vector2(46, 38), not replay, e, 4.5)
+	draw_string(fb, r.position + Vector2(60, 44), w("重看", "AGAIN") if replay else w("第一次遇到", "FIRST TIME"), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(Charcoal.INK if not replay else Charcoal.INK2, e))
+	draw_string(f, Vector2(r.end.x - 40 - r.size.x * 0.6, r.position.y + 44), w("图鉴「讲解」里能重看", "SEE IT AGAIN IN THE BOOK'S GUIDES"), HORIZONTAL_ALIGNMENT_RIGHT, r.size.x * 0.6, 14, Color(Charcoal.INK3, e))
+	var ar := Rect2(r.position + Vector2(40, 64), Vector2(r.size.x - 80, clampf(r.size.y - 64.0 - 64.0 - _text_h(r.size.x - 80.0) - 100.0, 200.0, ART_H)))
+	Charcoal.display(self, ar, e, 9)
 	_art(ar, e)
-	CodexFx.scan(self, ar, e, t)
 	var y := ar.end.y + 64.0
-	draw_string(fb, Vector2(ar.position.x, y), title, HORIZONTAL_ALIGNMENT_LEFT, ar.size.x, 44, Pal.ink(0.98 * e))
+	draw_string(fb, Vector2(ar.position.x, y), title, HORIZONTAL_ALIGNMENT_LEFT, ar.size.x, 40, Color(Charcoal.INK, e))
 	y += 54.0
-	for s in lines:
-		var lh := f.get_multiline_string_size(str(s), HORIZONTAL_ALIGNMENT_LEFT, ar.size.x - 300.0, 26).y
-		draw_multiline_string(f, Vector2(ar.position.x, y), str(s), HORIZONTAL_ALIGNMENT_LEFT, ar.size.x - 300.0, 26, -1, Pal.ink(0.9 * e))
-		y += maxf(40.0, lh + 10.0)
+	for i in lines.size():
+		var key := "L%d|%d" % [i, int(ar.size.x)]
+		if not _th.has(key):
+			_th[key] = f.get_multiline_string_size(str(lines[i]), HORIZONTAL_ALIGNMENT_LEFT, Charcoal.fit_width(f, str(lines[i]), ar.size.x, 26), 26).y
+		# 防孤字: the width that leaves no lone scrap on the last line, no 。，、 starting a line (cached)
+		draw_multiline_string(f, Vector2(ar.position.x, y), str(lines[i]), HORIZONTAL_ALIGNMENT_LEFT, Charcoal.fit_width(f, str(lines[i]), ar.size.x, 26), 26, -1, Color(Charcoal.INK, 0.86 * e))
+		y += maxf(40.0, float(_th[key]) + 16.0)
+	# 知道了: a dark key at the foot, its key's name on a keycap; sinks under a press
 	_btns = {}
-	var by := r.end.y - 84.0
-	var okr := Rect2(Vector2(r.end.x - 40.0 - 170.0, by), Vector2(170.0, 58.0))
+	var okr := Rect2(Vector2(r.end.x - 40.0 - 230.0, r.end.y - 84.0), Vector2(230.0, 56.0))
 	_btns.ok = okr
-	draw_rect(okr, Color(1, 1, 1, (0.1 if hover == "ok" else 0.05) * e))
-	draw_rect(okr, Pal.ink(0.4 * e), false, 1.0)
-	draw_string(f, okr.position + Vector2(0, 37), w("知道了  [Esc]", "GOT IT  [Esc]"), HORIZONTAL_ALIGNMENT_CENTER, okr.size.x, 20, Pal.ink(0.92 * e))
+	var down := 1.0 if hover == "ok" and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) else 0.0
+	var kr := Charcoal.key(self, okr, e, down * 0.6, Charcoal.FACE_HI if hover == "ok" else Color(0.15, 0.152, 0.16), 9)
+	draw_string(fb, Vector2(kr.position.x + 22, kr.get_center().y + 7), w("知道了", "GOT IT"), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(1, 1, 1, e) if hover == "ok" else Color(Charcoal.INK, e))
+	Charcoal.keycap(self, fb, Rect2(kr.end.x - 64, kr.get_center().y - 13, 48, 26), "Esc", e, down)
 
 
 # ---------------------------------------------------------------- the drawings (each a loop)
@@ -144,6 +170,7 @@ func _art(r: Rect2, a: float) -> void:
 		"mould": _art_mould(r, a)
 		"trip": _art_trip(r, a)
 		"console": _art_console(r, a)
+		"phase": _art_phase(r, a)
 
 
 func _pct_col(p: int, a: float) -> Color:
@@ -224,7 +251,7 @@ func _art_zone(r: Rect2, a: float) -> void:
 	var c := r.get_center() + Vector2(-80, 0)
 	var rad := minf(r.size.y * 0.36, 130.0)
 	draw_arc(c, 46.0, 0.0, TAU, 40, Pal.ink(0.7 * a), 3.0)
-	draw_arc(c, 46.0, t * 0.6, t * 0.6 + 1.2, 12, Color(UiSkin.DATA, a), 3.0)
+	draw_arc(c, 46.0, t * 0.6, t * 0.6 + 1.2, 12, Color(UiSkin.FIGURE, a), 3.0)
 	var names := {"power": w("动力区", "POWER"), "trade": w("贸易港", "TRADE"), "process": w("加工区", "PROCESS"), "cargo": w("货运区", "CARGO"), "tug": w("拖船站", "TUGS"), "salvage": w("拆船区", "SALVAGE")}
 	var ids := ["power", "trade", "process", "cargo", "tug", "salvage"]
 	for i in ids.size():
@@ -233,14 +260,22 @@ func _art_zone(r: Rect2, a: float) -> void:
 		draw_line(c + Vector2(cos(an), sin(an)) * 46.0, p, Pal.ink(0.3 * a), 2.0)
 		var me := str(ids[i]) == zone
 		var bx := Rect2(p - Vector2(70, 22), Vector2(140, 44))
-		var pulse := 0.5 + 0.5 * sin(t * 3.0)
-		draw_rect(bx, Color(UiSkin.ACCENT, (0.18 + 0.15 * pulse) * a) if me else Color(0.1, 0.11, 0.13, a))
-		draw_rect(bx, Color(UiSkin.ACCENT, a) if me else Pal.ink(0.35 * a), false, 2.0 if me else 1.0)
-		_t(str(names[ids[i]]), bx.position + Vector2(0, 30), 20, Pal.ink((1.0 if me else 0.6) * a), bx.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+		# 炭黑: each district a dark key; the one you are in a step lighter, its lamp lit, the orange lip under it
+		Charcoal.slab(self, bx, Color(Charcoal.FACE_HI if me else Charcoal.FACE, a), 6)
+		_t(str(names[ids[i]]), bx.position + Vector2(me as int * 10, 30), 20, Color(Charcoal.INK if me else Charcoal.INK2, a), bx.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+		if me:
+			Charcoal.led(self, bx.position + Vector2(18, 22), true, a, 4.0)
+			Charcoal.lip(self, Rect2(bx.position.x + 8, bx.end.y - 3, bx.size.x - 16, 3), a)
 	if zone == "ring":
-		draw_arc(c, 58.0 + 6.0 * sin(t * 3.0), 0.0, TAU, 40, Color(UiSkin.ACCENT, a), 2.0)
-	_t(w("你在这", "YOU ARE HERE"), Vector2(r.end.x - 200, r.position.y + 60), 20, Color(UiSkin.ACCENT, a))
-	_t(Port.name_of(zone) if zone != "ring" else w("中央转运环", "THE RING"), Vector2(r.end.x - 200, r.position.y + 100), 30, Pal.ink(0.95 * a))
+		draw_arc(c, 58.0 + 6.0 * sin(t * 3.0), 0.0, TAU, 40, Color(Charcoal.ACCENT, a), 2.0)
+	Charcoal.led(self, Vector2(r.end.x - 212, r.position.y + 53), true, a, 4.0)
+	_t(w("你在这", "YOU ARE HERE"), Vector2(r.end.x - 200, r.position.y + 60), 20, Color(Charcoal.ACCENT, a))
+	# the district's name in the room left of the window's edge (English names step their type down)
+	var nm: String = Port.name_of(zone) if zone != "ring" else w("中央转运环", "THE RING")
+	var npx := 30
+	while npx > 18 and Fonts.get_font("Medium").get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, npx).x > 186.0:
+		npx -= 1
+	_t(nm, Vector2(r.end.x - 200, r.position.y + 100), npx, Pal.ink(0.95 * a), 186.0)
 
 
 func _art_strip(r: Rect2, a: float) -> void:
@@ -273,7 +308,7 @@ func _art_equip(r: Rect2, a: float) -> void:
 	var b := Rect2(p - Vector2(60, 40), Vector2(120, 80))
 	draw_rect(b, Color(0.14, 0.15, 0.17, a))
 	draw_rect(b, Pal.ink(0.85 * a), false, 2.0)
-	draw_circle(b.get_center(), 16.0, Color(UiSkin.DATA, 0.6 * a))
+	draw_circle(b.get_center(), 16.0, Color(UiSkin.FIGURE, 0.6 * a))
 	if u >= 1.0:
 		var rise := clampf((fmod(t, 4.0) - 3.0), 0.0, 1.0)
 		_t("+ $ " + w("设备价", "MACHINE PRICE"), mouth.position + Vector2(200, 40 - 30 * rise), 30, Color(Hmi.ok_col(), a * (1.0 - rise * 0.3)))
@@ -359,6 +394,76 @@ func _art_trip(r: Rect2, a: float) -> void:
 		_t(w("维护工具（4）", "MAINTENANCE TOOL (4)"), wr.position + Vector2(-40, 150), 20, Pal.ink(0.8 * a), 200, HORIZONTAL_ALIGNMENT_CENTER)
 	else:
 		_t(w("超载中", "OVERLOADED"), Vector2(r.get_center().x + 40, r.get_center().y), 40, Color(UiSkin.ACCENT, a))
+
+
+# 相位接驳: a freight train runs left to right along the track, the shuttle the other way on the same
+# rails; where they overlap the shuttle breaks into two phase-split pixel outlines (air-blue, violet),
+# a thin halo as it goes in and comes out, and both run on untouched
+func _art_phase(r: Rect2, a: float) -> void:
+	var y := r.get_center().y + 10.0
+	var x0 := r.position.x + 30.0
+	var x1 := r.end.x - 30.0
+	for dy: float in [-14.0, 14.0]:
+		draw_line(Vector2(x0, y + dy), Vector2(x1, y + dy), Pal.ink(0.35 * a), 2.0)
+	var span := x1 - x0
+	var cyc := fmod(t, 5.0) / 5.0
+	# the freight train: loco + two wagons, grey, steady
+	var fx := x0 - 260.0 + (span + 520.0) * cyc
+	var fcars := [[0.0, 68.0, 50.0], [-80.0, 80.0, 60.0], [-172.0, 80.0, 60.0]]
+	var frects: Array = []
+	var clip := Rect2(Vector2(x0, r.position.y), Vector2(span, r.size.y))
+	for c in fcars:
+		var rc := Rect2(Vector2(fx + float(c[0]) - float(c[1]) * 0.5, y - float(c[2]) * 0.5), Vector2(c[1], c[2]))
+		frects.append(rc)
+		var vis := rc.intersection(clip)
+		if vis.size.x > 1.0:
+			draw_rect(vis, Pal.ink(0.16 * a))
+			draw_rect(vis, Pal.ink(0.7 * a), false, 1.5)
+	if fx - 150.0 > x0 and fx < x1:
+		_t(w("货运列车", "FREIGHT TRAIN"), Vector2(fx - 150.0, y - 46.0), 16, Pal.ink(0.6 * a), 160, HORIZONTAL_ALIGNMENT_CENTER)
+	# the shuttle: two cars, the other way
+	var sx := x1 + 140.0 - (span + 280.0) * cyc
+	var over := false
+	var srects: Array = []
+	for k in 2:
+		var rc := Rect2(Vector2(sx + k * 70.0 - 32.0, y - 16.0), Vector2(64.0, 32.0))
+		srects.append(rc)
+		for fr in frects:
+			if (fr as Rect2).intersects(rc):
+				over = true
+	var q := 4.0
+	for rc0 in srects:
+		var rc: Rect2 = (rc0 as Rect2).intersection(clip)
+		if rc.size.x <= 1.0:
+			continue
+		if over:
+			var sp := 2.0 + 1.5 * sin(t * 23.0)
+			_pix_rect(rc, q, Color(Pal.AIR, 0.85 * a), Vector2(0, -sp))
+			_pix_rect(rc, q, Color(Pal.VOLT, 0.6 * a), Vector2(0, sp))
+		else:
+			draw_rect(rc, Color(Pal.AIR, 0.22 * a))
+			draw_rect(rc, Pal.ink(0.9 * a), false, 1.5)
+	if over:
+		var c := (srects[0] as Rect2).merge(srects[1]).get_center()
+		var pr := 40.0 + 30.0 * fmod(t * 1.6, 1.0)
+		draw_arc(c, pr, 0.0, TAU, 48, Color(Pal.AIR, 0.6 * a * (1.0 - fmod(t * 1.6, 1.0))), 1.5, true)
+	if sx - 40.0 > x0 and sx + 140.0 < x1:
+		_t(w("接驳车", "SHUTTLE"), Vector2(sx - 40.0, y + 52.0), 16, Color(Pal.AIR, 0.9 * a), 180, HORIZONTAL_ALIGNMENT_CENTER)
+	_t(w("相位穿过 · 谁也不停", "PHASED THROUGH · NOBODY STOPS"), Vector2(r.position.x, r.end.y - 24.0), 18, Pal.ink(0.55 * a), r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+
+
+func _pix_rect(rc: Rect2, q: float, col: Color, off: Vector2) -> void:
+	var fr := int(t * 30.0)
+	var pts := [rc.position, Vector2(rc.end.x, rc.position.y), rc.end, Vector2(rc.position.x, rc.end.y)]
+	for i in 4:
+		var a0: Vector2 = pts[i] + off
+		var b0: Vector2 = pts[(i + 1) % 4] + off
+		var n := maxi(1, int(a0.distance_to(b0) / q))
+		for k in n:
+			var p := a0.lerp(b0, float(k) / float(n))
+			if (int(p.x / q) * 7 + int(p.y / q) * 13 + fr) % 5 == 0:
+				continue
+			draw_rect(Rect2(p - Vector2(q, q) * 0.4, Vector2(q, q) * 0.8), col)
 
 
 func _art_console(r: Rect2, a: float) -> void:

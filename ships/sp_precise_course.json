@@ -85,8 +85,8 @@
 				{
 					"id": "brief",
 					"text": {
-						"zh": "看一眼训练件：按 I 可以随时查图鉴",
-						"en": "LOOK OVER THE RIG: I OPENS THE CODEX ANY TIME"
+						"zh": "这次训练要处理的东西可以先检查一下。如果不清楚某个部件有什么作用，随时按 I 打开图鉴，查看对应的部件说明。",
+						"en": "YOU CAN FIRST CHECK OVER WHAT YOU WILL BE HANDLING IN THIS TRAINING. IF YOU’RE NOT SURE WHAT A PART DOES, PRESS I AT ANY TIME TO OPEN THE CODEX AND SEE THE MATCHING PART DESCRIPTION."
 					},
 					"tools": [],
 					"done": {
@@ -154,8 +154,8 @@
 				{
 					"id": "opt",
 					"text": {
-						"zh": "按 1，测反射率 OPT",
-						"en": "1 · MEASURE REFLECTANCE AT OPT"
+						"zh": "拆卸之前，先按 1 检查一下光学仪器 OPT 的反射率，确认主镜目前的状态。主镜很容易损坏，后面的操作都要小心一点。",
+						"en": "BEFORE REMOVAL, FIRST PRESS 1 TO CHECK THE REFLECTANCE OF OPTICAL INSTRUMENT OPT AND CONFIRM THE CURRENT CONDITION OF THE PRIMARY MIRROR. THE PRIMARY MIRROR IS EASILY DAMAGED, SO BE CAREFUL IN EVERYTHING THAT FOLLOWS."
 					},
 					"tools": [
 						1
@@ -176,8 +176,8 @@
 				{
 					"id": "cover",
 					"text": {
-						"zh": "按 4 拨 CVR，等防尘罩落到底",
-						"en": "4 · LOWER THE COVER FULLY AT CVR"
+						"zh": "接下来按 4 操作 CVR，把主镜的防尘罩放下来。记得等防尘罩完全落到底以后再继续，免得拆卸的时候碰坏镜面。",
+						"en": "NEXT PRESS 4 TO OPERATE CVR AND LOWER THE PRIMARY MIRROR’S DUST COVER. REMEMBER TO WAIT UNTIL THE COVER HAS FULLY SETTLED BEFORE CONTINUING, SO YOU DON’T DAMAGE THE MIRROR SURFACE DURING REMOVAL."
 					},
 					"tools": [
 						1,
@@ -199,8 +199,8 @@
 				{
 					"id": "cut",
 					"text": {
-						"zh": "按 2，沿仪器右端亮点竖切",
-						"en": "2 · CUT VERTICALLY THROUGH THE LIT WELDS"
+						"zh": "现在按 2 切换到切割工具，找到仪器右端标出来的亮点，沿着那个位置竖直切开。注意控制好切割的位置，尽量别碰到仪器本体。",
+						"en": "NOW PRESS 2 TO SWITCH TO THE CUTTING TOOL, FIND THE LIT SPOTS MARKED ON THE RIGHT END OF THE INSTRUMENT, AND CUT VERTICALLY THROUGH THEM. CONTROL THE CUT POSITION AND TRY NOT TO TOUCH THE INSTRUMENT BODY."
 					},
 					"tools": [
 						2,
@@ -218,8 +218,8 @@
 				{
 					"id": "ins",
 					"text": {
-						"zh": "仪器完整送进设备回收口",
-						"en": "THE INSTRUMENT, WHOLE, TO THE EQUIPMENT BAY"
+						"zh": "把拆下来的仪器完整送进设备回收口。只要没有损坏，就能按照完整设备进行回收，别急着把它切成废料。",
+						"en": "DELIVER THE REMOVED INSTRUMENT WHOLE TO THE EQUIPMENT MOUTH. AS LONG AS IT IS NOT DAMAGED IT IS RECOVERED AS A WHOLE DEVICE, SO DON’T RUSH TO CUT IT INTO SCRAP."
 					},
 					"tools": [
 						3,
@@ -239,8 +239,8 @@
 				{
 					"id": "locks",
 					"text": {
-						"zh": "控制柜通电时，按 4 锁 LK-1 和 LK-2",
-						"en": "4 · LOCK LK-1 AND LK-2 WITH POWER ON"
+						"zh": "接下来要拆主镜的固定结构。先确认控制柜还在通电，然后按 4 操作锁定装置，把 LK-1 和 LK-2 都锁好，再继续拆卸。",
+						"en": "NEXT YOU WILL REMOVE THE PRIMARY MIRROR’S MOUNTING STRUCTURE. FIRST CONFIRM THE CONTROL CABINET IS STILL POWERED, THEN PRESS 4 TO OPERATE THE LOCKS AND LOCK BOTH LK-1 AND LK-2 BEFORE CONTINUING WITH REMOVAL."
 					},
 					"tools": [
 						1,
@@ -270,8 +270,8 @@
 				{
 					"id": "outer",
 					"text": {
-						"zh": "按 4，先卸外圈 PM-2",
-						"en": "4 · UNBOLT OUTER SEGMENT PM-2 FIRST"
+						"zh": "先从外圈开始，按 4 拆卸 PM-2。按照顺序操作就行，暂时不要动里面的 PM-1。",
+						"en": "START FROM THE OUTER RING: PRESS 4 TO REMOVE PM-2. JUST FOLLOW THE ORDER, AND DON’T TOUCH PM-1 INSIDE FOR NOW."
 					},
 					"tools": [
 						3,
@@ -288,8 +288,8 @@
 				{
 					"id": "outer_in",
 					"text": {
-						"zh": "PM-2 送进设备回收口",
-						"en": "PM-2 TO THE EQUIPMENT BAY"
+						"zh": "把拆下来的 PM-2 完整送进设备回收口，确认回收完成以后，再回来处理剩下的部分。",
+						"en": "DELIVER THE REMOVED PM-2 WHOLE TO THE EQUIPMENT MOUTH, AND ONCE YOU HAVE CONFIRMED THE RECOVERY IS COMPLETE, COME BACK AND DEAL WITH THE REST."
 					},
 					"tools": [
 						3,
@@ -313,8 +313,8 @@
 				{
 					"id": "inner",
 					"text": {
-						"zh": "按 4，再卸内圈 PM-1",
-						"en": "4 · UNBOLT INNER SEGMENT PM-1"
+						"zh": "现在可以拆内圈了。按 4 拆卸 PM-1，操作的时候注意周围的结构，尽量保持整个部件完整。",
+						"en": "NOW YOU CAN REMOVE THE INNER RING. PRESS 4 TO REMOVE PM-1, AND WATCH THE SURROUNDING STRUCTURE WHILE YOU WORK, KEEPING THE WHOLE PART INTACT AS YOU CAN."
 					},
 					"tools": [
 						3,
@@ -331,8 +331,8 @@
 				{
 					"id": "inner_in",
 					"text": {
-						"zh": "PM-1 送进设备回收口",
-						"en": "PM-1 TO THE EQUIPMENT BAY"
+						"zh": "把 PM-1 也送进设备回收口。这样主镜相关的拆卸和回收工作就完成了，这一课也算顺利通过。",
+						"en": "DELIVER PM-1 TO THE EQUIPMENT MOUTH TOO. THAT FINISHES THE REMOVAL AND RECOVERY WORK ON THE PRIMARY MIRROR, AND THIS LESSON IS PASSED."
 					},
 					"tools": [
 						3,
@@ -362,8 +362,8 @@
 			"id": "SP_P2",
 			"mode": "lockstep",
 			"title": {
-				"zh": "承压玻璃：先泄压，再拧压条",
-				"en": "GLASS UNDER PRESSURE: VENT, THEN THE STRIPS"
+				"zh": "承压玻璃：先泄压，再拆压条",
+				"en": "GLASS UNDER PRESSURE: VENT FIRST, THEN REMOVE THE STRIPS"
 			},
 			"done_flag": "SP_P2_COMPLETE",
 			"guard": {
@@ -407,8 +407,8 @@
 				{
 					"id": "kpa",
 					"text": {
-						"zh": "测量（1）：读观景舱舱压 G-O",
-						"en": "MEASURE (1): THE HALL'S PRESSURE AT G-O"
+						"zh": "先测量一下观景舱 G-O 的内部压力，看看里面还剩多少气压。玻璃还承受着压力的时候，千万别急着拆。（1）",
+						"en": "FIRST MEASURE THE INTERNAL PRESSURE OF OBSERVATION HALL G-O AND SEE HOW MUCH GAS PRESSURE IS LEFT INSIDE. WHILE THE GLASS IS STILL UNDER PRESSURE, DON’T RUSH TO TAKE IT OFF. (1)"
 					},
 					"tools": [
 						1
@@ -429,8 +429,8 @@
 				{
 					"id": "vent",
 					"text": {
-						"zh": "① 软管接 G-O，抽到 5 kPa 以下（5）",
-						"en": "① HOSE ON G-O, BELOW 5 kPa (5)"
+						"zh": "把抽气软管连接到观景舱 G-O，慢慢把舱内压力降到 5 kPa 以下。等压力降下来以后，再进行下一步操作。（5）",
+						"en": "CONNECT THE PUMP-DOWN HOSE TO OBSERVATION HALL G-O AND SLOWLY BRING THE HALL PRESSURE DOWN BELOW 5 kPa. ONCE THE PRESSURE HAS DROPPED, GO ON TO THE NEXT STEP. (5)"
 					},
 					"tools": [
 						1,
@@ -454,8 +454,8 @@
 				{
 					"id": "strips",
 					"text": {
-						"zh": "② 拧下玻璃 OBS-1 的压条螺栓（4）",
-						"en": "② UNBOLT THE CLAMPING STRIPS OF PANE OBS-1 (4)"
+						"zh": "现在可以拆玻璃了。找到 OBS-1 玻璃周围的压条螺栓，把 4 颗螺栓全部拧下来。注意别直接切割玻璃，我们还要把它完整回收。（4）",
+						"en": "NOW YOU CAN TAKE THE GLASS OFF. FIND THE CLAMPING-STRIP BOLTS AROUND GLASS PANE OBS-1 AND UNSCREW ALL 4 BOLTS. DON’T CUT THE GLASS DIRECTLY, BECAUSE WE STILL WANT TO RECOVER IT WHOLE. (4)"
 					},
 					"tools": [
 						3,
@@ -472,8 +472,8 @@
 				{
 					"id": "deliver",
 					"text": {
-						"zh": "整块玻璃送进设备回收口",
-						"en": "THE PANE, WHOLE, TO THE EQUIPMENT BAY"
+						"zh": "螺栓全部拆掉以后，就可以把整块玻璃取下来了。小心搬运到设备回收口，完整送进去就算完成这一课。",
+						"en": "ONCE ALL THE BOLTS ARE OFF, YOU CAN LIFT THE WHOLE PANE OUT. CARRY IT CAREFULLY TO THE EQUIPMENT MOUTH AND DELIVER IT IN WHOLE TO COMPLETE THIS LESSON."
 					},
 					"tools": [
 						3,

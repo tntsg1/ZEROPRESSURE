@@ -71,6 +71,7 @@ func _ready() -> void:
 	skin.set_color("font_hover_color", "Button", Pal.ink(0.98))
 	skin.set_color("font_pressed_color", "Button", Pal.ink(1.0))
 	skin.set_color("font_disabled_color", "Button", Pal.ink(0.4))
+	UiSkin.scroll_into(skin)
 	theme = skin
 	# 51 号: the new look's ground (gradient, drifting glow, the pointer's light)
 	add_child(UiSkin.Ground.new())
@@ -127,8 +128,12 @@ func _ready() -> void:
 	row.add_theme_constant_override("separation", 14)
 	column.add_child(row)
 	go_btn = key(Txt.t("ld_go") + "  [Enter]", go, true, 260)
+	Charcoal.style_button(go_btn, "Enter")
+	go_btn.text = Txt.t("ld_go")
 	row.add_child(go_btn)
 	back_btn = key(Txt.t("ld_back") + "  [Esc]", cancel, true, 200)
+	Charcoal.style_button(back_btn, "Esc")
+	back_btn.text = Txt.t("ld_back")
 	row.add_child(back_btn)
 	status = label(Txt.t("ld_keys"), 14, Color(1, 1, 1, 0.5))
 	row.add_child(status)
@@ -235,7 +240,7 @@ func refresh() -> void:
 			"Structural metal into the furnace mouth is not paid out: its tonnes become the company's unrated raw material, to sort, assay and melt into billets for industrial clients yourself. The cost: no cash for it, and it does not count as structure tonnes for repairs. Equipment, hazards and contaminated pieces go as usual.")
 		slots_box.add_child(label(why, 14, Pal.heat(0.95, 1.2) if first and not retain else Color(1, 1, 1, 0.6)))
 		if retain:
-			slots_box.add_child(label(words("本单：废金属留作原料，不折现。", "THIS JOB: SCRAP KEPT, NOT PAID OUT."), 15, Pal.tint(Pal.FLUID, 1.0, 1.2)))
+			slots_box.add_child(label(words("本单：废金属留作原料，不折现。", "THIS JOB: SCRAP KEPT, NOT PAID OUT."), 15, Pal.tint(UiSkin.FIGURE, 1.0, 1.2)))
 	# what the contract lends on top
 	var lend: Dictionary = a.get("lend", {}) if not a.is_empty() else {}
 	if not lend.is_empty():

@@ -52,7 +52,7 @@ func close() -> void:
 
 func _row_rect(i: int) -> Rect2:
 	var s := c.size
-	return Rect2(s.x * 0.5 - 300, s.y * 0.5 - 360 + i * 46, 600, 42)
+	return Rect2(s.x * 0.5 - 390, s.y * 0.5 - 360 + i * 46, 780, 42)
 
 
 func _key_rect(i: int) -> Rect2:
@@ -252,43 +252,62 @@ func _draw_ui() -> void:
 	if k < 0.005:
 		return
 	var s := c.size
-	# 54 号: the new skin's ground, faded in with the page
 	c.draw_set_transform(Vector2.ZERO)
+	# 炭黑 v2: the charcoal ground, faded in with the page
 	if k > 0.98:
-		UiSkin.draw_ground(c, s, _t, c.get_local_mouse_position())
+		Charcoal.ground(c, s)
 	else:
-		c.draw_rect(Rect2(Vector2.ZERO, s), Color(UiSkin.BG0.r, UiSkin.BG0.g, UiSkin.BG0.b, 0.95 * k))
+		c.draw_rect(Rect2(Vector2.ZERO, s), Color(Charcoal.BG, 0.96 * k))
 	if keys_open:
 		_draw_keys(s)
 		return
-	_text(Txt.t("s_title"), Vector2(s.x * 0.5, s.y * 0.5 - 385), 30, Pal.ink(0.9 * k), font_l, 0)
+	var r0 := _row_rect(0)
+	var rl := _row_rect(ROWS.size() - 2)
+	_text(Txt.t("s_title"), Vector2(r0.position.x - 4, r0.position.y - 30), 34, Pal.ink(0.95 * k), font_l)
+	# one plate under the rows; a groove between the groups (sound / picture and motion / language and help)
+	Charcoal.panel(c, Rect2(r0.position - Vector2(22, 12), Vector2(r0.size.x + 44, rl.end.y - r0.position.y + 38)), k, 0.0, Charcoal.FACE, 14)
+	var fl: Font = font_l
 	for i in ROWS.size():
 		var row: String = ROWS[i]
 		var r := _row_rect(i)
 		r.position.y += (1.0 - Motion.stagger(k * 0.6, i, 0.04, 0.2)) * 16.0
 		var on := i == sel or i == hover
-		if on:
-			r.position.y -= 2.0
-		c.draw_style_box(UiSkin.box("raised", k, 1.0 if on else 0.0), r)
+		if i in [3, 11, 16]:
+			Charcoal.groove(c, r.position.x + 8, r.end.x - 8, r.position.y - 3, k)
 		if row == "back":
-			_text(Txt.t("s_back"), Vector2(r.get_center().x, r.position.y + 30), 20, Pal.ink((0.95 if on else 0.6) * k), font, 0)
+			var br := Rect2(r.position.x, r.position.y + 4, r.size.x, 46)
+			var fr := Charcoal.key(c, br, k, 0.0, Charcoal.FACE_HI if on else Charcoal.FACE, 10)
+			_text(Txt.t("s_back"), fr.position + Vector2(22, 31), 18, Pal.ink((0.97 if on else 0.75) * k), font_b)
+			Charcoal.keycap(c, font_b, Rect2(fr.end.x - 62, fr.position.y + 11, 48, 26), "Esc", k)
+			if on:
+				Charcoal.lip(c, Rect2(fr.position.x + 14, fr.end.y - 6, fr.size.x - 28, 4), k)
 			continue
+		# the chosen row lit, the orange lip at its left
+		if on:
+			c.draw_rect(Rect2(r.position.x, r.position.y, r.size.x, r.size.y), Color(Charcoal.FACE_HI, k))
+			c.draw_rect(Rect2(r.position.x, r.position.y + 4, 3, r.size.y - 8), Color(Charcoal.ACCENT, k))
+		_text("%02d" % (i + 1), r.position + Vector2(16, 29), 17, Color(Charcoal.ACCENT, k) if on else Pal.ink(0.35 * k), fl)
 		if row == "keys_row":
-			_text(Txt.t("s_keys_row"), r.position + Vector2(20, 30), 18, Pal.ink((0.95 if on else 0.65) * k), font)
-			_text("→", Vector2(r.end.x - 30, r.position.y + 30), 18, Pal.ink(0.6 * k), font, 0)
+			_text(Txt.t("s_keys_row"), r.position + Vector2(58, 28), 17, Pal.ink((0.97 if on else 0.75) * k), font)
+			var kr := Rect2(r.end.x - 232, r.position.y + 5, 220, r.size.y - 10)
+			Charcoal.display(c, kr, k, 6)
+			_text("→", Vector2(kr.get_center().x, kr.position.y + 23), 17, Pal.ink(0.85 * k), font_b, 0)
 			continue
-		_text(Txt.t("s_" + row), r.position + Vector2(20, 30), 18, Pal.ink((0.95 if on else 0.65) * k), font)
+		_text(Txt.t("s_" + row), r.position + Vector2(58, 28), 17, Pal.ink((0.97 if on else 0.75) * k), font)
+		# the value in a black window, its arrows at its ends; a switch has its lamp
 		var v := value(row)
-		_text("◂", Vector2(r.end.x - 190, r.position.y + 30), 18, Pal.ink(0.4 * k), font, 0)
-		_text(v, Vector2(r.end.x - 110, r.position.y + 30), 18, Pal.ink(0.95 * k), font_b, 0)
-		_text("▸", Vector2(r.end.x - 30, r.position.y + 30), 18, Pal.ink(0.4 * k), font, 0)
+		var vr := Rect2(r.end.x - 232, r.position.y + 5, 220, r.size.y - 10)
+		Charcoal.display(c, vr, k, 6)
+		_text("◂", Vector2(vr.position.x + 16, vr.position.y + 23), 15, Pal.ink((0.7 if on else 0.35) * k), font, 0)
+		_text("▸", Vector2(vr.end.x - 16, vr.position.y + 23), 15, Pal.ink((0.7 if on else 0.35) * k), font, 0)
+		var is_sw := v == Txt.t("s_on") or v == Txt.t("s_off")
+		if is_sw:
+			Charcoal.led(c, Vector2(vr.position.x + 44, vr.get_center().y), v == Txt.t("s_on"), k, 4.0)
+		_text(v, Vector2(vr.get_center().x + (8.0 if is_sw else 0.0), vr.position.y + 23), 17, Pal.ink(0.97 * k), font_b, 0)
 		if row.begins_with("vol_"):
 			var f: float = {"vol_master": Txt.vol_master, "vol_music": Txt.vol_music, "vol_sfx": Txt.vol_sfx}[row]
-			var br := Rect2(r.position.x + 20, r.end.y - 10, 300, 4)
-			c.draw_style_box(UiSkin.box("sunk", k), br)
-			if f > 0.01:
-				c.draw_style_box(UiSkin.box("accent", k), Rect2(br.position, Vector2(maxf(4.0, br.size.x * f), 4)))
-	_text(Txt.t("s_keys"), Vector2(s.x * 0.5, _row_rect(ROWS.size()).position.y + 30), 13, Pal.ink(0.35 * k), font, 0)
+			Charcoal.segments(c, Rect2(vr.position.x - 236, r.position.y + 17, 216, 8), f * 12.0, 12, k)
+	_text(Txt.t("s_keys"), Vector2(s.x * 0.5, _row_rect(ROWS.size()).position.y + 44), 13, Pal.ink(0.45 * k), font, 0)
 
 
 # the key list: every action, its key; Enter (or a click) waits for the new one
@@ -297,12 +316,17 @@ func _draw_keys(s: Vector2) -> void:
 	for i in Keys.ORDER.size() + 1:
 		var r := _key_rect(i)
 		var on := i == ksel
-		c.draw_style_box(UiSkin.box("raised", k, 1.0 if on else 0.0), r)
+		var fr := Charcoal.key(c, r, k, 0.0, Charcoal.FACE_HI if on else Charcoal.FACE, 9)
+		if on:
+			Charcoal.lip(c, Rect2(fr.position.x + 3, fr.position.y + 6, 3, fr.size.y - 12), k)
 		if i == Keys.ORDER.size():
 			_text(Txt.t("s_reset"), r.position + Vector2(20, 28), 16, Pal.ink((0.95 if on else 0.6) * k), font)
 			continue
 		var a: String = Keys.ORDER[i]
 		_text(Txt.t("key_" + a), r.position + Vector2(20, 28), 16, Pal.ink((0.95 if on else 0.7) * k), font)
 		var v := Txt.t("s_press") if on and waiting else Keys.label(a)
-		_text(v, Vector2(r.end.x - 20, r.position.y + 28), 16, Pal.heat(0.95 * k, 1.2) if on and waiting else Pal.ink(0.95 * k), font_b, 1)
+		var vw := maxf(64.0, font_b.get_string_size(v, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 28.0)
+		var vr := Rect2(r.end.x - 10 - vw, r.position.y + 6, vw, r.size.y - 12)
+		Charcoal.display(c, vr, k, 6)
+		_text(v, Vector2(vr.get_center().x, r.position.y + 27), 16, Color(Charcoal.ACCENT, k) if on and waiting else Pal.ink(0.95 * k), font_b, 0)
 	_text(Txt.t("s_keys_help"), Vector2(s.x * 0.5, _key_rect(Keys.ORDER.size() + 2).position.y + 30), 13, Pal.ink(0.5 * k), font, 0)

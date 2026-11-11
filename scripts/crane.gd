@@ -218,7 +218,7 @@ func _physics_process(dt: float) -> void:
 var auto_t := 0.0
 var stuck_t := 0.0
 const STUCK_S := 8.0             # s a piece taken unasked may hold the crane up before it is put down
-const AUTO_AGE := 1.5            # s a piece has been loose before the crane comes for it
+const AUTO_AGE := 0.8            # s a piece has been loose before the crane comes for it
 const AUTO_V := 0.6              # m/s: and no faster than this
 
 
@@ -226,7 +226,9 @@ const AUTO_V := 0.6              # m/s: and no faster than this
 func auto_pick():
 	if game.manual_only() or game.training or game.exam != null:
 		return null
-	var lim: float = game.grab_max()
+	# 2026-11-11 (user: every loose body to its mouth with the machines on): with hauling drones in the
+	# berth, whatever they cannot lift (over 1.5 t) is the crane's — not only what the grapple cannot pull
+	var lim: float = Hauler.MAX_T if not game.haulers().is_empty() else game.grab_max()
 	var taken := {}
 	for h in game.haulers():
 		for b in h.queue:
@@ -305,8 +307,14 @@ func _draw() -> void:
 			var k: Array = _rail_node.get_meta("k")
 			Cutaway.crane_rail(_rail_node, k[0], k[1], k[2]))
 		add_child(_rail_node)
-	_rail_node.visible = Pal.solid
-	if Pal.solid:
+	# far out (the whole ship on screen) the stiffeners and rivets are under a pixel and cost ARK-01's
+	# long berth ~8 ms of render a frame: the rail as two flat bands there
+	var far: bool = game != null and game.cam_zoom() < 0.3
+	_rail_node.visible = Pal.solid and not far and not Cutaway.skip.has("crane")
+	if Pal.solid and far:
+		draw_rect(Rect2(x0, ry - 4.0, x1 - x0, 6.0), Color(0.36, 0.37, 0.4))
+		draw_rect(Rect2(x0, ry + 2.0, x1 - x0, 17.0), Color(0.12, 0.125, 0.138))
+	elif Pal.solid:
 		var key := [x0, x1, ry]
 		if _rail_node.get_meta("k", []) != key:
 			_rail_node.set_meta("k", key)

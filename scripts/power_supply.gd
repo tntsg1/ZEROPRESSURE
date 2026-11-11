@@ -667,8 +667,9 @@ static func _tank_goods(keys: Array) -> Array:
 
 
 static func stock_h2() -> float:
-	# the gas line's own LH2 once it makes any (design §六: its second stage gives LOX and LH2)
-	var kg := float(Career.data.get("gas", {}).get("lh2", {}).get("kg", 0.0))
+	# the gas line's own LH2 (piped in from the tug station's cryo tanks, 2026-11-11), what is
+	# still in those tanks, and the LH2 tanks salvaged whole into the warehouse
+	var kg := float(Career.data.get("gas", {}).get("lh2", {}).get("kg", 0.0)) + float(TugYard.cryo().lh2)
 	for gd in _tank_goods(LH2_TANKS):
 		kg += float(gd.liq_m3) * LH2_RHO
 	return kg
@@ -682,7 +683,7 @@ static func _gas_lox() -> float:
 
 
 static func stock_o2() -> float:
-	var kg := _gas_lox()
+	var kg := _gas_lox() + float(TugYard.cryo().lox)
 	for gd in _tank_goods(LOX_TANKS):
 		kg += float(gd.liq_m3) * LOX_RHO
 	return kg
@@ -704,6 +705,16 @@ static func _withdraw(h2: float, o2: float) -> void:
 		var t0 := minf(h2, float(gl.get("kg", 0.0)))
 		gl.kg = float(gl.kg) - t0
 		h2 -= t0
+	# then the tug station's cryo tanks (not yet piped over)
+	for kind in ["lh2", "lox"]:
+		var want := h2 if kind == "lh2" else o2
+		var t1 := minf(want, float(TugYard.cryo()[kind]))
+		if t1 > 0.0:
+			TugYard.set_cryo(kind, float(TugYard.cryo()[kind]) - t1)
+			if kind == "lh2":
+				h2 -= t1
+			else:
+				o2 -= t1
 	for gd in _tank_goods(LH2_TANKS):
 		if h2 <= 0.0001:
 			break
@@ -731,7 +742,7 @@ static func cryo_status() -> String:
 	if float(nr[0]) <= 0.0:
 		if float(d().get("fc_fuel", 0.0)) >= FC_TANK - MIN_MWH:
 			return w("燃料电池的储罐已经装满，暂时无法继续补充燃料。", "THE FUEL CELLS' TANK IS FULL")
-		return w("库存不足，无法运送燃料。当前液氢库存 %.0f kg（来自拖船站拆下的液氢罐），液氧库存 %.0f kg（来自加工区气体生产线）。", "NO STOCK, NO RUN: %.0f kg LH2 (TANKS FROM THE TUG STATION) · %.0f kg LOX (THE GAS LINE)") % [stock_h2(), stock_o2()]
+		return w("库存不足，无法运送燃料。当前液氢库存 %.0f kg（〔来源：拖船站从废船抽回的低温罐 · 仓库里的液氢罐〕），液氧库存 %.0f kg（〔来源：加工区气体生产线 · 拖船站抽回的液氧〕）。", "NO STOCK, NO RUN: %.0f kg LH2 (TANKS FROM THE TUG STATION) · %.0f kg LOX (THE GAS LINE)") % [stock_h2(), stock_o2()]
 	return w("当前库存：液氢 %.0f kg、液氧 %.0f kg。燃料储罐低于一半时，会自动安排一次燃料运输。", "STOCK: %.0f kg LH2 · %.0f kg LOX · A RUN GOES BELOW HALF") % [stock_h2(), stock_o2()]
 
 

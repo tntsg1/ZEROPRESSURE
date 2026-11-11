@@ -19,7 +19,7 @@ static func shape_of(o: Dictionary) -> Dictionary:
 	var id := str(o.get("id", o.get("ship", "")))
 	if _cache.has(id):
 		return _cache[id]
-	var th := {"outline": [], "len": 40.0, "h": 8.0, "mid": 0.0}
+	var th := {"outline": [], "fills": [], "len": 40.0, "h": 8.0, "mid": 0.0}
 	var data := Ship.load_data(str(o.get("ship", "")))
 	if not data.is_empty():
 		var d := Variant.make(data, o)
@@ -32,6 +32,10 @@ static func shape_of(o: Dictionary) -> Dictionary:
 					pts.append(Vector2(q[0], q[1]))
 					y0 = minf(y0, q[1])
 					y1 = maxf(y1, q[1])
+				# 工业剖面: the structure filled in its material's grey (hull, keel, beams the
+				# armour grey; decks and bulkheads the darker interior grey)
+				if pts.size() >= 3 and Geometry2D.triangulate_polygon(pts).size() > 0:
+					th.fills.append([PackedVector2Array(pts), pd.kind in ["hull", "hatch", "keel", "beam"]])
 				if pts.size() > 1:
 					pts.append(pts[0])
 					th.outline.append(pts)
@@ -52,6 +56,14 @@ func _draw() -> void:
 	var sc := minf(r.size.x / L, r.size.y / th.h)
 	var org := Vector2(r.position.x + (r.size.x - L * sc) * 0.5, r.get_center().y - float(th.mid) * sc)
 	var col := Pal.ink(0.35 if dim else 0.7)
+	if Pal.solid:
+		var dk := 0.55 if dim else 1.0
+		for f in th.fills:
+			var sp := PackedVector2Array()
+			for v in f[0]:
+				sp.append(org + v * sc)
+			var c: Color = Color(0.13, 0.135, 0.15) if f[1] else Color(0.07, 0.073, 0.082)
+			draw_colored_polygon(sp, Color(c.r * dk, c.g * dk, c.b * dk))
 	for pts in th.outline:
 		var sp := PackedVector2Array()
 		for v in pts:

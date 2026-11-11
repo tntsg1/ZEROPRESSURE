@@ -14,7 +14,9 @@ extends RefCounted
 
 const MeshPen = preload("res://scripts/mesh_pen.gd")
 const W = preload("res://scripts/hub_works.gd")
+const CA = preload("res://scripts/console_art.gd")
 const FW = preload("res://scripts/freight_works.gd")
+const Tidy = preload("res://scripts/hub_tidy.gd")   # 极简体块, while Pal.solid (2026-11-11)
 
 const R_CORE := 7.6
 const R_CAR_IN := 8.4
@@ -140,6 +142,8 @@ func _in_gap(a: float, r: float, half_m: float) -> bool:
 
 
 func still_mesh(st: int) -> ArrayMesh:
+	if Pal.solid:
+		return _mesh("t_still%d" % st, func(p): Tidy.still(self, p, st))
 	return _mesh("still%d" % st, func(p): _still(p, st))
 
 
@@ -356,8 +360,9 @@ func _still(p, st: int) -> void:
 		var o := ug.orthogonal() * (-0.95 + k * 0.95)
 		_box(p, ug * 5.6 + o, gp, Vector2(1.9, 0.75), Color(0.07, 0.074, 0.082), _ink(0.3), 0.03)
 	var uc := -ug
-	_box(p, uc * 5.6, gp + PI, Vector2(2.2, 3.4), Color(0.1, 0.106, 0.118), _ink(0.5), 0.06)
-	_box(p, uc * 5.75, gp + PI, Vector2(1.25, 2.6), Color(0.04, 0.07, 0.085), _ink(0.35), 0.04)
+	# 2026-11-10: a status window in the cabinet's face (background: dark glass, no bright bezel), not a console
+	_box(p, uc * 5.6, gp + PI, Vector2(2.2, 3.4), Color(0.1, 0.106, 0.118), _ink(0.38), 0.05)
+	_box(p, uc * 5.75, gp + PI, Vector2(1.25, 2.6), CA.BG_GLASS, _ink(0.16), 0.03)
 	# ---- at each spoke but the power one: the hatch's frame and the arm's plinth
 	for z in sp:
 		if z == "power":
@@ -402,6 +407,8 @@ func _still(p, st: int) -> void:
 
 # the bridge from the power spoke over the carousel to the core, its cable tray on top
 func bridge_mesh(st: int) -> ArrayMesh:
+	if Pal.solid:
+		return _mesh("t_bridge%d" % st, func(p): Tidy.bridge(self, p, st))
 	return _mesh("bridge%d" % st, func(p): _bridge(p, st))
 
 
@@ -443,6 +450,8 @@ func _bridge(p, st: int) -> void:
 
 # ================================================================== the moving parts
 func carousel_mesh() -> ArrayMesh:
+	if Pal.solid:
+		return _mesh("t_carousel", func(p): Tidy.carousel(self, p))
 	return _mesh("carousel", _carousel)
 
 
@@ -517,6 +526,8 @@ func pinion_mesh() -> ArrayMesh:
 
 
 func fan_mesh(r: float) -> ArrayMesh:
+	if Pal.solid:
+		return _mesh("t_fan%.2f" % r, func(p): Tidy.fan(self, p, r))
 	return _mesh("fan%.2f" % r, func(p):
 		for i in 5:
 			var a := TAU * i / 5.0
@@ -533,6 +544,8 @@ func fan_mesh(r: float) -> ArrayMesh:
 
 
 func rotor_mesh() -> ArrayMesh:
+	if Pal.solid:
+		return _mesh("t_rotor", func(p): Tidy.rotor(self, p))
 	return _mesh("rotor", func(p):
 		p.circle(Vector2.ZERO, 2.05, Color(0.07, 0.074, 0.082), 40)
 		for k in 4:
@@ -718,6 +731,8 @@ func shadow_mesh() -> ArrayMesh:
 
 # ---- the transfer arm: the turret, the two links, the spreader
 func turret_mesh() -> ArrayMesh:
+	if Pal.solid:
+		return _mesh("t_turret", func(p): Tidy.turret(self, p))
 	return _mesh("turret", func(p):
 		p.circle(Vector2.ZERO, 0.95, Color(0.15, 0.158, 0.172), 24)
 		p.ring(Vector2.ZERO, 0.95, _ink(0.55), 0.06, 24)
@@ -730,6 +745,8 @@ func turret_mesh() -> ArrayMesh:
 
 
 func link_mesh(l: float, w0: float, w1: float) -> ArrayMesh:
+	if Pal.solid:
+		return _mesh("t_link%.1f" % l, func(p): Tidy.link(self, p, l, w0, w1))
 	return _mesh("link%.1f" % l, func(p):
 		p.poly(PackedVector2Array([Vector2(0, -w0 * 0.5), Vector2(l, -w1 * 0.5), Vector2(l, w1 * 0.5), Vector2(0, w0 * 0.5)]), Color(0.17, 0.178, 0.194))
 		p.polyline(PackedVector2Array([Vector2(0, -w0 * 0.5), Vector2(l, -w1 * 0.5), Vector2(l, w1 * 0.5), Vector2(0, w0 * 0.5)]), _ink(0.6), 0.05, true)
@@ -746,6 +763,8 @@ func link_mesh(l: float, w0: float, w1: float) -> ArrayMesh:
 
 
 func spreader_mesh() -> ArrayMesh:
+	if Pal.solid:
+		return _mesh("t_spreader", func(p): Tidy.spreader(self, p))
 	return _mesh("spreader", func(p):
 		# the frame over a crate's top, a beam across, a twistlock at each corner
 		var hx := 1.85
@@ -780,8 +799,12 @@ func back(ci: CanvasItem, t: float) -> void:
 	var th := W.theta
 	# the slip ring's rotor turns with the carousel
 	_put(ci, rotor_mesh(), Vector2.ZERO, th)
-	# the carousel
+	# the carousel (极简体块: its girders' and cradles' shadow in the pit under it, the light on its rims over it)
+	if Pal.solid:
+		_put(ci, _mesh("t_carshadow", func(p): Tidy.carousel_shadow(self, p)), -Look.LIGHT_DIR * Tidy.PIT_SHADOW, th)
 	_put(ci, carousel_mesh(), Vector2.ZERO, th)
+	if Pal.solid:
+		_put(ci, _mesh("t_carlight", func(p): Tidy.carousel_light(self, p)), Vector2.ZERO)
 	# what the cradles hold
 	for k in W.SLOTS:
 		var pc = W.cradles[k] if k < W.cradles.size() else null
@@ -825,6 +848,16 @@ func back(ci: CanvasItem, t: float) -> void:
 		var slide := 1.5 * doors
 		_put(ci, leaf_mesh(), hp + v * (0.05 + slide), g)
 		_put(ci, leaf_mesh(), hp - v * (0.05 + slide), g + PI)
+	if Pal.solid:
+		# 极简体块: the arms and the bridge stand over the floor; their shadows fall away from the light
+		var off := -Look.LIGHT_DIR * 1.1
+		for z in W.spokes():
+			if z == "power":
+				continue
+			var am := W._arm(z)
+			_put(ci, _mesh("t_lsh%.1f" % W.L1, func(p): Tidy.link_shadow(self, p, W.L1, 0.8, 0.62)), W.base_at(z) + off, float(am.q1))
+			_put(ci, _mesh("t_lsh%.1f" % W.L2, func(p): Tidy.link_shadow(self, p, W.L2, 0.6, 0.46)), W.elbow_at(z) + off, float(am.q2))
+		_put(ci, _mesh("t_bsh", func(p): Tidy.bridge_shadow(self, p)), off * 1.4)
 
 
 # over the carousel: the arms and their loads, the bridge
@@ -855,6 +888,8 @@ func front(ci: CanvasItem, t: float) -> void:
 # ================================================================== the light
 # the steady light: the wall lamps' fall on the deck (one mesh a stage), the slip ring's warmth
 func glow_mesh(st: int) -> ArrayMesh:
+	if Pal.solid:
+		return _mesh("t_glow%d" % st, func(p): Tidy.glow_mesh(self, p, st))
 	return _mesh("glow%d" % st, func(p):
 		if st < 1:
 			return
@@ -895,6 +930,9 @@ func glow(ci: CanvasItem, tex: Texture2D, t: float, game) -> void:
 	_frame(ci)
 	var st := W.stage
 	_put(ci, glow_mesh(st), Vector2.ZERO)
+	if Pal.solid:
+		Tidy.glow(self, ci, tex, t)
+		return
 	var th := W.theta
 	if st == 0:
 		# the dead ring: emergency beacons turning on the core's two cabinets, a lamp or two flickering
@@ -1002,8 +1040,11 @@ func plates(ci: CanvasItem, t: float) -> void:
 		var word := w("缺失", "GONE") if not has_drive(i, st) else (w("停转", "DEAD") if st == 0 else (w("运行", "RUN") if absf(W.omega) > 0.002 else w("待机", "READY")))
 		_text(ci, at, "M%d %s" % [i + 1, word], 0.36, Pal.heat(0.85, 1.1) if st == 0 or not has_drive(i, st) else dim)
 	# the control cabinet's screen: what the carousel is doing
+	# in its window (it was drawn over the cabinet's edge), small and dim as a far-off meter (CA.bg)
 	var g := float(sp.get("power", -PI * 0.5)) + PI
-	var sc := Vector2.from_angle(g) * 5.75 + Vector2(-0.55, -0.9)
+	var gu := Vector2.from_angle(g)
+	var half_w := (absf(gu.x) * 1.25 + absf(gu.orthogonal().x) * 2.6) * 0.5
+	var sc := gu * 5.75 + Vector2(-half_w + 0.15, -0.12)
 	var lines: Array = []
 	if st == 0:
 		lines = [[w("转盘 停转", "CAROUSEL DEAD"), Color(1.0, 0.36, 0.24)], [w("驱动缺失 2/4", "DRIVES 2/4 GONE"), dim]]
@@ -1011,7 +1052,7 @@ func plates(ci: CanvasItem, t: float) -> void:
 		var state := w("转位", "INDEXING") if absf(W.omega) > 0.002 else (w("定位锁止", "LOCKED") if W.settled() else w("等待", "WAITING"))
 		lines = [[w("转盘 ", "CAROUSEL ") + state, hi], ["%.0f°/s · %d/12" % [rad_to_deg(absf(W.omega)), W.loaded()], dim]]
 	for k in lines.size():
-		_text(ci, sc + Vector2(0, k * 0.42), lines[k][0], 0.3, lines[k][1])
+		_text(ci, sc + Vector2(0, k * 0.34), lines[k][0], 0.22, CA.bg(lines[k][1]))
 
 
 # ================================================================== the hover cards

@@ -15,6 +15,12 @@ func _initialize() -> void:
 	SaveGame.allow_test = true
 	if DisplayServer.get_name() != "headless":
 		root.add_child(preload("res://tests/test_window.gd").new())
+	# (the old rules, for comparison: -- nophase)
+	Tram.phase_through = not "nophase" in OS.get_cmdline_user_args()
+	var FWx = preload("res://scripts/freight_works.gd")
+	FWx.fix_red = not "nored" in OS.get_cmdline_user_args()
+	FWx.fix_up = not "noup" in OS.get_cmdline_user_args()
+	FWx.fix_where = not "nowhere" in OS.get_cmdline_user_args()
 	_run.call_deferred()
 
 
@@ -134,7 +140,9 @@ func _run() -> void:
 		mean += x / waits.size()
 	print("  waited for freight: worst %.1f s, mean %.1f s over %d calls" % [worst, mean, waits.size()])
 	check(all_ok, "every ride arrives with the freight running")
-	check(worst <= 8.0, "the shuttle waits for freight at most about 8 s (worst %.1f s, mean %.1f s)" % [worst, mean])
+	# 相位接驳 (2026-11-11): passing through freight, the shuttle never waits for it at all
+	var lim := 0.0 if Tram.phase_through else 8.0
+	check(worst <= lim, "the shuttle waits for freight at most %.0f s (worst %.1f s, mean %.1f s)" % [lim, worst, mean])
 	var fv = g.freight
 	check(fv.tick_us < 1500.0, "the trains' step is cheap (%.0f µs a frame on average, slowest %.1f ms, drawing %.0f µs)" % [fv.tick_us, fv.tick_max / 1000.0, fv.draw_us])
 	W.demo = false

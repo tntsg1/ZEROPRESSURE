@@ -30,6 +30,26 @@ static var _code := ""          # the district's stencil code while its block is
 # a soft additive halo on each (the title screen draws the port without halos)
 static var lamps: Array = []
 static var _no_lamps := false
+# 工业剖面 (2026-11-11): the districts' hulls in the ships' cutaway language — solid plating lit
+# from above, flat dark faces, pilasters with a lit and a shaded side, no panel-seam grid and no
+# hatched webs. Sample stage: only the zones listed here (the owner signs off before the rest)
+const CUT_ZONES := ["PRC"]
+# The hulls' outside lights (user 2026-11-11: the rows of saturated cyan bubbles "怪怪的，很难看";
+# four schemes to choose from, tests/port_lights_shot.gd). 0 as it was; 1 warm work lamps (a shade
+# on a bracket, a cone down, a pool on the deck, 2-3 a hull); 2 a thin cool-white strip under the
+# eave washing a narrow band of wall; 3 no outside lamps, warm light out of the portholes and the
+# door seams; 4 dark, a few small orange / white marker lights at corners and doors, slow blink
+static var light_scheme := 0
+# The hulls tidied (user 2026-11-11: from outside it is "ugly, a mess"): 0 as it was; 1 极简体块 -
+# one big flat lit face with its thickness and two seams; 2 工业厂房 - the same face in a few bays
+# between solid pilasters, a clerestory strip, a plinth. Both keep the one or two features a
+# district is known by and the quietest lights: corner markers, a few lit ports, a light at each
+# working door. tests/port_tidy_shot.gd
+static var hull_style := 1    # the owner picked 1 (2026-11-11); only with Pal.solid (F9 shows the old hulls)
+static func _tidy() -> bool:
+	return hull_style > 0 and Pal.solid
+static func _cut() -> bool:
+	return Pal.solid and _code.get_slice("-", 0) in CUT_ZONES
 # Performance (2026-10-24, design/…/24_港站绘制性能): the berth keeps the still drawing
 # as retained geometry and only replays what moves or sizes itself to the screen. While
 # _recording, every such piece is kept as a call (ci, t, z) in _rec instead of drawn;
@@ -249,8 +269,11 @@ static func _hub(ci, c: Vector2, M: float, z: float, t: float, n: int) -> void:
 	for i in 16:
 		var a0 := TAU * i / 16.0
 		var col := Pal.heat(0.85, 1.5) if i < segs16 else Pal.ink(0.05)
+		if _tidy():
+			# 极简体块 (2026-11-11): a quiet rim, no orange segments and no halos ("大红光斑全部去掉")
+			col = Pal.ink(0.1) if i < segs16 else Pal.ink(0.05)
 		ci.draw_arc(c, (HUB_R + 3.0) * M, a0 + 0.04, a0 + TAU / 16.0 - 0.04, 6, col, lw * 2.4, true)
-		if i < segs16 and not _no_lamps:
+		if i < segs16 and not _no_lamps and not _tidy():
 			# 109 号: a small halo (3 m threw orange blobs over the hub's rim up close)
 			lamps.append([c + Vector2.from_angle(a0 + TAU / 32.0) * (HUB_R + 3.0) * M, 1.2 * M, col])
 	# four docking arms off the ring, a pad at each end (a shuttle on one once it runs)
@@ -268,8 +291,8 @@ static func _hub(ci, c: Vector2, M: float, z: float, t: float, n: int) -> void:
 			ci.draw_line(p1 + Vector2.from_angle(ca) * 1.4 * M, p1 + Vector2.from_angle(ca) * 2.4 * M, Pal.ink(ink * 0.6), lw)
 		if n >= 2 and i == 1:
 			ci.draw_rect(Rect2(p1 + v * 2.5 * M - Vector2(1.5, 1.0) * M, Vector2(3.0, 2.0) * M), Pal.ink(0.4))
-	# cars on the ring once it runs
-	if n >= 1:
+	# cars on the ring once it runs (not on the tidied port: the real shuttles run there, scripts/tram.gd)
+	if n >= 1 and not _tidy():
 		_anim(ci, t, func(cc, tt: float, _z: float):
 			for i: int in [0, 1, 2, 3, 4, 5]:
 				if i >= [0, 3, 6][n]:
@@ -376,6 +399,9 @@ static func _truss(ci, a: Vector2, b: Vector2, half_w: float, step: float, col: 
 
 # a block with its outline and a grid of windows, lit by stage
 static func _block(ci, r: Rect2, M: float, lw: float, t: float, n: int, seed: int, warm: bool = false, plain: bool = false) -> void:
+	if _tidy() and not _ghost:
+		_tidy_block(ci, r, M, lw, t, n, seed)
+		return
 	if _ghost:
 		# the operator is inside: the shell as a faint outline, the interior shows through
 		ci.draw_rect(r, Color(FILL.r, FILL.g, FILL.b, 0.2))
@@ -397,12 +423,31 @@ static func _block(ci, r: Rect2, M: float, lw: float, t: float, n: int, seed: in
 	for pt in shell:
 		shadow.append(pt + Vector2(1.4, 1.8) * M)
 	ci.draw_colored_polygon(shadow, Color(0.0, 0.0, 0.0, 0.4))
-	ci.draw_colored_polygon(shell, FILL)
-	# plating: panel seams, every panel a little different in tone
+	var cut := _cut()
 	var px := 6.0 * M
 	var cols := int(r.size.x / px)
 	var rows := 3
-	for i in cols:
+	if cut:
+		# the plating as one lit face: paler under the eave, darker toward the deck; panels a touch
+		# apart in tone, no seam lines; two faint horizontal joints only
+		var top := Color(0.085, 0.089, 0.1)
+		var bot := Color(0.03, 0.032, 0.037)
+		var cs := PackedColorArray()
+		for pt in shell:
+			cs.append(top.lerp(bot, clampf((pt.y - r.position.y) / r.size.y, 0.0, 1.0)))
+		ci.draw_polygon(shell, cs)
+		for i in cols:
+			if rng.randf() < 0.4:
+				var pr := Rect2(r.position + Vector2(i * px, 0), Vector2(px, r.size.y))
+				ci.draw_rect(pr.grow(-0.2 * M), Color(1, 1, 1, 0.006))
+		for f in [0.34, 0.67]:
+			var jy: float = r.position.y + r.size.y * f
+			ci.draw_line(Vector2(r.position.x + ch, jy), Vector2(r.end.x - ch, jy), Pal.ink(ink * 0.22), lw)
+			ci.draw_line(Vector2(r.position.x + ch, jy + 0.12 * M), Vector2(r.end.x - ch, jy + 0.12 * M), Color(0, 0, 0, 0.5), lw * 1.6)
+	else:
+		ci.draw_colored_polygon(shell, FILL)
+	# plating: panel seams, every panel a little different in tone
+	for i in (0 if cut else cols):
 		for j in rows:
 			var pr := Rect2(r.position + Vector2(i * px, j * r.size.y / rows), Vector2(px, r.size.y / rows))
 			var tone := 0.028 + rng.randf() * 0.012
@@ -413,6 +458,8 @@ static func _block(ci, r: Rect2, M: float, lw: float, t: float, n: int, seed: in
 				for k in 4:
 					ci.draw_circle(pr.position + Vector2((k + 0.5) * px / 4.0, 0.5 * M), 0.12 * M, Pal.ink(ink * 0.7))
 	# light from above: a pale band along the top edge, a dark one along the bottom
+	if cut:
+		ci.draw_rect(Rect2(r.position + Vector2(ch, 0), Vector2(r.size.x - 2.0 * ch, 0.35 * M)), Color(0.16, 0.166, 0.18))
 	ci.draw_rect(Rect2(r.position + Vector2(ch, 0), Vector2(r.size.x - 2.0 * ch, 0.9 * M)), Color(0.07, 0.074, 0.084))
 	ci.draw_rect(Rect2(Vector2(r.position.x + ch, r.end.y - 0.9 * M), Vector2(r.size.x - 2.0 * ch, 0.9 * M)), Color(0.012, 0.014, 0.018))
 	# the hull code stencilled on the plating, big and faint
@@ -422,6 +469,16 @@ static func _block(ci, r: Rect2, M: float, lw: float, t: float, n: int, seed: in
 	var fx := r.position.x + px * 2.0
 	while fx < r.end.x - px:
 		var fr := Rect2(Vector2(fx - 0.6 * M, r.position.y), Vector2(1.2 * M, r.size.y))
+		if cut:
+			# a pilaster: its face lit from the left, the shaded side and the shadow it throws
+			ci.draw_rect(Rect2(fr.end.x, fr.position.y, 0.5 * M, fr.size.y), Color(0, 0, 0, 0.45))
+			var a := Color(0.11, 0.115, 0.128)
+			var b := Color(0.05, 0.052, 0.06)
+			ci.draw_polygon(PackedVector2Array([fr.position, Vector2(fr.end.x, fr.position.y), fr.end, Vector2(fr.position.x, fr.end.y)]), PackedColorArray([a, b, b, a]))
+			ci.draw_line(fr.position, Vector2(fr.position.x, fr.end.y), Pal.ink(ink + 0.12), lw * 1.4)
+			ci.draw_line(Vector2(fr.end.x, fr.position.y), fr.end, Pal.ink(ink * 0.35), lw)
+			fx += px * 2.0
+			continue
 		ci.draw_rect(fr, FILL2)
 		ci.draw_rect(fr, Pal.ink(ink + 0.05), false, lw)
 		_hatch(ci, fr, M, lw, Pal.ink(ink * 0.6), 1.0)
@@ -452,6 +509,9 @@ static func _block(ci, r: Rect2, M: float, lw: float, t: float, n: int, seed: in
 	# (56 号: a plain hull has none — "a building with little dots")
 	var pn := 0 if plain else int(r.size.x / (3.0 * M))
 	var lit_n: int = [int(pn * 0.15), int(pn * 0.55), pn][n]
+	if light_scheme > 0:
+		_scheme_lights(ci, r, M, lw, t, n, ink, plain, seed)
+		pn = 0
 	for k in pn:
 		var pp := r.position + Vector2((k + 0.5) * 3.0 * M, r.size.y * 0.3)
 		var on: bool = k < lit_n
@@ -489,7 +549,7 @@ static func _block(ci, r: Rect2, M: float, lw: float, t: float, n: int, seed: in
 	while bx < r.end.x - 1.0 * M:
 		ci.draw_line(Vector2(bx, ty - 0.3 * M), Vector2(bx, ty + 1.0 * M), Pal.ink(ink + 0.05), lw * 1.4)
 		bx += 4.0 * M
-	var segs := 0 if plain else int(r.size.x / (4.0 * M))
+	var segs := 0 if plain or light_scheme > 0 else int(r.size.x / (4.0 * M))
 	var lit_s: int = [0, segs / 2, segs][n]
 	for k in segs:
 		var sx := r.position.x + (k + 0.15) * 4.0 * M
@@ -524,6 +584,144 @@ static func _block(ci, r: Rect2, M: float, lw: float, t: float, n: int, seed: in
 	ci.draw_polyline(PackedVector2Array([shell[0] + Vector2(0, 0.6 * M), shell[1] + Vector2(0, 0.6 * M)]), Pal.ink(0.5), lw)
 
 
+# the outside lights of a hull under light_scheme 1-4 (no halos in the backdrop's glow layer: the
+# light is drawn as what it lights). n: how far the district's works have come (0 dark .. 2 all)
+const WARM := Color(1.0, 0.86, 0.66)       # ~3500 K
+const COOL := Color(0.86, 0.9, 0.95)
+static func _scheme_lights(ci, r: Rect2, M: float, lw: float, t: float, n: int, ink: float, plain: bool, seed: int) -> void:
+	var on_k: float = [0.25, 0.7, 1.0][n]
+	match light_scheme:
+		1:
+			# work lamps: 2-3 a hull, where the doors and the walkways are
+			var xs := [0.2, 0.5, 0.8] if r.size.x > 40.0 * M else [0.28, 0.72]
+			for f in xs:
+				var lx: float = r.position.x + r.size.x * f
+				var ly := r.position.y + 1.6 * M
+				# the bracket off the wall and the shade (a dark trapezoid, its lit lip)
+				ci.draw_line(Vector2(lx, r.position.y + 0.6 * M), Vector2(lx, ly), Pal.ink(ink + 0.1), lw * 1.4)
+				var shade := PackedVector2Array([Vector2(lx - 0.5 * M, ly), Vector2(lx + 0.5 * M, ly), Vector2(lx + 0.85 * M, ly + 0.6 * M), Vector2(lx - 0.85 * M, ly + 0.6 * M)])
+				ci.draw_colored_polygon(shade, Color(0.09, 0.093, 0.104))
+				ci.draw_polyline(PackedVector2Array([shade[0], shade[1], shade[2], shade[3], shade[0]]), Pal.ink(ink + 0.15), lw)
+				ci.draw_line(shade[3], shade[2], Color(WARM.r, WARM.g, WARM.b, 0.9 * on_k), lw * 1.6)
+				# the cone down the wall and the pool it leaves on the plating below
+				var reach := minf(r.size.y * 0.55, 9.0 * M)
+				var a := Color(WARM.r, WARM.g, WARM.b, 0.07 * on_k)
+				var z := Color(WARM.r, WARM.g, WARM.b, 0.0)
+				ci.draw_polygon(PackedVector2Array([shade[3], shade[2], Vector2(lx + 3.2 * M, ly + reach), Vector2(lx - 3.2 * M, ly + reach)]), PackedColorArray([a, a, z, z]))
+				ci.draw_colored_polygon(_ellipse(Vector2(lx, ly + reach * 0.9), 2.6 * M, 0.5 * M), Color(WARM.r, WARM.g, WARM.b, 0.035 * on_k))
+		2:
+			# a continuous thin strip under the eave, and the narrow band of wall it washes
+			var y := r.position.y + 1.3 * M
+			var x0 := r.position.x + 1.6 * M
+			var x1 := r.end.x - 1.6 * M
+			ci.draw_rect(Rect2(x0, y - 0.18 * M, x1 - x0, 0.3 * M), Color(0.07, 0.073, 0.082))
+			ci.draw_line(Vector2(x0, y), Vector2(x1, y), Color(COOL.r, COOL.g, COOL.b, 0.55 * on_k), lw * 1.4)
+			var a := Color(COOL.r, COOL.g, COOL.b, 0.05 * on_k)
+			var z := Color(COOL.r, COOL.g, COOL.b, 0.0)
+			ci.draw_polygon(PackedVector2Array([Vector2(x0, y + 0.15 * M), Vector2(x1, y + 0.15 * M), Vector2(x1, y + 2.6 * M), Vector2(x0, y + 2.6 * M)]), PackedColorArray([a, a, z, z]))
+		3:
+			# no outside lamps: warm light from inside, small rectangles at the ports and a door seam
+			var rng := RandomNumberGenerator.new()
+			rng.seed = seed * 13 + 5
+			var pn := 0 if plain else int(r.size.x / (3.0 * M))
+			for k in pn:
+				var pp := r.position + Vector2((k + 0.5) * 3.0 * M, r.size.y * 0.3)
+				var lit := rng.randf() < 0.45 * on_k
+				var pr := Rect2(pp - Vector2(0.45, 0.28) * M, Vector2(0.9, 0.56) * M)
+				ci.draw_rect(pr, Color(0.02, 0.022, 0.026))
+				if lit:
+					ci.draw_rect(pr.grow(-0.08 * M), Color(WARM.r * 0.8, WARM.g * 0.7, WARM.b * 0.55, 0.75))
+					ci.draw_rect(Rect2(pr.position.x - 0.3 * M, pr.end.y, pr.size.x + 0.6 * M, 0.9 * M), Color(WARM.r, WARM.g, WARM.b, 0.03))
+				ci.draw_rect(pr, Pal.ink(ink * 0.8), false, lw)
+			# the door's seam
+			var dr := Rect2(r.position + Vector2(r.size.x * 0.46, r.size.y * 0.58), Vector2(2.6, 2.6) * M)
+			ci.draw_line(Vector2(dr.position.x - 0.1 * M, dr.end.y), Vector2(dr.end.x + 0.1 * M, dr.end.y), Color(WARM.r, WARM.g, WARM.b, 0.6 * on_k), lw * 1.6)
+		4:
+			# markers only: small lights at the corners and the door, slow
+			var pts := [r.position + Vector2(1.6, 0.6) * M, Vector2(r.end.x - 1.6 * M, r.position.y + 0.6 * M),
+				Vector2(r.position.x + 0.6 * M, r.end.y - 1.6 * M), Vector2(r.end.x - 0.6 * M, r.end.y - 1.6 * M),
+				r.position + Vector2(r.size.x * 0.46 - 0.4 * M, r.size.y * 0.58)]
+			for i in pts.size():
+				var pp: Vector2 = pts[i]
+				var col := Pal.heat(1.0, 1.2) if i % 2 == 0 else Color(0.95, 0.95, 0.92)
+				ci.draw_circle(pp, 0.32 * M, Color(0.06, 0.062, 0.07))
+				_anim(ci, t, func(cc, tt: float, _z: float):
+					var b := 0.35 + 0.65 * pow(maxf(0.0, sin(tt * 1.4 + i * 1.7)), 6.0)
+					cc.draw_circle(pp, 0.2 * M, Color(col.r, col.g, col.b, b))
+					cc.draw_circle(pp, 0.6 * M, Color(col.r, col.g, col.b, 0.08 * b)))
+
+
+static func _tidy_block(ci, r: Rect2, M: float, lw: float, t: float, n: int, seed: int) -> void:
+	var on_k: float = [0.3, 0.7, 1.0][n]
+	var ch := 1.5 * M
+	var shell := PackedVector2Array([r.position + Vector2(ch, 0), Vector2(r.end.x - ch, r.position.y), Vector2(r.end.x, r.position.y + ch), Vector2(r.end.x, r.end.y - ch), Vector2(r.end.x - ch, r.end.y), Vector2(r.position.x + ch, r.end.y), Vector2(r.position.x, r.end.y - ch), r.position + Vector2(0, ch)])
+	# the shadow it throws, the plate's side (its thickness) away from the light, then the face
+	var sh := PackedVector2Array()
+	var side := PackedVector2Array()
+	for pt in shell:
+		sh.append(pt + Vector2(1.4, 1.8) * M)
+		side.append(pt + Vector2(0.45, 0.6) * M)
+	ci.draw_colored_polygon(sh, Color(0, 0, 0, 0.45))
+	ci.draw_colored_polygon(side, Color(0.018, 0.019, 0.022))
+	var top := Color(0.1, 0.104, 0.116)
+	var bot := Color(0.038, 0.04, 0.046)
+	var cs := PackedColorArray()
+	for pt in shell:
+		cs.append(top.lerp(bot, clampf((pt.y - r.position.y) / r.size.y, 0.0, 1.0)))
+	ci.draw_polygon(shell, cs)
+	# the eave lit, the base in shade
+	ci.draw_rect(Rect2(r.position + Vector2(ch, 0), Vector2(r.size.x - 2.0 * ch, 0.45 * M)), Color(0.2, 0.207, 0.224))
+	ci.draw_rect(Rect2(Vector2(r.position.x + ch, r.end.y - 0.6 * M), Vector2(r.size.x - 2.0 * ch, 0.6 * M)), Color(0.016, 0.017, 0.02))
+	var seam := Color(0, 0, 0, 0.45)
+	if hull_style == 1:
+		for f in [0.36, 0.7]:
+			var y: float = r.position.y + r.size.y * f
+			ci.draw_line(Vector2(r.position.x + ch, y), Vector2(r.end.x - ch, y), seam, lw * 1.4)
+	else:
+		# a plinth along the base, a clerestory strip under the eave, solid pilasters between bays
+		ci.draw_rect(Rect2(r.position.x + ch, r.end.y - 3.0 * M, r.size.x - 2.0 * ch, 2.4 * M), Color(0.03, 0.032, 0.037))
+		ci.draw_line(Vector2(r.position.x + ch, r.end.y - 3.0 * M), Vector2(r.end.x - ch, r.end.y - 3.0 * M), Pal.ink(0.16), lw)
+		var bays := clampi(int(r.size.x / (12.0 * M)), 3, 8)
+		for i in range(1, bays):
+			var x: float = r.position.x + r.size.x * i / bays
+			ci.draw_rect(Rect2(x + 0.7 * M, r.position.y, 0.6 * M, r.size.y), Color(0, 0, 0, 0.4))
+			ci.draw_rect(Rect2(x - 0.7 * M, r.position.y, 1.4 * M, r.size.y), Color(0.085, 0.089, 0.1))
+			ci.draw_line(Vector2(x - 0.7 * M, r.position.y), Vector2(x - 0.7 * M, r.end.y), Pal.ink(0.22), lw)
+		ci.draw_rect(Rect2(r.position.x + 3.0 * M, r.position.y + 2.2 * M, r.size.x - 6.0 * M, 1.0 * M), Color(0.02, 0.021, 0.025))
+	# the outline: the lit top edge bright, the rest a quiet line
+	ci.draw_polyline(PackedVector2Array([shell[7], shell[0], shell[1], shell[2]]), Pal.ink(0.55), lw * 1.6)
+	ci.draw_polyline(PackedVector2Array([shell[2], shell[3], shell[4], shell[5], shell[6], shell[7]]), Pal.ink(0.2), lw)
+	ci.draw_string(Fonts.get_font("SemiBold"), r.position + Vector2(r.size.x * 0.08, r.size.y * 0.5 + 2.2 * M), _code, HORIZONTAL_ALIGNMENT_LEFT, -1, int(6.0 * M), Pal.ink(0.045))
+	# a few lit ports (warm, from inside): every third, one row
+	var rng := RandomNumberGenerator.new()
+	rng.seed = seed * 7 + 3
+	var wy: float = (r.position.y + 2.7 * M) if hull_style == 2 else (r.position.y + r.size.y * 0.3)
+	var pn := int((r.size.x - 8.0 * M) / (3.0 * M))
+	for k in pn:
+		if k % 3 != 1:
+			continue
+		var pr := Rect2(Vector2(r.position.x + 4.0 * M + k * 3.0 * M, wy - 0.3 * M), Vector2(1.1, 0.6) * M)
+		ci.draw_rect(pr, Color(0.015, 0.016, 0.019))
+		if rng.randf() < 0.6 * on_k:
+			ci.draw_rect(pr.grow(-0.1 * M), Color(0.62, 0.56, 0.46, 0.75))
+	# two corner markers, slow
+	var pts := [r.position + Vector2(1.8, 0.9) * M, Vector2(r.end.x - 1.8 * M, r.position.y + 0.9 * M)]
+	for i in pts.size():
+		var pp: Vector2 = pts[i]
+		var col: Color = Pal.heat(1.0, 1.2) if i == 0 else Color(0.95, 0.95, 0.92)
+		ci.draw_circle(pp, 0.3 * M, Color(0.05, 0.052, 0.06))
+		_anim(ci, t, func(cc, tt: float, _z: float):
+			var b := 0.3 + 0.7 * pow(maxf(0.0, sin(tt * 1.2 + i * 2.1)), 6.0)
+			cc.draw_circle(pp, 0.18 * M, Color(col.r, col.g, col.b, b * on_k)))
+
+
+static func _ellipse(c: Vector2, rx: float, ry: float) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for k in 16:
+		out.append(c + Vector2(cos(TAU * k / 16.0) * rx, sin(TAU * k / 16.0) * ry))
+	return out
+
+
 static func _hatch(ci, r: Rect2, M: float, lw: float, col: Color, step: float = 2.0) -> void:
 	var x := r.position.x - r.size.y
 	while x < r.end.x:
@@ -551,6 +749,17 @@ static func _power(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: i
 			var px := x0 + side * (i * (33.0 / panels) + 0.6) * M
 			var wpx := (33.0 / panels - 0.8) * M
 			var pr := Rect2(Vector2(minf(px, px + side * wpx), cy - 5.8 * M), Vector2(wpx, 11.6 * M))
+			if _tidy():
+				# a solid panel lit along its top, no tube lines; warming faintly with the loop
+				var a := Color(0.11, 0.115, 0.128)
+				var b := Color(0.04, 0.042, 0.048)
+				ci.draw_polygon(PackedVector2Array([pr.position, Vector2(pr.end.x, pr.position.y), pr.end, Vector2(pr.position.x, pr.end.y)]), PackedColorArray([a, a, b, b]))
+				ci.draw_line(pr.position, Vector2(pr.end.x, pr.position.y), Pal.ink(0.4), lw * 1.2)
+				if n >= 1:
+					_anim(ci, t, func(cc, _tt: float, _z: float):
+						var frac := clampf((PowerWorksRef.rad_t - 20.0) / 95.0, 0.0, 1.0)
+						cc.draw_rect(pr.grow(-0.3 * M), Pal.heat(0.1 * frac, 1.0)))
+				continue
 			ci.draw_rect(pr, Color(0.035, 0.04, 0.05))
 			ci.draw_rect(pr, Pal.ink(ink + 0.05), false, lw)
 			var tx := pr.position.x + 0.5 * M
@@ -635,6 +844,14 @@ static func _power_fins(ci, r: Rect2, M: float, lw: float, n: int, ink: float) -
 	for i in 5:
 		var fx := r.position.x + (6.0 + i * 11.0) * M
 		var fr := Rect2(Vector2(fx, r.position.y - 26.0 * M), Vector2(2.2 * M, 14.0 * M))
+		if _tidy():
+			# a solid fin, lit on the left, a quiet warm cast once the reactors run
+			ci.draw_rect(fr, Color(0.045, 0.047, 0.054))
+			ci.draw_rect(Rect2(fr.position, Vector2(fr.size.x * 0.4, fr.size.y)), Color(0.1, 0.104, 0.116))
+			ci.draw_line(fr.position, Vector2(fr.position.x, fr.end.y), Pal.ink(0.4), lw * 1.2)
+			if n >= 1:
+				ci.draw_rect(fr.grow(-0.3 * M), Pal.heat(0.03 + 0.03 * n, 1.0))
+			continue
 		ci.draw_rect(fr, FILL2)
 		ci.draw_rect(fr, Pal.ink(ink), false, lw)
 		_hatch(ci, fr, M, lw, Pal.heat(0.1 + 0.15 * n, 1.0) if n >= 1 else Pal.ink(ink * 0.5), 1.4)
@@ -661,9 +878,10 @@ const TradeWorksRef = preload("res://scripts/trade_works.gd")
 static func _tug(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: int) -> void:
 	var ink := _ink(n)
 	_block(ci, r, M, lw, t, n, 23)
-	# a gantry frame over the roof
-	ci.draw_rect(Rect2(r.position - Vector2(0, 6.0 * M), Vector2(r.size.x, 6.0 * M)), Pal.ink(ink * 0.8), false, lw)
-	for i in 8:
+	# a gantry frame over the roof (not on the tidied hull)
+	if not _tidy():
+		ci.draw_rect(Rect2(r.position - Vector2(0, 6.0 * M), Vector2(r.size.x, 6.0 * M)), Pal.ink(ink * 0.8), false, lw)
+	for i in (0 if _tidy() else 8):
 		var gx := r.position.x + i * r.size.x / 8.0
 		ci.draw_line(Vector2(gx, r.position.y - 6.0 * M), Vector2(gx + r.size.x / 8.0, r.position.y), Pal.ink(ink * 0.6), lw)
 	# 96 号 (user 2026-10-28: "既然叫拖船站，为什么船在外面？"): the tugs berth inside now and the
@@ -843,6 +1061,9 @@ static func fan_angle() -> float:
 static func _trade(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: int) -> void:
 	var ink := _ink(n)
 	_block(ci, r, M, lw, t, n, 41)
+	if _tidy():
+		_trade_tidy(ci, r, M, lw, t, n)
+		return
 	# a dome on the hall (the exchange)
 	var dc := Vector2(r.get_center().x, r.position.y)
 	ci.draw_circle(dc, 10.0 * M, FILL)
@@ -896,6 +1117,46 @@ static func _trade(ci, c: Vector2, r: Rect2, M: float, lw: float, t: float, n: i
 				if int(e.lock) == i2 and float(e.g) >= 1.0:
 					used = true
 			cc.draw_circle(Vector2(r.end.x + 1.2 * M, r.position.y + (lk.x - 0.6) * M), 0.45 * M, Pal.tint(Pal.FLUID, 0.9, 1.3) if used else (Pal.ink(0.3) if nn >= 1 else Pal.ink(0.1))))
+
+
+# the trade port tidied: what it is known by - the exchange's dome, its pier, the airlocks - as
+# solid shapes, one light at each working place
+static func _trade_tidy(ci, r: Rect2, M: float, lw: float, t: float, n: int) -> void:
+	var on_k: float = [0.3, 0.7, 1.0][n]
+	var dc := Vector2(r.get_center().x, r.position.y)
+	var dome := PackedVector2Array()
+	var dcol := PackedColorArray()
+	for k in 25:
+		var a := PI + PI * k / 24.0
+		dome.append(dc + Vector2.from_angle(a) * 10.0 * M)
+		var lk := clampf(Vector2.from_angle(a).dot(Look.LIGHT_DIR), -1.0, 1.0)
+		dcol.append(Color(0.05, 0.053, 0.06).lerp(Color(0.2, 0.207, 0.226), lk * 0.5 + 0.5))
+	ci.draw_polygon(dome, dcol)
+	ci.draw_arc(dc, 10.0 * M, PI, TAU, 32, Pal.ink(0.5), lw * 1.6, true)
+	ci.draw_arc(dc, 6.5 * M, PI * 1.08, PI * 1.92, 20, Color(0, 0, 0, 0.5), lw * 1.4, true)
+	# the pier: one solid deck running out, its lit edge, three lights where ships tie up
+	var py := r.get_center().y
+	var px0 := r.end.x
+	var px1 := r.end.x + 72.0 * M
+	ci.draw_rect(Rect2(px0, py - 0.9 * M, px1 - px0, 3.0 * M), Color(0, 0, 0, 0.4))
+	ci.draw_rect(Rect2(px0, py - 1.5 * M, px1 - px0, 3.0 * M), Color(0.07, 0.074, 0.084))
+	ci.draw_line(Vector2(px0, py - 1.5 * M), Vector2(px1, py - 1.5 * M), Pal.ink(0.45), lw * 1.4)
+	for f in [0.25, 0.6, 0.95]:
+		var lp := Vector2(px0 + (px1 - px0) * f, py - 2.1 * M)
+		ci.draw_circle(lp, 0.3 * M, Color(0.05, 0.052, 0.06))
+		ci.draw_circle(lp, 0.18 * M, Color(WARM.r, WARM.g, WARM.b, 0.8 * on_k))
+	# the airlocks and the lighter's port: dark openings in a plain frame, a hazard edge, a door light
+	for span in [TradeWorksRef.LOCKS[0], TradeWorksRef.LOCKS[1], TradeWorksRef.PORT]:
+		var th := Rect2(Vector2(r.end.x - 2.6 * M, r.position.y + span.x * M), Vector2(3.0 * M, (span.y - span.x) * M))
+		ci.draw_rect(th, Color(0.012, 0.013, 0.016))
+		ci.draw_rect(th, Pal.ink(0.35), false, lw * 1.4)
+		ci.draw_line(Vector2(th.end.x, th.position.y), th.end, Pal.heat(0.55, 1.0), lw * 2.0)
+		ci.draw_circle(Vector2(th.get_center().x, th.position.y - 0.6 * M), 0.2 * M, Color(WARM.r, WARM.g, WARM.b, 0.7 * on_k))
+	var nn := n
+	_anim(ci, t, func(cc, tt: float, _z: float):
+		var busy: bool = (not TradeWorksRef.job.is_empty() and not bool(TradeWorksRef.job.get("done", true))) or not TradeWorksRef.visitors.is_empty()
+		var bp := dc + Vector2(0.0, -10.6 * M)
+		cc.draw_circle(bp, 0.45 * M, Pal.heat(0.35 + 0.65 * absf(sin(tt * 3.0)), 1.4) if busy else (Pal.ink(0.35) if nn >= 1 else Pal.ink(0.12))))
 
 
 # 货运区: the warehouse, container stacks in rows, a gantry crane over them, a trolley running

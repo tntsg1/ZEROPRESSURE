@@ -114,6 +114,15 @@ func draw_colored_polygon(pts: PackedVector2Array, col: Color, _uvs: PackedVecto
 		_v(pts[i], Vector2.ZERO, col)
 
 
+# a polygon with a colour per point (the cutaway picture's lit faces)
+func draw_polygon(pts: PackedVector2Array, cols: PackedColorArray, _uvs: PackedVector2Array = PackedVector2Array(), _tex: Texture2D = null) -> void:
+	var idx := Geometry2D.triangulate_polygon(pts)
+	if _p.size() > MAX_VERTS:
+		flush()
+	for i in idx:
+		_v(pts[i], Vector2.ZERO, cols[i] if cols.size() == pts.size() else cols[0])
+
+
 func draw_string(font: Font, pos: Vector2, text: String, align: int = HORIZONTAL_ALIGNMENT_LEFT, width: float = -1.0, size: int = 16, col: Color = Color.WHITE) -> void:
 	flush()
 	node.draw_string(font, pos, text, align, width, size, col)

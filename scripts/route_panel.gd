@@ -52,6 +52,7 @@ func _ready() -> void:
 		var box := SkillBook._key_box(state)
 		box.content_margin_left = 16
 		skin.set_stylebox(state, "Button", box)
+	UiSkin.scroll_into(skin)
 	theme = skin
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -136,6 +137,21 @@ func refresh() -> void:
 		var button := key(title, select_category.bind(i))
 		button.toggle_mode = true
 		button.button_pressed = i == category
+		# 炭黑 v2: tall keys with their number, the open one pressed in with its lip
+		button.custom_minimum_size.y = 64
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.add_theme_constant_override("h_separation", 0)
+		var n_c := categories.get_child_count() + 1
+		var kb := SkillBook._key_box("normal")
+		kb.content_margin_left = 54
+		for stn in ["normal", "hover", "pressed", "disabled"]:
+			var bx := SkillBook._key_box(stn)
+			bx.content_margin_left = 54
+			button.add_theme_stylebox_override(stn, bx)
+		button.draw.connect(func():
+			var fl: Font = Fonts.get_font("Light")
+			var dn := 1.0 if button.button_pressed else 0.0
+			button.draw_string(fl, Vector2(16, button.size.y * 0.5 + 10 + dn * 2), "%d" % n_c, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Charcoal.ACCENT if button.button_pressed else Pal.ink(0.45)))
 		categories.add_child(button)
 	entries = []
 	if category == 6:
@@ -278,11 +294,22 @@ func refresh_cards() -> void:
 		button.tooltip_text = node_name(n) + "\n" + summary(n)
 		grid.add_child(button)
 		cards.append(button)
+		# 炭黑 v2: the card's number big at its left, a lamp for its state (done white, can be had orange)
+		var n_k := page_index * PAGE_SIZE + i + 1
+		var lamp_on: bool = n.done or n.ready
+		var lamp_c := Color(0.86, 0.88, 0.86) if n.done else Charcoal.ACCENT
+		button.draw.connect(func():
+			var fl: Font = Fonts.get_font("Light")
+			var dn := 3.0 if button.button_pressed else 0.0
+			button.draw_string(fl, Vector2(18, 54 + dn), "%02d" % n_k, HORIZONTAL_ALIGNMENT_LEFT, -1, 38, Charcoal.ACCENT if button.button_pressed else Pal.ink(0.6))
+			Charcoal.led(button, Vector2(button.size.x - 22, 22 + dn), lamp_on, 1.0, 4.5, lamp_c))
 		var margin := MarginContainer.new()
 		margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		for side in ["left", "right", "top", "bottom"]:
 			margin.add_theme_constant_override("margin_" + side, 18)
+		margin.add_theme_constant_override("margin_left", 84)
+		margin.add_theme_constant_override("margin_right", 40)
 		button.add_child(margin)
 		var column := VBoxContainer.new()
 		column.mouse_filter = Control.MOUSE_FILTER_IGNORE

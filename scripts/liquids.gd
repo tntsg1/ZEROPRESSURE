@@ -176,9 +176,10 @@ func _physics_process(dt: float) -> void:
 	World._ps("liq_move", _pa)
 	_flush()
 	# globules meeting and pulling on each other: every third step (a 40th of a second)
-	if Engine.get_physics_frames() % 3 == 0:
+	var every := maxi(1, roundi(Look.TICKS / 40.0))   # a 40th of a second at any physics rate
+	if Engine.get_physics_frames() % every == 0:
 		_pa = Time.get_ticks_usec()
-		_merge(dt * 3.0)
+		_merge(dt * every)
 		World._ps("liq_merge", _pa)
 	for f in frost:
 		f[1] = float(f[1]) + dt

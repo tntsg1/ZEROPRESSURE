@@ -451,16 +451,16 @@
 			"id": "TUT_01",
 			"mode": "lockstep",
 			"title": {
-				"zh": "先学会看",
-				"en": "LOOK FIRST"
+				"zh": "熟悉基本操作",
+				"en": "GET TO KNOW THE BASIC CONTROLS"
 			},
 			"done_flag": "TUT_01_COMPLETE",
 			"steps": [
 				{
 					"id": "rings",
 					"text": {
-						"zh": "穿过 3 个光环",
-						"en": "FLY THROUGH 3 RINGS"
+						"zh": "驾驶无人机依次穿过前方的 3 个光环。",
+						"en": "FLY THE DRONE THROUGH THE 3 RINGS AHEAD, ONE AFTER ANOTHER."
 					},
 					"tools": [],
 					"done": {
@@ -476,8 +476,8 @@
 				{
 					"id": "dash",
 					"text": {
-						"zh": "按住 Shift 冲过长光环",
-						"en": "HOLD SHIFT THROUGH THE LONG RING"
+						"zh": "按住 Shift 加速飞行，穿过前方的跑道。",
+						"en": "HOLD SHIFT TO BOOST AND FLY THROUGH THE LONG RING AHEAD."
 					},
 					"tools": [],
 					"done": {
@@ -493,8 +493,8 @@
 				{
 					"id": "stop",
 					"text": {
-						"zh": "进框，按 Space 停稳",
-						"en": "INTO THE BOX, SPACE TO STOP"
+						"zh": "驾驶无人机进入指定区域，然后按 Space 刹车，让无人机停稳。",
+						"en": "FLY THE DRONE INTO THE MARKED AREA, THEN PRESS SPACE TO BRAKE AND BRING IT TO A STOP."
 					},
 					"tools": [],
 					"done": {
@@ -510,8 +510,8 @@
 				{
 					"id": "pan",
 					"text": {
-						"zh": "按住右键拖动画面，看看四周",
-						"en": "HOLD RIGHT MOUSE AND DRAG: LOOK AROUND"
+						"zh": "按住鼠标右键并拖动鼠标，转动视角查看周围的环境。",
+						"en": "HOLD THE RIGHT MOUSE BUTTON AND DRAG TO TURN THE VIEW AND LOOK AROUND YOU."
 					},
 					"tools": [],
 					"done": {
@@ -524,8 +524,8 @@
 				{
 					"id": "overview",
 					"text": {
-						"zh": "按住 Z 拉远，看清整个舱段",
-						"en": "HOLD Z: PULL BACK, SEE ALL OF IT"
+						"zh": "按住 Z 拉远视角，查看整个舱段的结构。",
+						"en": "HOLD Z TO PULL THE VIEW BACK AND SEE THE STRUCTURE OF THE WHOLE SECTION."
 					},
 					"tools": [],
 					"done": {
@@ -538,8 +538,8 @@
 				{
 					"id": "hold",
 					"text": {
-						"zh": "按住 V：悬停锁定，无人机原地不动",
-						"en": "HOLD V: HOVER LOCK, THE DRONE STAYS PUT"
+						"zh": "按住 V 开启悬停锁定，让无人机保持在当前位置。",
+						"en": "HOLD V TO TURN ON HOVER LOCK AND KEEP THE DRONE IN ITS CURRENT POSITION."
 					},
 					"tools": [],
 					"done": {
@@ -552,8 +552,8 @@
 				{
 					"id": "assist",
 					"text": {
-						"zh": "按 F 关掉飞行稳定，再打开",
-						"en": "F: ASSIST OFF, THEN ON"
+						"zh": "按 F 关闭飞行稳定功能，再按一次 F 重新开启。",
+						"en": "PRESS F TO TURN FLIGHT ASSIST OFF, THEN PRESS F AGAIN TO TURN IT BACK ON."
 					},
 					"tools": [],
 					"done": {
@@ -566,8 +566,8 @@
 				{
 					"id": "find",
 					"text": {
-						"zh": "训练探针已配备：用测量（1）点选检修盖 P-001",
-						"en": "TRAINING PROBE SUPPLIED: MEASURE (1), SELECT COVER P-001"
+						"zh": "无人机已经配备训练探针，切换到测量工具（1），然后点击检修盖 P-001 进行测量。",
+						"en": "THE DRONE IS FITTED WITH A TRAINING PROBE. SWITCH TO MEASURE (1), THEN CLICK ACCESS COVER P-001 TO TAKE A READING."
 					},
 					"tools": [
 						1
@@ -593,8 +593,8 @@
 				{
 					"id": "tab",
 					"text": {
-						"zh": "按 Tab 打开工程图",
-						"en": "TAB: OPEN THE DRAWING"
+						"zh": "按 Tab 打开工程图，查看当前舱段的结构。",
+						"en": "PRESS TAB TO OPEN THE DRAWING AND SEE THE STRUCTURE OF THE CURRENT SECTION."
 					},
 					"tools": [
 						1
@@ -624,8 +624,8 @@
 				{
 					"id": "unbolt",
 					"text": {
-						"zh": "指着螺栓按左键拧下（自动换成维护工具，也可按 4）",
-						"en": "POINT AT A BOLT, CLICK (THE WRENCH COMES BY ITSELF; OR 4)"
+						"zh": "将准星对准螺栓，点击鼠标左键将螺栓拆下来。系统会自动切换到维护工具，你也可以按 4 手动切换。",
+						"en": "AIM THE CROSSHAIR AT A BOLT AND LEFT-CLICK TO REMOVE IT. THE SYSTEM SWITCHES TO THE MAINTENANCE TOOL AUTOMATICALLY, OR YOU CAN PRESS 4 TO SWITCH MANUALLY."
 					},
 					"tools": [
 						1,
@@ -657,8 +657,8 @@
 				{
 					"id": "hold",
 					"text": {
-						"zh": "先用磁力抓钩（3）稳住盖板",
-						"en": "GRAPPLE (3): STEADY THE COVER"
+						"zh": "先切换到磁力抓钩（3），固定住盖板，防止盖板在拆除后随意飘动。",
+						"en": "FIRST SWITCH TO GRAPPLE (3) AND HOLD THE COVER STEADY SO IT DOESN’T DRIFT AROUND ONCE IT COMES OFF."
 					},
 					"tools": [
 						3,
@@ -684,8 +684,8 @@
 				{
 					"id": "last",
 					"text": {
-						"zh": "拧下最后一颗螺栓（抓钩不放）",
-						"en": "UNBOLT THE LAST ONE (KEEP HOLD)"
+						"zh": "拆下最后一颗螺栓。",
+						"en": "REMOVE THE LAST BOLT."
 					},
 					"tools": [
 						3,
@@ -701,8 +701,8 @@
 				{
 					"id": "furnace",
 					"text": {
-						"zh": "拖进金属熔炉",
-						"en": "HAUL IT INTO THE FURNACE"
+						"zh": "使用磁力抓钩拖动拆下来的盖板，将它送进金属熔炉进行回收。",
+						"en": "USE THE GRAPPLE TO DRAG THE COVER YOU REMOVED AND DELIVER IT INTO THE METAL FURNACE FOR RECOVERY."
 					},
 					"tools": [
 						3,
@@ -747,8 +747,8 @@
 				{
 					"id": "scrap",
 					"text": {
-						"zh": "拆下练习废料 SC-T1，对准长槽甩进去（6 m 外也行）",
-						"en": "FREE SCRAP SC-T1 AND FLING IT INTO THE TROUGH (FROM 6 m IS FINE)"
+						"zh": "拆下练习废料 SC-T1，然后使用磁力抓钩将废料对准熔炉的长形入口，甩进去就能完成回收，即使距离入口还有 6 米也可以。",
+						"en": "REMOVE PRACTICE SCRAP SC-T1, THEN USE THE GRAPPLE TO LINE IT UP WITH THE FURNACE’S LONG INLET AND FLING IT IN TO RECOVER IT. EVEN 6 m FROM THE INLET IS ENOUGH."
 					},
 					"tools": [
 						3,
@@ -776,8 +776,8 @@
 				{
 					"id": "equip",
 					"text": {
-						"zh": "拆下传感器 EQ-T1，完整送进设备回收口",
-						"en": "FREE SENSOR EQ-T1, DELIVER IT WHOLE TO THE EQUIPMENT BAY"
+						"zh": "拆下传感器 EQ-T1，尽量保持设备完整，再使用磁力抓钩将它送进设备回收口。",
+						"en": "REMOVE SENSOR EQ-T1, KEEP THE DEVICE AS INTACT AS YOU CAN, THEN USE THE GRAPPLE TO DELIVER IT TO THE EQUIPMENT MOUTH."
 					},
 					"tools": [
 						3,
@@ -801,8 +801,8 @@
 				{
 					"id": "hazard",
 					"text": {
-						"zh": "化学品瓶 HZ-T1 送进危险品口，别进熔炉",
-						"en": "CHEMICAL BOTTLE HZ-T1 TO THE HAZARD MOUTH, NOT THE FURNACE"
+						"zh": "将化学品瓶 HZ-T1 拆下来，送进专门处理危险物品的回收口，注意不要把化学品瓶扔进金属熔炉。",
+						"en": "REMOVE CHEMICAL BOTTLE HZ-T1 AND DELIVER IT TO THE MOUTH THAT HANDLES HAZARDOUS GOODS. DO NOT THROW THE CHEMICAL BOTTLE INTO THE METAL FURNACE."
 					},
 					"tools": [
 						3,
@@ -830,8 +830,8 @@
 			"id": "TUT_03",
 			"mode": "lockstep",
 			"title": {
-				"zh": "零不代表安全",
-				"en": "ZERO ISN'T SAFE"
+				"zh": "仪器显示零，不代表已经安全",
+				"en": "A ZERO READING DOESN’T MEAN IT’S SAFE"
 			},
 			"done_flag": "TUT_03_COMPLETE",
 			"guard": {
@@ -877,8 +877,8 @@
 				{
 					"id": "measure",
 					"text": {
-						"zh": "用测量（1）测 PT-02",
-						"en": "MEASURE (1): PT-02"
+						"zh": "切换到测量工具（1），检查 PT-02 的压力读数。",
+						"en": "SWITCH TO MEASURE (1) AND CHECK THE PRESSURE READING AT PT-02."
 					},
 					"tools": [
 						1
@@ -902,8 +902,8 @@
 				{
 					"id": "ask",
 					"text": {
-						"zh": "现在能拆吗？",
-						"en": "SAFE TO OPEN?"
+						"zh": "现在仪器显示压力为零，可以直接开始拆解吗？",
+						"en": "THE GAUGE NOW READS ZERO PRESSURE. IS IT OK TO START TAKING IT APART?"
 					},
 					"tools": [],
 					"done": {
@@ -914,12 +914,12 @@
 					],
 					"choice": {
 						"a": {
-							"zh": "可以，仪器显示零压力",
-							"en": "YES — THE METER SAYS ZERO"
+							"zh": "可以，仪器显示压力为零，应该已经安全了。",
+							"en": "YES, THE GAUGE READS ZERO PRESSURE, SO IT SHOULD BE SAFE ALREADY."
 						},
 						"b": {
-							"zh": "还不能确定，要检查测量通路",
-							"en": "NOT YET — CHECK WHAT IT MEASURED"
+							"zh": "暂时还不能确定，需要检查测量管路有没有堵塞。",
+							"en": "NOT SURE YET. CHECK WHETHER THE MEASURING LINE IS BLOCKED."
 						},
 						"a_line": "T03_A",
 						"b_line": "T03_B"
@@ -928,8 +928,8 @@
 				{
 					"id": "trace",
 					"text": {
-						"zh": "按 Tab，沿 PT-02 的管路找",
-						"en": "TAB: TRACE PT-02'S LINE"
+						"zh": "按 Tab 查看管路，沿着 PT-02 连接的管道进行检查。",
+						"en": "PRESS TAB TO VIEW THE PIPING AND FOLLOW THE PIPE CONNECTED TO PT-02."
 					},
 					"tools": [
 						1
@@ -945,8 +945,8 @@
 				{
 					"id": "valve",
 					"text": {
-						"zh": "用维护工具（4）打开 V-02",
-						"en": "WRENCH (4): OPEN V-02"
+						"zh": "切换到维护工具（4），打开 V-02 阀门。",
+						"en": "SWITCH TO THE MAINTENANCE TOOL (4) AND OPEN VALVE V-02."
 					},
 					"tools": [
 						4
@@ -968,8 +968,8 @@
 				{
 					"id": "remeasure",
 					"text": {
-						"zh": "重新测量 PT-02",
-						"en": "MEASURE PT-02 AGAIN"
+						"zh": "重新测量 PT-02，确认当前的压力读数。",
+						"en": "MEASURE PT-02 AGAIN AND CONFIRM THE CURRENT PRESSURE READING."
 					},
 					"tools": [
 						1
@@ -992,8 +992,8 @@
 				{
 					"id": "hose",
 					"text": {
-						"zh": "气液回收（5）：软管接 GAS-T1",
-						"en": "HOSE (5): CONNECT GAS-T1"
+						"zh": "切换到气液回收工具（5），把回收软管连接到 GAS-T1。",
+						"en": "SWITCH TO GAS-LIQUID RECOVERY (5) AND CONNECT THE RECOVERY HOSE TO GAS-T1."
 					},
 					"tools": [
 						5
@@ -1015,8 +1015,8 @@
 				{
 					"id": "wait",
 					"text": {
-						"zh": "等 TC-1 降到 5 kPa 以下（按住 = 加速）",
-						"en": "WAIT: TC-1 BELOW 5 kPa (HOLD = TO SPEED UP)"
+						"zh": "等待 TC-1 的压力降到 5 kPa 以下，按住 = 可以加快时间。",
+						"en": "WAIT FOR THE PRESSURE AT TC-1 TO DROP BELOW 5 kPa. HOLD = TO SPEED UP TIME."
 					},
 					"tools": [
 						1,
@@ -1038,8 +1038,8 @@
 				{
 					"id": "plate",
 					"text": {
-						"zh": "拆下 P-002：螺栓（4）＋抓钩（3）",
-						"en": "TAKE OFF P-002: BOLTS (4) + GRAPPLE (3)"
+						"zh": "确认压力降下来以后，使用维护工具（4）拆除螺栓，再用抓钩（3）取下 P-002。",
+						"en": "ONCE THE PRESSURE HAS DROPPED, USE THE MAINTENANCE TOOL (4) TO REMOVE THE BOLTS, THEN USE THE GRAPPLE (3) TO TAKE OFF P-002."
 					},
 					"tools": [
 						3,
@@ -1058,8 +1058,8 @@
 				{
 					"id": "scrap",
 					"text": {
-						"zh": "送进金属熔炉",
-						"en": "INTO THE FURNACE"
+						"zh": "把拆下来的 P-002 送进金属熔炉，完成这次拆解练习。",
+						"en": "DELIVER THE REMOVED P-002 INTO THE METAL FURNACE TO FINISH THIS DISMANTLING EXERCISE."
 					},
 					"tools": [
 						3,
@@ -1131,8 +1131,8 @@
 				{
 					"id": "test",
 					"text": {
-						"zh": "用测量（1）测 E-T01",
-						"en": "MEASURE (1): TEST POINT E-T01"
+						"zh": "切换到测量工具（1），检查 E-T01 的电压读数。",
+						"en": "SWITCH TO MEASURE (1) AND CHECK THE VOLTAGE READING AT E-T01."
 					},
 					"tools": [
 						1
@@ -1163,8 +1163,8 @@
 				{
 					"id": "isolate",
 					"text": {
-						"zh": "断开备用电池的开关 K-BT（4）",
-						"en": "WRENCH (4): OPEN BATTERY SWITCH K-BT"
+						"zh": "使用维护工具（4），断开备用电池的 K-BT 开关。",
+						"en": "USE THE MAINTENANCE TOOL (4) TO OPEN THE BACKUP BATTERY’S SWITCH K-BT."
 					},
 					"tools": [
 						4
@@ -1189,8 +1189,8 @@
 				{
 					"id": "retest",
 					"text": {
-						"zh": "再测 E-T01",
-						"en": "MEASURE E-T01 AGAIN"
+						"zh": "再次测量 E-T01，检查断开备用电池以后还有没有电压。",
+						"en": "MEASURE E-T01 AGAIN TO CHECK WHETHER ANY VOLTAGE REMAINS AFTER THE BACKUP BATTERY IS DISCONNECTED."
 					},
 					"tools": [
 						1
@@ -1211,8 +1211,8 @@
 				{
 					"id": "bleed",
 					"text": {
-						"zh": "接上 E-T02 受控放电（4）",
-						"en": "WRENCH (4): PLUG IN BLEED E-T02"
+						"zh": "使用维护工具（4），连接 E-T02 放电接口，把设备里剩余的电量释放掉。",
+						"en": "USE THE MAINTENANCE TOOL (4) TO CONNECT BLEED PORT E-T02 AND RELEASE THE CHARGE LEFT IN THE DEVICE."
 					},
 					"tools": [
 						4
@@ -1235,8 +1235,8 @@
 				{
 					"id": "verify",
 					"text": {
-						"zh": "再测 E-T01，确认 0 V",
-						"en": "MEASURE E-T01: CONFIRM 0 V"
+						"zh": "重新测量 E-T01，确认电压已经降到 0 V。",
+						"en": "MEASURE E-T01 AGAIN AND CONFIRM THE VOLTAGE HAS DROPPED TO 0 V."
 					},
 					"tools": [
 						1
@@ -1258,8 +1258,8 @@
 				{
 					"id": "free",
 					"text": {
-						"zh": "拆下 G-T01 的螺栓和接头（4）",
-						"en": "WRENCH (4): FREE G-T01"
+						"zh": "确认没有残余电压以后，使用维护工具（4）拆除 G-T01 的固定螺栓和连接接头。",
+						"en": "ONCE YOU HAVE CONFIRMED THERE IS NO RESIDUAL VOLTAGE, USE THE MAINTENANCE TOOL (4) TO REMOVE THE MOUNTING BOLTS AND CONNECTORS OF G-T01."
 					},
 					"tools": [
 						3,
@@ -1275,8 +1275,8 @@
 				{
 					"id": "deliver",
 					"text": {
-						"zh": "完整送进设备回收口",
-						"en": "DELIVER IT WHOLE TO EQUIPMENT"
+						"zh": "把拆下来的 G-T01 完整送到设备回收口，完成这次拆解练习。",
+						"en": "DELIVER THE REMOVED G-T01 WHOLE TO THE EQUIPMENT MOUTH TO FINISH THIS DISMANTLING EXERCISE."
 					},
 					"tools": [
 						3,
@@ -1301,7 +1301,7 @@
 			"id": "TUT_LQ",
 			"mode": "lockstep",
 			"title": {
-				"zh": "失重液体",
+				"zh": "失重环境下的液体",
 				"en": "LIQUIDS IN FREE FALL"
 			},
 			"done_flag": "TUT_LQ_COMPLETE",
@@ -1325,8 +1325,8 @@
 				{
 					"id": "spill",
 					"text": {
-						"zh": "激光（2）：切断管子 LQ-1，看里面的东西怎么出来",
-						"en": "LASER (2): CUT PIPE LQ-1, WATCH WHAT COMES OUT"
+						"zh": "使用激光切割工具（2），切断 LQ-1 管道，观察里面的液体会怎样流出来。",
+						"en": "USE LASER (2) TO CUT PIPE LQ-1 AND WATCH HOW THE LIQUID INSIDE FLOWS OUT."
 					},
 					"tools": [
 						2
@@ -1349,8 +1349,8 @@
 				{
 					"id": "watch",
 					"text": {
-						"zh": "看液团漂走：没有重力，它们不会落下，碰到带电设备会短路",
-						"en": "WATCH THEM DRIFT: NOTHING FALLS; LIVE GEAR THEY TOUCH SHORTS"
+						"zh": "注意观察漂浮的液团。在失重环境下，液体不会向下掉落，如果接触到带电设备，还可能造成短路。",
+						"en": "WATCH THE FLOATING BLOBS OF LIQUID. IN FREE FALL LIQUID DOESN’T FALL DOWN, AND IF IT TOUCHES LIVE EQUIPMENT IT CAN CAUSE A SHORT CIRCUIT."
 					},
 					"tools": [],
 					"done": {
@@ -1360,8 +1360,8 @@
 				{
 					"id": "measure",
 					"text": {
-						"zh": "测量（1）：读小罐的排放口 DR-L",
-						"en": "MEASURE (1): READ THE TANK'S DRAIN DR-L"
+						"zh": "切换到测量工具（1），检查小型储液罐 DR-L 排放口的读数。",
+						"en": "SWITCH TO MEASURE (1) AND CHECK THE READING AT THE DRAIN PORT DR-L OF THE SMALL LIQUID TANK."
 					},
 					"tools": [
 						1
@@ -1378,8 +1378,8 @@
 				{
 					"id": "drain",
 					"text": {
-						"zh": "气液回收（5）：软管接 DR-L，把小罐抽空（按住 = 加速）",
-						"en": "HOSE (5): ON DR-L, DRAW THE TANK EMPTY (HOLD = TO SPEED UP)"
+						"zh": "使用气液回收工具（5），把回收软管连接到 DR-L 排放口，将储液罐内的液体全部抽走。按住 = 可以加快时间。",
+						"en": "USE GAS-LIQUID RECOVERY (5) TO CONNECT THE RECOVERY HOSE TO DRAIN PORT DR-L AND PUMP ALL THE LIQUID OUT OF THE TANK. HOLD = TO SPEED UP TIME."
 					},
 					"tools": [
 						1,
@@ -1406,8 +1406,8 @@
 				{
 					"id": "free",
 					"text": {
-						"zh": "拆下小罐 LQ-T（4）",
-						"en": "WRENCH (4): FREE TANK LQ-T"
+						"zh": "确认储液罐已经排空以后，使用维护工具（4）拆下 LQ-T 储液罐。",
+						"en": "ONCE YOU HAVE CONFIRMED THE TANK IS EMPTY, USE THE MAINTENANCE TOOL (4) TO REMOVE LIQUID TANK LQ-T."
 					},
 					"tools": [
 						3,
@@ -1424,8 +1424,8 @@
 				{
 					"id": "deliver",
 					"text": {
-						"zh": "完整送进设备回收口",
-						"en": "DELIVER IT WHOLE TO THE EQUIPMENT BAY"
+						"zh": "把拆下来的 LQ-T 储液罐完整送到设备回收口，完成这次拆解练习。",
+						"en": "DELIVER THE REMOVED LIQUID TANK LQ-T WHOLE TO THE EQUIPMENT MOUTH TO FINISH THIS DISMANTLING EXERCISE."
 					},
 					"tools": [
 						3,
@@ -1459,8 +1459,8 @@
 				{
 					"id": "pump",
 					"text": {
-						"zh": "完整回收冷却泵 CP-T",
-						"en": "RECOVER COOLANT PUMP CP-T WHOLE"
+						"zh": "检查冷却泵 CP-T 的所有连接管路，将冷却泵完整拆下来并送去回收。",
+						"en": "CHECK ALL THE CONNECTING LINES OF COOLANT PUMP CP-T, THEN REMOVE THE PUMP WHOLE AND SEND IT OFF FOR RECOVERY."
 					},
 					"tools": [
 						1,
@@ -1490,8 +1490,8 @@
 			"id": "TUT_06",
 			"mode": "goal",
 			"title": {
-				"zh": "重的东西不会听你的",
-				"en": "HEAVY THINGS DON'T LISTEN"
+				"zh": "小心重物",
+				"en": "BE CAREFUL WITH HEAVY OBJECTS"
 			},
 			"done_flag": "TUT_06_COMPLETE",
 			"guard": {
@@ -1509,8 +1509,8 @@
 				{
 					"id": "frame",
 					"text": {
-						"zh": "清空框架",
-						"en": "CLEAR THE FRAME"
+						"zh": "把框架上的所有部件拆下来，清空整个框架。",
+						"en": "REMOVE ALL THE COMPONENTS ON THE FRAME AND CLEAR THE WHOLE FRAME."
 					},
 					"tools": [
 						1,

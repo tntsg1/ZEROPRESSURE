@@ -2,13 +2,70 @@ extends SceneTree
 # 公测版的反馈 (scripts/demo_feedback.gd, user 2026-11-08 Q4 A): "反馈" in the pause menu of the public
 # build only; the page's big letters and its one orange key; the frame from before the menu as a JPG of
 # 300 KB at most (a noisy full-HD frame too); 2000 characters at most; a send that fails is kept on this
-# computer and goes up on the next start (flush), live against the server. Leaves nothing behind in the
-# user folder (the feedback it sends is dropped with tools/codes.mjs drop-machine afterwards).
+# computer and goes up on the next start (flush).
+# 2026-11-11 made safe: every file it touches has the test prefix zp_test_playtest_ (the player's
+# playtest_* saves, settings, records and outbox are never read, written or deleted), and nothing goes
+# to the real server: the registration and the flush go to a fake server on 127.0.0.1 in this test.
 #   tools/run_test.sh tests/demo_feedback_check.gd --fixed-fps 60
 
 const Gt = preload("res://scripts/demo.gd")
 const Fb = preload("res://scripts/demo_feedback.gd")
+const PRE := "zp_test_playtest_"
 var fails := 0
+var fake: FakeServer
+
+
+# a tiny HTTP server on 127.0.0.1: answers every POST with {"ok": true} and counts them by path
+class FakeServer extends Node:
+	var srv := TCPServer.new()
+	var conns: Array = []
+	var hits := {}
+	var port := 0
+
+	func start() -> bool:
+		for p in range(47811, 47851):
+			if srv.listen(p, "127.0.0.1") == OK:
+				port = p
+				return true
+		return false
+
+	func _process(_dt: float) -> void:
+		while srv.is_connection_available():
+			conns.append({"p": srv.take_connection(), "buf": PackedByteArray()})
+		for c in conns.duplicate():
+			var peer: StreamPeerTCP = c.p
+			peer.poll()
+			if peer.get_status() != StreamPeerTCP.STATUS_CONNECTED:
+				conns.erase(c)
+				continue
+			var n := peer.get_available_bytes()
+			if n > 0:
+				c.buf.append_array(peer.get_data(n)[1])
+			var text: String = (c.buf as PackedByteArray).get_string_from_ascii()
+			var he := text.find("
+
+")
+			if he < 0:
+				continue
+			var want := 0
+			for line in text.substr(0, he).split("
+"):
+				if line.to_lower().begins_with("content-length:"):
+					want = int(line.split(":")[1].strip_edges())
+			if (c.buf as PackedByteArray).size() < he + 4 + want:
+				continue
+			var path := text.substr(0, he).split("
+")[0].split(" ")[1]
+			hits[path] = int(hits.get(path, 0)) + 1
+			var body := "{\"ok\": true}"
+			peer.put_data(("HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: %d
+Connection: close
+
+%s" % [body.length(), body]).to_ascii_buffer())
+			peer.disconnect_from_host()
+			conns.erase(c)
 
 
 func check(ok: bool, what: String) -> void:
@@ -31,19 +88,49 @@ func _ids(g) -> Array:
 	return g.hud._menu_items().map(func(e): return str(e[0]))
 
 
+# only this test's own files: the zp_test_playtest_ prefix (files, the outbox, the records folder)
+func _rm_tree(dir: String) -> void:
+	if not DirAccess.dir_exists_absolute(dir):
+		return
+	for d in DirAccess.get_directories_at(dir):
+		_rm_tree(dir.path_join(d))
+	for f in DirAccess.get_files_at(dir):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(dir.path_join(f)))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(dir))
+
+
 func _clean() -> void:
-	for f in Fb.waiting():
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(f))
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(Fb.OUTBOX))
+	assert(Fb.outbox.get_file().begins_with(PRE))
+	_rm_tree(Fb.outbox)
+	_rm_tree("user://" + PRE + "records")
 	for f in DirAccess.get_files_at("user://"):
-		if f.begins_with("playtest_") and f.get_extension() in ["json", "cfg", "zip"]:
+		if f.begins_with(PRE):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path("user://" + f))
+
+
+# the build's own paths, pointed at this test's files (Demo.apply sets the player's playtest_* ones)
+func _own_paths() -> void:
+	SaveGame.path = "user://" + PRE + "save.json"
+	SaveGame.train_path = "user://" + PRE + "training.json"
+	SaveGame.allow_test = true
+	Career.path = "user://" + PRE + "career.json"
+	Txt.cfg_path = "user://" + PRE + "settings.cfg"
+	Playtest.root = "user://" + PRE + "records"
+	Fb.outbox = "user://" + PRE + "feedback_outbox"
 
 
 func _run() -> void:
 	Gt.forced = true
+	Fb.outbox = "user://" + PRE + "feedback_outbox"
 	_clean()
 	Gt.apply()
+	_own_paths()
+	fake = FakeServer.new()
+	root.add_child(fake)
+	check(fake.start(), "a fake server on 127.0.0.1:%d (nothing goes to the real one)" % fake.port)
+	var local := "http://127.0.0.1:%d" % fake.port
+	Fb.url_override = local
+	Gt.base_url = local
 	Txt.test_zh = true
 	Txt.zh = true
 	Career.data = Career.fresh()
@@ -77,7 +164,7 @@ func _run() -> void:
 	await _frames(10)
 	check(p != null and g.has_meta("feedback_open"), "反馈 opens the page")
 	check(p.text_in.get_theme_font_size("font_size") >= 20 and p.note_l.get_theme_font_size("font_size") >= 20, "big letters (%d)" % p.text_in.get_theme_font_size("font_size"))
-	check(p.send_b.get_theme_stylebox("normal") is StyleBoxFlat and (p.send_b.get_theme_stylebox("normal") as StyleBoxFlat).bg_color.is_equal_approx(UiSkin.ACCENT), "one orange main key: %s" % p.send_b.text)
+	check(p.send_b.get_theme_stylebox("normal") is StyleBoxFlat and (p.send_b.get_theme_stylebox("normal") as StyleBoxFlat).bg_color.is_equal_approx(Charcoal.ACCENT), "one orange main key: %s" % p.send_b.text)
 	check(p.kind_b.size() == 4 and p.kind == "other", "four kinds, 其他 picked")
 	p.kind_b["bug"].pressed.emit()
 	check(p.kind == "bug", "a kind picked")
@@ -116,7 +203,7 @@ func _run() -> void:
 	Fb.fail_in_tests = false
 	var http := HTTPRequest.new()
 	root.add_child(http)
-	http.request(Gt.URL + "/hello", ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify({"machine": Gt.machine(), "version": Gt.VERSION + "-test"}))
+	http.request(local + "/hello", ["Content-Type: application/json"], HTTPClient.METHOD_POST, JSON.stringify({"machine": Gt.machine(), "version": Gt.VERSION + "-test"}))
 	var hr: Array = await http.request_completed
 	check(int(hr[1]) == 200, "this machine registers (HTTP %d)" % int(hr[1]))
 	Fb.last_flush = {}
@@ -126,6 +213,7 @@ func _run() -> void:
 		await process_frame
 		n += 1
 	check(int(Fb.last_flush.get("sent", 0)) == 1 and int(Fb.last_flush.get("left", 1)) == 0, "the next start sends what waited: %s" % str(Fb.last_flush))
+	check(int(fake.hits.get("/feedback", 0)) == 1, "it went to the fake server, once: %s" % str(fake.hits))
 	# the full game has no 反馈
 	Gt.forced = false
 	check(not "feedback" in _ids(g), "the full game's menu has no 反馈: %s" % str(_ids(g)))
@@ -133,5 +221,8 @@ func _run() -> void:
 	await _frames(5)
 	_clean()
 	Fb.shot = null
+	Fb.url_override = ""
+	Fb.outbox = Fb.OUTBOX
+	Gt.base_url = Gt.URL
 	print("DEMO FEEDBACK %s" % ("PASS" if fails == 0 else "FAIL"))
 	quit(1 if fails > 0 else 0)

@@ -26,7 +26,12 @@ var tethered := false:
 		tethered = v
 		if v: _carry_begin()
 		else: _carry_end()
-const TUNNEL_MASK := 1 | 2     # tunnelling: loose pieces and the drone, never the hull (8) nor the berth (4)
+# tunnelling: only the drone, never the hull (8), the berth (4) nor other pieces (2026-11-11, user: "我现在量子
+# 飞船抓物品不是开着的吗？怎么现在还能撞到呢" — on layer 1 with loose pieces in its mask, a hauled plate
+# still knocked the equipment loose in the hull: "撞击损伤", money lost). Off every layer, so loose pieces
+# do not feel it either; it still meets the drone (it reacts to the drone, the drone does not to it).
+const TUNNEL_MASK := 2
+const TUNNEL_LAYER := 0
 var tunneling := false
 var _carried := false
 var capture = null         # recovery zone that is swallowing this body
@@ -281,7 +286,7 @@ func set_tunnel(on: bool) -> void:
 		tunneling = true
 		ghost = 0.0
 		clearing = 0.0
-		collision_layer = 1
+		collision_layer = TUNNEL_LAYER
 		collision_mask = TUNNEL_MASK
 		return
 	tunneling = false

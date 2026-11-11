@@ -125,8 +125,8 @@
 				{
 					"id": "brief",
 					"text": {
-						"zh": "看一眼训练件：按 I 可以随时查图鉴",
-						"en": "LOOK OVER THE RIG: I OPENS THE CODEX ANY TIME"
+						"zh": "先查看这次训练要用到的设备，按 I 可以随时打开图鉴，了解设备的具体信息。",
+						"en": "FIRST LOOK OVER THE EQUIPMENT USED IN THIS TRAINING. PRESS I AT ANY TIME TO OPEN THE CODEX AND LEARN THE DETAILS OF A DEVICE."
 					},
 					"tools": [],
 					"done": {
@@ -142,8 +142,8 @@
 			"id": "SP_A1",
 			"mode": "lockstep",
 			"title": {
-				"zh": "富氧舱：先换气，再开口",
-				"en": "OXYGEN-RICH: VENT IT, THEN OPEN IT"
+				"zh": "富氧舱：换气",
+				"en": "OXYGEN-RICH CABIN: VENT IT FIRST"
 			},
 			"done_flag": "SP_A1_COMPLETE",
 			"guard": {
@@ -194,8 +194,8 @@
 				{
 					"id": "o2",
 					"text": {
-						"zh": "测量（1）：读氧浓度 O2-1",
-						"en": "MEASURE (1): OXYGEN AT O2-1"
+						"zh": "切换到测量工具（1），检查 O2-1 的氧气浓度。",
+						"en": "SWITCH TO MEASURE (1) AND CHECK THE OXYGEN CONCENTRATION AT O2-1."
 					},
 					"tools": [
 						1
@@ -216,8 +216,8 @@
 				{
 					"id": "vent",
 					"text": {
-						"zh": "氧太高，激光一碰就闪燃：软管接 G-OX 抽到 5 kPa 以下（5）",
-						"en": "OXYGEN-RICH: A LASER FLASHES IT. HOSE ON G-OX, UNDER 5 kPa (5)"
+						"zh": "舱内的氧气浓度太高，直接使用激光切割容易发生闪燃。先使用气液回收工具（5），把软管连接到 G-OX，将舱内压力降到 5 kPa 以下。",
+						"en": "THE OXYGEN CONCENTRATION IN THE CABIN IS TOO HIGH, SO CUTTING WITH THE LASER CAN EASILY CAUSE A FLASH FIRE. FIRST USE GAS-LIQUID RECOVERY (5) TO CONNECT THE HOSE TO G-OX AND BRING THE CABIN PRESSURE BELOW 5 kPa."
 					},
 					"tools": [
 						1,
@@ -241,8 +241,8 @@
 				{
 					"id": "lid",
 					"text": {
-						"zh": "拆下顶板 OX-T 的螺栓（4），推到一边",
-						"en": "WRENCH (4): UNBOLT THE LID OX-T, PUSH IT CLEAR"
+						"zh": "切换到维护工具（4），拆除顶板 OX-T 上的固定螺栓，再把顶板推到旁边。",
+						"en": "SWITCH TO THE MAINTENANCE TOOL (4), REMOVE THE MOUNTING BOLTS ON LID OX-T, THEN PUSH THE LID ASIDE."
 					},
 					"tools": [
 						3,
@@ -259,8 +259,8 @@
 				{
 					"id": "lamp",
 					"text": {
-						"zh": "拆下补光灯 GL-1（4）",
-						"en": "WRENCH (4): FREE THE GROW LAMP GL-1"
+						"zh": "使用维护工具（4），拆下舱内的补光灯 GL-1，尽量保持设备完整。",
+						"en": "USE THE MAINTENANCE TOOL (4) TO REMOVE GROW LAMP GL-1 FROM THE CABIN, KEEPING THE DEVICE AS INTACT AS YOU CAN."
 					},
 					"tools": [
 						3,
@@ -277,8 +277,8 @@
 				{
 					"id": "deliver",
 					"text": {
-						"zh": "补光灯完整送进设备回收口",
-						"en": "THE LAMP, WHOLE, TO THE EQUIPMENT BAY"
+						"zh": "把拆下来的补光灯完整送到设备回收口，完成这次回收训练。",
+						"en": "DELIVER THE REMOVED GROW LAMP WHOLE TO THE EQUIPMENT MOUTH TO FINISH THIS RECOVERY TRAINING."
 					},
 					"tools": [
 						3,
@@ -304,8 +304,8 @@
 			"id": "SP_A2",
 			"mode": "lockstep",
 			"title": {
-				"zh": "复合材料：别切，拧下来",
-				"en": "COMPOSITE: DON'T CUT IT, UNBOLT IT"
+				"zh": "复合材料：拧下来",
+				"en": "COMPOSITE: UNBOLT IT, DON’T CUT IT"
 			},
 			"done_flag": "SP_A2_COMPLETE",
 			"guard": {
@@ -351,8 +351,8 @@
 				{
 					"id": "fume",
 					"text": {
-						"zh": "测量（1）：读航电舱的烟雾 FM-1",
-						"en": "MEASURE (1): SMOKE IN THE AVIONICS BAY, FM-1"
+						"zh": "先拿出测量工具（1），检查航电舱的烟雾读数 FM-1。",
+						"en": "FIRST TAKE OUT THE MEASURE TOOL (1) AND CHECK THE SMOKE READING FM-1 IN THE AVIONICS BAY."
 					},
 					"tools": [
 						1
@@ -373,8 +373,8 @@
 				{
 					"id": "vent",
 					"text": {
-						"zh": "舱里有气：切碳纤维会冒毒烟。先接 G-AV 抽成真空（5）",
-						"en": "AIR INSIDE: CUT FIBRE SMOKES. HOSE G-AV DOWN TO VACUUM (5)"
+						"zh": "舱里还有气体，直接切割碳纤维会产生有毒烟雾。先使用气液回收工具（5），把软管接到 G-AV，抽干舱内气体。",
+						"en": "THERE IS STILL GAS IN THE BAY, AND CUTTING CARBON FIBRE DIRECTLY PRODUCES TOXIC SMOKE. FIRST USE GAS-LIQUID RECOVERY (5) TO CONNECT THE HOSE TO G-AV AND PUMP THE GAS OUT OF THE BAY."
 					},
 					"tools": [
 						1,
@@ -398,8 +398,8 @@
 				{
 					"id": "unbolt",
 					"text": {
-						"zh": "拧下复合材料顶板 HC-1 的四颗螺栓（4），推到一边",
-						"en": "WRENCH (4): UNBOLT THE COMPOSITE LID HC-1, PUSH IT CLEAR"
+						"zh": "使用维护工具（4），拧下复合材料顶板 HC-1 上的四颗螺栓，再把整块顶板推到一边。",
+						"en": "USE THE MAINTENANCE TOOL (4) TO UNSCREW THE FOUR BOLTS ON COMPOSITE LID HC-1, THEN PUSH THE WHOLE LID ASIDE."
 					},
 					"tools": [
 						3,
@@ -416,8 +416,8 @@
 				{
 					"id": "console",
 					"text": {
-						"zh": "拆下舱里的航电台 AV-C（4）",
-						"en": "WRENCH (4): FREE THE AVIONICS CONSOLE AV-C"
+						"zh": "顶板移开以后，使用维护工具（4）把里面的航电台 AV-C 拆下来。",
+						"en": "ONCE THE LID IS OUT OF THE WAY, USE THE MAINTENANCE TOOL (4) TO REMOVE AVIONICS CONSOLE AV-C FROM INSIDE."
 					},
 					"tools": [
 						3,
@@ -434,8 +434,8 @@
 				{
 					"id": "deliver",
 					"text": {
-						"zh": "没被烟熏过的航电台完整送进设备回收口",
-						"en": "THE CONSOLE, UNSMOKED AND WHOLE, TO THE EQUIPMENT BAY"
+						"zh": "确认航电台没有受到有毒烟雾的污染，再把完整设备送到设备回收口。",
+						"en": "CONFIRM THE AVIONICS CONSOLE HAS NOT BEEN CONTAMINATED BY TOXIC SMOKE, THEN DELIVER THE WHOLE DEVICE TO THE EQUIPMENT MOUTH."
 					},
 					"tools": [
 						3,
@@ -461,8 +461,8 @@
 			"id": "SP_A3",
 			"mode": "lockstep",
 			"title": {
-				"zh": "炉芯：停机不等于冷却",
-				"en": "THE CORE: STOPPED ISN'T COLD"
+				"zh": "炉芯：停机了也不能马上拆",
+				"en": "THE CORE: SHUT DOWN DOESN’T MEAN YOU CAN REMOVE IT YET"
 			},
 			"done_flag": "SP_A3_COMPLETE",
 			"guard": {
@@ -504,8 +504,8 @@
 				{
 					"id": "temp",
 					"text": {
-						"zh": "测量（1）：读炉芯温度 CT-1",
-						"en": "MEASURE (1): CORE TEMPERATURE CT-1"
+						"zh": "先切换到测量工具（1），查看 CT-1 显示的炉芯温度。",
+						"en": "FIRST SWITCH TO MEASURE (1) AND CHECK THE CORE TEMPERATURE SHOWN AT CT-1."
 					},
 					"tools": [
 						1
@@ -526,8 +526,8 @@
 				{
 					"id": "cool",
 					"text": {
-						"zh": "换热泵有电、回路满着：等它降到 150 °C 以下（按住 = 加速）",
-						"en": "PUMP POWERED, LOOP FULL: WAIT UNDER 150 °C (HOLD = TO SPEED UP)"
+						"zh": "换热泵还有电，冷却液也足够，先让它继续冷却，等炉芯温度降到 150 °C 以下再操作。按住 = 可以加快时间。",
+						"en": "THE HEAT-EXCHANGE PUMP STILL HAS POWER AND THERE IS ENOUGH COOLANT, SO LET IT KEEP COOLING AND WAIT UNTIL THE CORE TEMPERATURE DROPS BELOW 150 °C BEFORE YOU WORK ON IT. HOLD = TO SPEED UP TIME."
 					},
 					"tools": [
 						1
@@ -548,8 +548,8 @@
 				{
 					"id": "drain",
 					"text": {
-						"zh": "冷透了，现在才放冷却液：软管接 PL（5）",
-						"en": "COLD THROUGH: ONLY NOW DRAIN THE LOOP, HOSE ON PL (5)"
+						"zh": "炉芯温度已经降下来了，现在可以回收冷却液了。切换到气液回收工具（5），把软管连接到 PL。",
+						"en": "THE CORE TEMPERATURE HAS DROPPED, SO YOU CAN RECOVER THE COOLANT NOW. SWITCH TO GAS-LIQUID RECOVERY (5) AND CONNECT THE HOSE TO PL."
 					},
 					"tools": [
 						1,
@@ -570,8 +570,8 @@
 				{
 					"id": "free",
 					"text": {
-						"zh": "拆下炉芯 CORE 的螺栓和管子（4）",
-						"en": "WRENCH (4): FREE THE CORE"
+						"zh": "使用维护工具（4），把炉芯 CORE 上的固定螺栓和连接管道全部拆下来。",
+						"en": "USE THE MAINTENANCE TOOL (4) TO REMOVE ALL THE MOUNTING BOLTS AND CONNECTING PIPES ON CORE."
 					},
 					"tools": [
 						3,
@@ -588,8 +588,8 @@
 				{
 					"id": "deliver",
 					"text": {
-						"zh": "炉芯完整送进设备回收口",
-						"en": "THE CORE, WHOLE, TO THE EQUIPMENT BAY"
+						"zh": "把拆下来的炉芯 CORE 完整送到设备回收口，尽量不要在搬运过程中损坏设备。",
+						"en": "DELIVER THE REMOVED CORE WHOLE TO THE EQUIPMENT MOUTH, AND TRY NOT TO DAMAGE IT WHILE MOVING IT."
 					},
 					"tools": [
 						3,

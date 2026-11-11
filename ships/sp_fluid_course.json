@@ -90,8 +90,8 @@
 				{
 					"id": "brief",
 					"text": {
-						"zh": "看一眼训练件：按 I 可以随时查图鉴",
-						"en": "LOOK OVER THE RIG: I OPENS THE CODEX ANY TIME"
+						"zh": "正式开始之前，先看看这次要处理的设备，熟悉一下各个零件的位置和用途。如果遇到不认识的零件，可以随时按 I 打开图鉴，里面有详细说明，不用急着把所有东西都记下来。",
+						"en": "BEFORE WE START, TAKE A LOOK AT THE EQUIPMENT YOU WILL BE HANDLING AND GET TO KNOW WHERE EACH PART IS AND WHAT IT IS FOR. IF YOU MEET A PART YOU DON’T RECOGNISE, PRESS I AT ANY TIME TO OPEN THE CODEX, WHICH HAS DETAILED EXPLANATIONS. THERE’S NO NEED TO MEMORISE EVERYTHING AT ONCE."
 					},
 					"tools": [],
 					"done": {
@@ -107,8 +107,8 @@
 			"id": "SP_F1",
 			"mode": "lockstep",
 			"title": {
-				"zh": "钻杆：泄扭、泄压、卡瓦、自上而下",
-				"en": "THE STRING: TORQUE, MUD, SLIPS, TOP DOWN"
+				"zh": "钻杆拆卸：释放扭矩、排出泥浆、固定卡瓦",
+				"en": "THE DRILL STRING: RELEASE TORQUE, DRAIN MUD, SET SLIPS"
 			},
 			"done_flag": "SP_F1_COMPLETE",
 			"guard": {
@@ -156,8 +156,8 @@
 				{
 					"id": "tq",
 					"text": {
-						"zh": "测量（1）：读扭矩表 TQ",
-						"en": "MEASURE (1): THE TORQUE GAUGE TQ"
+						"zh": "先别急着拆卸，我们得确认钻杆里面还剩下多少扭矩。按 1 使用测量工具，查看扭矩表（TQ）的读数。如果还有残余扭矩，现在直接拆卸可不太安全。",
+						"en": "DON’T RUSH TO TAKE IT APART; FIRST WE NEED TO CONFIRM HOW MUCH TORQUE IS LEFT IN THE DRILL STRING. PRESS 1 TO USE THE MEASURE TOOL AND READ TORQUE GAUGE (TQ). IF THERE IS STILL RESIDUAL TORQUE, TAKING IT APART NOW IS NOT SAFE."
 					},
 					"tools": [
 						1
@@ -178,8 +178,8 @@
 				{
 					"id": "bleed",
 					"text": {
-						"zh": "① 松转盘刹车泄扭：TQB（4）",
-						"en": "① RELEASE THE ROTARY BRAKE: TQB (4)"
+						"zh": "接下来要把剩余的扭矩释放掉。找到转盘刹车（TQB），按 4 松开刹车，让钻杆慢慢释放扭矩。这一步不用着急，等扭矩降下来以后，我们再继续处理。",
+						"en": "NEXT THE REMAINING TORQUE MUST BE RELEASED. FIND ROTARY BRAKE (TQB) AND PRESS 4 TO RELEASE THE BRAKE, LETTING THE DRILL STRING RELEASE ITS TORQUE SLOWLY. NO NEED TO RUSH THIS STEP; WE CONTINUE ONCE THE TORQUE HAS DROPPED."
 					},
 					"tools": [
 						1,
@@ -199,8 +199,8 @@
 				{
 					"id": "torque",
 					"text": {
-						"zh": "等扭矩降到 5% 以下（按住 = 加速）",
-						"en": "WAIT: TORQUE UNDER 5 % (HOLD = TO SPEED UP)"
+						"zh": "现在先等一会儿，确认扭矩已经降到 5% 以下。只有达到这个数值，才能安全地进行后面的拆卸。如果觉得等待时间太长，可以按住 = 加快时间。",
+						"en": "NOW WAIT A WHILE AND CONFIRM THE TORQUE HAS DROPPED BELOW 5%. ONLY AT THIS VALUE CAN THE REMOVAL THAT FOLLOWS BE DONE SAFELY. IF THE WAIT SEEMS TOO LONG YOU CAN HOLD = TO SPEED UP TIME."
 					},
 					"tools": [
 						1,
@@ -219,8 +219,8 @@
 				{
 					"id": "mudp",
 					"text": {
-						"zh": "测量（1）：读泥浆压力 MUDP",
-						"en": "MEASURE (1): MUD PRESSURE MUDP"
+						"zh": "扭矩已经处理好了，不过钻杆里面可能还有泥浆压力。我们再检查一下，按 1 使用测量工具，看看泥浆压力表（MUDP）现在显示多少。确认压力情况以后，才能进行下一步。",
+						"en": "THE TORQUE IS HANDLED, BUT THERE MAY STILL BE MUD PRESSURE INSIDE THE DRILL STRING. LET’S CHECK AGAIN: PRESS 1 TO USE THE MEASURE TOOL AND SEE WHAT MUD PRESSURE GAUGE (MUDP) SHOWS NOW. ONLY AFTER CONFIRMING THE PRESSURE CAN YOU TAKE THE NEXT STEP."
 					},
 					"tools": [
 						1
@@ -237,8 +237,8 @@
 				{
 					"id": "mud",
 					"text": {
-						"zh": "② 软管接立管 PMUD 放泥浆（可回收）（5）",
-						"en": "② HOSE ON THE STANDPIPE PMUD: DRAIN THE MUD (IT SELLS) (5)"
+						"zh": "现在可以把里面的泥浆排出来了。找到立管（PMUD），按 5 把软管连接上去，再通过软管释放剩余的泥浆压力。排出来的泥浆还能回收，所以尽量别浪费，这些东西以后说不定还用得上。",
+						"en": "NOW YOU CAN DRAIN THE MUD INSIDE. FIND STANDPIPE (PMUD), PRESS 5 TO CONNECT THE HOSE TO IT, AND RELEASE THE REMAINING MUD PRESSURE THROUGH THE HOSE. THE MUD THAT COMES OUT CAN BE RECOVERED, SO TRY NOT TO WASTE IT; YOU MIGHT NEED IT LATER."
 					},
 					"tools": [
 						1,
@@ -260,8 +260,8 @@
 				{
 					"id": "slips",
 					"text": {
-						"zh": "③ 坐好两副卡瓦 SLIP-1、SLIP-2（4）",
-						"en": "③ SET BOTH SLIPS, SLIP-1 AND SLIP-2 (4)"
+						"zh": "泥浆处理完以后，我们还得把钻杆固定好，不然拆卸上面的立根时，剩下的钻杆可能会失去支撑。找到两副卡瓦（SLIP-1、SLIP-2），分别按 4 安装到位，确认它们都已经固定好以后再继续。",
+						"en": "ONCE THE MUD IS HANDLED, WE STILL HAVE TO SECURE THE DRILL STRING, OR THE REST OF THE STRING MAY LOSE ITS SUPPORT WHEN WE REMOVE THE STAND ABOVE. FIND THE TWO SETS OF SLIPS (SLIP-1, SLIP-2) AND PRESS 4 ON EACH TO SET THEM IN PLACE, THEN CONFIRM BOTH ARE SECURED BEFORE YOU CONTINUE."
 					},
 					"tools": [
 						1,
@@ -294,8 +294,8 @@
 				{
 					"id": "free1",
 					"text": {
-						"zh": "④ 从最上面卸起：拆下立根 J-1（4）",
-						"en": "④ TOP DOWN: BREAK OUT STAND J-1 (4)"
+						"zh": "准备工作都完成了，现在终于可以开始拆卸了。记住，钻杆要从最上面开始一节一节地拆，千万别直接拆下面的部分。先找到最上面的立根（J-1），按 4 把它拆卸下来。",
+						"en": "THE PREPARATION IS ALL DONE, AND NOW AT LAST YOU CAN START TAKING IT APART. REMEMBER, THE DRILL STRING MUST BE REMOVED FROM THE VERY TOP, ONE JOINT AT A TIME; NEVER GO STRAIGHT FOR THE LOWER PARTS. FIRST FIND THE TOP STAND (J-1) AND PRESS 4 TO BREAK IT OUT."
 					},
 					"tools": [
 						3,
@@ -312,8 +312,8 @@
 				{
 					"id": "deliver1",
 					"text": {
-						"zh": "J-1 送进设备回收口",
-						"en": "J-1 TO THE EQUIPMENT BAY"
+						"zh": "很好，第一节立根已经拆下来了。接下来把立根（J-1）送到旁边的设备回收口，这些完整拆下来的设备还有回收价值，所以我们尽量把它们保存好。",
+						"en": "GOOD, THE FIRST STAND IS OFF. NOW DELIVER STAND (J-1) TO THE EQUIPMENT MOUTH NEARBY. THESE PIECES, REMOVED WHOLE, ARE WORTH RECOVERING, SO WE KEEP THEM IN GOOD CONDITION WHERE WE CAN."
 					},
 					"tools": [
 						3,
@@ -338,8 +338,8 @@
 				{
 					"id": "free2",
 					"text": {
-						"zh": "再拆下 J-2（4）",
-						"en": "THEN J-2 (4)"
+						"zh": "第一节已经处理好了，接下来轮到第二节立根（J-2）。操作方法和刚才一样，找到对应的连接位置，按 4 进行拆卸。前面的安全准备已经完成，这次应该就比较熟悉了。",
+						"en": "THE FIRST ONE IS HANDLED, SO NEXT IS THE SECOND STAND (J-2). THE METHOD IS THE SAME AS BEFORE: FIND THE MATCHING CONNECTION POINT AND PRESS 4 TO REMOVE IT. THE SAFETY PREPARATION IS ALREADY DONE, SO THIS TIME SHOULD FEEL FAMILIAR."
 					},
 					"tools": [
 						3,
@@ -356,8 +356,8 @@
 				{
 					"id": "deliver2",
 					"text": {
-						"zh": "J-2 送进设备回收口",
-						"en": "J-2 TO THE EQUIPMENT BAY"
+						"zh": "最后，把第二节立根（J-2）也送进设备回收口。这样两节立根就全部处理完了。以后遇到类似的钻杆，记得先处理残余扭矩和泥浆压力，再固定卡瓦，确认安全以后从上往下拆卸，就不会那么容易出问题了。",
+						"en": "FINALLY, DELIVER THE SECOND STAND (J-2) TO THE EQUIPMENT MOUTH TOO. THAT COMPLETES BOTH STANDS. NEXT TIME YOU MEET A SIMILAR DRILL STRING, REMEMBER TO HANDLE THE RESIDUAL TORQUE AND MUD PRESSURE FIRST, THEN SET THE SLIPS, AND ONCE IT IS CONFIRMED SAFE, REMOVE IT FROM THE TOP DOWN, AND THINGS WON’T GO WRONG SO EASILY."
 					},
 					"tools": [
 						3,
@@ -388,8 +388,8 @@
 			"id": "SP_F2",
 			"mode": "lockstep",
 			"title": {
-				"zh": "交叉连通罐：带压抽，抽完就停",
-				"en": "CROSS-CONNECTED TANKS: DRAW UNDER PRESSURE, STOP WHEN DRY"
+				"zh": "交叉连通罐：保持压力，抽完及时停泵",
+				"en": "CROSS-CONNECTED TANKS: HOLD PRESSURE, STOP THE PUMP WHEN DRY"
 			},
 			"done_flag": "SP_F2_COMPLETE",
 			"guard": {
@@ -445,8 +445,8 @@
 				{
 					"id": "ullage",
 					"text": {
-						"zh": "测量（1）：读罐顶气压 TV-1（氮气增压保着它）",
-						"en": "MEASURE (1): ULLAGE PRESSURE TV-1 (THE NITROGEN HOLDS IT UP)"
+						"zh": "先测量一下 TV-1 储罐顶部的气压，看看目前的压力是多少。这套设备需要靠氮气增压来维持压力，等会儿抽取液体的时候，还得让增压系统继续工作。（1）",
+						"en": "FIRST MEASURE THE GAS PRESSURE AT THE TOP OF TANK TV-1 AND SEE WHAT THE PRESSURE IS NOW. THIS EQUIPMENT RELIES ON NITROGEN PRESSURISATION TO HOLD ITS PRESSURE, SO WHEN YOU DRAW OFF THE LIQUID LATER THE PRESSURISATION SYSTEM MUST KEEP WORKING. (1)"
 					},
 					"tools": [
 						1
@@ -467,8 +467,8 @@
 				{
 					"id": "cross",
 					"text": {
-						"zh": "① 打开两只罐的连通阀 XV-1、XV-2（4）",
-						"en": "① OPEN BOTH CROSSOVERS XV-1 AND XV-2 (4)"
+						"zh": "接下来找到两只储罐之间的连通阀 XV-1 和 XV-2，把这两个阀门全部打开，让两只储罐和总管连通，这样就可以通过主泵一起抽取里面的液体了。（4）",
+						"en": "NEXT FIND CROSSOVER VALVES XV-1 AND XV-2 BETWEEN THE TWO TANKS AND OPEN BOTH, CONNECTING THE TWO TANKS TO THE MANIFOLD, SO THAT THE LIQUID IN THEM CAN BE DRAWN OFF TOGETHER BY THE MAIN PUMP. (4)"
 					},
 					"tools": [
 						1,
@@ -498,8 +498,8 @@
 				{
 					"id": "draw",
 					"text": {
-						"zh": "② 增压保持打开，软管接主泵 PR 抽总管（5，按住 = 加速）",
-						"en": "② PRESSURISATION STAYS ON. HOSE ON PR, DRAW IT OFF (5)"
+						"zh": "先保持氮气增压系统开启，再把软管连接到主泵 PR，开始抽取总管里的液体。抽取过程中不要关闭增压系统，需要加快速度的话，可以按住操作键进行加速。（5）",
+						"en": "KEEP THE NITROGEN PRESSURISATION SYSTEM ON, THEN CONNECT THE HOSE TO MAIN PUMP PR AND START DRAWING OFF THE LIQUID IN THE MANIFOLD. DON’T SWITCH OFF THE PRESSURISATION DURING DRAWING; IF YOU NEED TO GO FASTER, HOLD THE CONTROL KEY TO SPEED UP. (5)"
 					},
 					"tools": [
 						1,
@@ -521,8 +521,8 @@
 				{
 					"id": "stop",
 					"text": {
-						"zh": "③ 抽完立刻摘下软管（再点一次 PR），别让泵干转",
-						"en": "③ DRY NOW: HOSE OFF PR AT ONCE, OR THE PUMP RUNS DRY"
+						"zh": "等液体全部抽完以后，记得马上再点击一次 PR，把软管从主泵上拆下来。千万别让主泵一直空转，里面已经没有液体了，继续运行只会增加设备损坏的风险。",
+						"en": "ONCE ALL THE LIQUID HAS BEEN DRAWN OFF, REMEMBER TO CLICK PR AGAIN IMMEDIATELY TO TAKE THE HOSE OFF THE MAIN PUMP. NEVER LET THE MAIN PUMP KEEP RUNNING DRY; THERE IS NO LIQUID LEFT IN IT, AND RUNNING ON ONLY ADDS TO THE RISK OF DAMAGING THE EQUIPMENT."
 					},
 					"tools": [
 						1,
@@ -541,8 +541,8 @@
 				{
 					"id": "free",
 					"text": {
-						"zh": "拆下罐 T-1（4）",
-						"en": "WRENCH (4): FREE TANK T-1"
+						"zh": "液体处理完成以后，就可以开始拆卸储罐了。找到 T-1 储罐，把上面的 4 个固定连接点全部解除，确认储罐已经松开以后再进行搬运。（4）",
+						"en": "ONCE THE LIQUID HAS BEEN HANDLED, YOU CAN START REMOVING THE TANK. FIND TANK T-1, RELEASE ALL 4 MOUNTING POINTS ON IT, AND CONFIRM THE TANK IS LOOSE BEFORE MOVING IT. (4)"
 					},
 					"tools": [
 						3,
@@ -559,8 +559,8 @@
 				{
 					"id": "deliver",
 					"text": {
-						"zh": "空罐送进回收口",
-						"en": "THE EMPTY TANK TO A MOUTH"
+						"zh": "现在把拆下来的 T-1 空罐送到回收口，尽量保持罐体完整。等设备完成回收以后，这次训练就算完成了。",
+						"en": "NOW DELIVER THE REMOVED EMPTY TANK T-1 TO THE EQUIPMENT MOUTH, KEEPING THE TANK BODY AS INTACT AS YOU CAN. ONCE THE EQUIPMENT HAS BEEN RECOVERED, THIS TRAINING IS COMPLETE."
 					},
 					"tools": [
 						3,

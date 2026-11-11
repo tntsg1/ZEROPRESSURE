@@ -641,9 +641,9 @@ func _draw_slots(s: Vector2, vk: float) -> void:
 	var delay := 0.3 if lvl >= 2 else 0.0
 	var st := slots_t - delay
 	var head := Txt.t("t_slots")
-	var hw := font.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+	var hw := font_l.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x
 	var hk := clampf(st / 0.3, 0.0, 1.0) * vk
-	draw_string(font, Vector2(s.x * 0.5 - hw * 0.5, _slot_rect(0).position.y - 34 + (1.0 - hk) * 20.0), head, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Pal.ink(0.45 * hk))
+	draw_string(font_l, Vector2(s.x * 0.5 - hw * 0.5, _slot_rect(0).position.y - 40 + (1.0 - hk) * 20.0), head, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Pal.ink(0.95 * hk))
 	for i in Career.SLOTS:
 		var raw := Motion.stagger(st, i, 0.07, 0.45)
 		var e := Pal.ease_out(raw) * vk
@@ -668,23 +668,26 @@ func _draw_slots(s: Vector2, vk: float) -> void:
 func _card(i: int, r: Rect2, e: float, lift: float, st: float, lvl: int) -> void:
 	var d: Dictionary = slots[i] if i < slots.size() else {}
 	var on := lift
-	draw_rect(r, Color(0.03 + 0.012 * on, 0.032 + 0.012 * on, 0.037 + 0.012 * on, 0.94 * e))
+	# 2026-11-11 炭黑 v2
+	r = Charcoal.key(self, r, e, 0.0, Charcoal.FACE.lerp(Charcoal.FACE_HI, on), 14)
 	if on > 0.02 and lvl >= 1:
-		_sheen(r, ms.x, 0.05 * on * e)
-	draw_rect(r, Pal.ink((0.14 + 0.4 * on) * e), false, 1.0)
-	draw_rect(Rect2(r.position + Vector2(0, r.size.y * (1.0 - on) * 0.5), Vector2(3, r.size.y * on)), Pal.heat(e, 1.1))
+		_sheen(r, ms.x, 0.03 * on * e)
+	if on > 0.02:
+		Charcoal.lip(self, Rect2(r.position.x + 16, r.end.y - 7, (r.size.x - 32) * on, 4), e)
 	var x := r.position.x + 28
-	draw_string(font, Vector2(x, r.position.y + 34), Txt.t("t_slot") % (i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Pal.ink(0.4 * e))
+	draw_string(font_l, Vector2(x - 2, r.position.y + 44), "%02d" % (i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color(Charcoal.ACCENT, e) if on > 0.5 else Pal.ink(0.5 * e))
+	draw_string(font, Vector2(x + 48, r.position.y + 40), Txt.t("t_slot") % (i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.4 * e))
 	if d.is_empty():
 		if naming == i:
 			draw_string(font, Vector2(x, r.position.y + 132), Txt.t("t_company"), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Pal.ink(0.45 * e))
 			draw_string(font, Vector2(x, r.position.y + 236), Txt.t("t_slot_new_d"), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 56, 13, Pal.ink(0.4 * e))
 			return
+		Charcoal.display(self, Rect2(r.position.x + 20, r.position.y + 64, r.size.x - 40, r.size.y - 92), e, 10)
 		var c := r.get_center() + Vector2(0, -10)
 		var pk := 0.85 + 0.15 * on
 		draw_line(c + Vector2(-14, 0) * pk, c + Vector2(14, 0) * pk, Pal.ink((0.35 + 0.5 * on) * e), 1.6, true)
 		draw_line(c + Vector2(0, -14) * pk, c + Vector2(0, 14) * pk, Pal.ink((0.35 + 0.5 * on) * e), 1.6, true)
-		draw_arc(c, 30.0 + 4.0 * on, 0.0, TAU, 40, Pal.ink((0.12 + 0.3 * on) * e), 1.0, true)
+		draw_arc(c, 30.0 + 4.0 * on, 0.0, TAU, 40, Color(Charcoal.ACCENT, (0.25 + 0.6 * on) * e) if on > 0.02 else Pal.ink(0.2 * e), 1.5, true)
 		_center(Txt.t("t_slot_new") if on > 0.5 else Txt.t("t_slot_empty"), Vector2(c.x, c.y + 70), 18, Pal.ink((0.5 + 0.45 * on) * e), font)
 		return
 	var status: String
@@ -696,11 +699,13 @@ func _card(i: int, r: Rect2, e: float, lift: float, st: float, lvl: int) -> void
 	else:
 		status = Txt.t("t_slot_berth")
 	var sw := font.get_string_size(status, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
-	draw_string(font, Vector2(r.end.x - 28 - sw, r.position.y + 34), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Pal.tint(Pal.AIR, 0.75 * e, 1.0))
+	draw_string(font, Vector2(r.end.x - 28 - sw, r.position.y + 38), status, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Pal.ink(0.8 * e))
+	Charcoal.led(self, Vector2(r.end.x - 40 - sw, r.position.y + 33), true, e, 4.0, Charcoal.ACCENT if not d.get("certified", true) else Color(0.92, 0.93, 0.9))
 	var nm: String = d.get("company", "")
 	if nm == "":
 		nm = Txt.t("t_company_default")
-	draw_string(font_l, Vector2(x, r.position.y + 82), nm, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 56, 30, Pal.ink(0.96 * e))
+	draw_string(font_l, Vector2(x, r.position.y + 90), nm, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 56, 30, Pal.ink(0.96 * e))
+	Charcoal.display(self, Rect2(r.position.x + 16, r.position.y + 108, r.size.x - 32, 160), e, 9)
 	var lv := "trainee"
 	for l in Career.LEVELS:
 		if int(d.get("rep", 0)) >= l[1]:
@@ -715,7 +720,7 @@ func _card(i: int, r: Rect2, e: float, lift: float, st: float, lvl: int) -> void
 		[Txt.t("t_slot_time"), "%d:%02d" % [secs / 3600, (secs / 60) % 60]],
 	]
 	for j in rows.size():
-		var y := r.position.y + 128 + j * 30
+		var y := r.position.y + 136 + j * 29
 		var re := Pal.ease_out(Motion.stagger(st, i * 3 + j + 2, 0.03, 0.3))
 		draw_string(font, Vector2(x, y), rows[j][0], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.ink(0.45 * e * re))
 		var vw := font_b.get_string_size(rows[j][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
@@ -723,8 +728,10 @@ func _card(i: int, r: Rect2, e: float, lift: float, st: float, lvl: int) -> void
 		draw_string(font_b, Vector2(r.end.x - 28 - vw + (1.0 - re) * 16.0, y), rows[j][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 17, (Pal.heat(0.85 * e * re, 1.0) if loan_col else Pal.ink(0.9 * e * re)))
 	# bottom: continue (on hover) and delete
 	var go_a := on * e
-	draw_string(font_b, Vector2(x, r.end.y - 22), Txt.t("t_slot_go") + "  →", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Pal.ink(0.95 * go_a))
-	draw_rect(Rect2(x, r.end.y - 14, 60.0 * go_a, 2), Pal.heat(go_a, 1.1))
+	if go_a > 0.01:
+		var gw := font_b.get_string_size(Txt.t("t_slot_go") + "  →", HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 36.0
+		Charcoal.slab(self, Rect2(x - 12, r.end.y - 50, gw, 36), Color(Charcoal.ACCENT, go_a), 8)
+		draw_string(font_b, Vector2(x + 6, r.end.y - 26), Txt.t("t_slot_go") + "  →", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.06, 0.05, 0.04, go_a))
 	var dr := _del_rect(i)
 	dr.position.y += r.position.y - _slot_rect(i).position.y
 	var dl := Txt.t("t_slot_delete_ok") if del_confirm == i else Txt.t("t_slot_delete")
@@ -737,10 +744,11 @@ func _slots_foot(s: Vector2, vk: float, st: float) -> void:
 	# back, and the keys
 	var br := _back_rect()
 	var ba := vk * clampf((st - 0.25) / 0.3, 0.0, 1.0)
+	var bk := Charcoal.key(self, br.grow_individual(30, 4, 30, 4), ba, 0.0, Charcoal.FACE_HI if hover == 99 else Charcoal.FACE, 9)
 	if hover == 99:
-		Pal.band(self, br, 0.12 * ba)
-		draw_rect(Rect2(br.get_center().x - 30, br.end.y - 2, 60, 2), Pal.heat(ba, 1.0))
-	_center(Txt.t("t_slot_back"), Vector2(br.get_center().x, br.position.y + 27), 17, Pal.ink((0.9 if hover == 99 else 0.5) * ba), font)
+		Charcoal.lip(self, Rect2(bk.position.x + 12, bk.end.y - 6, bk.size.x - 24, 3), ba)
+	draw_string(font, Vector2(bk.position.x + 18, bk.position.y + 31), Txt.t("t_slot_back"), HORIZONTAL_ALIGNMENT_LEFT, bk.size.x - 90, 17, Pal.ink((0.97 if hover == 99 else 0.75) * ba))
+	Charcoal.keycap(self, font_b, Rect2(bk.end.x - 58, bk.position.y + 10, 44, 26), "Esc", ba)
 	_center(Txt.t("t_slot_keys"), Vector2(s.x * 0.5, s.y - 32), 12, Pal.ink(0.25 * ba), font)
 
 

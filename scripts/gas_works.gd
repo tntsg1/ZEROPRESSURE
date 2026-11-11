@@ -11,16 +11,31 @@ var _sig := ""
 var _t := 0.0
 var _vented0 := -1.0
 var plume := 0.0
+var plant = null              # scripts/gas_plant.gd
+var pipes = null              # scripts/gas_pipes.gd
+static var NEW_PLANT := true  # tests: false shows the old sketch (before / after pictures)
 
 
 func _ready() -> void:
 	z_index = 2
 	z_as_relative = false
 	font = Fonts.get_font("Regular")
+	# 2026-11-10: the line's real plant, built against the district's left wall (scripts/gas_plant.gd);
+	# the old sketch below is no longer drawn
+	if NEW_PLANT:
+		plant = preload("res://scripts/gas_plant.gd").new()
+		plant.game = game
+		add_child(plant)
+		# 2026-11-11: the pipelines feeding it across the port, and the film of where the gas goes
+		pipes = preload("res://scripts/gas_pipes.gd").new()
+		pipes.game = game
+		add_child(pipes)
 
 
+# (2026-11-11: with the real plant and its pipes, wherever the port is — a ship being stripped too;
+# the old sketch below stays the berth's only)
 func active() -> bool:
-	return game != null and game.in_berth() and game.career() and GasLine.built()
+	return game != null and game.career() and GasLine.built() and (plant != null or game.in_berth())
 
 
 # the works' origin (m in world px): left of the processing district, at its floor's height
@@ -52,7 +67,7 @@ func _p(m: Vector2) -> Vector2:
 
 
 func _draw() -> void:
-	if not active():
+	if not active() or plant != null:
 		return
 	var M := PortStructure.M()
 	var d := GasLine.data()

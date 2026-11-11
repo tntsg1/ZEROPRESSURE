@@ -254,7 +254,7 @@ func _physics_process(dt: float) -> void:
 		game.drone.global_position = global_position
 		game.drone.linear_velocity = Vector2.ZERO
 	# 108 号 帧率: only while its part of the port is in view (scripts/view_cull.gd)
-	if ViewCull.sees(game, Rect2(global_position - Vector2(40, 40) * Geom.M, Vector2(80, 80) * Geom.M)):
+	if ViewCull.sees(game, Rect2(global_position - Vector2(18, 18) * Geom.M, Vector2(36, 36) * Geom.M)):
 		queue_redraw()
 	var pk := "%s|%s|%s|%d" % [pad, docking, str(active()), int(round(maxf(game.cam_zoom(), 0.02) * 2000.0))]
 	if pk != _pads_key and pads_layer != null:

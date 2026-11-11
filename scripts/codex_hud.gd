@@ -264,6 +264,7 @@ func _card_nodes() -> void:
 	c.add_child(card_c)
 	c.move_child(card_c, 0)
 	title_rt = BenchFx.RiseText.new("", font_b, 19, Pal.ink(0.97))
+	title_rt.underline = false   # 2026-11-11 炭黑: no orange stroke under the title (read as a squiggle)
 	title_rt.position = Vector2(18, 26)
 	title_rt.size = Vector2(W - 80.0, 27)
 	card_c.add_child(title_rt)
@@ -302,8 +303,8 @@ func _draw_card() -> void:
 	# the scan line at the card's lower edge while it wipes on, with its glow
 	if scan < 1.0:
 		var y := p.y + h * scan
-		c.draw_texture_rect(UiSkin.glow_tex(), Rect2(p.x - 20.0, y - 10.0, W + 40.0, 20.0), false, Color(UiSkin.DATA, 0.35 * a))
-		c.draw_rect(Rect2(p.x - 6.0, y - 1.0, W + 12.0, 2.0), Color(UiSkin.DATA, 0.95 * a))
+		c.draw_texture_rect(UiSkin.glow_tex(), Rect2(p.x - 20.0, y - 10.0, W + 40.0, 20.0), false, Color(1, 1, 1, 0.12 * a))
+		c.draw_rect(Rect2(p.x - 6.0, y - 1.0, W + 12.0, 2.0), Color(0.92, 0.93, 0.9, 0.95 * a))
 
 
 static var prof_us := 0      # tests: microseconds spent drawing the card each frame, summed
@@ -359,28 +360,30 @@ func _draw_static() -> void:
 	var lv := CodexFx.level(id)
 	var r := Rect2(Vector2.ZERO, Vector2(W, h))
 	# the glass: dark, faint scan rows, a hairline edge, the corner brackets, the kind's colour bar
-	ci.draw_rect(r, Color(0.022, 0.025, 0.03, 0.94))
-	ci.draw_texture_rect(CodexFx.rows_tex(), r, true, Color(1, 1, 1, 0.018))
-	ci.draw_rect(r, Pal.ink(0.2), false, 1.0)
-	CodexFx.brackets(ci, r.grow(-4.0), Pal.ink(0.55) if lv < 3 else Color(UiSkin.ACCENT, 0.9), 12.0)
-	var acc := Pal.tint(Pal.AIR, 1.0, 1.1) if e.get("cat", "") != "mech" else Pal.heat(1.0, 1.05)
-	ci.draw_rect(Rect2(Vector2.ZERO, Vector2(3, h)), acc)
+	# 2026-11-11 炭黑 v2: a charcoal plate; the drawing in a black window; the kind's lamp, not a blue bar
+	Charcoal.panel(ci, r, 1.0, 0.0, Charcoal.FACE, 12)
+	if lv >= 3:
+		CodexFx.brackets(ci, r.grow(-4.0), Color(UiSkin.ACCENT, 0.9), 12.0)
+	var acc := Color(0.92, 0.93, 0.9) if e.get("cat", "") != "mech" else Charcoal.ACCENT
+	Charcoal.display(ci, Rect2(Vector2(12, 60), Vector2(ART_W + 2.0, ART_W * 0.8 + 12.0)), 1.0, 7)
 	# the head: kind mark, archive number, kind · first met (the title rises in its own layer)
 	_cat_mark(ci, str(e.get("cat", "device")), Vector2(24, 17), acc)
 	var code := CodexFx.code(id)
-	UI.text(ci, font_b, code, Vector2(36, 22), 12, Color(UiSkin.DATA, 0.95))
+	UI.text(ci, font_b, code, Vector2(36, 22), 12, Pal.ink(0.75))
 	var cw: float = font_b.get_string_size(code, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
 	ci.draw_line(Vector2(42 + cw, 13), Vector2(42 + cw, 23), Pal.ink(0.3), 1.0)
 	var cat_l: String = Txt.t("cxu_cat_" + str(e.get("cat", "device"))) + " · " + Txt.t("cxu_first")
-	UI.text(ci, font, cat_l, Vector2(50 + cw, 22), 12, Pal.tint(acc, 0.85, 1.0))
+	UI.text(ci, font, cat_l, Vector2(50 + cw, 22), 12, Pal.ink(0.6))
 	title_rt.set_text(Codex.title(id))
 	# the three sentences (the danger cells under "danger" are drawn with what moves)
 	var x := 18.0 + ART_W + 8.0
 	var y := 74.0
 	for part in ["a", "b", "c"]:
 		var lab: String = Txt.t("cxu_" + part)
-		var col: Color = Pal.heat(0.9, 1.1) if part == "b" else (Pal.tint(Pal.FLUID, 0.9, 1.0) if part == "c" else Pal.ink(0.55))
-		UI.text(ci, font, lab, Vector2(x, y + 1), 12, col)
+		# each line's lamp: the danger orange, the way white, the plain one dark
+		var col: Color = Charcoal.ACCENT if part == "b" else (Pal.ink(0.92) if part == "c" else Pal.ink(0.55))
+		Charcoal.led(ci, Vector2(x - 8, y - 3), part != "a", 1.0, 3.0, Charcoal.ACCENT if part == "b" else Color(0.92, 0.93, 0.9))
+		UI.text(ci, font_b, lab, Vector2(x, y + 1), 12, col)
 		if part == "b":
 			_cells_at = Vector2(x, y + 7.0)
 		y += _para(Codex.line(id, part), Vector2(x + label_w(), y - 14.0), TXT_W - label_w(), FS, Pal.ink(0.9), null, ci) + 8.0
@@ -403,6 +406,7 @@ func _draw_moving() -> void:
 	# the close cross, lit under the pointer
 	var cr := Rect2(W - 42.0, 2.0, 38.0, 38.0)
 	var hot := cr.has_point(ci.get_local_mouse_position())
+	Charcoal.key(ci, cr.grow(-5.0), 1.0, 0.0, Charcoal.FACE_HI if hot else Charcoal.FACE, 6)
 	ci.draw_line(cr.position + Vector2(7, 7), cr.end - Vector2(7, 7), Pal.ink(0.8 if hot else 0.4), 1.5, true)
 	ci.draw_line(Vector2(cr.end.x - 7, cr.position.y + 7), Vector2(cr.position.x + 7, cr.end.y - 7), Pal.ink(0.8 if hot else 0.4), 1.5, true)
 	# the drawing, alive on its instrument screen
@@ -416,11 +420,8 @@ func _draw_moving() -> void:
 	if game.codex.card == id:
 		var left := 1.0 - clampf(game.codex.card_t / Codex.SHOW_T, 0.0, 1.0)
 		var lw := (W - 3.0) * left
-		ci.draw_rect(Rect2(3, h - 2, lw, 1.5), Color(UiSkin.DATA, 0.3))
-		if t > 0.0 and lw > 30.0:
-			var hx := 3.0 + CodexFx.fract(t * 0.6) * lw
-			ci.draw_texture_rect(UiSkin.glow_tex(), Rect2(hx - 22.0, h - 9.0, 44.0, 14.0), false, Color(UiSkin.DATA, 0.4))
-			ci.draw_rect(Rect2(maxf(3.0, hx - 18.0), h - 2.5, minf(18.0, hx - 3.0), 2.0), Color(UiSkin.DATA, 0.95))
+		# the time left: the orange lip shrinking along the foot
+		Charcoal.lip(ci, Rect2(12, h - 6, (W - 24.0) * left, 3), 0.85)
 
 
 # a small mark for the kind: structure a hex, device a box, mechanism a gear, system rings

@@ -133,9 +133,9 @@ func _run() -> void:
 				two.append("%s→%s" % [a, b])
 	check(gaps == 0, "every ride runs from its stop to the other, each leg on from where the last stopped")
 	check(laps == 0, "no ride runs more than three quarters of the hub's loop (the longest %s, %.0f m)" % [worst, worst_len])
-	# 130 号: the hub's stop moved to the loop's lower left (Tram.RING_A), just past the processing line's
-	# switch: that is now the pair that changes ends (the berth's is straight on)
-	check("ring→process" in two and "process→ring" in two and not ("ring→salvage" in two), "the hub's stop and the processing district's: a reversal past a switch; to the berth straight on (%s)" % ", ".join(two))
+	# 道岔缩短 (user 2026-11-10): the turnouts take 16° of the loop, not 46°: no two stops' overlap, so no
+	# ride changes ends (the hub's stop and the processing line's used to)
+	check(two.is_empty(), "no ride changes ends: every one turns in straight (%s)" % ", ".join(two))
 	# every switch the plans name is one that stands on the rails
 	var ids := {}
 	for sw in tr._switches:

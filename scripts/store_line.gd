@@ -224,11 +224,11 @@ func _build() -> void:
 		var br := Rect2(at - Vector2(0.45, 0.32) * M, Vector2(0.9, 0.64) * M)
 		pen.rect(br.grow(0.04 * M), dark)
 		pen.rect(br, Color(0.14, 0.148, 0.16))
-		pen.rect(br, Pal.ink(0.6), false, 0.03 * M)
-		pen.rect(br.grow(-0.08 * M), Pal.ink(0.3), false, 0.02 * M)
+		pen.rect(br, Pal.ink(0.4), false, 0.03 * M)
+		pen.rect(br.grow(-0.08 * M), Pal.ink(0.2), false, 0.02 * M)
 		for cx in [-1.0, 1.0]:
 			for cy in [-1.0, 1.0]:
-				pen.circle(at + Vector2(cx * 0.35, cy * 0.23) * M, 0.03 * M, Pal.ink(0.7), 6)
+				pen.circle(at + Vector2(cx * 0.35, cy * 0.23) * M, 0.03 * M, Pal.ink(0.45), 6)
 		pen.hatch(Rect2(br.position + Vector2(0.12, 0.12) * M, Vector2(0.3, 0.14) * M), Pal.heat(0.6, 1.0), 0.02 * M, 0.06 * M)
 	_body = pen.mesh()
 	# the core the light runs on: UV.x = metres from the terminal
@@ -269,12 +269,13 @@ func _draw() -> void:
 	if _body == null:
 		return
 	draw_mesh(_body, null)
-	# the boxes' lamps: green while the line is up, a blink as each signal passes
+	# the boxes' lamps: a small dim pilot lamp while the line is up (2026-11-10: background, not a console's
+	# lit key — a slow faint breath, no bright green)
 	var M := Geom.M
 	for bi in _boxes:
 		var at: Vector2 = _raw[bi] + Vector2(0.28, 0.0) * M
-		var blink := 0.6 + 0.4 * absf(sin(t * 2.2 + float(bi)))
-		draw_circle(at, 0.065 * M, Pal.tint(Pal.FLUID, 0.9 * blink, 1.3))
+		var blink := 0.85 + 0.15 * absf(sin(t * 1.2 + float(bi)))
+		draw_circle(at, 0.05 * M, Pal.tint(Pal.FLUID, 0.32 * blink, 0.9))
 	var z: float = maxf(get_canvas_transform().get_scale().x, 0.02)
 	# far out the cable is a hair: a line a pixel and a half wide on the screen keeps it readable
 	if M * z < 14.0 and _thin.size() > 1:
@@ -287,7 +288,7 @@ func _draw() -> void:
 	var font := Fonts.get_font("SemiBold")
 	for lb in _labels:
 		draw_set_transform(lb[0], 0.0, Vector2.ONE / z)
-		draw_string(font, Vector2(0, 5), str(lb[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Pal.ink(0.62))
+		draw_string(font, Vector2(0, 5), str(lb[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, preload("res://scripts/console_art.gd").bg(Pal.ink(0.62)))
 	draw_set_transform(Vector2.ZERO)
 
 

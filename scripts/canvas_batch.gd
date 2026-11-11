@@ -16,6 +16,8 @@ const THIN := 1.2
 var node: CanvasItem
 var no_text := false     # a layer of shapes only (its text is drawn on another, less often)
 var no_shapes := false   # a layer of text only
+var circle_segments := 0 # 0: existing 6/12-segment art; 64: smooth native-style circles
+static var _unit_discs := {}
 var _tp := PackedVector2Array()     # triangles
 var _tc := PackedColorArray()
 var _lp := PackedVector2Array()     # hairline segments
@@ -173,17 +175,26 @@ func draw_polygon(pts: PackedVector2Array, cols: PackedColorArray, _uvs: PackedV
 func draw_circle(c: Vector2, r: float, col: Color, filled: bool = true, w: float = -1.0, _aa: bool = false) -> void:
 	if no_shapes:
 		return
-	var n := 12 if r > 4.0 else 6
+	var n := circle_segments if circle_segments > 0 else (12 if r > 4.0 else 6)
 	if not filled:
 		draw_arc(c, r, 0.0, TAU, n + 1, col, w)
 		return
 	_fill_mode(Rect2(c - Vector2(r, r), Vector2(r, r) * 2.0))
-	var prev := c + Vector2(r, 0.0)
-	for i in range(1, n + 1):
-		var p := c + Vector2.from_angle(TAU * i / n) * r
-		_tp.append_array([c, prev, p])
-		_tc.append_array([col, col, col])
-		prev = p
+	if not _unit_discs.has(n):
+		var unit := PackedVector2Array()
+		var prev := Vector2.RIGHT
+		for i in range(1, n + 1):
+			var p := Vector2.from_angle(TAU * i / n)
+			unit.append_array([Vector2.ZERO, prev, p])
+			prev = p
+		_unit_discs[n] = unit
+	# Transform/append in native array operations, not three GDScript appends per
+	# vertex per circle. In a distant 620 m rail there are hundreds of tiny wheels.
+	_tp.append_array(Transform2D(0.0, Vector2(r, r), 0.0, c) * (_unit_discs[n] as PackedVector2Array))
+	var colors := PackedColorArray()
+	colors.resize(n * 3)
+	colors.fill(col)
+	_tc.append_array(colors)
 
 
 # these go straight to the canvas item, in order

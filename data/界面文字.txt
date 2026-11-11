@@ -30295,7 +30295,7 @@
 英：THE FUEL CELLS' TANK IS FULL
 
 [power_supply:cryo_status:3]
-中：库存不足，无法运送燃料。当前液氢库存 %.0f kg（来自拖船站拆下的液氢罐），液氧库存 %.0f kg（来自加工区气体生产线）。
+中：库存不足，无法运送燃料。当前液氢库存 %.0f kg（〔来源：拖船站从废船抽回的低温罐 · 仓库里的液氢罐〕），液氧库存 %.0f kg（〔来源：加工区气体生产线 · 拖船站抽回的液氧〕）。
 英：NO STOCK, NO RUN: %.0f kg LH2 (TANKS FROM THE TUG STATION) · %.0f kg LOX (THE GAS LINE)
 
 [power_supply:cryo_status:4]

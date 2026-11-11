@@ -243,6 +243,56 @@ func _intro(s: Vector2, k: float) -> void:
 # the course card, top left (user 2026-10-26: "左上角这个操作提示放大一点，起码放到一个正常人能看得到的地方"):
 # a solid panel, the step to do now in large type, the one before and after under and over it
 const CARD := Rect2(22, 22, 700, 290)
+# 2026-11-10 (user rewrote the course texts as long sentences, up to ~200 Chinese characters / 400 English
+# letters a step): the step is wrapped (no punctuation at a line start, no lone scrap on the last line,
+# Charcoal.fit_width), the card grows with it, and when the step is still taller than STEP_MAX_H its type
+# steps down 26 -> 22 -> 19 -> 17 -> 15 px (not scrolled, so every word stays on screen). The "THEN:"
+# preview and the finished step above are one line each, cut with an ellipsis. Checked by tests/text_fit.gd
+const STEP_W := 640.0
+const STEP_MAX_H := 210.0
+const HEAD_MAX_H := 80.0
+const SAFE_MAX_H := 300.0
+const STEP_SIZES := [26, 22, 19, 17, 15]
+const HEAD_SIZES := [28, 24, 21, 18]
+static var overview_now := OVERVIEW_RECT     # the button follows the card's bottom edge
+static var _bk := {}
+
+
+# the largest of `sizes` at which `text`, wrapped at `width`, is no taller than `max_h` (the smallest when none is)
+static func block(font: Font, text: String, width: float, max_h: float, sizes: Array) -> Dictionary:
+	var key := "%s|%d|%d|%s|%d" % [text, int(width), int(max_h), str(sizes), font.get_rid().get_id()]
+	if _bk.has(key):
+		return _bk[key]
+	var out := {}
+	for px in sizes:
+		var w := Charcoal.fit_width(font, text, width, px)
+		var h := font.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, w, px).y
+		out = {"px": px, "w": w, "h": h, "asc": font.get_ascent(px), "one": font.get_multiline_string_size("A", HORIZONTAL_ALIGNMENT_LEFT, -1, px).y}
+		if h <= max_h:
+			break
+	if _bk.size() > 1024:
+		_bk.clear()
+	_bk[key] = out
+	return out
+
+
+# one line cut to `w` with an ellipsis
+static func clip(font: Font, s: String, w: float, px: int) -> String:
+	if font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= w:
+		return s
+	var lo := 0
+	var hi := s.length()
+	while lo < hi:
+		var mid := (lo + hi + 1) / 2
+		if font.get_string_size(s.substr(0, mid).strip_edges() + "…", HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= w:
+			lo = mid
+		else:
+			hi = mid - 1
+	return s.substr(0, lo).strip_edges() + "…"
+
+
+func _para(f: Font, s: String, pos: Vector2, blk: Dictionary, col: Color) -> void:
+	c.draw_multiline_string(f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, blk.w, blk.px, -1, col)
 
 
 func _task_list() -> void:
@@ -259,84 +309,146 @@ func _task_list() -> void:
 		return
 	var x := CARD.position.x + 22.0
 	var y := CARD.position.y + 30.0
-	c.draw_rect(CARD, Color(0.03, 0.034, 0.042, 0.95))
-	c.draw_rect(CARD, Pal.ink(0.16), false, 1.0)
-	c.draw_rect(Rect2(CARD.position + Vector2(0, 12), Vector2(4, CARD.size.y - 24)), Pal.heat(0.95, 1.2))
 	var sp: String = tut.special()
-	_text(game.txt("tut_course") if sp == "" else Txt.t("cxu_sp_course") % Txt.t("cxu_cls_" + sp).split(" · ")[-1], Vector2(x, y), 16, Pal.ink(0.62))
 	var ls: Array = tut.lessons()
 	var li: int = mini(tut.lesson_i, ls.size() - 1)
 	var l: Dictionary = ls[li] if li >= 0 else {}
 	var cryo_safety: bool = Txt.zh and str(l.get("id", "")) == "SP_C1"
 	var separator := "｜" if cryo_safety else "  "
 	var head: String = game.txt("tut_lesson") % li + separator + tut.text(l.get("title", "")) if li > 0 else tut.text(l.get("title", ""))
-	_text(head, Vector2(x, y + 36), 28, Pal.ink(0.97), font_b)
+	var hb := block(font_b, head, STEP_W, HEAD_MAX_H, HEAD_SIZES)
+	var dy := maxf(0.0, hb.h - hb.one)             # what a wrapped lesson title pushes everything down
 	var step_id := str(tut.step().get("id", ""))
+	var safety_ids: Array = []
+	var safety_titles: Array = []
 	if not tut.done and cryo_safety and step_id in ["kpa", "valve", "thaw"]:
-		_safety_steps(tut, l, x, y, ["kpa", "valve", "thaw"], ["测量罐内压力", "检查安全阀", "解冻安全阀"], "操作提醒：只加热安全阀，不要关闭冷头。")
-		return
-	if not tut.done and str(l.get("id", "")) == "SP_L1" and step_id in ["bleed", "pins", "pivot"]:
-		_safety_steps(tut, l, x, y, ["bleed", "pins", "pivot"], [_w("泄压", "BLEED"), _w("解除锁销", "REMOVE THE PINS"), _w("拆除枢轴", "REMOVE THE PIVOT")], _w("操作提醒：先泄压，再拔销。锁销没有全部拆除前，不要切割枢轴。", "BLEED FIRST, THEN PULL BOTH PINS BEFORE CUTTING THE PIVOT."))
+		safety_ids = ["kpa", "valve", "thaw"]
+		safety_titles = ["测量罐内压力", "检查安全阀", "解冻安全阀"]
+	elif not tut.done and str(l.get("id", "")) == "SP_L1" and step_id in ["bleed", "pins", "pivot"]:
+		safety_ids = ["bleed", "pins", "pivot"]
+		safety_titles = [_w("泄压", "BLEED"), _w("解除锁销", "REMOVE THE PINS"), _w("拆除枢轴", "REMOVE THE PIVOT")]
+	var steps: Array = l.get("steps", [])
+	var si: int = tut.step_i
+	var lay: Dictionary = {}
+	var bottom := CARD.end.y
+	if not safety_ids.is_empty():
+		var reminder := "操作提醒：只加热安全阀，不要关闭冷头。" if cryo_safety else _w("操作提醒：先泄压，再拔销。锁销没有全部拆除前，不要切割枢轴。", "BLEED FIRST, THEN PULL BOTH PINS BEFORE CUTTING THE PIVOT.")
+		lay = _safety_layout(tut, l, y + dy, safety_ids, reminder)
+		bottom = maxf(bottom, lay.bottom + 22.0)
+	elif tut.done:
+		bottom = maxf(bottom, y + dy + 110.0 + 30.0)
+	elif si < steps.size():
+		var cur: Dictionary = steps[si]
+		var cb := block(font_b, tut.text(cur.text), STEP_W - 18.0, STEP_MAX_H, STEP_SIZES)
+		var tb: float = y + 140.0 + dy + cb.h - cb.asc          # bottom of the step's last line
+		var ny := tb + 32.0
+		if tut.lockstep() and si + 1 < steps.size():
+			bottom = maxf(bottom, ny + 8.0)
+		if tut.hint_level >= 1 and steps[si].has("hint"):
+			var ln: Dictionary = tut.course.get("lines", {}).get(str(steps[si].hint), {})
+			var ht := _w("提示：", "HINT: ") + str(ln.get("zh", "") if Txt.zh else ln.get("en", ln.get("zh", "")))
+			if ht != _w("提示：", "HINT: "):
+				var hint_b := block(font, ht, CARD.size.x - 44.0, 140.0, [16, 14])
+				var hy := (ny if tut.lockstep() and si + 1 < steps.size() else tb) + 34.0
+				lay["hint"] = ht
+				lay["hint_b"] = hint_b
+				lay["hint_y"] = hy
+				bottom = maxf(bottom, hy + hint_b.h - hint_b.asc)
+		lay["cb"] = cb
+		lay["ny"] = ny
+		bottom = maxf(bottom, tb + 22.0)
+	var card := Rect2(CARD.position, Vector2(CARD.size.x, maxf(CARD.size.y, bottom - CARD.position.y)))
+	overview_button.position.y = card.end.y + 14.0
+	overview_now = Rect2(OVERVIEW_RECT.position.x, card.end.y + 14.0, OVERVIEW_RECT.size.x, OVERVIEW_RECT.size.y)
+	c.draw_rect(card, Color(0.03, 0.034, 0.042, 0.95))
+	c.draw_rect(card, Pal.ink(0.16), false, 1.0)
+	c.draw_rect(Rect2(card.position + Vector2(0, 12), Vector2(4, card.size.y - 24)), Pal.heat(0.95, 1.2))
+	_text(game.txt("tut_course") if sp == "" else Txt.t("cxu_sp_course") % Txt.t("cxu_cls_" + sp).split(" · ")[-1], Vector2(x, y), 16, Pal.ink(0.62))
+	_para(font_b, head, Vector2(x, y + 36), hb, Pal.ink(0.97))
+	var q_pos := Vector2(x, overview_now.end.y + 28)
+	if not safety_ids.is_empty():
+		_safety_steps(tut, l, x, safety_ids, safety_titles, lay)
+		if tut.hint_level >= 1:
+			_text(game.txt("tut_q"), q_pos, 16, Pal.ink(0.55 + 0.25 * sin(t * 3.0)))
 		return
 	# lessons as a row of marks
 	for i in range(1, ls.size()):
 		var mx := x + (i - 1) * 26.0
-		var my := y + 52.0
+		var my := y + dy + 52.0
 		var col := Pal.ink(0.9) if i < tut.lesson_i else (Pal.heat(1.0, 1.2) if i == tut.lesson_i else Pal.ink(0.25))
 		c.draw_rect(Rect2(mx, my, 18, 4), col)
 	if tut.done:
-		_text(game.txt("tut_done"), Vector2(x, y + 110), 22, Pal.ink(0.9))
+		_text(game.txt("tut_done"), Vector2(x, y + dy + 110), 22, Pal.ink(0.9))
 		return
 	var mode: String = game.txt("tut_lockstep") if tut.lockstep() else game.txt("tut_goal")
-	_text(mode, Vector2(x + (ls.size() - 1) * 26.0 + 8.0, y + 58), 14, Pal.ink(0.5))
-	var steps: Array = l.get("steps", [])
-	var si: int = tut.step_i
-	var ry := y + 140.0 + row_shift * 34.0
-	# the step just done, ticked and fading; the current one, large; the next one
+	_text(mode, Vector2(x + (ls.size() - 1) * 26.0 + 8.0, y + dy + 58), 14, Pal.ink(0.5))
+	var ry := y + dy + 140.0 + row_shift * 34.0
+	# the step just done, ticked and fading (one line); the current one, large and wrapped; the next one (one line)
 	if si > 0 and tut.lockstep():
 		var prev: Dictionary = steps[si - 1]
 		var a := 0.45 * clampf(1.0 - (tick_t - 0.6) / 0.5, 0.4, 1.0)
 		_tick(Vector2(x + 6, ry - 46), clampf(tick_t / 0.25, 0.0, 1.0), a + 0.3)
-		_text(tut.text(prev.text), Vector2(x + 26, ry - 36), 17, Pal.ink(a))
+		_text(clip(font, tut.text(prev.text), STEP_W - 26.0, 17), Vector2(x + 26, ry - 36), 17, Pal.ink(a))
 	if si < steps.size():
 		var cur: Dictionary = steps[si]
 		var pop := Pal.back(clampf((1.0 - row_shift) * 1.2, 0.0, 1.0), 1.8)
-		c.draw_rect(Rect2(x, ry - 24, 5, 32), Pal.heat(1.0, 1.0))
-		_text(tut.text(cur.text), Vector2(x + 18 + (1.0 - pop) * 10.0, ry), 26, Pal.ink(0.98 * pop + 0.02), font_b)
+		var cb: Dictionary = lay.cb
+		c.draw_rect(Rect2(x, ry - 24, 5, maxf(32.0, cb.h - cb.asc + 24.0)), Pal.heat(1.0, 1.0))
+		_para(font_b, tut.text(cur.text), Vector2(x + 18 + (1.0 - pop) * 10.0, ry), cb, Pal.ink(0.98 * pop + 0.02))
 		if tut.lockstep() and si + 1 < steps.size():
-			_text(game.txt("tut_next_prefix") + tut.text(steps[si + 1].text), Vector2(x + 18, ry + 38), 17, Pal.ink(0.45))
+			var nt: String = game.txt("tut_next_prefix") + tut.text(steps[si + 1].text)
+			_text(clip(font, nt, STEP_W - 18.0, 17), Vector2(x + 18, lay.ny + (ry - (y + dy + 140.0))), 17, Pal.ink(0.45))
 	# stuck: the step's hint on the card (it used to be Liang's line on the radio, which is off now)
-	if tut.hint_level >= 1 and si < steps.size() and steps[si].has("hint"):
-		var ln: Dictionary = tut.course.get("lines", {}).get(str(steps[si].hint), {})
-		var ht := str(ln.get("zh", "") if Txt.zh else ln.get("en", ln.get("zh", "")))
-		if ht != "":
-			c.draw_string(font, Vector2(x, ry + 76), _w("提示：", "HINT: ") + ht, HORIZONTAL_ALIGNMENT_LEFT, CARD.size.x - 44.0, 16, Pal.heat(0.95, 1.3))
+	if lay.has("hint"):
+		var hb2: Dictionary = lay.hint_b
+		c.draw_multiline_string(font, Vector2(x, lay.hint_y), lay.hint, HORIZONTAL_ALIGNMENT_LEFT, hb2.w, hb2.px, -1, Pal.heat(0.95, 1.3))
 	if tut.hint_level >= 1:
-		_text(game.txt("tut_q"), Vector2(x, OVERVIEW_RECT.end.y + 28), 16, Pal.ink(0.55 + 0.25 * sin(t * 3.0)))
+		_text(game.txt("tut_q"), q_pos, 16, Pal.ink(0.55 + 0.25 * sin(t * 3.0)))
+
+
+# the stacked safety rows: every row wrapped in full, the type size stepping down (17 -> 14) until they fit
+func _safety_layout(tut: Tutorial, lesson: Dictionary, y: float, ids: Array, reminder: String) -> Dictionary:
+	var rows: Array = []
+	for id in ids:
+		for st in lesson.get("steps", []):
+			if str(st.get("id", "")) == id:
+				rows.append(tut.text(st.text))
+				break
+	var current := ids.find(str(tut.step().get("id", "")))
+	var chosen := {}
+	for px in [17, 16, 15, 14]:
+		var bl: Array = []
+		var total := 0.0
+		for i in rows.size():
+			var b := block(font_b if i == current else font, rows[i], STEP_W - 20.0, 9999.0, [px])
+			bl.append(b)
+			total += b.h + 10.0
+		chosen = {"blocks": bl, "total": total}
+		if total <= SAFE_MAX_H:
+			break
+	var yy := y + 111.0
+	var ys: Array = []
+	for b in chosen.blocks:
+		ys.append(yy)
+		yy += b.h + 10.0
+	var rb := block(font, reminder, STEP_W, 120.0, [15])
+	return {"rows": rows, "blocks": chosen.blocks, "ys": ys, "title_y": y + 75.0, "rem": reminder, "rem_b": rb,
+		"rem_y": yy + 8.0, "bottom": yy + 8.0 + rb.h - rb.asc}
 
 
 # Keep related safety operations together, using the actual tutorial step for progress.
-func _safety_steps(tut: Tutorial, lesson: Dictionary, x: float, y: float, ids: Array, titles: Array, reminder: String) -> void:
+func _safety_steps(tut: Tutorial, _lesson: Dictionary, x: float, ids: Array, titles: Array, lay: Dictionary) -> void:
 	var current := ids.find(str(tut.step().get("id", "")))
-	_text(_w("当前步骤：", "CURRENT STEP: ") + str(titles[current]), Vector2(x, y + 75), 18, Pal.heat(0.95, 1.1), font_b)
-	var steps: Array = lesson.get("steps", [])
-	for i in ids.size():
-		var row: Dictionary = {}
-		for st in steps:
-			if str(st.get("id", "")) == ids[i]:
-				row = st
-				break
-		if row.is_empty():
-			continue
-		var yy := y + 111.0 + i * 31.0
+	_text(_w("当前步骤：", "CURRENT STEP: ") + str(titles[current]), Vector2(x, lay.title_y), 18, Pal.heat(0.95, 1.1), font_b)
+	for i in lay.rows.size():
+		var yy: float = lay.ys[i]
+		var b: Dictionary = lay.blocks[i]
 		if i < current:
 			_tick(Vector2(x + 2.0, yy - 12.0), 1.0, 0.85)
 		elif i == current:
-			c.draw_rect(Rect2(x, yy - 18.0, 4.0, 23.0), Pal.heat(1.0, 1.0))
-		_text(tut.text(row.text), Vector2(x + 20.0, yy), 17, Pal.ink(0.98 if i == current else 0.72), font_b if i == current else font)
-	_text(reminder, Vector2(x, y + 223.0), 15, Pal.heat(0.9, 1.15), font)
-	if tut.hint_level >= 1:
-		_text(game.txt("tut_q"), Vector2(x, OVERVIEW_RECT.end.y + 28), 16, Pal.ink(0.55 + 0.25 * sin(t * 3.0)))
+			c.draw_rect(Rect2(x, yy - b.asc, 4.0, b.h), Pal.heat(1.0, 1.0))
+		_para(font_b if i == current else font, lay.rows[i], Vector2(x + 20.0, yy), b, Pal.ink(0.98 if i == current else 0.72))
+	_para(font, lay.rem, Vector2(x, lay.rem_y), lay.rem_b, Pal.heat(0.9, 1.15))
 
 
 func _tick(p: Vector2, k: float, a: float) -> void:

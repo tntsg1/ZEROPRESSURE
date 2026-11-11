@@ -63,10 +63,14 @@ func _ready() -> void:
 	card = PanelContainer.new()
 	card.position = Vector2(22, 22)
 	card.custom_minimum_size = Vector2(640, 0)
-	card.add_theme_stylebox_override("panel", GuideMark.card_box(Pal.tint(Pal.AIR, 1.0, 1.3)))
+	# 2026-11-11 炭黑 v2: a charcoal card with the orange edge on top (the other guides' orange, not ice blue)
+	var cb := Charcoal.side_box(18.0)
+	cb.border_width_top = 3
+	cb.border_color = Charcoal.ACCENT
+	card.add_theme_stylebox_override("panel", cb)
 	var col := VBoxContainer.new()
 	card.add_child(col)
-	count = _label(13, Pal.tint(Pal.AIR, 0.85, 1.3))
+	count = _label(13, Charcoal.ACCENT)
 	title = _label(20, Pal.ink(0.96))
 	body = _label(15, Pal.ink(0.7))
 	for n in [count, title, body]:
@@ -297,7 +301,7 @@ func _draw() -> void:
 	var at := _target()
 	var k := 0.6 + 0.4 * sin(t * 5.0)
 	var big := 1.6 if step_t >= STUCK_2 else 1.0
-	GuideMark.target(self, at, z, Pal.tint(Pal.AIR, 1.0, 1.4), t, "", 26.0, big)
+	GuideMark.target(self, at, z, UiSkin.ACCENT, t, "", 26.0, big)
 	if STEPS[step] == "cut":
 		var m = _piece("MAST")
 		if m != null and m.body != null:
@@ -308,7 +312,7 @@ func _draw() -> void:
 	# an arrow from the drone when the target is far
 	var d = game.drone
 	if d != null:
-		GuideMark.arrow(self, game.look.lamp_pos() if game.look != null else d.global_position, at, z, Pal.tint(Pal.AIR, 1.0, 1.4), t)
+		GuideMark.arrow(self, game.look.lamp_pos() if game.look != null else d.global_position, at, z, UiSkin.ACCENT, t)
 	# 131 号: off the screen, the arrow on its edge with the metres left (scripts/guide_way.gd)
 	if way == null:
 		way = GuideWay.new()
@@ -316,4 +320,4 @@ func _draw() -> void:
 	var wdt := clampf(t - _way_t, 0.0, 0.1)
 	_way_t = t
 	way.update(game, d.global_position if d != null else Vector2.INF, at, wdt)
-	way.draw_edge(self, w("目标", "TARGET"), Pal.tint(Pal.AIR, 1.0, 1.4), card.get_global_rect() if card != null and card.visible else Rect2())
+	way.draw_edge(self, w("目标", "TARGET"), UiSkin.ACCENT, card.get_global_rect() if card != null and card.visible else Rect2())

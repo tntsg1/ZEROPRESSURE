@@ -292,8 +292,12 @@ static func draw(ci: CanvasItem, a, t: float, lod: int) -> void:
 	var lamp := PROBE + Vector2(0.75, 0.15)
 	ci.draw_circle(P.call(lamp), 0.2 * m, Color(1.0, 0.25, 0.2, 0.9 if fmod(t, 0.5) < 0.3 else 0.35) if bad else (Pal.tint(Pal.FLUID, 0.9, 1.3) if st == "feed" and arm > 0.5 else Pal.ink(0.2)))
 	ci.draw_line(P.call(PROBE + Vector2(0.0, -0.4)), P.call(Vector2(PROBE.x, 16.25)), Pal.ink(0.3), maxf(1.0, 0.06 * m))
+	# 2026-11-10 (user: what nobody can use must read as background): the probe's gauge window — dark glass
+	# in a dull housing, its words small and dim (console_art.gd bg), not a teal console screen
+	var CA = preload("res://scripts/console_art.gd")
 	var scr := Rect2(PROBE + Vector2(-0.55, -2.25), Vector2(2.2, 1.35))
-	_box(ci, P, m, scr, Color(0.04, 0.12, 0.13), lw)
+	ci.draw_rect(Rect2(P.call(scr.position), scr.size * m), CA.BG_GLASS)
+	ci.draw_rect(Rect2(P.call(scr.position), scr.size * m), Pal.ink(0.22), false, lw)
 	var line1 := w("压力探头", "PRESSURE PROBE")
 	var line2 := w("待料", "IDLE")
 	if bad:
@@ -304,9 +308,9 @@ static func draw(ci: CanvasItem, a, t: float, lod: int) -> void:
 	elif st in ["close", "press", "tie", "eject"]:
 		line2 = w("压制中", "PRESSING") if st == "press" else w("放行", "CLEAR")
 	if bad:
-		ci.draw_rect(Rect2(P.call(scr.position), scr.size * m), Color(0.6, 0.08, 0.05, 0.35 + 0.2 * sin(t * 9.0)))
-	a._text(ci, scr.position + Vector2(0.12, 0.52), line1, 0.3, Color(1.0, 0.45, 0.4) if bad else Pal.tint(Pal.AIR, 0.85, 1.3))
-	a._text(ci, scr.position + Vector2(0.12, 1.1), line2, 0.28, Color(1.0, 0.6, 0.55) if bad else Pal.tint(Pal.AIR, 0.7, 1.2))
+		ci.draw_rect(Rect2(P.call(scr.position), scr.size * m), Color(0.6, 0.08, 0.05, 0.14 + 0.06 * sin(t * 9.0)))
+	a._text(ci, scr.position + Vector2(0.12, 0.5), line1, 0.22, CA.bg(Color(1.0, 0.45, 0.4) if bad else Pal.tint(Pal.AIR, 0.85, 1.3)))
+	a._text(ci, scr.position + Vector2(0.12, 0.98), line2, 0.2, CA.bg(Color(1.0, 0.6, 0.55) if bad else Pal.tint(Pal.AIR, 0.7, 1.2)))
 	# ---- the roller table and the hatch to the warehouse's line
 	ci.draw_rect(Rect2(P.call(Vector2(ROLL.x, ROLL_Y)), Vector2(ROLL.y - ROLL.x, 0.25) * m), Color(0.08, 0.083, 0.094))
 	var rx := ROLL.x + 0.2

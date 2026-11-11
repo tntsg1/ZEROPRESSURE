@@ -18,7 +18,7 @@ const PAD := 40.0
 const HEAD_H := 132.0
 const DETAIL_W := 450.0
 const INBOX_W := 300.0
-const FILTER_H := 46.0
+const FILTER_H := 58.0
 const WHEEL := 90.0
 const DIM_A := 0.25                   # what the filter leaves out is drawn at this strength
 const TRADE_K := 0.95                 # 128 号 §四: the exchange, market less its 5 %
@@ -50,6 +50,7 @@ var _t := 0.0
 var font: Font
 var font_b: Font
 var font_s: Font
+var font_l: Font
 var _sig := ""
 var _items_by_id := {}
 var _totals_cache := {}
@@ -84,6 +85,7 @@ class Layer extends Control:
 			page._draw_grid_fx(self)
 		else:
 			page._draw_drag(self)
+			page._draw_p_mode(self)
 
 
 func w(zh: String, en: String) -> String:
@@ -98,6 +100,7 @@ func _ready() -> void:
 	font = Fonts.get_font("Regular")
 	font_b = Fonts.get_font("Medium")
 	font_s = Fonts.get_font("SemiBold")
+	font_l = Fonts.get_font("Light")
 	grid_view = Layer.new()
 	grid_view.page = self
 	grid_view.what = "grid"
@@ -138,6 +141,8 @@ func select(id: String) -> void:
 	sel = id
 	var selected := _item(id)
 	var key := str(selected.get("key", "")) if str(selected.get("cat", "")) == "raw" and not selected.get("inbox", false) else ""
+	if key == "" and stack_of(id).size() >= 2:
+		key = str(_stack_key_of.get(id, ""))
 	if key != quantity_key:
 		quantity_key = key
 		quantity = 1
@@ -191,6 +196,7 @@ func build() -> void:
 		_items_by_id[str(it.id)] = it
 	for bundles in _raw_bundles.values():
 		bundles.reverse()
+	_build_stacks()
 	_totals_cache = {"recycle": rec, "market": market, "used": used}
 	_sig = _signature()
 	if sel != "" and _item(sel).is_empty():
@@ -211,6 +217,8 @@ func filters() -> Array:
 
 
 func _matches(it: Dictionary) -> bool:
+	if _p_mode:
+		return ProcessLine.pressable(it).ok
 	return kind == "all" or str(it.get("cat", "")) == kind
 
 
@@ -449,11 +457,21 @@ func _can_admit(it: Dictionary) -> bool:
 
 func _quantity_available() -> bool:
 	var it := _item(sel)
-	return _multi.is_empty() and str(it.get("cat", "")) == "raw" and str(it.get("id", "")).begins_with("r:") and not it.get("inbox", false)
+	if not _multi.is_empty() or it.get("inbox", false):
+		return false
+	if str(it.get("cat", "")) == "raw" and str(it.get("id", "")).begins_with("r:"):
+		return true
+	return stack_of(sel).size() >= 2
+
+
+func _qty_raw() -> bool:
+	return str(sel).begins_with("r:")
 
 
 # Take the highest numbered bundles first so removing one cannot renumber another selected bundle.
 func _quantity_units() -> Array:
+	if not _qty_raw():
+		return stack_of(sel)
 	return _raw_bundles.get(str(_item(sel).get("key", "")), [])
 
 
@@ -462,6 +480,16 @@ func _quantity_chosen() -> Array:
 	var count := clampi(quantity, 0, units.size())
 	if count == 0:
 		return []
+	if not _qty_raw():
+		# a stack: the picked one, then the cheapest of the rest
+		var rest := units.filter(func(u): return str(u.id) != sel)
+		rest.sort_custom(func(a, b): return float(a.get("market", 0.0)) < float(b.get("market", 0.0)))
+		var out: Array = [_item(sel)]
+		for u in rest:
+			if out.size() >= count:
+				break
+			out.append(u)
+		return out
 	# The clicked bundle is always included; fill the rest from the end, then
 	# keep descending order when removing them so the indices remain stable.
 	var selected := _item(sel)
@@ -490,6 +518,16 @@ func sell_quantity(to_trade: bool) -> void:
 	var chosen := _quantity_chosen()
 	if chosen.is_empty():
 		_say(w("先用滑条选择要卖的数量", "CHOOSE A QUANTITY FIRST"), true)
+		return
+	if not _qty_raw():
+		_multi = {}
+		for u in chosen:
+			_multi[str(u.id)] = true
+		if to_trade:
+			list_multi()
+		else:
+			sell_multi()
+		quantity = 1
 		return
 	if to_trade and not trade_open():
 		_say(StoreBook.exchange_shut_text(), true)
@@ -883,7 +921,7 @@ func _layout() -> void:
 	var fx := PAD
 	for f in filters():
 		var lbl := "%s  %d" % [StoreBook.cat_name(f), count(f)]
-		var wd := font_b.get_string_size(lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 34.0
+		var wd := font_b.get_string_size(lbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 96.0   # 炭黑 v2: room for the key number and the count window
 		_btns["f:" + f] = Rect2(fx, _top(), wd, FILTER_H - 6.0)
 		fx += wd + 8.0
 	_btns["tidy"] = Rect2(gr.end.x - 130.0, _top(), 130.0, FILTER_H - 6.0)
@@ -909,7 +947,9 @@ func _layout() -> void:
 	_btns["trade"] = Rect2(bx, dr.end.y - 116.0, bw if not _multi.is_empty() else (bw - 12.0) * 0.5, 50.0)
 	if _multi.is_empty():
 		_btns["order"] = Rect2(bx + (bw + 12.0) * 0.5, dr.end.y - 116.0, (bw - 12.0) * 0.5, 50.0)
-	_btns["close"] = Rect2(size.x - PAD - 150.0, 40.0, 150.0, 44.0)
+	# as wide as the trail's words (2026-11-10: "返回 XX [Esc]" runs long)
+	var ccw := maxf(150.0, font_b.get_string_size(Back.close_text(true), HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 36.0)
+	_btns["close"] = Rect2(size.x - PAD - ccw, 40.0, ccw, 44.0)
 	if _queue_link_t > 0.0:
 		_btns["queue_link"] = Rect2(gr.end.x - 200.0, size.y - 46.0, 200.0, 36.0)
 
@@ -984,11 +1024,26 @@ func _process(dt: float) -> void:
 				_menu.hover = i
 	if _marq_on:
 		_marq_to = m
+	# 按住 P: held past P_HOLD_S the bale mode comes up; a sweep with the button down adds what it crosses
+	if _p_down and not _p_mode and _t - _p_t0 >= P_HOLD_S:
+		_enter_p_mode()
+	if _p_mode and _p_drag:
+		var pu := _unit_at(m)
+		if pu != "" and not _p_seen.has(pu):
+			_p_seen[pu] = true
+			_p_add(pu)
+	_edge_scroll(dt, m)
 	_ease_hover(dt)
+	if _press_id != "" and drag_id == "" and not _long_done and _t - _press_t >= LONG_S and m.distance_to(_press_at) <= 8.0:
+		_long_press(_press_id)
 	if _press_id != "" and drag_id == "" and m.distance_to(_press_at) > 8.0:
 		_start_drag(_press_id, _press_at)
 	queue_redraw()
-	var gsig := "%.2f|%s|%s|%s|%s|%s|%d|%s|%s" % [scroll, _sig, kind, str(_live_ids()), str(_multi.keys()), drag_id, lay.hash(), BenchFx.on(), grid_view.size]
+	_qty_mark = {}
+	if _quantity_available() and quantity > 1:
+		for u in _quantity_chosen():
+			_qty_mark[str(u.id)] = true
+	var gsig := "%.2f|%s|%s|%s|%s|%s|%d|%s|%s|%s|%s|%s" % [scroll, _sig, kind, str(_live_ids()), str(_multi.keys()), drag_id, lay.hash(), BenchFx.on(), grid_view.size, _p_mode, str(_bale_marks.keys()), str(_qty_mark.keys())]
 	if gsig != _grid_sig:
 		_grid_sig = gsig
 		grid_view.queue_redraw()
@@ -1003,6 +1058,9 @@ func _start_drag(id: String, at: Vector2) -> void:
 	if (it.get("inbox", false) and str(it.cat) in ["raw", "part"]) or it.get("steel", false):
 		return
 	drag_id = id
+	_drag_group = []
+	if id == sel and _quantity_available() and quantity > 1:
+		_drag_group = _quantity_chosen().map(func(u): return str(u.id))
 	# picking a thing up selects it, but its prices do not roll again (only a new pick does)
 	if sel != id:
 		sel = id
@@ -1057,6 +1115,8 @@ func _drop(page_pos: Vector2) -> void:
 		elif StoreBook.move(id, at.x, at.y, drag_rot):
 			if game != null and game.get("sfx") != null:
 				game.sfx.play("clamp")
+			if _drag_group.size() > 1:
+				_split_rest(id, at)
 		build()
 		# 落位：from where it was let go into its cells
 		if BenchFx.on() and lay.has(landed):
@@ -1116,6 +1176,23 @@ func _gui_input(ev: InputEvent) -> void:
 				_menu = {}
 		elif ev.button_index == MOUSE_BUTTON_LEFT:
 			_layout()
+			# 按住 P 点选压块: a click picks (or drops) a thing for the press, never moves it
+			if ev.pressed and _p_down and _grid_rect().has_point(ev.position):
+				_enter_p_mode()
+				var pu := _unit_at(ev.position)
+				_p_drag = true
+				_drag_at = ev.position
+				_p_seen = {}
+				if pu != "":
+					_p_seen[pu] = true
+					_p_click(pu)
+				accept_event()
+				return
+			if not ev.pressed and _p_drag:
+				_p_drag = false
+				_p_seen = {}
+				accept_event()
+				return
 			if not ev.pressed:
 				if quantity_drag:
 					_set_quantity(ev.position.x)
@@ -1125,7 +1202,7 @@ func _gui_input(ev: InputEvent) -> void:
 				if _marq_on:
 					_marq_on = false
 					_marq_to = ev.position
-					if _marq_from.distance_to(_marq_to) > 3.0:
+					if _marq_from.distance_to(_to_content(_marq_to)) > 3.0:
 						_box_pick()
 					elif _ctrl_press != "":
 						_toggle_multi(_ctrl_press)
@@ -1152,7 +1229,8 @@ func _gui_input(ev: InputEvent) -> void:
 			# Ctrl: a box from here (or, if the pointer does not move, the thing under it in or out)
 			if (ev.ctrl_pressed or ev.meta_pressed or _test_ctrl) and not _guide_on() and _grid_rect().has_point(ev.position):
 				_marq_on = true
-				_marq_from = ev.position
+				_drag_at = ev.position
+				_marq_from = _to_content(ev.position)
 				_marq_to = ev.position
 				_ctrl_press = _unit_at(ev.position)
 				_vel = 0.0
@@ -1185,6 +1263,8 @@ func _gui_input(ev: InputEvent) -> void:
 				select(u)
 				_press_id = u
 				_press_at = ev.position
+				_press_t = _t
+				_long_done = false
 		accept_event()
 
 
@@ -1240,6 +1320,13 @@ func _press(b: String) -> void:
 
 
 func _unhandled_input(ev: InputEvent) -> void:
+	if ev is InputEventKey and ev.physical_keycode == KEY_P and not ev.echo:
+		if ev.pressed:
+			_p_press()
+		else:
+			_p_release()
+		get_viewport().set_input_as_handled()
+		return
 	if not (ev is InputEventKey and ev.pressed and not ev.echo):
 		return
 	var vis := shown()
@@ -1249,8 +1336,10 @@ func _unhandled_input(ev: InputEvent) -> void:
 			i = k
 	match ev.physical_keycode:
 		KEY_ESCAPE, KEY_F3:
-			# Esc steps back: the menu, then the Ctrl selection, then a drag, then the page
-			if not _menu.is_empty():
+			# Esc steps back: the P mode's picks, the menu, then the Ctrl selection, then a drag, then the page
+			if _p_mode or _p_down:
+				_p_cancel()
+			elif not _menu.is_empty():
 				_menu = {}
 			elif not _multi.is_empty() or _marq_on:
 				_multi = {}
@@ -1265,8 +1354,6 @@ func _unhandled_input(ev: InputEvent) -> void:
 			_press("sell")
 		KEY_K:
 			keep_sel()
-		KEY_P:
-			work_sel()
 		KEY_R:
 			turn()
 		KEY_T:
@@ -1279,9 +1366,13 @@ func _unhandled_input(ev: InputEvent) -> void:
 			var fl := filters()
 			open_kind(fl[(fl.find(kind) + 1) % fl.size()])
 		KEY_RIGHT, KEY_D, KEY_DOWN, KEY_S:
-			if not vis.is_empty(): select(str(vis[mini(i + 1, vis.size() - 1)].id))
+			if ev.shift_pressed and _quantity_available():
+				_bump_quantity(1)
+			elif not vis.is_empty(): select(str(vis[mini(i + 1, vis.size() - 1)].id))
 		KEY_LEFT, KEY_A, KEY_UP, KEY_W:
-			if not vis.is_empty(): select(str(vis[maxi(i - 1, 0)].id))
+			if ev.shift_pressed and _quantity_available():
+				_bump_quantity(-1)
+			elif not vis.is_empty(): select(str(vis[maxi(i - 1, 0)].id))
 		_:
 			return
 	get_viewport().set_input_as_handled()
@@ -1299,14 +1390,15 @@ func _lit(on: bool) -> float:
 
 func _draw() -> void:
 	_layout()
-	draw_rect(Rect2(Vector2.ZERO, size), BG)
+	# 2026-11-10 炭黑: near-black ground, the racks a faint picture behind; matte panes; the grid in a
+	# recessed black window; dark keys that press in, the one main key orange
+	Charcoal.ground(self, size)
 	# the store's racks behind it all, blurred, moving a little against the pointer
 	_draw_bg()
 	_draw_head()
 	_draw_filters()
 	var gr := _grid_rect()
-	_glass(self, gr.grow(6.0))
-	draw_rect(gr.grow(1.0), Pal.ink(0.16), false, 1.0)
+	Charcoal.display(self, gr.grow(6.0), 1.0, 8)
 	_glass(self, _detail_rect())
 	if _inbox_on():
 		_glass(self, _inbox_rect())
@@ -1323,26 +1415,29 @@ func _draw_head() -> void:
 	var cap := StoreBook.cap()
 	var summary := w("仓库总值 %s（回收价）/ %s（市价） · 已用 %d/%d 格", "STORES WORTH %s (RECYCLING) / %s (MARKET) · %d/%d CELLS USED") % [Pal.money(float(s.get("recycle", 0.0))), Pal.money(float(s.get("market", 0.0))), int(s.get("used", 0)), cap]
 	_text(summary, Vector2(PAD + 16, 104), 18, Pal.ink(0.9), font_b)
-	var sx := PAD + 560.0
+	# after the summary, however long it runs (the English one ran under the gauge)
+	var sx := maxf(PAD + 560.0, PAD + 16.0 + font_b.get_string_size(summary, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x + 24.0)
 	var sw := 260.0
 	var k := clampf(float(s.get("used", 0)) / maxf(1.0, float(cap)), 0.0, 1.0)
 	draw_rect(Rect2(sx, 96, sw, 6), Color(1, 1, 1, 0.07))
 	draw_rect(Rect2(sx, 96, sw * k, 6), Pal.ink(0.6) if k < 0.9 else Pal.heat(1.0, 1.1))
-	_text(w("资金", "CASH"), Vector2(size.x - PAD - 180.0 - 220.0, 58), 13, Pal.ink(0.5), font_b, 200.0, HORIZONTAL_ALIGNMENT_RIGHT)
-	_text(Pal.money(float(Career.data.get("money", 0.0))), Vector2(size.x - PAD - 180.0 - 220.0, 88), 24, Pal.ink(0.95), font_s, 200.0, HORIZONTAL_ALIGNMENT_RIGHT)
+	Charcoal.display(self, Rect2(Rect2(_btns.get("close", Rect2(size.x - PAD - 150.0, 0, 0, 0))).position.x - 248.0, 36.0, 236.0, 66.0))
+	_text(w("资金", "CASH"), Vector2(Rect2(_btns.get("close", Rect2(size.x - PAD - 150.0, 0, 0, 0))).position.x - 230.0, 58), 13, Pal.ink(0.5), font_b, 200.0, HORIZONTAL_ALIGNMENT_RIGHT)
+	_text(Pal.money(float(Career.data.get("money", 0.0))), Vector2(Rect2(_btns.get("close", Rect2(size.x - PAD - 150.0, 0, 0, 0))).position.x - 230.0, 88), 24, Pal.ink(0.95), font_s, 200.0, HORIZONTAL_ALIGNMENT_RIGHT)
 	var cr2: Rect2 = _btns.get("close", Rect2())
 	var hc := hover_btn == "close"
-	draw_rect(cr2, Color(1, 1, 1, 0.08 if hc else 0.035))
-	draw_rect(cr2, Pal.ink(0.5 if hc else 0.25), false, 1.0)
-	_text(Back.close_text(true), cr2.position + Vector2(0, 29), 15, Pal.ink(0.9), font_b, cr2.size.x, HORIZONTAL_ALIGNMENT_CENTER)
-	draw_line(Vector2(PAD, HEAD_H), Vector2(size.x - PAD, HEAD_H), Pal.ink(0.12), 1.0)
+	_ckey(cr2, hc)
+	var ck := Charcoal.split_key(Back.close_text(true))
+	var ckw := font_s.get_string_size(str(ck[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 16.0
+	Charcoal.keycap(self, font_s, Rect2(cr2.end.x - ckw - 10.0, cr2.get_center().y - 12.0, ckw, 24.0), str(ck[1]))
+	_text(str(ck[0]), cr2.position + Vector2(0, 28), 15, Pal.ink(0.92), font_b, cr2.size.x - ckw - 14.0, HORIZONTAL_ALIGNMENT_CENTER)
+	Charcoal.groove(self, PAD, size.x - PAD, HEAD_H)
 	var line := _line()
 	if line != "":
 		var lr := Rect2(PAD, HEAD_H + 12.0, size.x - PAD * 2.0, 44.0)
-		var kk := 0.85 + 0.15 * sin(_t * 3.0)
-		draw_rect(lr, Color(UiSkin.ACCENT, 0.1 * kk))
-		draw_rect(Rect2(lr.position, Vector2(4, lr.size.y)), UiSkin.ACCENT)
-		_text(line, lr.position + Vector2(20, 29), 17, Pal.ink(0.97), font_s, lr.size.x - 30.0)
+		Charcoal.slab(self, lr, Color(Charcoal.SCREEN, 0.95), 8)
+		Charcoal.led(self, lr.position + Vector2(20, lr.size.y * 0.5), true, 1.0, 4.5)
+		_text(line, lr.position + Vector2(36, 29), 17, Pal.ink(0.97), font_s, lr.size.x - 46.0)
 
 
 func _draw_filters() -> void:
@@ -1350,13 +1445,19 @@ func _draw_filters() -> void:
 		var r: Rect2 = _btns["f:" + f]
 		var on: bool = kind == f
 		var hov: bool = hover_btn == "f:" + f
-		draw_rect(r, Color(1, 1, 1, 0.08 if on else (0.04 if hov else 0.015)))
-		draw_rect(r, Color(UiSkin.ACCENT, 0.9) if on else Pal.ink(0.2), false, 1.2 if on else 1.0)
-		_text("%s  %d" % [StoreBook.cat_name(f), count(f)], r.position + Vector2(17, 26), 16, Pal.ink(0.97 if on else 0.6), font_s if on else font_b)
+		var fr := Charcoal.key(self, r, 1.0, 1.0 if on else 0.0, Charcoal.FACE_HI if hov else Charcoal.FACE, 10)
+		if on:
+			Charcoal.lip(self, Rect2(fr.position.x + 12.0, fr.end.y - 6.0, fr.size.x - 24.0, 4.0))
+		var fi := filters().find(f)
+		_text("%d" % (fi + 1), fr.position + Vector2(12, 34), 22, Charcoal.ACCENT if on else Pal.ink(0.45), font_l)
+		var nr := Rect2(fr.end.x - 40.0, fr.position.y + 12.0, 30.0, 26.0)
+		Charcoal.display(self, nr, 1.0, 5)
+		_text("%d" % count(f), nr.position + Vector2(0, 19), 14, Pal.ink(0.95), font_s, nr.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+		_text(StoreBook.cat_name(f), fr.position + Vector2(34, 33), 16, Pal.ink(0.97 if on else 0.7), font_s, fr.size.x - 82.0)
 	var tb: Rect2 = _btns["tidy"]
-	draw_rect(tb, Color(1, 1, 1, 0.07 if hover_btn == "tidy" else 0.03))
-	draw_rect(tb, Pal.ink(0.35), false, 1.0)
-	_text(w("一键整理  [T]", "TIDY  [T]"), tb.position + Vector2(0, 26), 15, Pal.ink(0.85), font_b, tb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	_ckey(tb, hover_btn == "tidy")
+	Charcoal.keycap(self, font_s, Rect2(tb.end.x - 38.0, tb.get_center().y - 12.0, 28.0, 24.0), "T")
+	_text(w("一键整理", "TIDY"), tb.position + Vector2(0, 28), 15, Pal.ink(0.9), font_b, tb.size.x - 36.0, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 func _draw_scrollbar() -> void:
@@ -1375,30 +1476,27 @@ func _draw_grid(ci: CanvasItem) -> void:
 	var gs: Vector2 = grid_view.size
 	# the floor: a dark plate lit a little from the top, each cell a shallow bay with a lit lip and a
 	# darker foot, tick marks where four cells meet, a brighter rule every fourth row
-	ci.draw_rect(Rect2(Vector2.ZERO, gs), Color(0.026, 0.03, 0.036))
-	ci.draw_polygon(PackedVector2Array([Vector2.ZERO, Vector2(gs.x, 0), Vector2(gs.x, gs.y * 0.6), Vector2(0, gs.y * 0.6)]), PackedColorArray([Color(1, 1, 1, 0.025), Color(1, 1, 1, 0.025), Color(1, 1, 1, 0.0), Color(1, 1, 1, 0.0)]))
+	ci.draw_rect(Rect2(Vector2.ZERO, gs), Color(0.085, 0.087, 0.094))
 	var y0 := int(floor(scroll / c))
 	var y1 := mini(StoreBook.rows(), int(ceil((scroll + gs.y) / c)) + 1)
 	for y in range(y0, y1):
 		var yy := y * c - scroll
 		for x in StoreBook.COLS:
-			var cr := Rect2(Vector2(x * c, yy) + Vector2(2, 2), Vector2(c - 4, c - 4))
-			ci.draw_rect(cr, Color(1, 1, 1, 0.024))
-			ci.draw_rect(Rect2(cr.position, Vector2(cr.size.x, 1)), Color(1, 1, 1, 0.045))
-			ci.draw_rect(Rect2(cr.position.x, cr.end.y - 1, cr.size.x, 1), Color(0, 0, 0, 0.35))
+			var cr := Rect2(Vector2(x * c, yy) + Vector2(3, 3), Vector2(c - 6, c - 6))
+			# 炭黑 v2: a slot sunk in the plate — black inside, its top edge in shadow, its lower lip lit
+			ci.draw_rect(cr, Color(0.022, 0.023, 0.026))
+			ci.draw_rect(Rect2(cr.position, Vector2(cr.size.x, 3)), Color(0.004, 0.004, 0.005))
+			ci.draw_rect(Rect2(cr.position, Vector2(2, cr.size.y)), Color(0.008, 0.008, 0.01))
+			ci.draw_rect(Rect2(cr.position.x, cr.end.y, cr.size.x, 1), Color(0.19, 0.192, 0.2))
 		if y % 4 == 0:
-			ci.draw_line(Vector2(0, yy), Vector2(gs.x, yy), Color(1, 1, 1, 0.06), 1.0)
-			ci.draw_string(font_b, Vector2(4, yy + 12), "%02d" % y, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(1, 1, 1, 0.18))
-		for x in range(1, StoreBook.COLS):
-			var p := Vector2(x * c, yy)
-			ci.draw_line(p + Vector2(-3, 0), p + Vector2(3, 0), Color(1, 1, 1, 0.09), 1.0)
-			ci.draw_line(p + Vector2(0, -3), p + Vector2(0, 3), Color(1, 1, 1, 0.09), 1.0)
+			ci.draw_string(font_b, Vector2(5, yy + 14), "%02d" % y, HORIZONTAL_ALIGNMENT_LEFT, -1, 9, Color(0.4, 0.4, 0.42))
 	# the things that are still (the moving ones are on the layer above)
 	for it in items:
 		var id := str(it.id)
 		if not lay.has(id) or id == drag_id or _live(id):
 			continue
 		_draw_one(ci, it, id)
+	_draw_stack_frames(ci)
 
 
 # is this unit moving now (it is drawn every frame, on the layer above the still grid)
@@ -1454,8 +1552,8 @@ func _draw_grid_fx(ci: CanvasItem) -> void:
 			var s := StoreBook._size(_item(drag_id), drag_rot)
 			var r := Rect2(Vector2(at.x * c, at.y * c - scroll), Vector2(s.x * c, s.y * c))
 			var ok := drop_ok(m)
-			ci.draw_rect(r, Color(UiSkin.DATA, 0.12) if ok else Color(Pal.heat(1.0, 1.0), 0.18))
-			ci.draw_rect(r, Color(UiSkin.DATA, 0.8) if ok else Pal.heat(1.0, 1.2), false, 1.5)
+			ci.draw_rect(r, Color(UiSkin.FIGURE, 0.12) if ok else Color(Pal.heat(1.0, 1.0), 0.18))
+			ci.draw_rect(r, Color(UiSkin.FIGURE, 0.8) if ok else Pal.heat(1.0, 1.2), false, 1.5)
 
 
 # one unit as it is now: its shadow, the thing (turning if it is), the pointer's light and edge, the
@@ -1491,14 +1589,24 @@ func _draw_one(ci: CanvasItem, it: Dictionary, id: String) -> void:
 	# filter leaves out stays at about 28 % while it lands too
 	var la := _land_k(id)
 	if la > 0.0:
-		ci.draw_rect(_rest_rect(id).grow(-1.0), Color(UiSkin.DATA, 0.9 * la), false, 2.0)
-		ci.draw_rect(_rest_rect(id).grow(-1.0), Color(UiSkin.DATA, 0.08 * la))
+		ci.draw_rect(_rest_rect(id).grow(-1.0), Color(UiSkin.FIGURE, 0.9 * la), false, 2.0)
+		ci.draw_rect(_rest_rect(id).grow(-1.0), Color(UiSkin.FIGURE, 0.08 * la))
 	if dk > 0.0:
 		ci.draw_rect(_rest_rect(id).grow(1.0).merge(ur.grow(1.0)), Color(0.026, 0.03, 0.036, DIM_VEIL * dk))
+	# 按住 P: what the press can take gets a thin frame; what is picked, the 压块 tag
+	if _p_mode and dk < 0.5 and not _bale_marks.has(id):
+		ci.draw_rect(ur.grow(1.0), Color(UiSkin.FIGURE, 0.55), false, 1.2)
+	if _bale_marks.has(id):
+		_bale_tag(ci, ur)
+	var sn := stack_of(id).size()
+	if sn >= 2 and not id.begins_with("r:"):
+		_stack_badge(ci, ur, sn)
+	if _qty_mark.has(id):
+		ci.draw_rect(ur.grow(-3.0), Color(UiSkin.ACCENT, 0.85), false, 1.5)
 	# The check and frame stay visible even on goods dimmed by the filter.
 	if _multi.has(id):
-		ci.draw_rect(ur.grow(1.0), Color(UiSkin.DATA, 0.95), false, 2.0)
-		ci.draw_rect(Rect2(ur.position + Vector2(ur.size.x - 16, 4), Vector2(12, 12)), Color(UiSkin.DATA, 0.9))
+		ci.draw_rect(ur.grow(1.0), Color(UiSkin.FIGURE, 0.95), false, 2.0)
+		ci.draw_rect(Rect2(ur.position + Vector2(ur.size.x - 16, 4), Vector2(12, 12)), Color(UiSkin.FIGURE, 0.9))
 		ci.draw_polyline(PackedVector2Array([ur.position + Vector2(ur.size.x - 13, 10), ur.position + Vector2(ur.size.x - 10.5, 13), ur.position + Vector2(ur.size.x - 6, 7)]), Color(0.02, 0.03, 0.04), 1.6)
 
 
@@ -1545,7 +1653,7 @@ func _draw_drag(ci: CanvasItem) -> void:
 		ci.draw_set_transform_matrix(_xf)
 		ur = Rect2(-ur.size * 0.5, ur.size)
 	_unit(ci, it, ur, drag_rot, false, 0.92 + 0.08 * k)
-	ci.draw_rect(ur, Color(UiSkin.DATA, 0.45 * k), false, 1.0)
+	ci.draw_rect(ur, Color(UiSkin.FIGURE, 0.45 * k), false, 1.0)
 	if turning:
 		_xf = Transform2D.IDENTITY
 		ci.draw_set_transform_matrix(_xf)
@@ -1589,7 +1697,7 @@ func _unit(ci: CanvasItem, it: Dictionary, r: Rect2, rot: int, dim: bool, alpha 
 	var on: bool = str(it.id) == sel
 	var hk := float(_hk.get(str(it.id), 0.0))
 	var cat := str(it.cat)
-	var tint: Color = {"raw": Color(0.5, 0.5, 0.52), "equip": Color(UiSkin.DATA), "part": Color(1.0, 0.78, 0.35), "special": Pal.tint(Pal.FLUID, 1.0, 1.0)}.get(cat, Pal.ink(0.6))
+	var tint: Color = {"raw": Color(0.5, 0.5, 0.52), "equip": Color(UiSkin.FIGURE), "part": Color(1.0, 0.78, 0.35), "special": Pal.tint(Pal.FLUID, 1.0, 1.0)}.get(cat, Pal.ink(0.6))
 	# the tray, in one draw: black ground lit a little from the top, an inner shadow down the right and
 	# along the bottom, a lit lip on top and the left, scored lines at the corners (baked once); it
 	# warms as the pointer brings it up
@@ -1613,7 +1721,7 @@ func _unit(ci: CanvasItem, it: Dictionary, r: Rect2, rot: int, dim: bool, alpha 
 		ci.draw_string(font_s, r.end - Vector2(tw + 6, 6), corner, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Pal.ink(0.95 * alpha))
 	if it.has("part"):
 		var cond := clampf(float(it.part.get("cond", 0.0)), 0.0, 1.0)
-		ci.draw_rect(Rect2(r.position + Vector2(4, r.size.y - 5), Vector2((r.size.x - 8) * cond, 2)), Color(UiSkin.DATA, alpha) if cond >= Repair.COND_MIN else Pal.heat(0.9, 1.1))
+		ci.draw_rect(Rect2(r.position + Vector2(4, r.size.y - 5), Vector2((r.size.x - 8) * cond, 2)), Color(UiSkin.FIGURE, alpha) if cond >= Repair.COND_MIN else Pal.heat(0.9, 1.1))
 	# its edge: a hairline, lit along the top (the chosen one's frame is traced over it by the grid)
 	ci.draw_rect(r, Pal.ink(0.22 * alpha), false, 1.0)
 	ci.draw_line(r.position + Vector2(1, 1), Vector2(r.end.x - 1, r.position.y + 1), Color(1, 1, 1, 0.12 * alpha), 1.0)
@@ -1754,14 +1862,14 @@ func _draw_steel() -> void:
 	var r := steel_rect()
 	var on := sel == "steel"
 	var hov := hover == "steel"
-	draw_rect(r, Color(1, 1, 1, 0.03 if hov else 0.015))
-	draw_rect(r, Color(UiSkin.ACCENT, 0.95) if on else Pal.ink(0.22), false, 1.4 if on else 1.0)
+	r = Charcoal.key(self, r, 1.0, 0.0, Charcoal.FACE_HI if hov else Charcoal.FACE, 8)
+	if on:
+		draw_rect(r, Color(Charcoal.ACCENT, 0.9), false, 1.4)
 	_text(w("修缮钢材", "REPAIR STEEL"), r.position + Vector2(14, 28), 18, Pal.ink(0.95), font_s)
 	var t := steel_t()
 	_text("%.1f t" % t, r.position + Vector2(14, 28), 18, Pal.ink(0.95 if t > 0.05 else 0.4), font_s, r.size.x - 28.0, HORIZONTAL_ALIGNMENT_RIGHT)
 	var slot := Rect2(r.position + Vector2(14, 42), Vector2(r.size.x - 28, 70))
-	draw_rect(slot, Color(0.028, 0.032, 0.038))
-	draw_rect(slot, Pal.ink(0.16), false, 1.0)
+	Charcoal.display(self, slot, 1.0, 5)
 	if t > 0.05:
 		_plates(self, slot.grow(-6.0), t, 1.0)
 	else:
@@ -1792,13 +1900,15 @@ func _draw_inbox() -> void:
 	if not _inbox_on():
 		var ea := _inbox_area()
 		var er := Rect2(ea.position, Vector2(ea.size.x, 74.0))
-		draw_rect(er, Pal.ink(0.12), false, 1.0)
+		Charcoal.panel(self, er, 0.7, 0.0, Charcoal.FACE, 8)
+		Charcoal.led(self, er.position + Vector2(er.size.x - 20, 24), false, 1.0, 4.0)
 		_text(w("待入库", "WAITING"), er.position + Vector2(14, 30), 18, Pal.ink(0.5), font_s)
 		_text(w("没有等着放进仓库的货", "NOTHING WAITING TO BE STORED"), er.position + Vector2(14, 56), 13, Pal.ink(0.4), font_b, er.size.x - 28.0)
 		return
 	var ir := _inbox_rect()
-	draw_rect(ir, Color(UiSkin.ACCENT, 0.015))
-	draw_rect(ir, Color(UiSkin.ACCENT, 0.55), false, 1.0)
+	Charcoal.panel(self, ir, 1.0, 0.0, Charcoal.FACE, 8)
+	draw_rect(ir, Color(Charcoal.ACCENT, 0.55), false, 1.0)
+	Charcoal.led(self, ir.position + Vector2(ir.size.x - 20, 24), true, 1.0, 4.5)
 	_text(w("待入库", "WAITING"), ir.position + Vector2(14, 30), 20, Pal.ink(0.97), font_s)
 	var over := inbox.filter(func(x): return not x.get("inbox", false)).size()
 	var sub := w("%d 样 · 拖进格子或按“留着”放进去", "%d · DRAG INTO THE GRID OR KEEP") % inbox.size()
@@ -1806,7 +1916,7 @@ func _draw_inbox() -> void:
 		sub = w("%d 样 · 其中 %d 样是格子里放不下的旧货", "%d · %d OLD THINGS WITH NO ROOM") % [inbox.size(), over]
 	_text(sub, ir.position + Vector2(14, 56), 13, Pal.ink(0.6), font_b, ir.size.x - 28.0)
 	var kb: Rect2 = _btns.get("keep_all", Rect2())
-	draw_rect(kb, Color(1, 1, 1, (0.08 if hover_btn == "keep_all" else 0.04)))
+	_ckey(kb, hover_btn == "keep_all")
 	draw_rect(kb, Pal.ink(0.5), false, 1.0)
 	_text(w("能放的都放进去", "PUT AWAY WHAT FITS"), kb.position + Vector2(0, 26), 14, Pal.ink(0.9), font_b, kb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	var shown_n := 0
@@ -1818,8 +1928,9 @@ func _draw_inbox() -> void:
 		var on: bool = str(it.id) == sel
 		var g := _lit(str(it.id) == guide_id)
 		var fade := 0.35 if str(it.id) == drag_id else 1.0
-		draw_rect(r, Color(0.085, 0.09, 0.1) if str(it.id) != hover else Color(0.105, 0.11, 0.12))
-		draw_rect(r, Color(UiSkin.ACCENT, 0.95) if on else Pal.ink(0.22), false, 1.4 if on else 1.0)
+		r = Charcoal.key(self, r, fade, 0.0, Charcoal.FACE_HI if str(it.id) == hover else Charcoal.FACE, 8)
+		if on:
+			draw_rect(r, Color(Charcoal.ACCENT, 0.9), false, 1.4)
 		if g > 0.0:
 			draw_rect(r.grow(3.0), Color(UiSkin.ACCENT, 0.4 + 0.6 * g), false, 2.0)
 		var pic := Rect2(r.position + Vector2(8, 8), Vector2(58, 58))
@@ -1872,7 +1983,7 @@ func _draw_detail() -> void:
 		var nw := minf(wd, font_s.get_string_size(str(it.name), HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x)
 		draw_rect(Rect2(x + nw * 0.5 * (1.0 - lk), y + 8.0, nw * lk, 1.5), Color(UiSkin.ACCENT, 0.9))
 	y += 34.0
-	_text(str(it.qty), Vector2(x, y), 24, Pal.ink(0.97), font_s)
+	_text(_qty_line(it), Vector2(x, y), 24, Pal.ink(0.97), font_s)
 	y += 26.0
 	_text(StoreBook.cat_name(str(it.cat)) + "  ·  " + where_of(it), Vector2(x, y), 13, Pal.ink(0.5), font_b, wd)
 	var org := origin_of(it)
@@ -1897,7 +2008,11 @@ func _draw_detail() -> void:
 	var qty_recycle := 0.0
 	var qty_trade := 0.0
 	var qty_tonnes := 0.0
-	if qty_count > 0:
+	if qty_count > 0 and not _qty_raw():
+		for u in _quantity_chosen():
+			qty_recycle += recycle_of(u)
+			qty_trade += maxf(0.0, trade_net(u))
+	elif qty_count > 0:
 		# Only the highest-numbered bundle may be partial; the rest share the same price and mass.
 		var partial: Dictionary = bundles[0]
 		var regular: Dictionary = bundles[1] if bundles.size() > 1 else partial
@@ -1913,8 +2028,9 @@ func _draw_detail() -> void:
 	var ok := can_sell(it) and (not use_qty or qty_count > 0)
 	var arm := _confirm == str(it.id)
 	var lit := _lit(guide_btn == "sell")
-	draw_rect(sb, Color(UiSkin.ACCENT, (0.38 if arm else (0.26 if hover_btn == "sell" else 0.15)) + 0.12 * lit) if ok else Color(1, 1, 1, 0.03))
-	draw_rect(sb, Color(UiSkin.ACCENT, 0.95 if ok else 0.25), false, 1.2 + 1.2 * lit)
+	_ckey(sb, hover_btn == "sell", ok, true, arm)
+	if lit > 0.0:
+		draw_rect(sb.grow(3.0), Color(Charcoal.ACCENT, 0.5 * lit), false, 2.0)
 	var sl := ""
 	if use_qty and qty_count == 0:
 		sl = w("先选择出售数量", "CHOOSE A QUANTITY")
@@ -1924,15 +2040,20 @@ func _draw_detail() -> void:
 		sl = w("再按一次确认：卖给回收站 %s", "PRESS AGAIN: SELL FOR %s") % Pal.money(recycle_of(it))
 	else:
 		sl = w("卖给回收站  %s  [Enter]", "SELL TO RECYCLING  %s  [Enter]") % Pal.money(qty_recycle if use_qty else recycle_of(it))
-	_text(sl, sb.position + Vector2(0, 26), 17, Pal.ink(0.97 if ok else 0.45), font_s, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(sl, sb.position + Vector2(0, 26), 17, Color(0.1, 0.05, 0.02) if ok else Pal.ink(0.45), font_s, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	if ok:
-		_text(w("立刻到账，市价的 6 成", "PAID AT ONCE, 60% OF MARKET"), sb.position + Vector2(0, 46), 12, Pal.ink(0.6), font_b, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+		_text(w("立刻到账，市价的 6 成", "PAID AT ONCE, 60% OF MARKET"), sb.position + Vector2(0, 46), 12, Color(0.15, 0.07, 0.02, 0.8), font_b, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	_draw_work(it)
 	if use_qty:
 		var qr: Rect2 = _btns["quantity"]
 		var maximum := bundles.size()
 		quantity = qty_count
-		_text(w("出售数量：%d / %d 捆  ·  %.1f 吨", "QUANTITY: %d / %d BUNDLES · %.1f t") % [quantity, maximum, qty_tonnes], qr.position + Vector2(0, 13), 14, Pal.ink(0.9), font_b, qr.size.x)
+		if _qty_raw():
+			_text(w("出售数量：%d / %d 捆  ·  %.1f 吨", "QUANTITY: %d / %d BUNDLES · %.1f t") % [quantity, maximum, qty_tonnes], qr.position + Vector2(0, 13), 14, Pal.ink(0.9), font_b, qr.size.x)
+		else:
+			var rg := qty_range()
+			var each := Pal.money(float(rg[0])) if absf(float(rg[1]) - float(rg[0])) < 1.0 else "%s–%s" % [Pal.money(float(rg[0])), Pal.money(float(rg[1]))]
+			_text(w("数量：%d / %d 件  ·  每件回收 %s", "QUANTITY: %d / %d · %s EACH") % [quantity, maximum, each], qr.position + Vector2(0, 13), 14, Pal.ink(0.9), font_b, qr.size.x)
 		var left := qr.position.x + 16.0
 		var right := qr.end.x - 16.0
 		var yy := qr.position.y + 32.0
@@ -1943,15 +2064,13 @@ func _draw_detail() -> void:
 	else:
 		var kb: Rect2 = _btns["keep"]
 		var kok := can_keep(it)
-		draw_rect(kb, Color(1, 1, 1, 0.08 if hover_btn == "keep" and kok else 0.035))
-		draw_rect(kb, Pal.ink(0.55 if kok else 0.2), false, 1.0)
+		_ckey(kb, hover_btn == "keep" and kok, kok)
 		_text(keep_label(it), kb.position + Vector2(0, 29), 15, Pal.ink(0.9 if kok else 0.45), font_b, kb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	var held := listed_of(it)
 	if held > 0.004:
 		# a listing holds some of these: withdrawn right here, never on another page
 		var r: Rect2 = _btns["trade"]
-		draw_rect(r, Color(1, 1, 1, 0.08 if hover_btn == "trade" else 0.04))
-		draw_rect(r, Pal.ink(0.6), false, 1.2)
+		_ckey(r, hover_btn == "trade")
 		_text(w("撤下挂单  %.1f t", "WITHDRAW  %.1f t") % held, r.position + Vector2(0, 22), 14, Pal.ink(0.95), font_b, r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 		_text(w("货回到仓库，才能卖或留着", "BACK IN STORE, THEN SELL OR KEEP"), r.position + Vector2(0, 41), 11, Pal.ink(0.55), font_b, r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	for b in ["trade", "order"]:
@@ -1960,9 +2079,7 @@ func _draw_detail() -> void:
 		var r: Rect2 = _btns[b]
 		if trade_open() and mk > 0.0 and ok:
 			var hv: bool = hover_btn == b
-			var acc := UiSkin.ACCENT if b == "trade" else UiSkin.DATA
-			draw_rect(r, Color(1, 1, 1, 0.08 if hv else 0.04))
-			draw_rect(r, Color(acc, 0.85 if hv else 0.55), false, 1.2)
+			_ckey(r, hv)
 			var of := order_offer(it) if b == "order" else {}
 			var top := ""
 			var sub := ""
@@ -2046,6 +2163,10 @@ func work_sel() -> void:
 	if str(ws.why) != "":
 		_say(str(ws.why), true)
 		return
+	if work_kind(it) == "bale" and _quantity_available() and quantity > 1:
+		_send_bales(_quantity_chosen().map(func(u): return str(u.id)))
+		quantity = 1
+		return
 	if work_kind(it) == "cast":
 		var r := ProcessLine.queue_ingots(_cast_t(it))
 		if not r.ok:
@@ -2077,9 +2198,7 @@ func _draw_work(it: Dictionary) -> void:
 	var r: Rect2 = _btns["work"]
 	var shut := str(ws.why) != ""
 	var hv: bool = hover_btn == "work"
-	var acc := UiSkin.DATA
-	draw_rect(r, Color(acc, (0.16 if hv else 0.08)) if not shut else Color(1, 1, 1, 0.025))
-	draw_rect(r, Color(acc, 0.85 if hv else 0.55) if not shut else Pal.ink(0.18), false, 1.2)
+	_ckey(r, hv, not shut)
 	_text(str(ws.label), r.position + Vector2(0, 22), 15, Pal.ink(0.45 if shut else 0.96), font_s, r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	_text(str(ws.why) if shut else str(ws.sub), r.position + Vector2(12, 41), 11, Pal.ink(0.42 if shut else 0.62), font_b, r.size.x - 24.0, HORIZONTAL_ALIGNMENT_CENTER)
 	if hv and BenchFx.now() - _work_hover_t >= BenchFx.NOTE_S:
@@ -2118,7 +2237,7 @@ func _draw_foot() -> void:
 	draw_set_transform(Vector2.ZERO)
 	var y := size.y - 34.0
 
-	var line := message if _msg_t > 0.0 else w("Esc / F3 关闭 · 1–%d 筛选 · 拖动挪位置 · R 转向 · T 一键整理 · Enter 卖给回收站 · K 留着 · 滚轮翻页", "Esc / F3 CLOSE · 1–%d FILTER · DRAG MOVES · R TURNS · T TIDY · ENTER SELL · K KEEP · WHEEL SCROLLS") % filters().size() + w(" · Ctrl+拖动 框选 · Ctrl+点击 加选或减选 · 右键 菜单", " · CTRL+DRAG BOX · CTRL+CLICK ADD / DROP · RIGHT-CLICK MENU")
+	var line := message if _msg_t > 0.0 else w("Esc / F3 关闭 · 1–%d 筛选 · 拖动挪位置 · R 转向 · T 一键整理 · Enter 卖给回收站 · K 留着 · 滚轮翻页", "Esc / F3 CLOSE · 1–%d FILTER · DRAG MOVES · R TURNS · T TIDY · ENTER SELL · K KEEP · WHEEL SCROLLS") % filters().size() + w(" · Ctrl+拖动 框选 · Ctrl+点击 加选或减选 · 按住 P 点选压块 · 长按同类一叠选数量，Shift+←→ 调数量 · 右键 菜单", " · CTRL+DRAG BOX · CTRL+CLICK ADD / DROP · HOLD P, CLICK TO BALE · HOLD ON A STACK FOR A QUANTITY, SHIFT+←→ · RIGHT-CLICK MENU")
 
 	var col := Pal.ink(0.4)
 	if _msg_t > 0.0:
@@ -2129,7 +2248,7 @@ func _draw_foot() -> void:
 		sx = -240.0 * (1.0 - BenchFx.e_out((3.5 - _msg_t) / 0.35)) - 240.0 * BenchFx.e_io(1.0 - _msg_t / 0.35)
 		col.a *= clampf(1.0 + sx / 240.0, 0.0, 1.0)
 		var lw := font_b.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
-		draw_rect(Rect2(PAD + sx, y + 8.0, lw * clampf(_msg_t / 3.5, 0.0, 1.0), 2.0), Color(UiSkin.DATA if not _msg_bad else UiSkin.ACCENT, 0.7))
+		draw_rect(Rect2(PAD + sx, y + 8.0, lw * clampf(_msg_t / 3.5, 0.0, 1.0), 2.0), Color(UiSkin.FIGURE if not _msg_bad else UiSkin.ACCENT, 0.7))
 	_text(line, Vector2(PAD + sx, y), 15, col, font_b)
 	if _queue_link_t > 0.0 and _btns.has("queue_link"):
 		var qr: Rect2 = _btns["queue_link"]
@@ -2223,7 +2342,7 @@ static func tier_of(it: Dictionary) -> String:
 
 static func tier_col(t: String) -> Color:
 	match t:
-		"rare": return UiSkin.DATA
+		"rare": return UiSkin.FIGURE
 		"precious": return UiSkin.ACCENT
 		"danger": return Color(1.0, 0.32, 0.22)
 	return Color(0.82, 0.84, 0.86)
@@ -2272,18 +2391,30 @@ func _bg() -> Texture2D:
 func _draw_bg() -> void:
 	var m := _mouse()
 	var par := ((m / size) - Vector2(0.5, 0.5)) * -18.0 if BenchFx.on() and size.x > 0.0 else Vector2.ZERO
-	draw_texture_rect(_bg(), Rect2(Vector2(-30, -20) + par, size + Vector2(60, 40)), false, Color(0.55, 0.6, 0.66, 0.07))
-	# a cool light from the top and a darkening toward the floor
-	draw_polygon(PackedVector2Array([Vector2.ZERO, Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(0, size.y)]), PackedColorArray([Color(0.5, 0.6, 0.7, 0.04), Color(0.5, 0.6, 0.7, 0.04), Color(0, 0, 0, 0.25), Color(0, 0, 0, 0.25)]))
+	draw_texture_rect(_bg(), Rect2(Vector2(-30, -20) + par, size + Vector2(60, 40)), false, Color(0.7, 0.7, 0.7, 0.035))
 
 
 # a frosted glass panel: a faint fill, fine scan rows, a lit top edge and a softer left one
 func _glass(ci: CanvasItem, r: Rect2, k := 1.0) -> void:
-	ci.draw_rect(r, Color(0.06, 0.07, 0.08, 0.72 * k))
-	ci.draw_texture_rect(CodexFx.rows_tex(), r, true, Color(1, 1, 1, 0.02 * k))
-	ci.draw_rect(r, Pal.ink(0.14 * k), false, 1.0)
-	ci.draw_line(r.position + Vector2(1, 1), Vector2(r.end.x - 1, r.position.y + 1), Color(1, 1, 1, 0.14 * k), 1.0)
-	ci.draw_line(r.position + Vector2(1, 1), Vector2(r.position.x + 1, r.end.y - 1), Color(1, 1, 1, 0.05 * k), 1.0)
+	Charcoal.panel(ci, r, k)
+
+
+# a key drawn by hand (炭黑): a raised dark key, lighter under the pointer; the page's main key
+# solid orange (its words dark); shut, it is dim and flat; arm = waiting for the second press
+func _ckey(r: Rect2, hv: bool, ok := true, primary := false, arm := false) -> void:
+	if primary and ok:
+		var b := StyleBoxFlat.new()
+		b.bg_color = Charcoal.ACCENT.lightened(0.1 if hv else 0.0).darkened(0.15 if arm else 0.0)
+		b.set_corner_radius_all(8)
+		b.anti_aliasing = true
+		b.shadow_color = Color(0, 0, 0, 0.7)
+		b.shadow_size = 8
+		b.shadow_offset = Vector2(0, 4)
+		b.border_width_top = 1
+		b.border_color = Color(1, 1, 1, 0.28)
+		draw_style_box(b, r)
+		return
+	r = Charcoal.key(self, r, 1.0 if ok else 0.5, 0.0, Charcoal.FACE_HI if hv and ok else Charcoal.FACE, 8)
 
 
 # ---------------------------------------------------------------- the pointer over the grid
@@ -2317,7 +2448,7 @@ func _grid_glow(ci: CanvasItem) -> void:
 	if not Rect2(Vector2.ZERO, gs).has_point(m) or drag_id != "":
 		return
 	var c := cell()
-	ci.draw_texture_rect(UiSkin.glow_tex(), Rect2(m - Vector2(c * 2.2, c * 2.2), Vector2(c * 4.4, c * 4.4)), false, Color(UiSkin.DATA, 0.05))
+	ci.draw_texture_rect(UiSkin.glow_tex(), Rect2(m - Vector2(c * 2.2, c * 2.2), Vector2(c * 4.4, c * 4.4)), false, Color(UiSkin.FIGURE, 0.05))
 	var cx := int(floor(m.x / c))
 	var cy := int(floor((m.y + scroll) / c))
 	for dy in range(-3, 4):
@@ -2329,7 +2460,7 @@ func _grid_glow(ci: CanvasItem) -> void:
 			var cr := Rect2(Vector2(gx * c, gy * c - scroll) + Vector2(2, 2), Vector2(c - 4, c - 4))
 			var f := 1.0 - clampf(cr.get_center().distance_to(m) / (c * 2.5), 0.0, 1.0)
 			if f > 0.0:
-				ci.draw_rect(cr, Color(UiSkin.DATA, 0.28 * f * f), false, 1.0)
+				ci.draw_rect(cr, Color(UiSkin.FIGURE, 0.28 * f * f), false, 1.0)
 
 
 # where the dragged thing could go: every cell some free place would cover glows faintly
@@ -2361,7 +2492,7 @@ func _draw_fits(ci: CanvasItem) -> void:
 		var y := v.y * c - scroll
 		if y + c < 0.0 or y > gs.y:
 			continue
-		ci.draw_rect(Rect2(Vector2(v.x * c, y) + Vector2(3, 3), Vector2(c - 6, c - 6)), Color(UiSkin.DATA, 0.045 * pulse))
+		ci.draw_rect(Rect2(Vector2(v.x * c, y) + Vector2(3, 3), Vector2(c - 6, c - 6)), Color(UiSkin.FIGURE, 0.045 * pulse))
 
 
 # a unit lit by the pointer: the light inside its own rectangle only (the glow's piece that falls in it)
@@ -2385,12 +2516,12 @@ func _draw_over(ci: CanvasItem) -> void:
 	for rp in _ripples:
 		var s := BenchFx.now() - float(rp[1])
 		var q := BenchFx.e_out(s / 0.45)
-		ci.draw_arc(rp[0], 6.0 + 34.0 * q, 0, TAU, 36, Color(UiSkin.DATA, 0.7 * (1.0 - q)), 1.5, true)
+		ci.draw_arc(rp[0], 6.0 + 34.0 * q, 0, TAU, 36, Color(UiSkin.FIGURE, 0.7 * (1.0 - q)), 1.5, true)
 		ci.draw_arc(rp[0], 3.0 + 16.0 * q, 0, TAU, 24, Color(1, 1, 1, 0.35 * (1.0 - q)), 1.0, true)
 	# the Ctrl box
 	if _marq_on:
 		var mr := _box_rect()
-		ci.draw_rect(mr, Color(UiSkin.DATA, 0.08))
+		ci.draw_rect(mr, Color(UiSkin.FIGURE, 0.08))
 		_ants(ci, mr)
 	# the small card for what the pointer rests on
 	if _tip_id != "" and _tip_t >= TIP_S and _menu.is_empty() and drag_id == "":
@@ -2403,7 +2534,7 @@ func _draw_over(ci: CanvasItem) -> void:
 
 # the box's edge: a faint line all round, eight bright dashes chasing along it
 func _ants(ci: CanvasItem, r: Rect2) -> void:
-	ci.draw_rect(r, Color(UiSkin.DATA, 0.45), false, 1.0)
+	ci.draw_rect(r, Color(UiSkin.FIGURE, 0.45), false, 1.0)
 	var per := 2.0 * (r.size.x + r.size.y)
 	if per < 4.0:
 		return
@@ -2413,7 +2544,7 @@ func _ants(ci: CanvasItem, r: Rect2) -> void:
 		var d := fmod(off + per * k / 8.0, per)
 		var a := _on_rect(pts, d)
 		var b := _on_rect(pts, minf(d + 14.0, per - 0.01))
-		ci.draw_line(a, b, Color(UiSkin.DATA, 0.95), 1.6)
+		ci.draw_line(a, b, Color(UiSkin.FIGURE, 0.95), 1.6)
 
 
 func _on_rect(pts: Array, d: float) -> Vector2:
@@ -2532,20 +2663,36 @@ func _menu_pick(i: int) -> void:
 var _test_ctrl := false        # tests hold Ctrl this way (no real key is pressed)
 
 
+# a page point in the grid's content (scrolled): the Ctrl box keeps its start there, so when the grid
+# scrolls under it (the wheel, or the pointer at an edge) the box stretches with the content
+func _to_content(p: Vector2) -> Vector2:
+	var gr := _grid_rect()
+	var q := Vector2(clampf(p.x, gr.position.x, gr.end.x), clampf(p.y, gr.position.y, gr.end.y))
+	return q - gr.position + Vector2(0.0, scroll)
+
+
+# the box in the grid's content
+func _box_content() -> Rect2:
+	return Rect2(_marq_from, Vector2.ZERO).expand(_to_content(_marq_to))
+
+
+# the box on the page (what of it is in view)
 func _box_rect() -> Rect2:
-	return Rect2(_marq_from, Vector2.ZERO).expand(_marq_to).intersection(_grid_rect())
+	var bc := _box_content()
+	bc.position += _grid_rect().position - Vector2(0.0, scroll)
+	return bc.intersection(_grid_rect())
 
 
+# everything the box covers joins the selection (whatever has scrolled out of view too); what was
+# chosen before stays chosen
 func _box_pick() -> void:
-	var grid := _grid_rect()
-	var mr := _box_rect()
-	mr.position -= grid.position
-	var visible_grid := Rect2(Vector2.ZERO, grid.size)
+	var mr := _box_content()
 	for it in items:
 		var id := str(it.id)
 		if not lay.has(id) or id == drag_id:
 			continue
-		var ur := _drawn_rect(id).intersection(visible_grid)
+		var ur := _rest_rect(id).grow(-2.0)
+		ur.position.y += scroll
 		if ur.has_area() and ur.intersects(mr, true):
 			_multi[id] = true
 	_after_multi()
@@ -2703,18 +2850,15 @@ func _draw_multi_detail(dr: Rect2) -> void:
 	_text(w("市价合计 %s", "MARKET IN ALL %s") % Pal.money(float(s.market)), Vector2(x, y), 14, Pal.ink(0.6), font_b, wd)
 	var sb: Rect2 = _btns["sell"]
 	var ok := int(s.sellable) > 0
-	draw_rect(sb, Color(UiSkin.ACCENT, 0.26 if hover_btn == "sell" else 0.15) if ok else Color(1, 1, 1, 0.03))
-	draw_rect(sb, Color(UiSkin.ACCENT, 0.95 if ok else 0.25), false, 1.2)
-	_text(w("全部卖给回收站  %s  [Enter]", "SELL ALL TO RECYCLING  %s  [Enter]") % Pal.money(float(s.recycle)), sb.position + Vector2(0, 26), 17, Pal.ink(0.97 if ok else 0.45), font_s, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
-	_text(w("立刻到账，市价的 6 成", "PAID AT ONCE, 60% OF MARKET"), sb.position + Vector2(0, 46), 12, Pal.ink(0.6), font_b, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	_ckey(sb, hover_btn == "sell", ok, true)
+	_text(w("全部卖给回收站  %s  [Enter]", "SELL ALL TO RECYCLING  %s  [Enter]") % Pal.money(float(s.recycle)), sb.position + Vector2(0, 26), 17, Color(0.1, 0.05, 0.02) if ok else Pal.ink(0.45), font_s, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	_text(w("立刻到账，市价的 6 成", "PAID AT ONCE, 60% OF MARKET"), sb.position + Vector2(0, 46), 12, Color(0.15, 0.07, 0.02, 0.8) if ok else Pal.ink(0.4), font_b, sb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	var kb: Rect2 = _btns["keep"]
-	draw_rect(kb, Color(1, 1, 1, 0.08 if hover_btn == "keep" else 0.035))
-	draw_rect(kb, Pal.ink(0.55), false, 1.0)
+	_ckey(kb, hover_btn == "keep")
 	_text(w("全部留着", "KEEP THEM ALL"), kb.position + Vector2(0, 29), 15, Pal.ink(0.9), font_b, kb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	var tb: Rect2 = _btns["trade"]
 	var open := trade_open()
-	draw_rect(tb, Color(UiSkin.DATA, 0.2 if hover_btn == "trade" and open else 0.1 if open else 0.03))
-	draw_rect(tb, Pal.ink(0.7 if open else 0.25), false, 1.0)
+	_ckey(tb, hover_btn == "trade" and open, open)
 	_text(w("一键挂到交易行", "LIST ALL ON THE EXCHANGE") if open else StoreBook.exchange_shut_text(), tb.position + Vector2(0, 21), 16, Pal.ink(0.95 if open else 0.45), font_s, tb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 	_text(w("按市价挂单 · 成交后到账，扣 5%", "MARKET PRICE · PAID AFTER SALE, LESS 5%"), tb.position + Vector2(0, 41), 12, Pal.ink(0.6 if open else 0.35), font_b, tb.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 
@@ -2730,8 +2874,8 @@ func _draw_size(at: Vector2, it: Dictionary) -> float:
 	for y in s.y:
 		for x in s.x:
 			var r := Rect2(at + Vector2(x * c, y * c), Vector2(c - 2, c - 2))
-			draw_rect(r, Color(UiSkin.DATA, 0.35))
-			draw_rect(r, Color(UiSkin.DATA, 0.8), false, 1.0)
+			draw_rect(r, Color(UiSkin.FIGURE, 0.35))
+			draw_rect(r, Color(UiSkin.FIGURE, 0.8), false, 1.0)
 	return s.y * c
 
 
@@ -2740,21 +2884,384 @@ func _draw_ladder(at: Vector2, wd: float, it: Dictionary, pk: float) -> float:
 	var mk := market_of(it)
 	if mk <= 0.0:
 		return 0.0
-	# 128 号 第 7 段 (user 2026-11-09): the figures are the buttons' figures at once — only the
-	# bars grow in (a count-up read $1,796 beside a $1,800 button)
-	var rows := [[w("回收站 %s", "RECYCLING %s") % Pal.money(recycle_of(it)), recycle_of(it), UiSkin.ACCENT, true],
-		[w("交易行约 %s", "EXCHANGE ~%s") % Pal.money(trade_net(it) if trade_open() else mk * TRADE_K), (trade_net(it) if trade_open() else mk * TRADE_K), Pal.ink(0.5), trade_open()],
-		[(w("订单 %s", "ORDER %s") if not order_offer(it).is_empty() else w("订单约 %s", "ORDER ~%s")) % Pal.money(order_est(it)), order_est(it), Pal.ink(0.5), trade_open()]]
+	# 炭黑 v2: the three prices in one black window, side by side and large, each with its segment
+	# scale against the dearest (the scales fill in; the figures are the keys' figures at once)
+	var cols := [[w("回收站", "RECYCLING"), recycle_of(it), true, w("立刻到账", "AT ONCE")],
+		[w("交易行约", "EXCHANGE ~"), (trade_net(it) if trade_open() else mk * TRADE_K), trade_open(), w("扣 5%", "LESS 5%")],
+		[w("订单", "ORDER") if not order_offer(it).is_empty() else w("订单约", "ORDER ~"), order_est(it), trade_open(), str(order_offer(it).get("client", "")) if not order_offer(it).is_empty() else w("看订单板", "THE BOARD")]]
 	var top := maxf(order_est(it), mk * ORDER_K)
-	var y := at.y
-	for row in rows:
-		var f := clampf(float(row[1]) / maxf(top, 1.0), 0.0, 1.0) * pk
-		var bar := Rect2(Vector2(at.x + 150.0, y - 9.0), Vector2((wd - 150.0) * f, 8.0))
-		draw_rect(Rect2(Vector2(at.x + 150.0, y - 9.0), Vector2(wd - 150.0, 8.0)), Color(1, 1, 1, 0.05))
-		var col: Color = row[2]
-		draw_rect(bar, Color(col, 0.85 if row[3] else 0.35))
-		if not row[3]:
-			draw_rect(Rect2(Vector2(at.x + 150.0, y - 9.0), Vector2(wd - 150.0, 8.0)), Pal.ink(0.12), false, 1.0)
-		_text(str(row[0]), Vector2(at.x, y), 13, Pal.ink(0.85 if row[3] else 0.5), font_b, 146.0)
-		y += 20.0
-	return y - at.y
+	var r := Rect2(at.x, at.y - 14.0, wd, 104.0)
+	Charcoal.display(self, r)
+	var cw := r.size.x / 3.0
+	for i in 3:
+		var cx := r.position.x + i * cw
+		var live: bool = cols[i][2]
+		if i > 0:
+			draw_line(Vector2(cx, r.position.y + 12), Vector2(cx, r.end.y - 12), Color(1, 1, 1, 0.07), 1.0)
+		_text(str(cols[i][0]), Vector2(cx + 12, r.position.y + 24), 12, Pal.ink(0.5 if live else 0.3), font_b, cw - 18.0)
+		_text(Pal.money(float(cols[i][1])), Vector2(cx + 10, r.position.y + 58), 24, (Charcoal.ACCENT if i == 0 else Pal.ink(0.96)) if live else Pal.ink(0.4), font_l, cw - 16.0)
+		Charcoal.segments(self, Rect2(cx + 12, r.position.y + 70, cw - 24.0, 6.0), clampf(float(cols[i][1]) / maxf(top, 1.0), 0.0, 1.0) * 10.0 * pk, 10, 1.0 if live else 0.4)
+		_text(str(cols[i][3]), Vector2(cx + 12, r.end.y - 10), 11, Pal.ink(0.45), font_b, cw - 18.0)
+	return r.size.y + 6.0
+
+
+# ================================================================ 2026-11-10 按住 P 点选压块 + 拖到边缘自动滚动
+# User: "长按 P，然后只要点击我要压缩的物品，它就会自动归于'压缩'这一类". P held past P_HOLD_S (or any
+# click while it is down) is the bale mode: what the press takes is lit, the rest dim; a click picks a
+# thing (the 压块 tag on it), a second click drops it, a sweep with the button down picks what it
+# crosses; letting go of P sends the picks to the press — the same send_to_press as the 压块 [P] key
+# (out of the grid onto the press's queue). Esc drops them all. A tap of P is the key as before: the
+# chosen thing, or the whole Ctrl selection.
+
+const P_HOLD_S := 0.25        # P held this long is the mode (a tap is shorter)
+const EDGE_PX := 56.0         # the edge band where a drag starts to scroll the grid
+const EDGE_V := 900.0         # px/s at the very edge; more past it, up to EDGE_MAX times
+const EDGE_MAX := 3.0
+
+var _p_down := false
+var _p_t0 := 0.0
+var _p_mode := false
+var _p_drag := false
+var _p_seen := {}
+var _bale_marks := {}         # id -> true: picked for the press, sent when P is let go
+var _edge_v := 0.0            # the edge scroll's speed now (eased)
+var _drag_at := Vector2.INF   # where the Ctrl box or the P sweep was pressed (page)
+
+
+func _p_press() -> void:
+	if _p_down:
+		return
+	_p_down = true
+	_p_t0 = _t
+
+
+func _enter_p_mode() -> void:
+	if _p_mode:
+		return
+	_p_mode = true
+	_press_id = ""
+	drag_id = ""
+	_fits = {}
+	_menu = {}
+	_say(w("压块模式：点物品加入压块，再点一次取消 · 松开 P 送去压块机 · Esc 全部取消", "BALE MODE: CLICK THINGS TO PICK, AGAIN TO DROP · LET GO OF P TO SEND · Esc DROPS ALL"))
+
+
+func _p_release() -> void:
+	if not _p_down:
+		return
+	_p_down = false
+	_p_drag = false
+	_p_seen = {}
+	if not _p_mode:
+		# a tap: the 压块 [P] key as it always was — the Ctrl selection all together, else the chosen one
+		if not _multi.is_empty():
+			bale_multi()
+		else:
+			work_sel()
+		return
+	_p_mode = false
+	_msg_t = 0.0
+	var ids: Array = _bale_marks.keys()
+	_bale_marks = {}
+	if ids.is_empty():
+		_say(w("压块模式结束：没有选东西", "BALE MODE OVER: NOTHING PICKED"))
+		return
+	_send_bales(ids)
+
+
+func _p_cancel() -> void:
+	var n := _bale_marks.size()
+	_p_down = false
+	_p_mode = false
+	_p_drag = false
+	_p_seen = {}
+	_bale_marks = {}
+	_say(w("压块模式取消：%d 件都留在仓库", "BALE MODE CANCELLED: %d STAY IN STORE") % n)
+
+
+# a click in the mode: pick it, or drop it if it is picked; a thing the press cannot take says why
+func _p_click(id: String) -> void:
+	var it := _item(id)
+	var st := _p_stack(id)
+	if st.size() > 1:
+		if _bale_marks.has(id):
+			for sid in st:
+				_bale_marks.erase(sid)
+			_say(w("取消压块：%s ×%d", "DROPPED: %s ×%d") % [str(it.get("name", "")), st.size()])
+			return
+		var okk := ProcessLine.pressable(it)
+		if not okk.ok:
+			_say((str(okk.why) if str(okk.why) != "" else w("这件不能压", "NOT FOR THE PRESS")), true)
+			return
+		for sid in st:
+			_bale_marks[sid] = true
+		_say(w("加入压块：%s 整叠 ×%d · 已选 %d 件 · 松开 P 送去压块机", "PICKED: %s, THE STACK ×%d · %d · LET GO OF P TO SEND") % [str(it.get("name", "")), st.size(), _bale_marks.size()])
+		return
+	if _bale_marks.has(id):
+		_bale_marks.erase(id)
+		_say(w("取消压块：%s", "DROPPED: %s") % str(it.get("name", "")))
+		return
+	var ok := ProcessLine.pressable(it)
+	if not ok.ok:
+		_say((str(ok.why) if str(ok.why) != "" else w("这件不能压", "NOT FOR THE PRESS")), true)
+		return
+	_bale_marks[id] = true
+	_say(w("加入压块：%s · 已选 %d 件 · 松开 P 送去压块机", "PICKED: %s · %d · LET GO OF P TO SEND") % [str(it.get("name", "")), _bale_marks.size()])
+
+
+# the sweep: adds what the press can take, never drops
+func _p_add(id: String) -> void:
+	if _bale_marks.has(id):
+		return
+	var it := _item(id)
+	if not ProcessLine.pressable(it).ok:
+		return
+	for sid in _p_stack(id):
+		_bale_marks[sid] = true
+	_bale_marks[id] = true
+	_say(w("加入压块：%s · 已选 %d 件 · 松开 P 送去压块机", "PICKED: %s · %d · LET GO OF P TO SEND") % [str(it.get("name", "")), _bale_marks.size()])
+
+
+# P with a Ctrl selection: every one the press can take goes; the rest stay, counted
+func bale_multi() -> void:
+	var ids: Array = _multi.keys()
+	_multi = {}
+	_send_bales(ids)
+
+
+func _send_bales(ids: Array) -> void:
+	var sent := 0
+	var place := 0
+	var whys := {}
+	for id in ids:
+		var ok := ProcessLine.pressable(_item(str(id)))
+		if not ok.ok:
+			whys[str(ok.why)] = int(whys.get(str(ok.why), 0)) + 1
+			continue
+		var r := ProcessLine.send_to_press(str(id))
+		if r.ok:
+			sent += 1
+			place = int(r.place)
+		else:
+			whys[str(r.reason)] = int(whys.get(str(r.reason), 0)) + 1
+	build()
+	if sent == 0:
+		_say((str(whys.keys()[0]) if not whys.is_empty() else w("没有能压块的东西", "NOTHING THE PRESS CAN TAKE")), true)
+		return
+	var line := w("送去压块 %d 件 · 压机排到第 %d 个 · 约 %d 秒后全部压完回仓库", "%d TO THE BALER · UP TO NUMBER %d · ALL BACK IN ~%d s") % [sent, place, int(ProcessLine.press_total({}) * place)]
+	var skipped := 0
+	for k in whys:
+		skipped += int(whys[k])
+	if skipped > 0:
+		line += w(" · %d 件不能压：%s", " · %d NOT TAKEN: %s") % [skipped, str(whys.keys()[0])]
+	_say(line, false)
+	_msg_t = 6.0
+	if game != null and is_instance_valid(game) and game.get("sfx") != null:
+		game.sfx.play("stamp")
+	var vis := shown()
+	if sel != "" and _item(sel).is_empty():
+		sel = str(vis[0].id) if not vis.is_empty() else ""
+
+
+# dragging (the Ctrl box, a thing being moved, the P sweep) near the grid's top or bottom edge, or
+# past it, scrolls the grid: faster the nearer the edge and the further past it, eased in and out
+func _edge_scroll(dt: float, m: Vector2) -> void:
+	var goal := 0.0
+	# a click near the edge is not a drag: the box and the P sweep scroll once the pointer has moved
+	if drag_id != "" or ((_marq_on or _p_drag) and m.distance_to(_drag_at) > 8.0):
+		var gr := _grid_rect()
+		var top := gr.position.y + EDGE_PX
+		var bot := gr.end.y - EDGE_PX
+		if m.y < top:
+			goal = -EDGE_V * minf((top - m.y) / EDGE_PX, EDGE_MAX)
+		elif m.y > bot:
+			goal = EDGE_V * minf((m.y - bot) / EDGE_PX, EDGE_MAX)
+	_edge_v = lerpf(_edge_v, goal, 1.0 - exp(-12.0 * dt))
+	if absf(_edge_v) < 1.0 and goal == 0.0:
+		_edge_v = 0.0
+		return
+	scroll = clampf(scroll + _edge_v * dt, 0.0, _scroll_max())
+
+
+# the 压块 tag on a picked unit: an accent frame and a small label in its top-left corner
+func _bale_tag(ci: CanvasItem, r: Rect2) -> void:
+	ci.draw_rect(r.grow(1.0), Color(UiSkin.ACCENT, 0.95), false, 2.0)
+	ci.draw_rect(r, Color(UiSkin.ACCENT, 0.08))
+	var tag := w("压块", "BALE")
+	var tw := font_s.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+	var tr := Rect2(r.position + Vector2(4, 4), Vector2(tw + 12, 18))
+	ci.draw_rect(tr, Color(UiSkin.ACCENT, 0.92))
+	ci.draw_string(font_s, tr.position + Vector2(6, 14), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.03, 0.03, 0.035))
+
+
+# the mode's band over the grid's top and a tag at the pointer (the layer above the grid)
+func _draw_p_mode(ci: CanvasItem) -> void:
+	if not _p_mode:
+		return
+	var gr := _grid_rect()
+	var band := Rect2(gr.position.x, gr.position.y, gr.size.x, 34.0)
+	ci.draw_rect(band, Color(0.03, 0.033, 0.04, 0.92))
+	ci.draw_rect(Rect2(band.position, Vector2(4, band.size.y)), UiSkin.ACCENT)
+	ci.draw_rect(Rect2(band.position.x, band.end.y - 1.0, band.size.x, 1.0), Color(UiSkin.ACCENT, 0.6))
+	var line := w("压块模式 · 点物品加入压块，再点取消 · 已选 %d 件 · 松开 P 送去压块机 · Esc 全部取消", "BALE MODE · CLICK TO PICK, AGAIN TO DROP · %d PICKED · LET GO OF P TO SEND · Esc DROPS ALL") % _bale_marks.size()
+	ci.draw_string(font_s, band.position + Vector2(16, 23), line, HORIZONTAL_ALIGNMENT_LEFT, band.size.x - 24.0, 15, Pal.ink(0.97))
+	var m := _mouse()
+	if gr.has_point(m):
+		var tag := w("压块", "BALE")
+		var tw := font_s.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+		var tr := Rect2(m + Vector2(14, 14), Vector2(tw + 12, 18))
+		ci.draw_rect(tr, Color(UiSkin.ACCENT, 0.92))
+		ci.draw_string(font_s, tr.position + Vector2(6, 14), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.03, 0.03, 0.035))
+
+
+# ================================================================ 2026-11-10 同类成叠 + 长按数量滑块
+# User: "只要有很多物品是同样的种类，都可以像钢卷、钢材一样长按…滑块选择". What one kind is:
+# StoreBook.stack_key (the same kind and state; prices may differ, shown as a range). Each thing keeps its
+# own cells (the grid's real-size rule — no save change); 一键整理 lays a stack together, a frame round it
+# and ×N on each. Picking any of a stack shows the quantity slider (as raw bundles always did); a long
+# press (LONG_S, the pointer still) takes the whole stack. The quantity goes to 卖给回收站, 交易行, P (压块)
+# and to a drag: that many lift off and land at the drop, the rest stay. Shift+←/→ change it. Orders take
+# what an order asks for (the slider does not apply).
+
+const LONG_S := 0.45          # the button held this long, the pointer still: the whole stack
+var _stacks := {}             # stack key -> [units], cheapest first
+var _stack_key_of := {}       # id -> stack key
+var _press_t := 0.0
+var _long_done := false
+var _long_t0 := -9.0
+var _drag_group: Array = []   # ids that go with the one dragged (a stack's quantity)
+var _qty_mark := {}           # ids a stack's quantity takes now (drawn framed)
+
+
+func _build_stacks() -> void:
+	_stacks = {}
+	_stack_key_of = {}
+	for it in items:
+		var id := str(it.id)
+		if id.begins_with("r:") or not lay.has(id):
+			continue
+		var k := StoreBook.stack_key(it)
+		if k == "":
+			continue
+		if not _stacks.has(k):
+			_stacks[k] = []
+		_stacks[k].append(it)
+		_stack_key_of[id] = k
+	for k in _stacks:
+		(_stacks[k] as Array).sort_custom(func(a, b): return float(a.get("market", 0.0)) < float(b.get("market", 0.0)))
+
+
+# the stack a unit is in (raw bundles: all of that raw), [] if none
+func stack_of(id: String) -> Array:
+	if id.begins_with("r:"):
+		var it := _item(id)
+		return _raw_bundles.get(str(it.get("key", "")), [])
+	return _stacks.get(str(_stack_key_of.get(id, "")), [])
+
+
+func _p_stack(id: String) -> Array:
+	var st := stack_of(id)
+	return st.map(func(u): return str(u.id)) if st.size() >= 2 else []
+
+
+func _long_press(id: String) -> void:
+	_long_done = true
+	if stack_of(id).size() < 2:
+		return
+	select(id)
+	quantity = _quantity_units().size()
+	_long_t0 = BenchFx.now()
+	var it := _item(id)
+	_say(w("整叠 %s ×%d：滑块或 Shift+←→ 改数量 · Enter 卖 · P 压块 · 直接拖走就拆出这么多", "THE STACK %s ×%d: SLIDER OR SHIFT+←→ · ENTER SELLS · P BALES · DRAG TO SPLIT") % [str(it.get("name", "")), quantity])
+
+
+func _bump_quantity(d: int) -> void:
+	quantity = clampi(quantity + d, 1, maxi(1, _quantity_units().size()))
+	queue_redraw()
+
+
+# the price range of a stack's chosen things (recycling): [low, high]
+func qty_range() -> Array:
+	var lo := INF
+	var hi := 0.0
+	for u in _quantity_chosen():
+		lo = minf(lo, recycle_of(u))
+		hi = maxf(hi, recycle_of(u))
+	return [lo if lo != INF else 0.0, hi]
+
+
+# a drag that took several of a stack: the one dragged landed at `at`; the rest go to the free cells
+# nearest it (row by row from there), each as it lay turned
+func _split_rest(first: String, at: Vector2i) -> void:
+	var moved := 1
+	var us := StoreBook.units()
+	var lay2 := StoreBook.layout(us)
+	var by := {}
+	for u in us:
+		by[str(u.id)] = u
+	for oid in _drag_group:
+		if str(oid) == first or not by.has(str(oid)) or not lay2.has(str(oid)):
+			continue
+		var u: Dictionary = by[str(oid)]
+		var rot := int(lay2[str(oid)][2])
+		var occ := StoreBook._occ_of(lay2, us, str(oid))
+		var sz := StoreBook._size(u, rot)
+		var spot := Vector2i(-1, -1)
+		var best := INF
+		for y in StoreBook.rows():
+			for x in StoreBook.COLS:
+				if StoreBook._free(occ, x, y, sz):
+					var d := Vector2(x - at.x, (y - at.y) * 1.2).length()
+					if d < best:
+						best = d
+						spot = Vector2i(x, y)
+		if spot.x < 0:
+			continue
+		if StoreBook.move(str(oid), spot.x, spot.y, rot):
+			lay2[str(oid)] = [spot.x, spot.y, rot]
+			moved += 1
+	_say(w("拆出 %d 件放到这里", "%d SPLIT OFF HERE") % moved)
+	_drag_group = []
+
+
+# ×N in a stack's things' lower-left corner
+func _stack_badge(ci: CanvasItem, r: Rect2, n: int) -> void:
+	var t := "×%d" % n
+	var tw := font_s.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+	var br := Rect2(Vector2(r.position.x + 4, r.end.y - 22), Vector2(tw + 10, 18))
+	ci.draw_rect(br, Color(0, 0, 0, 0.62))
+	ci.draw_rect(br, Color(UiSkin.FIGURE, 0.7), false, 1.0)
+	ci.draw_string(font_s, br.position + Vector2(5, 14), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.95))
+
+
+# a stack lying together (its cells fill one block): a thin frame round the block
+func _draw_stack_frames(ci: CanvasItem) -> void:
+	for k in _stacks:
+		var st: Array = _stacks[k]
+		if st.size() < 2:
+			continue
+		var u := Rect2()
+		var area := 0.0
+		for it in st:
+			var r := _rest_rect(str(it.id))
+			area += r.get_area()
+			u = r if u.size == Vector2.ZERO else u.merge(r)
+		if absf(u.get_area() - area) > 1.0:
+			continue
+		ci.draw_rect(u.grow(1.0), Color(UiSkin.FIGURE, 0.45), false, 1.0)
+
+
+# the detail's count under the name: what the quantity slider takes now (a stack: "3 件（整叠）")
+func _qty_line(it: Dictionary) -> String:
+	if str(it.get("id", "")) != sel or not _quantity_available():
+		return str(it.get("qty", ""))
+	var n := clampi(quantity, 0, _quantity_units().size())
+	var whole := n == _quantity_units().size() and n >= 2
+	if _qty_raw():
+		if n <= 1:
+			return str(it.get("qty", ""))
+		var t := 0.0
+		for u in _quantity_chosen():
+			t += float(u.get("t", 0.0))
+		return (w("%d 捆 · %.1f t（整叠）", "%d BUNDLES · %.1f t (ALL)") if whole else w("%d 捆 · %.1f t", "%d BUNDLES · %.1f t")) % [n, t]
+	return (w("%d 件（整叠）", "%d (THE STACK)") if whole else w("%d 件", "%d PCS")) % n

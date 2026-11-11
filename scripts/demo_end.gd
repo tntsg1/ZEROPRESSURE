@@ -47,7 +47,7 @@ func _ready() -> void:
 	box.add_child(_label(Gt.w("2. 哪一刻最困惑、不知道该做什么？", "2. When were you most lost or unsure what to do?"), 18, font_b, 0.9))
 	lost = _text_box()
 	box.add_child(lost)
-	box.add_child(_label(Gt.w("3. 给这一小时打几分（1–10）？", "3. How would you score this hour (1–10)?"), 18, font_b, 0.9))
+	box.add_child(_label(Gt.w("3. 给这次试玩打几分（1–10）？", "3. How would you score this playtest (1–10)?"), 18, font_b, 0.9))
 	var srow := HBoxContainer.new()
 	box.add_child(srow)
 	score = HSlider.new()

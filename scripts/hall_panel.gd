@@ -18,7 +18,7 @@ const RepairBill = preload("res://scripts/repair_bill.gd")
 const PAD := 40.0
 const HEAD_H := 118.0
 const TAB_Y := 132.0
-const TAB_H := 44.0
+const TAB_H := 56.0
 const LIST_W := 520.0
 const ROW_H := 64.0
 const BG := Color(0.035, 0.04, 0.048)
@@ -34,6 +34,7 @@ var tab := "sell"
 var font: Font
 var font_b: Font
 var font_s: Font
+var font_l: Font
 var sel := ""                 # sell: the unit picked
 var custom := false           # sell: the price slider open
 var price_k := 1.0            # sell: the asking price, of the market now
@@ -72,6 +73,7 @@ func _ready() -> void:
 	font = Fonts.get_font("Regular")
 	font_b = Fonts.get_font("Medium")
 	font_s = Fonts.get_font("SemiBold")
+	font_l = Fonts.get_font("Light")
 	var st: Dictionary = BenchFx.state_of("hall_panel").get("own", {})
 	if not st.is_empty():
 		tab = str(st.get("tab", "sell")) if str(st.get("tab", "")) in TABS else "sell"
@@ -412,15 +414,23 @@ func _process(dt: float) -> void:
 # ---------------------------------------------------------------- drawing helpers
 
 func _text(s: String, p: Vector2, px: int, col: Color, f: Font = null, wmax := -1.0, al := HORIZONTAL_ALIGNMENT_LEFT) -> void:
-	draw_string(f if f != null else font_b, p, s, al, wmax, px, col)
+	var fo: Font = f if f != null else font_b
+	# 2026-11-10: a line never runs past the width it was given (it ran out of its card); cut, with "…"
+	if wmax > 0.0 and fo.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x > wmax:
+		var lo := 0
+		var hi := s.length()
+		while lo < hi:
+			var mid := (lo + hi + 1) / 2
+			if fo.get_string_size(s.substr(0, mid) + "…", HORIZONTAL_ALIGNMENT_LEFT, -1, px).x <= wmax:
+				lo = mid
+			else:
+				hi = mid - 1
+		s = s.substr(0, lo) + "…"
+	draw_string(fo, p, s, al, wmax, px, col)
 
 
 func _glass(r: Rect2, k := 1.0) -> void:
-	draw_rect(r, Color(0.06, 0.07, 0.08, 0.72 * k))
-	draw_texture_rect(CodexFx.rows_tex(), r, true, Color(1, 1, 1, 0.02 * k))
-	draw_rect(r, Pal.ink(0.14 * k), false, 1.0)
-	draw_line(r.position + Vector2(1, 1), Vector2(r.end.x - 1, r.position.y + 1), Color(1, 1, 1, 0.14 * k), 1.0)
-	draw_line(r.position + Vector2(1, 1), Vector2(r.position.x + 1, r.end.y - 1), Color(1, 1, 1, 0.05 * k), 1.0)
+	Charcoal.panel(self, r, k)
 
 
 # rows rise one after another as a tab comes in
@@ -441,27 +451,60 @@ func _key(id: String, r: Rect2, label: String, note := "", why := "", primary :=
 	var hv := float(_hov.get(id, 0.0))
 	var lift := -BenchFx.LIFT * hv if BenchFx.on() and not shut else 0.0
 	var rr := Rect2(r.position + Vector2(0, lift), r.size)
-	var acc := UiSkin.ACCENT
+	var acc := Charcoal.ACCENT
+	var down := 0.0
+	if _flash.has(id) and BenchFx.on():
+		down = clampf(1.0 - (BenchFx.now() - float(_flash[id])) / 0.18, 0.0, 1.0)
 	if primary and not shut:
-		var br := 0.5 + 0.5 * sin(_t * TAU / 2.4) if BenchFx.on() else 0.5
-		draw_rect(rr, Color(acc, 0.2 + 0.12 * hv))
-		draw_rect(rr, Color(acc, 0.75 + 0.25 * maxf(hv, br * 0.6)), false, 1.4 + hv)
+		# the page's one action: the orange key, a firm shadow under it, sinking as it is pressed
+		var fr := rr
+		fr.position.y += 3.0 * down
+		draw_style_box(_orange_box(hv, down), fr)
+		rr = fr
 	else:
-		draw_rect(rr, Color(1, 1, 1, (0.02 if shut else 0.04) + 0.05 * hv))
-		draw_rect(rr, Pal.ink((0.16 if shut else 0.32) + 0.3 * hv), false, 1.0)
+		rr = Charcoal.key(self, rr, 0.55 if shut else 1.0, down, Charcoal.FACE.lerp(Charcoal.FACE_HI, hv), 8)
 	if _flash.has(id) and BenchFx.on():
 		var age := BenchFx.now() - float(_flash[id])
 		if age < 0.35:
 			draw_rect(rr.grow(age * 14.0), Color(acc, 0.35 * (1.0 - age / 0.35)), false, 1.5)
-	var px := 16 if primary else 14
-	var ty := rr.position.y + (rr.size.y * 0.5 + 6.0 if sub == "" else rr.size.y * 0.5 - 2.0)
-	_text(label, Vector2(rr.position.x, ty), px, Pal.ink(0.45 if shut else 0.96), font_s if primary else font_b, rr.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	var px := 30 if label in ["−", "+"] and r.size.y >= 60.0 else (16 if primary else 14)
+	var ty := rr.position.y + (rr.size.y * 0.5 + (11.0 if px >= 30 else 6.0) if sub == "" else rr.size.y * 0.5 - 2.0)
+	# "… [Enter]" / "… [Esc]": the words centred, the key's name on a cap at the right
+	var kk := Charcoal.split_key(label.strip_edges())
+	var cap_w := 0.0
+	if kk[1] != "" and rr.size.x > 110.0:
+		label = kk[0]
+		cap_w = maxf(40.0, font_s.get_string_size(kk[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 16.0)
+		Charcoal.keycap(self, font_s, Rect2(rr.end.x - cap_w - 10.0, rr.get_center().y - 12.0, cap_w, 24.0), kk[1], 0.5 if shut else 1.0, down)
+		cap_w += 14.0
+	var ink := Color(0.1, 0.05, 0.02) if primary and not shut else Pal.ink(0.45 if shut else 0.96)
+	_text(label, Vector2(rr.position.x, ty), px, ink, font_s if primary else font_b, rr.size.x - cap_w, HORIZONTAL_ALIGNMENT_CENTER)
 	if sub != "":
-		_text(sub, Vector2(rr.position.x, ty + 18.0), 11, Pal.ink(0.4 if shut else 0.62), font_b, rr.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+		_text(sub, Vector2(rr.position.x, ty + 18.0), 11, Color(0.15, 0.07, 0.02, 0.8) if primary and not shut else Pal.ink(0.4 if shut else 0.62), font_b, rr.size.x - cap_w, HORIZONTAL_ALIGNMENT_CENTER)
+
+
+static var _ob := {}
+
+
+func _orange_box(hv: float, down: float) -> StyleBoxFlat:
+	var k := "%d|%d" % [int(hv * 10.0), int(down * 10.0)]
+	if _ob.has(k):
+		return _ob[k]
+	var b := StyleBoxFlat.new()
+	b.bg_color = Charcoal.ACCENT.lightened(0.08 * hv).darkened(0.12 * down)
+	b.set_corner_radius_all(8)
+	b.anti_aliasing = true
+	b.shadow_color = Color(0, 0, 0, 0.7 - 0.35 * down)
+	b.shadow_size = 8
+	b.shadow_offset = Vector2(0, 4.0 - 3.0 * down)
+	b.border_width_top = 1
+	b.border_color = Color(1, 1, 1, 0.28 * (1.0 - down))
+	_ob[k] = b
+	return b
 
 
 func _tab_rect(i: int) -> Rect2:
-	return Rect2(PAD + i * 190.0, TAB_Y, 180.0, TAB_H)
+	return Rect2(PAD + i * 248.0, TAB_Y, 234.0, TAB_H)
 
 
 # a warehouse unit's or an offer's picture in a square: the machine's own line art, a bundle, plates
@@ -516,8 +559,9 @@ func _draw() -> void:
 	_btns = {}
 	_notes = {}
 	_shut = {}
-	draw_rect(Rect2(Vector2.ZERO, size), BG)
-	draw_polygon(PackedVector2Array([Vector2.ZERO, Vector2(size.x, 0), Vector2(size.x, size.y), Vector2(0, size.y)]), PackedColorArray([Color(0.5, 0.6, 0.7, 0.04), Color(0.5, 0.6, 0.7, 0.04), Color(0, 0, 0, 0.25), Color(0, 0, 0, 0.25)]))
+	# 2026-11-10 炭黑 (user: "交易行也一点没改啊"): the dark instrument — still near-black ground,
+	# matte charcoal panels with a shadow, figures in black windows, keys that press in
+	Charcoal.ground(self, size)
 	_draw_head()
 	_draw_tabs()
 	_draw_now()
@@ -536,14 +580,20 @@ func _draw_head() -> void:
 	var no := HallMarket.live_orders().size()
 	var line := w("当前上架商品 %d 件 · 已接受订单 %d/%d 张 · %s", "%d LISTED · %d/%d ORDERS · %s") % [nl, no, HallMarket.MAX_ORDERS, HallMarket.level_text()]
 	_text(line, Vector2(PAD + 16, 104), 18, Pal.ink(0.88), font_b)
-	_text(w("当前资金", "CASH"), Vector2(size.x - PAD - 180.0 - 220.0, 58), 13, Pal.ink(0.5), font_b, 200.0, HORIZONTAL_ALIGNMENT_RIGHT)
-	_text(Pal.money(roundf(_cash_shown)), Vector2(size.x - PAD - 180.0 - 220.0, 88), 24, Pal.ink(0.95), font_s, 200.0, HORIZONTAL_ALIGNMENT_RIGHT)
+	var back0 := Back.close_text(true) if Back.has_back() else (w("返回仓库 [Esc]", "BACK TO STORES  [Esc]") if back_to_store else w("关闭窗口 [Esc]", "CLOSE  [Esc]"))
+	var cash_x := size.x - PAD - maxf(170.0, font_b.get_string_size(back0, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 36.0) - 230.0
+	Charcoal.display(self, Rect2(cash_x - 18.0, 36.0, 236.0, 66.0))
+	_text(w("当前资金", "CASH"), Vector2(cash_x, 58), 13, Pal.ink(0.5), font_b, 200.0, HORIZONTAL_ALIGNMENT_RIGHT)
+	_text(Pal.money(roundf(_cash_shown)), Vector2(cash_x, 88), 24, Pal.ink(0.95), font_s, 200.0, HORIZONTAL_ALIGNMENT_RIGHT)
 	var back := Back.close_text(true) if Back.has_back() else (w("返回仓库 [Esc]", "BACK TO STORES  [Esc]") if back_to_store else w("关闭窗口 [Esc]", "CLOSE  [Esc]"))
-	_key("close", Rect2(size.x - PAD - 170.0, 48, 170.0, 46.0), back, (w("返回%s界面", "Back to %s") % Back.label()) if Back.has_back() else (w("关闭交易行界面", "Close the exchange") if not back_to_store else w("返回仓库界面", "Back to the stores page")))
+	var cw := maxf(170.0, font_b.get_string_size(back, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x + 36.0)
+	_key("close", Rect2(size.x - PAD - cw, 48, cw, 46.0), back, (w("返回%s界面", "Back to %s") % Back.label()) if Back.has_back() else (w("关闭交易行界面", "Close the exchange") if not back_to_store else w("返回仓库界面", "Back to the stores page")))
 	draw_line(Vector2(PAD, HEAD_H), Vector2(size.x - PAD, HEAD_H), Pal.ink(0.12), 1.0)
 
 
 func _draw_tabs() -> void:
+	# 2026-11-10 炭黑 v2: three big keys like the terminal's home keys, the open one pressed in, the
+	# orange lip sliding under them
 	var names := {"sell": w("出售货物", "SELL"), "buy": w("购买货物", "BUY"), "orders": w("客户订单", "ORDERS")}
 	var notes := {"sell": w("把仓库里的货物上架到交易行，成交需要等待一段现实时间", "List what is in store; it sells in real time"),
 		"buy": w("可以购买其他公司的设备和钢材，不过价格会比自己拆船获得的更贵", "Buy other companies' machines and steel, dearer than your own"),
@@ -555,20 +605,21 @@ func _draw_tabs() -> void:
 		_notes["tab:" + id] = [str(notes[id]), ""]
 		var on := id == tab
 		var hv := float(_hov.get("tab:" + id, 0.0))
-		draw_rect(r, Color(1, 1, 1, 0.06 if on else 0.02 + 0.04 * hv))
-		var label := str(names[id])
+		var fr := Charcoal.key(self, r, 1.0, 1.0 if on else 0.0, Charcoal.FACE.lerp(Charcoal.FACE_HI, hv), 10)
+		_text("%d" % (i + 1), fr.position + Vector2(18, 37), 26, Charcoal.ACCENT if on else Pal.ink(0.45), font_l)
+		var count := ""
 		if id == "sell" and HallMarket.listings().size() > 0:
-			label += "  ·  %d" % HallMarket.listings().size()
+			count = "%d" % HallMarket.listings().size()
 		if id == "orders":
 			var open_n := HallMarket.orders().filter(func(o): return str(o.state) == "open").size()
 			if open_n > 0:
-				label += "  ·  %d" % open_n
-		_text(label, r.position + Vector2(0, 29), 17, Pal.ink(0.97 if on else 0.6 + 0.3 * hv), font_s if on else font_b, r.size.x, HORIZONTAL_ALIGNMENT_CENTER)
-	# the underline slides, with a glow under it
-	var ir := Rect2(_ink_x, TAB_Y + TAB_H - 3.0, 180.0, 3.0)
-	draw_rect(ir.grow_individual(0, 4, 0, 0), Color(UiSkin.ACCENT, 0.12))
-	draw_rect(ir, UiSkin.ACCENT)
-	draw_line(Vector2(PAD, TAB_Y + TAB_H), Vector2(size.x - PAD, TAB_Y + TAB_H), Pal.ink(0.1), 1.0)
+				count = "%d" % open_n
+		_text(str(names[id]), fr.position + Vector2(52, 36), 19, Pal.ink(0.97 if on else 0.7 + 0.25 * hv), font_s, fr.size.x - 100.0)
+		if count != "":
+			var cr := Rect2(fr.end.x - 44.0, fr.position.y + 15.0, 30.0, 26.0)
+			Charcoal.display(self, cr, 1.0, 5)
+			_text(count, cr.position + Vector2(0, 19), 14, Pal.ink(0.95), font_s, cr.size.x, HORIZONTAL_ALIGNMENT_CENTER)
+	Charcoal.lip(self, Rect2(_ink_x + 24.0, TAB_Y + TAB_H - 4.0, 186.0, 4.0))
 
 
 func _body_top() -> float:
@@ -607,7 +658,10 @@ func now_of() -> Array:
 
 func _draw_now() -> void:
 	var n := now_of()
-	ConsoleKit.draw_now(self, Rect2(PAD, TAB_Y + TAB_H + 16.0, size.x - PAD * 2.0, NOW_H), bool(n[0]), str(n[1]))
+	var r := Rect2(PAD, TAB_Y + TAB_H + 16.0, size.x - PAD * 2.0, NOW_H)
+	# 炭黑: the shared line (ConsoleKit) set into a charcoal plate of its own
+	Charcoal.panel(self, r.grow(6.0), 1.0, 0.0, Charcoal.FACE, 10)
+	ConsoleKit.draw_now(self, r, bool(n[0]), str(n[1]))
 
 
 func _swap_k() -> Array:
@@ -621,70 +675,102 @@ func _swap_k() -> Array:
 
 func _draw_sell() -> void:
 	var top := _body_top()
-	var lr := Rect2(PAD, top, LIST_W, size.y - top - 70.0)
-	_glass(lr)
-	_text(w("仓库里可以出售的货物", "IN STORE, FOR SALE"), lr.position + Vector2(18, 30), 15, Pal.ink(0.7), font_s)
-	var y0 := lr.position.y + 48.0
-	var vis_h := lr.size.y - 56.0
+	var lr := Rect2(PAD, top, LIST_W, size.y - top - 64.0)
+	Charcoal.panel(self, lr, 1.0, 0.0, Charcoal.FACE, 14)
+	_text(w("仓库里可以出售的货物", "IN STORE, FOR SALE"), lr.position + Vector2(22, 36), 17, Pal.ink(0.85), font_s)
+	_text("%d" % _units.size(), Vector2(lr.end.x - 22, lr.position.y + 36), 17, Pal.ink(0.5), font_s, -1, HORIZONTAL_ALIGNMENT_RIGHT)
+	Charcoal.groove(self, lr.position.x + 16, lr.end.x - 16, lr.position.y + 52)
+	var y0 := lr.position.y + 62.0
+	var vis_h := lr.size.y - 72.0
 	var maxs := maxf(0.0, _units.size() * ROW_H - vis_h)
 	scroll.sell = clampf(float(scroll.sell), 0.0, maxs)
 	if _units.is_empty():
-		_text(w("仓库目前还是空的，拆船回收的货物会自动存放到这里", "THE STORES ARE EMPTY: WHAT YOU BRING HOME COMES HERE"), lr.position + Vector2(18, 80), 14, Pal.ink(0.5), font_b, lr.size.x - 36.0)
+		_text(w("仓库目前还是空的，拆船回收的货物会自动存放到这里", "THE STORES ARE EMPTY: WHAT YOU BRING HOME COMES HERE"), lr.position + Vector2(22, 100), 14, Pal.ink(0.5), font_b, lr.size.x - 44.0)
 	for i in _units.size():
 		var u: Dictionary = _units[i]
 		var ry := y0 + i * ROW_H - float(scroll.sell)
 		if ry < y0 - 1.0 or ry + ROW_H > lr.end.y - 4.0:
 			continue
 		var rs := _rise(i)
-		var r := Rect2(lr.position.x + 10.0, ry + float(rs[0]), lr.size.x - 20.0, ROW_H - 6.0)
 		var id := "u:" + str(u.id)
+		var r := Rect2(lr.position.x + 14.0, ry + float(rs[0]), lr.size.x - 28.0, ROW_H - 8.0)
 		_btns[id] = r
 		_notes[id] = ["", ""]
-		var on := str(u.id) == sel
-		var hv := float(_hov.get(id, 0.0))
-		var a := float(rs[1])
-		draw_rect(r, Color(UiSkin.ACCENT, 0.14 * a) if on else Color(1, 1, 1, (0.02 + 0.05 * hv) * a))
-		if on:
-			draw_rect(Rect2(r.position, Vector2(3, r.size.y)), Color(UiSkin.ACCENT, a))
-		_u_thumb(Rect2(r.position + Vector2(10, 5), Vector2(48, 48)), u, a)
-		_text(str(u.name), r.position + Vector2(72, 25), 15, Pal.ink(0.95 * a), font_s, 260.0)
-		_text("%s · %s" % [str(u.get("qty", "")), StoreBook.cat_name(str(u.cat))], r.position + Vector2(72, 46), 12, Pal.ink(0.5 * a), font_b, 260.0)
-		_text(w("预计 %s", "~%s") % Pal.money(HallMarket.net(HallMarket.market_now(u))), r.position + Vector2(r.size.x - 160.0, 33), 15, Pal.ink(0.9 * a), font_b, 148.0, HORIZONTAL_ALIGNMENT_RIGHT)
+		_row_key(r, str(u.id) == sel, float(_hov.get(id, 0.0)), float(rs[1]))
+		var rr := Rect2(r.position + Vector2(0, 4.0 if str(u.id) == sel else 0.0), r.size)
+		_u_thumb(Rect2(rr.position + Vector2(30, 6), Vector2(44, 44)), u, float(rs[1]))
+		_text(str(u.name), rr.position + Vector2(86, 25), 15, Pal.ink(0.95 * float(rs[1])), font_s, 200.0)
+		_text("%s · %s" % [str(u.get("qty", "")), StoreBook.cat_name(str(u.cat))], rr.position + Vector2(86, 45), 12, Pal.ink(0.5 * float(rs[1])), font_b, 200.0)
+		var pw := Rect2(rr.end.x - 140.0, rr.position.y + 10.0, 128.0, rr.size.y - 20.0)
+		Charcoal.display(self, pw, float(rs[1]), 5)
+		_text(Pal.money(HallMarket.net(HallMarket.market_now(u))), pw.position + Vector2(0, pw.size.y * 0.5 + 7.0), 17, Pal.ink(0.95 * float(rs[1])), font_s, pw.size.x - 12.0, HORIZONTAL_ALIGNMENT_RIGHT)
 	if maxs > 0.0:
 		var bar_h := vis_h * vis_h / (vis_h + maxs)
-		draw_rect(Rect2(lr.end.x - 5.0, y0 + (vis_h - bar_h) * float(scroll.sell) / maxs, 3.0, bar_h), Pal.ink(0.25))
-	var dr := Rect2(lr.end.x + 20.0, top, size.x - PAD - lr.end.x - 20.0, size.y - top - 70.0)
-	_glass(dr)
+		draw_rect(Rect2(lr.end.x - 7.0, y0 + (vis_h - bar_h) * float(scroll.sell) / maxs, 3.0, bar_h), Pal.ink(0.25))
+	var dr := Rect2(lr.end.x + 24.0, top, size.x - PAD - lr.end.x - 24.0, lr.size.y)
+	Charcoal.panel(self, dr, 1.0, 0.0, Charcoal.FACE, 14)
 	var sw := _swap_k()
 	var x := dr.position.x + 28.0
-	var y := dr.position.y + 44.0 + float(sw[0])
+	var wd := dr.size.x - 56.0
+	var y := dr.position.y + float(sw[0])
 	var u := _unit(sel)
 	if u.is_empty():
-		_text(w("先从左边选择一件货物", "PICK SOMETHING ON THE LEFT"), Vector2(x, y + 20), 18, Pal.ink(0.5), font_b)
+		_text(w("先从左边选择一件货物", "PICK SOMETHING ON THE LEFT"), Vector2(x, y + 60), 18, Pal.ink(0.5), font_b)
+		return
+	var kind := HallMarket.kind_of(u)
+	var mkt := HallMarket.market_now(u)
+	var avg := float(u.market)
+	_u_thumb(Rect2(Vector2(x, y + 20), Vector2(64, 64)), u)
+	_text(str(u.name), Vector2(x + 84, y + 52), 28, Pal.ink(0.97), font_s, wd - 100.0)
+	_text("%s · %s" % [str(u.get("qty", "")), StoreBook.cat_name(str(u.cat))], Vector2(x + 84, y + 78), 14, Pal.ink(0.55), font_b)
+	# the three prices in one big black window, each with its scale
+	var of := _order_for(u)
+	var order_p := float(of.price) if not of.is_empty() else avg * HallMarket.ORDER_K
+	_price_window(Rect2(x, y + 100.0, wd, 132.0), [
+		[w("回收站", "RECYCLING"), float(u.recycle), w("立刻到账", "PAID AT ONCE")],
+		[w("交易行预计到手", "EXCHANGE, PAID"), HallMarket.net(mkt), HallMarket.eta_text(HallMarket.fill_secs(mkt, mkt))],
+		[w("订单价", "AN ORDER"), order_p, (w("%s 要", "%s WANTS IT") % str(of.client)) if not of.is_empty() else w("目前没有买家", "NONE WANT IT NOW")]], 1)
+	var cr := Rect2(x, y + 250.0, wd, 200.0)
+	_draw_curve(cr, kind, avg)
+	var by := cr.end.y + 22.0
+	if not custom:
+		_key("list", Rect2(x, by, minf(540.0, wd - 240.0), 58.0), w("按照建议价格上架 %s [Enter]", "LIST AT THE SUGGESTED PRICE  %s  [Enter]") % Pal.money(mkt),
+			w("按照当前市场价格上架出售，成交后会扣除 5% 的手续费，剩余金额会转入账户", "Listed at the market now; paid less 5% on the sale"), "", true,
+			w("预计到账 %s · %s", "%s PAID · %s") % [Pal.money(HallMarket.net(mkt)), HallMarket.eta_text(HallMarket.fill_secs(mkt, mkt))])
+		_key("custom", Rect2(x + minf(540.0, wd - 240.0) + 16.0, by, 220.0, 58.0), w("自行设置价格…", "SET MY OWN PRICE…"), w("打开价格调整滑条，价格越高，成交可能越慢；价格越低，成交通常越快", "Open the price slider: dearer sells slower, cheaper faster"))
+		_draw_listings(Rect2(x, by + 80.0, wd, dr.end.y - 16.0 - by - 80.0))
 	else:
-		var kind := HallMarket.kind_of(u)
-		var mkt := HallMarket.market_now(u)
-		var avg := float(u.market)
-		_u_thumb(Rect2(Vector2(x, y - 26), Vector2(72, 72)), u)
-		_text(str(u.name), Vector2(x + 90, y + 2), 26, Pal.ink(0.97), font_s, dr.size.x - 140.0)
-		_text("%s · %s" % [str(u.get("qty", "")), StoreBook.cat_name(str(u.cat))], Vector2(x + 90, y + 30), 14, Pal.ink(0.55), font_b)
-		# the price ladder in one line (§四)
-		var of := _order_for(u)
-		var ladder := w("回收站价格 %s · 交易行预计售价 %s · 订单价格 %s", "RECYCLING %s · EXCHANGE ~%s · ORDER %s") % [Pal.money(float(u.recycle)), Pal.money(HallMarket.net(mkt)), Pal.money(float(of.price)) if not of.is_empty() else w("预计售价 %s（目前没有买家）", "~%s (NONE WANT IT NOW)") % Pal.money(avg * HallMarket.ORDER_K)]
-		_text(ladder, Vector2(x, y + 76), 16, Pal.ink(0.85), font_b, dr.size.x - 56.0)
-		# the price curve
-		var cr := Rect2(x, y + 100.0, dr.size.x - 56.0, 230.0)
-		_draw_curve(cr, kind, avg)
-		var by := cr.end.y + 26.0
-		if not custom:
-			_key("list", Rect2(x, by, 520.0, 58.0), w("按照建议价格上架 %s [Enter]", "LIST AT THE SUGGESTED PRICE  %s  [Enter]") % Pal.money(mkt),
-				w("按照当前市场价格上架出售，成交后会扣除 5% 的手续费，剩余金额会转入账户", "Listed at the market now; paid less 5% on the sale"), "", true,
-				w("预计到账 %s · %s", "%s PAID · %s") % [Pal.money(HallMarket.net(mkt)), HallMarket.eta_text(HallMarket.fill_secs(mkt, mkt))])
-			_key("custom", Rect2(x + 536.0, by, 220.0, 58.0), w("自行设置价格…", "SET MY OWN PRICE…"), w("打开价格调整滑条，价格越高，成交可能越慢；价格越低，成交通常越快", "Open the price slider: dearer sells slower, cheaper faster"))
-		else:
-			_draw_slider(Rect2(x, by - 6.0, dr.size.x - 56.0, 150.0), u, mkt, avg)
-	# what is listed
-	_draw_listings(Rect2(dr.position.x + 28.0, dr.end.y - 190.0, dr.size.x - 56.0, 176.0))
+		_draw_slider(Rect2(x, by - 4.0, wd, 150.0), u, mkt, avg)
+		_draw_listings(Rect2(x, by + 156.0, wd, dr.end.y - 16.0 - by - 156.0))
+
+
+func _row_key(r: Rect2, on: bool, hv: float, a: float) -> void:
+	var fr := Charcoal.key(self, r, a, 1.0 if on else 0.0, Charcoal.FACE_HI if hv > 0.5 and not on else Charcoal.FACE, 8)
+	Charcoal.led(self, Vector2(fr.position.x + 15.0, fr.get_center().y), on, a, 4.0)
+	if on:
+		Charcoal.lip(self, Rect2(fr.position.x + 30.0, fr.end.y - 5.0, fr.size.x - 60.0, 3.0), a)
+
+
+# three prices side by side in a black window: label, the figure large, a scale against the
+# dearest, a line under it; hi = the one to look at (its figure in the accent)
+func _price_window(r: Rect2, cols: Array, hi: int) -> void:
+	Charcoal.display(self, r)
+	var top := 0.0
+	for c in cols:
+		if (c as Array).size() <= 3:
+			top = maxf(top, float(c[1]))
+	var cw := r.size.x / cols.size()
+	for i in cols.size():
+		var cx := r.position.x + i * cw
+		if i > 0:
+			draw_line(Vector2(cx, r.position.y + 14), Vector2(cx, r.end.y - 14), Color(1, 1, 1, 0.07), 1.0)
+		_text(str(cols[i][0]), Vector2(cx + 18, r.position.y + 30), 13, Pal.ink(0.5), font_b, cw - 30.0)
+		# a fourth entry: the figure as words (a count, not money), with no price scale under it
+		var plain: bool = (cols[i] as Array).size() > 3
+		_text(str(cols[i][3]) if plain else Pal.money(float(cols[i][1])), Vector2(cx + 16, r.position.y + 76), 36, Charcoal.ACCENT if i == hi else Pal.ink(0.96), font_l, cw - 26.0)
+		if not plain:
+			Charcoal.segments(self, Rect2(cx + 18, r.position.y + 90, cw - 40.0, 7.0), float(cols[i][1]) / maxf(top, 1.0) * 16.0, 16)
+		_text(str(cols[i][2]), Vector2(cx + 18, r.end.y - 14), 12, Pal.ink(0.5), font_b, cw - 30.0)
 
 
 func _order_for(u: Dictionary) -> Dictionary:
@@ -700,14 +786,23 @@ func _order_for(u: Dictionary) -> Dictionary:
 
 
 func _draw_curve(r: Rect2, kind: String, avg: float) -> void:
-	draw_rect(r, Color(0, 0, 0, 0.25))
-	draw_rect(r, Pal.ink(0.1), false, 1.0)
+	# 炭黑: an oscilloscope window — a fine grid, ticks along its edges, the line in the accent
+	Charcoal.display(self, r)
+	for gi in range(1, 12):
+		var gx := r.position.x + r.size.x * gi / 12.0
+		draw_line(Vector2(gx, r.position.y + 4), Vector2(gx, r.end.y - 4), Color(1, 1, 1, 0.03), 1.0)
+	for gj in range(1, 6):
+		var gy := r.position.y + r.size.y * gj / 6.0
+		draw_line(Vector2(r.position.x + 4, gy), Vector2(r.end.x - 4, gy), Color(1, 1, 1, 0.03), 1.0)
+	for ti in range(0, 49):
+		var tx := r.position.x + r.size.x * ti / 48.0
+		draw_line(Vector2(tx, r.end.y - 4), Vector2(tx, r.end.y - (10.0 if ti % 4 == 0 else 6.0)), Color(1, 1, 1, 0.16), 1.0)
 	var lo := 1.0 - HallMarket.DRIFT * 1.25
 	var hi := 1.0 + HallMarket.DRIFT * 1.25
 	var yof := func(f: float) -> float: return r.end.y - 18.0 - (f - lo) / (hi - lo) * (r.size.y - 36.0)
 	# the ±10 % band and the average
 	var band := Rect2(r.position.x, yof.call(1.0 + HallMarket.DRIFT), r.size.x, yof.call(1.0 - HallMarket.DRIFT) - yof.call(1.0 + HallMarket.DRIFT))
-	draw_rect(band, Color(1, 1, 1, 0.025))
+	draw_rect(band, Color(1, 1, 1, 0.018))
 	var ay: float = yof.call(1.0)
 	var dx := r.position.x
 	while dx < r.end.x:
@@ -729,7 +824,7 @@ func _draw_curve(r: Rect2, kind: String, avg: float) -> void:
 		fill.append(Vector2(pts[0].x, r.end.y - 1.0))
 		var cols := PackedColorArray()
 		for i in fill.size():
-			cols.append(Color(UiSkin.ACCENT, 0.09 if i < pts.size() else 0.0))
+			cols.append(Color(1, 1, 1, 0.035 if i < pts.size() else 0.0))
 		draw_polygon(fill, cols)
 		draw_polyline(pts, Color(UiSkin.ACCENT, 0.9), 2.0, true)
 	var now_f := HallMarket.drift(kind)
@@ -786,7 +881,7 @@ func _draw_slider(r: Rect2, u: Dictionary, mkt: float, avg: float) -> void:
 
 
 func _draw_listings(r: Rect2) -> void:
-	draw_line(r.position, Vector2(r.end.x, r.position.y), Pal.ink(0.1), 1.0)
+	Charcoal.groove(self, r.position.x, r.end.x, r.position.y)
 	var ls := HallMarket.listings()
 	_text(w("当前有 %d 件商品正在出售", "LISTED: %d") % ls.size(), r.position + Vector2(0, 26), 15, Pal.ink(0.7), font_s)
 	var sold: Array = HallMarket.data().get("sold", [])
@@ -797,13 +892,13 @@ func _draw_listings(r: Rect2) -> void:
 		_text(w("目前还没有上架的商品，选择一件商品后按 Enter 即可上架。", "NOTHING LISTED: PICK ONE ABOVE, ENTER TO LIST"), r.position + Vector2(0, 62), 13, Pal.ink(0.42), font_b)
 		return
 	var cw := (r.size.x - 24.0) / 3.0
-	for i in mini(ls.size(), 6):
+	var fit_rows := maxi(1, int((r.size.y - 42.0) / 66.0))
+	for i in mini(ls.size(), 3 * fit_rows):
 		var l: Dictionary = ls[i]
 		var cx := r.position.x + (i % 3) * (cw + 12.0)
 		var cy := r.position.y + 42.0 + (i / 3) * 66.0
 		var cr := Rect2(cx, cy, cw, 58.0)
-		draw_rect(cr, Color(1, 1, 1, 0.03))
-		draw_rect(cr, Pal.ink(0.14), false, 1.0)
+		Charcoal.panel(self, cr, 1.0, 0.0, Charcoal.FACE_HI, 8)
 		_text(str(l.name), cr.position + Vector2(12, 22), 13, Pal.ink(0.92), font_s, cw - 120.0)
 		_text(w("当前出售价格 %s · %s", "%s · %s") % [Pal.money(float(l.price)), HallMarket.eta_text(HallMarket.listing_left(l))], cr.position + Vector2(12, 40), 11, Pal.ink(0.55), font_b, cw - 120.0)
 		var pr := Rect2(cr.position.x + 12.0, cr.end.y - 9.0, cw - 124.0, 3.0)
@@ -816,70 +911,83 @@ func _draw_listings(r: Rect2) -> void:
 
 func _draw_buy() -> void:
 	var top := _body_top()
-	var lr := Rect2(PAD, top, LIST_W, size.y - top - 70.0)
-	_glass(lr)
-	_text(w("其他公司正在出售的商品", "OTHER COMPANIES' GOODS"), lr.position + Vector2(18, 30), 15, Pal.ink(0.7), font_s)
+	var lr := Rect2(PAD, top, LIST_W, size.y - top - 64.0)
+	Charcoal.panel(self, lr, 1.0, 0.0, Charcoal.FACE, 14)
+	_text(w("其他公司正在出售的商品", "OTHER COMPANIES' GOODS"), lr.position + Vector2(22, 36), 17, Pal.ink(0.85), font_s)
+	Charcoal.groove(self, lr.position.x + 16, lr.end.x - 16, lr.position.y + 52)
 	var offers := HallMarket.offers()
 	var need := _repair_need()
 	for i in offers.size():
 		var of: Dictionary = offers[i]
 		var rs := _rise(i)
-		var r := Rect2(lr.position.x + 10.0, lr.position.y + 48.0 + i * ROW_H + float(rs[0]), lr.size.x - 20.0, ROW_H - 6.0)
+		var r := Rect2(lr.position.x + 14.0, lr.position.y + 62.0 + i * ROW_H + float(rs[0]), lr.size.x - 28.0, ROW_H - 8.0)
 		if r.end.y > lr.end.y - 4.0:
 			break
 		var id := "b:" + str(of.kind)
 		_btns[id] = r
 		_notes[id] = ["", ""]
 		var on := str(of.kind) == buy_sel
-		var hv := float(_hov.get(id, 0.0))
 		var a := float(rs[1])
-		draw_rect(r, Color(UiSkin.ACCENT, 0.14 * a) if on else Color(1, 1, 1, (0.02 + 0.05 * hv) * a))
-		if on:
-			draw_rect(Rect2(r.position, Vector2(3, r.size.y)), Color(UiSkin.ACCENT, a))
+		_row_key(r, on, float(_hov.get(id, 0.0)), a)
+		var rr := Rect2(r.position + Vector2(0, 4.0 if on else 0.0), r.size)
 		var rp := HallMarket.rep_piece(str(of.kind)) if str(of.cat) == "equip" else ["", "", 0.0]
-		_thumb(Rect2(r.position + Vector2(10, 5), Vector2(48, 48)), str(of.cat), str(rp[0]), str(rp[1]), str(of.kind), a)
-		_text(str(of.name), r.position + Vector2(72, 25), 15, Pal.ink(0.95 * a), font_s, 230.0)
+		_thumb(Rect2(rr.position + Vector2(30, 6), Vector2(44, 44)), str(of.cat), str(rp[0]), str(rp[1]), str(of.kind), a)
+		_text(str(of.name), rr.position + Vector2(86, 25), 15, Pal.ink(0.95 * a), font_s, 190.0)
 		var sub := str(of.seller)
 		if need.has(str(of.kind)):
 			sub += w(" · 修缮时需要使用", " · FOR THE MENDING")
-		_text(sub, r.position + Vector2(72, 46), 12, Color(UiSkin.ACCENT, 0.8 * a) if need.has(str(of.kind)) else Pal.ink(0.5 * a), font_b, 260.0)
-		_text("%s / %s" % [Pal.money(float(of.each)), str(of.unit)], r.position + Vector2(r.size.x - 170.0, 33), 15, Pal.ink(0.9 * a), font_b, 158.0, HORIZONTAL_ALIGNMENT_RIGHT)
-	var dr := Rect2(lr.end.x + 20.0, top, size.x - PAD - lr.end.x - 20.0, size.y - top - 70.0)
-	_glass(dr)
+		_text(sub, rr.position + Vector2(86, 45), 12, Color(Charcoal.ACCENT, 0.85 * a) if need.has(str(of.kind)) else Pal.ink(0.5 * a), font_b, 190.0)
+		var pw := Rect2(rr.end.x - 140.0, rr.position.y + 10.0, 128.0, rr.size.y - 20.0)
+		Charcoal.display(self, pw, a, 5)
+		_text("%s/%s" % [Pal.money(float(of.each)), str(of.unit)], pw.position + Vector2(0, pw.size.y * 0.5 + 6.0), 14, Pal.ink(0.95 * a), font_s, pw.size.x - 12.0, HORIZONTAL_ALIGNMENT_RIGHT)
+	var dr := Rect2(lr.end.x + 24.0, top, size.x - PAD - lr.end.x - 24.0, lr.size.y)
+	Charcoal.panel(self, dr, 1.0, 0.0, Charcoal.FACE, 14)
 	var of2 := _offer(buy_sel)
 	if of2.is_empty():
 		return
 	var sw := _swap_k()
 	var x := dr.position.x + 28.0
-	var y := dr.position.y + 44.0 + float(sw[0])
+	var wd := dr.size.x - 56.0
+	var y := dr.position.y + float(sw[0])
 	var steel := str(of2.cat) == "steel"
 	var rp2 := HallMarket.rep_piece(buy_sel) if not steel else ["", "", 0.0]
-	_thumb(Rect2(Vector2(x, y - 26), Vector2(96, 96)), str(of2.cat), str(rp2[0]), str(rp2[1]), buy_sel)
-	_text(str(of2.name), Vector2(x + 116, y + 4), 26, Pal.ink(0.97), font_s)
-	_text(w("出售方：%s", "SELLER %s") % str(of2.seller), Vector2(x + 116, y + 32), 14, Pal.ink(0.55), font_b)
+	_thumb(Rect2(Vector2(x, y + 20), Vector2(64, 64)), str(of2.cat), str(rp2[0]), str(rp2[1]), buy_sel)
+	_text(str(of2.name), Vector2(x + 84, y + 52), 28, Pal.ink(0.97), font_s, wd - 100.0)
+	_text(w("出售方：%s", "SELLER %s") % str(of2.seller), Vector2(x + 84, y + 78), 14, Pal.ink(0.55), font_b)
 	var own_v := RepairBill.STEEL_PRICE if steel else RepairBill.kind_price(buy_sel)
-	var dear := roundi((float(of2.each) / maxf(own_v, 1.0) - 1.0) * 100.0)
-	y += 100.0
-	_text(w("%s / %s", "%s / %s") % [Pal.money(float(of2.each)), str(of2.unit)], Vector2(x, y), 30, Pal.ink(0.97), font_s)
-	if steel:
-		_text(w("修缮钢材按吨出售，购买后会存入仓库的修缮钢材区，修缮港区时会自动从库存中扣除", "Repair steel by the tonne, into the stores' repair steel slot; the works take from it"), Vector2(x, y + 30), 14, Pal.ink(0.6), font_b, dr.size.x - 56.0)
-	else:
-		_text(w("自己拆船获得的同类物资价值约为 %s，这里的售价高出 %d%%", "YOUR OWN SALVAGE OF THIS KIND ~%s · %d%% DEARER HERE") % [Pal.money(own_v), dear], Vector2(x, y + 30), 14, Pal.ink(0.6), font_b, dr.size.x - 56.0)
 	var have := float(Career.data.get("structure_t", 0.0)) if steel else float(RepairBill.own_of(buy_sel).size())
-	_text((w("仓库当前库存：%.1f t", "IN STORE: %.1f t") % have) if steel else (w("仓库当前库存：%d 台", "IN STORE: %d") % int(have)), Vector2(x, y + 54), 14, Pal.ink(0.6), font_b)
+	_price_window(Rect2(x, y + 100.0, wd, 132.0), [
+		[w("售价", "PRICE"), float(of2.each), "/ %s" % str(of2.unit)],
+		[w("自己拆船获得约", "YOUR OWN SALVAGE"), own_v, w("这里贵 %d%%", "%d%% DEARER HERE") % roundi((float(of2.each) / maxf(own_v, 1.0) - 1.0) * 100.0)],
+		[w("仓库库存", "IN STORE"), have, w("修缮时会先用库存", "THE MENDING USES THESE FIRST"), (w("%.1f t", "%.1f t") % have) if steel else (w("%d 台", "%d") % int(have))]], 0)
+	var ny := y + 262.0
+	if steel:
+		_text(w("修缮钢材按吨出售，购买后会存入仓库的修缮钢材区，修缮港区时会自动从库存中扣除", "Repair steel by the tonne, into the stores' repair steel slot; the works take from it"), Vector2(x, ny), 14, Pal.ink(0.6), font_b, wd)
+		ny += 24.0
 	need = _repair_need()
 	if need.has(buy_sel):
-		_text(str(need[buy_sel]), Vector2(x, y + 78), 14, Color(UiSkin.ACCENT, 0.9), font_b, dr.size.x - 56.0)
-	y += 120.0
+		Charcoal.led(self, Vector2(x + 6, ny - 5), true, 1.0, 4.0)
+		_text(str(need[buy_sel]), Vector2(x + 20, ny), 14, Pal.ink(0.9), font_b, wd - 20.0)
+		ny += 24.0
+	# how many: two big keycaps either side of a black window
+	var qy := ny + 20.0
 	var step := float(of2.get("step", 1.0))
 	var n := float(buy_n) * step
-	_key("bminus", Rect2(x, y, 48.0, 48.0), "−", w("减少购买数量", "Fewer"))
-	_text((("%.0f t" % n) if steel else ("× %d" % buy_n)), Vector2(x + 56.0, y + 32.0), 22, Pal.ink(0.95), font_s, 120.0, HORIZONTAL_ALIGNMENT_CENTER)
-	_key("bplus", Rect2(x + 184.0, y, 48.0, 48.0), "+", w("增加购买数量", "More"))
+	_key("bminus", Rect2(x, qy, 72.0, 72.0), "−", w("减少购买数量", "Fewer"))
+	var qw := Rect2(x + 88.0, qy, 180.0, 72.0)
+	Charcoal.display(self, qw)
+	_text(w("数量", "QUANTITY"), qw.position + Vector2(14, 22), 12, Pal.ink(0.5), font_b)
+	_text((("%.0f t" % n) if steel else ("× %d" % buy_n)), qw.position + Vector2(0, 58), 30, Pal.ink(0.97), font_l, qw.size.x - 16.0, HORIZONTAL_ALIGNMENT_RIGHT)
+	_key("bplus", Rect2(qw.end.x + 16.0, qy, 72.0, 72.0), "+", w("增加购买数量", "More"))
 	var total := snappedf(float(of2.each) * n, 1.0)
 	var cash := float(Career.data.get("money", 0.0))
+	var tw := Rect2(qw.end.x + 108.0, qy, minf(300.0, wd - (qw.end.x + 108.0 - x)), 72.0)
+	if tw.size.x > 160.0:
+		Charcoal.display(self, tw)
+		_text(w("合计", "TOTAL"), tw.position + Vector2(14, 22), 12, Pal.ink(0.5), font_b)
+		_text(Pal.money(total), tw.position + Vector2(0, 58), 30, Pal.ink(0.97) if cash + 0.5 >= total else Pal.heat(1.0, 1.2), font_l, tw.size.x - 16.0, HORIZONTAL_ALIGNMENT_RIGHT)
 	var why := "" if cash + 0.5 >= total else w("现金不足：- %s", "NOT ENOUGH CASH: %s SHORT") % Pal.money(total - cash)
-	_key("buy", Rect2(x, y + 70.0, 520.0, 58.0), w("买下  %s  [Enter]", "BUY  %s  [Enter]") % Pal.money(total),
+	_key("buy", Rect2(x, qy + 96.0, minf(560.0, wd), 58.0), w("买下  %s  [Enter]", "BUY  %s  [Enter]") % Pal.money(total),
 		w("确认付款后，购买的货物会存入仓库，仓库空间不足时，多余的货物会进入待入库区", "Paid at once; into the stores (what does not fit waits to be stored)"), why, true,
 		w("付款前现金 %s，付款后剩余 %s", "CASH %s → %s") % [Pal.money(cash), Pal.money(cash - total)])
 
@@ -900,27 +1008,29 @@ func _repair_need() -> Dictionary:
 # ---------------------------------------------------------------- 订单
 
 func _draw_orders() -> void:
-	# 132 号 (sketch 1b): no rule strip, no empty slots — the cards by how much they want doing now,
-	# bigger words, the one key on the picked card; one line for the next order
+	# 炭黑 v2: the orders as big numbered keys (01, 02 …), the offer in a black window, a lamp for the
+	# state, the time left as a segment count-down, the key at the foot of the card
 	var top := _body_top()
 	var cards := _cards()
 	var n := cards.size()
 	var per := 4
-	var cw := (size.x - PAD * 2.0 - (per - 1) * 16.0) / per
+	var gap := 22.0
+	var cw := (size.x - PAD * 2.0 - (per - 1) * gap) / per
 	var rows := maxi(1, ceili(n / float(per)))
-	var ch := minf(430.0, (size.y - top - 130.0 - (rows - 1) * 16.0) / rows)
+	var ch := minf(470.0, (size.y - top - 110.0 - (rows - 1) * gap) / rows)
 	for i in n:
-		var cx := PAD + (i % per) * (cw + 16.0)
-		var cy := top + (i / per) * (ch + 16.0)
+		var cx := PAD + (i % per) * (cw + gap)
+		var cy := top + (i / per) * (ch + gap)
 		var rs := _rise(i)
-		_order_card(Rect2(cx, cy + float(rs[0]), cw, ch), cards[i], float(rs[1]))
-	var ny := top + rows * (ch + 16.0) + 20.0 if n > 0 else top + 40.0
+		_order_card(Rect2(cx, cy + float(rs[0]), cw, ch), cards[i], float(rs[1]), i)
+	var ny := top + rows * (ch + gap) + 22.0 if n > 0 else top + 40.0
 	var s0 := maxf(0.0, float(HallMarket.data().get("next_order", 0.0)) - HallMarket.clock())
 	var nl := (w("下一批订单预计 %d 秒后到达", "NEXT ORDER IN ~%d s") % int(ceil(s0))) if n < HallMarket.MAX_ORDERS else w("当前订单已达到上限，最多可以同时保留 %d 张订单", "FULL: UP TO %d ORDERS") % HallMarket.MAX_ORDERS
-	_text(nl, Vector2(PAD, ny), 20, Pal.ink(0.5), font_b)
+	Charcoal.led(self, Vector2(PAD + 6, ny - 6), n < HallMarket.MAX_ORDERS, 1.0, 4.0, Color(0.86, 0.88, 0.86))
+	_text(nl, Vector2(PAD + 22, ny), 18, Pal.ink(0.55), font_b)
 
 
-func _order_card(r: Rect2, o: Dictionary, a: float) -> void:
+func _order_card(r: Rect2, o: Dictionary, a: float, idx := 0) -> void:
 	var id := "o:" + str(o.id)
 	_btns[id] = r
 	_notes[id] = ["", ""]
@@ -928,50 +1038,66 @@ func _order_card(r: Rect2, o: Dictionary, a: float) -> void:
 	var hv := float(_hov.get(id, 0.0))
 	var st := str(o.state)
 	var lit := st in ["taken", "rail", "ship"]
-	draw_rect(r, Color(0.06, 0.07, 0.08, 0.85 * a))
-	draw_texture_rect(CodexFx.rows_tex(), r, true, Color(1, 1, 1, 0.02 * a))
-	draw_rect(r, Color(UiSkin.ACCENT, (0.95 if on else 0.35 + 0.3 * hv) * a) if on else Pal.ink((0.16 + 0.2 * hv) * a), false, 2.0 if on else 1.0)
-	if lit:
-		draw_rect(Rect2(r.position, Vector2(r.size.x, 3)), Color(UiSkin.DATA, 0.8 * a))
+	var have := HallMarket.have_of(str(o.cat), str(o.kind))
+	var ok := have >= float(o.n) - 0.0005
+	r = Charcoal.key(self, r, a, 0.0, Charcoal.FACE_HI if on or hv > 0.5 else Charcoal.FACE, 14)
+	if on:
+		var ring := StyleBoxFlat.new()
+		ring.draw_center = false
+		ring.set_corner_radius_all(14)
+		ring.set_border_width_all(1)
+		ring.anti_aliasing = true
+		ring.border_color = Color(Charcoal.ACCENT, 0.8 * a)
+		draw_style_box(ring, r)
 	var x := r.position.x + 22.0
-	var y := r.position.y + 36.0
-	_text(str(o.client), Vector2(x, y), 20, Pal.ink(0.6 * a), font_b, r.size.x - 44.0)
-	y += 14.0
+	var wd := r.size.x - 44.0
+	# the big number, the lamp, who wants what
+	_text("%02d" % (idx + 1), Vector2(x - 2, r.position.y + 62), 54, Color(Charcoal.ACCENT, a) if on else Pal.ink(0.9 * a), font_l)
+	Charcoal.led(self, Vector2(r.end.x - 24.0, r.position.y + 26.0), lit or (st == "open" and ok), a, 5.0, Charcoal.ACCENT if lit else Color(0.86, 0.88, 0.86))
+	var state_t: String = {"open": w("可接", "OPEN") if ok else w("缺货", "SHORT"), "taken": w("备货中", "MAKING UP"), "rail": w("运输中", "ON THE TRAIN"), "ship": w("待提货", "AT THE QUAY"), "done": w("已到账", "PAID")}.get(st, "")
+	_text(str(state_t), Vector2(r.end.x - 120.0, r.position.y + 56), 12, Pal.ink(0.6 * a), font_b, 104.0, HORIZONTAL_ALIGNMENT_RIGHT)
+	_text(str(o.client), Vector2(x + 92, r.position.y + 34), 14, Pal.ink(0.55 * a), font_b, wd - 160.0)
+	_text(HallMarket.want_name(o), Vector2(x + 92, r.position.y + 60), 20, Pal.ink(0.97 * a), font_s, wd - 100.0)
 	var rp := HallMarket.rep_piece(str(o.kind)) if str(o.cat) == "equip" else ["", "", 0.0]
-	_thumb(Rect2(Vector2(x, y), Vector2(64, 64)), str(o.cat), str(rp[0]), str(rp[1]), str(o.kind), a)
-	_text(HallMarket.want_name(o), Vector2(x + 80, y + 40), 26, Pal.ink(0.97 * a), font_s, r.size.x - 120.0)
-	y += 120.0
-	_text(Pal.money(float(o.price)), Vector2(x, y), 40, Pal.ink(0.97 * a), font_s)
+	# the offer in a black window, the market under it
+	var pw := Rect2(x, r.position.y + 84.0, wd, 96.0)
+	Charcoal.display(self, pw, a)
+	_thumb(Rect2(pw.end.x - 74.0, pw.position.y + 14.0, 60, 60), str(o.cat), str(rp[0]), str(rp[1]), str(o.kind), a)
+	_text(w("报价", "OFFER"), pw.position + Vector2(14, 24), 12, Pal.ink(0.5 * a), font_b)
+	_text(Pal.money(float(o.price)), pw.position + Vector2(12, 64), 38, Pal.ink(0.97 * a), font_l, pw.size.x - 100.0)
 	var base := HallMarket.want_base(str(o.cat), str(o.kind)) * float(o.n)
-	_text(w("当前市场价格：%s", "MARKET %s") % Pal.money(base), Vector2(x + font_s.get_string_size(Pal.money(float(o.price)), HORIZONTAL_ALIGNMENT_LEFT, -1, 40).x + 16.0, y - 4.0), 18, Pal.ink(0.55 * a), font_b)
-	y += 40.0
+	_text(w("市价 %s · 高 %d%%", "MARKET %s · +%d%%") % [Pal.money(base), roundi((float(o.price) / maxf(base, 1.0) - 1.0) * 100.0)], pw.position + Vector2(14, 86), 12, Pal.ink(0.55 * a), font_b, pw.size.x - 100.0)
+	var y := pw.end.y + 30.0
 	if st == "open":
-		var have := HallMarket.have_of(str(o.cat), str(o.kind))
-		var ok := have >= float(o.n) - 0.0005
 		var hs := (w("仓库当前库存：%.1f / %.0f t", "IN STORE %.1f / %.0f t") % [have, float(o.n)]) if str(o.cat) == "raw" else (w("仓库当前库存：%d / %d 台", "IN STORE %d / %d") % [int(have), int(o.n)])
-		_text(hs, Vector2(x, y), 20, Color(Hmi.ok_col(), a) if ok else Pal.ink(0.65 * a), font_b, r.size.x - 44.0)
+		_text(hs, Vector2(x, y), 16, Pal.ink(0.95 * a) if ok else Pal.ink(0.6 * a), font_b, wd)
+		# the time left: a segment count-down, orange in the last three minutes
 		var left := float(o.due) - HallMarket.clock()
 		var life := float(o.due) - float(o.at)
 		var mins := HallMarket.mins_left(o)
-		_text(w("订单还剩 %d 分钟，超过时间后就会自动取消", "%d MIN LEFT · LAPSED, IT IS GONE") % mins, Vector2(x, y + 34.0), 18, Color(UiSkin.ACCENT, a) if mins <= 3 else Pal.ink(0.55 * a), font_b, r.size.x - 44.0)
-		var tl := Rect2(x, y + 48.0, r.size.x - 44.0, 6.0)
-		draw_rect(tl, Color(1, 1, 1, 0.06 * a))
-		draw_rect(Rect2(tl.position, Vector2(tl.size.x * clampf(left / maxf(life, 1.0), 0.0, 1.0), 6.0)), Color(UiSkin.ACCENT, a) if mins <= 3 else Pal.ink(0.5 * a))
+		_text(w("剩余 %d 分钟，到时自动取消", "%d MIN LEFT · THEN IT LAPSES") % mins, Vector2(x, y + 30.0), 13, Color(Charcoal.ACCENT, a) if mins <= 3 else Pal.ink(0.55 * a), font_b, wd)
+		var segs := clampi(int(ceil(life / 60.0)), 4, 20)
+		Charcoal.segments(self, Rect2(x, y + 42.0, wd, 8.0), clampf(left / maxf(life, 1.0), 0.0, 1.0) * segs, segs, a if mins <= 3 else 0.55 * a)
 		if not ok and not on:
 			var ways := HallMarket.short_ways(o)
 			if not ways.is_empty():
-				_text(str(ways[0]), Vector2(x, y + 84.0), 16, Pal.ink(0.6 * a), font_b, r.size.x - 44.0)
+				_text(str(ways[0]), Vector2(x, y + 76.0), 13, Pal.ink(0.6 * a), font_b, wd)
 	else:
-		_pipeline(Rect2(x, y - 6.0, r.size.x - 44.0, 52.0), o, a)
+		_pipeline(Rect2(x, y - 10.0, wd, 52.0), o, a)
 		if not on:
-			_text(w("不用额外操作，货款到账后会收到通知", "NOTHING TO DO: YOU WILL BE TOLD"), Vector2(x, y + 82.0), 16, Pal.ink(0.5 * a), font_b)
+			_text(w("不用额外操作，货款到账后会收到通知", "NOTHING TO DO: YOU WILL BE TOLD"), Vector2(x, y + 76.0), 13, Pal.ink(0.5 * a), font_b, wd)
+	# the key at the foot: live on the picked card (orange), a dark cap on the others (a click picks)
+	var kr := Rect2(x, r.end.y - 70.0, wd, 52.0)
 	if on and st in ["open", "taken"]:
 		var bl := w("接受订单 [Enter]", "TAKE  [Enter]") if st == "open" else w("取消订单", "GIVE BACK")
 		var note := w("接受订单后，仓库会自动准备货物，备货完成后由货运火车送到贸易港，等待客户提货", "Take it: the stores make it up, the train takes it to the trade port, the client collects") if st == "open" else w("取消这张订单后，已经准备好的货物会退回仓库，不会收取罚款", "Give it back: the goods go back to the stores, no penalty")
-		_key("take", Rect2(x, r.end.y - 70.0, r.size.x - 44.0, 54.0), bl, note, "", st == "open")
+		_key("take", kr, bl, note, "", st == "open")
 		if str(o.cat) == "raw" and ProcessLine.mould_of_key(str(o.kind)) != "" and HallMarket.have_of("raw", str(o.kind)) + ProcessLine.for_order_t(str(o.id)) < float(o.n) - float(o.get("got", 0.0)) - 0.05:
 			var why := "" if ProcessLine.first_done() or not ProcessLine.LEGACY_DESKS else w("第一次冶炼需要先到熔炉操作台亲自完成", "MAKE THE FIRST HEAT BY HAND FIRST")
-			_key("plan", Rect2(x, r.end.y - 122.0, r.size.x - 44.0, 44.0), w("为这张订单安排生产 · %s模具", "PLAN FOR THIS ORDER · %s") % ProcessLine.mould_name(ProcessLine.mould_of_key(str(o.kind))), w("将仓库里的钢锭安排到加工队列最前面，使用%s模具加工成订单需要的货物", "Puts ingots first in the processing queue, cast as the order wants") % StoreBook.raw_name(str(o.kind)), why)
+			_key("plan", Rect2(x, kr.position.y - 54.0, wd, 44.0), w("为这张订单安排生产 · %s模具", "PLAN FOR THIS ORDER · %s") % ProcessLine.mould_name(ProcessLine.mould_of_key(str(o.kind))), w("将仓库里的钢锭安排到加工队列最前面，使用%s模具加工成订单需要的货物", "Puts ingots first in the processing queue, cast as the order wants") % StoreBook.raw_name(str(o.kind)), why)
+	elif st == "open":
+		var fk := Charcoal.panel(self, kr, 0.7 * a, 0.0, Charcoal.FACE, 8)
+		_text(w("选中后接受订单", "PICK TO TAKE"), fk.position + Vector2(0, 33), 15, Pal.ink(0.5 * a), font_b, fk.size.x, HORIZONTAL_ALIGNMENT_CENTER)
 
 
 # a taken order's way: 备货 → 火车 → 客户飞船 → 到账, the step it is on lit
@@ -1005,7 +1131,7 @@ func _draw_foot() -> void:
 		draw_rect(r, Color(0.06, 0.07, 0.08, 0.96 * k))
 		draw_rect(Rect2(r.position, Vector2(4, r.size.y)), (Pal.heat(k, 1.1) if _msg_bad else Color(UiSkin.ACCENT, k)))
 		draw_rect(r, Pal.ink(0.2 * k), false, 1.0)
-		draw_rect(Rect2(r.position.x, r.end.y - 2.0, r.size.x * clampf(_msg_t / 4.0, 0.0, 1.0), 2.0), Color(UiSkin.DATA, 0.6 * k))
+		draw_rect(Rect2(r.position.x, r.end.y - 2.0, r.size.x * clampf(_msg_t / 4.0, 0.0, 1.0), 2.0), Color(UiSkin.FIGURE, 0.6 * k))
 		_text(message, r.position + Vector2(24, 26), 16, Pal.ink(0.97 * k), font_b)
 	else:
 		var esc := (w("Esc 返回%s", "ESC: BACK TO %s") % Back.label()) if Back.has_back() else w("Esc 关闭界面", "ESC: CLOSE")

@@ -29,6 +29,8 @@ func button(value: String,callback: Callable) -> Button:
 	node.text = value
 	node.custom_minimum_size.y = 42
 	node.pressed.connect(callback)
+	# 炭黑 v2: the desk's keys are dark keys (the orange one restyled after)
+	Charcoal.style_button(node)
 	return node
 func show_result(result: Dictionary) -> void:
 	var reasons := {
@@ -68,11 +70,35 @@ func _ready() -> void:
 	column.add_child(ConsoleKit.header(words("电弧炉控制台", "FURNACE DESK"), "EAF-3"))
 	now_line = ConsoleKit.NowLine.new()
 	column.add_child(now_line)
-	temp_l = ConsoleKit.text("", 48, 0.97)
-	temp_l.add_theme_font_override("font", Fonts.get_font("SemiBold"))
-	column.add_child(temp_l)
-	readout = ConsoleKit.text("", 20, 0.85)
-	column.add_child(readout)
+	# 炭黑 v2: the temperature, its scale to the tapping heat, and the readings in one black window
+	var well := PanelContainer.new()
+	well.add_theme_stylebox_override("panel", Charcoal.well_box(16))
+	column.add_child(well)
+	# 炭黑 v3: the furnace drawn at the window's left — the shell, the scrap or the melt in it, the
+	# electrodes and their arc while it is on; the figures at its right
+	var wh := HBoxContainer.new()
+	wh.add_theme_constant_override("separation", 16)
+	well.add_child(wh)
+	vessel = Control.new()
+	vessel.custom_minimum_size = Vector2(150, 176)
+	vessel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vessel.draw.connect(_draw_vessel)
+	wh.add_child(vessel)
+	var wv := VBoxContainer.new()
+	wv.add_theme_constant_override("separation", 6)
+	wv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	wv.alignment = BoxContainer.ALIGNMENT_CENTER
+	wh.add_child(wv)
+	temp_l = ConsoleKit.text("", 50, 0.97)
+	temp_l.add_theme_font_override("font", Fonts.get_font("Light"))
+	wv.add_child(temp_l)
+	temp_scale = Control.new()
+	temp_scale.custom_minimum_size.y = 30
+	temp_scale.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	temp_scale.draw.connect(_draw_scale)
+	wv.add_child(temp_scale)
+	readout = ConsoleKit.text("", 16, 0.8)
+	wv.add_child(readout)
 	next_step = label(GuideCopy.text("heat.idle"),18)
 	next_step.visible = false
 	column.add_child(next_step)
@@ -92,6 +118,7 @@ func _ready() -> void:
 	main = button("", _press_main)
 	main.custom_minimum_size.y = 64
 	ConsoleKit.orange(main, 24)
+	main.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	column.add_child(main)
 	message = label("",18)
 	column.add_child(message)
@@ -148,7 +175,9 @@ func _ready() -> void:
 	more.add_child(power_row)
 	more.add_child(button(words("停止运行并重置设备","STOP / RETURN"),func():show_result(service.command("stop"))))
 	column.add_spacer(false)
-	column.add_child(button(Back.close_text() if Back.has_back() else words("关闭面板 [Esc]","CLOSE [Esc]"),_back))
+	var close_b := button(Back.close_text() if Back.has_back() else words("关闭面板 [Esc]","CLOSE [Esc]"),_back)
+	Charcoal.key_text(close_b)
+	column.add_child(close_b)
 	_update()
 
 
@@ -224,6 +253,9 @@ func _update() -> void:
 
 func _process(dt: float) -> void:
 	ConsoleKit.card_fit(self)
+	_vt += dt
+	if _state == "processing" and vessel != null:
+		vessel.queue_redraw()
 	_update()
 	_refresh += dt
 	if _refresh < 0.2: return
@@ -265,7 +297,86 @@ func _process(dt: float) -> void:
 	var melted := clampf(float(f.m_l) / total, 0.0, 1.0) if str(heat.get("state","")) == "processing" else 0.0
 	var available: float = Career.data.get("exchange",{}).get("actors",{}).get("company",{}).get("stock",{}).get("ferrous_scrap:1",0.0)
 	temp_l.text = "%d °C" % int(f.T)
+	_temp = float(f.T)
+	_state = str(heat.get("state", ""))
+	_melted = melted
+	_power = _pct()
+	temp_scale.queue_redraw()
+	vessel.queue_redraw()
+	_fit_label(message, 18)
+	_fit_label(next_step, 18)
 	readout.text = "%s %d%% · %s %.2f t\n%s %d%% · %s $%.2f%s" % [words("已熔化","MELTED"), int(melted * 100.0), words("钢水状态","MELT"), float(f.m_l), words("当前功率","POWER"), _pct(), words("本次冶炼电费","POWER COST"), float(heat.get("energy_cost",0.0)), (words(" · 待支付电费 $%.2f" % due, " · DUE $%.2f" % due) if due > 0.005 else "")]
+
+
+var temp_scale: Control
+var vessel: Control
+var _state := ""
+var _melted := 0.0
+var _power := 100
+var _vt := 0.0
+
+
+# the furnace: a bowl of refractory, the scrap heaped in it (charged) or the melt filling it (the
+# share melted), the roof and three electrodes; on, the arc flickers under them, its brightness the power
+func _draw_vessel() -> void:
+	var s := vessel.size
+	var c := s.x * 0.5
+	var ink := Pal.ink(0.7)
+	var top := 62.0
+	var bot := s.y - 10.0
+	var shell := PackedVector2Array([Vector2(10, top), Vector2(s.x - 10, top), Vector2(s.x - 22, bot), Vector2(22, bot), Vector2(10, top)])
+	var on := _state == "processing"
+	var charged := _state in ["processing", "raw_transport"]
+	var hot := Charcoal.ACCENT
+	# the melt: its level the share melted, glowing with the heat
+	if on and _melted > 0.01:
+		var lv := lerpf(bot - 4.0, top + 22.0, clampf(_melted, 0.0, 1.0))
+		var kx := (lv - top) / (bot - top)
+		var lx := lerpf(10.0, 22.0, kx) + 4.0
+		vessel.draw_colored_polygon(PackedVector2Array([Vector2(lx, lv), Vector2(s.x - lx, lv), Vector2(s.x - 26, bot - 4), Vector2(26, bot - 4)]), Color(hot, 0.55 + 0.4 * clampf(_temp / SmelterModel.T_TAP, 0.0, 1.0)))
+	# the scrap: blocks heaped while it is still solid
+	if charged and _melted < 0.95:
+		var n := int(round(7.0 * (1.0 - _melted)))
+		for i in n:
+			var bx := 30.0 + float(i % 4) * 22.0 + (8.0 if i >= 4 else 0.0)
+			var by := bot - 18.0 - float(i / 4) * 14.0
+			vessel.draw_rect(Rect2(bx, by, 18, 11), Pal.ink(0.55), false, 1.5)
+	vessel.draw_polyline(shell, ink, 2.0, true)
+	vessel.draw_line(Vector2(4, top), Vector2(s.x - 4, top), ink, 3.0)
+	# the roof and the electrodes
+	vessel.draw_rect(Rect2(c - 40, top - 16, 80, 12), Pal.ink(0.5), false, 1.5)
+	var tip := top + 26.0
+	for ex in [-18.0, 0.0, 18.0]:
+		vessel.draw_line(Vector2(c + ex, 4), Vector2(c + ex, tip), Pal.ink(0.85) if on else Pal.ink(0.5), 4.0)
+		if on and _power > 0:
+			var fl := 0.55 + 0.45 * sin(_vt * 31.0 + ex) if BenchFx.on() else 0.8
+			var pk := clampf(_power / 100.0, 0.15, 1.0)
+			vessel.draw_circle(Vector2(c + ex, tip + 4), 4.0 + 3.0 * fl * pk, Color(1.0, 0.85, 0.6, 0.9 * pk))
+	# the power under it as segments
+	Charcoal.segments(vessel, Rect2(10, s.y - 4, s.x - 20, 4), (_power / 100.0 if on else 0.0) * 10.0, 10)
+
+
+func _fit_label(lb: Label, px: int) -> void:
+	if lb == null or lb.text == "" or not lb.visible or lb.get_parent() == null:
+		return
+	var avail: float = (lb.get_parent() as Control).size.x
+	if avail <= 0.0:
+		return
+	lb.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	lb.custom_minimum_size.x = Charcoal.fit_width(lb.get_theme_font("font"), lb.text, avail, px)
+var _temp := 20.0
+
+
+# the heat against the tapping heat: segments filling to it, orange once it is reached
+func _draw_scale() -> void:
+	var s := temp_scale.size
+	var k := clampf(_temp / SmelterModel.T_TAP, 0.0, 1.0)
+	Charcoal.segments(temp_scale, Rect2(0, 4, s.x, 7), k * 24.0, 24)
+	var fnt: Font = Fonts.get_font("Medium")
+	var t := words("出钢 %d °C", "TAP %d °C") % int(SmelterModel.T_TAP)
+	var tw := fnt.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+	temp_scale.draw_string(fnt, Vector2(s.x - tw, 27), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Charcoal.ACCENT if k >= 1.0 else Pal.ink(0.5))
+	temp_scale.draw_string(fnt, Vector2(0, 27), "%d%%" % int(k * 100.0), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Pal.ink(0.5))
 
 
 # the furnace's power: what it is given of what it asks, a per cent (100 when idle)
