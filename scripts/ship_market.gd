@@ -271,7 +271,7 @@ static func _kept_n() -> int:
 
 # what the feed depends on besides its slot: a new berth or a new rank draws other ships
 static func _sig() -> String:
-	return "%d/%.0f" % [Market.max_stars(int(Career.data.get("rep", 0))), Dock.owned(Career.data.get("upgrades", {}))]
+	return "%d/%.0f/%s" % [Market.max_stars(int(Career.data.get("rep", 0))), Dock.owned(Career.data.get("upgrades", {})), Market.gate_sig()]
 
 
 static func _check_sig() -> void:
@@ -924,12 +924,27 @@ static func cards() -> bool:
 	var offers: Array = Career.data.get("offers", [])
 	var changed := false
 	for a in data().assets:
-		if str(a.state) != "arrived":
+		# 138 号 (user 2026-11-11: "为什么说我买了4艘船，但是我实际上只能拆1艘船呢？"): a hulk the port holds
+		# has its card too, saying why and for how much (it held a berth with nothing to show for it)
+		var held := str(a.state) == "held"
+		if not (str(a.state) == "arrived" or held):
 			continue
-		if offers.any(func(o): return str(o.get("id", "")) == str(a.id)):
+		var have: Array = offers.filter(func(o): return str(o.get("id", "")) == str(a.id))
+		if not have.is_empty():
+			if bool(have[0].get("port_held", false)) != held:
+				if held:
+					have[0].port_held = true
+					have[0].held_why = held_text(a)
+				else:
+					have[0].erase("port_held")
+					have[0].erase("held_why")
+				changed = true
 			continue
 		var o: Dictionary = a.listing.offer.duplicate(true)
 		o.paid = float(a.price) + float(a.tow)
+		if held:
+			o.port_held = true
+			o.held_why = held_text(a)
 		offers.push_front(o)
 		changed = true
 	if changed:

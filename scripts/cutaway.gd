@@ -692,49 +692,55 @@ static func back_rooms(w) -> void:
 	var shells: Dictionary = w._room_shells()
 	var bl: Node2D = w.back_layer
 	for n in w.rooms:
-		var r = w.rooms[n]
-		var poly: PackedVector2Array = r.poly
-		var k := 1.0
-		var f := 1.0
-		if r.has("shell0") and r.shell0 > 0.0:
-			f = clampf(shells[n] / r.shell0, 0.0, 1.0)
-			k = back_k(f)
-		if k < 0.02:
-			continue
-		if not r.revealed:
-			bl.draw_colored_polygon(poly, Color(0.03, 0.031, 0.035, k))
-			continue
-		var bb: Rect2 = r.bbox
-		var cc := bb.get_center()
-		var rr := maxf(bb.size.x, bb.size.y) * 0.5
-		var cs := PackedColorArray()
-		for v in poly:
-			var lk := clampf((v - cc).dot(Look.LIGHT_DIR) / rr, -1.0, 1.0)
-			var g := lerpf(0.7, 1.25, lk * 0.5 + 0.5) if calm < 1 else lerpf(0.9, 1.08, lk * 0.5 + 0.5)
-			var wl: Color = Color(0.075, 0.078, 0.088) if skip.has("backfix") else Pal.ROOM_LIT
-			cs.append(Color(wl.r * g, wl.g * g, wl.b * g, k))
-		bl.draw_polygon(poly, cs)
-		var ring := PackedVector2Array(poly)
-		ring.append(poly[0])
-		bl.draw_polyline(ring, Color(0, 0, 0, 0.16 * k), 34.0)
-		bl.draw_polyline(ring, Color(0, 0, 0, 0.28 * k), 14.0)
-		var rs: Array = Depth3.room(w, r, false) if not skip.has("rooms") and calm < 1 else [PackedVector2Array(), PackedColorArray()]
-		if not (rs[0] as PackedVector2Array).is_empty():
-			var rc: PackedColorArray = rs[1]
-			if k < 0.99 and not skip.has("backfix"):
-				# the hold's frames fade with its wall
-				rc = PackedColorArray()
-				for c in (rs[1] as PackedColorArray):
-					rc.append(Color(c.r, c.g, c.b, c.a * k))
-			RenderingServer.canvas_item_add_triangle_array(bl.get_canvas_item(), PackedInt32Array(), rs[0], rc)
-		if not back_grid(f):
-			continue
-		if not r.has("grid"):
-			r.grid = w._room_grid(r)
-		if r.grid[0].size() >= 2:
-			bl.draw_multiline(r.grid[0], Pal.ink(0.02 * k), 1.0)
-		if r.grid[1].size() >= 2:
-			bl.draw_multiline(r.grid[1], Pal.ink(0.012 * k), 1.0)
+		if not w.hide_rooms.has(n):
+			back_room(w, bl, n, shells)
+
+
+# one compartment's back wall (also drawn turned with a wheel: scripts/rings_fx.gd)
+static func back_room(w, bl: CanvasItem, n: String, shells: Dictionary) -> void:
+	var r = w.rooms[n]
+	var poly: PackedVector2Array = r.poly
+	var k := 1.0
+	var f := 1.0
+	if r.has("shell0") and r.shell0 > 0.0:
+		f = clampf(shells[n] / r.shell0, 0.0, 1.0)
+		k = back_k(f)
+	if k < 0.02:
+		return
+	if not r.revealed:
+		bl.draw_colored_polygon(poly, Color(0.03, 0.031, 0.035, k))
+		return
+	var bb: Rect2 = r.bbox
+	var cc := bb.get_center()
+	var rr := maxf(bb.size.x, bb.size.y) * 0.5
+	var cs := PackedColorArray()
+	for v in poly:
+		var lk := clampf((v - cc).dot(Look.LIGHT_DIR) / rr, -1.0, 1.0)
+		var g := lerpf(0.7, 1.25, lk * 0.5 + 0.5) if calm < 1 else lerpf(0.9, 1.08, lk * 0.5 + 0.5)
+		var wl: Color = Color(0.075, 0.078, 0.088) if skip.has("backfix") else Pal.ROOM_LIT
+		cs.append(Color(wl.r * g, wl.g * g, wl.b * g, k))
+	bl.draw_polygon(poly, cs)
+	var ring := PackedVector2Array(poly)
+	ring.append(poly[0])
+	bl.draw_polyline(ring, Color(0, 0, 0, 0.16 * k), 34.0)
+	bl.draw_polyline(ring, Color(0, 0, 0, 0.28 * k), 14.0)
+	var rs: Array = Depth3.room(w, r, false) if not skip.has("rooms") and calm < 1 else [PackedVector2Array(), PackedColorArray()]
+	if not (rs[0] as PackedVector2Array).is_empty():
+		var rc: PackedColorArray = rs[1]
+		if k < 0.99 and not skip.has("backfix"):
+			# the hold's frames fade with its wall
+			rc = PackedColorArray()
+			for c in (rs[1] as PackedColorArray):
+				rc.append(Color(c.r, c.g, c.b, c.a * k))
+		RenderingServer.canvas_item_add_triangle_array(bl.get_canvas_item(), PackedInt32Array(), rs[0], rc)
+	if not back_grid(f):
+		return
+	if not r.has("grid"):
+		r.grid = w._room_grid(r)
+	if r.grid[0].size() >= 2:
+		bl.draw_multiline(r.grid[0], Pal.ink(0.02 * k), 1.0)
+	if r.grid[1].size() >= 2:
+		bl.draw_multiline(r.grid[1], Pal.ink(0.012 * k), 1.0)
 
 
 # a closed compartment seen from outside: the side plating, lit like the hull, with a few

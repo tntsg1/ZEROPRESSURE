@@ -71,9 +71,13 @@ func _zone_for(b) -> String:
 	var planned: String = str(b.get_meta("plan_zone", ""))
 	if planned in ["metal", "equip", "hazard"]:
 		return Dock.for_load(planned, b)
+	if b.pieces.any(func(p): return game.sys.dest_of(p) == "anti") and Dock.ZONES.has("anti"):
+		return "anti"
 	var k := "equip"
+	# 认真拆有奖励: harmless leftovers go to the equipment mouth's drain rack
+	var drainable: bool = game.clean != null and game.clean.active() and game.clean.body_residual(b) != ""
 	for p in b.pieces:
-		if game.sys.dest_of(p) == "hazard":
+		if game.sys.dest_of(p) == "hazard" and not drainable:
 			k = "hazard"
 	if k != "hazard" and game.dock.is_scrap(b):
 		k = "metal"

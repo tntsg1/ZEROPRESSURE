@@ -21,13 +21,16 @@ const SHOP := [
 	["tunnel", "upgrade", 480000.0, "up_tunnel", "up_tunnel_d"],
 	# 2026-11-11 量子隧穿·机体: the same stage, dearer, after the grapple's tunnelling (Jev: 120 万)
 	["tunnel_body", "upgrade", 1200000.0, "up_tunnel_body", "up_tunnel_body_d"],
+	# 2026-11-11 排队拧 (user: "在前期可以解锁，拧螺丝不必一个一个拧"): early and cheap (Jev 1.2 万; one job done),
+	# its card under the tunnels' on the drone page (tools.gd: wq)
+	["wrench_queue", "upgrade", 12000.0, "as_up_wrench_queue", "as_up_wrench_queue_d"],
 	["arm", "facility", 65000.0, "fa_arm", "fa_arm_d"],
 	["repair", "item", 3000.0, "it_repair", "it_repair_d"],
 	["ring", "item", 9000.0, "it_ring", "it_ring_d"],
 	["spare", "item", 15000.0, "it_spare", "it_spare_d"],
 	["intel", "item", 6000.0, "it_intel", "it_intel_d"],
 ]
-const FITTED := 6
+const FITTED := 7
 const DRONE_UPGRADES := 3
 # now → after, per upgrade: [label key, now, after, now 0..1, after 0..1] ("sh_" values are Txt keys)
 const STATS := {
@@ -57,7 +60,7 @@ const BERTH := [
 ]
 # a facility that only makes sense with another one bought first
 # late upgrades: [completed jobs, reputation] before they can be bought
-const LATE := {"tunnel": [20, 30], "tunnel_body": [20, 30]}
+const LATE := {"tunnel": [20, 30], "tunnel_body": [20, 30], "wrench_queue": [1, 0]}
 const REQUIRES := {"tunnel": "grapple5", "tunnel_body": "tunnel", "hauler2": "hauler", "berth120": "berth88", "berth200": "berth120", "berth620": "berth200"}
 # The terminal is one device (P.7 structure A, player 2026-10-18): a home screen
 # of apps; on site the same device, opened by its key or at the berth's
@@ -532,7 +535,7 @@ func items() -> Array:
 		4: return _supply_items()
 		5: return [] # The growth desk uses native, clipped and focusable controls.
 		7: return _training_rows()
-		DRONE_PAGE: return SHOP.slice(0, DRONE_UPGRADES) + _skin_items() + [_tunnel_item(), _tunnel_item("tunnel_body")]
+		DRONE_PAGE: return SHOP.slice(0, DRONE_UPGRADES) + _skin_items() + [_tunnel_item(), _tunnel_item("tunnel_body"), _tunnel_item("wrench_queue")]
 	return []
 
 
@@ -552,6 +555,11 @@ func _tunnel_i() -> int:
 # 量子隧穿·机体: its card right under the tunnel's
 func _tbody_i() -> int:
 	return _tunnel_i() + 1
+
+
+# 排队拧: its card under those two
+func _wq_i() -> int:
+	return _tunnel_i() + 2
 
 
 # why a late upgrade can't be bought yet ("" when it can): the part it needs first, then the work done
@@ -1489,6 +1497,16 @@ func take(i: int) -> void:
 		else:
 			_refuse(StoreBook.blocked_text())
 		return
+	# 138 号: a held hulk's card: why, and where it is paid (二手船市 · 我的船)
+	if offers()[i].get("port_held", false):
+		_refuse(str(offers()[i].get("held_why", "")) + Ops.w("。去二手船市“我的船”付清就能开工。", ". PAY IT UNDER HULK MARKET · MY SHIPS TO START IT."))
+		if game_ref != null and ShipMarket.open():
+			var gm = game_ref
+			_go_page("ship_market", func():
+				gm.open_ship_market()
+				if gm.console_ui != null and gm.console_ui.has_method("_cat"):
+					gm.console_ui._cat("mine"))
+		return
 	leave_from = _item_rect(i)
 	leave_offer = offers()[i].duplicate(true)
 	if offers()[i].get("trial_card", false):
@@ -1799,9 +1817,9 @@ func _item_rect(i: int) -> Rect2:
 				return _callout(i)
 			return _facility_rect(i - FITTED)
 		DRONE_PAGE:
-			if i == _tunnel_i() or i == _tbody_i():
+			if i == _tunnel_i() or i == _tbody_i() or i == _wq_i():
 				var sr := _schematic_rect()
-				return Rect2(sr.end.x - 294.0, sr.position.y + 150.0 + (76.0 if i == _tbody_i() else 0.0), 270.0, 66.0)
+				return Rect2(sr.end.x - 294.0, sr.position.y + 150.0 + (76.0 if i == _tbody_i() else (152.0 if i == _wq_i() else 0.0)), 270.0, 66.0)
 			return _callout(i) if i < DRONE_UPGRADES else _skin_rect(i - DRONE_UPGRADES)
 		2:
 			return _finance_rect()
@@ -2151,6 +2169,9 @@ func _anchor(i: int) -> Vector2:
 	if i == _tbody_i():
 		# the drone's own hull: it is what tunnels
 		return c + Vector2(Drone.R * DK * 0.7, Drone.R * DK * 0.55)
+	if i == _wq_i():
+		# the wrench's arm under the drone: what takes the queued fixings one by one
+		return c + Vector2(Drone.R * DK * 0.35, Drone.R * DK * 0.95)
 	return Vector2(r.position.x + r.size.x * 0.72, r.position.y + r.size.y * 0.3)
 
 
@@ -2726,8 +2747,9 @@ func _market(s: Vector2, a: float) -> void:
 		var pl := Rect2(r.position.x + 18, y + 18, r.size.x - 36, 46)
 		var drift: bool = o.get("owner", "") == "salvage"
 		var bought: bool = o.get("bought", false)
-		Hmi.plate(self, font_s, pl, Txt.t(("sc_found" if o.get("found", false) else "sc_bought") if bought else ("sc_drift" if drift else "sc_" + scope)), 21, k)
-		Hmi.lamp(self, Vector2(pl.end.x - 22, pl.get_center().y), Hmi.warn_col() if scope != "full" else Hmi.ok_col(), true, k, 7.0)
+		var held: bool = o.get("port_held", false)
+		Hmi.plate(self, font_s, pl, Ops.w("自有船 · 港务扣留", "OWN HULK · HELD BY THE PORT") if held else Txt.t(("sc_found" if o.get("found", false) else "sc_bought") if bought else ("sc_drift" if drift else "sc_" + scope)), 21, k)
+		Hmi.lamp(self, Vector2(pl.end.x - 22, pl.get_center().y), Hmi.warn_col() if scope != "full" or held else Hmi.ok_col(), true, k, 7.0)
 		_text(Txt.t("tm_contract_n") % o.id, Vector2(pl.end.x - 44, pl.get_center().y + 6), 13, Pal.ink(0.5 * k), font, 1)
 		# 炭黑 v2: the card's number, large (orange on the chosen one), the ship's name after it
 		_text("%02d" % (i + 1), Vector2(x - 2, y + 103), 32, Color(Charcoal.ACCENT, row_k.call(0)) if on else Pal.ink(0.55 * row_k.call(0)), font_l)
@@ -2923,6 +2945,7 @@ func _shop(_s: Vector2, a: float) -> void:
 		_skin_tile(DRONE_UPGRADES + i, ka)
 	_tunnel_box(_tunnel_i(), ka)
 	_tunnel_box(_tbody_i(), ka, "tunnel_body")
+	_tunnel_box(_wq_i(), ka, "wrench_queue")
 	# how to read the lamps
 	var ly := sr.position.y + 30
 	var keys := [[Hmi.ok_col(), Txt.t("tm_lamp_have")], [Hmi.can_col(), Txt.t("tm_lamp_can")], [Hmi.warn_col(), Txt.t("tm_lamp_short")]]
@@ -3175,7 +3198,7 @@ func _tunnel_box(i: int, a: float, id: String = "tunnel") -> void:
 	var have: bool = d.upgrades.has(it[0])
 	var why := "" if have else _late_why(str(it[0]))
 	var short: bool = not have and why == "" and float(d.money) < float(it[2])
-	var k := Pal.ease_out(clampf((deal_t - (0.25 if id == "tunnel" else 0.31)) / 0.3, 0.0, 1.0)) * a
+	var k := Pal.ease_out(clampf((deal_t - (0.25 if id == "tunnel" else (0.31 if id == "tunnel_body" else 0.37))) / 0.3, 0.0, 1.0)) * a
 	r.position.x += (1.0 - k) * 30.0
 	var p := _anchor(i)
 	draw_line(Vector2(r.position.x, r.get_center().y), p, Pal.tint(UiSkin.FIGURE, (0.35 + 0.45 * maxf(hk, sk)) * k), 1.2, true)
@@ -3183,8 +3206,11 @@ func _tunnel_box(i: int, a: float, id: String = "tunnel") -> void:
 	Hmi.raised(self, r, k, Hmi.PANEL_LO.lerp(Hmi.PANEL_HI, maxf(hk * 0.6, sk)))
 	Hmi.lamp(self, r.position + Vector2(22, r.size.y * 0.5), Hmi.ok_col() if have else (Hmi.warn_col() if why != "" or short else Hmi.can_col()), true, k)
 	_text(Txt.t(it[3]), r.position + Vector2(42, 28), 17, Pal.ink(0.96 * k), font_s)
-	_text(Ops.w("后期升级", "LATE"), Vector2(r.end.x - 10, r.position.y + 13), 10, Pal.heat(0.85 * k, 1.1), font_b, 1)
-	if have:
+	var early: bool = id == "wrench_queue"
+	_text(Ops.w("前期升级", "EARLY") if early else Ops.w("后期升级", "LATE"), Vector2(r.end.x - 10, r.position.y + 13), 10, Pal.tint(Pal.FLUID, 0.85 * k, 1.1) if early else Pal.heat(0.85 * k, 1.1), font_b, 1)
+	if have and early:
+		_text(Txt.t("as_up_wrench_queue_have"), r.position + Vector2(42, 54), 15, Pal.tint(Pal.FLUID, 0.95 * k, 1.1), font_s)
+	elif have:
 		_text(Ops.w("已安装 · 按 %s 开关", "FITTED · %s ON/OFF") % _tunnel_key(id), r.position + Vector2(42, 54), 15, Pal.tint(Pal.FLUID, 0.95 * k, 1.1), font_s)
 	elif why != "":
 		_text(Pal.money(it[2]) + Ops.w(" · 未解锁", " · LOCKED"), r.position + Vector2(42, 54), 15, Pal.ink(0.5 * k), font_s)
@@ -3394,13 +3420,16 @@ func _detail(a: float) -> void:
 		if tab == DRONE_PAGE and id == "tunnel_body" and not Txt.has("st_" + id):
 			_text(Txt.t("tm_strategy"), sc.position + Vector2(14, 26), 14, Pal.ink(0.6 * ka), font)
 			_wrap(Ops.w("先装量子隧穿，再装这个。装上后默认开启，按 %s 或右上角「机体」按钮开关。开着时，无人机自己能穿过墙壁、船体、设施和散件；还没泄压的舱室和港区边界仍然挡得住。", "Fit quantum tunnelling first. On once fitted; %s or the BODY button top right switches it. While on, the drone itself passes walls, hulls, facilities and loose pieces; rooms still under pressure and the berth's edge still stop it.") % _tunnel_key(id), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2))
+		if tab == DRONE_PAGE and id == "wrench_queue":
+			_text(Txt.t("tm_strategy"), sc.position + Vector2(14, 26), 14, Pal.ink(0.6 * ka), font)
+			_wrap(Txt.t("as_up_wrench_queue_st"), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2))
 		if tab == DRONE_PAGE and id == "tunnel" and not Txt.has("st_" + id):
 			_text(Txt.t("tm_strategy"), sc.position + Vector2(14, 26), 14, Pal.ink(0.6 * ka), font)
 			_wrap(Ops.w("装上后默认开启，按 %s 开关。开着时，抓钩抓着的件能直接穿过墙壁和船体拖出来，不用先开路。", "On once fitted; %s switches it. While on, a held piece is dragged straight through walls and hulls: no path to cut first.") % Keys.label("tunnel"), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2))
 		if tab == DRONE_PAGE and LATE.has(id) and not d.upgrades.has(id):
 			var lw := _late_why(id)
 			Hmi.lamp(self, Vector2(x + 8, sc.end.y + 24), Hmi.warn_col() if lw != "" else Hmi.ok_col(), true, ka, 6.0)
-			_text(lw if lw != "" else (Ops.w("条件已满足：%d 单、声望 %d、量子隧穿", "UNLOCKED: %d JOBS, REPUTATION %d, QUANTUM TUNNELLING") if id == "tunnel_body" else Ops.w("条件已满足：%d 单、声望 %d、5 吨牵引抓钩", "UNLOCKED: %d JOBS, REPUTATION %d, THE 5 t GRAPPLE")) % [int(LATE[id][0]), int(LATE[id][1])], Vector2(x + 22, sc.end.y + 30), 15, Pal.heat(0.95 * ka, 1.2) if lw != "" else Pal.tint(Pal.FLUID, 0.9 * ka, 1.1), font_b)
+			_text(lw if lw != "" else (Ops.w("条件已满足：%d 单、声望 %d、量子隧穿", "UNLOCKED: %d JOBS, REPUTATION %d, QUANTUM TUNNELLING") if id == "tunnel_body" else (Ops.w("条件已满足：完成 %d 单（声望 %d）", "UNLOCKED: %d JOB DONE (REPUTATION %d)") if id == "wrench_queue" else Ops.w("条件已满足：%d 单、声望 %d、5 吨牵引抓钩", "UNLOCKED: %d JOBS, REPUTATION %d, THE 5 t GRAPPLE"))) % [int(LATE[id][0]), int(LATE[id][1])], Vector2(x + 22, sc.end.y + 30), 15, Pal.heat(0.95 * ka, 1.2) if lw != "" else Pal.tint(Pal.FLUID, 0.9 * ka, 1.1), font_b)
 	else:
 		var n := int(d.items.get(id, 0))
 		_text(Txt.t("tm_stock_n") % n, Vector2(x, y + 4), 18, Pal.ink(0.9 * ka), font_b)
@@ -3551,6 +3580,8 @@ func _bottom(s: Vector2, a: float) -> void:
 			var o0: Dictionary = offers()[sel] if sel < offers().size() else {}
 			if o0.get("find", false):
 				label = Ops.w("派拖船去拖 · %s · 约 %d 秒", "SEND A TUG · %s · ~%d s") % [str(ShipMarket.tow_terms(o0).text), ShipMarket.quote_s(o0)] + "   Enter"
+			elif o0.get("port_held", false):
+				label = Ops.w("去付清扣留 · 二手船市", "PAY WHAT HOLDS IT · HULK MARKET") + "   Enter"
 			elif o0.get("bought", false):
 				label = Ops.w("开工拆", "START STRIPPING") + "   Enter"
 			if not next_job.is_empty():
@@ -3569,7 +3600,9 @@ func _bottom(s: Vector2, a: float) -> void:
 				note = Txt.t("tm_borrow") % Pal.money(float(o.fee) - float(d.money))
 			# a family of ship never trained for: the special course first (the contract waits)
 			# 61 号: a ship with something not trained for is taken all the same; a plain note says so
-			if not Codex.missing(str(o.ship)).is_empty():
+			if o.get("port_held", false):
+				note = str(o.get("held_why", "")) + Ops.w("。付清后这张卡就能开工。", ". PAID, THIS CARD CAN BE STARTED.")
+			elif not Codex.missing(str(o.ship)).is_empty():
 				note = Ops.w("这艘船有%s，没练过。点“开工拆”会先带你去练这几门专项（必练），练完直接回来拆它。", "This ship has %s, not trained for: start stripping takes you through those courses first (required), then straight back to it.") % Codex.untrained_text(str(o.ship))
 			if StoreBook.blocks_next_job() and not o.get("find", false) and not o.get("queued", false) and game_ref != null:
 				label = Ops.w("先处理待入库", "HANDLE WAITING GOODS") + "   Enter"
@@ -3608,6 +3641,8 @@ func _bottom(s: Vector2, a: float) -> void:
 				label = "✓ " + Txt.t("tm_installed")
 				if tab == DRONE_PAGE and str(it[0]) in ["tunnel", "tunnel_body"]:
 					label = "✓ " + Ops.w("已安装 · 按 %s 开关", "FITTED · %s ON/OFF") % _tunnel_key(str(it[0]))
+				elif tab == DRONE_PAGE and str(it[0]) == "wrench_queue":
+					label = "✓ " + Txt.t("as_up_wrench_queue_have")
 				ok = false
 			elif tab == DRONE_PAGE and LATE.has(it[0]) and _late_why(str(it[0])) != "":
 				label = Pal.money(price)

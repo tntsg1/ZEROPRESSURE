@@ -213,6 +213,9 @@ func _zone_for(b) -> String:
 	var planned: String = str(b.get_meta("plan_zone", ""))
 	if planned in ["metal", "equip", "hazard"]:
 		return planned
+	# 认真拆有奖励: harmless leftovers go to the equipment mouth's drain rack, not the hazard mouth
+	if game.clean != null and game.clean.active() and game.clean.body_residual(b) != "":
+		return "equip"
 	for p in b.pieces:
 		if game.sys.dest_of(p) == "hazard":
 			return "hazard"

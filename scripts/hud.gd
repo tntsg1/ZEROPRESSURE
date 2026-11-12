@@ -223,6 +223,8 @@ func keep_out() -> Array:
 		_ko.append((fr[k] as Rect2).grow_individual(10.0, 34.0, 10.0, 34.0))
 	if asset_rect.has_area():
 		_ko.append(asset_rect.grow(10.0))
+	if _combo_on():
+		_ko.append(_combo_rect(size()).grow(10.0))
 	if keys_band != null and keys_band.band_rect().has_area():
 		_ko.append(keys_band.band_rect().grow(10.0))
 	if Look.on and game.look != null:
@@ -327,7 +329,9 @@ func _arrival_card(s: Vector2) -> void:
 	_text(head, r.position + Vector2(20, 34), 20, Pal.ink(0.96), font_b)
 	var line := Ops.w("按 %s（或点这里）打开终端，它的卡已经选好：点“开工拆”就进船坞开拆。", "Press %s (or click here): the terminal opens on its card — start stripping to bring it into the berth.") % Keys.label("terminal")
 	if ar.get("held", false):
-		line = Ops.w("它被扣在港口（欠费或留置）。按 %s（或点这里）打开终端看原因，处理完才能开拆。", "It is held at the port (a lien or a bill). Press %s (or click here) to see why.") % Keys.label("terminal")
+		# 137 号: the reason and the sum said here; a click goes where it is paid (二手船市 · 我的船)
+		var why := ShipMarket.held_text(ShipMarket.asset(str(ar.get("id", ""))))
+		line = Ops.w("被港口扣留：%s。点这里去二手船市“我的船”付清放行。", "HELD BY THE PORT: %s. CLICK HERE TO PAY IT UNDER HULK MARKET · MY SHIPS.") % why
 	_text(line, r.position + Vector2(20, 66), 15, Color(UiSkin.ACCENT, 0.95), font)
 
 
@@ -601,7 +605,14 @@ func _input(ev: InputEvent) -> void:
 			_menu_click()
 			return
 		if not game.arrival.is_empty() and game.state == "play" and arrival_rect(size()).has_point(c.get_local_mouse_position()):
-			game.open_console("terminal")
+			if game.arrival.get("held", false) and ShipMarket.open():
+				# 137 号: a held hulk is paid for under the hulk market's 我的船
+				game.arrival = {}
+				game.open_ship_market()
+				if game.console_ui != null and game.console_ui.has_method("_cat"):
+					game.console_ui._cat("mine")
+			else:
+				game.open_console("terminal")
 			get_viewport().set_input_as_handled()
 			return
 		if ending:
@@ -901,6 +912,9 @@ func _draw_hud_body() -> void:
 				UI.boot_cover(c, _contract_rect(), _boot(0))
 				_asset_board(_contract_rect())
 			_xform(Vector2.ZERO)
+			# 2026-11-11 (MF-126, user: "给我一个提示啊"): the blueprint slides the panels away — the TASK
+			# frame stays, so the next step stays in it, small
+			_next_compact(g.blueprint.k if g.blueprint != null else 0.0)
 		_overweight()
 		_tearing()
 		_left_markers(s)
@@ -919,6 +933,7 @@ func _draw_hud_body() -> void:
 		else:
 			_credits(s)
 			UI.boot_cover(c, Rect2(s.x - 290.0, 22, 268, 86), _boot(1))
+			_combo_chip(s)
 		_machines(s)
 		_work_order(s)
 		_xform(Vector2.ZERO)
@@ -1119,6 +1134,8 @@ func _zone_for(b) -> String:
 		all_m += p.mass
 		if game.sys.dest_of(p) == "hazard":
 			return "hazard"
+		if game.sys.dest_of(p) == "anti":
+			return "anti"
 		if p.cls == "equip" and p.intact:
 			equip = true
 		else:
@@ -1756,7 +1773,7 @@ func _ops_strip(s: Vector2) -> void:
 
 func _machines(s: Vector2) -> void:
 	var g = game
-	var ps: Array = g.plan.status() if g.plan != null and Game.G4_OPEN else []
+	var ps: Array = g.plan.status() if g.plan_shown() else []
 	if g.arm == null and g.hauler == null and g.crane == null and ps.is_empty():
 		return
 	# 2026-11-11: the J key and the plan's line are in the function keys now (scripts/hud_keys.gd)
@@ -1816,6 +1833,9 @@ func _toolbar(s: Vector2) -> void:
 		if i == 4:
 			var mode: String = g.txt("mode_" + g.tools.hose_mode)
 			_text(mode, rect.position + Vector2(rect.size.x - 10, 56), 13, Pal.ink(0.5 + 0.3 * on) if g.tools.hose_mode == "recover" else Pal.heat(0.8, 1.0), font, 1)
+			# 2026-11-11: its two buttons, over the slot while it is in hand (the right one: slurp.gd)
+			if on > 0.05:
+				_text(g.txt("as_slurp_keys"), Vector2(rect.position.x + rect.size.x * 0.5, rect.position.y - 8), 12, Pal.ink(0.62 * on), font, 0)
 		if i == 5 and g.gear != null:
 			var ih: String = g.gear.in_hand()
 			var cnt: int = int(g.gear.carried_counts().get(ih, 0))
@@ -2310,6 +2330,13 @@ func _cursor_label() -> void:
 		"line":
 			name = h.label
 			act = g.txt("act_measure")
+		"batt":
+			name = Txt.piece_name(h.piece)
+			act = g.txt("act_feed")
+		"lid":
+			name = Txt.piece_name(h.piece)
+			var why: String = g.finds.open_block(h.piece) if g.get("finds") != null else ""
+			act = g.txt(why) if why != "" else g.txt("act_open_lid")
 		"piece", "inspect":
 			name = Txt.piece_name(h.piece)
 			var m: float = g.world.group_mass(h.piece)
@@ -2746,8 +2773,8 @@ func _settlement(s: Vector2) -> void:
 		if g.standard_time() > 0.0:
 			tl += "  /  " + g.txt("e_standard") + "  " + _clock(g.standard_time())
 		_text(tl, Vector2(cx - 260, ny + 46), 14, Pal.ink(0.5), font)
-		# 61 号: the plans are out of sight (P does nothing), so the settlement doesn't say one was saved
-		if g.plan != null and g.plan.result_key != "" and Game.G4_OPEN:
+		# 61 号 / 2026-11-11: the settlement says a plan was saved once the cutter method is owned
+		if g.plan_shown() and g.plan.result_key != "":
 			c.draw_multiline_string(font,Vector2(cx - 260,ny + 66),g.plan.result_text(),HORIZONTAL_ALIGNMENT_LEFT,520,12,2,Pal.ink(0.75))
 		var crows := career_rows()
 		for i in crows.size():
@@ -2823,6 +2850,10 @@ func _settlement128(s: Vector2, e: float) -> void:
 	var pk := Pal.ease_out(clampf(e / 0.45, 0.0, 1.0))
 	# sized to what is on it: the cell rows (25 a row) and the overflow note
 	var sheet_h: float = 690.0 + (50.0 if StoreBook.used_with(StoreBook.inbox()) > StoreBook.cap() else 0.0)
+	# 认真拆有奖励: the strip grade's band under the haul
+	var strip_gr: String = g.clean.grade() if g.get("clean") != null else ""
+	if strip_gr != "":
+		sheet_h += 112.0
 	var sheet := Rect2(cx - 400, maxf(40.0, (s.y - sheet_h) * 0.5) + (1.0 - pk) * 40.0, 800, sheet_h)
 	# 炭黑 v2: a charcoal plate; its figures in black windows
 	Charcoal.panel(c, sheet, pk, 0.0, Charcoal.FACE, 16)
@@ -2864,6 +2895,9 @@ func _settlement128(s: Vector2, e: float) -> void:
 		_text(str(tiles[i][1]), tr.position + Vector2(14, 74), 34, Pal.ink((0.97 if some else 0.3) * tk), font_l)
 		_text(str(tiles[i][2]), tr.position + Vector2(16, 100), 12, Pal.ink(0.45 * tk), font)
 	y += 150.0
+	if strip_gr != "":
+		_strip_grade(Rect2(x0, y - 22, x1 - x0, 96), e, strip_gr)
+		y += 112.0
 	var k2 := clampf((e - 1.1) / 0.4, 0.0, 1.0)
 	var roll := Pal.ease_out(clampf((e - 1.1) / 0.9, 0.0, 1.0))
 	var xm := cx + 7.0
@@ -2963,6 +2997,87 @@ func _settlement128(s: Vector2, e: float) -> void:
 			_trap_rows(traps, Vector2(sheet.end.x + 50, sheet.position.y + 50), e - 1.8)
 		elif traps.is_empty():
 			_asset_review(s, e)
+
+
+# 认真拆有奖励 (scripts/clean_run.gd): the S / A / B stamped in, what it was made of, what it paid
+var _grade_stamped := false
+func _strip_grade(r: Rect2, e: float, gr: String) -> void:
+	var cr = game.clean
+	var k := clampf((e - 0.85) / 0.35, 0.0, 1.0)
+	if k <= 0.0:
+		_grade_stamped = false
+		return
+	Charcoal.display(c, r, k, 9)
+	# the letter, stamped
+	var se := e - 1.0
+	var lit: bool = gr != "B"
+	if se > 0.0:
+		if not _grade_stamped:
+			_grade_stamped = true
+			game.sfx.play("stamp")
+		var sc := lerpf(2.0, 1.0, Pal.ease_out(clampf(se / 0.22, 0.0, 1.0)))
+		var la := clampf(se / 0.1, 0.0, 1.0)
+		var col: Color = Color(Charcoal.ACCENT, la) if lit else Color(Charcoal.INK2, la)
+		var lc := r.position + Vector2(56, r.size.y * 0.5)
+		_xform(lc, -0.08, Vector2(sc, sc))
+		var px := 66
+		var lw: float = font_l.get_string_size(gr, HORIZONTAL_ALIGNMENT_LEFT, -1, px).x
+		c.draw_string(font_l, Vector2(-lw * 0.5, px * 0.36), gr, HORIZONTAL_ALIGNMENT_LEFT, -1, px, col)
+		_xform(Vector2.ZERO)
+	c.draw_line(r.position + Vector2(112, 16), r.position + Vector2(112, r.size.y - 16), Pal.ink(0.12 * k), 1.0)
+	var x := r.position.x + 132.0
+	var y := r.position.y + 28.0
+	_text(Ops.w("拆解评级", "STRIP GRADE"), Vector2(x, y), 12, Pal.ink(0.5 * k), font_b)
+	_text(Ops.w("干净 %d/%d 件 · %d%%", "CLEAN %d/%d · %d %%") % [cr.clean_n, cr.whole_n, int(round(cr.clean_share() * 100.0))], Vector2(x, y + 28), 17, Pal.ink(0.95 * k), font_b)
+	var nf: int = game.finds.found.size() if game.get("finds") != null else 0
+	var bl: String = Ops.w("最高连击 ×%d", "BEST STREAK ×%d") % cr.best
+	if nf > 0:
+		bl += Ops.w("  ·  隐藏发现 %d", "  ·  FOUND INSIDE %d") % nf
+	_text(bl, Vector2(x, y + 52), 13, Pal.ink(0.6 * k), font)
+	var x2 := r.position.x + r.size.x * 0.52
+	var rs: float = cr.residual_share()
+	_text(Ops.w("残留回收 %s", "LEFTOVERS RECOVERED %s") % ("—" if rs < 0.0 else "%d%%" % int(round(rs * 100.0))), Vector2(x2, y + 28), 15, Pal.ink(0.85 * k), font)
+	var mn: int = cr.mishaps.size()
+	var ml: String = Ops.w("小事故 %d", "MISHAPS %d") % mn if mn > 0 else Ops.w("没有小事故", "NO MISHAPS")
+	if cr.batt_mwh > 0.005:
+		ml += Ops.w("  ·  余电 %.2f 兆瓦时", "  ·  CHARGE %.2f MWh") % cr.batt_mwh
+	_text(ml, Vector2(x2, y + 52), 13, Pal.ink(0.6 * k), font)
+	# what it paid: the streak and the grade's share
+	var pay: float = cr.bonus_cash + game.earned() * cr.grade_share() + cr.batt_cash
+	_text(Ops.w("加成", "BONUS"), Vector2(r.end.x - 18, y), 12, Pal.ink(0.5 * k), font_b, 1)
+	_text("+" + Pal.money(pay * Pal.ease_out(clampf((e - 1.15) / 0.7, 0.0, 1.0))), Vector2(r.end.x - 18, y + 40), 26, Color(Charcoal.ACCENT, k) if pay >= 1.0 else Pal.ink(0.35 * k), font_l, 1)
+
+
+# 认真拆有奖励: the streak chip left of the income, while there is a streak (and a moment after it breaks)
+func _combo_rect(s: Vector2) -> Rect2:
+	return Rect2(s.x - 290.0 - 12.0 - 172.0, 22.0, 172.0, 64.0)
+
+
+func _combo_on() -> bool:
+	var cr = game.get("clean")
+	return cr != null and cr.active() and (cr.combo > 0 or game.playtime - cr.broke_t < 0.9)
+
+
+func _combo_chip(s: Vector2) -> void:
+	if not _combo_on():
+		return
+	var g = game
+	var cr = g.clean
+	var broke: float = g.playtime - cr.broke_t
+	var live: bool = cr.combo > 0
+	var n: int = cr.combo if live else cr.broke_n
+	var a := 1.0 if live else clampf((0.9 - broke) / 0.45, 0.0, 1.0)
+	var r := _combo_rect(s)
+	if not live:
+		r.position.x += sin(broke * 55.0) * 5.0 * clampf(1.0 - broke / 0.5, 0.0, 1.0)
+	Charcoal.panel(c, r, a, 0.0, Charcoal.FACE, 10)
+	var pop := clampf(1.0 - (g.playtime - cr.pop_t) / 0.3, 0.0, 1.0)
+	var col: Color = Color(Charcoal.ACCENT, a) if live else Color(Charcoal.INK3, a)
+	var px := int(30.0 * (1.0 + 0.28 * pop * pop))
+	_text("×%d" % n, Vector2(r.position.x + 14, r.position.y + 42), px, col, font_l)
+	_text(Ops.w("干净连击", "CLEAN STREAK"), Vector2(r.end.x - 14, r.position.y + 22), 11, Pal.ink(0.5 * a), font_b, 1)
+	_text("+%.1f%%" % (cr.STEP * mini(n, cr.CAP_N) * 100.0), Vector2(r.end.x - 14, r.position.y + 42), 15, Pal.ink((0.95 if live else 0.4) * a), font_b, 1)
+	Charcoal.segments(c, Rect2(r.position.x + 14, r.end.y - 13, r.size.x - 28, 5), float(mini(n, cr.CAP_N)), cr.CAP_N, a)
 
 
 # the old books (cash, loan, gear, what to repair next), folded under the haul
@@ -3338,10 +3453,10 @@ func _asset_board(cr: Rect2) -> void:
 			y += nx_how * 17.0
 		for bgi in nx_bg:
 			# 占位 (待用户定稿): "后台 · " before what is under way, "待办 · " lines as they are
-			var bl: String = str(bgi.t) if str(bgi.kind) == "todo" else Ops.w("后台 · ", "BACKGROUND · ") + str(bgi.t)
+			var bl: String = str(bgi.t) if str(bgi.kind) == "todo" else NextStep.line("N_bg") + str(bgi.t)
 			var bc: Color = Pal.heat(0.75, 1.1) if str(bgi.kind) == "todo" else Pal.ink(0.5)
-			c.draw_arc(Vector2(x + 4.0, y + 25.0), 3.5, 0.0, TAU, 12, Color(UiSkin.ACCENT, 0.7), 1.2, true)
-			_text(bl, Vector2(x + 14.0, y + 29.0), 12, bc, font, -1, r.size.x - 54.0)
+			c.draw_arc(Vector2(x + 4.0, y + 8.0), 3.5, 0.0, TAU, 12, Color(UiSkin.ACCENT, 0.7), 1.2, true)
+			_text(bl, Vector2(x + 14.0, y + 12.0), 12, bc, font, -1, r.size.x - 54.0)
 			y += 17.0
 		y += 22.0
 	for wl in warn:
@@ -3383,6 +3498,36 @@ static func short_step(s: String) -> String:
 		_code_rx = RegEx.create_from_string("[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+")
 	var all := _code_rx.search_all(s)
 	return all[all.size() - 1].get_string() if not all.is_empty() else s
+
+
+# the next step in the TASK frame while the blueprint has the panels slid away: what to do (or what is
+# under way and how long), how, and the background — the same words as the asset board's
+func _next_compact(k: float) -> void:
+	if k < 0.05 or not NextStep.on(game):
+		return
+	var nx: Dictionary = NextStep.of(game)
+	if nx.is_empty():
+		return
+	var cr := _contract_rect()
+	var bg: Array = (nx.get("bg", []) as Array).slice(0, 2)
+	var tl := _wrapped_lines(str(nx.t), cr.size.x - 40.0, 15, font_b)
+	var hl := _wrapped_lines(str(nx.how), cr.size.x - 40.0, 12) if str(nx.how) != "" else 0
+	var r := Rect2(cr.position, Vector2(cr.size.x, 40.0 + tl * 20.0 + hl * 17.0 + bg.size() * 17.0))
+	UI.panel(c, r, 0.82 * k, 0.0, UiSkin.ACCENT, k)
+	var x := r.position.x + 18.0
+	var y := r.position.y + 22.0
+	var wait: bool = nx.get("wait", false)
+	_text(Ops.w("进行中", "UNDER WAY") if wait else Ops.w("下一步", "NEXT"), Vector2(x, y), 11, Color(UiSkin.ACCENT, 0.95 * k), font)
+	y += 18.0
+	_mtext(str(nx.t), Vector2(x, y), r.size.x - 40.0, 15, -1, Color(Pal.ink(0.97), k), font_b)
+	y += tl * 20.0
+	if hl > 0:
+		_mtext(str(nx.how), Vector2(x, y - 4.0), r.size.x - 40.0, 12, -1, Color(Pal.ink(0.62), k))
+		y += hl * 17.0
+	for bgi in bg:
+		var bl: String = str(bgi.t) if str(bgi.kind) == "todo" else NextStep.line("N_bg") + str(bgi.t)
+		_text(bl, Vector2(x, y), 12, Color(Pal.ink(0.5), k), font, -1, r.size.x - 40.0)
+		y += 17.0
 
 
 # 110 号 (Q2 C): the next step on site — a ring on the control or piece it means, a leader and the

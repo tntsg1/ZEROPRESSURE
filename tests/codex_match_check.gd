@@ -318,6 +318,14 @@ func _m6() -> void:
 	print("match: 6 the beam near any pane crazes it (ARK-01 lists no glazing)")
 	var g = await _game("ark01")
 	check(not g.atmos.active(), "ARK-01 has no oxygen-hall config")
+	# the greenhouse glass is on wheel B: both wheels despun and pinned first (scripts/rings.gd), its pieces ordinary
+	if g.rings != null and g.rings.wheels():
+		for r in g.rings.cfg.rings:
+			g.rings.rpm[r] = 0.0
+			g.rings.ang[r] = 0.0
+			g.rings.locked[r] = true
+			g.rings._release(r)
+		await _frames(2)
 	var near = g.world.tag("GL-L2")
 	var far = g.world.tag("GL-U4")
 	check(near != null and far != null and g.atmos.panes().size() >= 12, "%d panes aboard" % g.atmos.panes().size())

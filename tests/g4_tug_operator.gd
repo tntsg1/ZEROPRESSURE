@@ -402,6 +402,11 @@ func hand_delivery(body, defer_if_enclosed: bool = false, park_at: Vector2 = Vec
 				reached = true
 				break
 			if g.tools.held_body != body:
+				# 认真拆有奖励 (2026-11-11): a charged machine caught by the equipment mouth has its small
+				# mishap and is thrown out of the grapple; the berth brings it back to the mouth by itself
+				if g.get("mishap") != null and g.mishap.back.any(func(e): return e.body == body):
+					reached = true
+					break
 				errors.append("grapple lost physical cargo "+target_piece.key)
 				return false
 			var grab: Vector2 = g.tools.grab_point()
@@ -433,6 +438,7 @@ func hand_delivery(body, defer_if_enclosed: bool = false, park_at: Vector2 = Vec
 			errors.append("grapple route blocked: "+target_piece.key+" at "+str(g.tools.grab_point()/Geom.M)+" toward "+str(goal/Geom.M))
 			return false
 		if not is_instance_valid(body) or body.capture != null: break
+		if g.get("mishap") != null and g.mishap.back.any(func(e): return e.body == body): break
 	g.bot.lmb = false
 	if park_at != Vector2.INF and is_instance_valid(body) and body.capture == null:
 		await frames(10)
@@ -448,9 +454,15 @@ func hand_delivery(body, defer_if_enclosed: bool = false, park_at: Vector2 = Vec
 	if is_instance_valid(body) and body.capture == "trough":
 		var com: Vector2 = body.global_transform*body.center_of_mass
 		receiving_frames += ceili(absf(com.x-Dock.zpos("metal").x)/(Dock.CONVEY*Geom.M)*60.0)
-	for frame in receiving_frames:
+	var frame := 0
+	while frame < receiving_frames:
 		if target_piece.gone: break
+		# 认真拆有奖励 (2026-11-11): a charged machine brought by hand has its small mishap first — thrown
+		# out, emptied, drawn back — and is taken a few seconds later: wait for it as for the belt
+		if frame == receiving_frames - 1 and g.get("mishap") != null and g.mishap.back.any(func(e): return e.body == body) and receiving_frames < 900:
+			receiving_frames += 600
 		await tree.process_frame
+		frame += 1
 	if not target_piece.gone:
 		errors.append("physical mouth has not received "+target_piece.key+" / verdict="+str(g.judge(body,Dock.kind(zone)))+" / position="+str(body.global_transform*body.center_of_mass/Geom.M))
 		return false

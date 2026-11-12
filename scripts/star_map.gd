@@ -1254,7 +1254,7 @@ func sig_state(s: Dictionary) -> Dictionary:
 				"arrived":
 					return {"kind": "arrived", "words": w("已到港 · 在拖船区等着拆", "DOCKED · WAITING IN THE TUG YARD")}
 				"held":
-					return {"kind": "held", "words": w("已到港 · 港务扣留", "DOCKED · HELD BY THE PORT")}
+					return {"kind": "held", "words": w("已到港 · 港务扣留 · 去二手船市“我的船”付清放行", "DOCKED · HELD BY THE PORT · PAY IT UNDER HULK MARKET · MY SHIPS")}
 				"stripping":
 					return {"kind": "done", "words": w("正在船坞里拆", "BEING STRIPPED")}
 				_:

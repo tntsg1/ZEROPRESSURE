@@ -69,6 +69,8 @@ func toggle() -> void:
 		return
 	on = not on
 	_apply()
+	# what the grapple holds follows (tools.tunnel_on counts the drone's own tunnelling)
+	tools._apply_tunnel()
 	g.say("qtb_on" if on else "qtb_off", at)
 	g.sfx.play("holo", Vector2.INF, 0.8, 0.42 if on else 0.32)
 	g.sfx.play("reveal", Vector2.INF, 0.35, 1.5 if on else 1.2)

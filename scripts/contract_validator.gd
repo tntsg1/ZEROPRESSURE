@@ -41,7 +41,8 @@ static func _dismantlable(d: Dictionary, reasons: Array, detail: Array) -> void:
 	var boxes: Array = []
 	for pd in d.pieces:
 		# too heavy for any grapple, unless it has marked lines to cut it into parts that are not
-		if pd.get("cls", "") == "equip" and float(pd.get("mass", 0.0)) > MAX_GRAPPLE * (pd.get("segments", []).size() + 1):
+		# (AX-40's antimatter trap is the exception: its job lends the crane and it is never cut)
+		if pd.get("cls", "") == "equip" and float(pd.get("mass", 0.0)) > MAX_GRAPPLE * (pd.get("segments", []).size() + 1) 				and not (str(pd.get("hazard", "")) == "antimatter" and d.get("kit_lend", {}).has("crane")):
 			reasons.append("too_heavy")
 			detail.append("%s weighs %.1f t" % [pd.key, pd.mass])
 		if pd.get("cls", "") == "equip" or pd.kind == "fixture":

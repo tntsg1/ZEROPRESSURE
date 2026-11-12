@@ -41,7 +41,8 @@ const E := {
 
 	# ---------------------------------------------------------------- devices: power
 	"swb": {"cat": "device", "arts": ["swb"], "size": [2.0, 1.6]},
-	"battery": {"cat": "device", "arts": ["battery"], "size": [2.2, 1.0]},
+	# E018–E028 (2026-11-11): each battery drawn as itself, still the same "battery" card until it has its own text
+	"battery": {"cat": "device", "arts": ["battery", "ark_aux_pack", "battery_cart", "emerg_light", "ring_battery", "shuttle_pack", "vrla_rack", "main_battery", "drone_pack", "courier_stack", "lock_ups", "pod_ups", "race_pack", "standby_bank", "ups_unit"], "size": [2.2, 1.0]},
 	"cap": {"cat": "device", "arts": ["cap"], "size": [1.6, 1.2]},
 	"gen": {"cat": "device", "arts": ["gen"], "size": [2.6, 1.3]},
 	"panel": {"cat": "device", "arts": ["panel"], "size": [1.2, 1.4]},
@@ -65,7 +66,8 @@ const E := {
 	"filter": {"cat": "device", "arts": ["filter"], "size": [1.0, 1.6]},
 	"trap": {"cat": "device", "arts": ["trap"], "size": [1.0, 1.2]},
 	"manifold": {"cat": "device", "arts": ["manifold"], "size": [2.4, 1.0]},
-	"aux": {"cat": "device", "arts": ["aux"], "size": [1.4, 1.2]},
+	# E002–E016 (2026-11-11): redrawn each as itself, still the same "aux" card until it has its own text
+	"aux": {"cat": "device", "arts": ["aux", "rf_amp", "aux_rocket", "gamma_probe", "pellet_feeder", "steam_cyl", "fog_pump", "comms_desk", "fw_appliance", "rig_welder", "e07_unit", "shunt_reg", "gas_puff", "ion_grid", "rb_clock", "daq_rail"], "size": [1.4, 1.2]},
 	"relief": {"cat": "device", "arts": ["relief"], "size": [1.0, 1.4]},
 	"pipe": {"cat": "device", "arts": ["pipe"], "size": [3.0, 0.5]},
 	"hpu": {"cat": "device", "arts": ["hpu"], "size": [1.8, 1.4]},
@@ -101,6 +103,17 @@ const E := {
 	"rcs_quad": {"cat": "device", "arts": ["rcs_quad"], "size": [1.0, 1.0]},
 	"turbopump": {"cat": "device", "arts": ["turbopump"], "size": [1.8, 1.0]},
 	"apu": {"cat": "device", "arts": ["apu"], "size": [2.2, 1.0]},
+	"ax_trap": {"cat": "device", "arts": ["ax_trap"], "size": [1.4, 1.4]},
+	"ax_mps": {"cat": "device", "arts": ["ax_mps"], "size": [0.8, 1.4]},
+	"ax_injector": {"cat": "device", "arts": ["ax_injector"], "size": [2.6, 0.5]},
+	"ax_cryo": {"cat": "device", "arts": ["ax_cryo"], "size": [1.0, 1.3]},
+	"ax_cold_head": {"cat": "device", "arts": ["ax_cold_head"], "size": [1.0, 0.8]},
+	"ax_ion_pump": {"cat": "device", "arts": ["ax_ion_pump"], "size": [1.0, 1.1]},
+	"ax_ion_engine": {"cat": "device", "arts": ["ax_ion_engine"], "size": [2.4, 1.6]},
+	"ax_panel": {"cat": "device", "arts": ["ax_panel"], "size": [1.0, 1.4]},
+	"ax_quench": {"cat": "device", "arts": ["ax_quench"], "size": [1.0, 1.5]},
+	"ax_gamma": {"cat": "device", "arts": ["ax_gamma"], "size": [1.2, 1.0]},
+	"ax_ppu": {"cat": "device", "arts": ["ax_ppu"], "size": [0.8, 1.3]},
 	"ntr_core": {"cat": "device", "arts": ["ntr_core"], "size": [2.6, 1.4]},
 	# computing, avionics, sensing
 	"nav_rack": {"cat": "device", "arts": ["nav_rack"], "size": [1.0, 1.8]},
@@ -232,6 +245,7 @@ const E := {
 	"m_media": {"cat": "mech", "cls": "fluid", "ships": ["fl116"], "arts": ["manifold", "separator_3ph", "coriolis"], "inc": ["media_mixed", "manifold_spill"], "draw": "manifold", "size": [2.4, 1.0]},
 	"m_o2_flash": {"cat": "mech", "cls": "atmos", "ships": ["hb86", "my48"], "arts": ["growlamp", "plants", "electrolyser"], "inc": ["o2_fire"], "draw": "", "glyph": "fire"},
 	"m_composite": {"cat": "mech", "cls": "atmos", "ships": ["st40"], "inc": ["composite_fumes"], "draw": "", "glyph": "gas"},
+	"m_antimatter": {"cat": "mech", "cls": "energy", "ships": ["ax40"], "arts": ["ax_trap", "ax_mps"], "inc": ["annihilation"], "draw": "ax_trap", "size": [1.4, 1.4]},
 	"m_radiation": {"cat": "mech", "cls": "atmos", "ships": ["nr95"], "arts": ["ntr_core", "shadow_shield", "control_drum"], "inc": ["dose_fault", "core_detonation", "drum_slip"], "draw": "shadow_shield", "size": [1.0, 2.0]},
 	"m_decay_heat": {"cat": "mech", "cls": "atmos", "ships": ["nr95", "mf126"], "arts": ["ntr_core", "arc_furnace", "radiator"], "inc": ["core_cracked", "petal_hot"], "draw": "arc_furnace", "size": [2.4, 1.8]},
 	"m_thermal": {"cat": "mech", "cls": "atmos", "ships": ["ev55"], "arts": ["armor", "coronagraph"], "inc": ["tile_shatter", "heat_spoil"], "draw": "", "glyph": "heat"},

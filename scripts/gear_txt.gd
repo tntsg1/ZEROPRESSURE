@@ -8,6 +8,8 @@ const S := {
 	"gear_pump": ["独立泵", "INDEPENDENT PUMP"],
 	"gear_pump_d": ["可以安装在带压舱室的壁板、储罐或储箱上，直接抽出内部物质，不需要连接现有接口。\n即使接口被阀门封死，或者找不到接口，也能正常抽取。\n回收零件前记得拆下泵，否则会跟着零件一起被回收。", "Stuck on any wall of a pressurised room, or on a tank or bottle: it draws through its own tap, no port needed, even where the port is shut off or nowhere to be found. Left on a piece that goes down a mouth, it goes with it."],
 	"gear_prop": ["临时撑杆", "TEMPORARY PROP"],
+	"gear_confine": ["便携约束电源", "PORTABLE CONFINEMENT SUPPLY"],
+	"gear_confine_d": ["【占位】接在反物质储存阱上，接管约束线圈的供电；读数变成“双路供电”后才可以断主电。只随 AX-40 借出。", "[PLACEHOLDER] Clamped on the antimatter trap, it takes over its coils' supply; once the trap reads dual supply the main bus may go. Lent with the AX-40 only."],
 	"gear_prop_d": ["安装在船坞地面，支撑货柜墙指定一列的底部横梁。\n安装后，这一列及外侧各列的重量会通过撑杆传到地面，方便你先拆除内侧的货柜。\n最大承重 60 t，约等于两列满载货柜。超载后撑杆会弯曲，受力过大时可能折断。", "Stood on the berth floor under a bay's bottom chord of a container wall: that bay and every bay outboard of it bear on it instead of the bays inboard, which can then be emptied first. Rated 60 t (about two full bays): past that it bows, then buckles."],
 	"gear_probe": ["监测探头", "MONITORING PROBE"],
 	"gear_probe_d": ["安装在测量点、接口或零件上，持续监测数据。\n读数会自动更新。出现明显变化时，会通过无线电通知你。\n回收零件前记得取下探头，否则会一起丢失。", "Left on a test point, a port or a piece: its reading stays live and never goes stale, and a real change is called out on the radio. Left on a piece that goes down a mouth, it is gone."],

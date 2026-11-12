@@ -89,7 +89,7 @@ func _near(f: Vector2, r: float) -> Array:
 
 
 func _visible(p) -> bool:
-	if p.gone or p.body != null:
+	if p.gone or p.body != null or world.live.has(p.id):
 		return false
 	return not (p.room != "" and world.rooms.has(p.room) and not world.rooms[p.room].revealed)
 

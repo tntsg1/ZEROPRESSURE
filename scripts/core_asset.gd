@@ -490,6 +490,18 @@ const SHIPS := {
 				"risks": ["船体切成大块送熔炉：快，但氢氧还在就切会爆燃，设备跟着熔掉", "Big sections to the furnace: quick, but cut with the gas still in it flares, and the units melt"]},
 		],
 	},
+	# AX-40 逆火 (design/新船点子_10艘_详细版_20261111.md §4): the trap, $80,000, to its own cradle
+	"ax40": {
+		"name": ["反物质储存阱", "THE ANTIMATTER TRAP"],
+		"units": ["储存阱 1 件（9 t，吊车整件送反物质回收架）", "THE TRAP (9 t, CRANED WHOLE INTO THE ANTIMATTER CRADLE)"],
+		"groups": [{"name": ["储存阱", "THE TRAP"], "tags": ["TRAP"]}],
+		"methods": [
+			{"key": "careful", "name": ["先接便携电源，带电吊走", "PORTABLE SUPPLY FIRST, CRANE IT LIVE"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
+				"risks": ["约束只靠主电：先给储存阱接上便携约束电源，读数变成“双路供电”后才能断主电；拧下四颗支架螺栓、拔掉线圈引线，吊车整件送进反物质回收架", "The confinement runs on the main bus only: the portable supply on the trap first, and only once it reads dual supply may the bus go; four cradle bolts, the coils' lead, then the crane takes it whole into the antimatter cradle"]},
+			{"key": "demolish", "name": ["照常先断电", "POWER OFF FIRST, AS USUAL"], "minutes": [0, 0], "lo": 0.0, "hi": 0.0,
+				"risks": ["拉主闸、切到供电电缆或配电盘、拆掉磁体电源或电池：约束一断电，正反物质当场湮灭，船坞重建，合同失败", "The main switch, a chain cable or the switchboard cut, the magnet supply or the battery out: the moment it loses power it annihilates; the berth is rebuilt, the contract fails"]},
+		],
+	},
 	"qc30": {
 		"name": ["量子芯片与制冷机", "THE QUANTUM CHIP AND ITS FRIDGE"],
 		"units": ["量子芯片 QPU + 稀释制冷机五级冷台", "THE QPU + THE FRIDGE'S FIVE STAGES"],
@@ -853,7 +865,7 @@ static func full(g) -> float:
 				if p != null:
 					sum += float(p.value)
 			return sum
-		"gr7", "m14", "tug", "pod", "s09", "qc30", "jd38", "h22", "st40", "my48", "ev55", "ih55":
+		"gr7", "m14", "tug", "pod", "s09", "qc30", "jd38", "h22", "st40", "my48", "ev55", "ih55", "ax40":
 			var sum := ore_full(g) if spec(g).get("ore", false) else 0.0
 			for t in _units(g):
 				var p = _unit(g, str(t))
@@ -897,7 +909,7 @@ static func board(g) -> Dictionary:
 			return _sail_board(g)
 		"ob90":
 			return _mirror_board(g)
-		"gr7", "m14", "tug", "pod", "s09", "qc30", "jd38", "h22", "st40", "my48", "ev55", "ih55":
+		"gr7", "m14", "tug", "pod", "s09", "qc30", "jd38", "h22", "st40", "my48", "ev55", "ih55", "ax40":
 			return _equip_board(g)
 		"cf90":
 			return _box_board(g)
@@ -1026,7 +1038,7 @@ static func review(g) -> Dictionary:
 			return _sail_review(g)
 		"ob90":
 			return _mirror_review(g)
-		"gr7", "m14", "tug", "pod", "s09", "qc30", "jd38", "h22", "st40", "my48", "ev55", "ih55":
+		"gr7", "m14", "tug", "pod", "s09", "qc30", "jd38", "h22", "st40", "my48", "ev55", "ih55", "ax40":
 			return _equip_review(g)
 		"cf90":
 			return _box_review(g)
@@ -1226,6 +1238,14 @@ const POWER_LAST := ["fx70", "fr26", "cl104", "vt80", "nr95", "mf126", "ic120", 
 static func _ship_warn(g, warn: Array) -> void:
 	var s = g.sys
 	match ship_key(g):
+		"ax40":
+			var a = g.anti
+			if a == null or not a.active() or a.done != "":
+				return
+			if not a.portable():
+				warn.append(w("储存阱只靠主电：断电即湮灭，先接便携约束电源", "THE TRAP RUNS ON THE MAIN BUS ONLY: NO POWER, IT ANNIHILATES. PORTABLE SUPPLY FIRST"))
+			elif a.main_volts() > 1.0:
+				warn.append(w("双路供电：现在可以断主电", "DUAL SUPPLY: THE MAIN BUS MAY GO NOW"))
 		"qc30":
 			var d = g.dilution
 			if d == null or not d.active():

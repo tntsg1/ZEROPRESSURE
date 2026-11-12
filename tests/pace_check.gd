@@ -157,13 +157,14 @@ func _run() -> void:
 		var res := {}
 		for pace in [false, true]:
 			NextStep.PACE_ON = pace
+			NextStep.WAIT_ON = pace
 			var g := _start(ship)
 			await _frames(30)
 			g.drone.global_position = Dock.centre() * Geom.M + Vector2(0, -6.0) * Geom.M
 			var r := await _follow(g, ship)
 			r.incidents = g.incidents.size()
 			res[pace] = r
-			print("  %s %s: %.0f s (waited %.0f s), %d steps, mean %.1f m to the next; hoses with work left %d, moved on %d; safe %s" % [ship, "now" if pace else "before", r.t, r.waited, r.n, r.mean, r.hosed, r.moved, r.safe])
+			print("  %s %s: incidents %d, %.0f s (waited %.0f s), %d steps, mean %.1f m to the next; hoses with work left %d, moved on %d; safe %s" % [ship, "now" if pace else "before", int(r.incidents), r.t, r.waited, r.n, r.mean, r.hosed, r.moved, r.safe])
 			print("    ", " → ".join(r.trail.slice(0, 14)))
 			g.queue_free()
 			await _frames(3)

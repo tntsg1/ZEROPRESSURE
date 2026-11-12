@@ -19,6 +19,8 @@ var GX0 := -1.0
 var GY0 := -5.0
 var GW := 440
 var GH := 100
+const VENT_TAU := 0.4              # s: time constant of a hose vent (any volume): ~2 s to empty
+const VENT_FLOOR := 0.0067         # of the pressure it began at (e^-5): below this a vent lets the rest go at once
 const K_OPEN := 8.0               # m²/s of exchange per contact cell
 const SAFE_KPA := 5.0
 # hazards that only ever go to the hazard mouth (which pays 40 % of their value)
@@ -525,9 +527,17 @@ func _step_gas(dt: float) -> void:
 			var v: String = c.target
 			var k := port_rate(port_id) * pump_k()
 			var hose: Dictionary = hoses[port_id]
+			var take: float
 			if hose.mode == "vent":
-				k *= 3.0
-			var take: float = minf(vols[v].n, k * P(v) * h)
+				# venting to space is fast whatever the size of the space: the pressure falls
+				# exponentially (VENT_TAU) and the rest is let go under VENT_FLOOR of where it began, so any
+				# volume is empty in about two seconds. Nothing is recovered.
+				var pv := P(v)
+				var p0: float = maxf(float(hose.get("p0", 0.0)), pv) if pv > 0.01 else 0.0
+				hose["p0"] = p0
+				take = vols[v].n if pv < p0 * VENT_FLOOR else vols[v].n * (1.0 - exp(-h / VENT_TAU))
+			else:
+				take = minf(vols[v].n, k * P(v) * h)
 			if bio.get(v, 0.0) > 0.0 and vols[v].n > 1e-9:
 				var out: float = bio[v] * take / vols[v].n
 				bio[v] -= out
@@ -1281,6 +1291,8 @@ func dest_of(p) -> String:
 		return "metal"
 	if not p.intact:
 		return "metal"
+	if p.hazard == "antimatter":
+		return "anti"
 	if p.hazard in Systems.HAZARD_ONLY:
 		return "hazard"
 	var fv := fluid_in_piece(p)

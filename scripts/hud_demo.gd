@@ -75,12 +75,13 @@ func _fn_list() -> Array:
 	var g = game
 	var out: Array = []
 	var haul: int = g.haulers().size() if g.has_method("haulers") else 0
-	var plan_ok: bool = g.plan != null and bool(_const("G4_OPEN", false)) and g.plan.has_plan()
+	var open: bool = g.has_method("plan_open") and g.plan_open()
+	var plan_ok: bool = open and g.plan != null and g.plan.has_plan()
 	var plan_why := ""
-	if not bool(_const("G4_OPEN", false)):
-		plan_why = w("第二船坞开放后可用", "With the second berth")
+	if not open:
+		plan_why = Txt.t("as_plan_not_bought")
 	elif g.plan == null or not g.plan.has_plan():
-		plan_why = w("这艘船还没有拆法方案", "No plan for this ship yet")
+		plan_why = Txt.t("as_plan_none")
 	var tun: bool = g.tools != null and g.tools.has_method("tunnel_fitted") and g.tools.tunnel_fitted()
 	var mul: bool = g.tools != null and g.tools.multi != null and g.tools.multi.fitted()
 	var boat: bool = g.boat != null and is_instance_valid(g.boat) and g.boat.aboard

@@ -60,6 +60,10 @@ var dirty_draw := false
 # strips, their owner draws them each frame with draw_pieces (a strip redraw a frame would cost
 # far more; user 2026-10-27, the furl went in visible steps)
 var live := {}
+# ARK-01 侧挂转轮 (scripts/rings_fx.gd): cables drawn by their owner, not the line layer
+var hide_lines := {}
+var turning := {}              # piece id -> true: on a wheel still turning (not where the file put it: not pickable)
+var hide_rooms := {}            # and rooms whose back their owner draws (a turning wheel's)
 var dirty_back := false
 var metal_price := 120.0
 var ore_price := 0.0          # 96 号 (user 2026-10-28 "按矿价算"): a hopper's chunks pay as ore, $/t, not as scrap
@@ -551,7 +555,7 @@ func _pick_cands(wpos: Vector2) -> Array:
 	var cand: Array = []
 	for id in _pick.get(Vector2i((wpos / PICK_CELL).floor()), {}):
 		var p = pieces.get(id)
-		if p != null and not p.gone and p.body == null and (p.door or _bounds(p).has_point(wpos)):
+		if p != null and not p.gone and p.body == null and not turning.has(id) and (p.door or _bounds(p).has_point(wpos)):
 			cand.append(p)
 	for b in bodies:
 		if not is_instance_valid(b):
@@ -597,7 +601,7 @@ func pieces_near(wpos: Vector2, rad: float) -> Array:
 					continue
 				seen[id] = true
 				var p = pieces.get(id)
-				if p != null and not p.gone and p.body == null:
+				if p != null and not p.gone and p.body == null and not turning.has(id):
 					cand.append(p)
 	for b in bodies:
 		if is_instance_valid(b):
@@ -2544,6 +2548,8 @@ func _draw_back_rooms() -> void:
 		return
 	var shells := _room_shells()
 	for n in rooms:
+		if hide_rooms.has(n):
+			continue
 		var r = rooms[n]
 		var poly: PackedVector2Array = r.poly
 		var k := 1.0
@@ -2658,6 +2664,8 @@ func _hatch(out: PackedVector2Array, poly: PackedVector2Array, bb: Rect2) -> voi
 
 func _draw_lines() -> void:
 	for id in lines:
+		if hide_lines.has(id):
+			continue
 		var l = lines[id]
 		var pa = pieces.get(l.a)
 		var pb = pieces.get(l.b)

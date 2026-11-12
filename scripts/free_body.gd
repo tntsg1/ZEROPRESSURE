@@ -251,6 +251,8 @@ func _physics_process(dt: float) -> void:
 	if get_meta("arm_parked",false): return
 	_ghost_step(dt)
 	_clear_step(dt)
+	if tethered and not tunneling:
+		_tunnel_sync()
 	# The solver publishes its result before scene physics callbacks. Repair an
 	# invalid result before the dock, tools and FX read the body this step.
 	var pose := global_transform
@@ -264,8 +266,16 @@ func _physics_process(dt: float) -> void:
 
 
 func _carry_begin() -> void:
-	# swallowed, on the arm or put away by something else: not ours to change
-	if capture != null or freeze or get_meta("arm", false) or get_meta("arm_parked", false):
+	_tunnel_sync()
+
+
+# 2026-11-11 (user: "有时候这个量子隧穿，我明明打开了，还是会碰撞"): on the player's line with tunnelling on, it
+# tunnels — looked at again every step it is held, not only the moment it was grabbed. Grabbed from
+# under a hauler's claim (meta "arm": a hauler on its way to it) or out of a machine's claw (still
+# carried, frozen), it used to be skipped once and then collided the whole time it was held.
+func _tunnel_sync() -> void:
+	# swallowed, held by a machine still (it lets go this step) or put away: not yet
+	if capture != null or freeze or _carried or get_meta("arm_parked", false):
 		return
 	var t = world.game.tools if world != null and world.game != null else null
 	if t != null and t.has_method("tunnel_on") and t.tunnel_on():

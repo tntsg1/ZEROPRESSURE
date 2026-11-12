@@ -44,10 +44,12 @@ const SPEC := {
 		"tiers": [[0.0, [["1 台搬运无人机，1.5 t 以内", "A hauling drone, up to 1.5 t"]]],
 			[0.0, [["第二台搬运无人机", "A second hauling drone"], ["一扳手同时拧 2 颗", "One wrench pass takes 2 fixings"]]],
 			[0.0, [["机械臂自动喂熔炉", "The arm feeds the furnace"], ["一扳手同时拧 3 颗", "One wrench pass takes 3 fixings"]]]]},
+	# 2026-11-11 (user: "长时监测，你直接别说没学会了，到时候直接放升级里面，不要有任何学会的"): bought, tier 1 too
+	# (half the methods' typical second tier: 2 万); no borrow job, no achievement teaching it
 	"probe": {"name": ["长时监测", "LEFT-ON PROBES"],
 		"does": ["探针留在测点上一直读数，数值一变就用无线电报", "A probe left on a test point keeps reading and calls out any real change"],
-		"learn": "borrow", "ships": ["fr26", "cl104", "ic120"], "seed": 950001, "lend": {"probe": 2}, "gear": "probe", "feat": "watch",
-		"tiers": [[0.0, [["1 根探针", "One probe"]]],
+		"learn": "buy", "gear": "probe",
+		"tiers": [[20000.0, [["1 根探针", "One probe"]]],
 			[39000.0, [["越线停切：读数一变，正在切的激光自动停下", "Stops the beam: a reading changes, the cut halts"], ["远程读数 8 m", "Remote reading 8 m"]]],
 			[120000.0, [["远程读数 10 m", "Remote reading 10 m"]]]]},
 	"crane": {"name": ["整件吊走", "LIFT IT WHOLE"],
@@ -203,7 +205,7 @@ static func learned(id: String) -> bool:
 # the next one to learn, in the agreed order ("" once all are)
 static func next_id() -> String:
 	for id in ORDER:
-		if not learned(id):
+		if not learned(id) and SPEC[id].learn != "buy":
 			return id
 	return ""
 
@@ -252,7 +254,9 @@ static func borrow_reason(id: String) -> String:
 		return Txt.t("rp_unknown")
 	var s: Dictionary = SPEC[id]
 	if learned(id):
-		return _t(["已学会", "LEARNED"])
+		return Txt.t("as_mt_owned")
+	if s.learn == "buy":
+		return buy_reason(id)
 	if s.learn == "build":
 		return _t(["让施工队修建：%s", "HAVE THE CREW BUILD: %s"]) % Txt.t(Repair.find(str(s.builds[0]))[4])
 	if wait(id) > 0:
@@ -310,14 +314,16 @@ static func take(id: String) -> String:
 # the next tier's price, or why it cannot be bought ("" when it can)
 static func price(id: String) -> float:
 	var n := level(id)
+	if SPEC.has(id) and n == 0 and SPEC[id].learn == "buy":
+		return float(SPEC[id].tiers[0][0])
 	return float(SPEC[id].tiers[n][0]) if SPEC.has(id) and n >= 1 and n < tiers(id) else 0.0
 
 
 static func buy_reason(id: String) -> String:
-	if not learned(id):
-		return _t(["还没学会", "NOT LEARNED YET"])
+	if not learned(id) and SPEC[id].learn != "buy":
+		return Txt.t("as_mt_not_owned")
 	if level(id) >= tiers(id):
-		return _t(["已到最高档", "TOP TIER"])
+		return Txt.t("as_mt_top")
 	if id == "auto":
 		return _t(["让施工队修建：%s", "HAVE THE CREW BUILD: %s"]) % Txt.t(Repair.find(str(SPEC.auto.builds[level(id)]))[4])
 	if float(Career.data.get("money", 0.0)) < price(id):
@@ -335,8 +341,11 @@ static func buy(id: String) -> String:
 	var m: Dictionary = Career.data.get("methods", {})
 	m[id] = level(id) + 1
 	Career.data.methods = m
-	# 108 号 Q15: a tier that is a tool, not a number, puts the tool on the shelf
+	# 108 号 Q15: a tier that is a tool, not a number, puts the tool on the shelf (a bought method's
+	# first tier: its own tool)
 	var tool: String = TIER_GEAR.get(id, {}).get(int(m[id]), "")
+	if tool == "" and int(m[id]) == 1 and SPEC[id].learn == "buy":
+		tool = str(SPEC[id].get("gear", ""))
 	if tool != "":
 		var gw: Dictionary = Career.data.get("gear", {})
 		gw[tool] = int(gw.get(tool, 0)) + 1
@@ -349,7 +358,7 @@ static func buy(id: String) -> String:
 
 # learn it (tier 1); its tool's first unit goes on the shelf unless it came with the feat already
 static func learn(id: String, grant: bool) -> bool:
-	if not SPEC.has(id) or learned(id) or SPEC[id].learn == "build":
+	if not SPEC.has(id) or learned(id) or SPEC[id].learn in ["build", "buy"]:
 		return false
 	var m: Dictionary = Career.data.get("methods", {})
 	m[id] = 1

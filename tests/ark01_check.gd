@@ -111,8 +111,9 @@ func _run() -> void:
 	var r1: float = rg.rpm["A"]
 	await _frames(60)
 	check(absf(rg.rpm["A"] - r1) < 0.001, "with its capacitor full the brakes take nothing off")
+	# the dump is a 5 s pulse on the side-hung wheels (the brakes let go while it runs)
 	_op(g, "BDUMP-A")
-	await _frames(60 * 3)
+	await _frames(60 * 6)
 	check(rg.cap_charge("A") < 0.5 and rg.rpm["A"] < r1, "dumped, the braking goes on (%.0f %%)" % (rg.cap_charge("A") * 100.0))
 	check(not _has(g, "ring_twist"), "both braked together: no twist so far")
 	# locked still turning: the bearing seizes
@@ -131,10 +132,20 @@ func _run() -> void:
 	for i in 4:
 		_op(g, "BRK-A%d" % (i + 1))
 	_op(g, "BCOOL-A")
-	_op(g, "BDUMP-A")
-	await _frames(60 * 70)
+	# braked on, the capacitor dumped whenever it fills (a 5 s pulse each)
+	for k in 70:
+		if rg.cap_charge("A") >= 0.999 and not rg.dumping("A"):
+			_op(g, "BDUMP-A")
+		await _frames(60)
 	check(_has(g, "ring_twist"), "ring A braked with B still turning: the hull twists, the berth's clamps overload")
 	check(rg.rpm["A"] <= 0.05, "ring A came to rest (%.2f rpm)" % rg.rpm["A"])
+	# the side-hung wheel's pin goes in only at its hole: inched round to it first
+	if rg.wheels():
+		_op(g, "INCH-A")
+		for k in 35:
+			if rg.aligned("A"):
+				break
+			await _frames(60)
 	_op(g, "LOCK-A")
 	await _frames(3)
 	check(rg.locked.has("A") and not _has(g, "bearing_seized"), "locked at rest: the bearing holds quietly")

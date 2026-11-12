@@ -13,6 +13,10 @@ const SMALL := 30.0      # under this (px, the short side) only the outline stro
 
 # a piece kind's name decides the drawing where one art id covers several machines
 const BY_NAME := {
+	"p_ark_amp": "power_amp", "p_aux": "aux_thruster",
+	"p_ax_gamma_monitor": "gamma_monitor", "p_bl_feeder": "fish_feeder",
+	"p_bl_humidifier": "steam_humidifier", "p_bl_mister": "mist_pump",
+	"p_comms": "radio_console",
 	"p_heat_exchanger": "hx", "p_hx": "hx",
 	"p_ark_duct_fan": "duct_fan", "p_deck_fan": "duct_fan",
 	"p_chiller": "chiller",
@@ -650,6 +654,13 @@ static func draw(ci: CanvasItem, art: String, w: float, h: float, p, font: Font)
 
 static func _draw_art(ci: CanvasItem, art: String, r: Rect2, p, font: Font) -> void:
 	match art:
+		"power_amp": power_amp(ci, r)
+		"aux_thruster": aux_thruster(ci, r)
+		"gamma_monitor": gamma_monitor(ci, r)
+		"fish_feeder": fish_feeder(ci, r)
+		"steam_humidifier": steam_humidifier(ci, r)
+		"mist_pump": mist_pump(ci, r)
+		"radio_console": radio_console(ci, r)
 		"pump": pump(ci, r)
 		"cabinet": cabinet(ci, r, p, font)
 		"swb": swb(ci, r)
@@ -735,11 +746,132 @@ static func _draw_art(ci: CanvasItem, art: String, r: Rect2, p, font: Font) -> v
 				ext._draw_art(ci, art, r, p, font)
 
 
-const DRAWN := ["pump", "cabinet", "swb", "battery", "gen", "env", "filter", "trap", "locker", "console", "nav_rack", "module", "aux", "panel", "junction", "insp", "sensor", "overhead", "growlamp", "tray", "pipe", "cargo", "crate", "container", "gastank", "extinguisher", "water", "fueltank", "cap", "screen", "nav", "o2cab", "bunk", "blackbox", "table", "shelf", "desk", "toolwall", "fridge", "medcab", "galley", "bench", "radiator", "hx", "duct_fan", "chiller", "transformer", "inverter", "fuelcell", "hpu", "manifold", "charger", "actuator", "relief", "stator", "gauge_box", "beacon", "lamp", "eng_core", "nozzle", "reel", "drum", "hook", "sphere_tank", "rcs_quad", "radar", "eng_front", "engine_s", "brake", "arm", "dock", "freezer", "barrel", "turret", "launcher", "ciws", "gun_mount", "decoy"]
+const DRAWN := ["power_amp", "aux_thruster", "gamma_monitor", "fish_feeder", "steam_humidifier", "mist_pump", "radio_console", "pump", "cabinet", "swb", "battery", "gen", "env", "filter", "trap", "locker", "console", "nav_rack", "module", "aux", "panel", "junction", "insp", "sensor", "overhead", "growlamp", "tray", "pipe", "cargo", "crate", "container", "gastank", "extinguisher", "water", "fueltank", "cap", "screen", "nav", "o2cab", "bunk", "blackbox", "table", "shelf", "desk", "toolwall", "fridge", "medcab", "galley", "bench", "radiator", "hx", "duct_fan", "chiller", "transformer", "inverter", "fuelcell", "hpu", "manifold", "charger", "actuator", "relief", "stator", "gauge_box", "beacon", "lamp", "eng_core", "nozzle", "reel", "drum", "hook", "sphere_tank", "rcs_quad", "radar", "eng_front", "engine_s", "brake", "arm", "dock", "freezer", "barrel", "turret", "launcher", "ciws", "gun_mount", "decoy"]
 
 
 static func _has(art: String) -> bool:
 	return art in DRAWN or (ext != null and art in ext.DRAWN) or (detail != null and art in detail.DRAWN)
+
+
+# Named auxiliary equipment: keep the identifying parts even at the small ships'
+# native size. All strokes go through the existing mesh recorder and batcher.
+static func vp(r: Rect2, x: float, y: float) -> Vector2:
+	return r.position + r.size * Vector2(x, y)
+
+
+static func path_uv(ci: CanvasItem, r: Rect2, pts: Array, al := 0.6, wd := 1.0) -> void:
+	var q := PackedVector2Array()
+	for p in pts:
+		q.append(vp(r, p.x, p.y))
+	P(ci, q, al, wd)
+
+
+# Rack power amplifier: finned power stages, fan, input/output terminals, meter.
+static func power_amp(ci: CanvasItem, r: Rect2) -> void:
+	var q := sub(r, 0.12, 0.08, 0.88, 0.93)
+	R(ci, q, 0.65, 1.2)
+	for x in [0.04, 0.91]:
+		R(ci, sub(r, x, 0.12, x + 0.05, 0.88), 0.5)
+	R(ci, sub(r, 0.21, 0.15, 0.66, 0.29), 0.55)
+	path_uv(ci, r, [Vector2(0.25, 0.25), Vector2(0.42, 0.19), Vector2(0.59, 0.25)], 0.4)
+	D(ci, vp(r, 0.76, 0.22), 1.5, 0.8)
+	var rad := minf(r.size.x * 0.22, r.size.y * 0.18)
+	O(ci, vp(r, 0.49, 0.51), rad, 0.55)
+	impeller(ci, vp(r, 0.49, 0.51), rad * 0.8, 0.42)
+	for x in [0.2, 0.72]:
+		hatch(ci, sub(r, x, 0.34, x + 0.09, 0.72), 4, false, 0.45, 9)
+	for x in [0.26, 0.45, 0.64]:
+		R(ci, sub(r, x, 0.8, x + 0.1, 0.88), 0.6)
+		D(ci, vp(r, x + 0.05, 0.84), 1.0, 0.7)
+
+
+# Axial auxiliary thruster: feed manifold, injector, chamber, throat and bell.
+static func aux_thruster(ci: CanvasItem, r: Rect2) -> void:
+	R(ci, sub(r, 0.03, 0.28, 0.15, 0.72), 0.6)
+	R(ci, sub(r, 0.17, 0.21, 0.24, 0.79), 0.7, 1.3)
+	path_uv(ci, r, [Vector2(0.24, 0.27), Vector2(0.45, 0.27), Vector2(0.57, 0.4), Vector2(0.66, 0.4), Vector2(0.96, 0.08), Vector2(0.96, 0.92), Vector2(0.66, 0.6), Vector2(0.57, 0.6), Vector2(0.45, 0.73), Vector2(0.24, 0.73), Vector2(0.24, 0.27)], 0.7, 1.3)
+	for y in [0.06, 0.94]:
+		path_uv(ci, r, [Vector2(0.04, y), Vector2(0.33, y), Vector2(0.33, 0.27 if y < 0.5 else 0.73)], 0.5)
+	for x in [0.28, 0.33, 0.38, 0.43]:
+		L(ci, vp(r, x, 0.3), vp(r, x, 0.7), 0.35)
+	L(ci, vp(r, 0.69, 0.44), vp(r, 0.94, 0.2), 0.28)
+	L(ci, vp(r, 0.69, 0.56), vp(r, 0.94, 0.8), 0.28)
+	L(ci, vp(r, 0.91, 0.13), vp(r, 0.91, 0.87), 0.4)
+
+
+# Scintillation probe and photomultiplier beside a separate count-rate readout.
+static func gamma_monitor(ci: CanvasItem, r: Rect2) -> void:
+	path_uv(ci, r, [Vector2(0.08, 0.23), Vector2(0.15, 0.14), Vector2(0.3, 0.14), Vector2(0.37, 0.23), Vector2(0.37, 0.76), Vector2(0.08, 0.76), Vector2(0.08, 0.23)], 0.65, 1.2)
+	R(ci, sub(r, 0.1, 0.26, 0.35, 0.44), 0.5)
+	L(ci, vp(r, 0.22, 0.47), vp(r, 0.22, 0.69), 0.4, 1.5)
+	path_uv(ci, r, [Vector2(0.22, 0.76), Vector2(0.22, 0.91), Vector2(0.88, 0.91), Vector2(0.88, 0.78)], 0.48)
+	R(ci, sub(r, 0.48, 0.19, 0.94, 0.79), 0.65, 1.2)
+	R(ci, sub(r, 0.54, 0.28, 0.88, 0.52), 0.5)
+	path_uv(ci, r, [Vector2(0.56, 0.45), Vector2(0.62, 0.45), Vector2(0.65, 0.34), Vector2(0.68, 0.45), Vector2(0.74, 0.45), Vector2(0.78, 0.38), Vector2(0.81, 0.45), Vector2(0.86, 0.45)], 0.55)
+	for x in [0.59, 0.72, 0.85]:
+		D(ci, vp(r, x, 0.65), 1.1, 0.65)
+
+
+# Fish feeder: covered hopper, conical funnel, screw metering tube and chute.
+static func fish_feeder(ci: CanvasItem, r: Rect2) -> void:
+	R(ci, sub(r, 0.16, 0.08, 0.8, 0.14), 0.65)
+	path_uv(ci, r, [Vector2(0.19, 0.14), Vector2(0.19, 0.4), Vector2(0.37, 0.58), Vector2(0.59, 0.58), Vector2(0.77, 0.4), Vector2(0.77, 0.14)], 0.65, 1.2)
+	R(ci, sub(r, 0.36, 0.23, 0.58, 0.39), 0.35)
+	for pt in [Vector2(0.4, 0.27), Vector2(0.48, 0.34), Vector2(0.54, 0.28)]:
+		D(ci, vp(r, pt.x, pt.y), 1, 0.4)
+	R(ci, sub(r, 0.12, 0.6, 0.3, 0.74), 0.55)
+	R(ci, sub(r, 0.3, 0.6, 0.8, 0.73), 0.6)
+	path_uv(ci, r, [Vector2(0.32, 0.7), Vector2(0.4, 0.62), Vector2(0.48, 0.7), Vector2(0.56, 0.62), Vector2(0.64, 0.7), Vector2(0.72, 0.62)], 0.4)
+	path_uv(ci, r, [Vector2(0.73, 0.73), Vector2(0.73, 0.84), Vector2(0.87, 0.9), Vector2(0.94, 0.82), Vector2(0.81, 0.76), Vector2(0.81, 0.64)], 0.6)
+	for x in [0.24, 0.64]:
+		L(ci, vp(r, x, 0.76), vp(r, x, 0.94), 0.5, 1.3)
+	L(ci, vp(r, 0.16, 0.94), vp(r, 0.71, 0.94), 0.5)
+
+
+# Steam humidifier: refill tank, sight glass, electrode cylinder and vapour duct.
+static func steam_humidifier(ci: CanvasItem, r: Rect2) -> void:
+	R(ci, sub(r, 0.05, 0.29, 0.41, 0.85), 0.6, 1.2)
+	R(ci, sub(r, 0.14, 0.21, 0.31, 0.29), 0.5)
+	R(ci, sub(r, 0.16, 0.4, 0.28, 0.75), 0.4)
+	L(ci, vp(r, 0.17, 0.58), vp(r, 0.27, 0.58), 0.65)
+	path_uv(ci, r, [Vector2(0.56, 0.3), Vector2(0.62, 0.24), Vector2(0.82, 0.24), Vector2(0.88, 0.3), Vector2(0.88, 0.77), Vector2(0.82, 0.83), Vector2(0.62, 0.83), Vector2(0.56, 0.77), Vector2(0.56, 0.3)], 0.65)
+	for x in [0.65, 0.78]:
+		L(ci, vp(r, x, 0.29), vp(r, x, 0.68), 0.4)
+	path_uv(ci, r, [Vector2(0.41, 0.75), Vector2(0.48, 0.75), Vector2(0.48, 0.87), Vector2(0.7, 0.87), Vector2(0.7, 0.83)], 0.45)
+	path_uv(ci, r, [Vector2(0.68, 0.24), Vector2(0.68, 0.1), Vector2(0.95, 0.1)], 0.65, 1.5)
+	path_uv(ci, r, [Vector2(0.78, 0.24), Vector2(0.78, 0.18), Vector2(0.95, 0.18)], 0.5)
+	L(ci, vp(r, 0.05, 0.93), vp(r, 0.91, 0.93), 0.5, 1.4)
+
+
+# Atomising sprayer: pressure reservoir, motor/pump and two flared nozzles.
+static func mist_pump(ci: CanvasItem, r: Rect2) -> void:
+	path_uv(ci, r, [Vector2(0.08, 0.38), Vector2(0.15, 0.3), Vector2(0.33, 0.3), Vector2(0.4, 0.38), Vector2(0.4, 0.79), Vector2(0.33, 0.87), Vector2(0.15, 0.87), Vector2(0.08, 0.79), Vector2(0.08, 0.38)], 0.6)
+	O(ci, vp(r, 0.24, 0.5), minf(r.size.x, r.size.y) * 0.09, 0.5)
+	L(ci, vp(r, 0.24, 0.5), vp(r, 0.28, 0.45), 0.5)
+	R(ci, sub(r, 0.49, 0.61, 0.83, 0.83), 0.55)
+	hatch(ci, sub(r, 0.56, 0.65, 0.8, 0.79), 4, true, 0.35, 5)
+	path_uv(ci, r, [Vector2(0.4, 0.77), Vector2(0.45, 0.77), Vector2(0.45, 0.7), Vector2(0.49, 0.7)], 0.5)
+	path_uv(ci, r, [Vector2(0.64, 0.61), Vector2(0.64, 0.16), Vector2(0.42, 0.16)], 0.6, 1.4)
+	L(ci, vp(r, 0.64, 0.34), vp(r, 0.84, 0.34), 0.6)
+	for v in [Vector2(0.42, 0.16), Vector2(0.84, 0.34)]:
+		path_uv(ci, r, [v + Vector2(-0.02, -0.04), v + Vector2(0.1, -0.06), v + Vector2(0.1, 0.06), v + Vector2(-0.02, 0.04)], 0.65)
+	L(ci, vp(r, 0.07, 0.94), vp(r, 0.9, 0.94), 0.5)
+
+
+# Radio console: sloping operator panel, spectrum screen, tuning dial, handset.
+static func radio_console(ci: CanvasItem, r: Rect2) -> void:
+	path_uv(ci, r, [Vector2(0.06, 0.82), Vector2(0.06, 0.3), Vector2(0.14, 0.21), Vector2(0.84, 0.21), Vector2(0.94, 0.65), Vector2(0.94, 0.82), Vector2(0.06, 0.82)], 0.65, 1.2)
+	R(ci, sub(r, 0.14, 0.32, 0.58, 0.58), 0.55)
+	path_uv(ci, r, [Vector2(0.18, 0.52), Vector2(0.25, 0.52), Vector2(0.29, 0.43), Vector2(0.33, 0.52), Vector2(0.4, 0.37), Vector2(0.45, 0.52), Vector2(0.53, 0.48)], 0.5)
+	O(ci, vp(r, 0.73, 0.46), minf(r.size.x, r.size.y) * 0.11, 0.6)
+	L(ci, vp(r, 0.73, 0.46), vp(r, 0.78, 0.41), 0.65)
+	for y in [0.66, 0.73]:
+		for x in [0.17, 0.27, 0.37, 0.47]:
+			L(ci, vp(r, x, y), vp(r, x + 0.05, y), 0.5, 1.4)
+	path_uv(ci, r, [Vector2(0.7, 0.2), Vector2(0.7, 0.08), Vector2(0.83, 0.08), Vector2(0.83, 0.17)], 0.55, 1.5)
+	path_uv(ci, r, [Vector2(0.82, 0.7), Vector2(0.76, 0.77), Vector2(0.7, 0.69), Vector2(0.64, 0.76)], 0.4)
+	for x in [0.16, 0.82]:
+		R(ci, sub(r, x, 0.82, x + 0.07, 0.94), 0.5)
 
 
 # ------------------------------------------------------------------ pump

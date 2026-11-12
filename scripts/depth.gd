@@ -212,7 +212,8 @@ func _draw_sil() -> void:
 	var seen := {}
 	for id in w.order:
 		var p = w.pieces[id]
-		if p.gone or p.body != null:
+		# a turning wheel's pieces and rooms (scripts/rings_fx.gd) aren't where the file put them
+		if p.gone or p.body != null or w.live.has(id):
 			continue
 		seen[id] = true
 		if p.room != "":
@@ -229,7 +230,7 @@ func _draw_sil() -> void:
 			_tris.erase(id)
 	# the rooms still standing fill the hull's outline in
 	for n in rooms:
-		if not w.rooms.has(n):
+		if not w.rooms.has(n) or w.hide_rooms.has(n):
 			continue
 		var rp: PackedVector2Array = w.rooms[n].poly
 		for i in Geometry2D.triangulate_polygon(rp):

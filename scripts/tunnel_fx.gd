@@ -15,13 +15,29 @@ const RIPPLE_DT := 0.09       # s between ripples where the outline crosses a wa
 const RING_LIFE := 0.55       # s a ripple lives
 const HALO_LIFE := 0.9        # s the entry / exit halo lives
 const MAX_RINGS := 48
-const MAX_DOTS := 520         # dithered dots inside the wall, per frame
+const MAX_DOTS := 520         # dithered dots inside the wall, per frame (all bodies together)
+# 2026-11-11 (user: "干脆就把所有穿模装上那个量子的动画"): every body passing through the ship without touching
+# it — a load in the grapple, a hauler's / the crane's / the arm's / a crew boat's, one easing out of a
+# wall after a let-go (FreeBody: its mask without World.STATIC_LAYER) — gets the same wave-packet look,
+# tunnelling upgrade or not. The player's own drone only when it tunnels (body_tunnel: it collides
+# otherwise). Many at once: only those on screen, at most MAX_OTHER of them (nearest the view's middle),
+# the walls looked up in a grid of the ship's outlines, one dot budget, crossing sounds spaced.
+const MAX_OTHER := 6            # (two haulers, the crane, the arm, a crew boat: five at most in play)
+const CELL := 192.0           # px: the grid the ship's outlines are filed in
+const SND_GAP := 0.12         # s between two crossing sounds of bodies not the player's
 
 var tools
 var t := 0.0
 var rings: Array = []         # {p, r, life, age, halo}
 var watch := {}               # body instance id -> {"b", "hist": [[polys...]], "ht", "rt", "in", "c", "st", "e"}
-var stats := {"inside": 0, "rings": 0, "halos": 0, "entries": 0, "exits": 0, "drone_in": 0, "drone_entries": 0, "drone_exits": 0, "flames": 0}
+var stats := {"inside": 0, "rings": 0, "halos": 0, "entries": 0, "exits": 0, "drone_in": 0, "drone_entries": 0, "drone_exits": 0, "flames": 0, "others": 0, "others_in": 0, "other_entries": 0, "dots": 0, "us_proc": 0, "us_draw": 0}
+var _walls: Array = []        # [[bbox, world poly]] of the attached ship's pieces
+var _grid := {}               # Vector2i -> [index into _walls]
+var _walls_t := -9.0
+var _walls_n := -1
+var _snd_t := 0.0
+var _last_in := {}            # body instance id -> when it was last inside a wall (no halo again for a re-show)
+var all_phasing := true       # false: only the player's own, as before 2026-11-11 (tests' before shots)
 
 
 func _init() -> void:
@@ -57,7 +73,65 @@ func _candidates() -> Array:
 	var d = tools.drone
 	if bt != null and bt.showing() and d != null and is_instance_valid(d) and d.alive:
 		out.append(d)
+	# every other body that does not touch the ship now (carried, eased out, tunnelling), on screen
+	var game = _game()
+	if game != null and game.world != null and all_phasing:
+		var view := _view().grow(240.0)
+		var mid := view.get_center()
+		var more: Array = []
+		for b in game.world.bodies:
+			if not is_instance_valid(b) or out.has(b) or b.capture != null or b.get_meta("arm_parked", false):
+				continue
+			if b.collision_mask & World.STATIC_LAYER:
+				continue
+			if not view.has_point(b.global_position):
+				continue
+			# those already drawn stay (no churn of who is shown: each change would ring a halo)
+			more.append([b.global_position.distance_squared_to(mid) * (0.25 if watch.has(b.get_instance_id()) else 1.0), b])
+		more.sort_custom(func(x, y): return x[0] < y[0])
+		for i in mini(MAX_OTHER, more.size()):
+			out.append(more[i][1])
+		stats.others = mini(MAX_OTHER, more.size())
 	return out
+
+
+# the world rect on screen
+func _view() -> Rect2:
+	var vp := get_viewport()
+	if vp == null:
+		return Rect2(-1e6, -1e6, 2e6, 2e6)
+	return vp.get_canvas_transform().affine_inverse() * vp.get_visible_rect()
+
+
+# the attached ship's outlines, filed in a grid (looked at again when pieces come off, or every 0.3 s:
+# a towed hulk moves)
+func _file_walls(game) -> void:
+	var n: int = game.world.pieces.size()
+	var gone := 0
+	for q in game.world.pieces.values():
+		if q.gone or q.body != null:
+			gone += 1
+	if t - _walls_t < 0.3 and n * 100000 + gone == _walls_n:
+		return
+	_walls_t = t
+	_walls_n = n * 100000 + gone
+	_walls.clear()
+	_grid.clear()
+	for q in game.world.pieces.values():
+		if q.gone or q.body != null:
+			continue
+		var wq: PackedVector2Array = game.world.world_poly(q)
+		if wq.size() < 3:
+			continue
+		var bb := Geom.bbox(wq)
+		var k := _walls.size()
+		_walls.append([bb, wq])
+		for gx in range(int(floorf(bb.position.x / CELL)), int(floorf(bb.end.x / CELL)) + 1):
+			for gy in range(int(floorf(bb.position.y / CELL)), int(floorf(bb.end.y / CELL)) + 1):
+				var c := Vector2i(gx, gy)
+				if not _grid.has(c):
+					_grid[c] = []
+				_grid[c].append(k)
 
 
 # the drone's outline (its hull, round)
@@ -70,17 +144,26 @@ func _drone_poly(d) -> PackedVector2Array:
 
 
 func _process(dt: float) -> void:
+	var us0 := Time.get_ticks_usec()
+	_process_inner(dt)
+	stats.us_proc = Time.get_ticks_usec() - us0
+
+
+func _process_inner(dt: float) -> void:
 	var game = _game()
 	if game == null or game.world == null:
 		return
 	t += dt
+	_snd_t -= dt
 	var live := {}
 	var inside_n := 0
+	var others_in := 0
+	var own = tools.held_body
 	for b in _candidates():
 		var id: int = b.get_instance_id()
 		live[id] = true
 		if not watch.has(id):
-			watch[id] = {"b": b, "hist": [], "ht": 0.0, "rt": 0.0, "in": false, "c": Vector2.ZERO, "st": 0.0, "e": 0.0, "parts": [], "polys": [], "cross": []}
+			watch[id] = {"b": b, "out_t": float(_last_in.get(id, -9.0)), "hist": [], "ht": 0.0, "rt": 0.0, "in": false, "c": Vector2.ZERO, "st": 0.0, "e": 0.0, "parts": [], "polys": [], "cross": []}
 		var w: Dictionary = watch[id]
 		var is_drone: bool = b is Drone
 		var polys: Array = []
@@ -106,6 +189,8 @@ func _process(dt: float) -> void:
 		var parts := _inside(game, polys)
 		w.parts = parts
 		var now_in := not parts.is_empty()
+		if now_in:
+			_last_in[id] = t
 		w.e = move_toward(float(w.e), 1.0 if now_in else 0.0, dt * (6.0 if now_in else 2.5))
 		if now_in:
 			inside_n += 1
@@ -117,20 +202,41 @@ func _process(dt: float) -> void:
 			w.c = c / maxf(1.0, n)
 		if is_drone and now_in:
 			stats.drone_in += 1
-		if now_in and not w.in:
-			_halo(w.c)
+		# the player's own (the drone, what its grapple holds) always sound; the machines' loads spaced
+		var mine: bool = is_drone or b == own or bool(b.tethered)
+		if not mine and now_in:
+			others_in += 1
+		var loud: bool = mine or _snd_t <= 0.0
+		# in again a moment after it was (a flicker at a face, or shown again after a turn off screen):
+		# no new halo, no new sound — the crossing it is in the middle of
+		var again: bool = now_in and not w.in and t - float(w.get("out_t", -9.0)) < 0.4
+		if now_in and not w.in and again:
+			pass
+		elif now_in and not w.in:
+			_halo(w.c, not mine)
 			stats.entries += 1
 			if is_drone:
 				stats.drone_entries += 1
-			# the drone's own crossing a little lower and fuller than a load's
-			game.sfx.play("holo", w.c, 0.9 if is_drone else 0.8, 0.42 if is_drone else 0.5)
-			game.sfx.play("reveal", w.c, 0.5 if is_drone else 0.45, 1.6 if is_drone else 1.9)
+			if not mine:
+				stats.other_entries += 1
+			if loud:
+				if not mine:
+					_snd_t = SND_GAP
+				var k := 1.0 if mine else 0.55
+				# the drone's own crossing a little lower and fuller than a load's
+				game.sfx.play("holo", w.c, (0.9 if is_drone else 0.8) * k, 0.42 if is_drone else 0.5)
+				game.sfx.play("reveal", w.c, (0.5 if is_drone else 0.45) * k, 1.6 if is_drone else 1.9)
 		elif w.in and not now_in:
-			_halo(w.c)
+			_halo(w.c, not mine)
 			stats.exits += 1
 			if is_drone:
 				stats.drone_exits += 1
-			game.sfx.play("mirror_lock", w.c, 0.55 if is_drone else 0.5, 1.35 if is_drone else 1.6)
+			if loud:
+				if not mine:
+					_snd_t = SND_GAP
+				game.sfx.play("mirror_lock", w.c, (0.55 if is_drone else 0.5) * (1.0 if mine else 0.55), 1.35 if is_drone else 1.6)
+		if w.in and not now_in:
+			w["out_t"] = t
 		w.in = now_in
 		# echoes: where it was a moment ago
 		w.ht = float(w.ht) - dt
@@ -144,20 +250,28 @@ func _process(dt: float) -> void:
 			# the wall ripples where the outline crosses its faces
 			w.rt = float(w.rt) - dt
 			if w.rt <= 0.0:
-				w.rt = RIPPLE_DT
-				for x in w.cross:
-					_ring(x, 34.0, RING_LIFE, false)
+				# a machine's load: a third as often, two of its crossings (many at once stay cheap)
+				w.rt = RIPPLE_DT * (1.0 if mine else 3.0)
+				var nx: int = w.cross.size() if mine else (mini(2, w.cross.size()) if rings.size() < 20 else 0)
+				for xi in nx:
+					_ring(w.cross[xi], 34.0, RING_LIFE, false)
 			w.st = float(w.st) - dt
 			if w.st <= 0.0:
-				w.st = 0.22
-				game.sfx.play("static_arc", w.c, 0.12, 2.4 + randf() * 0.4)
+				w.st = 0.22 if mine else 0.45
+				if mine or _snd_t <= 0.0:
+					game.sfx.play("static_arc", w.c, 0.12 if mine else 0.07, 2.4 + randf() * 0.4)
 	for id in watch.keys():
 		if not live.has(id):
 			watch.erase(id)
+	if _last_in.size() > 64:
+		for id in _last_in.keys():
+			if t - float(_last_in[id]) > 1.0:
+				_last_in.erase(id)
 	for r in rings:
 		r.age += dt
 	rings = rings.filter(func(r): return r.age < r.life)
 	stats.inside = inside_n
+	stats.others_in = others_in
 	stats.rings = rings.size()
 	if not watch.is_empty() or not rings.is_empty():
 		queue_redraw()
@@ -169,13 +283,17 @@ func _process(dt: float) -> void:
 # the parts of the load inside the attached ship's pieces
 func _inside(game, polys: Array) -> Array:
 	var out: Array = []
+	_file_walls(game)
 	for wp in polys:
 		var bb := Geom.bbox(wp)
-		for q in game.world.pieces.values():
-			if q.gone or q.body != null:
-				continue
-			var wq: PackedVector2Array = game.world.world_poly(q)
-			if not bb.intersects(Geom.bbox(wq)):
+		var seen := {}
+		for gx in range(int(floorf(bb.position.x / CELL)), int(floorf(bb.end.x / CELL)) + 1):
+			for gy in range(int(floorf(bb.position.y / CELL)), int(floorf(bb.end.y / CELL)) + 1):
+				for k in _grid.get(Vector2i(gx, gy), []):
+					seen[k] = true
+		for k in seen:
+			var wq: PackedVector2Array = _walls[k][1]
+			if not bb.intersects(_walls[k][0]):
 				continue
 			for part in Geometry2D.intersect_polygons(wp, wq):
 				if absf(Geom.area(part)) > 8.0:
@@ -211,9 +329,20 @@ func _ring(p: Vector2, r: float, life: float, halo: bool) -> void:
 	rings.append({"p": p, "r": r, "life": life, "age": 0.0, "halo": halo})
 
 
-func _halo(p: Vector2) -> void:
+func _halo(p: Vector2, lite := false) -> void:
 	_ring(p, 130.0, HALO_LIFE, true)
+	rings[rings.size() - 1]["lite"] = lite
 	stats.halos += 1
+
+
+# a plain ring: one cached unit circle, placed by the canvas transform (no points made per ring)
+var _unit := PackedVector2Array()
+func _circ(c: Vector2, r: float, col: Color, w: float) -> void:
+	if _unit.is_empty():
+		for k in 25:
+			_unit.append(Vector2.from_angle(TAU * k / 24.0))
+	draw_set_transform(c, 0.0, Vector2(r, r))
+	draw_polyline(_unit, col, w / maxf(r, 0.01))
 
 
 func _hash(x: int, y: int, k: int) -> float:
@@ -222,9 +351,11 @@ func _hash(x: int, y: int, k: int) -> float:
 
 
 # the outline broken into screen pixels (snapped to a q grid), each flickering in phase
+# (one draw call for all its pixels: each a short thick segment — 2026-11-11, many bodies at once)
 func _quant(poly: PackedVector2Array, q: float, col: Color, off: Vector2, flick: float) -> void:
 	var last := Vector2.INF
 	var frame := int(t * 30.0)
+	var segs := PackedVector2Array()
 	for i in poly.size():
 		var a: Vector2 = poly[i] + off
 		var b: Vector2 = poly[(i + 1) % poly.size()] + off
@@ -237,10 +368,20 @@ func _quant(poly: PackedVector2Array, q: float, col: Color, off: Vector2, flick:
 			last = s
 			if flick > 0.0 and _hash(int(s.x), int(s.y), frame) < flick:
 				continue
-			draw_rect(Rect2(s * q + Vector2(q * 0.1, q * 0.1), Vector2(q * 0.8, q * 0.8)), col)
+			var y := s.y * q + q * 0.5
+			segs.append(Vector2(s.x * q + q * 0.1, y))
+			segs.append(Vector2(s.x * q + q * 0.9, y))
+	if segs.size() >= 2:
+		draw_multiline(segs, col, q * 0.8)
 
 
 func _draw() -> void:
+	var us0 := Time.get_ticks_usec()
+	_draw_inner()
+	stats.us_draw = Time.get_ticks_usec() - us0
+
+
+func _draw_inner() -> void:
 	var game = _game()
 	if game == null:
 		return
@@ -249,12 +390,16 @@ func _draw() -> void:
 	var q := 4.0 / z
 	var air := Pal.AIR
 	var violet := Pal.VOLT
+	var dots := 0
 	for id in watch:
 		var w: Dictionary = watch[id]
 		var e: float = w.e
 		if e <= 0.01:
 			continue
 		var b = w.b
+		# the machines' loads (not the player's drone or what its grapple holds): the same look, lighter —
+		# one echo, half the fringes, no dots, plainer rings
+		var lite: bool = is_instance_valid(b) and not (b is Drone) and not bool(b.tethered)
 		# the drone: the whole time it tunnels, its hull is the two-layer wave packet, and its jets
 		# leave pixel echoes behind (only the load's parts inside a wall get the rest)
 		if is_instance_valid(b) and b is Drone:
@@ -271,7 +416,7 @@ func _draw() -> void:
 		var perp := Vector2(-u.y, u.x)
 		# phase-split echoes of where it was, oldest faintest, broken into pixels
 		var hist: Array = w.hist
-		for k in hist.size():
+		for k in range(maxi(0, hist.size() - 1) if lite else 0, hist.size()):
 			var age := float(hist.size() - k) / float(hist.size() + 1)
 			var a := (1.0 - age) * 0.32 * e
 			for poly in hist[k]:
@@ -284,7 +429,6 @@ func _draw() -> void:
 		# inside the wall: interference fringes travelling with it, and dithered probability
 		var lam := 7.0 / z
 		var lam2 := 7.9 / z
-		var dots := 0
 		for it in w.parts:
 			var part: PackedVector2Array = it.part
 			var bb := Geom.bbox(part)
@@ -298,11 +442,13 @@ func _draw() -> void:
 					for seg in Geometry2D.intersect_polyline_with_polygon(PackedVector2Array([mid - perp * half, mid + perp * half]), part):
 						if seg.size() >= 2:
 							draw_line(seg[0], seg[seg.size() - 1], Pal.tint(air if beat > 0.45 else Pal.INK, (0.06 + 0.32 * beat) * e, 0.9), 1.6 / z)
-				s0 += lam * 0.5
+				s0 += lam * (1.0 if lite else 0.5)
 			# |ψ|²: pixels lit at random inside, more of them towards the middle
 			var gstep := q * 2.0
 			var frame := int(t * 24.0)
 			var gx := floorf(bb.position.x / gstep)
+			if lite:
+				gx = INF
 			while gx * gstep <= bb.end.x and dots < MAX_DOTS:
 				var gy := floorf(bb.position.y / gstep)
 				while gy * gstep <= bb.end.y and dots < MAX_DOTS:
@@ -320,23 +466,33 @@ func _draw() -> void:
 			var a0: Vector2 = cr[i]
 			var a1: Vector2 = cr[i + 1]
 			var along := (a1 - a0)
-			var n := maxi(2, int(along.length() / (3.0 / z)))
+			# a machine's load: the standing wave coarser (a few points, not one every 3 px)
+			var n := mini(8, maxi(2, int(along.length() / (6.0 / z)))) if lite else maxi(2, int(along.length() / (3.0 / z)))
 			var nrm := Vector2(-along.y, along.x).normalized()
 			var pts := PackedVector2Array()
 			for k in n + 1:
 				var f := float(k) / float(n)
 				pts.append(a0 + along * f + nrm * sin(f * TAU * 3.0 + t * 18.0) * (3.0 / z) * sin(f * PI))
-			draw_polyline(pts, Pal.tint(air, 0.8 * e, 1.6), 2.0 / z, true)
-			draw_polyline(pts, Pal.ink(0.55 * e, 1.6), 1.0 / z, true)
+			draw_polyline(pts, Pal.tint(air, 0.8 * e, 1.6), 2.0 / z, not lite)
+			if not lite:
+				draw_polyline(pts, Pal.ink(0.55 * e, 1.6), 1.0 / z, true)
 		for x in cr:
+			if lite:
+				draw_rect(Rect2(x - Vector2.ONE * 2.0 / z, Vector2.ONE * 4.0 / z), Pal.ink(0.8 * e, 1.3))
+				continue
 			draw_circle(x, 2.2 / z, Pal.ink(0.8 * e, 1.3))
-			draw_arc(x, (7.0 + 2.5 * sin(t * 20.0)) / z, 0.0, TAU, 20, Pal.tint(air, 0.6 * e, 1.3), 1.2 / z, true)
+			draw_arc(x, (7.0 + 2.5 * sin(t * 20.0)) / z, 0.0, TAU, 12 if lite else 20, Pal.tint(air, 0.6 * e, 1.3), 1.2 / z, not lite)
+	stats.dots = dots
 	# ripples on the wall faces, and the entry / exit halos
 	for r in rings:
 		var k: float = r.age / r.life
 		var rad: float = (r.r * Pal.ease_out(k) + 3.0) / z
 		var a: float = (1.0 - k) * (1.0 - k)
-		if r.halo:
+		if r.halo and r.get("lite", false):
+			# a machine's load: the halo's two rings, plainer (many at once)
+			_circ(r.p, rad, Pal.tint(air, 0.7 * a, 1.5), 2.0 / z)
+		elif r.halo:
+			draw_set_transform(Vector2.ZERO)
 			draw_arc(r.p, rad, 0.0, TAU, 72, Pal.tint(air, 0.8 * a, 1.5), 2.6 / z, true)
 			draw_arc(r.p, rad * 0.9, 0.0, TAU, 72, Pal.ink(0.4 * a, 1.6), 1.2 / z, true)
 			draw_arc(r.p, rad * 0.72, 0.0, TAU, 48, Pal.tint(violet, 0.4 * a, 1.4), 1.4 / z, true)
@@ -346,5 +502,6 @@ func _draw() -> void:
 				var a0 := TAU * float(i) / float(n) + t * 1.6
 				draw_arc(r.p, rad * 1.18, a0, a0 + TAU / float(n) * 0.45, 4, Pal.ink(0.5 * a, 1.3), 1.0 / z)
 		else:
-			draw_arc(r.p, rad, 0.0, TAU, 32, Pal.tint(air, 0.5 * a, 1.2), 1.2 / z, true)
-			draw_arc(r.p, rad * 0.55, 0.0, TAU, 24, Pal.ink(0.35 * a, 1.2), 1.0 / z, true)
+			_circ(r.p, rad, Pal.tint(air, 0.5 * a, 1.2), 1.2 / z)
+			_circ(r.p, rad * 0.55, Pal.ink(0.35 * a, 1.2), 1.0 / z)
+	draw_set_transform(Vector2.ZERO)

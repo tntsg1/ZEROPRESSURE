@@ -53,7 +53,7 @@ func shown() -> bool:
 
 # a page's own control under the pointer (anything not of the site HUD): it is on top of the plate
 func _page_over() -> bool:
-	if game != null and is_instance_valid(game) and game.get("console_ui") != null and is_instance_valid(game.console_ui):
+	if game != null and is_instance_valid(game) and game.get("console_ui") != null and is_instance_valid(game.console_ui): 
 		return true
 	var h := get_viewport().gui_get_hovered_control()
 	return h != null and not (hud != null and is_instance_valid(hud) and hud is Node and (hud as Node).is_ancestor_of(h))
@@ -88,9 +88,10 @@ func _fn_list() -> Array:
 	var out: Array = []
 	var haul: int = g.haulers().size()
 	var any_machine: bool = haul > 0 or g.arm != null or g.crane != null
-	var g4: bool = bool(_const("G4_OPEN", false))
-	var plan_ok: bool = g.plan != null and g4 and g.plan.has_plan()
-	var plan_why := w("第二船坞开放后可用", "With the second berth") if not g4 else w("这艘船还没有拆法方案", "No plan for this ship yet")
+	# 2026-11-11: the plan key follows the cutter method (Game.plan_open), not the second berth
+	var open: bool = g.has_method("plan_open") and g.plan_open()
+	var plan_ok: bool = open and g.plan != null and g.plan_shown() and (not g.plan.steps.is_empty() or (bool(_const("G4_OPEN", false)) and g.plan.has_plan()))
+	var plan_why := Txt.t("as_plan_not_bought") if not open else Txt.t("as_plan_none")
 	var tun: bool = g.tools != null and g.tools.tunnel_fitted()
 	var mul: bool = g.tools != null and g.tools.multi != null and g.tools.multi.fitted()
 	var boat: bool = g.boat != null and is_instance_valid(g.boat) and g.boat.aboard
@@ -143,7 +144,7 @@ func _process(dt: float) -> void:
 	if _t > 0.25:
 		_t = 0.0
 		var f := _fn_list()
-		var ps: Array = game.plan.status() if game.plan != null and bool(_const("G4_OPEN", false)) else []
+		var ps: Array = game.plan.status() if game.has_method("plan_shown") and game.plan_shown() else []
 		var sig := str(f) + str(ps) + str(get_viewport_rect().size) + str(Txt.zh)
 		if sig != _sig:
 			_sig = sig

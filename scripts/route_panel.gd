@@ -1,4 +1,5 @@
 extends Control
+const PlanCodex = preload("res://scripts/plan_codex.gd")
 # The growth desk owns selection and layout; Career/Growth remain the authority.
 const PAGE_SIZE := 6
 var terminal: Control
@@ -124,7 +125,7 @@ func _ready() -> void:
 
 func refresh() -> void:
 	heading.text = words("拆法与建设", "METHODS & CONSTRUCTION")
-	introduction.text = words("拆法是新工具带来的新干法：借用合同里先用一次就学会，之后花钱升档。", "A method is a new tool and the new way of working it opens: use it once on a borrow job to learn it, then buy its tiers.") if category == 6 else words("这里安排基础修复与工程成长。原料买卖和工业客户请进入交易行；加工在现场设备操作。", "Manage base repairs and engineering growth here. Trade materials and find industrial clients in the exchange; operate production equipment on site.")
+	introduction.text = Txt.t("as_mt_intro") if category == 6 else words("这里安排基础修复与工程成长。原料买卖和工业客户请进入交易行；加工在现场设备操作。", "Manage base repairs and engineering growth here. Trade materials and find industrial clients in the exchange; operate production equipment on site.")
 	previous.text = words("上一页", "PREVIOUS")
 	following.text = words("下一页", "NEXT")
 	status.text = words("Tab 切换焦点 · 方向键选择 · Enter 确认 · Esc 返回", "Tab focus · Arrows select · Enter confirm · Esc return")
@@ -156,8 +157,10 @@ func refresh() -> void:
 	entries = []
 	if category == 6:
 		for id in Methods.ORDER:
-			if Methods.learned(id) or id == Methods.next_id():
+			if Methods.learned(id) or id == Methods.next_id() or Methods.SPEC[id].learn == "buy":
 				entries.append(_method_node(id))
+		# 2026-11-11 切割宝典 (scripts/plan_codex.gd): every type cut on P without stripping one first
+		entries.append(PlanCodex.node())
 	elif category == 0:
 		for it in Route.buys():
 			if it[1] == "facility":
@@ -224,7 +227,7 @@ func _method_node(id: String) -> Dictionary:
 
 func node_name(n: Dictionary) -> String:
 	if n.kind == "method":
-		return str(n.name) if int(n.level) > 0 else words("下一种 · ", "NEXT · ") + str(n.name)
+		return str(n.name)
 	if n.kind == "port":
 		return "%s  %d / 2" % [str(n.name), int(n.get("stage", 0))]
 	if n.kind == "feat":
@@ -238,6 +241,8 @@ func node_name(n: Dictionary) -> String:
 func summary(n: Dictionary) -> String:
 	if n.kind == "method":
 		return Methods.does(str(n.id))
+	if n.kind == "codex":
+		return str(n.note)
 	if n.kind == "order":
 		var spec: Dictionary = load("res://scripts/work_orders.gd").SPECS[str(n.id)]
 		return " + ".join(spec.targets)+(str(" + "+spec.mount) if spec.mount != "" else "")
@@ -255,14 +260,24 @@ func summary(n: Dictionary) -> String:
 	return str(points[0]) if not points.is_empty() else str(n.note)
 
 func state_text(n: Dictionary) -> String:
+	if n.kind == "codex":
+		return Txt.t("as_mt_top") if n.done else ((Txt.t("as_mt_buy") % Pal.money(PlanCodex.PRICE)) if n.ready else str(n.why))
 	if n.kind == "method":
 		var id := str(n.id)
 		var lv := int(n.level)
+		# 2026-11-11 (user: "不要有任何学会的…实时变化就行了"): the tier it is at, and the next price
+		var learn: String = Methods.SPEC[id].learn
 		if lv == 0:
-			return (words("接借用合同", "TAKE THE BORROW JOB") if Methods.SPEC[id].learn != "order" else words("接“稳住再拆”委托", "TAKE THE RIGGING ORDER")) if n.ready else str(n.why)
+			if learn == "buy":
+				return Txt.t("as_mt_unbought") + "  ·  " + ((Txt.t("as_mt_buy") % Pal.money(Methods.price(id))) if n.ready else str(n.why))
+			if learn == "build":
+				return Txt.t("as_mt_unbought") + "  ·  " + Txt.t("as_mt_facility")
+			return Txt.t("as_mt_unbought") + "  ·  " + ((words("接借用合同", "TAKE THE BORROW JOB") if learn != "order" else words("接“稳住再拆”委托", "TAKE THE RIGGING ORDER")) if n.ready else str(n.why))
 		var tier := words("%d / %d 档", "TIER %d / %d") % [lv, Methods.tiers(id)]
 		if n.done:
-			return words("已会 · ", "LEARNED · ") + tier
+			return tier + "  ·  " + Txt.t("as_mt_top")
+		if id == "auto":
+			return tier + "  ·  " + Txt.t("as_mt_facility")
 		return tier + "  ·  " + ((words("升档", "NEXT TIER") + "  " + Pal.money(Methods.price(id))) if n.ready else str(n.why))
 	if n.kind == "order": return Txt.t("tm_trial_done") if n.done else (words("定向接取", "TAKE DIRECTLY") if n.ready else load("res://scripts/work_orders.gd").reason(str(n.id)))
 	if n.kind == "port":
@@ -354,6 +369,18 @@ func refresh_detail() -> void:
 	if n.kind == "method":
 		_method_detail(n)
 		return
+	if n.kind == "codex":
+		_add_line(Txt.t("as_codex_types") % PlanCodex.types().size(), 17, Pal.ink(0.85))
+		detail.add_child(HSeparator.new())
+		if n.done:
+			_add_line(Txt.t("as_mt_top"), 17, Hmi.ok_col())
+			return
+		detail.add_child(label(Txt.t("as_mt_buy") % Pal.money(PlanCodex.PRICE), 24))
+		action_button = key(state_text(n), purchase)
+		action_button.disabled = not n.ready
+		detail.add_child(action_button)
+		detail.add_child(label(words("永久 · 本单立即生效", "Permanent · in effect at once"), 16))
+		return
 	if n.kind == "order":
 		_order_detail(n)
 		return
@@ -430,14 +457,23 @@ func _method_detail(n: Dictionary) -> void:
 	var lv := int(n.level)
 	for tier in range(1, Methods.tiers(id) + 1):
 		var price := float(s.tiers[tier - 1][0])
-		var cost := words("学会时得到", "COMES WITH IT") if tier == 1 else (words("施工队修建", "CREW-BUILT") if id == "auto" else Pal.money(price))
+		var cost := Pal.money(price) if s.learn == "buy" or tier > 1 else (Txt.t("as_mt_facility") if s.learn == "build" else Txt.t("as_mt_cost_job"))
+		if id == "auto" and tier > 1:
+			cost = Txt.t("as_mt_facility")
 		_add_line("%s  %s  ·  %s  ·  %s" % ["✓" if lv >= tier else "○", ["I", "II", "III"][tier - 1], " / ".join(Methods.points(id, tier)), cost], 17, Hmi.ok_col() if lv >= tier else Pal.ink(0.8))
 	detail.add_child(HSeparator.new())
 	var busy: bool = terminal.overlay and not terminal.between
+	if lv == 0 and s.learn == "buy":
+		detail.add_child(label(Txt.t("as_mt_buy") % Pal.money(Methods.price(id)), 24))
+		action_button = key(state_text(n), purchase)
+		action_button.disabled = not n.ready
+		detail.add_child(action_button)
+		detail.add_child(label(words("永久 · 本单立即生效", "Permanent · in effect at once"), 16))
+		return
 	if lv == 0:
-		detail.add_child(label(words("怎么学会", "HOW TO LEARN IT"), 16))
+		detail.add_child(label(Txt.t("as_mt_how"), 16))
 		if s.learn == "build":
-			_add_line(words("让施工队修好%s就算学会。", "Learned once the crew has built the %s.") % Repair.name_of(str(s.builds[0])), 17, Pal.ink(0.85))
+			_add_line(Txt.t("as_mt_build_how") % Repair.name_of(str(s.builds[0])), 17, Pal.ink(0.85))
 			action_button = key(words("去船坞修建", "GO TO THE BUILD"), select_key.bind("buy:" + str(s.builds[0])))
 			detail.add_child(action_button)
 			return
@@ -448,7 +484,7 @@ func _method_detail(n: Dictionary) -> void:
 		if s.learn == "order":
 			lend.append(Gear.name_of("anchor"))
 		var ship_name := Methods.ship_label(ship)
-		_add_line(words("借用合同：%s · 出借 %s · 不收合同费；做完这单就学会。", "Borrow job: %s · lends %s · no fee; finish it and the method is yours.") % [ship_name, "、".join(lend) if not lend.is_empty() else words("本单装配", "fitted for the job")], 17, Pal.ink(0.85))
+		_add_line(Txt.t("as_mt_borrow_line") % [ship_name, "、".join(lend) if not lend.is_empty() else words("本单装配", "fitted for the job")], 17, Pal.ink(0.85))
 		var feat := str(s.get("feat", ""))
 		if feat != "":
 			_add_line(words("或者在任何船上达成：%s", "Or achieve on any ship: %s") % Txt.t("feat_" + feat), 16, Pal.ink(0.7))
@@ -459,9 +495,10 @@ func _method_detail(n: Dictionary) -> void:
 			detail.add_child(label(words("请先结束当前合同。", "FINISH THE CURRENT CONTRACT FIRST."), 16))
 		return
 	if n.done:
-		_add_line(words("已到最高档。", "TOP TIER."), 17, Hmi.ok_col())
+		_add_line(Txt.t("as_mt_top"), 17, Hmi.ok_col())
 		return
 	if id == "auto":
+		_add_line(Txt.t("as_mt_facility"), 17, Pal.ink(0.85))
 		var next_build := str(s.builds[lv])
 		action_button = key(words("去船坞修建：", "BUILD: ") + Repair.name_of(next_build), select_key.bind("buy:" + next_build))
 		detail.add_child(action_button)
@@ -625,13 +662,20 @@ func purchase() -> void:
 	if n.kind == "port":
 		_port_fix(str(n.id), Port.reason(str(n.id), true) == "")
 		return
-	if n.kind == "method":
+	if n.kind == "codex":
+		var bad := PlanCodex.buy()
+		if bad != "":
+			status.text = bad
+			return
+		terminal.sfx.play("stamp", Vector2.INF, 0.9)
+		notice = Txt.t("as_mt_bought") + node_name(n)
+	elif n.kind == "method":
 		var why := Methods.buy(str(n.id))
 		if why != "":
 			status.text = why
 			return
 		terminal.sfx.play("stamp", Vector2.INF, 0.9)
-		notice = words("已升档：", "TIER UP: ") + node_name(n)
+		notice = (words("已升档：", "TIER UP: ") if int(n.level) > 0 else Txt.t("as_mt_bought")) + node_name(n)
 	elif n.kind == "skill":
 		var result := Growth.buy(str(n.id))
 		if result != "":

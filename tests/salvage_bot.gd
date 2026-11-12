@@ -235,6 +235,17 @@ func _prep() -> void:
 	var w = g.world
 	if phase_t % 5 != 0:
 		return
+	# AX-40: the portable confinement supply on the antimatter trap before anything is touched, and
+	# nothing more until it carries the trap (the bus is held till then: hold_power)
+	if g.anti != null and g.anti.active() and g.anti.done == "" and not g.anti.portable():
+		if g.anti.portable_k() <= 0.0 and _carries("confine") and _once("confine"):
+			var tr = g.anti.trap
+			var at: Vector2 = w.frame(tr) * Geom.centroid(tr.poly)
+			g.gear.sel = g.gear.carried_types().find("confine")
+			g.gear.act({"kind": "place", "type": "confine", "piece": tr, "pos": at})
+			_note("portable confinement supply on the trap")
+			_work(2.5)
+		return
 	# a cold chain: the berth's temporary cooling on before anything else is touched
 	if g.coldchain != null and g.coldchain.active():
 		var cs: String = g.coldchain.cfg.get("supply", "")
@@ -720,7 +731,8 @@ func _prep() -> void:
 			var cp: String = e.get("cap", "")
 			if s.iso.has(cp):
 				dump = str(s.iso[cp].get("discharge", ""))
-			for sw in [str(e.get("cool", "")), dump]:
+			# the side-hung wheels' dump is a pulse: pressed when the capacitor fills (below), not left on
+			for sw in [str(e.get("cool", "")), "" if rgs.wheels() else dump]:
 				if sw != "" and not s.on(sw) and not _hidden(sw) and _once("ring " + sw):
 					_w(sw)
 					_note("%s on" % sw)
@@ -756,8 +768,25 @@ func _prep() -> void:
 							_note("brake %s on" % bsw)
 							_work(2.5)
 							return
+			if rgs.wheels():
+				for r in rc:
+					var dc: String = rgs._dump_ctrl(r)
+					if rgs.turning(r) and dc != "" and rgs.cap_charge(r) >= 0.999 and not rgs.dumping(r) and not _hidden(dc):
+						_w(dc)
+						_note("ring %s capacitor full: dumped" % r)
+						_work(2.5)
+						return
+					# stopped off its pin's hole: inched round first
+					var inch: String = str(rc[r].get("inch", ""))
+					if not rgs.turning(r) and not rgs.locked.has(r) and not rgs.aligned(r) and inch != "" and not s.on(inch) and not _hidden(inch):
+						_w(inch)
+						_note("ring %s inched round to its pin" % r)
+						_work(2.5)
+						return
 			for r in rc:
 				var lk: String = str(rc[r].get("lock", ""))
+				if rgs.wheels() and not rgs.aligned(r):
+					continue
 				if not rgs.turning(r) and not rgs.locked.has(r) and not _hidden(lk) and _once("lock " + lk):
 					_w(lk)
 					_note("ring %s at rest: bearing locked" % r)
@@ -1100,7 +1129,7 @@ func _unsafe() -> Array:
 # loose equipment not yet sent off lying within reach of a piece
 # the newer ship modules, which tell the bot what they need themselves
 # (bot_prep(), unsafe(), optionally bot_order())
-const GEN_MODS := ["optics", "magnets", "waterball", "nested", "drillstring", "boiloff"]
+const GEN_MODS := ["optics", "magnets", "waterball", "nested", "drillstring", "boiloff", "anti"]
 
 
 func _gen_mods() -> Array:
@@ -1542,6 +1571,9 @@ func zone_for(b) -> String:
 	for p in b.pieces:
 		m += p.mass
 		var d: String = g.sys.dest_of(p)
+		# AX-40: the antimatter trap to its own cradle, whole
+		if d == "anti" and Dock.ZONES.has("anti"):
+			return "anti"
 		if d == "hazard":
 			hazard = true
 		elif d == "equip":

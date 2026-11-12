@@ -312,7 +312,16 @@ static func title(id: String) -> String:
 
 
 static func line(id: String, part: String) -> String:
-	return Txt.t("cx_%s_%s" % [id, part])
+	var s := Txt.t("cx_%s_%s" % [id, part])
+	# 认真拆有奖励: what the meter has found inside this kind of machine (scripts/hidden_traits.gd)
+	if part == "x" and CodexData.E.get(id, {}).get("cat", "") == "device":
+		for art in CodexData.E[id].get("arts", []):
+			var hl: String = HiddenTraits.book_line(str(art))
+			if hl != "":
+				s += "
+" + hl
+				break
+	return s
 
 
 # ---------------------------------------------------------------- on site

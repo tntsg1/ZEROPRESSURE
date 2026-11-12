@@ -72,7 +72,7 @@ func _ready() -> void:
 	moving.draw.connect(_draw_moving)
 	add_child(moving)
 	card = preload("res://scripts/facility_card.gd").new()
-	card.items = func() -> Array: return art.hover_items(_names()) if visible and PortArt.inside == "trade" else []
+	card.items = func() -> Array: return art.hover_items(_names()) if visible and PortArt.view == "trade" else []
 	add_child(card)
 	walls = StaticBody2D.new()
 	walls.collision_layer = 4
@@ -165,7 +165,7 @@ func lod() -> int:
 
 
 func _inside_view() -> bool:
-	return PortArt.inside == "trade" or game.cam_zoom() >= 0.3
+	return PortArt.view == "trade" or game.cam_zoom() >= 0.3
 
 
 func _draw_moving() -> void:

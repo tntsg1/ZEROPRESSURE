@@ -259,6 +259,17 @@ func _job_proc() -> bool:
 			elif step_t > float(st.get("max", 60.0)):
 				job_bad.append("%s: %s not reached after %d s" % [label, str(st.until), int(st.max)])
 				return true
+		"deploy":
+			# a field tool put on a piece (AX-40: the portable confinement supply on the trap)
+			var dp = w.tag(st.piece)
+			if dp == null or game.gear == null:
+				job_bad.append("%s: no %s or no gear" % [label, st.piece])
+				return true
+			game.gear.act({"kind": "place", "type": st.gear, "piece": dp, "pos": w.frame(dp) * Geom.centroid(dp.poly)})
+			if not game.gear.units.any(func(u): return u.type == st.gear and u.piece == dp.id):
+				job_bad.append("%s: %s would not go on %s" % [label, st.gear, st.piece])
+				return true
+			_next()
 		"cut":
 			var at := Vector2(st.at[0], st.at[1]) * M
 			var p = w.piece_at(at)

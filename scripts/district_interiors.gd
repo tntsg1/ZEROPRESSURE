@@ -185,7 +185,8 @@ func _layer(z: int, draw: Callable) -> Node2D:
 
 func _zone() -> String:
 	var st = get_parent()
-	return str(st.inside) if st != null and st.get("inside") != null else ""
+	# 无缝进出: the district being shown (the drone in it, nearing it or just out of it)
+	return str(st.view) if st != null and st.get("view") != null else ""
 
 
 # how hard each district works now (0 off, ~0.3 idle with power, 1 busy)
@@ -415,6 +416,8 @@ func _draw() -> void:
 			tug_art.r = _r
 			tug_art.m = _m
 			cb.flush()
+			if DistrictStyle.on():
+				DistrictStyle.back_wall(self, _r, _m, on, tug_art.FLOOR)
 			tug_art.still(self, on, lod(), Port.stage("tug"))
 		"process":
 			# 101 号: drawn by scripts/process_art.gd on its own layers

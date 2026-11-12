@@ -28,7 +28,7 @@ const BY_BERTH_ONLY := true       # 66 号: what ship turns up depends on the be
 
 static var stats := {"made": 0, "discarded": 0, "reasons": {}}   # what the contract validator threw away
 # the ship types on the market and how often each comes up ([type, weight, reputation needed])
-const POOL := [["gr7", 4, 0], ["s09", 3, 0], ["pod", 3, 0], ["tug", 1, 0], ["h22", 3, 6], ["m14", 3, 8], ["med47", 3, 10], ["fr26", 3, 12], ["pt34", 3, 16], ["jd38", 3, 2], ["tw64", 3, 7], ["hb86", 3, 11], ["cl104", 3, 13], ["es112", 3, 15], ["fl116", 3, 17], ["sv122", 3, 19], ["mf126", 3, 21], ["ro128", 3, 23], ["cv138", 3, 25], ["vt80", 3, 27], ["ps12", 3, 29], ["cf90", 3, 31], ["sa200", 3, 33], ["nr95", 3, 35], ["ih55", 3, 26], ["mt140", 3, 37], ["md160", 3, 39], ["tb180", 3, 41], ["ch110", 3, 43], ["my48", 3, 14], ["ic120", 3, 45], ["ark01", 2, 47, 2], ["qc30", 3, 20, 2], ["st40", 3, 16, 2], ["ev55", 3, 22, 2], ["dc84", 3, 24, 2], ["ob90", 3, 28, 2], ["fx70", 3, 26, 2], ["bl88", 3, 18, 2], ["lc140", 3, 32, 2], ["dr150", 3, 34, 2], ["hg170", 3, 36, 2]]
+const POOL := [["gr7", 4, 0], ["s09", 3, 0], ["pod", 3, 0], ["tug", 1, 0], ["h22", 3, 6], ["m14", 3, 8], ["med47", 3, 10], ["fr26", 3, 12], ["pt34", 3, 16], ["jd38", 3, 2], ["tw64", 3, 7], ["hb86", 3, 11], ["cl104", 3, 13], ["es112", 3, 15], ["fl116", 3, 17], ["sv122", 3, 19], ["mf126", 3, 21], ["ro128", 3, 23], ["cv138", 3, 25], ["vt80", 3, 27], ["ps12", 3, 29], ["cf90", 3, 31], ["sa200", 3, 33], ["nr95", 3, 35], ["ih55", 3, 26], ["mt140", 3, 37], ["md160", 3, 39], ["tb180", 3, 41], ["ch110", 3, 43], ["my48", 3, 14], ["ic120", 3, 45], ["ark01", 2, 47, 2], ["qc30", 3, 20, 2], ["st40", 3, 16, 2], ["ev55", 3, 22, 2], ["dc84", 3, 24, 2], ["ob90", 3, 28, 2], ["fx70", 3, 26, 2], ["bl88", 3, 18, 2], ["lc140", 3, 32, 2], ["dr150", 3, 34, 2], ["hg170", 3, 36, 2], ["ax40", 3, 30, 2]]
 
 
 # a type's card data: class letters, name, length, value (the Heron's here, the rest from their files)
@@ -72,9 +72,29 @@ static func pick_ship(rng: RandomNumberGenerator, career: Dictionary, stars: int
 	return "gr7"
 
 
+# AX-40 逆火 (user 2026-11-11: "第 5–6 章解锁"; Jev A 0.87): a ship that only turns up once this
+# chapter of the main line (scripts/mainline.gd) is done — for the AX-40, from the fifth chapter on,
+# when the habit of cutting the power first is well set (and it is there to break it)
+const CHAPTER_GATE := {"ax40": "trade"}
+
+
+static func unlocked(ship: String) -> bool:
+	if not CHAPTER_GATE.has(ship) or Career.data.is_empty():
+		return true
+	return Mainline.done(str(CHAPTER_GATE[ship]))
+
+
+# which gated ships are open now (the market's feed is drawn again when it changes)
+static func gate_sig() -> String:
+	var out := ""
+	for s in CHAPTER_GATE:
+		out += "1" if unlocked(s) else "0"
+	return out
+
+
 # a ship the berth can take: anything up to the standard berth, longer ones once it is extended
 static func fits(ship: String, career: Dictionary) -> bool:
-	return Ship.available(ship) and float(type_of(ship).get("length", 0.0)) <= Dock.owned(career.get("upgrades", {})) - 6.0
+	return Ship.available(ship) and unlocked(ship) and float(type_of(ship).get("length", 0.0)) <= Dock.owned(career.get("upgrades", {})) - 6.0
 
 
 # the pool as this build carries it (the playtest pack has fewer ships)

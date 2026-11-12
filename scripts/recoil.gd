@@ -88,7 +88,8 @@ func _jet_of(p, kind: String):
 
 
 # open a gas jet on piece p from its vessel vol (local: where, ldir: which way it blows)
-func open(p, vol: String, local: Vector2, ldir: Vector2, area: float, kind: String) -> Dictionary:
+# mishap (scripts/mishap.gd): the equipment mouth's small mishap — no incident, it hurts no drone
+func open(p, vol: String, local: Vector2, ldir: Vector2, area: float, kind: String, mishap := false) -> Dictionary:
 	var s = _sys()
 	var old = _jet_of(p, kind)
 	if old != null:
@@ -98,11 +99,12 @@ func open(p, vol: String, local: Vector2, ldir: Vector2, area: float, kind: Stri
 	# a real jet is never quite on the axis: the bottle tumbles as it goes
 	var d := ldir.normalized().rotated(randf_range(-0.06, 0.06))
 	# a piece that comes loose is re-centred on its body: _local moves the point with it
-	var j := {"piece": p, "vol": vol, "local": local, "cen0": Geom.centroid(p.poly), "body0": p.body, "ldir": d, "area": area, "kind": kind, "t": 0.0, "acc": 0.0, "gas": gas, "f": 0.0}
+	var j := {"piece": p, "vol": vol, "local": local, "cen0": Geom.centroid(p.poly), "body0": p.body, "ldir": d, "area": area, "kind": kind, "t": 0.0, "acc": 0.0, "gas": gas, "f": 0.0, "mishap": mishap}
 	jets.append(j)
 	var at: Vector2 = game.world.frame(p) * local
 	var wdir: Vector2 = game.world.frame(p).basis_xform(d).normalized()
-	game.incident("recoil", "%s %s %.0f kPa" % [p.tag, kind, s.P(vol)])
+	if not mishap:
+		game.incident("recoil", "%s %s %.0f kPa" % [p.tag, kind, s.P(vol)])
 	# the crack of it letting go, then the roar
 	game.fx.flash(at, 120.0, 0.3, Pal.tint(Pal.AIR, 0.8, 1.8))
 	for i in 18:
@@ -112,7 +114,7 @@ func open(p, vol: String, local: Vector2, ldir: Vector2, area: float, kind: Stri
 	game.shake(0.3 if kind == "neck" else 0.12, wdir)
 	if kind == "neck":
 		game.hitstop(0.05)
-	if p.body != null:
+	if p.body != null and not mishap:
 		_fly(p.body)
 	return j
 
@@ -434,7 +436,7 @@ func _step_jet(j: Dictionary, dt: float) -> bool:
 	if p.body != null:
 		var b = p.body
 		b.apply_force(-dir * fn * N_TO_GAME, at - b.global_position)
-		if fn > 300.0:
+		if fn > 300.0 and not j.get("mishap", false):
 			_fly(b)
 	_jet_fx(at, dir, fn, j)
 	_stream(at, dir, fn, p)

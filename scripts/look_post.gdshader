@@ -16,11 +16,34 @@ uniform float t = 0.0;
 uniform float feed = 0.0;
 uniform float interference = 0.0;
 uniform float focus = 0.0;
+// AX-40 逆火 · the annihilation (scripts/annihilation.gd): all zero = untouched.
+//   a_pull   the collapse: the picture drawn in toward a_c and wound round it, a thin lens ring
+//            (negative: the release, pushed back out as a ring)
+//   a_inv    the gamma shell's one frame of negative, inside a_inv_r (uv, height units)
+//   a_dark   the world blacked out behind the bubble-chamber tracks
+//   a_edge   the berth burnt into glowing outlines; a_cut puts them out cell by cell from a_wc out
+uniform vec2 a_c = vec2(0.5);
+uniform float a_pull = 0.0;
+uniform float a_lens = 0.12;
+uniform float a_inv = 0.0;
+uniform float a_inv_r = 0.0;
+uniform float a_dark = 0.0;
+uniform float a_edge = 0.0;
+uniform float a_cut = 0.0;
+uniform vec2 a_wo = vec2(0.0);
+uniform vec2 a_ws = vec2(1920.0, 1080.0);
+uniform vec2 a_wc = vec2(0.0);
+uniform float a_rmax = 3000.0;
+uniform vec3 a_edge_col = vec3(0.55, 1.25, 1.75);
 
 float hash(vec2 p) {
 	p = fract(p * vec2(443.897, 441.423));
 	p += dot(p, p.yx + 19.19);
 	return fract((p.x + p.y) * p.x);
+}
+
+float lum(vec2 uv) {
+	return dot(texture(screen_tex, uv).rgb, vec3(0.3, 0.55, 0.15));
 }
 
 vec3 sample_at(vec2 uv, vec2 d, float r2) {
@@ -59,9 +82,45 @@ void fragment() {
 		float blk = step(1.0 - 0.3 * interference, hash(floor(uv / (px * 16.0)) + floor(t * 6.0)));
 		uv = mix(uv, (floor(uv / (px * 8.0)) + 0.5) * px * 8.0, blk);
 	}
+	float aspect = SCREEN_PIXEL_SIZE.y / SCREEN_PIXEL_SIZE.x;
+	vec2 av = (uv - a_c) * vec2(aspect, 1.0);
+	float ar = length(av);
+	float lens_glow = 0.0;
+	if (a_pull != 0.0) {
+		// sampled from further out (and turned a little): everything slides in and winds round the point
+		float k = a_pull;
+		float pull = k > 0.0 ? 1.0 + 3.2 * k * exp(-ar / (0.10 + 0.25 * k)) : 1.0 + 0.6 * k * exp(-pow((ar + 0.35 * k) / 0.06, 2.0));
+		float tw = 1.7 * max(k, 0.0) * exp(-ar / 0.16);
+		vec2 v = av * pull;
+		v = vec2(v.x * cos(tw) - v.y * sin(tw), v.x * sin(tw) + v.y * cos(tw));
+		uv = a_c + v / vec2(aspect, 1.0);
+		float re = a_lens * max(k, 0.0);
+		lens_glow = max(k, 0.0) * exp(-pow((ar - re) / 0.0045, 2.0));
+	}
 	vec2 d = uv - 0.5;
 	float r2 = dot(d * vec2(1.0, 0.75), d * vec2(1.0, 0.75));
 	vec3 c = sample_at(uv, d, r2);
+	if (a_pull > 0.0) {
+		// the point itself: a hole of nothing, the thin bent light round its rim
+		c *= smoothstep(0.002, max(0.004, 0.03 * a_pull), ar);
+		c += vec3(0.55, 0.85, 1.6) * lens_glow * 1.6;
+	}
+	if (a_dark > 0.0 || a_edge > 0.0) {
+		vec3 glow = vec3(0.0);
+		if (a_edge > 0.0) {
+			float e = abs(lum(uv + vec2(px.x, 0.0)) - lum(uv - vec2(px.x, 0.0))) + abs(lum(uv + vec2(0.0, px.y)) - lum(uv - vec2(0.0, px.y)));
+			e = smoothstep(0.012, 0.14, e);
+			vec2 w = a_wo + SCREEN_UV * a_ws;
+			vec2 cell = floor(w / 120.0);
+			float h = hash(cell + 0.37);
+			float off_at = 0.62 * clamp(length(w - a_wc) / a_rmax, 0.0, 1.0) + 0.38 * h;
+			float left = off_at - a_cut;
+			float alive = step(0.0, left);
+			float stut = left < 0.035 ? step(0.5, hash(cell + floor(t * 28.0))) * 2.2 : 1.0;
+			glow = a_edge_col * e * a_edge * alive * stut;
+		}
+		c = c * (1.0 - 0.93 * clamp(a_dark, 0.0, 1.0)) + glow;
+	}
 	c *= 1.0 - vignette * smoothstep(0.05, 0.42, r2);
 	vec3 s = pow(max(c, vec3(0.0)), vec3(1.0 / 2.2));
 	if (feed > 0.0) {
@@ -76,6 +135,10 @@ void fragment() {
 	if (grain > 0.0) {
 		float n = hash(floor(FRAGCOORD.xy) + floor(t * 24.0) * 17.31) - 0.5;
 		s += n * grain * (0.6 + 0.4 * (1.0 - s.g));
+	}
+	if (a_inv > 0.0) {
+		float inside = 1.0 - smoothstep(a_inv_r - 0.01, a_inv_r, ar);
+		s = mix(s, vec3(1.0) - clamp(s, 0.0, 1.0) * vec3(1.0, 0.97, 0.9), inside * a_inv);
 	}
 	c = pow(max(s, vec3(0.0)), vec3(2.2));
 	COLOR = vec4(c, 1.0);

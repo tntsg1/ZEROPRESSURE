@@ -135,6 +135,22 @@ func guarded(b) -> bool:
 	return false
 
 
+# why it is guarded, as the Txt key said by the pointer ("" when it is not): the branches of guarded()
+func guard_reason(b) -> String:
+	for p in b.pieces:
+		if p.hazard != "":
+			return "as_mg_guard_hazard"
+	for p in b.pieces:
+		if p.cls == "equip" and p.intact:
+			if p.value >= 15000.0:
+				return "as_mg_guard_value"
+			if p.fragile >= 0.5:
+				return "as_mg_guard_fragile"
+			if p.mandatory:
+				return "as_mg_guard_keep"
+	return ""
+
+
 # what the field would take if caught now at this point: [[body, reason ""], ...] nearest first
 func candidates(at: Vector2) -> Array:
 	var out: Array = []

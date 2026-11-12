@@ -171,7 +171,7 @@ func _run() -> void:
 	term.set_tab(Terminal.DRONE_PAGE)
 	await _frames(30)
 	var its: Array = term.items()
-	check(its.size() == Terminal.DRONE_UPGRADES + 8 and its[Terminal.DRONE_UPGRADES][1] == "skin" and its[Terminal.DRONE_UPGRADES + 5][1] == "skin" and its[Terminal.DRONE_UPGRADES + 6][0] == "tunnel" and its[Terminal.DRONE_UPGRADES + 7][0] == "tunnel_body", "drone page: three upgrades, six airframes, then the tunnel upgrade and its body card (%d)" % its.size())
+	check(its.size() == Terminal.DRONE_UPGRADES + 9 and its[Terminal.DRONE_UPGRADES + 8][0] == "wrench_queue" and its[Terminal.DRONE_UPGRADES][1] == "skin" and its[Terminal.DRONE_UPGRADES + 5][1] == "skin" and its[Terminal.DRONE_UPGRADES + 6][0] == "tunnel" and its[Terminal.DRONE_UPGRADES + 7][0] == "tunnel_body", "drone page: three upgrades, six airframes, then the tunnel upgrade, its body card and the queued wrench (%d)" % its.size())
 	var base := Terminal.DRONE_UPGRADES
 	term.sel = base + Skins.ORDER.find("swift")
 	await _frames(20)

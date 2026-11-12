@@ -97,7 +97,8 @@ func _refresh() -> void:
 	for a in ShipMarket.data().assets:
 		# 96 号: a contract taken but not started (the berth empty) still lies in the yard
 		var in_hand: bool = str(a.state) == "stripping" and game != null and game.in_berth()
-		if (str(a.state) == "arrived" or in_hand) and a.get("seen_in", false) and str(arrival.get("id", "")) != str(a.id):
+		# 137 号: a hulk the port holds (a lien, a waste bill) lies in the yard as well until it is paid
+		if (str(a.state) in ["arrived", "held"] or in_hand) and a.get("seen_in", false) and str(arrival.get("id", "")) != str(a.id):
 			var sh := _shape(str(a.listing.offer.ship))
 			_parked.append({"id": str(a.id), "polys": sh[0], "stern": sh[1], "slot": TugYard.assign(a), "ship": str(a.listing.offer.ship)})
 
@@ -110,7 +111,9 @@ static func due() -> Dictionary:
 	for a in ShipMarket.data().assets:
 		# never the hulk being stripped (user 2026-10-26: started at once, it was brought in again
 		# inside its own job and the camera stayed on the tug's path)
-		if str(a.state) == "arrived" and not a.get("seen_in", false) and str(a.id) != active:
+		# 137 号 (user 2026-11-11: a POD "星图上面显示它已经到了，但实际上它完全没有动画，也完全到不了"): one the
+		# port holds is brought in too — it was left out in the belt, never seen, with nothing saying why
+		if str(a.state) in ["arrived", "held"] and not a.get("seen_in", false) and str(a.id) != active:
 			return a
 	return {}
 
@@ -172,7 +175,8 @@ func start(a: Dictionary) -> void:
 	game.state_t = 0.0
 	game.tools.release_grab(false)
 	if game.hud != null:
-		game.hud.show_hint(Ops.w("拖船把 %s 拖回来了，停进拖船站外的泊位。按 Esc 跳过。", "The tug is bringing %s in to the tug yard. Esc skips.") % str(a.id))
+		var held := str(a.get("state", "")) == "held"
+		game.hud.show_hint((Ops.w("拖船把 %s 拖回来了，停进拖船站外的泊位。它被港口扣留，付清才能开拆。按 Esc 跳过。", "The tug is bringing %s in to the tug yard. The port holds it until paid. Esc skips.") if held else Ops.w("拖船把 %s 拖回来了，停进拖船站外的泊位。按 Esc 跳过。", "The tug is bringing %s in to the tug yard. Esc skips.")) % str(a.id))
 
 
 # ---------------------------------------------------------------- the tow, planned

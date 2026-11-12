@@ -23,6 +23,10 @@ extends Node2D
 # lies dropped, what was lost.
 
 const DEPLOY := ["anchor", "pump", "probe", "prop"]
+# AX-40 逆火: the portable confinement supply — only ever lent with the ship, never sold. Put on the
+# antimatter trap it takes up the coils' load (scripts/antimatter.gd CONNECT_T); then the trap reads
+# "dual supply" and the main bus may go. Taken back with the bus dead, the trap annihilates.
+const LEND_ONLY := ["confine"]
 const MODS := []                  # the drone modules were dropped in G2 (player: no use); PRICE keeps theirs for the refund
 const OLD_MODS := ["mod_bumper", "mod_hover", "mod_rack"]
 const PRICE := {"anchor": 18000.0, "pump": 14000.0, "probe": 6000.0, "prop": 12000.0, "mod_bumper": 16000.0, "mod_hover": 12000.0, "mod_rack": 20000.0}
@@ -73,7 +77,7 @@ func _init() -> void:
 # ---------------------------------------------------------------- catalogue
 
 static func is_deploy(type: String) -> bool:
-	return type in DEPLOY
+	return type in DEPLOY or type in LEND_ONLY
 
 
 static func is_mod(type: String) -> bool:
@@ -266,11 +270,22 @@ func target(aim: Vector2, ctrl_h: Dictionary, piece_h: Dictionary) -> Dictionary
 					var bb := Geom.bbox(world.world_poly(chord))
 					var at := Vector2(clampf(piece_h.pos.x, bb.position.x + 1.0 * Geom.M, bb.end.x - 1.0 * Geom.M), bb.end.y)
 					return {"kind": "place", "type": type, "piece": chord, "pos": at, "d": 0.0, "label": ("第 %d 列" if Txt.zh else "BAY %d") % (bay + 1), "bay": bay}
+		"confine":
+			if p != null and game.anti != null and game.anti.is_trap(p) and _confine_on(p).is_empty():
+				return {"kind": "place", "type": type, "piece": p, "pos": piece_h.pos, "d": 0.0, "label": p.tag}
 		"probe":
 			if ctrl_h.get("kind", "") == "ctrl" and ctrl_h.ctrl.kind in ["port", "test", "discharge", "probe"] and not _probed_ctrl(ctrl_h.ctrl.id):
 				return {"kind": "place", "type": type, "ctrl": ctrl_h.ctrl, "pos": ctrl_h.pos, "d": 0.0, "label": ctrl_h.ctrl.id}
 			if p != null and not _probed_piece(p):
 				return {"kind": "place", "type": type, "piece": p, "pos": piece_h.pos, "d": 0.0, "label": p.tag}
+	return {}
+
+
+# the portable confinement supply on a piece ({} when none)
+func _confine_on(p) -> Dictionary:
+	for u in units:
+		if u.type == "confine" and u.piece == p.id:
+			return u
 	return {}
 
 
@@ -417,6 +432,9 @@ func act(tg: Dictionary) -> void:
 		"pump":
 			u.vol = tg.vol
 			game.sys.taps[u.uid] = _tap_for(u)
+		"confine":
+			# clamped on the trap's flank nearest the pointer, its leads onto the coils' terminals
+			u.t = 0.0
 		"prop":
 			u.bay = int(tg.bay)
 			u.post = Vector2(tg.pos.x, maxf(tg.pos.y + 0.6 * Geom.M, Dock.TROUGH_Y * Geom.M))
@@ -450,6 +468,8 @@ func act(tg: Dictionary) -> void:
 		_hint("gear_pump_set")
 	elif tg.type == "prop":
 		_hint("gear_prop_set")
+	elif tg.type == "confine":
+		game.say("confine_on", tg.pos)
 	else:
 		_hint("gear_probe_set")
 
@@ -523,6 +543,10 @@ func on_swallowed(b, zone: String) -> void:
 		var p = world.pieces.get(u.piece)
 		if p == null or not b.pieces.has(p):
 			continue
+		if u.type == "confine":
+			# it goes into the cradle with the trap, still feeding it: the lent unit is handed over
+			units.erase(u)
+			continue
 		if u.type == "anchor":
 			# the anchor is cast off at the winch post, to be fetched
 			_unhook(u)
@@ -581,6 +605,7 @@ func _physics_process(dt: float) -> void:
 			"anchor": _step_anchor(u, p, dt)
 			"pump": _step_pump(u, p, dt)
 			"probe": _step_probe(u, dt)
+			"confine": u.t = float(u.get("t", 0.0)) + dt
 	for d in drops:
 		d.pos += d.vel * dt
 		d.vel *= exp(-0.4 * dt)
@@ -805,6 +830,8 @@ func _draw() -> void:
 					draw_line(at + Vector2(-1, 3) / z, at + Vector2(5, -3) / z, Pal.tint(Pal.FLUID, 0.95, 1.4), lw * 1.4)
 			"prop":
 				_draw_prop(u, at, z, lw)
+			"confine":
+				_draw_confine(u, at, z, lw)
 			"probe":
 				var pulse := 0.6 + 0.4 * sin(t * 4.0)
 				draw_arc(at, 6.0 / z, 0.0, TAU, 16, col, lw, true)
@@ -815,6 +842,48 @@ func _draw() -> void:
 		var pulse2 := 0.7 + 0.3 * sin(t * 5.0)
 		draw_arc(p, 8.0 / z * pulse2, 0.0, TAU, 16, col2, lw, true)
 		draw_rect(Rect2(p - Vector2(4, 4) / z, Vector2(8, 8) / z), col2, false, lw)
+
+
+# AX-40: the portable confinement supply on the trap's flank — a squat case with a handle, a cooling
+# grille, two heavy leads to the coils' terminals and a status lamp; while it takes up the load an
+# arc fills round the lamp, then the lamp breathes blue-white with the trap
+func _draw_confine(u: Dictionary, at: Vector2, z: float, lw: float) -> void:
+	var M := Geom.M
+	var k := clampf(float(u.get("t", 0.0)) / 2.0, 0.0, 1.0)
+	var c: Vector2 = at
+	var p = world.pieces.get(u.piece)
+	var tc: Vector2 = world.frame(p) * Geom.centroid(p.poly) if p != null and not p.gone else c
+	var out := (c - tc).normalized() if c.distance_to(tc) > 4.0 else Vector2.UP
+	var box_c := c + out * 0.55 * M
+	var ax := out.orthogonal()
+	var hw := 0.62 * M
+	var hh := 0.38 * M
+	var pts := PackedVector2Array([box_c + ax * hw + out * hh, box_c - ax * hw + out * hh, box_c - ax * hw - out * hh, box_c + ax * hw - out * hh])
+	draw_colored_polygon(pts, Color(0.06, 0.065, 0.075, 0.97))
+	var edge := Color(0.62, 0.9, 1.2, 0.95)
+	draw_polyline(PackedVector2Array([pts[0], pts[1], pts[2], pts[3], pts[0]]), edge, lw * 1.3, true)
+	# the handle on top, the grille slots, the leads down onto the trap
+	draw_line(box_c + out * (hh + 0.12 * M) - ax * 0.3 * M, box_c + out * (hh + 0.12 * M) + ax * 0.3 * M, Pal.ink(0.85), lw * 1.4)
+	draw_line(box_c + out * hh - ax * 0.3 * M, box_c + out * (hh + 0.12 * M) - ax * 0.3 * M, Pal.ink(0.85), lw)
+	draw_line(box_c + out * hh + ax * 0.3 * M, box_c + out * (hh + 0.12 * M) + ax * 0.3 * M, Pal.ink(0.85), lw)
+	for i in 5:
+		var gx := -0.45 + 0.13 * i
+		draw_line(box_c + ax * gx * M - out * 0.2 * M, box_c + ax * gx * M + out * 0.2 * M, Pal.ink(0.45), lw)
+	for sx in [-0.22, 0.22]:
+		var a0: Vector2 = box_c - out * hh + ax * float(sx) * M
+		draw_line(a0, c + ax * sx * 0.6 * M - out * 0.05 * M, Color(1.5, 0.45, 0.25, 0.9), lw * 2.0)
+	var lamp := box_c + ax * 0.38 * M + out * 0.05 * M
+	var breathe := 0.6 + 0.4 * sin(t * 1.6)
+	if k < 1.0:
+		draw_arc(lamp, 0.16 * M, -PI * 0.5, -PI * 0.5 + TAU * k, 24, Color(1.6, 1.2, 0.5, 1.0), lw * 1.6, true)
+		draw_circle(lamp, 0.07 * M, Color(1.6, 1.0, 0.4, 0.6 + 0.4 * sin(t * 12.0)))
+	else:
+		draw_circle(lamp, 0.09 * M, Color(0.55 * breathe * 2.0, 0.95 * breathe * 2.0, 1.4 * breathe * 2.0, 1.0))
+	var font: Font = game.hud.font if game.hud != null else ThemeDB.fallback_font
+	var s := 1.0 / maxf(z, 0.02)
+	draw_set_transform(box_c - ax * 0.42 * M + out * 0.06 * M, 0.0, Vector2(s, s) * 0.8)
+	draw_string(font, Vector2.ZERO, "PCS", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Pal.ink(0.85))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 # 97 号: a screw-jack prop from the floor to the chord: its base plate, the outer tube, the screw

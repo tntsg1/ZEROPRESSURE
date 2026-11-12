@@ -11,7 +11,7 @@ extends SceneTree
 # plus the meta() sections of the authoring script (gas, power, fluids,
 # per-control settings, contract value, the factory drawing).
 
-const AUTHORS := {"gr7": "res://tools/authoring/gr7_author.gd", "s09": "res://tools/authoring/s09_author.gd", "tug": "res://tools/authoring/tug_author.gd", "pod": "res://tools/authoring/pod_author.gd", "h22": "res://tools/authoring/h22_author.gd", "med47": "res://tools/authoring/med47_author.gd", "m14": "res://tools/authoring/m14_author.gd", "fr26": "res://tools/authoring/fr26_author.gd", "ts1": "res://tools/authoring/ts1_author.gd", "pt34": "res://tools/authoring/pt34_author.gd", "jd38": "res://tools/authoring/jd38_author.gd", "tw64": "res://tools/authoring/tw64_author.gd", "hb86": "res://tools/authoring/hb86_author.gd", "cl104": "res://tools/authoring/cl104_author.gd", "es112": "res://tools/authoring/es112_author.gd", "fl116": "res://tools/authoring/fl116_author.gd", "sv122": "res://tools/authoring/sv122_author.gd", "mf126": "res://tools/authoring/mf126_author.gd", "ro128": "res://tools/authoring/ro128_author.gd", "cv138": "res://tools/authoring/cv138_author.gd", "vt80": "res://tools/authoring/vt80_author.gd", "ps12": "res://tools/authoring/ps12_author.gd", "cf90": "res://tools/authoring/cf90_author.gd", "sa200": "res://tools/authoring/sa200_author.gd", "nr95": "res://tools/authoring/nr95_author.gd", "ih55": "res://tools/authoring/ih55_author.gd", "mt140": "res://tools/authoring/mt140_author.gd", "md160": "res://tools/authoring/md160_author.gd", "tb180": "res://tools/authoring/tb180_author.gd", "ch110": "res://tools/authoring/ch110_author.gd", "my48": "res://tools/authoring/my48_author.gd", "ic120": "res://tools/authoring/ic120_author.gd", "arktest": "res://tools/authoring/arktest_author.gd", "ark01": "res://tools/authoring/ark01_author.gd", "qc30": "res://tools/authoring/qc30_author.gd", "st40": "res://tools/authoring/st40_author.gd", "ev55": "res://tools/authoring/ev55_author.gd", "dc84": "res://tools/authoring/dc84_author.gd", "ob90": "res://tools/authoring/ob90_author.gd", "fx70": "res://tools/authoring/fx70_author.gd", "bl88": "res://tools/authoring/bl88_author.gd", "lc140": "res://tools/authoring/lc140_author.gd", "dr150": "res://tools/authoring/dr150_author.gd", "hg170": "res://tools/authoring/hg170_author.gd",
+const AUTHORS := {"gr7": "res://tools/authoring/gr7_author.gd", "s09": "res://tools/authoring/s09_author.gd", "tug": "res://tools/authoring/tug_author.gd", "pod": "res://tools/authoring/pod_author.gd", "h22": "res://tools/authoring/h22_author.gd", "med47": "res://tools/authoring/med47_author.gd", "m14": "res://tools/authoring/m14_author.gd", "fr26": "res://tools/authoring/fr26_author.gd", "ts1": "res://tools/authoring/ts1_author.gd", "pt34": "res://tools/authoring/pt34_author.gd", "jd38": "res://tools/authoring/jd38_author.gd", "tw64": "res://tools/authoring/tw64_author.gd", "hb86": "res://tools/authoring/hb86_author.gd", "cl104": "res://tools/authoring/cl104_author.gd", "es112": "res://tools/authoring/es112_author.gd", "fl116": "res://tools/authoring/fl116_author.gd", "sv122": "res://tools/authoring/sv122_author.gd", "mf126": "res://tools/authoring/mf126_author.gd", "ro128": "res://tools/authoring/ro128_author.gd", "cv138": "res://tools/authoring/cv138_author.gd", "vt80": "res://tools/authoring/vt80_author.gd", "ps12": "res://tools/authoring/ps12_author.gd", "cf90": "res://tools/authoring/cf90_author.gd", "sa200": "res://tools/authoring/sa200_author.gd", "nr95": "res://tools/authoring/nr95_author.gd", "ih55": "res://tools/authoring/ih55_author.gd", "mt140": "res://tools/authoring/mt140_author.gd", "md160": "res://tools/authoring/md160_author.gd", "tb180": "res://tools/authoring/tb180_author.gd", "ch110": "res://tools/authoring/ch110_author.gd", "my48": "res://tools/authoring/my48_author.gd", "ic120": "res://tools/authoring/ic120_author.gd", "arktest": "res://tools/authoring/arktest_author.gd", "ark01": "res://tools/authoring/ark01_author.gd", "qc30": "res://tools/authoring/qc30_author.gd", "st40": "res://tools/authoring/st40_author.gd", "ev55": "res://tools/authoring/ev55_author.gd", "dc84": "res://tools/authoring/dc84_author.gd", "ob90": "res://tools/authoring/ob90_author.gd", "fx70": "res://tools/authoring/fx70_author.gd", "bl88": "res://tools/authoring/bl88_author.gd", "lc140": "res://tools/authoring/lc140_author.gd", "dr150": "res://tools/authoring/dr150_author.gd", "hg170": "res://tools/authoring/hg170_author.gd", "ax40": "res://tools/authoring/ax40_author.gd",
 	"e07a": "res://tools/authoring/e07_author.gd", "e07b": "res://tools/authoring/e07_author.gd",
 	"e07c": "res://tools/authoring/e07_author.gd", "e07d": "res://tools/authoring/e07_author.gd",
 	"sp_energy": "res://tools/authoring/sp_author.gd", "sp_cryo": "res://tools/authoring/sp_author.gd", "sp_fluid": "res://tools/authoring/sp_author.gd",
@@ -32,6 +32,9 @@ func _initialize() -> void:
 	_cut_lines(w, id)
 	var d: Dictionary = author.meta()
 	d.merge(export_world(w), true)
+	# ARK-01 改造方案 2 (2026-11-11): the two rings are side-hung wheels (tools/authoring/ark01_wheels.gd)
+	if id == "ark01":
+		d = load("res://tools/authoring/ark01_wheels.gd").apply(d)
 	var f := FileAccess.open("res://ships/%s.json" % id, FileAccess.WRITE)
 	f.store_string(pretty(d, "") + "\n")
 	f.close()
@@ -56,6 +59,9 @@ static func _cut_lines(w, id: String) -> void:
 	for pid in w.order:
 		var p = w.pieces[pid]
 		if p.cls != "equip" or p.gone:
+			continue
+		# AX-40's antimatter trap: whole into its cradle by crane, never cut (a cut annihilates it)
+		if p.hazard == "antimatter":
 			continue
 		var seg: Array = p.get_meta("segments", [])
 		var need := ceili(float(p.mass) / GRAB_T)

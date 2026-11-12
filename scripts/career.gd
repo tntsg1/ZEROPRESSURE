@@ -509,7 +509,8 @@ static func hold(i: int) -> bool:
 
 static func accept(i: int) -> Dictionary:
 	var offers: Array = data.get("offers", [])
-	if i < 0 or i >= offers.size() or not active().is_empty() or offers[i].get("queued", false):
+	# 138 号: a hulk the port holds is not started until what holds it is paid
+	if i < 0 or i >= offers.size() or not active().is_empty() or offers[i].get("queued", false) or offers[i].get("port_held", false):
 		return {}
 	var o: Dictionary = offers[i].duplicate(true)
 	var fee: float = o.get("fee", 0.0)

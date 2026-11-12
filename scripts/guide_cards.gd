@@ -22,7 +22,7 @@ const GAP_S := 20.0            # game seconds between two cards
 const STOP_MS := 0.5           # a district card waits for the drone below this (m/s)
 const ZONES := ["power", "trade", "process", "cargo", "tug", "ring"]
 const ORDER := ["phase_shuttle", "power_short", "first_trip", "store_full", "order_due", "first_listing", "first_mould", "first_equip", "first_strip",
-	"zone_power", "zone_trade", "zone_process", "zone_cargo", "zone_tug", "zone_ring"]
+	"zone_power", "zone_trade", "zone_process", "zone_cargo", "zone_tug", "zone_ring", "ark_wheels", "antimatter_trap"]
 const CONSOLES := ["console_trade", "console_hall", "console_queue", "console_gas", "console_heat", "console_mill"]
 
 # id: title, three lines (zh, en), the drawing, where "带我去" leads ("" none)
@@ -51,6 +51,16 @@ const CARDS := {
 		["六条走廊在这儿碰头。", "Six corridors meet here."],
 		["坐接驳车，去哪个区都是 10 秒左右。", "The shuttle takes you to any district in about 10 s."],
 		["最后要让它重新转起来。", "In the end it has to turn again."]]},
+	# ARK-01 改造方案 2: the side-hung wheels (scripts/rings.gd notes it on the ship). 文案占位，由作者写
+	"ark_wheels": {"t": ["【占位：转轮标题】", "[PLACEHOLDER: THE WHEELS]"], "art": "strip", "go": "", "l": [
+		["【占位：先断负载、开冷却，两轮按配比一起刹】", "[PLACEHOLDER: loads off, cooling on, brake both wheels together]"],
+		["【占位：电容满了按一下泄放，泄放时刹车松开】", "[PLACEHOLDER: dump the capacitor when full; the brakes let go meanwhile]"],
+		["【占位：停住后盘车对准锁销孔，再插锁销】", "[PLACEHOLDER: stopped, inch it to the pin hole, then the pin]"]]},
+	# AX-40 逆火 (scripts/antimatter.gd notes it on the ship). 文案占位，由作者写
+	"antimatter_trap": {"t": ["【占位：断电即湮灭】", "[PLACEHOLDER: NO POWER, IT ANNIHILATES]"], "art": "strip", "go": "", "l": [
+		["【占位：这艘船不能先断电，储存阱只靠主电】", "[PLACEHOLDER: not the power first here: the trap runs on the main bus only]"],
+		["【占位：先给储存阱接便携约束电源，读数变成双路供电】", "[PLACEHOLDER: the portable supply on the trap first, till it reads dual supply]"],
+		["【占位：再断主电，吊车整件送反物质回收架】", "[PLACEHOLDER: then the bus off, and crane it whole to the antimatter cradle]"]]},
 	"first_strip": {"t": ["开工", "FIRST STRIP"], "art": "strip", "go": "", "l": [
 		["先断电，再泄压，最后动刀。", "Power off, then vent, then cut."],
 		["左上角一条一条告诉你下一步。", "The top left tells you each next step."],

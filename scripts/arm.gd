@@ -43,6 +43,9 @@ func enqueue(b, destination: String, rated_t: float) -> bool:
 func _zone_for(b) -> String:
 	var planned: String = str(b.get_meta("plan_zone",""))
 	if planned in ["equip","metal","hazard"]: return Dock.for_load(planned,b,false)
+	# 认真拆有奖励: harmless leftovers go to the equipment mouth's drain rack
+	if game.clean != null and game.clean.active() and game.clean.body_residual(b) != "":
+		return Dock.for_load("equip",b,false)
 	for p in b.pieces:
 		if game.sys.dest_of(p) == "hazard": return "hazard"
 	return Dock.for_load("metal" if game.dock.is_scrap(b) else "equip",b,false)

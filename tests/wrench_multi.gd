@@ -35,11 +35,12 @@ func _run() -> void:
 	await frames(6)
 	g.tutorial = null
 
-	# a plate with four bolts on it, plus a neighbour plate that must stay alone
+	# a unit of equipment with four bolts on it, plus a neighbour plate that must stay alone
+	# (2026-11-11, user: "同步拆装…只能拆装设备" — the ganged head takes equipment's fixings only)
 	var c := Vector2(5000, 5000)
 	var plate = g.world.add_piece("hull", PackedVector2Array([
 		c + Vector2(-60, -40), c + Vector2(60, -40), c + Vector2(60, 40), c + Vector2(-60, 40)
-	]), {})
+	]), {"cls": "equip", "key": "TEST-UNIT", "tag": "TEST-UNIT"})
 	var far = g.world.add_piece("hull", PackedVector2Array([
 		Vector2(5400, 5400), Vector2(5460, 5400), Vector2(5460, 5460), Vector2(5400, 5460)
 	]), {})
@@ -89,6 +90,16 @@ func _run() -> void:
 		var expect: float = base * (1.0 + 0.28 * want[tier])
 		check(is_equal_approx(t.job.dur, expect), "volume %d takes %.2fs for the pass" % [tier, expect])
 		t.job = {}
+
+	# a plate of structure with bolts of its own: one at a time, however ganged the head
+	var sp := c + Vector2(0, 300)
+	var splate = g.world.add_piece("hull", PackedVector2Array([
+		sp + Vector2(-60, -40), sp + Vector2(60, -40), sp + Vector2(60, 40), sp + Vector2(-60, 40)
+	]), {})
+	var sb0 = g.world.add_joint(splate, null, "bolt", sp + Vector2(-14, -10))
+	g.world.add_joint(splate, null, "bolt", sp + Vector2(14, -10))
+	g.job.kit = {"skill_wrench_multi": 3}
+	check(t._joint_batch(sb0).is_empty(), "a structure plate's bolt: one at a time even at volume 3")
 
 	# a full pass really removes them all
 	g.job.kit = {"skill_wrench_multi": 3}

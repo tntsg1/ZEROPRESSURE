@@ -117,6 +117,16 @@ func _run() -> void:
 		g.queue_free()
 		quit(0)
 		return
+	if _arg("zoom", "") != "":
+		# one shot of the ring in the new look at that zoom (the side-by-side with a district)
+		_look(true)
+		_put(c, float(_arg("zoom", "")))
+		await _frames(60)
+		Cap.save(root, "res://tests/out/hubtidy_z%s.png" % _arg("zoom", ""))
+		g.queue_free()
+		await _frames(4)
+		quit(0)
+		return
 	var cargo_a: float = ((PortStructure.door("cargo")[0] as Vector2) - c).angle()
 	var views := [["hall", c, 0.55], ["core", c, 1.5], ["arm", c + Vector2.from_angle(cargo_a) * 15.0 * M, 1.4], ["far", c, 0.2]]
 	for v in views:

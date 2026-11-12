@@ -81,14 +81,26 @@ var tunnel_fx: Node2D
 # 2026-11-11 量子隧穿·机体 (Terminal.SHOP "tunnel_body"): the drone itself passes everything; key U or
 # the key strip's button; on by default once bought
 var body_tunnel: Node
+var slurp: Node2D               # tool 5's right button: the suction tube for what has leaked (slurp.gd)
+# 2026-11-11 排队拧 (Terminal.SHOP "wrench_queue"; user: "点一下之后可以马上点下一个，不用等第一个拧完"): with it
+# fitted, a fixing clicked while the wrench is busy joins a queue; the wrench takes them one after
+# another in the order clicked (the time per fixing as ever, the player need not wait on it). Only the
+# fixings clicked (the ganged head still adds only the aimed unit's own). Clicked again, or the right
+# button on it: out of the queue. Out of reach, the queue waits at that one until the drone is back;
+# another tool in hand, or the right button elsewhere, empties it.
+var wq: Array = []              # hover dicts of the fixings queued ("joint"), in the order clicked
+var wq_wait := false            # the next one is out of reach: waiting for the drone
 
 
 func tunnel_fitted() -> bool:
 	return game != null and game.has_upgrade("tunnel")
 
 
+# what the grapple holds tunnels: the grapple's own switch (N), or the drone's own tunnelling on —
+# the drone that passes a bulkhead brings what it holds through with it (user 2026-11-11, S-30: the
+# drone through the round bulkhead, the load in its claw still struck what was inside)
 func tunnel_on() -> bool:
-	return tunnel and tunnel_fitted()
+	return (tunnel and tunnel_fitted()) or (body_tunnel != null and body_tunnel.active())
 
 
 func toggle_tunnel() -> void:
@@ -145,6 +157,10 @@ func _init() -> void:
 	body_tunnel = preload("res://scripts/body_tunnel.gd").new()
 	body_tunnel.tools = self
 	add_child(body_tunnel)
+	# 2026-11-11: the hose tool's right button, the drone's own suction tube (scripts/slurp.gd)
+	slurp = preload("res://scripts/slurp.gd").new()
+	slurp.tools = self
+	add_child(slurp)
 
 
 # how far the tool in hand reaches
@@ -200,6 +216,9 @@ func set_tool(n: int, force: bool = false, by_key: bool = false) -> void:
 		else:
 			release_grab(false)
 	job = {}
+	if not wq.is_empty():
+		wq.clear()
+		game.say("as_wq_cleared", drone.global_position + Vector2(0, -44))
 	tool = n
 	game.sfx.play("tool")
 
@@ -261,6 +280,7 @@ func step(dt: float) -> void:
 			_finish_cut()
 		release_grab(false)
 		job = {}
+		wq.clear()
 		hover = {}
 		queue_redraw()
 		add_node.queue_redraw()
@@ -291,9 +311,12 @@ func step(dt: float) -> void:
 				else:
 					_start_job()
 		_:
-			if lmb_pressed and hover.get("ok", false) and job.is_empty():
+			if _wq_click():
+				pass
+			elif lmb_pressed and hover.get("ok", false) and job.is_empty():
 				_start_job()
 	_step_job(dt)
+	_wq_step()
 	queue_redraw()
 	add_node.queue_redraw()
 
@@ -337,10 +360,24 @@ func _find_hover() -> Dictionary:
 			var hc := _near_connector(pick * 0.9)
 			if not hc.is_empty() and (h.is_empty() or hc.d < h.d):
 				h = hc
+			# 认真拆有奖励: a found spares box or board: the wrench opens the cover (scripts/hidden_traits.gd)
+			if h.is_empty() and game.finds != null:
+				var hl := _piece_hover()
+				if not hl.is_empty() and game.finds.can_open(hl.piece):
+					hl.kind = "lid"
+					hl.label = hl.piece.tag
+					h = hl
 		5:
 			h = _near_ctrl(["port"], pick * 1.2)
 			if not h.is_empty() and h.ctrl.medium == "volt":
 				h = {}
+			# 认真拆有奖励: a charged battery's terminals take the feedback lead (scripts/clean_run.gd)
+			if h.is_empty() and game.clean != null:
+				var hb := _piece_hover()
+				if not hb.is_empty() and game.clean.feedable(hb.piece):
+					hb.kind = "batt"
+					hb.label = hb.piece.tag
+					h = hb
 		6:
 			if game.gear != null:
 				h = game.gear.target(aim, _near_ctrl(["port", "test", "discharge", "probe"], pick), _piece_hover())
@@ -455,9 +492,26 @@ func _piece_hover() -> Dictionary:
 
 # The ganged service head (upgrade): the fixings of the same unit that come off
 # together with the one under the pointer, nearest first.
+# 2026-11-11 (user, IC-25: "我明明没有想要关闭下面的支撑架，就只是想要把那个物品回收一下…结果下面的支撑架也给
+# 弄没了"): it used to take any fixing that shared either side with the one under the pointer — and the
+# other side of a pump's bolt is the structure it sits on, so the support frame's own bolts to that
+# structure came off with it. Now only the fixings of the equipment the pointer is on (that same piece,
+# or a piece of the same unit); a fixing of structure alone (a frame, a bracket, a bulkhead) is still
+# one at a time, and when the unit has fewer left only those come off.
+func _batch_unit(j):
+	for id in [j.a, j.b]:
+		var q = world.pieces.get(id)
+		if q != null and not q.gone and q.cls == "equip":
+			return q
+	return null
+
+
 func _joint_batch(primary) -> Array:
 	var n := int(game.skill_value("wrench_multi")) - 1
 	if n <= 0 or primary == null:
+		return []
+	var unit = _batch_unit(primary)
+	if unit == null:
 		return []
 	var p0: Vector2 = world.joint_world(primary)
 	var r := 1.1 * Geom.M
@@ -467,7 +521,13 @@ func _joint_batch(primary) -> Array:
 			continue
 		if not (j.type in ["bolt", "lock", "clamp"]):
 			continue
-		if j.a != primary.a and j.b != primary.a and j.a != primary.b and j.b != primary.b:
+		# one of its two sides must be this unit (its own piece, or a piece of the same unit)
+		var mine := false
+		for id in [j.a, j.b]:
+			var q = world.pieces.get(id)
+			if q != null and (q == unit or (q.cls == "equip" and q.key == unit.key and q.key != "")):
+				mine = true
+		if not mine:
 			continue
 		var p: Vector2 = world.joint_world(j)
 		var d := p.distance_to(p0)
@@ -482,7 +542,8 @@ func _joint_batch(primary) -> Array:
 	return out
 
 
-func _start_job() -> void:
+func _start_job(tg: Dictionary = {}) -> void:
+	var hv: Dictionary = tg if not tg.is_empty() else hover
 	var dur := 0.4
 	var kind := "wrench"
 	var extra: Array = []
@@ -498,25 +559,132 @@ func _start_job() -> void:
 			dur = Gear.DEPLOY_T
 		4:
 			kind = "wrench"
-			match hover.kind:
+			match hv.kind:
 				"joint":
-					dur = {"bolt": 0.55, "lock": 0.45, "clamp": 0.95}.get(hover.joint.type, 0.5)
+					dur = {"bolt": 0.55, "lock": 0.45, "clamp": 0.95}.get(hv.joint.type, 0.5)
 				"connector":
 					dur = 0.4
+				"lid":
+					dur = HiddenTraits.OPEN_T
 				"ctrl":
-					dur = {"switch": 0.22, "remote": 0.22, "valve": 0.5, "door": 0.25, "hatch": 0.3, "jam": 0.9, "stop": 0.35, "socket": 0.45, "discharge": 0.45}.get(hover.ctrl.kind, 0.35)
-	if kind == "wrench" and hover.get("kind", "") == "joint":
-		extra = _joint_batch(hover.joint)
+					dur = {"switch": 0.22, "remote": 0.22, "valve": 0.5, "door": 0.25, "hatch": 0.3, "jam": 0.9, "stop": 0.35, "socket": 0.45, "discharge": 0.45}.get(hv.ctrl.kind, 0.35)
+	if kind == "wrench" and hv.get("kind", "") == "joint":
+		extra = _joint_batch(hv.joint)
 		if not extra.is_empty():
 			dur *= 1.0 + 0.28 * extra.size()
 	if kind == "wrench":
 		dur /= game.skill_value("wrench_speed")
 	elif kind == "measure":
 		dur = game.skill_value("meter_speed")
-	job = {"kind": kind, "t": 0.0, "dur": dur, "target": hover.duplicate(), "pos": hover.pos, "extra": extra}
+	job = {"kind": kind, "t": 0.0, "dur": dur, "target": hv.duplicate(), "pos": hv.pos, "extra": extra}
 	game.sfx.play("probe" if kind == "measure" else ("wrench" if kind == "wrench" else "hose"))
 	if not extra.is_empty():
-		game.say("wrench_multi", hover.pos, str(extra.size() + 1))
+		game.say("wrench_multi", hv.pos, str(extra.size() + 1))
+
+
+# ---------------------------------------------------------------- 排队拧 (the wrench's queue)
+
+func wq_fitted() -> bool:
+	return game != null and game.has_upgrade("wrench_queue")
+
+
+func wq_index(j) -> int:
+	for i in wq.size():
+		if wq[i].joint == j:
+			return i
+	return -1
+
+
+# a press with the wrench: on a queued fixing, out of the queue; on another while the wrench is busy,
+# into it. True when the press was the queue's
+func _wq_click() -> bool:
+	if tool != 4 or not lmb_pressed or not wq_fitted():
+		return false
+	if hover.get("kind", "") != "joint" or hover.get("joint") == null:
+		return false
+	var j = hover.joint
+	var i := wq_index(j)
+	if i >= 0:
+		wq.remove_at(i)
+		game.say("as_wq_cancel", world.joint_world(j) + Vector2(0, -30))
+		game.sfx.play("switch")
+		return true
+	if job.is_empty() or not hover.get("ok", false):
+		return false
+	# the one being turned now, or one the ganged head takes with it: already in hand
+	if job.target.get("joint") == j or job.get("extra", []).any(func(e): return e.get("joint") == j):
+		return true
+	wq.append(hover.duplicate())
+	game.sfx.play("tool", world.joint_world(j), 0.6, 1.3)
+	return true
+
+
+# the next in the queue once the wrench is free (in reach); gone or covered ones dropped
+func _wq_step() -> void:
+	if wq.is_empty():
+		wq_wait = false
+		return
+	if tool != 4:
+		wq.clear()
+		return
+	wq = wq.filter(func(e): return e.joint.alive and not world.joint_covered(e.joint))
+	if wq.is_empty() or not job.is_empty():
+		return
+	var head: Dictionary = wq[0]
+	var p: Vector2 = world.joint_world(head.joint)
+	if not in_range(p):
+		if not wq_wait:
+			game.say("as_wq_wait", p + Vector2(0, -30))
+		wq_wait = true
+		return
+	wq_wait = false
+	wq.pop_front()
+	head.pos = p
+	_start_job(head)
+
+
+# right button on a queued fixing: out of the queue (true); elsewhere the queue goes with the job
+func wq_rmb() -> bool:
+	if wq.is_empty():
+		return false
+	if hover.get("kind", "") == "joint" and hover.get("joint") != null:
+		var i := wq_index(hover.joint)
+		if i >= 0:
+			wq.remove_at(i)
+			game.say("as_wq_cancel", world.joint_world(hover.joint) + Vector2(0, -30))
+			game.sfx.play("switch")
+			return true
+	wq.clear()
+	game.say("as_wq_cleared", drone.global_position + Vector2(0, -44))
+	return false
+
+
+# the queue on the field: a numbered tag on each, a faint line in the order they will be taken
+func _draw_wq(z: float) -> void:
+	if wq.is_empty():
+		return
+	var font: Font = game.hud.font if game.hud != null and "font" in game.hud else ThemeDB.fallback_font
+	var prev: Vector2 = job.pos if not job.is_empty() else Vector2.INF
+	for i in wq.size():
+		var e: Dictionary = wq[i]
+		if not e.joint.alive:
+			continue
+		var p: Vector2 = world.joint_world(e.joint)
+		if prev != Vector2.INF:
+			_dashed_line(prev, p, Pal.ink(0.22), 1.0 / z)
+		prev = p
+		var wait: bool = wq_wait and i == 0
+		var col: Color = Pal.heat(0.95, 1.2) if wait else Pal.tint(Pal.AIR, 0.95, 1.2)
+		var c := p + Vector2(11.0, -11.0) / z
+		draw_set_transform(c, 0.0, Vector2(1.0 / z, 1.0 / z))
+		draw_circle(Vector2.ZERO, 8.0, Color(0.03, 0.032, 0.036, 0.9))
+		draw_arc(Vector2.ZERO, 8.0, 0.0, TAU, 20, col, 1.4, true)
+		var txt := str(i + 1)
+		var w := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
+		draw_string(font, Vector2(-w * 0.5, 4.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, col)
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		# the fixing itself ringed
+		draw_arc(p, 6.0 / z, 0.0, TAU, 16, Pal.ink(0.55), 1.0 / z, true)
 
 
 func _target_pos(tg: Dictionary) -> Vector2:
@@ -524,7 +692,7 @@ func _target_pos(tg: Dictionary) -> Vector2:
 		"ctrl": return world.ctrl_world(tg.ctrl)
 		"joint": return world.joint_world(tg.joint)
 		"connector": return world.line_end_world(tg.line, tg.end)
-		"piece":
+		"piece", "batt", "lid":
 			if tg.has("local"):
 				return world.frame(tg.piece) * tg.local
 			return tg.pos
@@ -535,11 +703,14 @@ func _step_job(dt: float) -> void:
 	if job.is_empty():
 		return
 	var tg: Dictionary = job.target
-	if tg.kind == "piece" and not tg.has("local"):
+	if tg.kind in ["piece", "batt", "lid"] and not tg.has("local"):
 		tg.local = world.frame(tg.piece).affine_inverse() * tg.pos
 	job.pos = _target_pos(tg)
 	if not in_range(job.pos):
 		game.say("out_of_range", job.pos)
+		# the queue's run: this one goes back to the head of it, and is taken again once in reach
+		if not wq.is_empty() and job.kind == "wrench" and tg.get("kind", "") == "joint" and tg.joint.alive:
+			wq.push_front(tg)
 		job = {}
 		return
 	job.t += dt
@@ -636,6 +807,9 @@ func _laser(dt: float) -> void:
 			game.sfx.play("deny")
 		return
 	var desired := tail_target if tail_on else clamp_range(aim)
+	# ARK-01 side-hung wheels (scripts/rings.gd): a beam into a wheel still turning tears off what it meets
+	if lmb and game.rings != null and game.rings.fx != null:
+		game.rings.beam_at(desired)
 	if lmb and (lmb_pressed or not cutting):
 		cutting = true
 		tail_on = false
@@ -863,6 +1037,9 @@ func _warn_equipment_old() -> void:
 	var bd := near
 	for id in world.order:
 		var q = world.pieces[id]
+		# a turning wheel's pieces aren't where the file put them (scripts/rings.gd): not warned of there, as world.pieces_near
+		if world.turning.has(id):
+			continue
 		if q.gone or q.cls != "equip" or not q.intact:
 			continue
 		var lp: Vector2 = world.frame(q).affine_inverse() * front - world.door_offset(q)
@@ -1350,6 +1527,7 @@ func _draw_multi(z: float, lw: float) -> void:
 		_dashed_circle(at, multi.radius(), Pal.tint(Pal.AIR, 0.55, 1.2), lw * 1.2)
 		var n := 0
 		var m := 0.0
+		var guard_why := ""
 		for c in multi.candidates(at):
 			var b = c[0]
 			var bb := Rect2()
@@ -1362,8 +1540,12 @@ func _draw_multi(z: float, lw: float) -> void:
 			var cc := Pal.tint(Pal.AIR, 0.9, 1.4) if take else Pal.ink(0.35)
 			_brackets(bb.grow(3.0 / z), cc, lw * 1.4, 6.0 / z)
 			if c[1] == "guarded":
-				draw_line(bb.position, bb.end, Pal.heat(0.7, 1.3), lw * 1.2, true)
-				draw_line(Vector2(bb.position.x, bb.end.y), Vector2(bb.end.x, bb.position.y), Pal.heat(0.7, 1.3), lw * 1.2, true)
+				# 2026-11-11 (user): not a cross over its whole outline (a big piece crossed out the ship) —
+				# a small shield at its box's corner, the same size on screen at any zoom; its reason by
+				# the pointer when the pointer is over it
+				_shield(Vector2(bb.end.x, bb.position.y) + Vector2(-12.0, 12.0) / z, 8.0 / z, Pal.heat(0.7, 1.3), lw)
+				if guard_why == "" and bb.grow(4.0 / z).has_point(aim):
+					guard_why = multi.guard_reason(b)
 			if take:
 				n += 1
 				m += b.total_mass()
@@ -1371,6 +1553,8 @@ func _draw_multi(z: float, lw: float) -> void:
 		if multi.pick != "all":
 			pk = " · " + (Ops.w("只抓钢", "STEEL ONLY") if multi.pick == "steel" else Ops.w("只抓设备", "MACHINES ONLY"))
 		_readout(font, at + Vector2(multi.radius() + 8.0 / z, -10.0 / z), z, "%d/%d · %.1f/%.1f t%s" % [n, multi.count(), m, multi.mass_cap(), pk], Pal.ink(0.85))
+		if guard_why != "":
+			_readout(font, aim + Vector2(16.0 / z, 26.0 / z), z, game.txt(guard_why), Pal.heat(0.95, 1.2))
 		return
 	for h in multi.held:
 		if not is_instance_valid(h.body):
@@ -1382,6 +1566,16 @@ func _draw_multi(z: float, lw: float) -> void:
 	if over:
 		txt += " · " + game.txt("mg_over")
 	_readout(font, tether_target + Vector2(14.0 / z, -18.0 / z), z, txt, col)
+
+
+# a small shield (the field grapple leaves this one): outline and a faint fill, in the brackets' line
+func _shield(c: Vector2, s: float, col: Color, w: float) -> void:
+	var pts := PackedVector2Array([c + Vector2(-s, -s), c + Vector2(s, -s), c + Vector2(s, 0.15 * s), c + Vector2(0.0, 1.15 * s), c + Vector2(-s, 0.15 * s)])
+	draw_colored_polygon(pts, Color(col.r, col.g, col.b, 0.16))
+	var line := pts.duplicate()
+	line.append(pts[0])
+	draw_polyline(line, Color(col.r, col.g, col.b, 0.62), w * 1.2, true)
+	draw_line(c + Vector2(0.0, -0.55 * s), c + Vector2(0.0, 0.6 * s), Color(col.r, col.g, col.b, 0.5), w, true)
 
 
 func _brackets(r: Rect2, c: Color, w: float, arm: float) -> void:
@@ -1438,6 +1632,7 @@ func _draw() -> void:
 			var tip := from.lerp(pp, Pal.ease_out(k * 1.6))
 			_dashed_line(from, tip, Pal.ink(0.7), lw)
 			FastDraw.circle(self, tip, 2.5 / z, Pal.ink(1.0))
+	_draw_wq(z)
 	# cursor
 	_cursor(z)
 	# 2026-11-10: a loose piece no hauling drone will take: why, by the pointer (hauler.refuse_reason)

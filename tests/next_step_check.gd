@@ -80,7 +80,12 @@ func _run() -> void:
 	g.sys.hoses["G-I"] = {"mode": "recover", "t": 0.0}
 	await _frames(2)
 	st = _ns(g)
-	check(st.get("wait", false) and str(st.t).find("泄压中") >= 0, "hosed: venting, under way (%s)" % st.get("t", ""))
+	# 2026-11-10 推进节奏 (user: "放气管子插上去之后，就马上下一个"): the venting goes on in the background, the next
+	# step comes at once (NextStep.PACE_ON off: the wait as before)
+	if NextStep.PACE_ON:
+		check(not st.get("wait", false) and (st.get("bg", []) as Array).any(func(b): return str(b.t).find("泄压中") >= 0), "hosed: the venting in the background, the next step at once (%s · %s)" % [st.get("t", ""), str(st.get("bg", []))])
+	else:
+		check(st.get("wait", false) and str(st.t).find("泄压中") >= 0, "hosed: venting, under way (%s)" % st.get("t", ""))
 	g.sys.hoses.erase("G-I")
 	_vent(g, "I")
 	await _frames(3)

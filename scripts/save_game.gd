@@ -232,6 +232,7 @@ static func snapshot(g) -> Dictionary:
 		"boxbeam": g.boxbeam.save_state() if g.boxbeam != null and g.boxbeam.active() else {},
 		"sail": g.sail.save_state() if g.sail != null and g.sail.active() else {},
 		"reactor": g.reactor.save_state() if g.reactor != null and g.reactor.active() else {},
+		"anti": g.anti.save_state() if g.anti != null and g.anti.active() else {},
 		"softshell": g.softshell.save_state() if g.softshell != null and g.softshell.active() else {},
 		"train": g.train.save_state() if g.train != null and g.train.active() else {},
 		"flywheel": g.flywheel.save_state() if g.flywheel != null and g.flywheel.active() else {},
@@ -271,7 +272,9 @@ static func snapshot(g) -> Dictionary:
 			"drone": {"p": _v2(g.drone.global_position), "v": _v2(g.drone.linear_velocity), "hp": g.drone.integrity, "alive": g.drone.alive},
 			"tool": g.tools.tool, "hose_mode": g.tools.hose_mode, "reveals": g.reveal_count, "respawn": g.drone_respawn, "used": g.used, "verified": g.verified, "ops": g.ops,
 			"debris": debris, "must_value": g.must_value, "changed": g.changed, "time_by": g.time_by,
-			"receiver_commits":g.receiver_commits, "material_receipts":g.material_receipts, "parts_in": g.parts_in, "parts_value": g.parts_value, "spot_paid": g.spot_paid, "structure_t": g.structure_t, "goods_in": g.goods_in, "goods_value": g.goods_value},
+			"receiver_commits":g.receiver_commits, "material_receipts":g.material_receipts, "parts_in": g.parts_in, "parts_value": g.parts_value, "spot_paid": g.spot_paid, "structure_t": g.structure_t, "goods_in": g.goods_in, "goods_value": g.goods_value,
+			"clean": g.clean.to_save() if g.clean != null else {},
+			"finds": g.finds.to_save() if g.get("finds") != null else {}},
 	}
 	if not g.job.is_empty():
 		d.job = g.job
@@ -602,6 +605,10 @@ static func apply_late(g, d: Dictionary) -> void:
 	g.goods_value = float(gd.get("goods_value", 0.0))
 	g.structure_t = float(gd.get("structure_t", 0.0))
 	g.incidents = gd.get("incidents", [])
+	if g.clean != null:
+		g.clean.from_save(gd.get("clean", {}))
+	if g.get("finds") != null:
+		g.finds.from_save(gd.get("finds", {}))
 	g.playtime = gd.time
 	g.hints_seen = gd.hints
 	g.ledger = gd.ledger

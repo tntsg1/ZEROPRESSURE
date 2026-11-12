@@ -25,9 +25,14 @@ const BY_NAME := {
 	"p_biobox": "case_d", "p_bl_fry_tank": "case_d", "p_dr_core_box": "case_d", "p_hg_assay_case": "case_d",
 	"p_op_table": "optable_d",
 	"p_bag_strap": "strap_d", "p_harness": "strap_d",
+	# AX-40 逆火
+	"p_ax_trap": "ax_trap", "p_ax_magnet_psu": "ax_mps", "p_ax_injector": "ax_injector", "p_ax_cryocooler": "ax_cryo",
+	"p_ax_cold_head": "ax_cold_head", "p_ax_ion_pump": "ax_ion_pump", "p_ax_ion_engine": "ax_ion_engine",
+	"p_ax_confine_panel": "ax_panel", "p_ax_quench_dump": "ax_quench", "p_ax40_gamma": "ax_gamma", "p_ax_ppu": "ax_ppu",
 }
 const DRAWN := ["suite", "bed_d", "seat_d", "suit_d", "medcart", "plant_tray", "robot", "vault_d", "stairs",
-	"missile_d", "lift_d", "case_d", "optable_d", "strap_d"]
+	"missile_d", "lift_d", "case_d", "optable_d", "strap_d",
+	"ax_trap", "ax_mps", "ax_injector", "ax_cryo", "ax_cold_head", "ax_ion_pump", "ax_ion_engine", "ax_panel", "ax_quench", "ax_gamma", "ax_ppu"]
 
 
 static func L(ci, a, b, al := 0.5, wd := 1.0): E.L(ci, a, b, al, wd)
@@ -56,6 +61,17 @@ static func draw(ci: CanvasItem, art: String, r: Rect2, p, font: Font) -> void:
 		"case_d": case(ci, r)
 		"optable_d": optable(ci, r)
 		"strap_d": strap(ci, r)
+		"ax_trap": ax_trap(ci, r)
+		"ax_mps": ax_mps(ci, r, font)
+		"ax_injector": ax_injector(ci, r)
+		"ax_cryo": ax_cryo(ci, r)
+		"ax_cold_head": ax_cold_head(ci, r)
+		"ax_ion_pump": ax_ion_pump(ci, r)
+		"ax_ion_engine": ax_ion_engine(ci, r)
+		"ax_panel": ax_panel(ci, r, font)
+		"ax_quench": ax_quench(ci, r)
+		"ax_gamma": ax_gamma(ci, r)
+		"ax_ppu": ax_ppu(ci, r)
 
 
 # ---------------------------------------------------------------- shared parts
@@ -630,3 +646,225 @@ static func strap(ci, r: Rect2) -> void:
 	L(ci, Vector2(w * 0.47, y - bh * 0.5), Vector2(w * 0.53, y + bh * 0.5), 0.45)
 	for s in [0.04, 0.96]:
 		A(ci, Vector2(w * s, y), minf(h * 0.3, 3.0), -PI * 0.5, PI * 0.5 if s < 0.5 else PI * 1.5, 0.55, 1.2)
+
+
+# ---------------------------------------------------------------- AX-40 逆火 (antimatter storage ship)
+
+# an octagon round a point (the trap's module outline), radius to the flats, closed
+static func _oct(c: Vector2, rf: float) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for i in 9:
+		out.append(c + Vector2.from_angle(TAU * (i + 0.5) / 8.0) * rf / cos(PI / 8.0))
+	return out
+
+
+# the storage trap: a thick shield octagon (its cast blocks and lifting eyes), the ring magnets'
+# four coil packs in section round a spherical UHV vessel, the vessel's flanged ports, the
+# electrode stack seen through the bore, the coil terminals where the supply's leads land
+static func ax_trap(ci, r: Rect2) -> void:
+	var c := r.get_center()
+	var rf := minf(r.size.x, r.size.y) * 0.5
+	P(ci, _oct(c, rf), 0.75, 1.6)
+	P(ci, _oct(c, rf * 0.93), 0.35)
+	var segs := PackedVector2Array()
+	for i in 16:
+		var a := TAU * (i + 0.5) / 16.0
+		segs.append(c + Vector2.from_angle(a) * rf * 0.7)
+		segs.append(c + Vector2.from_angle(a) * rf * 0.93)
+	E.S(ci, segs, 0.3)
+	for i in 8:
+		D(ci, c + Vector2.from_angle(TAU * i / 8.0) * rf * 0.82, 1.6, 0.5)
+	P(ci, _oct(c, rf * 0.7), 0.55, 1.2)
+	for i in 4:
+		var a := TAU * (i + 0.5) / 4.0
+		O(ci, c + Vector2.from_angle(a) * rf, 3.2, 0.6, 1.2)
+	var rc := rf * 0.56
+	for i in 4:
+		var a := TAU * i / 4.0
+		var ax := Vector2.from_angle(a)
+		var pc := c + ax * rc
+		var tg := ax.orthogonal()
+		var hw := rf * 0.11
+		var hl := rf * 0.2
+		P(ci, PackedVector2Array([pc + ax * hw + tg * hl, pc - ax * hw + tg * hl, pc - ax * hw - tg * hl, pc + ax * hw - tg * hl, pc + ax * hw + tg * hl]), 0.6, 1.2)
+		var ws := PackedVector2Array()
+		for k in 6:
+			var u := -hl + (k + 0.5) * hl * 2.0 / 6.0
+			ws.append(pc + tg * u - ax * hw * 0.8)
+			ws.append(pc + tg * u + ax * hw * 0.8)
+		E.S(ci, ws, 0.35)
+		R(ci, Rect2(pc + ax * (hw + 1.5) - Vector2(3, 3), Vector2(6, 6)), 0.5)
+	var rs := rf * 0.36
+	O(ci, c, rs, 0.75, 1.5)
+	O(ci, c, rs * 0.86, 0.3)
+	L(ci, c + Vector2(-rs * 1.04, 0), c + Vector2(rs * 1.04, 0), 0.5, 1.6)
+	for i in 4:
+		var d := Vector2.from_angle(TAU * (i + 0.5) / 4.0)
+		var p0 := c + d * rs
+		var p1 := c + d * rs * 1.32
+		L(ci, p0 + d.orthogonal() * 2.5, p1 + d.orthogonal() * 2.5, 0.5)
+		L(ci, p0 - d.orthogonal() * 2.5, p1 - d.orthogonal() * 2.5, 0.5)
+		E.flange(ci, p1, d, 5.0, 0.55)
+	var st := PackedVector2Array()
+	for k in 7:
+		var x := -rs * 0.6 + k * rs * 1.2 / 6.0
+		st.append(c + Vector2(x, -rs * 0.28))
+		st.append(c + Vector2(x, rs * 0.28))
+	E.S(ci, st, 0.45, 1.2)
+	R(ci, Rect2(c - Vector2(rs * 0.62, rs * 0.3), Vector2(rs * 1.24, rs * 0.6)), 0.35)
+	D(ci, c, 2.2, 0.85)
+
+
+# the magnet supply: a tall cabinet, its DC bus bars out of the top, two ammeters, the coil-current
+# breaker with its handle, the ramp controller's keypad, louvres at the foot
+static func ax_mps(ci, r: Rect2, font: Font) -> void:
+	var q := casing(ci, r, 0.65)
+	var w := q.size.x
+	var h := q.size.y
+	E.gauge(ci, q.position + Vector2(w * 0.28, h * 0.14), w * 0.17, 0.6)
+	E.gauge(ci, q.position + Vector2(w * 0.72, h * 0.14), w * 0.17, 0.6)
+	var br := sub(q, 0.18, 0.3, 0.82, 0.52)
+	R(ci, br, 0.6, 1.3)
+	L(ci, br.get_center() + Vector2(0, -br.size.y * 0.3), br.get_center() + Vector2(br.size.x * 0.25, br.size.y * 0.2), 0.65, 2.0)
+	D(ci, br.get_center() + Vector2(0, -br.size.y * 0.3), 2.0, 0.7)
+	var kp := sub(q, 0.2, 0.58, 0.8, 0.72)
+	R(ci, kp, 0.45)
+	for i in 4:
+		for j in 2:
+			R(ci, Rect2(kp.position + Vector2(kp.size.x * (0.08 + 0.23 * i), kp.size.y * (0.15 + 0.45 * j)), Vector2(kp.size.x * 0.16, kp.size.y * 0.3)), 0.35)
+	vents(ci, sub(q, 0.12, 0.8, 0.88, 0.96), 0.3)
+	for k in 2:
+		var x := r.position.x + r.size.x * (0.35 + 0.3 * k)
+		R(ci, Rect2(x - 2.0, r.position.y - 6.0, 4.0, 7.0), 0.6)
+	if font != null:
+		E.T(ci, font, q.position + Vector2(2, h * 0.27), "MAG PSU", w - 4, 9, 0.55)
+
+
+# the positron injector: a beamline, its solenoid rings, a gate valve, the source's lead castle
+static func ax_injector(ci, r: Rect2) -> void:
+	var y0 := r.position.y + r.size.y * 0.3
+	var y1 := r.position.y + r.size.y * 0.7
+	var x0 := r.position.x
+	L(ci, Vector2(x0, y0), Vector2(r.end.x - r.size.x * 0.18, y0), 0.6, 1.3)
+	L(ci, Vector2(x0, y1), Vector2(r.end.x - r.size.x * 0.18, y1), 0.6, 1.3)
+	var n := maxi(3, int(r.size.x / 16.0))
+	for i in n:
+		var x := x0 + r.size.x * 0.08 + i * (r.size.x * 0.62) / n
+		R(ci, Rect2(x, r.position.y + 2.0, r.size.x * 0.035, r.size.y - 4.0), 0.5)
+	E.flange(ci, Vector2(x0 + 1.0, r.get_center().y), Vector2.LEFT, r.size.y * 0.45, 0.6)
+	var gv := Rect2(x0 + r.size.x * 0.72, r.position.y, r.size.x * 0.08, r.size.y)
+	R(ci, gv, 0.6, 1.2)
+	L(ci, gv.position + Vector2(gv.size.x * 0.5, 0), gv.position + Vector2(gv.size.x * 0.5, -6.0), 0.55, 1.6)
+	var cs := Rect2(r.end.x - r.size.x * 0.17, r.position.y - 2.0, r.size.x * 0.17, r.size.y + 4.0)
+	R(ci, cs, 0.65, 1.4)
+	E.hatch(ci, cs.grow(-2.0), 4.0, false, 0.25, 30)
+
+
+# the coils' cryocooler compressor: a ribbed housing, two gauges, the flex lines up out of its top
+static func ax_cryo(ci, r: Rect2) -> void:
+	var q := casing(ci, r, 0.6)
+	var ribs := PackedVector2Array()
+	var n := maxi(4, int(q.size.y / 7.0))
+	for i in n:
+		var y := q.position.y + q.size.y * (0.35 + 0.6 * i / n)
+		ribs.append(Vector2(q.position.x + 3.0, y))
+		ribs.append(Vector2(q.end.x - 3.0, y))
+	E.S(ci, ribs, 0.3)
+	E.gauge(ci, q.position + Vector2(q.size.x * 0.3, q.size.y * 0.16), q.size.x * 0.13, 0.55)
+	E.gauge(ci, q.position + Vector2(q.size.x * 0.7, q.size.y * 0.16), q.size.x * 0.13, 0.55)
+	for k in 2:
+		var x := r.position.x + r.size.x * (0.35 + 0.3 * k)
+		P(ci, PackedVector2Array([Vector2(x, r.position.y), Vector2(x, r.position.y - 4.0), Vector2(x + 3.0, r.position.y - 7.0)]), 0.5, 1.4)
+
+
+# a coil's cold head: the motor housing on its flange under the roof, the two stages narrowing down
+static func ax_cold_head(ci, r: Rect2) -> void:
+	var c := r.get_center().x
+	var top := Rect2(c - r.size.x * 0.35, r.position.y, r.size.x * 0.7, r.size.y * 0.4)
+	R(ci, top, 0.6, 1.3)
+	L(ci, Vector2(r.position.x, r.position.y + 1.0), Vector2(r.end.x, r.position.y + 1.0), 0.5, 1.6)
+	var s1 := Rect2(c - r.size.x * 0.2, top.end.y, r.size.x * 0.4, r.size.y * 0.3)
+	R(ci, s1, 0.55)
+	var s2 := Rect2(c - r.size.x * 0.1, s1.end.y, r.size.x * 0.2, r.end.y - s1.end.y)
+	R(ci, s2, 0.55)
+	D(ci, Vector2(c, r.end.y - 2.0), 1.4, 0.6)
+	E.gauge(ci, top.get_center(), top.size.y * 0.32, 0.5)
+
+
+# an ion pump: its body's cells between the magnet yoke, the HV feedthrough
+static func ax_ion_pump(ci, r: Rect2) -> void:
+	var q := casing(ci, r, 0.6)
+	var cells := PackedVector2Array()
+	var n := maxi(3, int(q.size.x / 7.0))
+	for i in n:
+		var x := q.position.x + (i + 0.5) * q.size.x / n
+		cells.append(Vector2(x, q.position.y + q.size.y * 0.25))
+		cells.append(Vector2(x, q.end.y - q.size.y * 0.15))
+	E.S(ci, cells, 0.35)
+	R(ci, sub(q, 0.08, 0.2, 0.92, 0.88), 0.45)
+	O(ci, q.position + Vector2(q.size.x * 0.82, q.size.y * 0.1), 2.6, 0.6)
+
+
+# the gridded ion engine: the discharge chamber and its magnet rings, the cone, the grids, the neutraliser
+static func ax_ion_engine(ci, r: Rect2) -> void:
+	var cy := r.get_center().y
+	var ch := Rect2(r.position.x + r.size.x * 0.05, r.position.y + r.size.y * 0.12, r.size.x * 0.62, r.size.y * 0.76)
+	R(ci, ch, 0.65, 1.4)
+	for k in 4:
+		var x := ch.position.x + ch.size.x * (0.15 + 0.22 * k)
+		R(ci, Rect2(x, ch.position.y - 2.0, ch.size.x * 0.05, ch.size.y + 4.0), 0.5)
+	var gx := r.end.x - r.size.x * 0.06
+	P(ci, PackedVector2Array([Vector2(ch.end.x, ch.position.y), Vector2(gx, r.position.y), Vector2(gx, r.end.y), ch.end]), 0.6, 1.3)
+	for k in 3:
+		L(ci, Vector2(gx + k * 2.5, r.position.y + 2.0), Vector2(gx + k * 2.5, r.end.y - 2.0), 0.5 - 0.1 * k, 1.2)
+	R(ci, Rect2(gx - 6.0, r.position.y - 4.0, 5.0, 6.0), 0.55)
+	E.flange(ci, Vector2(r.position.x + 1.0, cy), Vector2.LEFT, r.size.y * 0.25, 0.5)
+
+
+# the confinement readout: a framed display with its trace, three lamps, the test jack
+static func ax_panel(ci, r: Rect2, font: Font) -> void:
+	var q := casing(ci, r, 0.65)
+	var sc := sub(q, 0.1, 0.1, 0.9, 0.55)
+	R(ci, sc, 0.6, 1.2)
+	var pts := PackedVector2Array()
+	for i in 13:
+		var u := i / 12.0
+		pts.append(sc.position + Vector2(sc.size.x * u, sc.size.y * (0.55 - 0.25 * sin(u * TAU * 1.5))))
+	P(ci, pts, 0.45)
+	for k in 3:
+		O(ci, q.position + Vector2(q.size.x * (0.25 + 0.25 * k), q.size.y * 0.7), 2.2, 0.55)
+	if font != null:
+		E.T(ci, font, q.position + Vector2(2, q.size.y * 0.92), "CONFINE", q.size.x - 4, 8, 0.5)
+
+
+# the quench dump: a resistor bank behind a perforated cover, its cooling fins
+static func ax_quench(ci, r: Rect2) -> void:
+	var q := casing(ci, r, 0.6)
+	var fins := PackedVector2Array()
+	var n := maxi(4, int(q.size.x / 5.0))
+	for i in n:
+		var x := q.position.x + (i + 0.5) * q.size.x / n
+		fins.append(Vector2(x, q.position.y + 3.0))
+		fins.append(Vector2(x, q.end.y - 3.0))
+	E.S(ci, fins, 0.35)
+	R(ci, sub(q, 0.1, 0.35, 0.9, 0.65), 0.5)
+
+
+# a gamma counter: the detector's can and its photomultiplier, a small display
+static func ax_gamma(ci, r: Rect2) -> void:
+	# the dedicated drawing lives with the other named auxiliaries (art_ships.gd, E002–E016)
+	if E.ext != null:
+		E.ext.gamma_probe(ci, r)
+	else:
+		E.gamma_monitor(ci, r)
+
+
+# the ion engine's power processor: stacked converter modules, each with its heat sink and lamp
+static func ax_ppu(ci, r: Rect2) -> void:
+	var q := casing(ci, r, 0.6)
+	var n := maxi(2, int(q.size.y / 16.0))
+	for i in n:
+		var m := Rect2(q.position.x + 2.0, q.position.y + 2.0 + i * (q.size.y - 4.0) / n, q.size.x - 4.0, (q.size.y - 4.0) / n - 2.0)
+		R(ci, m, 0.45)
+		vents(ci, Rect2(m.position.x + m.size.x * 0.55, m.position.y + 2.0, m.size.x * 0.4, m.size.y - 4.0), 0.25)
+		D(ci, m.position + Vector2(m.size.x * 0.15, m.size.y * 0.5), 1.4, 0.6)

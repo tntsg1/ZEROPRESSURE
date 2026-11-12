@@ -1,0 +1,133 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-11",
+	"ship": "s09",
+	"steps": [
+		{
+			"ctrl": "GAS-A",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAS-B",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAS-L",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "H2-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "SPRAY-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "RCS-1P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "RCS-2P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-FC",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "K-B",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "K-BRK",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "E-CAP",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "FC-LOCAL",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAS-A",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAS-B",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAS-L",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "H2-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "SPRAY-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "RCS-1P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "RCS-2P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		}
+	]
+}

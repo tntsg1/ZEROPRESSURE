@@ -274,7 +274,7 @@ WHEN = {"zone_power": "第一次进动力区", "zone_trade": "第一次进贸易
         "store_full": "仓库第一次用到八成", "first_listing": "修好贸易港后第一次挂单", "power_short": "第一次电力不足",
         "order_due": "订单第一次快到期", "first_mould": "第一次换模", "first_trip": "发电机第一次超载跳闸",
         "console_trade": "第一次打开贸易港终端", "console_hall": "第一次打开交易行", "console_queue": "第一次打开加工队列",
-        "console_gas": "第一次打开加工区业务终端", "console_heat": "第一次打开炉台", "console_mill": "第一次打开轧机"}
+        "console_gas": "第一次打开加工区业务终端", "console_heat": "第一次打开炉台", "console_mill": "第一次打开轧机", "antimatter_trap": "AX-40 逆火反物质储存船第一次进坞"}
 cid = None
 n = 0
 for ln in gc.split("\n"):
@@ -289,10 +289,20 @@ for ln in gc.split("\n"):
         n += 1
         entry("G_%s_%d" % (cid, n), m.group(1), m.group(2), "讲解卡第 %d 行" % n, WHEN.get(cid, ""), "一句")
 
+# 7 the next step's own words (scripts/next_step.gd LINES, 2026-11-10/11): the background, the waits, MF-126's core
+section("七、拆船现场“下一步”：后台进度、等待倒计时、炉芯（%s %d %.0f 由游戏填）")
+NWHEN = {"N_bg": "下一步下面的后台行前缀", "N_carry": "设备被拿着时（%s = 设备）", "N_todo": "放下没送进回收口（%s = 设备）",
+         "N_wait_done": "接上软管但没别的事可做时", "N_wait_idle": "只能等、没别的事可做时", "N_eta_s": "等待剩余时间（秒）",
+         "N_eta_m": "等待剩余时间（分钟）", "N_core_cooling": "MF-126 炉芯冷却中（当前温度 → 安全温度）",
+         "N_core_how": "MF-126 炉芯冷却中的说明", "N_core_ready": "MF-126 冷却完，取炉芯那步的前缀",
+         "N_core_room": "MF-126 冷却完但炉芯舱还带压"}
+for m in re.finditer(r'^\t"(N_[a-z0-9_]+)": \["((?:[^"\\]|\\.)*)", "((?:[^"\\]|\\.)*)"\]', rd("scripts/next_step.gd"), re.M):
+    entry(m.group(1), m.group(2), m.group(3), "拆船现场", NWHEN.get(m.group(1), ""), "")
+
 # ids the author wrote that the game no longer knows: kept at the end, not lost
 lost = [k for k in old if k not in used]
 if lost:
-    section("七、游戏里已经不用的编号")
+    section("八、游戏里已经不用的编号")
     for k in lost:
         entry(k, old[k][0], old[k][1], on=False)
 

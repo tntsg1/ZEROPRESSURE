@@ -170,6 +170,12 @@ static func add_port2() -> void:
 	equip_x.erase("equip2")
 
 
+# AX-40 逆火: the antimatter cradle, over the berth's far end — the trap goes in whole, by crane,
+# still confined (scripts/antimatter.gd); nothing else does
+static func add_anti() -> void:
+	ZONES["anti"] = {"pos": Vector2(FLOOR_X1 - 6.0, -8.4 - LIFT), "face": Vector2(0, 1), "w": 5.4, "kind": "anti"}
+
+
 # what a mouth takes: "equip", "metal" or "hazard" (a second bay stands for the first)
 static func kind(id: String) -> String:
 	return ZONES[id].get("kind", id) if ZONES.has(id) else id
@@ -711,6 +717,11 @@ func _physics_process(dt: float) -> void:
 				var verdict: Dictionary = game.judge(b, kd)
 				if verdict.ok:
 					_start_swallow(b, id)
+				elif verdict.reason == "drain" and game.mishap != null:
+					game.mishap.drain(b, id)
+				elif verdict.reason == "mishap" and game.mishap != null:
+					# 认真拆有奖励: something harmless still in it — a small mishap, then it is taken
+					game.mishap.trigger(b, id)
 				else:
 					b.rejected_t = 2.2
 					zone_state[id].reject = 1.0
@@ -2061,6 +2072,7 @@ static func zone_col(id: String, a: float = 1.0, k: float = 1.0) -> Color:
 	match id:
 		"metal": return Pal.heat(a, k)
 		"hazard": return Pal.tint(Pal.FLUID, a, k)
+		"anti": return Color(0.5 * k, 0.86 * k, 1.25 * k, a)
 	return Pal.ink(a, k)
 
 

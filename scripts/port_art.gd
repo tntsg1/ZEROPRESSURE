@@ -25,6 +25,16 @@ const BOX := Vector2(60.0, 28.0)        # a district's main block
 # the zone the operator is inside: its shell is drawn see-through (set by port_structure)
 static var inside := ""
 static var _ghost := false
+# 无缝进出 (scripts/port_structure.gd _reveal): the district whose inside shows, the X-ray hole over its
+# shell round the drone (world px; < 0 none)
+static var view := ""
+static var reveal_px := -1.0
+static var reveal_at := Vector2.ZERO
+
+
+# the shell stays whole and is seen through the hole, not swapped for an outline when inside
+static func seamless() -> bool:
+	return Pal.solid and hull_style > 0
 static var _code := ""          # the district's stencil code while its block is drawn
 # every lit lamp drawn this frame: [world px, radius px, colour]; scripts/backdrop.gd draws
 # a soft additive halo on each (the title screen draws the port without halos)
@@ -308,7 +318,7 @@ static func _district(ci, c: Vector2, zone: String, M: float, z: float, t: float
 	var lw := 1.0 / z
 	var ink := _ink(n)
 	var r := Rect2(c - BOX * 0.5 * M, BOX * M)
-	_ghost = inside == zone
+	_ghost = inside == zone and not seamless()
 	_code = "%s-%d" % [{"power": "PWR", "tug": "TUG", "process": "PRC", "trade": "TRD", "cargo": "CGO", "salvage": "SLV"}.get(zone, "Z"), n]
 	match zone:
 		"power": _power(ci, c, r, M, lw, t, n)

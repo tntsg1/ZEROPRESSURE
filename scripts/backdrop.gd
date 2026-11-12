@@ -25,6 +25,11 @@ var builds := 0           # still parts built so far (tests: nothing rebuilds wh
 var dyn: Node2D
 var star_layer: Node2D
 var lines_mat: ShaderMaterial
+# 无缝进出: the district shell the drone is going into (PortArt.view), lifted over its inside and seen
+# through a soft hole round the drone; its moving pieces with it
+var veil_mat: ShaderMaterial
+var veil_dyn: Node2D
+var _veiled := ""
 var _ambient_key: Array = []
 var _next_redraw_ms := 0
 
@@ -56,6 +61,16 @@ func _ready() -> void:
 		n.draw.connect(_build.bind(n, str(part)))
 		add_child(n)
 		parts[part] = n
+	veil_mat = ShaderMaterial.new()
+	veil_mat.shader = lines_mat.shader
+	veil_dyn = Node2D.new()
+	veil_dyn.name = "PortVeilMoving"
+	veil_dyn.z_index = 4
+	veil_dyn.z_as_relative = false
+	veil_dyn.material = veil_mat
+	veil_dyn.visible = false
+	veil_dyn.draw.connect(_draw_veil_moving)
+	add_child(veil_dyn)
 	dyn = Node2D.new()
 	dyn.name = "PortMoving"
 	dyn.draw.connect(_draw_moving)
@@ -84,7 +99,7 @@ func _key(part: String, lit: Dictionary) -> String:
 		"base": return JSON.stringify(lit)
 		"ark": return "on"
 	# 工业剖面: the hulls drawn in the cutaway picture rebuild when F9 switches it
-	return "%d|%s|%s" % [int(lit.get(part, 0)), str(PortArt.inside == part), str(Pal.solid) + str(PortArt.light_scheme) + str(PortArt.hull_style)]
+	return "%d|%s|%s" % [int(lit.get(part, 0)), str(PortArt.inside == part and not PortArt.seamless()), str(Pal.solid) + str(PortArt.light_scheme) + str(PortArt.hull_style)]
 
 
 func _process(_dt: float) -> void:
@@ -104,6 +119,7 @@ func _process(_dt: float) -> void:
 		halo_tex = Fx.make_glow_texture(1.6)
 	if game != null and game.cam != null:
 		lines_mat.set_shader_parameter("zoom", game.cam_zoom())
+	_veil()
 	var lit := Port.lit() if _shows_port() else {}
 	for part in parts:
 		var k := _key(part, lit)
@@ -124,6 +140,47 @@ func _process(_dt: float) -> void:
 		dyn.queue_redraw()
 		star_layer.queue_redraw()
 		halo.queue_redraw()
+
+
+# 无缝进出: lift the shell being entered over the inside (z 4: over the machines, under the drone)
+# and cut the hole in it; let the others lie where they were
+func _veil() -> void:
+	var vz := PortArt.view if PortArt.reveal_px >= 0.0 and parts.has(PortArt.view) and _shows_port() and not legacy else ""
+	if vz != _veiled:
+		if parts.has(_veiled):
+			var o: Node2D = parts[_veiled]
+			o.z_index = 0
+			o.z_as_relative = true
+			o.material = lines_mat
+		_veiled = vz
+		if vz != "":
+			var n: Node2D = parts[vz]
+			n.z_index = 4
+			n.z_as_relative = false
+			n.material = veil_mat
+		veil_dyn.visible = vz != ""
+		dyn.queue_redraw()
+	if vz == "":
+		return
+	var z: float = game.cam_zoom() if game != null and game.cam != null else 1.0
+	veil_mat.set_shader_parameter("zoom", z)
+	veil_mat.set_shader_parameter("hole_c", PortArt.reveal_at)
+	veil_mat.set_shader_parameter("hole_r", PortArt.reveal_px)
+	veil_mat.set_shader_parameter("hole_soft", 3.5 * Geom.M)
+	veil_mat.set_shader_parameter("edge_w", 1.6 / maxf(z, 0.05))
+	veil_mat.set_shader_parameter("edge_col", Color(0.86, 0.84, 0.78, 0.0 if Txt.reduce_motion else 0.55))
+	veil_dyn.queue_redraw()
+
+
+func _draw_veil_moving() -> void:
+	if _veiled == "" or game == null or game.cam == null:
+		return
+	var z: float = game.cam_zoom()
+	PortArt._recording = false
+	PortArt._rz = z
+	var t := _time()
+	for f: Callable in anims.get(_veiled, []):
+		f.call(veil_dyn, t, z)
 
 
 # a still part, built once into its node's retained mesh
@@ -164,7 +221,7 @@ func _draw_moving() -> void:
 	PortArt._rz = z
 	var t := _time()
 	for part in PortArt.PARTS:
-		if not seen[part]:
+		if not seen[part] or part == _veiled:
 			continue
 		for f: Callable in anims.get(part, []):
 			f.call(dyn, t, z)

@@ -33,6 +33,8 @@ static func on(_g) -> bool:
 #   near      among the safety work, and among a plain ship's units, the nearest to the drone first
 # The background is in of(g).bg: [{kind: "hose"|"carry"|"todo", t, at}]. PACE_ON false: the guide as before.
 static var PACE_ON := true
+# 2026-11-11 等待步骤: a step only waiting says how long, the mark goes to what can be done meanwhile (false: as before)
+static var WAIT_ON := true
 static var _skip_todo := false
 static var _bg: Array = []
 static var _memo_f := -1
@@ -41,7 +43,7 @@ static var _memo: Dictionary = {}
 
 
 static func of(g) -> Dictionary:
-	if not PACE_ON:
+	if not PACE_ON or g == null or not on(g):
 		return _of(g)
 	var f := Engine.get_process_frames() + Engine.get_physics_frames() * 100000
 	if f == _memo_f and _memo_g == g and is_instance_valid(g):
@@ -64,7 +66,9 @@ static func of(g) -> Dictionary:
 		else:
 			# 占位 (待用户定稿): nothing to do meanwhile that does not wait on it
 			st = st.duplicate()
-			st.how = str(st.how) + (w(" · 等泄压完成", " · WAIT FOR IT TO FINISH") if str(st.how) != "" else w("等泄压完成", "WAIT FOR IT TO FINISH"))
+			st.how = str(st.how) + (" · " if str(st.how) != "" else "") + line("N_wait_done")
+	if WAIT_ON and not st.is_empty() and st.get("wait", false):
+		st = _while_waiting(g, st)
 	if not st.is_empty():
 		st = st.duplicate()
 		st.bg = _bg.duplicate()
@@ -100,6 +104,8 @@ static func _of(g) -> Dictionary:
 			return _plain(g)
 		"qc30":
 			return _qc30(g)
+		"ax40":
+			return _ax40(g)
 		"jd38":
 			return _jd38(g)
 		"h22":
@@ -167,6 +173,116 @@ static func _of(g) -> Dictionary:
 
 static func _step(t: String, how: String, at: Vector2, wait := false) -> Dictionary:
 	return {"t": t, "how": how, "at": at, "wait": wait}
+
+
+# ---------------------------------------------------------------- waiting (2026-11-11)
+# user on MF-126: "这个引导，他要我干啥呀？为什么一直要我下去，一直要我标中间那个东西啊？然后呢，给我一个提示啊！"
+# A step that is only waiting (the core cooling, the wheels slowing, the field dumping…) is said plainly with
+# the time it will take, and the mark goes to work that can be done meanwhile; the wait goes on in the
+# background with its countdown. Meanwhile never the power, a generator or a line drained (the waits mostly
+# run on them: the pumps, the coolers, the brakes) — only rooms vented, a preloaded arm made safe, and the
+# units of a ship whose units come off in any order (and MF-126's not on its cooling: the racks, the probe).
+
+# the words the pace and the waits added (2026-11-10/11): data/台词.txt has the author's say over them
+# (tools/export_lines.py lists them under "N_"); these are the defaults
+const LINES := {
+	"N_bg": ["后台 · ", "BACKGROUND · "],
+	"N_carry": ["%s 送回收中", "%s ON ITS WAY TO A MOUTH"],
+	"N_todo": ["待办：把 %s 送进回收口", "TO DO: %s INTO A MOUTH"],
+	"N_wait_done": ["等泄压完成", "WAIT FOR IT TO FINISH"],
+	"N_wait_idle": ["不用守着，到了会提示", "No need to watch it; it will say when"],
+	"N_eta_s": [" · 约 %d 秒", " · ~%d s"],
+	"N_eta_m": [" · 约 %d 分钟", " · ~%d MIN"],
+	"N_core_cooling": ["炉芯冷却中 · %.0f°C → %.0f°C", "THE CORE IS COOLING · %.0f → %.0f °C"],
+	"N_core_how": ["不用守着：换热泵别断电、冷却回路别放空；这期间先拆别处", "No need to watch it: keep the pumps powered and the loop full; strip elsewhere meanwhile"],
+	"N_core_ready": ["可以取炉芯了：", "THE CORE CAN COME OUT: "],
+	"N_core_room": ["炉芯冷下来了，先抽空它的舱 · ", "THE CORE IS COOL; ITS ROOM FIRST · "],
+}
+
+
+static func line(id: String) -> String:
+	var d: Array = LINES.get(id, ["", ""])
+	var p: Array = Lines.get_pair(id) if Lines.has(id) else []
+	# the file trims its lines: one the author left as it was keeps its spaces (" · 约 %d 秒")
+	if not p.is_empty() and str(p[0]) != "" and str(p[0]).strip_edges() != str(d[0]).strip_edges():
+		return str(p[0]) if Txt.zh or str(p[1]) == "" else str(p[1])
+	return str(d[0] if Txt.zh else d[1])
+
+
+static var _wait_hist := {}      # wait key -> [sim time, value] when first seen at that value
+
+
+# the seconds a wait still takes, from how fast its first figure has been falling (-1: not known yet)
+static func eta(g, st: Dictionary) -> float:
+	var t: String = str(st.get("t", ""))
+	var rx := RegEx.create_from_string("[-0-9.]+")
+	var nums := rx.search_all(t)
+	if nums.is_empty():
+		return -1.0
+	var v := float(nums[0].get_string())
+	var target := float(nums[1].get_string()) if nums.size() > 1 else 0.0
+	var how := RegEx.create_from_string("(?:降到|under|below) ?([0-9.]+)").search(str(st.get("how", "")))
+	if nums.size() < 2 and how != null:
+		target = float(how.get_string(1))
+	var key := rx.sub(t, "#", true)
+	var now: float = float(g.sys.time) if g.get("sys") != null else Time.get_ticks_msec() / 1000.0
+	var h: Array = _wait_hist.get(key, [])
+	if h.is_empty() or v > float(h[1]) + 0.001:
+		_wait_hist[key] = [now, v]
+		return -1.0
+	var dt := now - float(h[0])
+	var dv := float(h[1]) - v
+	if dt < 1.5 or dv <= 0.0:
+		return -1.0
+	return maxf(0.0, (v - target) / (dv / dt))
+
+
+static func _eta_words(g, st: Dictionary) -> String:
+	var e := eta(g, st)
+	if e < 0.0:
+		return ""
+	if e >= 90.0:
+		return line("N_eta_m") % int(ceil(e / 60.0))
+	return line("N_eta_s") % maxi(1, int(ceil(e)))
+
+
+# what can be done while st waits: the rooms vented, the preloaded arms, the free units
+static func _meanwhile(g, st: Dictionary) -> Array:
+	var out: Array = []
+	# a ship with an order of its own (ARK-01's hub before its tubes, OB-90's cover before the knife…): its
+	# waits are waited, told plainly with the time; only the ships whose work comes in any order go on
+	if not _plain_ship(g) and CoreAsset.ship_key(g) != "mf126":
+		return out
+	for x in _safety_list(g):
+		if str(x.t).begins_with(w("抽空", "VENT")) and not str(x.t).begins_with(w("抽空燃料", "DRAIN")) and FLUIDS.values().all(func(f): return str(x.t).find(str(f[0 if Txt.zh else 1])) < 0):
+			out.append(x)
+	var pl := _preloads(g)
+	if not pl.is_empty() and not pl.get("wait", false):
+		out.append(pl)
+	if _plain_ship(g):
+		out.append_array(_unit_list(g))
+	elif CoreAsset.ship_key(g) == "mf126" and g.get("furnace") != null:
+		var core := str(g.furnace.cfg.get("core", ""))
+		for u in _unit_list(g):
+			if str(u.t).find(core) < 0:
+				out.append(u)
+	var at: Vector2 = st.get("at", Vector2.INF)
+	# nothing at the very thing being waited on
+	return out.filter(func(x): return not (at.is_finite() and (x.at as Vector2).is_finite() and (x.at as Vector2).distance_to(at) < 1.0 * Geom.M))
+
+
+static func _while_waiting(g, st: Dictionary) -> Dictionary:
+	var words := str(st.t) + ("" if st.get("eta_known", false) else _eta_words(g, st))
+	var alt := _nearest(g, _meanwhile(g, st))
+	if not alt.is_empty():
+		_bg.append({"kind": "wait", "t": words, "at": st.at})
+		return alt
+	var out := st.duplicate()
+	out.t = words
+	# 占位 (待用户定稿): nothing to do meanwhile — say it is only waiting
+	if str(out.how).find(line("N_wait_idle").substr(0, 4)) < 0 and str(out.how).find(w("不用守着", "No need")) < 0:
+		out.how = line("N_wait_idle") + (w("；", "; ") + str(out.how) if str(out.how) != "" else "")
+	return out
 
 
 # ---------------------------------------------------------------- the pace (2026-11-10)
@@ -511,11 +627,11 @@ static func _take(g, tag: String, fix: String = "") -> Dictionary:
 		if held(g, p.body):
 			# taken: on its way; the next step comes now
 			_grabbed(g)[tag] = true
-			_bg.append({"kind": "carry", "t": w("%s 送回收中", "%s ON ITS WAY TO A MOUTH") % tag, "at": at})   # 占位
+			_bg.append({"kind": "carry", "t": line("N_carry") % tag, "at": at})
 			return {}
 		if _skip_todo and _grabbed(g).has(tag):
 			# put down short of a mouth: a to-do in the background, not the main step while there is other work
-			_bg.append({"kind": "todo", "t": w("待办：把 %s 送进回收口", "TO DO: %s INTO A MOUTH") % tag, "at": at})   # 占位
+			_bg.append({"kind": "todo", "t": line("N_todo") % tag, "at": at})
 			return {}
 	if p.body == null:
 		return _step(w("拆下 %s", "TAKE %s OFF") % tag, fix if fix != "" else w("维护工具（4）拧下它的固定件，别用激光切", "wrench (4) on its fixings, never the laser"), at)
@@ -1124,7 +1240,38 @@ static func _mf126(g) -> Dictionary:
 			if not pw.is_empty():
 				pw.t = w("换热泵没电：接船坞辅助供电", "THE PUMPS ARE DEAD: BERTH SUPPLY")
 				return pw
+		if WAIT_ON:
+			# 2026-11-11 (user: "给我一个提示啊"): plainly a wait, how long, and what to keep doing meanwhile
+			var safe_t: float = float(fu.cfg.get("safe", 150.0))
+			var left: float = (fu.core_temp() - safe_t) / maxf(0.01, float(fu.cfg.get("cool", 4.0))) if fu.cooling() else -1.0
+			g.set_meta("ns_core_hot", true)
+			# 机制说明 (可改)
+			var cw := line("N_core_cooling") % [fu.core_temp(), safe_t]
+			if left >= 0.0:
+				cw += line("N_eta_s") % int(ceil(left)) if left < 90.0 else line("N_eta_m") % int(ceil(left / 60.0))
+			var cs := _step(cw, line("N_core_how"), _tag_at(g, str(fu.cfg.get("core", ""))), true)
+			cs.eta_known = true
+			return cs
 		return _step(w("炉芯冷却中：%.0f°C / %.0f°C", "THE CORE IS COOLING: %.0f OF %.0f °C") % [fu.core_temp(), float(fu.cfg.get("safe", 150.0))], w("换热泵别断电，冷却回路别放空", "keep the pumps powered and the loop full"), _tag_at(g, str(fu.cfg.get("core", ""))), true)
+	if WAIT_ON and fu != null and fu.active() and g.has_meta("ns_core_hot"):
+		# cooled after a wait: the mark back on the core, said so
+		var core := str(fu.cfg.get("core", ""))
+		var cp = g.world.tag(core)
+		var room: String = g.world.room_at(_tag_at(g, core)) if cp != null and not cp.gone else ""
+		if room == "" or g.sys.P(room) <= LOW:
+			var ct := _take(g, core)
+			if not ct.is_empty():
+				ct.t = line("N_core_ready") + str(ct.t)
+				return ct
+		elif _gas_port(g, room) != "":
+			# its room still under pressure: that first, said what it is for (the core waits on it)
+			var vs := _open_room(g, room)
+			if vs.is_empty():
+				var port := _gas_port(g, room)
+				vs = _step(w("抽空 %s：接 %s", "VENT %s AT %s") % [_room(g, room), port], w("气液回收（5）对着接口，现在 %.0f kPa", "hose (5) on the port, %.0f kPa now") % g.sys.P(room), _ctrl_at(g, port))
+			if not vs.get("wait", false):
+				vs.t = line("N_core_room") + str(vs.t)
+			return vs
 	var pl := _preloads(g)
 	if not pl.is_empty():
 		return pl
@@ -1228,7 +1375,7 @@ static func _fx70(g) -> Dictionary:
 			var st := _flip(g, dump, true, w("开泄能开关：拨 %s", "CLOSE THE DUMP: %s") % dump, w("维护工具（4）；之后线圈储能慢慢放进泄能电阻，制冷别断", "wrench (4); the energy runs down into the dump resistor; keep the cooling on"))
 			if not st.is_empty():
 				return st
-		return _step(w("泄能中：还剩 %d%%", "DUMPING: %d%% LEFT") % int(round(mg.field())), w("降到 5%% 以下再断电、动线圈支架；别断制冷", "under 5%% before the power or the supports; keep the cooling on"), _tag_at(g, str(mg.cfg.get("plant", ""))), true)
+		return _step(w("泄能中：还剩 %d%%", "DUMPING: %d%% LEFT") % int(round(mg.field())), w("降到 5% 以下再断电、动线圈支架；别断制冷", "under 5% before the power or the supports; keep the cooling on"), _tag_at(g, str(mg.cfg.get("plant", ""))), true)
 	return _plain(g)
 
 
@@ -1420,6 +1567,23 @@ static func _cl104(g) -> Dictionary:
 
 
 # ---------------------------------------------------------------- 111 号: QC-30, the fridge warmed in order
+
+# AX-40 逆火: the one ship the power must not go off first. Venting and opening up as usual; never
+# the main switch until the portable confinement supply carries the trap (scripts/antimatter.gd)
+static func _ax40(g) -> Dictionary:
+	var a = g.anti
+	if a == null or not a.active() or a.done != "" or a.trap == null or a.trap.gone:
+		return _plain(g)
+	var at: Vector2 = g.world.frame(a.trap) * Geom.centroid(a.trap.poly)
+	if not a.portable():
+		if a.portable_k() > 0.0:
+			return _step(w("便携约束电源接管中：%d%%", "PORTABLE SUPPLY TAKING OVER: %d%%") % int(a.portable_k() * 100.0), w("读数变成“双路供电”之前别断主电", "not the main bus before it reads dual supply"), at, true)
+		var st := _make_safe(g)
+		if not st.is_empty() and str(st.get("t", "")).find(w("断电", "POWER OFF")) < 0:
+			return st
+		return _step(w("先给储存阱接便携约束电源", "THE PORTABLE SUPPLY ON THE TRAP FIRST"), w("部署（6）点储存阱；储存阱只靠主电，断电即湮灭，这艘船别先拉主闸", "deploy (6) on the trap; it runs on the main bus only — no power, it annihilates. Not the main switch first"), at)
+	return _plain(g)
+
 
 static func _qc30(g) -> Dictionary:
 	var d = g.dilution

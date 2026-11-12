@@ -1,0 +1,49 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-11",
+	"ship": "pod",
+	"steps": [
+		{
+			"ctrl": "GAS-F",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "RCS-1P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "RCS-2P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-P",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAS-F",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "RCS-1P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "RCS-2P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		}
+	]
+}

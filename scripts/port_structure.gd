@@ -12,6 +12,14 @@ class_name PortStructure
 var game
 var t := 0.0
 var inside := ""                 # the zone the operator is in ("" outside)
+# 无缝进出 (user 2026-11-11: the hard line where the shell turned to the inside "显得很出戏"): the
+# district whose inside is drawn — the one the drone is in, nearing or has just left — and how far
+# round the drone its shell is seen through (m: an X-ray hole that opens as it nears the door and
+# fills the district once inside, closing again behind it). PortArt.view and backdrop.gd show it.
+var view := ""
+var reveal_m := 0.0
+const REVEAL_NEAR := 8.0         # m outside a shell its inside begins to show
+const REVEAL_ALL := 80.0         # m: a hole this big sees the whole district
 var walls: StaticBody2D
 var interiors                    # the districts' pipes, platforms and machinery (40 号)
 const Interiors = preload("res://scripts/district_interiors.gd")
@@ -367,9 +375,14 @@ func _process(dt: float) -> void:
 	_tug_hulls_tick()
 	if not visible:
 		PortArt.inside = ""
+		view = ""
+		reveal_m = 0.0
+		PortArt.view = ""
+		PortArt.reveal_px = -1.0
 		return
 	inside = zone_at(game.drone.global_position) if game.drone != null else ""
 	PortArt.inside = inside
+	_reveal(dt)
 	if inside != "" and not game.in_vehicle():
 		Tram.discover(inside)
 	queue_redraw()
@@ -413,7 +426,7 @@ func _draw() -> void:
 				draw_line(gp, gp + n * 1.2 * m, Pal.tint(Pal.AIR, 0.7, 1.3), 3.0 * lw)
 			var lamp := Pal.tint(Pal.AIR, 0.5 + 0.3 * sin(t * 3.0), 1.4)
 			draw_circle(p + n * 0.6 * m, 0.25 * m, lamp)
-			if inside == zone:
+			if view == zone:
 				_interior(zone, r, m, lw, font, z)
 		# corridor walls
 		var axis := (p - c).normalized()
@@ -494,10 +507,61 @@ func _stock(r: Rect2, m: float, lw: float, font: Font, z: float) -> void:
 			draw_set_transform(Vector2.ZERO)
 
 
+# 无缝进出: the district to show the inside of and the hole's radius, eased (never a cut: with less
+# motion it only eases faster)
+func _reveal(dt: float) -> void:
+	if not PortArt.seamless() or game.drone == null or inside == "ring":
+		view = inside
+		reveal_m = REVEAL_ALL if view != "" else 0.0
+		PortArt.view = view
+		PortArt.reveal_px = -1.0
+		return
+	var p: Vector2 = game.drone.global_position
+	var m := M()
+	var best := ""
+	var depth := -INF
+	for zone in PortArt.ANGLE:
+		if zone == "salvage":
+			continue
+		var r := box(zone)
+		var d: float
+		if r.has_point(p):
+			d = minf(minf(p.x - r.position.x, r.end.x - p.x), minf(p.y - r.position.y, r.end.y - p.y))
+		else:
+			d = -Vector2(maxf(0.0, maxf(r.position.x - p.x, p.x - r.end.x)), maxf(0.0, maxf(r.position.y - p.y, p.y - r.end.y))).length()
+		if d > depth:
+			depth = d
+			best = zone
+	var target := 0.0
+	if depth > -REVEAL_NEAR * m:
+		target = REVEAL_ALL if depth > 0.0 else (depth / m + REVEAL_NEAR) * 2.2
+	else:
+		best = ""
+	if best != view and view != "" and depth > 0.0:
+		# in another district without coming through its door (a jump, a ride): show it at once
+		view = best
+		reveal_m = REVEAL_ALL
+	elif best != view and view != "":
+		# another district: the old hole closes first
+		target = 0.0
+	elif best != "":
+		view = best
+	reveal_m += (target - reveal_m) * (1.0 - exp(-dt * (14.0 if Txt.reduce_motion else 5.0)))
+	if target <= 0.0 and reveal_m < 0.15:
+		reveal_m = 0.0
+		view = best if best != "" and best == view else ""
+	PortArt.view = view
+	PortArt.reveal_px = reveal_m * m if view != "" else -1.0
+	PortArt.reveal_at = p
+
+
 func _interior(zone: String, r: Rect2, m: float, lw: float, font: Font, z: float) -> void:
 	# 101 号: the processing district draws its own hall, floor and all (scripts/process_art.gd); this
 	# veil over it dimmed the furnace and the line
 	if zone in ["process", "cargo"]:
+		return
+	# 六区内部质感: the hall is scripts/district_style.gd's, under the machines (district_interiors.gd)
+	if DistrictStyle.on() and zone == "tug":
 		return
 	draw_rect(r, Color(0.03, 0.034, 0.04, 0.55))
 	var gx := r.position.x

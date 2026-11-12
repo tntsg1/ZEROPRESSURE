@@ -49,6 +49,10 @@ var package_mode := false
 var package_worker := false
 var _cutter_service = null
 var cut_motion: Dictionary = {}
+# 2026-11-11 切割宝典: where the steps came from — "own" (this career's recording), "codex" (the
+# shipwrights' plan, scripts/plan_codex.gd) or "" (none / the grey heron preset)
+var source := ""
+const Codex = preload("res://scripts/plan_codex.gd")
 
 func cutter_service():
 	if package_worker and game.plan != null and game.plan != self:
@@ -69,7 +73,9 @@ func setup(g) -> void:
 	packages = load("res://scripts/plan_packages.gd").new(self)
 	if g.career() and Career.usable():
 		Career.load_or_new()
-		steps = Career.data.get("plans", {}).get(g.ship_id, []).duplicate(true)
+		var picked: Array = Codex.pick(g.ship_id) if not g.manual_only() else [[], ""]
+		steps = picked[0]
+		source = str(picked[1])
 		if steps.is_empty() and g.ship_id == "gr7":
 			preset = true
 			_preset_driver = load("res://scripts/grey_heron_plan.gd")
@@ -325,7 +331,11 @@ func commit() -> void:
 	if Career.data.is_empty() or not game.career() or game.dev_job():
 		result_key = "plan_career_only"
 		return
-	if rec.is_empty():
+	if source == "codex" and machine_steps > 0:
+		# the shipwrights' plan ran this job: what the operator added is not a plan of their own
+		result_key = "as_plan_codex_ran"
+		result_arg = ""
+	elif rec.is_empty():
 		result_key = "plan_preset_ready" if preset else ("plan_record_blocked" if record_blocked != "" else ("plan_rejected" if rejected != "" else "plan_no_actions"))
 		result_arg = record_blocked if record_blocked != "" else rejected
 	else:
@@ -350,7 +360,7 @@ func result_text() -> String:
 
 func save_state() -> Dictionary:
 	var d := {"rec": rec.duplicate(true), "i": i, "record_blocked":record_blocked, "rejected":rejected, "preset":preset,
-		"steps": steps.duplicate(true), "watch": haul_watch.duplicate(true), "cuts": cuts_rec, "hauls": hauls_rec}
+		"steps": steps.duplicate(true), "watch": haul_watch.duplicate(true), "cuts": cuts_rec, "hauls": hauls_rec, "source": source}
 	d.cut_motion = cut_motion.duplicate(true)
 	if not package_worker and is_instance_valid(_cutter_service): d.cutter = _cutter_service.save_state()
 	if packages != null:
@@ -367,6 +377,7 @@ func load_state(d: Dictionary) -> void:
 	if d.has("steps"):
 		preset = bool(d.get("preset", false))
 		steps = d.steps.duplicate(true)
+		source = str(d.get("source", "own" if not preset and not steps.is_empty() else ""))
 	elif preset and not d.get("preset",false):
 		i = 0
 	record_blocked = str(d.get("record_blocked", ""))
@@ -426,7 +437,26 @@ func toggle() -> String:
 # so the plan saved at the settlement is the one replayed, with what was added and without what
 # was skipped (Shift + the plan key skips the step the machine is on)
 func editing() -> bool:
-	return not preset and not package_mode and Methods.level("cutter") >= 2
+	return not preset and not package_mode and source != "codex" and Methods.level("cutter") >= 2
+
+
+# 切割宝典: both plans for this type — Shift + the plan key (not running) changes which one P runs
+func can_switch() -> bool:
+	return game != null and not running and Codex.owned() and Codex.has(game.ship_id) and not Career.data.get("plans", {}).get(game.ship_id, []).is_empty()
+
+
+func switch_source() -> String:
+	if not can_switch():
+		return ""
+	var to := "own" if source == "codex" else "codex"
+	Codex.set_pick(game.ship_id, to)
+	var picked: Array = Codex.pick(game.ship_id)
+	steps = picked[0]
+	source = str(picked[1])
+	i = 0
+	wait = ""
+	haul_watch.clear()
+	return "as_plan_src_" + source
 
 
 func _passed() -> void:
@@ -701,7 +731,7 @@ func _step_cut(st: Dictionary, dt: float) -> void:
 	var at: Vector2 = game.world.frame(p)*front
 	# 104 号: the cutter working your plan is a dismantling method; before it is learned the
 	# plan still works the controls and hoses, and holds at each cut for you to make by hand
-	if game.career() and not game.dev_job() and not game.has_upgrade("cutter"):
+	if game.career() and not game.dev_job() and not game.has_upgrade("cutter") and source != "codex":
 		wait = "plan_needs_method"
 		wait_arg = Methods.name_of("cutter")
 		return
@@ -868,8 +898,11 @@ func status() -> Array:
 	if package_mode and packages != null: return packages.summary()
 	# [title, line] for the HUD; empty when there is nothing to show
 	if steps.is_empty():
+		# 2026-11-11: what is being written down for this type's plan, while the operator works
+		if game != null and game.career() and not game.dev_job() and not game.manual_only():
+			return [Txt.t("as_plan_rec_title"), Txt.t("as_plan_rec_stopped" if record_blocked != "" else "as_plan_rec_line") % rec.size()]
 		return []
-	var head := Txt.t("plan_preset_title" if preset else "plan_title") % [mini(i + (0 if i >= steps.size() else 1), steps.size()), steps.size()]
+	var head := Txt.t("plan_preset_title" if preset else ("as_plan_title_codex" if source == "codex" else "as_plan_title")) % [mini(i + (0 if i >= steps.size() else 1), steps.size()), steps.size()]
 	if i >= steps.size():
 		if not haul_watch.is_empty():
 			var obstruction := transport_wait()

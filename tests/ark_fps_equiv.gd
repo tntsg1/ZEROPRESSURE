@@ -24,6 +24,9 @@ func _old_warn(front: Vector2, near: float):
 		var q = g.world.pieces[id]
 		if q.gone or q.cls != "equip" or not q.intact:
 			continue
+		# a turning wheel's pieces (scripts/rings.gd) are out of reach where the file put them
+		if g.world.turning.has(id):
+			continue
 		var lp: Vector2 = g.world.frame(q).affine_inverse() * front - g.world.door_offset(q)
 		var bb := Geom.bbox(q.poly).grow(near)
 		if not bb.has_point(lp):

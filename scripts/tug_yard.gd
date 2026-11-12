@@ -181,7 +181,21 @@ static func advance(game, dt: float) -> bool:
 
 # the line for the tug station and the star map: the yard and the tugs
 static func status() -> String:
-	var parts: Array = [w("拖船泊位 %d/%d", "YARD %d/%d") % [taken().size(), slots()], w("最大拖带船长 %s", "TOWS UP TO %s") % ("%.0f m" % max_len() if max_len() < 1000.0 else w("不限", "ANY LENGTH"))]
+	# 138 号: the count split by what holds each berth, so it adds up to what the page shows
+	var tk := taken()
+	var n_way := tk.filter(func(a): return str(a.get("state", "")) == "towing").size()
+	var n_held := tk.filter(func(a): return str(a.get("state", "")) == "held").size()
+	var split: Array = []
+	if n_way > 0:
+		split.append(w("在途 %d", "%d ON THE WAY") % n_way)
+	if n_held > 0:
+		split.append(w("扣留 %d", "%d HELD") % n_held)
+	if tk.size() - n_way - n_held > 0:
+		split.append(w("待开工 %d", "%d READY") % (tk.size() - n_way - n_held))
+	var head := w("拖船泊位 %d/%d", "YARD %d/%d") % [tk.size(), slots()]
+	if not split.is_empty():
+		head += w("（%s）", " (%s)") % w("、", ", ").join(split)
+	var parts: Array = [head, w("最大拖带船长 %s", "TOWS UP TO %s") % ("%.0f m" % max_len() if max_len() < 1000.0 else w("不限", "ANY LENGTH"))]
 	for i in TugFleet.count():
 		var n: String = TugFleet.NAMES[i]
 		if not TugFleet.home(i):

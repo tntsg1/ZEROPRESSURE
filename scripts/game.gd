@@ -27,6 +27,7 @@ var liner                     # a liner's escape pods and observation glass (PS-
 var boxbeam                   # a container wall that is the ship's beam (CF-90), scripts/boxbeam.gd
 var sail                      # a light sail held flat by its stays (SA-200), scripts/sail.gd
 var reactor                   # a shut-down reactor's dose field (NR-95), scripts/reactor.gd
+var anti                      # AX-40's antimatter trap: no power, it annihilates (scripts/antimatter.gd)
 var softshell                 # inflatable bags on a rigid spine (IH-55), scripts/softshell.gd
 var train                     # a train of modules on couplers (MT-140), scripts/train.gd
 var flywheel                  # a mass driver still spinning (MD-160), scripts/flywheel.gd
@@ -37,6 +38,9 @@ var boiloff                   # cryogenic tanks boiling off (HG-170), scripts/bo
 var liquids                   # liquid adrift in free fall (every leak and spill), scripts/liquids.gd
 var combustion                # what burns, with what, and how hard, scripts/combustion.gd
 var recoil                    # a container pushed back by its own jet, scripts/recoil.gd
+var clean: CleanRun           # 认真拆有奖励: clean machines, the combo, the S/A/B grade (scripts/clean_run.gd)
+var mishap                    # 认真拆有奖励: the equipment mouth's small mishaps (scripts/mishap.gd)
+var finds: HiddenTraits       # 认真拆有奖励: what the meter finds inside a machine (scripts/hidden_traits.gd)
 var runaway                   # thermal runaway of a pierced charged battery (scripts/runaway.gd)
 var prestress                 # loaded beams that spring, twist and ring when cut through (scripts/prestress.gd)
 var spin                      # rotors coasting down after their power goes, a generator's remanence (scripts/spin.gd)
@@ -296,6 +300,11 @@ func _ready() -> void:
 		# nor a save of some other ship (the empty berth's, say) for a contract on this one
 		if not job.is_empty() and not data.is_empty() and str(job.get("ship", "")) != "" and str(data.get("ship", "")) != str(job.ship):
 			data = {}
+		# ARK-01 改造方案 2 (2026-11-11): a save from before the side-hung wheels holds the old rings'
+		# geometry the wheels' rules can't run on: the contract starts again on the new ship
+		if not data.is_empty() and str(data.get("ship", "")) == "ark01" and not (data.get("rings", {}) as Dictionary).has("ang"):
+			push_warning("ARK-01 save from before the side-hung wheels: the contract starts again")
+			data = {}
 	SaveGame.load_requested = false
 	if not data.is_empty():
 		ship_id = data.get("ship", "gr7")
@@ -341,6 +350,8 @@ func _ready() -> void:
 	Dock.configure(berth_len, ext.x, ext.y)
 	if has_upgrade("port2"):
 		Dock.add_port2()
+	if ship.has("antimatter"):
+		Dock.add_anti()
 	dock.set_ship(ship)
 	if not data.is_empty() and SaveGame.apply(self, data):
 		Ship.rooms(world, ship)
@@ -420,6 +431,10 @@ func _ready() -> void:
 	reactor.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(reactor)
 	reactor.setup(self, ship)
+	anti = preload("res://scripts/antimatter.gd").new()
+	anti.process_mode = Node.PROCESS_MODE_PAUSABLE
+	world.add_child(anti)
+	anti.setup(self, ship)
 	softshell = preload("res://scripts/softshell.gd").new()
 	softshell.process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_child(softshell)
@@ -454,6 +469,18 @@ func _ready() -> void:
 	recoil.process_mode = Node.PROCESS_MODE_PAUSABLE
 	world.add_child(recoil)
 	recoil.setup(self)
+	clean = CleanRun.new()
+	clean.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(clean)
+	clean.setup(self)
+	mishap = preload("res://scripts/mishap.gd").new()
+	mishap.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(mishap)
+	mishap.setup(self)
+	finds = HiddenTraits.new()
+	finds.process_mode = Node.PROCESS_MODE_PAUSABLE
+	add_child(finds)
+	finds.setup(self)
 	runaway = preload("res://scripts/runaway.gd").new()
 	runaway.process_mode = Node.PROCESS_MODE_PAUSABLE
 	world.add_child(runaway)
@@ -786,6 +813,8 @@ func _ready() -> void:
 			sail.load_state(data.sail)
 		if data.has("reactor"):
 			reactor.load_state(data.reactor)
+		if data.has("anti") and anti != null:
+			anti.load_state(data.anti)
 		if data.has("softshell"):
 			softshell.load_state(data.softshell)
 		if data.has("train"):
@@ -1332,23 +1361,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			"tow":
 				if boat_tow != null and boat != null and boat.aboard:
 					boat_tow.toggle()
-			"plan":
-				# 61 号: work plans stay out of sight until the second berth (G7)
-				if plan != null and G4_OPEN:
-					# 108 号 Q15: Shift + the plan key skips the step the machine is on (the cutter's second tier)
-					if plan.running and ev is InputEventKey and ev.shift_pressed and plan.editing():
-						if plan.skip_step():
-							say("plan_skipped", drone.global_position + Vector2(0, -44))
-							sfx.play("switch")
-						return
-					if plan.has_plan() and not plan.running:
-						open_plan_panel()
-						return
-					if auto_paused and not plan.running:
-						auto_paused = false
-					var plan_message := plan.toggle()
-					say(plan_message, drone.global_position + Vector2(0, -44), plan.message_arg)
-					sfx.play("switch")
+			"plan": plan_key(ev is InputEventKey and ev.shift_pressed)
 			"mouth":
 				# the equipment bay always runs on its rail; the furnace with the rail upgrade
 				dock.move_equip(drone.global_position.x / Geom.M)
@@ -1450,7 +1463,12 @@ func _unhandled_input(ev: InputEvent) -> void:
 	elif ev is InputEventMouseButton and not ev.pressed and ev.button_index == MOUSE_BUTTON_RIGHT:
 		if rmb_down and rmb_moved < 10.0 and ring_armed:
 			arm_ring(false)
-		elif rmb_down and rmb_moved < 10.0 and state == "play" and not menu_open and not contract_open:
+		elif rmb_down and rmb_moved < 10.0 and state == "play" and not menu_open and not contract_open and not (tools.slurp != null and tools.slurp.took_press()):
+			# (a press held long enough with the hose in hand was its suction tube's, not a click: slurp.gd)
+			# 排队拧: on a queued fixing it takes only that one out of the wrench's queue (tools.wq_rmb)
+			if tools.tool == 4 and tools.wq_rmb():
+				rmb_down = false
+				return
 			if tools.held_piece != null:
 				tools.release_grab(true)
 			tools.job = {}
@@ -1459,7 +1477,8 @@ func _unhandled_input(ev: InputEvent) -> void:
 		rmb_down = false
 	elif ev is InputEventMouseMotion and rmb_down:
 		rmb_moved += ev.relative.length()
-		if rmb_moved >= 10.0:
+		# the hose in hand: the right button is its suction tube's (slurp.gd), not the view's
+		if rmb_moved >= 10.0 and tools.tool != 5:
 			cam_pan -= ev.relative / maxf(zoom_now, 0.1)
 
 
@@ -1534,6 +1553,66 @@ func open_feedback() -> Node:
 # while it is open (the operator is at the desk, not at the controls)
 # 61 号 (60 号 Q7): the G4 work plans and engineering orders are kept, not shown
 static var G4_OPEN := false   # tests of the work plans switch it on
+
+
+# 2026-11-11 (user: "我按 P 键也毫无作用啊"): the plan key follows the cutter method (108 号, scripts/
+# methods.gd "cutter"), not G4_OPEN: owning it records a type's plan and replays it on P. G4_OPEN still
+# hides the rest of G4 — the work packages panel, the grey heron preset, the engineering orders.
+func plan_open() -> bool:
+	return G4_OPEN or (career() and (Methods.learned("cutter") or preload("res://scripts/plan_codex.gd").owned()))
+
+
+# the plan's HUD line and settlement note are shown (the grey heron preset stays with G4)
+func plan_shown() -> bool:
+	return plan != null and plan_open() and (G4_OPEN or not plan.preset)
+
+
+# the plan key (P; Shift+P skips the step the machine is on, the cutter's second tier). Every press
+# answers: not bought, no plan for this type yet, recording, running, stopped, skipped.
+func plan_key(shift: bool = false) -> void:
+	if plan == null or drone == null:
+		return
+	var at := drone.global_position + Vector2(0, -44)
+	if not G4_OPEN and not career():
+		say("plan_career_only", at)
+		sfx.play("deny")
+		return
+	if not plan_open():
+		say("as_plan_not_bought", at)
+		sfx.play("deny")
+		return
+	# 切割宝典: Shift + P while stopped changes between the codex's plan and the player's own
+	if shift and not plan.running and plan.can_switch():
+		say(plan.switch_source(), at)
+		sfx.play("switch")
+		return
+	if shift and plan.running:
+		if plan.editing():
+			if plan.skip_step():
+				say("plan_skipped", at)
+				sfx.play("switch")
+			else:
+				say("as_plan_no_skip", at)
+				sfx.play("deny")
+		else:
+			say("as_plan_skip_tier", at)
+			sfx.play("deny")
+		return
+	if G4_OPEN and plan.has_plan() and not plan.running:
+		open_plan_panel()
+		return
+	if not G4_OPEN and plan.preset and not plan.running:
+		# the grey heron's preset is G4's: without it this type has no plan of the player's yet
+		say("as_plan_none", at)
+		sfx.play("deny")
+		return
+	if auto_paused and not plan.running:
+		auto_paused = false
+	var plan_message := plan.toggle()
+	if not G4_OPEN and plan_message == "plan_none":
+		plan_message = "as_plan_none"
+	say(plan_message, at, plan.message_arg)
+	sfx.play("switch" if plan_message in ["plan_running", "plan_stopped", "plan_preset_running"] else "deny")
 
 
 func open_plan_panel() -> void:
@@ -2484,6 +2563,8 @@ func _layout_shape(x: float, lift: float, drop: float) -> void:
 	Dock.configure_shape(x, lift, drop)
 	if has_upgrade("port2"):
 		Dock.add_port2()
+	if ship.has("antimatter"):
+		Dock.add_anti()
 	dock.set_ship(ship)
 
 
@@ -3056,6 +3137,18 @@ func start_nuke(at: Vector2) -> void:
 	state_t = 0.0
 
 
+# AX-40 逆火: the antimatter trap lost its power (scripts/annihilation.gd); it plays where the
+# detonation does (state "nuke": step, skip) and settles the same way (end_nuke)
+func start_annihilation(at: Vector2) -> void:
+	if nuke != null or ended:
+		return
+	nuke = preload("res://scripts/annihilation.gd").new()
+	add_child(nuke)
+	nuke.setup(self, at)
+	state = "nuke"
+	state_t = 0.0
+
+
 # the card is through: the contract settles as given up, nothing left in the berth
 func end_nuke() -> void:
 	nuked = true
@@ -3259,6 +3352,15 @@ func bonuses() -> Array:
 			out.append(["e_must_bonus", snappedf(named, 1.0)])
 	if g == "safe" and incidents.is_empty():
 		out.append(["e_safe_bonus", snappedf(earned() * SAFE_SHARE, 1.0)])
+	# 认真拆有奖励: the clean combo's cash and the S / A grade's share
+	if clean != null and clean.active():
+		if clean.bonus_cash >= 1.0:
+			out.append(["e_combo_bonus", snappedf(clean.bonus_cash, 1.0)])
+		if clean.batt_cash >= 1.0:
+			out.append(["e_batt_cash", snappedf(clean.batt_cash, 1.0)])
+		var gs: float = clean.grade_share()
+		if gs > 0.0:
+			out.append(["e_grade_bonus", snappedf(earned() * gs, 1.0)])
 	return out
 
 
@@ -3649,6 +3751,8 @@ func net() -> float:
 
 func incident(kind: String, detail: String = "") -> void:
 	incidents.append([snappedf(playtime, 0.1), kind, detail])
+	if clean != null:
+		clean.on_incident(kind)
 	Playtest.incident(kind, detail)
 	if plan != null and plan.running and kind in ["blowout","fire","arc","burst","blast","prop_blast","o2_fire","tank_burst","tank_rupture","drone_lost"]:
 		plan.cancel()
@@ -3665,6 +3769,8 @@ func note_loss(reason: String, tag: String, amount: float) -> void:
 func _dent(p, new_cond: float, reason: String) -> void:
 	if p.cls == "equip" and p.intact and new_cond < p.cond:
 		note_loss(reason, p.tag, (p.cond - new_cond) * p.value)
+		if clean != null:
+			clean.on_dent(p, p.cond, new_cond)
 	p.cond = new_cond
 
 
@@ -3811,6 +3917,7 @@ func _piece_value(p, zone: String) -> float:
 			"equip": v = full if dest == "equip" else full * 0.4
 			"metal": v = scrap
 			"hazard": v = full * 0.4 if dest == "hazard" else full * 0.3
+			"anti": v = full if dest == "anti" else scrap
 	else:
 		v = scrap * (0.5 if zone == "hazard" else (1.0 if zone == "metal" else 0.8))
 	if p.contam:
@@ -3825,6 +3932,12 @@ func judge(b, zone: String) -> Dictionary:
 	var all_m := 0.0
 	var hazard := false
 	var equip_intact := false
+	# AX-40: the antimatter trap goes to its own cradle and nothing else does
+	var has_anti: bool = b.pieces.any(func(p): return p.hazard == "antimatter" and p.intact)
+	if has_anti and zone != "anti":
+		return {"ok": false, "reason": "rej_anti_mouth"}
+	if zone == "anti" and not has_anti:
+		return {"ok": false, "reason": "rej_not_anti"}
 	for p in b.pieces:
 		all_m += p.mass
 		var d: String = sys.dest_of(p)
@@ -3837,6 +3950,13 @@ func judge(b, zone: String) -> Dictionary:
 		total += piece_value(p, zone)
 	match zone:
 		"equip":
+			# 认真拆有奖励: something harmless still in it (a charge, air, water…) brought by hand or let drift
+			# in: a small mishap instead of a refusal (scripts/mishap.gd). A machine's load keeps the old rule.
+			if clean != null and mishap != null and clean.active() and clean.body_residual(b) != "":
+				# a machine's load goes to the drain rack beside the mouth instead (design §7.1)
+				if b.get_meta("arm", false) or b.has_meta("arm_drop"):
+					return {"ok": false, "reason": "drain"}
+				return {"ok": false, "reason": "mishap"}
 			if hazard:
 				return {"ok": false, "reason": "rej_hazard"}
 			if not equip_intact:
@@ -3874,6 +3994,9 @@ func on_swallowed(b, mouth: String) -> void:
 	# a second equipment bay pays and counts as the first; the effects play where it is
 	var zone := Dock.kind(mouth)
 	var at: Vector2 = Dock.zpos(mouth) - Dock.ZONES[mouth].face * 30.0
+	# 认真拆有奖励: clean or not, judged before what it held is emptied below
+	if clean != null:
+		clean.on_intake(b, zone, Dock.zpos(mouth) + Dock.ZONES[mouth].face * 2.2 * Geom.M)
 	var names: Array = []
 	var v := 0.0
 	var boom := false
@@ -3891,7 +4014,7 @@ func on_swallowed(b, mouth: String) -> void:
 		if p.tag != "" and p.cls == "equip":
 			names.append(p.tag)
 			verify("pieces", p.tag, {"to": zone})
-		if zone == "equip" and p.intact and p.cls == "equip" and p.mandatory:
+		if zone in ["equip", "anti"] and p.intact and p.cls == "equip" and p.mandatory:
 			mandatory_ok[p.tag] = true
 			must_value[p.tag] = float(p.value)
 		elif p.mandatory and p.cls == "equip":
@@ -3994,6 +4117,9 @@ func on_swallowed(b, mouth: String) -> void:
 		"hazard":
 			for i in 24:
 				fx.puff(Dock.zpos(mouth), (-face * 200.0).rotated(randf_range(-1.2, 1.2)), 0.9, 8.0, 40.0, Pal.tint(Pal.FLUID, 0.12))
+		"anti":
+			for i in 4:
+				fx.ring(Dock.zpos(mouth) - face * 40.0, 12.0 + i * 18.0, 170.0 + i * 60.0, 0.6 + i * 0.18, Color(0.5, 0.9, 1.4, 0.8), 1.4)
 	hitstop(0.04)
 	shake(0.12 + minf(0.25, b.total_mass() * 0.06))
 	sfx.play("eat_" + zone)
@@ -4075,6 +4201,8 @@ func on_body_freed(b) -> void:
 		sail.on_freed(b)
 	if reactor != null:
 		reactor.on_freed(b)
+	if anti != null:
+		anti.on_freed(b)
 	if softshell != null:
 		softshell.on_freed(b)
 	if flywheel != null:
@@ -4206,6 +4334,10 @@ func _bodies_upkeep(dt: float) -> void:
 		# tunnelling on the player's line (量子隧穿): it passes everything, so nothing knocks it (2026-11-11)
 		if dv > 55.0 and b.tunneling:
 			dv = 0.0
+		# 认真拆有奖励: a machine thrown out of the mouth in a mishap knocks nothing and is knocked by nothing
+		if dv > 55.0 and mishap != null and playtime - mishap.last_t < mishap.IMMUNE_T:
+			if mishap.immune(b) or b.get_colliding_bodies().any(func(o): return mishap.immune(o)):
+				dv = 0.0
 		if dv > 55.0 and b.age > 0.4 and b.age - float(b.get_meta("imp_t", -9.0)) > IMPACT_GAP:
 			b.set_meta("imp_t", b.age)
 			_impact(b, dv)
@@ -4349,6 +4481,8 @@ func on_laser_near_equipment(p, pos: Vector2) -> void:
 	# 117 号 (Q3 A): a fission core has its own warning (scripts/reactor.gd) — not "it's scrap" on top
 	if reactor != null and p in reactor.cores:
 		return
+	if anti != null and anti.is_trap(p):
+		return
 	say("laser_near", pos, p.tag if p.tag != "" else Txt.piece_name(p))
 	sfx.play("warn")
 	hint("equip_cut")
@@ -4369,6 +4503,8 @@ func on_cut_into(p, pos: Vector2) -> void:
 		sail.on_cut(p)
 	if reactor != null:
 		reactor.on_cut(p)
+	if anti != null:
+		anti.on_cut(p)
 	if softshell != null:
 		softshell.on_cut(p)
 	if train != null:
@@ -4445,6 +4581,10 @@ func on_cut_into(p, pos: Vector2) -> void:
 	if p.intact:
 		note_loss("dv_cut", p.tag, was_value - world.scrap_value(p))
 		mandatory_gone(p, "mg_cut")
+		if clean != null and p.cls == "equip":
+			clean.on_cut_equip()
+		if finds != null:
+			finds.on_ruined(p)
 	if was_value > 200.0:
 		incident("equip_cut", p.tag)
 		fx.number(pos + Vector2(0, -30), "−" + Pal.money(was_value).trim_prefix("$"), Pal.heat(0.9, 1.3), 18)
@@ -4957,6 +5097,8 @@ func do_measure(tg: Dictionary) -> void:
 						sys.measure(c.id, "temp", c.id, "inst_core", {"ctrl": c, "temp_fn": func(): return furnace.core_temp()})
 					"mag":
 						sys.measure(c.id, "field", c.id, "inst_field", {"ctrl": c, "field_fn": func(): return mech.field(c.target)})
+					"confine":
+						sys.measure(c.id, "sample", c.id, "inst_confine", {"ctrl": c, "sample_fn": func(): return anti.reading()})
 					"heat":
 						sys.measure(c.id, "temp", c.id, "inst_temp", {"ctrl": c, "temp_fn": func(): return munitions.room_temp(c.target)})
 					"cryo":
@@ -5041,6 +5183,9 @@ func do_measure(tg: Dictionary) -> void:
 				sys.measure("L:" + l.id, "temp", l.id.to_upper(), "inst_temp", {"anchor_pos": tg.pos, "temp_fn": func(): return sys.line_temp(l)})
 		"inspect", "piece":
 			var p = tg.piece
+			# 认真拆有奖励: what is inside it shows now (scripts/hidden_traits.gd)
+			if finds != null:
+				finds.on_measure(p)
 			verify("pieces", p.tag, {"fix": _inspect_text(p)})
 			var key := "P:%d" % p.id
 			var local: Vector2 = world.frame(p).affine_inverse() * tg.pos
@@ -5257,6 +5402,10 @@ func _inspect_text(p) -> String:
 		# years before it falls under what a repair can use — so keeping or selling is decided here
 		if Methods.level("precise") >= 2:
 			parts.append(life_text(p))
+	if finds != null:
+		var hl: String = finds.inspect_line(p)
+		if hl != "":
+			parts.append(hl)
 	if parts.size() == 1 and p.body == null:
 		parts.append(txt("j_none"))
 	return " · ".join(parts)
@@ -5509,10 +5658,18 @@ func has_upgrade(id: String) -> bool:
 	# between contracts there's no contract's kit: the berth has what the career bought
 	if ship.get("berth", false) and Career.data.get("upgrades", {}).has(id):
 		return true
+	# AX-40: the ship comes with what its job cannot do without (the crane for its 9 t trap)
+	if ship.get("kit_lend", {}).has(id):
+		return true
 	return method_kit().has(id) or (bot != null and bot.get("kit", {}).has(id))
 
 
 func do_wrench(tg: Dictionary, by_plan: bool = false) -> void:
+	# 认真拆有奖励: the cover of a machine the meter found something in (scripts/hidden_traits.gd)
+	if tg.get("kind", "") == "lid":
+		if finds != null:
+			finds.open(tg.piece)
+		return
 	if tg.get("kind", "") == "ctrl" and tg.has("ctrl"):
 		changed["c:" + tg.ctrl.id] = true
 	# the training interlock looks at what the wrench is about to undo
@@ -5725,6 +5882,9 @@ func _operate(c, at: Vector2) -> bool:
 	return true
 
 func do_hose(tg: Dictionary, by_plan := false) -> bool:
+	# 认真拆有奖励: the feedback lead on a charged battery's terminals (scripts/clean_run.gd)
+	if tg.get("kind", "") == "batt":
+		return clean != null and clean.feed_toggle(tg.piece)
 	var c = tg.ctrl
 	log_op("plan" if by_plan else "hose")
 	if plan != null and not by_plan:
