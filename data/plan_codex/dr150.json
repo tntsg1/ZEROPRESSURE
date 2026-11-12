@@ -1,0 +1,349 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "dr150",
+	"steps": [
+		{
+			"ctrl": "TQB",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "SLIP-1",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "SLIP-2",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "SLIP-3",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "SLIP-4",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "SLIP-5",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "SLIP-6",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "SLIP-7",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "SLIP-8",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-D",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-M",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-W",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-4-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PF",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "FUEL-2-D",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "FUEL-3-D",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PL",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-100-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-101-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "WATE-104-D",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-106-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2CA-108-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-M1",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "K-M2",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PMUD",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-19-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2CA-33-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-43-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2CA-65-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "MT-1-D",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "MT-2-D",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-79-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-D",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-M",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-W",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-4-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PF",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "FUEL-2-D",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "FUEL-3-D",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PL",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-100-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-101-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "WATE-104-D",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-106-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2CA-108-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PMUD",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-19-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2CA-33-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-43-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2CA-65-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "MT-1-D",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "MT-2-D",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-79-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		}
+	]
+}

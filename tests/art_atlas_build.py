@@ -67,9 +67,16 @@ ART_CAT.update({"rf_amp": "电力与配电", "aux_rocket": "推进与燃料", "g
                 "fw_appliance": "电力与配电", "rig_welder": "电力与配电", "e07_unit": "电力与配电", "shunt_reg": "电力与配电",
                 "gas_puff": "电力与配电", "ion_grid": "电力与配电", "rb_clock": "电力与配电", "daq_rail": "电力与配电"})
 # E018–E028 batteries redrawn in art_ships.gd (2026-11-11): still on the power pages
-ART_CAT.update({a: "电力与配电" for a in L("ark_aux_pack battery_cart emerg_light ring_battery shuttle_pack vrla_rack main_battery drone_pack courier_stack lock_ups pod_ups")})
+ART_CAT.update({a: "电力与配电" for a in L("ark_aux_pack battery_cart emerg_light ring_battery shuttle_pack vrla_rack main_battery drone_pack courier_stack lock_ups pod_ups race_pack standby_bank ups_unit")})
 
+ART_CAT.update({a: '电力与配电' for a in L('bench_drill bms_cab brake_ctrl cal_bench crd_cab crypto_rack dispatch_log dosing_skid food_bench gas_detector hv_switchgear material_rack pack_rack survey_log tool_cart turbine_ctrl tx_cabinet')})
+ART_CAT.update({a: '电力与配电' for a in L('hv_switchgear')})
+ART_CAT.update({a: '电力与配电' for a in L('chem_store core_store cryo_cdb cryo_spares dcdc drill_tools ev_calib garden_locker herbarium ob_cal plate_archive sample_cyl server_spares shot_archive spare_cells spare_leads well_logs')})
+ART_CAT.update({a: '电力与配电' for a in L('batch_log cargo_log cockpit_case custody_reg dining_table evidence_lockers flow_ctrl mail_locker manifest_term pharmacy sample_trays seed_vault shadow_board smelt_log supply_stack svc_bench tow_log')})
+ART_CAT.update({a: '电力与配电' for a in L('bl_electrolyser co2_burner diesel_genset drups fuel_cell_pm main_alternator rtg_module stirling_gen ts_power turbine_genset')})
 def cat_of(e):
+    if e.get("cat_keep"):   # a redrawn kind stays on the page it was on (swap_cells, 2026-11-11)
+        return e["cat_keep"]
     if e["struct"]:
         return "结构件"
     return ART_CAT.get(e["art"], "其他")

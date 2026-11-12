@@ -1,0 +1,64 @@
+# 用户 2026-11-11 去 AI 味定稿（来源：Google 文档“零压 · 11-11 新增文案 · 待去AI味 20261111”）
+# 格式：键名<TAB>中文定稿。标 [修] 的是审查会话只改了机制事实/名词（原因见行尾 # 注释），其余一字不改。
+txt.as_mg_guard_hazard	范围抓钩会跳过危险部件。按 X 关闭范围抓钩，切换到单体抓握模式。	# [修] 原文“按 3”：按 3 只是选抓钩工具，关不掉范围抓钩，实际是按 X
+txt.as_mg_guard_value	范围抓钩会跳过价值 $15,000 及以上的贵重设备。按 X 关闭范围抓钩，切换到单体抓握模式。	# [修] 同上
+txt.as_mg_guard_fragile	范围抓钩会跳过易碎设备。按 X 关闭范围抓钩，切换到单体抓握模式。	# [修] 同上
+txt.as_mt_intro	购买新工具后，可以解锁更多拆解方式。卡片上会实时显示当前档位，以及升级到下一档需要的费用。
+txt.as_mt_unbought	尚未购买
+txt.as_mt_buy	购买 %s
+txt.as_mt_facility	随着港区设施升级
+txt.as_mt_top	已升至最高档位
+txt.as_mt_owned	已拥有
+txt.as_mt_not_owned	尚未解锁这项拆解方式
+txt.as_mt_how	获取方式
+txt.as_mt_build_how	安排施工队完成%s的建设后，即可随着港区设施升级提升档位。
+txt.as_mt_borrow_line	借用合同：%s · 由 %s 提供设备 · 无需支付合同费用，完成这份合同即可使用。
+txt.as_mt_cost_job	通过借用合同获得
+txt.as_mt_bought	已购买：
+txt.as_plan_not_bought	尚未购买“按方案自动切”功能，请前往拆解方式页面购买。	# [修] 名词：功能名是“按方案自动切”，原文写成“自动切换”
+txt.as_plan_none	这个型号还没有保存过拆解方案。手动完成一艘船的拆解后，系统会记录你的操作，下次遇到相同型号时，可以按 P 使用保存的方案。
+txt.as_plan_title_codex	拆船宝典方案 · 自动切 %d/%d	# [修] 名词：“自动切换”→“自动切”
+txt.as_plan_src_codex	当前使用拆船宝典方案，按 Shift+P 可以切换回自己的方案。
+txt.as_plan_src_own	当前使用自己保存的方案，按 Shift+P 可以切换回拆船宝典方案。
+txt.as_plan_codex_ran	本次合同使用了拆船宝典方案，你自己保存的拆解方案不会受到影响。
+txt.as_codex_types	拆船手册目前收录了 %d 种船型的拆解方案。
+txt.as_codex_name	拆船宝典
+txt.as_codex_d	这本拆船手册由造船厂编写，收录了大部分船型的拆解方案。除了远航者和 AX-40，其他船型都不需要先手动拆解一遍。按 P 就能按照手册中的方案自动完成断电、泄压等安全处置；你拆开挡住的船壳后，切割机会接着完成主要的切割工作。船上的零件仍然需要自己拆卸。	# [修] 机制：宝典切割要等玩家拆开挡住的船壳后才自动切（已定方案②）
+txt.as_plan_skip_tier	需要先在拆解方式页面升级到第 2 档，才能在方案回放时跳过切割步骤。
+txt.as_plan_no_skip	当前步骤无法跳过。
+txt.as_plan_rec_title	正在录制拆解方案
+txt.as_plan_rec_line	已记录 %d 个步骤。完成结算后，会将这些步骤保存为当前船型的拆解方案。
+txt.as_plan_rec_stopped	拆解过程中发生事故，方案录制在第 %d 步中断。结算时仍会保留之前记录的步骤。
+txt.as_plan_title	拆解方案自动执行 %d/%d
+txt.as_up_wrench_queue	螺栓拆卸队列
+txt.as_up_wrench_queue_d	拆卸当前螺栓时，可以继续选择其他螺栓。工具会按照选择的顺序，自动完成后续拆卸。
+txt.as_up_wrench_queue_st	拆卸螺栓时，可以点击其他螺栓，将它们加入拆卸队列。工具会按照选择的顺序自动拆卸。再次点击或使用右键可以取消排队。如果目标超出操作范围，工具会暂停并等待你返回。切换工具后，队列会自动清空。
+txt.as_up_wrench_queue_have	已安装 · 拆卸过程中可以继续添加螺栓
+txt.as_wq_cancel	已从拆卸队列中移除
+txt.as_wq_cleared	排队已清空
+txt.as_wq_wait	下一个螺栓超出了工具的操作范围。请靠近目标，继续拆卸。
+txt.as_slurp_keys	按住左键抽取气体和液体，按住右键回收泄漏液体。
+txt.as_slurp_hint	按住右键，无人机会伸出吸管，回收漂浮在空中的泄漏液体。回收的液体会按照种类分别计入回收量。
+txt.as_slurp_took	已回收 %s L 泄漏液体
+txt.as_slurp_ice	泄漏液体已经冻结成冰球，无法使用吸管回收。
+txt.as_mg_guard_keep	合同要求完整回收的设备无法使用范围抓钩。请按 X 关闭范围抓钩，切换到单体抓握模式。	# [修] “按 3”→“按 X 关闭范围抓钩”
+G_ark_wheels_t	双转轮制动操作
+G_ark_wheels_1	先切断负载并启动冷却系统，再按照规定的制动比例，同时对两个转轮进行制动。
+G_ark_wheels_2	制动电容充满后，按下泄放按钮。泄放期间需要松开制动器，等待电容完成泄放。
+G_ark_wheels_3	两个转轮完全停止后，使用盘车装置将锁销孔对齐，再插入锁销固定转轮。
+G_antimatter_trap_t	断电会引发反物质湮灭
+G_antimatter_trap_1	这艘船的反物质储存阱目前只依靠主电源维持约束，直接切断主电源会导致反物质湮灭。
+G_antimatter_trap_2	先为储存阱接入便携式约束电源，确认供电状态显示为“双路供电”后，再进行后续操作。
+G_antimatter_trap_3	确认便携式约束电源正常供电后，切断主电源，再使用吊车将整个反物质储存阱运送到反物质回收架。
+N_bg	后台处理中 ·
+N_carry	正在运送 %s 至回收区
+N_todo	待办事项：将 %s 运送到回收口
+N_wait_done	正在等待泄压完成
+N_wait_idle	可以先处理其他工作，完成后会收到提示。	# [修] 这句用在所有等待步骤（泄压、炉芯冷却、飞轮刹停等），不只泄压，去掉“泄压”二字
+N_eta_s	· 预计还需 %d 秒
+N_eta_m	· 预计还需 %d 分钟
+N_core_cooling	炉芯正在冷却 · %.0f°C → %.0f°C
+N_core_how	炉芯冷却期间不需要一直等待。保持换热泵供电，确保冷却回路没有排空，就可以先去拆解其他部位。
+N_core_ready	炉芯已经冷却完成，可以开始取出：
+N_core_room	炉芯温度已经降下来了，还需要先将炉芯所在的舱室抽空。
+# G_ark_wheels_4/5/6：这三条已从游戏删除（是串错的旧条目），不写回。

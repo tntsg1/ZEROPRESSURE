@@ -1,0 +1,73 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "my48",
+	"steps": [
+		{
+			"ctrl": "VENT-JAM",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-S",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-M",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PO2",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PSPA",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "WATER-T-D",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-FC",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-S",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PO2",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PSPA",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "WATER-T-D",
+			"do": "h",
+			"pre": [],
+			"value": false
+		}
+	]
+}

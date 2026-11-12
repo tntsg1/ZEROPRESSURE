@@ -111,7 +111,7 @@ func _run() -> void:
 	if not before:
 		check(not st.get("wait", false) and (st.at as Vector2).distance_to(core_at) > 1.0 * Geom.M, "mf126 cooling: the mark is on something to do meanwhile, not the core (%s)" % st.get("t", ""))
 		var bg: Array = st.get("bg", [])
-		check(bg.any(func(b): return str(b.t).find("冷却") >= 0 and str(b.t).find("约") >= 0), "mf126 cooling: the core's countdown in the background (%s)" % str(bg))
+		check(bg.any(func(b): return str(b.t).find("冷却") >= 0 and str(b.t).find("预计") >= 0), "mf126 cooling: the core's countdown in the background (%s)" % str(bg))
 	# the blueprint open (the user's shot): the panels slide away, the step stays in the TASK frame
 	g.blueprint.toggle()
 	await _frames(50)
@@ -144,7 +144,7 @@ func _run() -> void:
 			check(str(now.get("t", "")) != "", "%s: the step has words while it waits" % ship)
 			if not before:
 				var moved: bool = not now.get("wait", false) and (now.get("bg", []) as Array).any(func(b): return b.kind == "wait")
-				var said: bool = now.get("wait", false) and str(now.get("how", "")).find("不用守着") >= 0
+				var said: bool = now.get("wait", false) and str(now.get("how", "")).find("可以先处理其他工作") >= 0
 				check(moved or said, "%s: something to do meanwhile (the wait in the background), or plainly only a wait" % ship)
 		g2.queue_free()
 		await _frames(4)

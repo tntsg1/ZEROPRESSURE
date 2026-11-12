@@ -1,0 +1,361 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "dc84",
+	"steps": [
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-A",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-B",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-N",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PL",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PF",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-M1",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "K-M2",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "CUST-1",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "CUST-2",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "CUST-3",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "CUST-4",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "CUST-5",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "CUST-6",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "CUST-7",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "CUST-8",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-UPS",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2CA-8-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PTA-1",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PTA-2",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PTA-3",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PTA-4",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PTA-5",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PTA-6",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-12-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-30-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PTB-1",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PTB-2",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PTB-3",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PTB-4",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PTB-5",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PTB-6",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-45-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-63-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-A",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-B",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-N",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PL",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PF",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2CA-8-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PTA-1",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PTA-2",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PTA-3",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PTA-4",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PTA-5",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PTA-6",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-12-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-30-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PTB-1",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PTB-2",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PTB-3",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PTB-4",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PTB-5",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PTB-6",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-45-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-63-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		}
+	]
+}

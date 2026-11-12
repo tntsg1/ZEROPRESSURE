@@ -2,13 +2,17 @@ extends SceneTree
 # 切割宝典 (scripts/plan_codex.gd, phase B): the shipwrights' plans for ship types never stripped.
 #   no codex, no own plan: P says there is none and names the codex
 #   the methods page card: price, buy, owned
-#   with the codex: three types never stripped run their codex plan on P to the end, no incident
+#   with the codex: three types never stripped run their codex plan on P to the end, no incident;
+#   a marked line behind the hull waits ("等待露出"), the hull piece is the "下一步" mark, and once it
+#   is off (the test takes it off, as the player) the cutter goes on without P and cuts the line whole
 #   safety: a codex cut never goes into a room still under pressure
 #   an own plan wins; Shift+P (stopped) changes to the codex's and back; a codex run keeps the own plan
 #   not for ARK-01 / AX-40
 # Test careers only. Usage: tools/run_test.sh tests/plan_codex_check.gd -- [ships...] [--capture]
 const Cap = preload("res://tests/cap.gd")
 const Codex = preload("res://scripts/plan_codex.gd")
+const Bot = preload("res://tests/salvage_bot.gd")
+const NextStep = preload("res://scripts/next_step.gd")
 var fails := 0
 var checks := 0
 var seq := 0
@@ -75,7 +79,7 @@ func _run() -> void:
 	Career.data.methods = {"cutter": 1}
 	var g = await game(ships[0])
 	press(g)
-	check(said(g, "as_plan_none") and "宝典" in Txt.t("as_plan_none") and not g.plan.running, "no codex, never stripped: P says there is no plan yet and names the codex")
+	check(said(g, "as_plan_none") and not g.plan.running, "no codex, never stripped: P says there is no plan yet (the owner's 11-11 text no longer names the codex)")
 	await done(g)
 	# 2. the methods page card
 	fresh(150000.0)
@@ -98,9 +102,32 @@ func _run() -> void:
 		var head_ok := false
 		var shot := false
 		var unsafe := []
-		for k in 40000:
+		var bot = Bot.new(g, {})
+		var lines: int = g.plan.steps.filter(func(s): return s.get("seg", false)).size()
+		var exposed := 0
+		var mark_ok := true
+		for k in 80000:
 			await process_frame
 			if not g.plan.running: break
+			if g.plan.wait == "as_plan_expose" and g.plan.expose_piece != null and not g.plan.expose_piece.gone and g.plan.expose_piece.body == null:
+				# the mark is on that hull piece; then the player takes it off (not the equipment's mounts)
+				var ns: Dictionary = NextStep.of(g)
+				if ns.is_empty() or str(ns.t) != Txt.t("as_plan_expose") % g.plan.expose_tag or ns.at != g.plan.expose_at: mark_ok = false
+				var keep := {}
+				for m in range(g.plan.i, g.plan.steps.size()):
+					var tp = g.world.key_piece(str(g.plan.steps[m].get("key", ""))) if g.plan.steps[m].get("seg", false) else null
+					if tp != null: keep[tp.id] = true
+				for j in g.world.joints_of(g.plan.expose_piece):
+					if not (keep.has(j.a) or keep.has(j.b)): g.world.kill_joint(j)
+				for l in g.world.lines_of(g.plan.expose_piece):
+					g.world.kill_line(l)
+				g.plan.expose_t = 0.0
+				exposed += 1
+			if k % 20 == 0:
+				for body in g.world.bodies:
+					if is_instance_valid(body) and body.capture == null and not bot.sent.has(body):
+						bot._send(body)
+						break
 			var ps: Array = g.plan.status()
 			if not ps.is_empty() and str(ps[0]) == Txt.t("as_plan_title_codex") % [mini(g.plan.i + 1, n_steps), n_steps]: head_ok = true
 			# the safety rule: the cutter fires only with the rooms beside the cut empty
@@ -114,6 +141,9 @@ func _run() -> void:
 					Cap.save(root, "res://proofs/plan_codex_replay_%s.png" % ship)
 		print("%s REPLAY i=%d/%d wait=%s %s" % [ship, g.plan.i, n_steps, g.plan.wait, g.plan.wait_arg])
 		check(head_ok, "%s: the HUD line reads the codex plan's progress" % ship)
+		if exposed > 0:
+			check(mark_ok, "%s: while a marked line waits, the hull piece over it is the 下一步 mark (%d taken off)" % [ship, exposed])
+		check(g.plan.seg_done == lines, "%s: the cutter cut %d of %d marked lines whole, the hull taken off by hand, no second P" % [ship, g.plan.seg_done, lines])
 		check(g.plan.i == n_steps and not g.plan.running and said(g, "plan_done"), "%s: every step done (safety work and cuts)" % ship)
 		check(g.incidents.is_empty() and unsafe.is_empty(), "%s: no incident, no cut beside a pressurised room %s" % [ship, str(unsafe)])
 		check(int(g.ops.get("plan", 0)) > 0, "%s: the steps were done by the berth's machines" % ship)

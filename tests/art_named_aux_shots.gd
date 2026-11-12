@@ -1,15 +1,34 @@
 extends SceneTree
-# 游戏内近景 (2026-11-11, E002–E016 dedicated drawings): builds one ship the way the berth draws
+# 游戏内近景 (2026-11-11, the dedicated-drawing batches): builds a ship the way the berth draws
 # it, opens every room, puts the camera on the first piece of a name_key and photographs it
-# close up (the full frame and a crop). Reads ships/*.json only; touches no save.
+# close up and at the berth's working zoom (two 960x600 crops). Reads ships/*.json only;
+# touches no save.
 # tools/run_test.sh tests/art_named_aux_shots.gd -- <ship> <name_key> <out_png> [zoom]
+# tools/run_test.sh tests/art_named_aux_shots.gd -- list <file>   (lines: ship name_key out_png_without_.png)
+
+var jobs: Array = []
+
 
 func _initialize() -> void:
 	var a := OS.get_cmdline_user_args()
-	var sid: String = a[0]
-	var nk: String = a[1]
-	var out: String = a[2]
 	root.add_child(preload("res://tests/test_window.gd").new())
+	if a.size() > 1 and a[0] == "list":
+		for ln in FileAccess.get_file_as_string(a[1]).split("\n"):
+			var f := ln.strip_edges().split(" ", false, 2)
+			if f.size() == 3:
+				jobs.append([f[0], f[1], f[2] + ".png", -1.0])
+	else:
+		jobs.append([a[0], a[1], a[2], float(a[3]) if a.size() > 3 else -1.0])
+	_run()
+
+
+func _run() -> void:
+	for j in jobs:
+		await _shot(j[0], j[1], j[2], j[3])
+	quit()
+
+
+func _shot(sid: String, nk: String, out: String, zoom: float) -> void:
 	var w := World.new()
 	root.add_child(w)
 	Ship.build(w, Ship.load_data(sid))
@@ -27,10 +46,11 @@ func _initialize() -> void:
 			break
 	if hit == null:
 		print("NO PIECE ", nk, " on ", sid)
-		quit(1)
+		w.queue_free()
+		await process_frame
 		return
 	var ext: Vector2 = hit.art_size   # already in pixels on the piece
-	var close: float = float(a[3]) if a.size() > 3 else clampf(minf(520.0 / ext.x, 330.0 / ext.y), 1.5, 8.0)
+	var close: float = zoom if zoom > 0.0 else clampf(minf(520.0 / ext.x, 330.0 / ext.y), 1.5, 8.0)
 	var cam := Camera2D.new()
 	cam.position = hit.center_world()
 	root.add_child(cam)
@@ -48,4 +68,7 @@ func _initialize() -> void:
 		var fn: String = out.replace(".png", "_%s.png" % zz[1])
 		crop.save_png(fn)
 		print("SHOT ", sid, " ", nk, " ", hit.tag, " zoom ", snappedf(zz[0], 0.01), " -> ", fn)
-	quit()
+	cam.queue_free()
+	w.queue_free()
+	for i in 3:
+		await process_frame

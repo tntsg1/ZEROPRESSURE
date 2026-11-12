@@ -1,0 +1,217 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "hg170",
+	"steps": [
+		{
+			"ctrl": "RVH-3",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PT-1",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PT-2",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PT-3",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PT-4",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-B",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PL",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PF",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "FUEL-2-D",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2CA-69-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-53-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-54-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "CABI-14-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-35-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2CA-41-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-M1",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "K-M2",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PT-1",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PT-2",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PT-3",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PT-4",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-B",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PL",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PF",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "FUEL-2-D",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2CA-69-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-53-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-54-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "CABI-14-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-35-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2CA-41-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		}
+	]
+}

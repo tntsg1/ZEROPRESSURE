@@ -10,6 +10,7 @@ figure{position:relative;user-select:none;-webkit-user-select:none;cursor:pointe
 .zm{position:absolute;top:6px;right:44px;width:30px;height:30px;background:#000a;border:2px solid #8a9096;border-radius:5px;color:#ddd;font-size:15px;line-height:26px;text-align:center;cursor:zoom-in;z-index:3}
 .zm:hover{border-color:#fff;color:#fff}
 figure:hover{border-color:#8a9096}
+figure.done:before{content:'已完成';position:absolute;left:6px;top:28px;z-index:3;background:#1f9d55;color:#fff;font-size:12px;padding:1px 6px;border-radius:3px;pointer-events:none}
 figure.wip:before{content:'返工中';position:absolute;left:6px;top:28px;z-index:3;background:#2a6fdb;color:#fff;font-size:12px;padding:1px 6px;border-radius:3px;pointer-events:none}
 figure.ck{outline:3px solid #3ddc84;outline-offset:-3px;border-color:#3ddc84}figure.ck .tk{background:#3ddc84;border-color:#3ddc84}figure.ck .tk:after{opacity:1}
 figure.pre{outline:3px dashed #ffd24a;outline-offset:-3px}body.dragging,body.dragging *{cursor:crosshair!important}
@@ -22,17 +23,17 @@ JS = """<script>
 const LS='zp_atlas_checks',http=location.protocol.startsWith('http');let st={};
 const figs=[...document.querySelectorAll('figure')];const idOf=f=>f.dataset.k,disp=f=>f.querySelector('figcaption b').textContent.trim();
 const hd=document.querySelector('header');
-hd.insertAdjacentHTML('beforeend','<div id="warn">请用 启动图鉴.bat 打开，勾选才能存到本地（当前只存在浏览器里）</div><div id="bar"><label><input id="ck_only" type="checkbox"> 只看已勾</label><span>已勾 <b id="ck_n">0</b> 个</span><button id="ck_clear">清空</button><button id="ck_exp">导出勾选</button><span id="ck_msg"></span><span>单击格子=勾选 · 双击或点放大镜=看大图 · Ctrl+拖动=框选勾上 · Ctrl+Shift+拖动=框选取消</span></div>');
+hd.insertAdjacentHTML('beforeend','<div id="warn">请用 启动图鉴.bat 打开，勾选才能存到本地（当前只存在浏览器里）</div><div id="bar"><label><input id="ck_only" type="checkbox"> 只看已勾</label><span>已勾 <b id="ck_n">0</b> 个</span><button id="ck_clear">清空</button><button id="ck_exp">导出勾选</button><label><input id="f_wip" type="checkbox"> 只看返工中 <b id="wip_n" style="color:#6aa6ff">0</b></label><label><input id="f_done" type="checkbox"> 只看已完成 <b id="done_n">0</b></label><span id="ck_msg"></span><span>单击格子=勾选 · 双击或点放大镜=看大图 · Ctrl+拖动=框选勾上 · Ctrl+Shift+拖动=框选取消</span></div>');
 document.body.insertAdjacentHTML('beforeend','<div id="sel"></div>');
 const $=id=>document.getElementById(id);
 if(!http)$('warn').style.display='block';
 function clean(){const ok=new Set(figs.map(idOf));Object.keys(st).forEach(k=>{if(!ok.has(k))delete st[k]})}
 function paint(){clean();figs.forEach(f=>f.classList.toggle('ck',!!st[idOf(f)]));$('ck_n').textContent=Object.keys(st).length;apply()}
 function apply(){const v=document.getElementById('q').value.trim().toLowerCase(),o=document.getElementById('o').checked,k=$('ck_only').checked;
-figs.forEach(f=>f.classList.toggle('hide',(v&&!f.dataset.s.includes(v))||(o&&!f.classList.contains('old'))||(k&&!f.classList.contains('ck'))))}
+figs.forEach(f=>f.classList.toggle('hide',(v&&!f.dataset.s.includes(v))||(o&&!f.classList.contains('old'))||(k&&!f.classList.contains('ck'))||($('f_wip').checked&&!f.classList.contains('wip'))||($('f_done').checked&&!f.classList.contains('done'))))}
 let pend=0,wip={};
 function lsSave(){try{localStorage.setItem(LS,JSON.stringify(st))}catch(e){}}
-function mark(){figs.forEach(f=>{const b=wip[idOf(f)];f.classList.toggle('wip',!!b);f.dataset.wip=b||''})}
+function mark(){let w=0,d=0;figs.forEach(f=>{const b=wip[idOf(f)],dn=b==='已完成';f.classList.toggle('done',dn);f.classList.toggle('wip',!!b&&!dn);f.dataset.wip=b||'';if(dn)d++;else if(b)w++});$('wip_n').textContent=w;$('done_n').textContent=d;apply()}
 function adopt(d){st=d.checks||{};wip=d['派工']||{};lsSave();paint();mark()}
 function post(set,unset){lsSave();if(!http)return;pend++;
 fetch('/checks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({set,unset,ids:Object.fromEntries(set.map(k=>[k,idDisp[k]||'']))})}).then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{pend--;$('ck_msg').textContent='已保存到 勾选.json';if(!pend)adopt(d)}).catch(()=>{pend--;$('ck_msg').textContent='服务器保存失败';$('warn').style.display='block'})}
@@ -58,7 +59,7 @@ document.addEventListener('mousemove',e=>{if(!drag)return;last={x:e.clientX,y:e.
 window.addEventListener('mouseup',e=>{if(!drag)return;clearInterval(raf);const hs=hits(),u=drag.untick;drag=null;document.body.classList.remove('dragging');$('sel').style.display='none';figs.forEach(f=>f.classList.remove('pre'));
 const ks=hs.map(idOf).filter(k=>u?st[k]:!st[k]);ks.forEach(k=>{if(u)delete st[k];else st[k]=true});paint();if(ks.length)u?post([],ks):post(ks,[]);swallow=true;setTimeout(()=>swallow=false,0)},true);
 window.addEventListener('blur',()=>{if(drag){clearInterval(raf);drag=null;$('sel').style.display='none';figs.forEach(f=>f.classList.remove('pre'))}});
-$('ck_only').onchange=apply;document.getElementById('q').addEventListener('input',apply);document.getElementById('o').addEventListener('change',apply);
+$('ck_only').onchange=apply;$('f_wip').onchange=apply;$('f_done').onchange=apply;document.getElementById('q').addEventListener('input',apply);document.getElementById('o').addEventListener('change',apply);
 $('ck_clear').onclick=()=>{if(Object.keys(st).length&&confirm('清空全部勾选？')){const ks=Object.keys(st);st={};paint();post([],ks)}};
 $('ck_exp').onclick=()=>{const b=new Blob([JSON.stringify({checks:st,'显示编号':Object.fromEntries(figs.filter(f=>st[idOf(f)]).map(f=>[idOf(f),disp(f)])),'更新时间':new Date().toLocaleString()},null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='勾选.json';a.click()};
 if(!http){try{st=JSON.parse(localStorage.getItem(LS)||'{}')}catch(e){st={}}}

@@ -1,0 +1,145 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "ob90",
+	"steps": [
+		{
+			"ctrl": "G-I",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2CA-52-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "LK-1",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "LK-2",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "LK-3",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PC",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-19-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-33-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PL",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PF",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-M1",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "K-M2",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-I",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2CA-52-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PC",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-19-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-33-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PL",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PF",
+			"do": "h",
+			"pre": [],
+			"value": false
+		}
+	]
+}

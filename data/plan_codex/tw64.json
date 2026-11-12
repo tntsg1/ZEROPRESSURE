@@ -1,0 +1,151 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "tw64",
+	"steps": [
+		{
+			"ctrl": "G-B",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-W",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-L",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-F",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-A",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-M",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "SUP",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PA-J",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PA-A",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PH",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PW-1",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PW-2",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-B",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-W",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-L",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-F",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-A",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PA-J",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PA-A",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PH",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PW-1",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PW-2",
+			"do": "h",
+			"pre": [],
+			"value": false
+		}
+	]
+}

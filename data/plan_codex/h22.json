@@ -1,0 +1,103 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-11",
+	"ship": "h22",
+	"steps": [
+		{
+			"ctrl": "GAS-C",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAS-Y",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAS-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PROP-1P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PROP-2P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-H",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "E-CAP",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "ACC-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "HYD-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAS-C",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAS-Y",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAS-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PROP-1P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PROP-2P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "ACC-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "HYD-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		}
+	]
+}

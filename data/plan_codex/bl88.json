@@ -1,0 +1,187 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "bl88",
+	"steps": [
+		{
+			"ctrl": "G-D",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-W",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-M",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PL",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PF",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "WREC-D",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-68-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-M1",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "K-M2",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PW",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "FISH-T-D",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PN",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "POND-D",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "FRY-D",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2CA-57-V",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-D",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-W",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-M",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PL",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PF",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "WREC-D",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-68-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PW",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "FISH-T-D",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PN",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "POND-D",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "FRY-D",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2CA-57-V",
+			"do": "h",
+			"pre": [],
+			"value": false
+		}
+	]
+}

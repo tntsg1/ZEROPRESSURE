@@ -1,0 +1,151 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "m14",
+	"steps": [
+		{
+			"ctrl": "GATE-1",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GATE-2",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-Q",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-E",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-M",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "K-MAG",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "HYD-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "LUBE-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "COOL-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "AIR-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-Q",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-E",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "HYD-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "LUBE-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "COOL-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "AIR-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"do": "cut",
+			"key": "CRUSH-H",
+			"origin": "CRUSH-H",
+			"pl": [
+				[
+					69.6000061035156,
+					-12.2340850830078
+				],
+				[
+					69.6000061035156,
+					146.634078979492
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
+		},
+		{
+			"do": "cut",
+			"key": "CRUSH-H",
+			"origin": "CRUSH-H",
+			"pl": [
+				[
+					141.600006103516,
+					-12.2340850830078
+				],
+				[
+					141.600006103516,
+					146.634078979492
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
+		}
+	]
+}

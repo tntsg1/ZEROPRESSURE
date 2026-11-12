@@ -3410,7 +3410,7 @@ func _detail(a: float) -> void:
 				Hmi.gauge(self, Rect2(x, y + 24, w, 22), nowk, Pal.ink(0.75), ka, 10, lerpf(nowk, aftk, grow))
 			y += 66
 		y += 6
-		var sc := Rect2(x - 10, y, w + 20, 96)
+		var sc := Rect2(x - 10, y, w + 20, 96 + (44 if id == "wrench_queue" else 0))  # 2026-11-11: its user-written strategy text runs to three lines
 		Hmi.screen(self, sc, ka)
 		if Txt.has("st_" + id):
 			_text(Txt.t("tm_strategy"), sc.position + Vector2(14, 26), 14, Pal.ink(0.6 * ka), font)
@@ -3422,7 +3422,7 @@ func _detail(a: float) -> void:
 			_wrap(Ops.w("先装量子隧穿，再装这个。装上后默认开启，按 %s 或右上角「机体」按钮开关。开着时，无人机自己能穿过墙壁、船体、设施和散件；还没泄压的舱室和港区边界仍然挡得住。", "Fit quantum tunnelling first. On once fitted; %s or the BODY button top right switches it. While on, the drone itself passes walls, hulls, facilities and loose pieces; rooms still under pressure and the berth's edge still stop it.") % _tunnel_key(id), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2))
 		if tab == DRONE_PAGE and id == "wrench_queue":
 			_text(Txt.t("tm_strategy"), sc.position + Vector2(14, 26), 14, Pal.ink(0.6 * ka), font)
-			_wrap(Txt.t("as_up_wrench_queue_st"), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2))
+			_wrap(Txt.t("as_up_wrench_queue_st"), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2), 4)
 		if tab == DRONE_PAGE and id == "tunnel" and not Txt.has("st_" + id):
 			_text(Txt.t("tm_strategy"), sc.position + Vector2(14, 26), 14, Pal.ink(0.6 * ka), font)
 			_wrap(Ops.w("装上后默认开启，按 %s 开关。开着时，抓钩抓着的件能直接穿过墙壁和船体拖出来，不用先开路。", "On once fitted; %s switches it. While on, a held piece is dragged straight through walls and hulls: no path to cut first.") % Keys.label("tunnel"), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2))

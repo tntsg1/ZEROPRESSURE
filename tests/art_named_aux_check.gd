@@ -16,6 +16,17 @@ const K1 := ["p_ark_amp", "p_aux", "p_ax_gamma_monitor", "p_bl_feeder", "p_bl_hu
 const K2 := ["p_ark_aux_battery", "p_ark_battery_cart", "p_ark_emerg_light", "p_ark_ring_battery", "p_ark_shuttle_battery",
 	"p_aux_battery", "p_battery", "p_drone_pack", "p_lc_courier_battery", "p_lock_ups", "p_pod_bat",
 	"p_st_battery", "p_standby_battery", "p_ups"]
+# third batch (the shared double-door cabinet), first part
+const C1 := ["p_ark_brake_ctrl", "p_ark_chem_dosing", "p_ark_material", "p_ark_process", "p_ark_transmitter", "p_ark_turbine_ctrl",
+	"p_drill", "p_tool_cart", "p_pack_rack", "p_dispatch_log", "p_bms", "p_cal_bench", "p_survey_log", "p_crd", "p_crypto",
+	"p_hv_cabinet", "p_gas_det"]
+const C2 := ["p_bl_herbarium", "p_bl_tool_shed", "p_dr_chem_store", "p_dr_sample_cab", "p_dr_tool_cab", "p_dr_well_logs", "p_ev_calib",
+	"p_ev_dcdc", "p_fx_cdb", "p_fx_cryo_spares", "p_fx_shot_archive", "p_fx_spare_leads", "p_hg_sample_cyl", "p_ob_cal",
+	"p_ob_plate_archive", "p_ob_spare_cells", "p_dc_spares"]
+const C3 := ["p_batch_log", "p_cabinet", "p_cargo_log", "p_custody", "p_evidence", "p_flow_ctrl", "p_lc_courier_mail", "p_manifest",
+	"p_pharmacy", "p_samples", "p_seed_vault", "p_smelt_log", "p_st_spares", "p_stores", "p_svc_cabinet", "p_table", "p_towlog"]
+const D4 := ["p_bl_electrolyser", "p_fuel_cell", "p_fuelcell", "p_ark_backup_gen", "p_backup_gen", "p_standby_gen", "p_co2_gen",
+	"p_dr_generator", "p_gen", "p_generator", "p_ts_power"]
 var KEYS: Array = K1
 
 var out := "E:/godot/zeropower/proofs/零件专属画法_E002-E016"
@@ -23,6 +34,7 @@ var cells := false
 var node: Node2D
 var font: Font
 var picks := {}      # nk -> [pd, ship]
+var sizes := {}      # nk -> {"w x h": [w, h]} every size it comes in across the fleet
 var mode := ""       # "sheet" | "cell"
 var cur := ""
 var cur_old := false
@@ -35,6 +47,14 @@ func _initialize() -> void:
 	cells = "cells" in a
 	if "b2" in a:
 		KEYS = K2
+	if "c1" in a:
+		KEYS = C1
+	if "c2" in a:
+		KEYS = C2
+	if "c3" in a:
+		KEYS = C3
+	if "d4" in a:
+		KEYS = D4
 	perf = "perf" in a
 	root.add_child(preload("res://tests/test_window.gd").new())
 	font = Fonts.get_font("Regular")
@@ -61,6 +81,10 @@ func _collect() -> void:
 			var nk: String = str(pd.get("name_key", ""))
 			if nk in KEYS and not picks.has(nk):
 				picks[nk] = [pd, f.get_basename()]
+			if nk in KEYS and pd.has("art_size") and (pd.art_size as Array).size() == 2:
+				if not sizes.has(nk):
+					sizes[nk] = {}
+				sizes[nk]["%.2fx%.2f" % [float(pd.art_size[0]), float(pd.art_size[1])]] = [float(pd.art_size[0]), float(pd.art_size[1])]
 
 
 func _piece(pd: Dictionary, old: bool, size_mul := Vector2.ONE):
@@ -136,6 +160,14 @@ func _paint() -> void:
 		node.draw_string(font, Vector2(1504, y + 16), "0.6x / 宽 1.6x / 高 1.6x（2x 放大）", HORIZONTAL_ALIGNMENT_LEFT, 400, 12, Pal.ink(0.6))
 		var x := 1504.0
 		var muls := [Vector2(0.6, 0.6), Vector2(1.6, 1.0), Vector2(1.0, 1.6)]
+		var others := []
+		var bs: Array = pd.get("art_size", [1, 1])
+		for k in sizes.get(nk, {}):
+			var v: Array = sizes[nk][k]
+			if absf(v[0] - float(bs[0])) > 0.01 or absf(v[1] - float(bs[1])) > 0.01:
+				others.append(Vector2(v[0] / float(bs[0]), v[1] / float(bs[1])))
+		if not others.is_empty() and not nk in ["p_comms", "p_battery", "p_ups"]:   # the key's other real sizes
+			muls = others.slice(0, 4)
 		if nk == "p_comms":   # the console's real sizes on the other ships (base 1.0 x 0.7)
 			muls = [Vector2(1.45, 3.6 / 0.7), Vector2(2.0, 2.96 / 0.7), Vector2(3.6, 1.48 / 0.7), Vector2(2.4, 0.8 / 0.7)]
 		elif nk == "p_ups":   # the UPS on the other ships (base 1.8 x 2.0): DC-84's tower, SV-122's room, FL-116's tall one
@@ -145,7 +177,7 @@ func _paint() -> void:
 		for mul in muls:
 			var pv = _piece(pd, false, mul)
 			var e2: Vector2 = pv.art_size * M
-			var sc := minf(2.0, minf((100.0 if nk in ["p_comms", "p_battery", "p_ups"] else 130.0) / e2.x, 240.0 / e2.y))
+			var sc := minf(2.0, minf((100.0 if muls.size() > 3 else 130.0) / e2.x, 240.0 / e2.y))
 			node.draw_set_transform(Vector2(x, y + 36), 0.0, Vector2(sc, sc))
 			Art.draw(node, pv.art, e2, pv, font)
 			node.draw_set_transform(Vector2.ZERO)

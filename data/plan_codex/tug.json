@@ -1,0 +1,49 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-11",
+	"ship": "tug",
+	"steps": [
+		{
+			"ctrl": "GAS-A",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "FUEL-T",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-T",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2-P",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAS-A",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "FUEL-T",
+			"do": "h",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2-P",
+			"do": "h",
+			"pre": [],
+			"value": false
+		}
+	]
+}

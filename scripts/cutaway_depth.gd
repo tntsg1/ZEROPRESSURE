@@ -17,6 +17,9 @@ extends RefCounted
 
 const M := 48.0
 const ENGINE_LAYERED := ["eng_core", "eng_front", "engine_s", "gen", "turbo", "turboexpander", "flywheel_rotor", "hpu", "screw_comp", "top_drive", "reactor"]
+# 2026-11-11 (零件图鉴第四批): pieces whose ship art is "gen" but that are now drawn as what they are
+# (art_ships.gd) and are not engines get no engine housing
+const NOT_ENGINE_DRAWN := ["fuel_cell_pm", "stirling_gen", "turbine_genset", "drups", "co2_burner", "diesel_genset", "rtg_module", "main_alternator", "ts_power"]
 
 static var _EQ = null
 
@@ -177,7 +180,7 @@ static func detail(w, p, poly: PackedVector2Array, m: String) -> Array:
 	var out: Array
 	match m:
 		"engine", "reactor":
-			out = _engine(poly) if p.art in ENGINE_LAYERED else [PackedVector2Array(), PackedColorArray()]
+			out = _engine(poly) if p.art in ENGINE_LAYERED and not str(Art.SH.BY_NAME.get(p.name_key, "")) in NOT_ENGINE_DRAWN else [PackedVector2Array(), PackedColorArray()]
 		"tank":
 			out = _tank(poly)
 		_:

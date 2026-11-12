@@ -1554,7 +1554,7 @@ func _draw_multi(z: float, lw: float) -> void:
 			pk = " · " + (Ops.w("只抓钢", "STEEL ONLY") if multi.pick == "steel" else Ops.w("只抓设备", "MACHINES ONLY"))
 		_readout(font, at + Vector2(multi.radius() + 8.0 / z, -10.0 / z), z, "%d/%d · %.1f/%.1f t%s" % [n, multi.count(), m, multi.mass_cap(), pk], Pal.ink(0.85))
 		if guard_why != "":
-			_readout(font, aim + Vector2(16.0 / z, 26.0 / z), z, game.txt(guard_why), Pal.heat(0.95, 1.2))
+			_readout(font, aim + Vector2(16.0 / z, 26.0 / z), z, game.txt(guard_why), Pal.heat(0.95, 1.2), 440.0)
 		return
 	for h in multi.held:
 		if not is_instance_valid(h.body):
@@ -1587,12 +1587,22 @@ func _brackets(r: Rect2, c: Color, w: float, arm: float) -> void:
 		draw_line(p, p + Vector2(0, arm * sy), c, w, true)
 
 
-func _readout(font: Font, at: Vector2, z: float, text: String, c: Color) -> void:
+func _readout(font: Font, at: Vector2, z: float, text: String, c: Color, max_w: float = 0.0) -> void:
 	var size := 15
-	draw_set_transform(at, 0.0, Vector2(1.0 / z, 1.0 / z))
 	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	draw_rect(Rect2(Vector2(-6, -16), Vector2(w + 12, 22)), Color(0.03, 0.032, 0.036, 0.85))
-	draw_string(font, Vector2.ZERO, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, c)
+	var lines := 1
+	if max_w > 0.0 and w > max_w:
+		# a long reason (the owner's 11-11 wording) wraps instead of running off the screen
+		lines = mini(3, int(ceil(w / (max_w - 12.0))))
+		w = max_w
+		# keep the whole box on screen: shift it left when its right edge would pass the view
+		var sx: float = (get_global_transform_with_canvas() * at).x
+		var over: float = sx + w + 12.0 - (get_viewport_rect().size.x - 16.0)
+		if over > 0.0:
+			at.x -= over / z
+	draw_set_transform(at, 0.0, Vector2(1.0 / z, 1.0 / z))
+	draw_rect(Rect2(Vector2(-6, -16), Vector2(w + 12, 22 + 20 * (lines - 1))), Color(0.03, 0.032, 0.036, 0.85))
+	draw_multiline_string(font, Vector2.ZERO, text, HORIZONTAL_ALIGNMENT_LEFT, w if lines > 1 else -1.0, size, lines, c)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 

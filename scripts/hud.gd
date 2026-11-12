@@ -852,6 +852,18 @@ func _tw(s: String, size_px: int, f: Font = null) -> float:
 
 
 # Measure wrapping with the same font and width used to draw the HUD text.
+# a background line of the next-step card: the words the author wrote, wrapped (two lines at most) rather than cut at the edge
+func _bg_line(bgi: Dictionary) -> String:
+	return str(bgi.t) if str(bgi.kind) == "todo" else NextStep.line("N_bg") + " " + str(bgi.t)
+
+
+func _bg_rows(items: Array, width: float) -> int:
+	var n := 0
+	for bgi in items:
+		n += mini(2, _wrapped_lines(_bg_line(bgi), width, 12))
+	return n
+
+
 func _wrapped_lines(s: String, width: float, size_px: int, f: Font = null) -> int:
 	var fo := f if f != null else font
 	var line_h: float = fo.get_height(size_px)
@@ -3399,7 +3411,7 @@ func _asset_board(cr: Rect2) -> void:
 				fixes += 1
 	# 2026-11-10 推进节奏: what goes on in the background (venting, a unit on its way, a to-do), a line each
 	var nx_bg: Array = (nx.get("bg", []) as Array).slice(0, 3) if not nx.is_empty() else []
-	var nx_h := (42.0 + nx_how * 17.0 + maxf(0, nx_title_lines - 1) * 20.0 + nx_bg.size() * 17.0) if not nx.is_empty() else 0.0
+	var nx_h := (42.0 + nx_how * 17.0 + maxf(0, nx_title_lines - 1) * 20.0 + _bg_rows(nx_bg, _contract_rect().size.x - 54.0) * 17.0) if not nx.is_empty() else 0.0
 	# 112 号: a long warning wraps inside the board instead of running past its edge
 	var warn_w := cr.size.x - 34.0
 	var warn_n := 0
@@ -3453,11 +3465,12 @@ func _asset_board(cr: Rect2) -> void:
 			y += nx_how * 17.0
 		for bgi in nx_bg:
 			# 占位 (待用户定稿): "后台 · " before what is under way, "待办 · " lines as they are
-			var bl: String = str(bgi.t) if str(bgi.kind) == "todo" else NextStep.line("N_bg") + str(bgi.t)
+			var bl: String = _bg_line(bgi)
 			var bc: Color = Pal.heat(0.75, 1.1) if str(bgi.kind) == "todo" else Pal.ink(0.5)
 			c.draw_arc(Vector2(x + 4.0, y + 8.0), 3.5, 0.0, TAU, 12, Color(UiSkin.ACCENT, 0.7), 1.2, true)
-			_text(bl, Vector2(x + 14.0, y + 12.0), 12, bc, font, -1, r.size.x - 54.0)
-			y += 17.0
+			var bn := mini(2, _wrapped_lines(bl, r.size.x - 54.0, 12))
+			_mtext(bl, Vector2(x + 14.0, y + 12.0), r.size.x - 54.0, 12, bn, bc, font)
+			y += 17.0 * bn
 		y += 22.0
 	for wl in warn:
 		var wn := _wrapped_lines(str(wl), warn_w, 12)
@@ -3512,7 +3525,7 @@ func _next_compact(k: float) -> void:
 	var bg: Array = (nx.get("bg", []) as Array).slice(0, 2)
 	var tl := _wrapped_lines(str(nx.t), cr.size.x - 40.0, 15, font_b)
 	var hl := _wrapped_lines(str(nx.how), cr.size.x - 40.0, 12) if str(nx.how) != "" else 0
-	var r := Rect2(cr.position, Vector2(cr.size.x, 40.0 + tl * 20.0 + hl * 17.0 + bg.size() * 17.0))
+	var r := Rect2(cr.position, Vector2(cr.size.x, 40.0 + tl * 20.0 + hl * 17.0 + _bg_rows(bg, cr.size.x - 40.0) * 17.0))
 	UI.panel(c, r, 0.82 * k, 0.0, UiSkin.ACCENT, k)
 	var x := r.position.x + 18.0
 	var y := r.position.y + 22.0
@@ -3525,9 +3538,10 @@ func _next_compact(k: float) -> void:
 		_mtext(str(nx.how), Vector2(x, y - 4.0), r.size.x - 40.0, 12, -1, Color(Pal.ink(0.62), k))
 		y += hl * 17.0
 	for bgi in bg:
-		var bl: String = str(bgi.t) if str(bgi.kind) == "todo" else NextStep.line("N_bg") + str(bgi.t)
-		_text(bl, Vector2(x, y), 12, Color(Pal.ink(0.5), k), font, -1, r.size.x - 40.0)
-		y += 17.0
+		var bl: String = _bg_line(bgi)
+		var bn := mini(2, _wrapped_lines(bl, r.size.x - 40.0, 12))
+		_mtext(bl, Vector2(x, y), r.size.x - 40.0, 12, bn, Color(Pal.ink(0.5), k), font)
+		y += 17.0 * bn
 
 
 # 110 号 (Q2 C): the next step on site — a ring on the control or piece it means, a leader and the

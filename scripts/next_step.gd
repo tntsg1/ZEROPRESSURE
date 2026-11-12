@@ -79,6 +79,10 @@ static func of(g) -> Dictionary:
 
 
 static func _of(g) -> Dictionary:
+	# 切割宝典 (2026-11-11): a marked-line cut waiting for the hull over it: that hull piece is the step
+	var pl = g.get("plan") if g != null and on(g) else null
+	if pl != null and pl.running and pl.wait == "as_plan_expose" and pl.expose_at.is_finite():
+		return _step(Txt.t("as_plan_expose") % pl.expose_tag, Txt.t("as_plan_expose_how"), pl.expose_at)
 	if g == null or g.world == null or g.sys == null or not on(g) or not CoreAsset.has(g) or g.store_guide_on():
 		return {}
 	# 用户定案（IC-120 的 A 方案推广到所有船，图鉴对标第二轮）: a pump whose line the hose has
@@ -242,8 +246,8 @@ static func _eta_words(g, st: Dictionary) -> String:
 	if e < 0.0:
 		return ""
 	if e >= 90.0:
-		return line("N_eta_m") % int(ceil(e / 60.0))
-	return line("N_eta_s") % maxi(1, int(ceil(e)))
+		return " " + line("N_eta_m") % int(ceil(e / 60.0))
+	return " " + line("N_eta_s") % maxi(1, int(ceil(e)))
 
 
 # what can be done while st waits: the rooms vented, the preloaded arms, the free units
@@ -281,7 +285,7 @@ static func _while_waiting(g, st: Dictionary) -> Dictionary:
 	out.t = words
 	# 占位 (待用户定稿): nothing to do meanwhile — say it is only waiting
 	if str(out.how).find(line("N_wait_idle").substr(0, 4)) < 0 and str(out.how).find(w("不用守着", "No need")) < 0:
-		out.how = line("N_wait_idle") + (w("；", "; ") + str(out.how) if str(out.how) != "" else "")
+		out.how = line("N_wait_idle") + ((" " if not Txt.zh else "") + str(out.how) if str(out.how) != "" else "")
 	return out
 
 
@@ -1248,7 +1252,7 @@ static func _mf126(g) -> Dictionary:
 			# 机制说明 (可改)
 			var cw := line("N_core_cooling") % [fu.core_temp(), safe_t]
 			if left >= 0.0:
-				cw += line("N_eta_s") % int(ceil(left)) if left < 90.0 else line("N_eta_m") % int(ceil(left / 60.0))
+				cw += " " + (line("N_eta_s") % int(ceil(left)) if left < 90.0 else line("N_eta_m") % int(ceil(left / 60.0)))
 			var cs := _step(cw, line("N_core_how"), _tag_at(g, str(fu.cfg.get("core", ""))), true)
 			cs.eta_known = true
 			return cs
@@ -1261,7 +1265,7 @@ static func _mf126(g) -> Dictionary:
 		if room == "" or g.sys.P(room) <= LOW:
 			var ct := _take(g, core)
 			if not ct.is_empty():
-				ct.t = line("N_core_ready") + str(ct.t)
+				ct.t = line("N_core_ready") + ("" if Txt.zh else " ") + str(ct.t)
 				return ct
 		elif _gas_port(g, room) != "":
 			# its room still under pressure: that first, said what it is for (the core waits on it)
@@ -1270,7 +1274,7 @@ static func _mf126(g) -> Dictionary:
 				var port := _gas_port(g, room)
 				vs = _step(w("抽空 %s：接 %s", "VENT %s AT %s") % [_room(g, room), port], w("气液回收（5）对着接口，现在 %.0f kPa", "hose (5) on the port, %.0f kPa now") % g.sys.P(room), _ctrl_at(g, port))
 			if not vs.get("wait", false):
-				vs.t = line("N_core_room") + str(vs.t)
+				vs.t = line("N_core_room") + ("" if Txt.zh else " ") + str(vs.t)
 			return vs
 	var pl := _preloads(g)
 	if not pl.is_empty():

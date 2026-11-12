@@ -829,43 +829,43 @@
 
 [txt.as_mg_guard_hazard]
 # 提示文字
-中：危险件：范围抓钩不抓，用单抓（3）
-英：HAZARD: THE FIELD GRAPPLE LEAVES IT · USE THE SINGLE GRAPPLE (3)
+中：范围抓钩会跳过危险部件。按 X 关闭范围抓钩，切换到单体抓握模式。
+英：HAZARD: THE FIELD GRAPPLE SKIPS IT · PRESS X TO TURN IT OFF AND GRAB SINGLY
 
 [txt.as_mg_guard_value]
 # 提示文字
-中：贵重设备（≥$15,000）：范围抓钩不抓，用单抓（3）
-英：VALUABLE (≥$15,000): THE FIELD GRAPPLE LEAVES IT · USE THE SINGLE GRAPPLE (3)
+中：范围抓钩会跳过价值 $15,000 及以上的贵重设备。按 X 关闭范围抓钩，切换到单体抓握模式。
+英：VALUABLE ($15,000+): THE FIELD GRAPPLE SKIPS IT · PRESS X TO TURN IT OFF AND GRAB SINGLY
 
 [txt.as_mg_guard_fragile]
 # 提示文字
-中：易碎设备：范围抓钩不抓，用单抓（3）
-英：FRAGILE: THE FIELD GRAPPLE LEAVES IT · USE THE SINGLE GRAPPLE (3)
+中：范围抓钩会跳过易碎设备。按 X 关闭范围抓钩，切换到单体抓握模式。
+英：FRAGILE: THE FIELD GRAPPLE SKIPS IT · PRESS X TO TURN IT OFF AND GRAB SINGLY
 
 [txt.as_mt_intro]
 # 提示文字
-中：拆法是新工具带来的新干法：卡片上实时显示现在的档位和下一档价格。
-英：A method is a new tool and the new way of working it opens: each card shows its tier now and the next one's price.
+中：购买新工具后，可以解锁更多拆解方式。卡片上会实时显示当前档位，以及升级到下一档需要的费用。
+英：New tools unlock more ways to dismantle. Each card shows its current tier live, and the cost of the next one.
 
 [txt.as_mt_unbought]
 # 提示文字
-中：未购买
+中：尚未购买
 英：NOT BOUGHT
 
 [txt.as_mt_buy]
 # 提示文字
-中：购买  %s
+中：购买 %s
 英：BUY  %s
 
 [txt.as_mt_facility]
 # 提示文字
-中：随港区设施升级
-英：GROWS WITH THE PORT'S FACILITIES
+中：随着港区设施升级
+英：GROWS WITH PORT FACILITY UPGRADES
 
 [txt.as_mt_top]
 # 提示文字
-中：最高档
-英：TOP TIER
+中：已升至最高档位
+英：MAX TIER REACHED
 
 [txt.as_mt_owned]
 # 提示文字
@@ -874,28 +874,28 @@
 
 [txt.as_mt_not_owned]
 # 提示文字
-中：还没有这项拆法
-英：NOT YET OWNED
+中：尚未解锁这项拆解方式
+英：THIS METHOD IS NOT UNLOCKED YET
 
 [txt.as_mt_how]
 # 提示文字
-中：怎么获得
+中：获取方式
 英：HOW TO GET IT
 
 [txt.as_mt_build_how]
 # 提示文字
-中：让施工队修好%s，档位随港区设施升级。
-英：Have the crew build the %s; its tiers grow with the port's facilities.
+中：安排施工队完成%s的建设后，即可随着港区设施升级提升档位。
+英：Have the crew finish building the %s, and its tier will grow with the port's facility upgrades.
 
 [txt.as_mt_borrow_line]
 # 提示文字
-中：借用合同：%s · 出借 %s · 不收合同费；做完这单即可使用。
-英：Borrow job: %s · lends %s · no fee; finish it and the method is yours.
+中：借用合同：%s · 由 %s 提供设备 · 无需支付合同费用，完成这份合同即可使用。
+英：Borrow job: %s · equipment supplied by %s · no contract fee; finish this job to use it.
 
 [txt.as_mt_cost_job]
 # 提示文字
-中：借用合同获得
-英：FROM ITS BORROW JOB
+中：通过借用合同获得
+英：FROM A BORROW JOB
 
 [txt.as_mt_bought]
 # 提示文字
@@ -904,103 +904,113 @@
 
 [txt.as_plan_not_bought]
 # 提示文字
-中：【占位】按方案自动切还没购买（拆法页）
-英：[PLACEHOLDER] The cutter-follows-your-plan method is not bought yet (methods page)
+中：尚未购买“按方案自动切”功能，请前往拆解方式页面购买。
+英："Auto-cut by plan" is not bought yet. Buy it on the methods page.
 
 [txt.as_plan_none]
 # 提示文字
-中：【占位】这个型号还没有方案：亲手拆完一艘，就会记下你的拆法，下次按 P 回放
-英：[PLACEHOLDER] No plan for this type yet: strip one by hand and your way is written down; press P on the next one
+中：这个型号还没有保存过拆解方案。手动完成一艘船的拆解后，系统会记录你的操作，下次遇到相同型号时，可以按 P 使用保存的方案。
+英：No dismantling plan is saved for this type yet. Strip one by hand and your steps are recorded; press P to use the saved plan on the next one of this type.
 
 [txt.as_plan_title_codex]
 # 提示文字
-中：【占位】宝典方案自动切 %d/%d
-英：[PLACEHOLDER] CODEX PLAN %d/%d
+中：拆船宝典方案 · 自动切 %d/%d
+英：CODEX PLAN · AUTO-CUT %d/%d
 
 [txt.as_plan_src_codex]
 # 提示文字
-中：【占位】改用宝典方案（Shift+P 换回我的方案）
-英：[PLACEHOLDER] Using the codex plan (Shift+P for your own)
+中：当前使用拆船宝典方案，按 Shift+P 可以切换回自己的方案。
+英：Using the Cutting Codex plan. Press Shift+P to switch back to your own plan.
 
 [txt.as_plan_src_own]
 # 提示文字
-中：【占位】改用我的方案（Shift+P 换回宝典方案）
-英：[PLACEHOLDER] Using your own plan (Shift+P for the codex's)
+中：当前使用自己保存的方案，按 Shift+P 可以切换回拆船宝典方案。
+英：Using your own saved plan. Press Shift+P to switch back to the Cutting Codex plan.
 
 [txt.as_plan_codex_ran]
 # 提示文字
-中：【占位】这单用的是宝典方案；你自己的方案没有改
-英：[PLACEHOLDER] This job ran the codex plan; your own plan is unchanged
+中：本次合同使用了拆船宝典方案，你自己保存的拆解方案不会受到影响。
+英：This job ran the Cutting Codex plan. Your own saved plan is unaffected.
 
 [txt.as_codex_types]
 # 提示文字
-中：【占位】手册里有 %d 种船型的拆法
-英：[PLACEHOLDER] The manual covers %d ship types
+中：拆船手册目前收录了 %d 种船型的拆解方案。
+英：The manual now covers plans for %d ship types.
 
 [txt.as_codex_name]
 # 提示文字
-中：【占位】切割宝典
-英：[PLACEHOLDER] CUTTING CODEX
+中：拆船宝典
+英：CUTTING CODEX
 
 [txt.as_codex_d]
 # 提示文字
-中：【占位】造船厂编的拆船手册：所有船型（远航者、AX-40 除外）不用先亲手拆一遍，按 P 自动完成安全处置（断电、泄压）和主要切割；零件仍需你来拆
-英：[PLACEHOLDER] The shipwrights' own breaking manual: on every type (not the ARK or the AX-40), P makes the ship safe (power off, pressure out) and makes the main cuts, no stripping one by hand first. The parts are still yours to take off
+中：这本拆船手册由造船厂编写，收录了大部分船型的拆解方案。除了远航者和 AX-40，其他船型都不需要先手动拆解一遍。按 P 就能按照手册中的方案自动完成断电、泄压等安全处置；你拆开挡住的船壳后，切割机会接着完成主要的切割工作。船上的零件仍然需要自己拆卸。
+英：The shipwrights' own breaking manual, with plans for most ship types. Every type except the Voyager and the AX-40 needs no hand-stripping first. Press P to run the manual's safe-down steps (power off, pressure out); once you open the blocking hull plates, the cutter carries on with the main cuts. Parts are still yours to take off.
+
+[txt.as_plan_expose]
+# 提示文字
+中：【占位】等待露出：拆开 %s，切割机就接着切
+英：[PLACEHOLDER] WAITING: TAKE %s OFF AND THE CUTTER GOES ON
+
+[txt.as_plan_expose_how]
+# 提示文字
+中：【占位】拆开标出的船壳；切割机按标记线自动切下里面的设备，不用再按 P
+英：[PLACEHOLDER] Take the marked hull off: the cutter cuts the equipment inside along its marked lines, no need to press P
 
 [txt.as_plan_skip_tier]
 # 提示文字
-中：【占位】回放时跳过一刀要第 2 档（拆法页升级）
-英：[PLACEHOLDER] Skipping a step needs tier 2 (methods page)
+中：需要先在拆解方式页面升级到第 2 档，才能在方案回放时跳过切割步骤。
+英：Upgrade to tier 2 on the methods page to skip cutting steps during plan replay.
 
 [txt.as_plan_no_skip]
 # 提示文字
-中：【占位】这一步不能跳过
-英：[PLACEHOLDER] This step cannot be skipped
+中：当前步骤无法跳过。
+英：This step cannot be skipped.
 
 [txt.as_plan_rec_title]
 # 提示文字
-中：【占位】方案录制中
-英：[PLACEHOLDER] RECORDING PLAN
+中：正在录制拆解方案
+英：RECORDING DISMANTLING PLAN
 
 [txt.as_plan_rec_line]
 # 提示文字
-中：【占位】已记 %d 步 · 结算后存为这个型号的方案
-英：[PLACEHOLDER] %d steps · saved as this type's plan at settlement
+中：已记录 %d 个步骤。完成结算后，会将这些步骤保存为当前船型的拆解方案。
+英：%d steps recorded. They are saved as this type's plan at settlement.
 
 [txt.as_plan_rec_stopped]
 # 提示文字
-中：【占位】录到第 %d 步停了（出了事故）· 结算保留之前的
-英：[PLACEHOLDER] Stopped at step %d (an incident) · settlement keeps what came before
+中：拆解过程中发生事故，方案录制在第 %d 步中断。结算时仍会保留之前记录的步骤。
+英：An incident stopped the dismantling; recording ended at step %d. Settlement keeps the steps recorded before it.
 
 [txt.as_plan_title]
 # 提示文字
-中：【占位】按方案自动切 %d/%d
-英：[PLACEHOLDER] AUTO PLAN %d/%d
+中：拆解方案自动执行 %d/%d
+英：AUTO PLAN RUNNING %d/%d
 
 [txt.as_up_wrench_queue]
 # 提示文字
-中：【占位】排队拧
-英：[PLACEHOLDER] Queued wrench
+中：螺栓拆卸队列
+英：WRENCH QUEUE
 
 [txt.as_up_wrench_queue_d]
 # 提示文字
-中：【占位】拧着一颗时就能点下一颗，按点的顺序自动拧完
-英：[PLACEHOLDER] Click the next fixing while one is still turning: they are done in the order clicked
+中：拆卸当前螺栓时，可以继续选择其他螺栓。工具会按照选择的顺序，自动完成后续拆卸。
+英：While one bolt is coming off, keep picking others. The tool works through them in the order picked.
 
 [txt.as_up_wrench_queue_st]
 # 提示文字
-中：【占位】拧着一颗时点下一颗就排进队列，按点的顺序自动拧完。再点或右键取消；出范围会等你回来；换工具清空。
-英：[PLACEHOLDER] Click the next while one turns: it queues, done in click order. Click again or right-click to drop it; out of reach it waits; another tool clears it.
+中：拆卸螺栓时，可以点击其他螺栓，将它们加入拆卸队列。工具会按照选择的顺序自动拆卸。再次点击或使用右键可以取消排队。如果目标超出操作范围，工具会暂停并等待你返回。切换工具后，队列会自动清空。
+英：While a bolt is coming off, click other bolts to add them to the queue. The tool removes them in the order picked. Click again or right-click to cancel one. If a target is out of reach, the tool pauses and waits for you to return. Switching tools clears the queue.
 
 [txt.as_up_wrench_queue_have]
 # 提示文字
-中：已安装 · 拧着时可接着点下一颗
-英：FITTED · CLICK THE NEXT WHILE ONE TURNS
+中：已安装 · 拆卸过程中可以继续添加螺栓
+英：FITTED · KEEP ADDING BOLTS WHILE ONE COMES OFF
 
 [txt.as_wq_cancel]
 # 提示文字
-中：已从排队里取消
-英：TAKEN OUT OF THE QUEUE
+中：已从拆卸队列中移除
+英：REMOVED FROM THE QUEUE
 
 [txt.as_wq_cleared]
 # 提示文字
@@ -1009,33 +1019,33 @@
 
 [txt.as_wq_wait]
 # 提示文字
-中：下一颗超出范围：飞近些继续拧
-英：NEXT ONE OUT OF REACH: FLY CLOSER TO GO ON
+中：下一个螺栓超出了工具的操作范围。请靠近目标，继续拆卸。
+英：NEXT BOLT IS OUT OF REACH. MOVE CLOSER TO CONTINUE.
 
 [txt.as_slurp_keys]
 # 提示文字
-中：左键 抽气液 · 右键 吸漏液
-英：LMB PUMP · RMB SIP SPILLS
+中：按住左键抽取气体和液体，按住右键回收泄漏液体。
+英：HOLD LMB: PUMP GAS AND LIQUID · HOLD RMB: RECOVER SPILLS
 
 [txt.as_slurp_hint]
 # 提示文字
-中：【占位】按住右键，无人机伸出吸管，把漂在空中的漏液吸回来（按液体种类计入回收）。
-英：[PLACEHOLDER] Hold the right button: the drone puts out a suction tube and draws in liquid adrift (booked as recovered, by kind).
+中：按住右键，无人机会伸出吸管，回收漂浮在空中的泄漏液体。回收的液体会按照种类分别计入回收量。
+英：Hold the right button and the drone extends a suction tube to recover spilled liquid adrift in the air. Recovered liquid is counted by kind.
 
 [txt.as_slurp_took]
 # 提示文字
-中：吸回漏液 %s L
-英：SPILL RECOVERED %s L
+中：已回收 %s L 泄漏液体
+英：RECOVERED %s L OF SPILLED LIQUID
 
 [txt.as_slurp_ice]
 # 提示文字
-中：冻成冰球了，吸管吸不动
-英：FROZEN TO ICE: THE TUBE CAN'T TAKE IT
+中：泄漏液体已经冻结成冰球，无法使用吸管回收。
+英：THE SPILL HAS FROZEN INTO ICE BALLS: THE TUBE CAN'T RECOVER THEM
 
 [txt.as_mg_guard_keep]
 # 提示文字
-中：合同要求完整回收：范围抓钩不抓，用单抓（3）
-英：THE CONTRACT WANTS IT WHOLE: THE FIELD GRAPPLE LEAVES IT · USE THE SINGLE GRAPPLE (3)
+中：合同要求完整回收的设备无法使用范围抓钩。请按 X 关闭范围抓钩，切换到单体抓握模式。
+英：THE CONTRACT REQUIRES IT INTACT: NO FIELD GRAPPLE · PRESS X TO TURN IT OFF AND GRAB SINGLY
 
 [txt.as_p_g]
 # 提示文字
@@ -1348,43 +1358,43 @@
 
 [G_ark_wheels_t]
 # 讲解卡标题 · 一行
-中：【占位：转轮标题】
-英：[PLACEHOLDER: THE WHEELS]
+中：双转轮制动操作
+英：DUAL-WHEEL BRAKING
 
 [G_ark_wheels_1]
 # 讲解卡第 1 行 · 一句
-中：【占位：先断负载、开冷却，两轮按配比一起刹】
-英：[PLACEHOLDER: loads off, cooling on, brake both wheels together]
+中：先切断负载并启动冷却系统，再按照规定的制动比例，同时对两个转轮进行制动。
+英：Cut the loads and start cooling, then brake both wheels together at the specified ratio.
 
 [G_ark_wheels_2]
 # 讲解卡第 2 行 · 一句
-中：【占位：电容满了按一下泄放，泄放时刹车松开】
-英：[PLACEHOLDER: dump the capacitor when full; the brakes let go meanwhile]
+中：制动电容充满后，按下泄放按钮。泄放期间需要松开制动器，等待电容完成泄放。
+英：When the brake capacitor is full, press the dump button. Release the brakes during the dump and wait for the capacitor to finish discharging.
 
 [G_ark_wheels_3]
 # 讲解卡第 3 行 · 一句
-中：【占位：停住后盘车对准锁销孔，再插锁销】
-英：[PLACEHOLDER: stopped, inch it to the pin hole, then the pin]
+中：两个转轮完全停止后，使用盘车装置将锁销孔对齐，再插入锁销固定转轮。
+英：Once both wheels have fully stopped, use the turning gear to line up the pin hole, then insert the pin to lock the wheels.
 
 [G_antimatter_trap_t]
 # 讲解卡标题 · AX-40 逆火反物质储存船第一次进坞 · 一行
-中：【占位：断电即湮灭】
-英：[PLACEHOLDER: NO POWER, IT ANNIHILATES]
+中：断电会引发反物质湮灭
+英：CUTTING POWER TRIGGERS ANNIHILATION
 
 [G_antimatter_trap_1]
 # 讲解卡第 1 行 · AX-40 逆火反物质储存船第一次进坞 · 一句
-中：【占位：这艘船不能先断电，储存阱只靠主电】
-英：[PLACEHOLDER: not the power first here: the trap runs on the main bus only]
+中：这艘船的反物质储存阱目前只依靠主电源维持约束，直接切断主电源会导致反物质湮灭。
+英：This ship's antimatter trap is held only by the main power. Cutting it directly will cause annihilation.
 
 [G_antimatter_trap_2]
 # 讲解卡第 2 行 · AX-40 逆火反物质储存船第一次进坞 · 一句
-中：【占位：先给储存阱接便携约束电源，读数变成双路供电】
-英：[PLACEHOLDER: the portable supply on the trap first, till it reads dual supply]
+中：先为储存阱接入便携式约束电源，确认供电状态显示为“双路供电”后，再进行后续操作。
+英：First connect the portable containment supply to the trap and confirm it reads "DUAL SUPPLY" before doing anything else.
 
 [G_antimatter_trap_3]
 # 讲解卡第 3 行 · AX-40 逆火反物质储存船第一次进坞 · 一句
-中：【占位：再断主电，吊车整件送反物质回收架】
-英：[PLACEHOLDER: then the bus off, and crane it whole to the antimatter cradle]
+中：确认便携式约束电源正常供电后，切断主电源，再使用吊车将整个反物质储存阱运送到反物质回收架。
+英：With the portable supply confirmed, cut the main power, then crane the whole antimatter trap to the antimatter cradle.
 
 [G_first_strip_t]
 # 讲解卡标题 · 第一单开工 · 一行
@@ -1692,58 +1702,58 @@
 
 [N_bg]
 # 拆船现场 · 下一步下面的后台行前缀
-中：后台 ·
-英：BACKGROUND ·
+中：后台处理中 ·
+英：PROCESSING IN BACKGROUND ·
 
 [N_carry]
 # 拆船现场 · 设备被拿着时（%s = 设备）
-中：%s 送回收中
-英：%s ON ITS WAY TO A MOUTH
+中：正在运送 %s 至回收区
+英：CARRYING %s TO THE RECOVERY AREA
 
 [N_todo]
 # 拆船现场 · 放下没送进回收口（%s = 设备）
-中：待办：把 %s 送进回收口
-英：TO DO: %s INTO A MOUTH
+中：待办事项：将 %s 运送到回收口
+英：TO DO: TAKE %s TO THE RECOVERY MOUTH
 
 [N_wait_done]
 # 拆船现场 · 接上软管但没别的事可做时
-中：等泄压完成
-英：WAIT FOR IT TO FINISH
+中：正在等待泄压完成
+英：WAITING FOR PRESSURE RELIEF TO FINISH
 
 [N_wait_idle]
 # 拆船现场 · 只能等、没别的事可做时
-中：不用守着，到了会提示
-英：No need to watch it; it will say when
+中：可以先处理其他工作，完成后会收到提示。
+英：You can work on something else meanwhile; you'll be notified when it's done.
 
 [N_eta_s]
 # 拆船现场 · 等待剩余时间（秒）
-中：· 约 %d 秒
-英：· ~%d s
+中：· 预计还需 %d 秒
+英：· ~%d s LEFT
 
 [N_eta_m]
 # 拆船现场 · 等待剩余时间（分钟）
-中：· 约 %d 分钟
-英：· ~%d MIN
+中：· 预计还需 %d 分钟
+英：· ~%d MIN LEFT
 
 [N_core_cooling]
 # 拆船现场 · MF-126 炉芯冷却中（当前温度 → 安全温度）
-中：炉芯冷却中 · %.0f°C → %.0f°C
-英：THE CORE IS COOLING · %.0f → %.0f °C
+中：炉芯正在冷却 · %.0f°C → %.0f°C
+英：CORE COOLING · %.0f°C → %.0f°C
 
 [N_core_how]
 # 拆船现场 · MF-126 炉芯冷却中的说明
-中：不用守着：换热泵别断电、冷却回路别放空；这期间先拆别处
-英：No need to watch it: keep the pumps powered and the loop full; strip elsewhere meanwhile
+中：炉芯冷却期间不需要一直等待。保持换热泵供电，确保冷却回路没有排空，就可以先去拆解其他部位。
+英：No need to wait out the cooling. Keep the heat-exchange pumps powered and the cooling loop from draining, and strip other areas meanwhile.
 
 [N_core_ready]
 # 拆船现场 · MF-126 冷却完，取炉芯那步的前缀
-中：可以取炉芯了：
-英：THE CORE CAN COME OUT:
+中：炉芯已经冷却完成，可以开始取出：
+英：CORE IS COOL ENOUGH TO REMOVE:
 
 [N_core_room]
 # 拆船现场 · MF-126 冷却完但炉芯舱还带压
-中：炉芯冷下来了，先抽空它的舱 ·
-英：THE CORE IS COOL; ITS ROOM FIRST ·
+中：炉芯温度已经降下来了，还需要先将炉芯所在的舱室抽空。
+英：THE CORE HAS COOLED, BUT ITS COMPARTMENT MUST BE EVACUATED FIRST.
 
 
 ############################################################
@@ -3369,18 +3379,6 @@
 ============================================================
 # 八、游戏里已经不用的编号
 ============================================================
-
-[G_ark_wheels_4]
-中：【占位：这艘船不能先断电，储存阱只靠主电】
-英：[PLACEHOLDER: not the power first here: the trap runs on the main bus only]
-
-[G_ark_wheels_5]
-中：【占位：先给储存阱接便携约束电源，读数变成双路供电】
-英：[PLACEHOLDER: the portable supply on the trap first, till it reads dual supply]
-
-[G_ark_wheels_6]
-中：【占位：再断主电，吊车整件送反物质回收架】
-英：[PLACEHOLDER: then the bus off, and crane it whole to the antimatter cradle]
 
 [L_main_industry_done]
 中：

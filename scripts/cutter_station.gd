@@ -189,7 +189,14 @@ func prepare(who, p, at: Vector2, kerf: float, dt: float) -> bool:
 			# 2026-10-27: the nearest spot it could fire from can be in a closed compartment (G4
 			# replay: right of BH-AM, under a whole deck): it sat "route blocked" forever. The
 			# nearest one the robot can actually fly to, of the closest few (a path search each: few)
-			for f in found.slice(0, 8):
+			# (2026-11-11 切割宝典: a line opened up in a hold has its clear spots behind a wall of shut
+			# ones nearer the robot — the first 8 were all shut on POD's CG-3: then the 16 nearest the work)
+			var tryout: Array = found.slice(0, 8)
+			if found.size() > 8:
+				var rest: Array = found.slice(8)
+				rest.sort_custom(func(x, y): return x[1].distance_squared_to(at) < y[1].distance_squared_to(at))
+				tryout.append_array(rest.slice(0, 16))
+			for f in tryout:
 				if _reachable(f[1]):
 					station = f[1]
 					break

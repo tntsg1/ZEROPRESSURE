@@ -42,8 +42,9 @@ func _initialize() -> void:
 
 func _all_strings() -> Array:
 	var out: Array = []
+	Lines._load()
 	for k in Txt.S:
-		var v = Txt.S[k]
+		var v = Txt.ov.get(k, Txt.S[k])
 		if v is Array:
 			for s in v:
 				out.append(str(s))
@@ -98,7 +99,8 @@ func _w(s: String, size: int, weight: String = "Regular") -> float:
 
 
 func _both(key: String) -> Array:
-	var v = Txt.S.get(key)
+	Lines._load()
+	var v = Txt.ov.get(key, Txt.S.get(key))
 	if v == null:
 		v = CodexTxt.S.get(key)
 	return v if v is Array else []
@@ -152,10 +154,10 @@ func _pairs(list: Array) -> Array:
 	return out
 
 
-func _prefixed(prefix: String) -> Array:
+func _prefixed(prefix: String, skip: Array = []) -> Array:
 	var out: Array = []
 	for k in Txt.S:
-		if str(k).begins_with(prefix):
+		if str(k).begins_with(prefix) and not k in skip:
 			out.append_array(_both(k))
 	return out
 
@@ -292,7 +294,8 @@ func _fit_all() -> void:
 	_fit("tier button", tb, 15, 228, "Medium")
 	_fit("contract card", _keys(["c_title", "c_title_n", "c_log_n", "c_fee_n"]) + _prefixed("c_req"), 15, 804)
 	# Liang's radio: two lines of 700 px at most (keep a margin for wrapping)
-	var radio: Array = _prefixed("as_") + _prefixed("rc_") + _prefixed("ex_l") + _keys(["ex_hint_cost", "ex_free", "ex_broken", "ex_a", "ex_bc", "tier_now"])
+	# as_codex_d / as_up_wrench_queue_st are long wrapped notes (methods detail label, strategy screen), not radio lines
+	var radio: Array = _prefixed("as_", ["as_codex_d", "as_up_wrench_queue_st"]) + _prefixed("rc_") + _prefixed("ex_l") + _keys(["ex_hint_cost", "ex_free", "ex_broken", "ex_a", "ex_bc", "tier_now"])
 	var course: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://ships/ts1_course.json"))
 	for id in course.get("lines", {}):
 		var ln: Dictionary = course.lines[id]

@@ -8,6 +8,7 @@ extends RefCounted
 # deck above (the tug gate), the mouth below (a hulk's stern under the gantry).
 
 const MeshPen = preload("res://scripts/mesh_pen.gd")
+const LinePen = preload("res://scripts/line_pen.gd")
 const FastDraw = preload("res://scripts/fast_draw.gd")
 const W = preload("res://scripts/tug_works.gd")
 
@@ -30,10 +31,10 @@ const HANGER_X := 52.45           # the two rods either side of it, 0.15 m off
 const DECK_END := 52.9
 const PROBE_RAIL := Vector2(31.2, 38.6)
 
-const FACE := Color(0.118, 0.124, 0.136)
-const FACE2 := Color(0.15, 0.158, 0.172)
-const DARK := Color(0.06, 0.064, 0.072)
-const VOID := Color(0.025, 0.027, 0.031)
+var FACE := Color(0.118, 0.124, 0.136)
+var FACE2 := Color(0.15, 0.158, 0.172)
+var DARK := Color(0.06, 0.064, 0.072)
+var VOID := Color(0.025, 0.027, 0.031)
 
 var font: Font
 var r := Rect2()       # the box, world px
@@ -46,7 +47,9 @@ func _ink(a: float) -> Color:
 	# the solid picture: the line art steps back behind the plates — opaque grey (with hdr_2d a faint
 	# white blends in linear light and reads far brighter than its alpha: the tank's outline glared)
 	if _t:
-		var g := 0.08 + a * 0.32
+		var g := (0.14 + a * 0.45) if _bright() else (0.08 + a * 0.32)
+		if _bright() and DistrictStyle.style == 9:
+			g *= 0.88
 		return Color(g, g * 1.03, g * 1.1)
 	return Pal.ink(a)
 
@@ -63,14 +66,21 @@ func _p(v: Vector2) -> Vector2:
 	return r.position + v * m
 
 
+# 8 黑白线稿: the machines as the game always drew them (white line art on black), the hall and the
+# hoist bay through scripts/line_pen.gd; not the solid picture's dimmed lines
+static func _lin() -> bool:
+	return DistrictStyle.on() and DistrictStyle.style == 8
+
+
 func _mesh(key: String, build: Callable) -> ArrayMesh:
 	# 六区内部质感: every mesh (the moving machines too) in the solid picture's line weight
-	var td := DistrictStyle.on()
+	var td := DistrictStyle.on() and not _lin()
 	var k := key + ("/s%d" % DistrictStyle.style if td else "")
 	if not _meshes.has(k):
 		var pen := MeshPen.new()
 		var was := _t
 		_t = td
+		_pal()
 		build.call(pen)
 		_t = was
 		_meshes[k] = pen.mesh()
@@ -127,11 +137,18 @@ func still(ci: CanvasItem, on: bool, lod: int, stage: int) -> void:
 	# the layer's bounds: a canvas item culls a draw_mesh by the mesh's own (untransformed) box, near
 	# the world's origin; a transparent frame round the station keeps the layer in view (tram 97 号)
 	ci.draw_rect(r, Color(0, 0, 0, 0), false, 1.0)
-	var td := DistrictStyle.on()
-	_put(ci, _mesh("still/%s/%d/%d/%d" % [on, lod, stage, DistrictStyle.style if td else 0], func(p):
+	var td := DistrictStyle.on() and not _lin()
+	_put(ci, _mesh("still/%s/%d/%d/%d" % [on, lod, stage, DistrictStyle.style if DistrictStyle.on() else 0], func(p):
 		_t = td
 		_still(p, on, lod, stage)
 		_t = false), Vector2.ZERO)
+	if td and DistrictStyle.style == 5:
+		var e := 0.7
+		var k := 1
+		while e < r.size.x / m - 2.0:
+			_text(ci, Vector2(e + (1.15 if e > 1.0 else 0.6) + 0.22, 5.83), "TS-%02d" % k, 0.42, Pal.tint(Pal.AIR, 0.75, 1.0))
+			e += 7.5
+			k += 1
 	if lod >= 1 and Pal.labels:
 		_text(ci, Vector2(9.4, 1.32), "SWL 40 t", 0.5, Pal.heat(0.75, 1.0))
 		_text(ci, Vector2(14.0, 1.32), "MOUTH GANTRY", 0.34, _ink(0.45))
@@ -156,9 +173,28 @@ static func w(zh: String, en: String) -> String:
 
 
 func _still(p, on: bool, lod: int, stage: int) -> void:
-	if _t and DistrictStyle.style == 3:
+	if _lin():
+		var lp := LinePen.new(p)
+		_hall(lp, on)
+		_metal(lp)
+		_bay(lp, on)
+		# the floor: its top a white line, a quiet warning line under it
+		var bw := r.size.x / m
+		p.line(Vector2(0.0, FLOOR + 0.03), Vector2(bw, FLOOR + 0.03), Pal.ink(0.85), 0.07)
+		p.line(Vector2(0.0, FLOOR + 0.4), Vector2(bw, FLOOR + 0.4), Pal.heat(0.4, 1.0), 0.05)
+		var jx := 1.5
+		while jx < bw:
+			p.line(Vector2(jx, FLOOR + 0.1), Vector2(jx, FLOOR + 0.32), Pal.ink(0.2), 0.03)
+			jx += 1.5
+	if _t and DistrictStyle.style >= 3:
 		_hall(p, on)
+		if DistrictStyle.style == 6:
+			_metal(p)
+		if DistrictStyle.style >= 4:
+			_wash(p, on)
 		_bay(p, on)
+		if DistrictStyle.style == 5:
+			_tech(p, on)
 	if _t:
 		_shadows(p)
 	_wall(p, lod, stage)
@@ -188,16 +224,16 @@ func _solid_rects() -> Array:
 
 func _shadows(p) -> void:
 	# 方案 C: the central ring's shadow (hub_tidy.gd: off away from the light, half a metre)
-	var off := -Look.LIGHT_DIR * 0.5 if DistrictStyle.style == 3 else SHADOW
+	var off := -Look.LIGHT_DIR * 0.5 if DistrictStyle.style >= 3 else SHADOW
 	for rr: Rect2 in _solid_rects():
-		p.rect(Rect2(rr.position + off, rr.size), Color(0, 0, 0, 0.45 if DistrictStyle.style == 3 else 0.42))
+		p.rect(Rect2(rr.position + off, rr.size), Color(0, 0, 0, 0.45 if DistrictStyle.style >= 3 else 0.42))
 
 
 func _lit_edges(p) -> void:
-	var lit := Color(0.22, 0.227, 0.245, 0.85) if DistrictStyle.style == 3 else Color(0.24, 0.247, 0.265)
-	if DistrictStyle.style == 3:
+	var lit := Color(C_EAVE, 0.85) if DistrictStyle.style >= 3 else Color(0.24, 0.247, 0.265)
+	if DistrictStyle.style >= 3:
 		# 方案 C: the main members as the ring's steel plates (hub_tidy.gd TOP2 faces), their dark far edge
-		var steel := Color(0.165, 0.172, 0.19)
+		var steel := C_STEEL
 		var members: Array = [Rect2(1.2, GIRDER.x, 21.6, GIRDER.y - GIRDER.x), Rect2(W.DECK_X.x, W.DECK_Y, maxf(W.DECK_X.y, DECK_END) - W.DECK_X.x, 0.7),
 			Rect2(TABLE.x, TABLE_TOP, TABLE.y - TABLE.x, 0.7)]
 		for lx: float in [W.LEGS.x, W.LEGS.y]:
@@ -218,13 +254,45 @@ func _lit_edges(p) -> void:
 
 # ================================================================== 方案 C 成品: the hall and the hoist bay
 # (user 2026-11-11: as finished as the central ring — scripts/hub_tidy.gd's plates, shadows, lit edges)
-const C_WALL := Color(0.03, 0.032, 0.038)
-const C_PANEL := Color(0.044, 0.047, 0.055)
-const C_LOW := Color(0.06, 0.063, 0.071)
-const C_TOP := Color(0.1, 0.104, 0.116)
-const C_STEEL := Color(0.165, 0.172, 0.19)
-const C_EAVE := Color(0.22, 0.227, 0.245)
+var C_WALL := Color(0.03, 0.032, 0.038)
+var C_PANEL := Color(0.044, 0.047, 0.055)
+var C_LOW := Color(0.06, 0.063, 0.071)
+var C_TOP := Color(0.1, 0.104, 0.116)
+var C_STEEL := Color(0.165, 0.172, 0.19)
+var C_EAVE := Color(0.22, 0.227, 0.245)
 const C_SH := Vector2(0.225, 0.445)     # -Look.LIGHT_DIR * 0.5
+const COOL := Color(0.82, 0.9, 1.0)
+
+
+# 改进方向样片 (user 2026-11-11: "黑默默的，太暗了而且没有科技感和质感"): DistrictStyle 4 亮工业,
+# 5 科技舱 (4 + screens, cyan status lines, guide lights, a hologram), 6 质感金属 (4 + brushed panels,
+# bevels, rivets, wear, round pipes, occlusion)
+func _bright() -> bool:
+	return _t and DistrictStyle.style >= 4
+
+
+func _pal() -> void:
+	var b := DistrictStyle.on() and DistrictStyle.style >= 4 and DistrictStyle.style != 8
+	var s7 := DistrictStyle.style == 7 or DistrictStyle.style == 9
+	C_WALL = (Color(0.095, 0.1, 0.11) if s7 else Color(0.085, 0.09, 0.1)) if b else Color(0.03, 0.032, 0.038)
+	C_PANEL = (Color(0.118, 0.123, 0.136) if s7 else Color(0.108, 0.113, 0.126)) if b else Color(0.044, 0.047, 0.055)
+	C_LOW = Color(0.135, 0.14, 0.155) if b else Color(0.06, 0.063, 0.071)
+	C_TOP = Color(0.2, 0.207, 0.225) if b else Color(0.1, 0.104, 0.116)
+	C_STEEL = Color(0.29, 0.3, 0.32) if b else Color(0.165, 0.172, 0.19)
+	C_EAVE = Color(0.52, 0.54, 0.57) if b else Color(0.22, 0.227, 0.245)
+	FACE = Color(0.2, 0.208, 0.226) if b else Color(0.118, 0.124, 0.136)
+	FACE2 = Color(0.25, 0.26, 0.28) if b else Color(0.15, 0.158, 0.172)
+	DARK = Color(0.11, 0.115, 0.128) if b else Color(0.06, 0.064, 0.072)
+	VOID = Color(0.05, 0.053, 0.06) if b else Color(0.025, 0.027, 0.031)
+	if b and DistrictStyle.style == 9:
+		# 9 (user: "之前的就可以，稍稍降低亮度就可以了"): 7 a little darker, the faces and the walls
+		var k := 0.87
+		C_WALL *= k; C_PANEL *= k; C_LOW *= k; C_TOP *= k; C_STEEL *= k; C_EAVE *= 0.9
+		FACE *= k; FACE2 *= k; DARK *= k; VOID *= k
+		for c in ["C_WALL", "C_PANEL", "C_LOW", "C_TOP", "C_STEEL", "C_EAVE", "FACE", "FACE2", "DARK", "VOID"]:
+			var v: Color = get(c)
+			v.a = 1.0
+			set(c, v)
 
 
 # a solid plate as the ring draws one: its shadow off away from the light, its face, the edges
@@ -238,6 +306,10 @@ func _slab(p, rr: Rect2, face: Color, sh := 0.45, lit := 0.85) -> void:
 	p.line(Vector2(rr.end.x, rr.position.y), rr.end, Color(0, 0, 0, 0.55), lw)
 	p.line(rr.position, Vector2(rr.end.x, rr.position.y), Color(C_EAVE, lit), lw)
 	p.line(rr.position, Vector2(rr.position.x, rr.end.y), Color(C_EAVE, lit * 0.6), lw)
+	if _t and DistrictStyle.style == 6 and rr.size.x > 0.3 and rr.size.y > 0.3:
+		# 质感金属: the chamfer's highlight just inside the lit edges
+		p.line(rr.position + Vector2(0.08, 0.09), Vector2(rr.end.x - 0.08, rr.position.y + 0.09), Color(1, 1, 1, 0.16), 0.03)
+		p.line(rr.position + Vector2(0.09, 0.08), Vector2(rr.position.x + 0.09, rr.end.y - 0.08), Color(1, 1, 1, 0.08), 0.03)
 
 
 # a recessed wall panel: lit along its bottom and right inner edges, shaded along its top and left
@@ -270,8 +342,8 @@ func _hall(p, on: bool) -> void:
 		# the panels' stiffening ribs, faint
 		var rx := a + 2.2
 		while rx < b - 1.0:
-			p.line(Vector2(rx, 5.3), Vector2(rx, 11.0), Color(0.06, 0.064, 0.072), 0.08)
-			p.line(Vector2(rx, 13.2), Vector2(rx, FLOOR - 0.9), Color(0.06, 0.064, 0.072), 0.08)
+			p.line(Vector2(rx, 5.3), Vector2(rx, 11.0), C_PANEL, 0.08)
+			p.line(Vector2(rx, 13.2), Vector2(rx, FLOOR - 0.9), C_PANEL, 0.08)
 			rx += 2.2
 	# the ring beam across at mid height
 	_slab(p, Rect2(0.7, 11.6, bw - 1.0, 0.75), C_LOW, 0.4, 0.7)
@@ -280,14 +352,14 @@ func _hall(p, on: bool) -> void:
 	for px: float in piers:
 		_slab(p, Rect2(px - 0.45, 0.9, 0.9, FLOOR - 0.9), C_LOW, 0.45, 0.75)
 		_slab(p, Rect2(px - 0.65, FLOOR - 0.7, 1.3, 0.7), C_TOP, 0.0, 0.8)
-		p.poly(PackedVector2Array([Vector2(px - 0.45, 12.35), Vector2(px + 0.45, 12.35), Vector2(px + 0.45, 13.3)]), Color(0.05, 0.053, 0.06))
+		p.poly(PackedVector2Array([Vector2(px - 0.45, 12.35), Vector2(px + 0.45, 12.35), Vector2(px + 0.45, 13.3)]), C_PANEL)
 		p.circle(Vector2(px, 6.2), 0.09, Pal.tint(Pal.AIR, 0.55 * lk, 1.2), 8)   # the bay's status lamp
 		# the cable riser beside it: its tray, three cables, a junction box at each tier
 		var cx := px + 0.75
-		p.rect(Rect2(cx, 1.25, 0.34, FLOOR - 1.9), Color(0.05, 0.053, 0.06))
+		p.rect(Rect2(cx, 1.25, 0.34, FLOOR - 1.9), C_PANEL)
 		p.line(Vector2(cx, 1.25), Vector2(cx, FLOOR - 0.65), Color(C_EAVE, 0.4), 0.04)
 		for k in 3:
-			p.line(Vector2(cx + 0.08 + k * 0.09, 1.25), Vector2(cx + 0.08 + k * 0.09, FLOOR - 0.65), [Color(0.12, 0.125, 0.14), Pal.heat(0.35, 1.0), Color(0.16, 0.166, 0.182)][k], 0.05)
+			p.line(Vector2(cx + 0.08 + k * 0.09, 1.25), Vector2(cx + 0.08 + k * 0.09, FLOOR - 0.65), [C_TOP, Pal.heat(0.35, 1.0), Color(0.16, 0.166, 0.182)][k], 0.05)
 		for jy in [7.6, 16.4]:
 			_slab(p, Rect2(cx - 0.12, jy, 0.6, 0.8), C_TOP, 0.4, 0.7)
 			p.rect(Rect2(cx + 0.02, jy + 0.12, 0.3, 0.14), Color(0.02, 0.025, 0.03))
@@ -302,20 +374,24 @@ func _hall(p, on: bool) -> void:
 		p.line(Vector2(cx - 0.62, 1.2), Vector2(cx + 0.62, 1.2), Color(0.86, 0.89, 0.92, 0.6 * lk), 0.08)
 	# the pipe bundle: three runs under the ceiling, a hanger every 3.75 m, a flange at each pier,
 	# their service bands (LH2 blue, MMH orange)
-	var runs := [[1.95, 0.3, Color(0.13, 0.135, 0.15)], [2.42, 0.22, Color(0.105, 0.11, 0.122)], [2.82, 0.18, Color(0.15, 0.156, 0.172)]]
+	var runs := [[1.95, 0.3, C_TOP], [2.42, 0.22, C_LOW], [2.82, 0.18, C_STEEL.darkened(0.15)]]
 	var hx := 1.9
 	while hx < bw - 0.5:
-		p.line(Vector2(hx, 1.25), Vector2(hx, 3.05), Color(0.075, 0.08, 0.09), 0.1)
-		p.rect(Rect2(hx - 0.22, 3.0, 0.44, 0.1), Color(0.075, 0.08, 0.09))
+		p.line(Vector2(hx, 1.25), Vector2(hx, 3.05), C_LOW, 0.1)
+		p.rect(Rect2(hx - 0.22, 3.0, 0.44, 0.1), C_LOW)
 		hx += 3.75
 	for rn: Array in runs:
 		var y: float = rn[0]
 		var d: float = rn[1]
 		p.rect(Rect2(0.7, y - d * 0.5, bw - 1.0, d), rn[2])
+		if DistrictStyle.style == 6:
+			# 质感金属: the pipe as a cylinder — its underside in shade, a sheen a quarter way down
+			p.rect(Rect2(0.7, y + d * 0.1, bw - 1.0, d * 0.4), Color(0, 0, 0, 0.3))
+			p.line(Vector2(0.7, y - d * 0.22), Vector2(bw - 0.3, y - d * 0.22), Color(1, 1, 1, 0.22), d * 0.14)
 		p.line(Vector2(0.7, y - d * 0.5 + 0.03), Vector2(bw - 0.3, y - d * 0.5 + 0.03), Color(C_EAVE, 0.55), 0.04)
 		p.line(Vector2(0.7, y + d * 0.5), Vector2(bw - 0.3, y + d * 0.5), Color(0, 0, 0, 0.5), 0.04)
 		for px: float in piers:
-			p.rect(Rect2(px + 1.1, y - d * 0.5 - 0.06, 0.16, d + 0.12), Color(0.19, 0.196, 0.214))
+			p.rect(Rect2(px + 1.1, y - d * 0.5 - 0.06, 0.16, d + 0.12), C_STEEL.lightened(0.1))
 	for bx in [5.0, 20.0, 35.0, 50.0]:
 		if bx < bw - 2.0:
 			p.rect(Rect2(bx, 1.8, 0.5, 0.3), Pal.tint(Pal.AIR, 0.75, 1.0))
@@ -334,7 +410,7 @@ func _hall(p, on: bool) -> void:
 		sx += 1.5
 	var kx := 3.0
 	while kx < wx1:
-		p.poly(PackedVector2Array([Vector2(kx - 0.5, wy + 0.24), Vector2(kx + 0.5, wy + 0.24), Vector2(kx - 0.5, wy + 1.0)]), Color(0.06, 0.064, 0.072))
+		p.poly(PackedVector2Array([Vector2(kx - 0.5, wy + 0.24), Vector2(kx + 0.5, wy + 0.24), Vector2(kx - 0.5, wy + 1.0)]), C_PANEL)
 		p.line(Vector2(kx - 0.5, wy + 0.24), Vector2(kx - 0.5, wy + 1.0), Color(C_EAVE, 0.35), 0.04)
 		p.line(Vector2(kx + 1.2, wy + 0.3), Vector2(kx + 2.4, wy + 0.3), Color(1.0, 0.92, 0.8, 0.45 * lk), 0.06)
 		kx += 3.75
@@ -344,6 +420,164 @@ func _hall(p, on: bool) -> void:
 	while ry < W.DECK_Y - 0.1:
 		p.line(Vector2(24.6, ry), Vector2(25.2, ry), Color(C_STEEL, 0.55), 0.04)
 		ry += 0.42
+
+
+# 亮工业 (4, and under 5 and 6): the cool-white light strip under the ceiling, its soft wash down the
+# wall's top, the floor's slab lit and its sheen under each lamp
+func _wash(p, on: bool) -> void:
+	var bw := r.size.x / m
+	var bh := r.size.y / m
+	var lk := 1.0 if on else 0.3
+	var n := 14
+	var soft := DistrictStyle.style == 7 or DistrictStyle.style == 9
+	for i in n:
+		var y0 := 1.3 + i * 0.75
+		# 7 (user: "方案一，但是上面不用那么亮"): the wash a third as strong, the strip held back
+		var a := (0.022 if soft else 0.075) * pow(1.0 - float(i) / n, 1.6) * lk
+		p.rect(Rect2(0.7, y0, bw - 1.0, 0.75), Color(COOL, a))
+	p.rect(Rect2(0.0, 0.9, bw, 0.12), C_STEEL)
+	p.line(Vector2(0.6, 1.08), Vector2(bw - 0.6, 1.08), Color(COOL, (0.42 if soft else 0.95) * lk), 0.07 if soft else 0.1)
+	p.line(Vector2(0.6, 1.2), Vector2(bw - 0.6, 1.2), Color(COOL, (0.05 if soft else 0.25) * lk), 0.16)
+	# the floor slab: a lit top, a sheen, the lamps' reflections fading down into it
+	p.rect(Rect2(0.0, FLOOR, bw, bh - FLOOR), C_TOP)
+	p.line(Vector2(0.0, FLOOR + 0.04), Vector2(bw, FLOOR + 0.04), Color(C_EAVE, 0.95), 0.08)
+	for i in 4:
+		p.rect(Rect2(0.0, FLOOR + 0.1 + i * 0.22, bw, 0.22), Color(COOL, (0.06 - i * 0.014) * lk))
+	var x := 3.75
+	while x < bw - 1.0:
+		for i in 4:
+			var w := 2.6 - i * 0.5
+			p.rect(Rect2(x - w * 0.5, FLOOR + 0.08 + i * 0.22, w, 0.22), Color(COOL, (0.09 - i * 0.02) * lk))
+		x += 7.5
+	p.line(Vector2(0.0, FLOOR + 0.45), Vector2(bw, FLOOR + 0.45), Pal.heat(0.45, 1.0), 0.06)
+
+
+# 质感金属 (6): the panels brushed, riveted round, worn toward the floor; streaks under the pipe
+# hangers; the occlusion in the corners (under the beam, the floor's foot, the walkway)
+func _metal(p) -> void:
+	var bw := r.size.x / m
+	var piers: Array = []
+	var x := 7.5
+	while x < bw - 1.0:
+		piers.append(x)
+		x += 7.5
+	var edges: Array = [0.7] + piers + [bw - 0.3]
+	for i in edges.size() - 1:
+		var a: float = edges[i] + (0.75 if i > 0 else 0.3)
+		var b: float = edges[i + 1] - 0.75
+		for pr: Rect2 in [Rect2(a, 5.0, b - a, 6.2), Rect2(a, 12.9, b - a, FLOOR - 13.6)]:
+			# the brushing: hairlines, faintly lighter and darker by turns
+			var y := pr.position.y + 0.35
+			var k := 0
+			while y < pr.end.y - 0.1:
+				p.line(Vector2(pr.position.x + 0.2, y), Vector2(pr.end.x - 0.1, y), Color(1, 1, 1, 0.022) if k % 2 == 0 else Color(0, 0, 0, 0.06), 0.035)
+				y += 0.17
+				k += 1
+			# the plates' seams, the rivets along them
+			var sy := pr.position.y + 2.0
+			while sy < pr.end.y - 0.5:
+				p.line(Vector2(pr.position.x, sy), Vector2(pr.end.x, sy), Color(0, 0, 0, 0.45), 0.05)
+				p.line(Vector2(pr.position.x, sy + 0.05), Vector2(pr.end.x, sy + 0.05), Color(1, 1, 1, 0.06), 0.03)
+				sy += 2.0
+			var rx := pr.position.x + 0.35
+			while rx < pr.end.x - 0.2:
+				for ry in [pr.position.y + 0.38, pr.end.y - 0.22]:
+					p.circle(Vector2(rx + 0.02, ry + 0.03), 0.06, Color(0, 0, 0, 0.5), 6)
+					p.circle(Vector2(rx, ry), 0.055, C_STEEL, 6)
+				rx += 0.6
+			# wear: the panel's foot darker
+			for j in 5:
+				p.rect(Rect2(pr.position.x, pr.end.y - 0.5 * (j + 1), pr.size.x, 0.5), Color(0.03, 0.025, 0.02, 0.045))
+	# streaks under the hangers, their lengths varied
+	var hx := 1.9
+	var n := 0
+	while hx < bw - 0.5:
+		var ln := 1.2 + fmod(n * 1.7, 2.6)
+		for j in 4:
+			p.rect(Rect2(hx - 0.06, 3.1 + j * ln * 0.25, 0.12, ln * 0.25), Color(0.02, 0.018, 0.015, 0.16 - j * 0.035))
+		hx += 3.75
+		n += 1
+	# occlusion: under the ring beam, at the floor's foot, under the walkway, beside each pilaster
+	for j in 4:
+		p.rect(Rect2(0.7, 12.35 + j * 0.2, bw - 1.0, 0.2), Color(0, 0, 0, 0.22 - j * 0.05))
+		p.rect(Rect2(0.7, FLOOR - 0.25 * (j + 1), bw - 1.0, 0.25), Color(0, 0, 0, 0.2 - j * 0.045))
+		p.rect(Rect2(0.7, 4.49 + j * 0.2, bw - 1.0, 0.2), Color(0, 0, 0, 0.16 - j * 0.035))
+	for px: float in piers:
+		for j in 3:
+			p.rect(Rect2(px + 0.45 + j * 0.18, 1.25, 0.18, FLOOR - 1.25), Color(0, 0, 0, 0.16 - j * 0.05))
+
+
+# 科技舱 (5): screens and readouts on the machines, a cyan status line along each pilaster and the
+# beam, the floor's guide lights, the wall panels' joints and their numbered plates
+func _tech(p, on: bool) -> void:
+	var bw := r.size.x / m
+	var lk := 1.0 if on else 0.25
+	var cy := Pal.tint(Pal.AIR, 0.85 * lk, 1.3)
+	var cy_dim := Pal.tint(Pal.AIR, 0.35 * lk, 1.0)
+	var x := 7.5
+	while x < bw - 1.0:
+		p.line(Vector2(x, 13.4), Vector2(x, 19.0), cy, 0.06)
+		p.line(Vector2(x, 5.4), Vector2(x, 9.0), cy_dim, 0.05)
+		x += 7.5
+	p.line(Vector2(0.7, 12.4), Vector2(bw - 0.3, 12.4), cy_dim, 0.04)
+	# the panels' numbered plates (the numbers are written in still()) and their inlaid joints
+	var e := 0.7
+	while e < bw - 2.0:
+		var px := e + (1.15 if e > 1.0 else 0.6)
+		p.rect(Rect2(px, 5.35, 1.7, 0.6), Color(0.02, 0.03, 0.036))
+		p.rect(Rect2(px, 5.35, 1.7, 0.6), cy_dim, false, 0.03)
+		p.rect(Rect2(px, 5.35, 0.08, 0.6), cy)
+		var b := e + 7.5 - 0.75
+		var sx := px + 2.4
+		while sx < b - 0.4:
+			p.line(Vector2(sx, 13.0), Vector2(sx, FLOOR - 0.8), Color(0, 0, 0, 0.5), 0.04)
+			sx += 2.4
+		for sy in [16.6, 20.3]:
+			p.line(Vector2(px - 0.4, sy), Vector2(b, sy), Color(0, 0, 0, 0.5), 0.04)
+		e += 7.5
+	# the floor's guide lights
+	var gx := 1.2
+	while gx < bw - 1.0:
+		p.rect(Rect2(gx, FLOOR + 0.12, 0.7, 0.07), cy)
+		gx += 1.5
+	# readouts: the cryo vessels' level bars, the fixture rack's tags, the tank's level ladder
+	for v in [[14.6, 2.0, 15.6], [17.1, 1.8, 16.6]]:
+		var rr := Rect2(float(v[0]) + 0.35, float(v[2]) + 3.25, float(v[1]) - 0.7, 0.8)
+		p.rect(rr, Color(0.02, 0.03, 0.036))
+		p.rect(Rect2(rr.position + Vector2(0.08, 0.5), Vector2((rr.size.x - 0.16) * 0.7, 0.14)), cy)
+		p.rect(Rect2(rr.position + Vector2(0.08, 0.18), Vector2(0.5, 0.08)), cy_dim)
+	for ay in [15.4, 19.3, 23.2]:
+		p.rect(Rect2(7.0, ay + 0.06, 0.9, 0.2), Color(0.02, 0.03, 0.036))
+		p.rect(Rect2(7.05, ay + 0.1, 0.5, 0.1), cy)
+	for k in 8:
+		p.rect(Rect2(TANK.end.x + 0.55, TANK.position.y + 3.0 + k * 0.6, 0.3, 0.12), cy if k >= 3 else cy_dim)
+	# the control desk's projector: its emitter on the desk
+	p.rect(Rect2(11.4, 22.95, 0.8, 0.25), C_STEEL)
+	p.rect(Rect2(11.55, 22.92, 0.5, 0.06), cy)
+
+
+# 科技舱: the hologram over the desk (a tug's wireframe turning, a scan line down it), a light running
+# along the floor's guide strip
+func _tech_moving(ci: CanvasItem, t: float, on: bool) -> void:
+	if not on:
+		return
+	var c := Vector2(11.8, 20.2)
+	var s := cos(t * 0.6)
+	var pts := [Vector2(-1.9, 0.2), Vector2(-1.2, -0.5), Vector2(1.0, -0.5), Vector2(1.7, -0.1), Vector2(1.9, 0.35), Vector2(1.4, 0.6), Vector2(-1.6, 0.6)]
+	var col := Pal.tint(Pal.AIR, 0.55, 1.2)
+	var line := PackedVector2Array()
+	for i in pts.size():
+		var a: Vector2 = pts[i]
+		var b: Vector2 = pts[(i + 1) % pts.size()]
+		line.append_array([_p(c + Vector2(a.x * s, a.y)), _p(c + Vector2(b.x * s, b.y))])
+		line.append_array([_p(c + Vector2(a.x * s, a.y)), _p(c + Vector2(a.x * s * 0.7, a.y - 0.35))])
+	ci.draw_multiline(line, col, _lw(0.03))
+	var sy := c.y - 0.9 + fmod(t * 0.8, 1.8)
+	ci.draw_line(_p(Vector2(c.x - 2.0, sy)), _p(Vector2(c.x + 2.0, sy)), Pal.tint(Pal.AIR, 0.8, 1.4), _lw(0.03))
+	ci.draw_line(_p(Vector2(11.8, 22.9)), _p(c + Vector2(-1.9 * absf(s) - 0.1, 0.7)), Pal.tint(Pal.AIR, 0.2, 1.0), _lw(0.02))
+	ci.draw_line(_p(Vector2(11.8, 22.9)), _p(c + Vector2(1.9 * absf(s) + 0.1, 0.7)), Pal.tint(Pal.AIR, 0.2, 1.0), _lw(0.02))
+	var gx := 22.0 - fmod(t * 6.0, 21.0)
+	FastDraw.circle(ci, _p(Vector2(gx, FLOOR + 0.16)), 0.12 * m, Pal.tint(Pal.AIR, 0.9, 1.6))
 
 
 # the hoist bay under the gantry, its back wall and floor: the guide rail and bollards, the tug
@@ -383,7 +617,7 @@ func _bay(p, on: bool) -> void:
 	# spare fenders (top), an RCS quad (middle), a push-plate segment (bottom)
 	for i in 3:
 		var fx := rx0 + 1.4 + i * 1.3
-		_slab(p, Rect2(fx, 14.0, 1.05, 1.4), Color(0.04, 0.042, 0.048), 0.35, 0.5)
+		_slab(p, Rect2(fx, 14.0, 1.05, 1.4), C_PANEL.darkened(0.3), 0.35, 0.5)
 		p.line(Vector2(fx + 0.15, 14.35), Vector2(fx + 0.9, 14.35), Color(0, 0, 0, 0.6), 0.05)
 	_slab(p, Rect2(rx0 + 1.6, 17.6, 2.7, 1.7), C_TOP)
 	for k in 4:
@@ -397,9 +631,9 @@ func _bay(p, on: bool) -> void:
 		p.circle(Vector2(rx0 + 2.0 + k * 1.2, 22.55), 0.12, Color(0, 0, 0, 0.5), 8)
 	# --- the tool wall: its board, the tools' silhouettes, a shelf of cases under it
 	var tw := Rect2(9.6, 13.7, 4.4, 5.6)
-	_slab(p, tw, Color(0.07, 0.074, 0.084))
-	p.rect(tw.grow(-0.15), Color(0.055, 0.058, 0.066))
-	var tc := Color(0.25, 0.258, 0.28)
+	_slab(p, tw, C_LOW)
+	p.rect(tw.grow(-0.15), C_PANEL)
+	var tc := C_STEEL.lightened(0.15)
 	for k in 3:   # spanners, largest to smallest
 		var kx := 10.1 + k * 0.5
 		p.line(Vector2(kx, 14.5), Vector2(kx, 16.6 - k * 0.3), tc, 0.12)
@@ -414,7 +648,7 @@ func _bay(p, on: bool) -> void:
 	p.line(Vector2(13.1, 16.6), Vector2(13.1, 18.7), tc, 0.08)
 	_slab(p, Rect2(9.4, 19.8, 4.8, 0.2), C_TOP, 0.4)
 	for k in 3:
-		_slab(p, Rect2(9.6 + k * 1.55, 19.05, 1.35, 0.75), Color(0.12, 0.125, 0.138), 0.3, 0.6)
+		_slab(p, Rect2(9.6 + k * 1.55, 19.05, 1.35, 0.75), C_TOP, 0.3, 0.6)
 		p.rect(Rect2(9.6 + k * 1.55 + 0.5, 19.3, 0.35, 0.12), Color(0, 0, 0, 0.5))
 	# --- the control desk: two screens on their arm, the sloped desk, the cabinet
 	p.line(Vector2(11.8, 22.6), Vector2(11.8, 23.2), C_STEEL, 0.12)
@@ -447,7 +681,7 @@ func _bay(p, on: bool) -> void:
 		var vt: float = v[2]
 		var cx := vx + vw * 0.5
 		var bot := FLOOR - 1.1
-		p.line(Vector2(cx + 0.3, vt - 0.5), Vector2(cx + 0.3, 3.0), Color(0.11, 0.115, 0.128), 0.12)   # the vent
+		p.line(Vector2(cx + 0.3, vt - 0.5), Vector2(cx + 0.3, 3.0), C_TOP, 0.12)   # the vent
 		p.rect(Rect2(vx + C_SH.x, vt + C_SH.y, vw, bot - vt), Color(0, 0, 0, 0.45))
 		p.circle(Vector2(cx, vt) + C_SH, vw * 0.5, Color(0, 0, 0, 0.45), 18)
 		p.circle(Vector2(cx, vt), vw * 0.5, C_STEEL, 18)
@@ -461,16 +695,16 @@ func _bay(p, on: bool) -> void:
 			p.line(Vector2(vx, jy), Vector2(vx + vw, jy), Color(0, 0, 0, 0.35), 0.05)
 			jy += 1.6
 		p.rect(Rect2(vx, vt + 2.2, vw, 0.3), v[3])
-		p.rect(Rect2(vx + 0.3, vt + 3.2, vw - 0.6, 0.9), Color(0.05, 0.053, 0.06))
+		p.rect(Rect2(vx + 0.3, vt + 3.2, vw - 0.6, 0.9), C_PANEL)
 		p.rect(Rect2(cx - 0.12, vt - vw * 0.5 - 0.4, 0.24, 0.4), C_STEEL)
 		p.circle(Vector2(cx, vt - vw * 0.5 - 0.45), 0.13, Pal.heat(0.65, 1.0), 8)
 		for lx in [vx + 0.25, vx + vw - 0.25]:
 			p.line(Vector2(lx, bot), Vector2(lx + (0.2 if lx > cx else -0.2), FLOOR), C_STEEL, 0.14)
 		p.rect(Rect2(vx - 0.3, bot - 0.05, vw + 0.6, 0.2), C_TOP)
-		p.line(Vector2(cx, bot), Vector2(cx, FLOOR + 0.7), Color(0.13, 0.135, 0.15), 0.22)   # down to the tanks
+		p.line(Vector2(cx, bot), Vector2(cx, FLOOR + 0.7), C_TOP, 0.22)   # down to the tanks
 		p.rect(Rect2(cx - 0.3, FLOOR - 0.12, 0.6, 0.24), C_TOP)
 	# the coupling header: the pipe across, four quick couplings with their caps, two handwheels
-	_slab(p, Rect2(14.4, 22.2, 4.7, 0.26), Color(0.13, 0.135, 0.15), 0.4)
+	_slab(p, Rect2(14.4, 22.2, 4.7, 0.26), C_TOP, 0.4)
 	var caps := [Pal.tint(Pal.AIR, 0.9, 1.0), Pal.tint(Pal.AIR, 0.9, 1.0), Color(0.78, 0.86, 0.95), Pal.heat(0.7, 1.0)]
 	for k in 4:
 		var qx := 14.8 + k * 1.15
@@ -668,7 +902,7 @@ func _placard_y() -> float:
 
 
 func _tank_frame(p, lod: int) -> void:
-	var cc := _t and DistrictStyle.style == 3
+	var cc := _t and DistrictStyle.style >= 3
 	var edge := _ink(0.4) if cc else _ink(0.72)
 	var x0 := TANK.position.x
 	var x1 := TANK.end.x
@@ -685,9 +919,9 @@ func _tank_frame(p, lod: int) -> void:
 	if cc:
 		# 方案 C: its shadow on the wall, the steel shell, lit on the side toward the light
 		p.rect(Rect2(Vector2(x0, top - rx) + C_SH, Vector2(x1 - x0, bot - top + 2.0 * rx)), Color(0, 0, 0, 0.4))
-		p.circle(Vector2(mid, top), rx, Color(0.11, 0.115, 0.128), 24)
-		p.circle(Vector2(mid, bot), rx, Color(0.11, 0.115, 0.128), 24)
-		p.rect(Rect2(x0, top, x1 - x0, bot - top), Color(0.11, 0.115, 0.128))
+		p.circle(Vector2(mid, top), rx, FACE, 24)
+		p.circle(Vector2(mid, bot), rx, FACE, 24)
+		p.rect(Rect2(x0, top, x1 - x0, bot - top), FACE)
 		p.rect(Rect2(mid + rx * 0.3, top, rx * 0.7, bot - top), Color(0, 0, 0, 0.2))
 		p.line(Vector2(x0 + 0.08, top), Vector2(x0 + 0.08, bot), Color(C_EAVE, 0.8), 0.08)
 		p.arc(Vector2(mid, top), rx - 0.08, PI, PI * 1.5, Color(C_EAVE, 0.8), 0.08, 12)
@@ -732,7 +966,7 @@ func _tank_frame(p, lod: int) -> void:
 # riser and the reel over the mouth; up the deck's column to the two berths' arms
 func _mains(p, lod: int) -> void:
 	# the solid picture: a heavy steel pipe, lit along its top (orange is for its valves only)
-	var col := (Color(0.09, 0.098, 0.11) if DistrictStyle.style == 3 else Color(0.2, 0.208, 0.226)) if _t else Pal.heat(0.5, 1.0)
+	var col := ((Color(0.2, 0.207, 0.225) if _bright() else Color(0.09, 0.098, 0.11)) if DistrictStyle.style >= 3 else Color(0.2, 0.208, 0.226)) if _t else Pal.heat(0.5, 1.0)
 	var trench := FLOOR - 0.35
 	p.polyline(PackedVector2Array([Vector2(TANK.position.x + 0.2, FLOOR - 0.6), Vector2(TANK.position.x + 0.2, trench), Vector2(RISER_X, trench), Vector2(RISER_X, REEL.y + 1.0)]), Color(0.02, 0.022, 0.026), 0.34)
 	p.polyline(PackedVector2Array([Vector2(TANK.position.x + 0.2, FLOOR - 0.6), Vector2(TANK.position.x + 0.2, trench), Vector2(RISER_X, trench), Vector2(RISER_X, REEL.y + 1.0)]), col, 0.2)
@@ -1034,8 +1268,11 @@ func _platform(p) -> void:
 
 # ================================================================== the moving parts
 func moving(ci: CanvasItem, t: float, on: bool, lod: int) -> void:
-	_t = DistrictStyle.on()
+	_t = DistrictStyle.on() and not _lin()
+	_pal()
 	_moving(ci, t, on, lod)
+	if _t and DistrictStyle.style == 5:
+		_tech_moving(ci, t, on)
 	_t = false
 
 

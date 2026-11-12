@@ -91,7 +91,7 @@ func _run() -> void:
 	g.zoom_now = 1.7
 	g.zoom_target = 1.7
 	await _frames(20)
-	check(g.txt("as_slurp_keys") == "左键 抽气液 · 右键 吸漏液", "the slot's key line: %s" % g.txt("as_slurp_keys"))
+	check(g.txt("as_slurp_keys") == "按住左键抽取气体和液体，按住右键回收泄漏液体。", "the slot's key line: %s" % g.txt("as_slurp_keys"))
 	Cap.save(root, "res://tests/out/slurp_before.png")
 	# ---- a short click: still a click
 	_rmb(true)

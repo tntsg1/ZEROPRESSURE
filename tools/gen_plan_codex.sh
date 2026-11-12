@@ -20,7 +20,8 @@ one() {
   timeout "$LIMIT" /e/godot/godot47/Godot_v4.7-stable_win64_console.exe --path . --resolution 1280x720 --position -2600,$((40 + x)) --fixed-fps 60 -s tests/gen_plan_codex.gd -- "$s" > "$LOG/$s.log" 2>&1
   local line
   line=$(grep -a "^CODEX $s " "$LOG/$s.log" | tail -1)
-  [ -z "$line" ] && line="CODEX $s FAIL wall-clock limit ${LIMIT}s (or crashed)" && rm -f "data/plan_codex/$s.json"
+  [ -z "$line" ] && line="CODEX $s FAIL wall-clock limit ${LIMIT}s (or crashed)"
+  case "$line" in *" PASS "*) ;; *) rm -f "data/plan_codex/$s.json" ;; esac   # only a verified plan stays
   echo "$line"
 }
 export -f one

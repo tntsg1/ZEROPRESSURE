@@ -1,253 +1,307 @@
 {
 	"by": "tools/gen_plan_codex.sh",
-	"made": "2026-11-11",
-	"ship": "mt140",
+	"made": "2026-11-12",
+	"ship": "pt34",
 	"steps": [
 		{
-			"ctrl": "G-1",
+			"ctrl": "G-W",
 			"do": "h",
 			"pre": [],
 			"value": true
 		},
 		{
-			"ctrl": "G-2",
+			"ctrl": "G-CIC",
 			"do": "h",
 			"pre": [],
 			"value": true
 		},
 		{
-			"ctrl": "G-3",
+			"ctrl": "G-UP",
 			"do": "h",
 			"pre": [],
 			"value": true
 		},
 		{
-			"ctrl": "G-4",
+			"ctrl": "G-RX",
 			"do": "h",
 			"pre": [],
 			"value": true
 		},
 		{
-			"ctrl": "G-5",
+			"ctrl": "G-AUX",
 			"do": "h",
 			"pre": [],
 			"value": true
 		},
 		{
-			"ctrl": "G-6",
+			"ctrl": "G-ARM",
 			"do": "h",
 			"pre": [],
 			"value": true
 		},
 		{
-			"ctrl": "G-7",
+			"ctrl": "G-DCR",
 			"do": "h",
 			"pre": [],
 			"value": true
 		},
 		{
-			"ctrl": "KB-1",
+			"ctrl": "G-MID",
 			"do": "h",
 			"pre": [],
 			"value": true
 		},
 		{
-			"ctrl": "KB-2",
+			"ctrl": "G-LOW",
 			"do": "h",
 			"pre": [],
 			"value": true
 		},
 		{
-			"ctrl": "KB-3",
+			"ctrl": "G-BR",
 			"do": "h",
 			"pre": [],
 			"value": true
 		},
 		{
-			"ctrl": "KB-4",
-			"do": "h",
-			"pre": [],
-			"value": true
-		},
-		{
-			"ctrl": "KB-5",
-			"do": "h",
-			"pre": [],
-			"value": true
-		},
-		{
-			"ctrl": "KB-6",
-			"do": "h",
-			"pre": [],
-			"value": true
-		},
-		{
-			"ctrl": "LUBE-6-D",
-			"do": "h",
-			"pre": [],
-			"value": true
-		},
-		{
-			"ctrl": "PT-2",
-			"do": "h",
-			"pre": [],
-			"value": true
-		},
-		{
-			"ctrl": "PT-5",
-			"do": "h",
-			"pre": [],
-			"value": true
-		},
-		{
-			"ctrl": "PP-7A",
-			"do": "h",
-			"pre": [],
-			"value": true
-		},
-		{
-			"ctrl": "PP-7B",
-			"do": "h",
-			"pre": [],
-			"value": true
-		},
-		{
-			"ctrl": "FOAM-7-D",
-			"do": "h",
-			"pre": [],
-			"value": true
-		},
-		{
-			"ctrl": "WASH-4-D",
-			"do": "h",
-			"pre": [],
-			"value": true
-		},
-		{
-			"ctrl": "K-1",
+			"ctrl": "K-A",
 			"do": "w",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "G-1",
+			"ctrl": "PP-1",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PP-2",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-GB",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2P-1",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "FP-1",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2P-2",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "FP-2",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "WP-1",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "WP-2",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-BB",
+			"do": "w",
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "CD-1",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "WD-1",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "WD-2",
+			"do": "w",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-MAG",
+			"do": "h",
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-W",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "G-2",
+			"ctrl": "G-CIC",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "G-3",
+			"ctrl": "G-UP",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "G-4",
+			"ctrl": "G-RX",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "G-5",
+			"ctrl": "G-AUX",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "G-6",
+			"ctrl": "G-ARM",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "G-7",
+			"ctrl": "G-DCR",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "KB-1",
+			"ctrl": "G-MID",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "KB-2",
+			"ctrl": "G-LOW",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "KB-3",
+			"ctrl": "G-BR",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "KB-4",
+			"ctrl": "PP-1",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "KB-5",
+			"ctrl": "PP-2",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "KB-6",
+			"ctrl": "O2P-1",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "LUBE-6-D",
+			"ctrl": "FP-1",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "PT-2",
+			"ctrl": "O2P-2",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "PT-5",
+			"ctrl": "FP-2",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "PP-7A",
+			"ctrl": "WP-1",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "PP-7B",
+			"ctrl": "WP-2",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "FOAM-7-D",
+			"ctrl": "G-MAG",
 			"do": "h",
 			"pre": [],
 			"value": false
 		},
 		{
-			"ctrl": "WASH-4-D",
-			"do": "h",
+			"do": "cut",
+			"key": "TURRET",
+			"origin": "TURRET",
+			"pl": [
+				[
+					944.0,
+					-428.0
+				],
+				[
+					944.0,
+					-336.0
+				]
+			],
 			"pre": [],
-			"value": false
+			"rooms": [],
+			"seg": true
+		},
+		{
+			"do": "cut",
+			"key": "TURRET",
+			"origin": "TURRET",
+			"pl": [
+				[
+					1048.0,
+					-438.399963378906
+				],
+				[
+					1048.0,
+					-336.0
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
 		}
 	]
 }

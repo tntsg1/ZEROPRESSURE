@@ -9,7 +9,7 @@ extends RefCounted
 # flat plates in a few greys, each solid piece its shadow off away from the light, its face, a lit
 # edge on the side toward it; dim outlines, no bolts or hatching; hazards one quiet line; a few small
 # slow lamps, no washes or beams).
-static var style := 3   # 2026-11-11 成品: 方案 C on by default (only the tug station reads it); F9 (Pal.solid) the old picture
+static var style := 9   # 2026-11-11 用户: 线稿版太难看，回到 7 稍稍降亮 — 9 = 7 at ~87%; 8 (黑白线稿, scripts/line_pen.gd) kept unused. Earlier: 2026-11-11 用户: "都不要灰色，只有之前一样的黑白" — 8 黑白线稿; was 7 (亮工业, top held back) # 2026-11-11 用户定 方向 1 亮工业，上方不要那么亮 (7 = 4 with the ceiling strip and its wash held back); only the tug station reads it; F9 (Pal.solid) the old picture
 
 const WALL := Color(0.036, 0.039, 0.045)
 const WALL_LOW := Color(0.026, 0.028, 0.032)
@@ -33,7 +33,11 @@ static func back_wall(ci: CanvasItem, r: Rect2, m: float, on: bool, floor_y := 2
 	ci.draw_polygon(PackedVector2Array([r.position, Vector2(r.end.x, r.position.y), Vector2(r.end.x, fy), Vector2(r.position.x, fy)]),
 		PackedColorArray([WALL, WALL, WALL_LOW, WALL_LOW]))
 	var top := r.position.y
-	if style == 3:
+	if style == 8:
+		# 黑白线稿: pure black (scripts/tug_station_art.gd draws the hall in white line art)
+		ci.draw_rect(r, Color(0, 0, 0))
+		return
+	if style >= 3:
 		_ring_hall(ci, r, m, on, fy)
 		return
 	if style == 1:

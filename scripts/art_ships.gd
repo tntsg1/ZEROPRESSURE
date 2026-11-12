@@ -40,6 +40,69 @@ const BY_NAME := {
 	"p_st_battery": "race_pack",
 	"p_standby_battery": "standby_bank",
 	"p_ups": "ups_unit",
+	# E036– (2026-11-11): the shared double-door cabinet, third batch
+	"p_ark_brake_ctrl": "brake_ctrl",
+	"p_ark_chem_dosing": "dosing_skid",
+	"p_ark_material": "material_rack",
+	"p_ark_process": "food_bench",
+	"p_ark_transmitter": "tx_cabinet",
+	"p_ark_turbine_ctrl": "turbine_ctrl",
+	"p_drill": "bench_drill",
+	"p_tool_cart": "tool_cart",
+	"p_pack_rack": "pack_rack",
+	"p_dispatch_log": "dispatch_log",
+	"p_bms": "bms_cab",
+	"p_cal_bench": "cal_bench",
+	"p_survey_log": "survey_log",
+	"p_crd": "crd_cab",
+	"p_crypto": "crypto_rack",
+	"p_hv_cabinet": "hv_switchgear",
+	"p_gas_det": "gas_detector",
+	"p_bl_herbarium": "herbarium",
+	"p_bl_tool_shed": "garden_locker",
+	"p_dr_chem_store": "chem_store",
+	"p_dr_sample_cab": "core_store",
+	"p_dr_tool_cab": "drill_tools",
+	"p_dr_well_logs": "well_logs",
+	"p_ev_calib": "ev_calib",
+	"p_ev_dcdc": "dcdc",
+	"p_fx_cdb": "cryo_cdb",
+	"p_fx_cryo_spares": "cryo_spares",
+	"p_fx_shot_archive": "shot_archive",
+	"p_fx_spare_leads": "spare_leads",
+	"p_hg_sample_cyl": "sample_cyl",
+	"p_ob_cal": "ob_cal",
+	"p_ob_plate_archive": "plate_archive",
+	"p_ob_spare_cells": "spare_cells",
+	"p_dc_spares": "server_spares",
+	"p_batch_log": "batch_log",
+	"p_cabinet": "shadow_board",
+	"p_cargo_log": "cargo_log",
+	"p_custody": "custody_reg",
+	"p_evidence": "evidence_lockers",
+	"p_flow_ctrl": "flow_ctrl",
+	"p_lc_courier_mail": "mail_locker",
+	"p_manifest": "manifest_term",
+	"p_pharmacy": "pharmacy",
+	"p_samples": "sample_trays",
+	"p_seed_vault": "seed_vault",
+	"p_smelt_log": "smelt_log",
+	"p_st_spares": "cockpit_case",
+	"p_stores": "supply_stack",
+	"p_svc_cabinet": "svc_bench",
+	"p_table": "dining_table",
+	"p_towlog": "tow_log",
+	# E089–E100 (2026-11-11): power and generation, fourth batch
+	"p_fuel_cell": "fuel_cell_pm",
+	"p_fuelcell": "fuel_cell_pm",
+	"p_ark_backup_gen": "stirling_gen",
+	"p_backup_gen": "turbine_genset",
+	"p_standby_gen": "drups",
+	"p_co2_gen": "co2_burner",
+	"p_dr_generator": "diesel_genset",
+	"p_gen": "rtg_module",
+	"p_generator": "main_alternator",
+	"p_ts_power": "ts_power",
 	# DR-150 Derrick
 	"p_dr_top_drive": "top_drive", "p_dr_drawworks": "drawworks", "p_dr_crown_block": "crown_block",
 	"p_dr_travel_block": "travel_block", "p_dr_rotary": "rotary_table", "p_dr_stand": "drillpipe",
@@ -116,7 +179,7 @@ const BY_NAME := {
 	"p_ev_coronagraph": "coronagraph",
 	"p_ev_particle": "particle_det",
 	"p_ev_magnetometer": "magnetometer",
-	"p_bl_electrolyser": "electrolyser",
+	"p_bl_electrolyser": "bl_electrolyser",
 	"p_bl_compost": "composter",
 	"p_bl_beehive": "beehive",
 	"p_lc_forklift": "forklift",
@@ -185,7 +248,11 @@ const DRAWN := ["top_drive", "drawworks", "crown_block", "travel_block", "rotary
 	"shaker", "hydrocyclone", "degasser", "decanter", "gas_buster", "agitator", "roughneck", "pipe_rack", "pipe_bundle",
 	"bop", "lathe", "mill", "standpipe", "choke_manifold", "koomey", "axial_comp", "screw_comp", "cold_box_h2", "ortho_para", "precooler", "psa", "gc", "mass_spec", "turboexpander", "dr_stage", "qpu", "pulse_tube", "ghs", "iso_table", "instrument_rack", "turbo_pump", "scroll_pump", "hexapod", "aft_optics", "fsm", "ir_camera", "spectrograph", "fgs", "wfs", "recoater", "reaction_wheel", "star_tracker", "immersion_rack", "cdu", "dry_cooler", "storage_array", "switch_chassis", "drive_carrier", "pwr_core", "rcp", "pressurizer", "crdm", "steam_turbine", "condenser", "despin_brake", "slip_ring", "rotary_seal", "spoke_lift", "work_vehicle", "food_module", "turbopump", "coronagraph", "particle_det", "magnetometer", "electrolyser", "composter", "beehive", "forklift", "hold_crane", "xray_scanner", "mail_sorter", "tow_winch", "spray_bar", "microscope", "co2_scrubber", "uv_steriliser", "humidifier", "ref_plant", "evaporator", "safe_deposit", "gun_rack", "biometric", "separator_3ph", "level_radar", "coriolis", "imu", "arc_furnace", "ingot_rack", "eddy_sorter", "mag_separator", "scrubber", "car", "deck_tractor", "apu", "escape_pod", "ntr_core", "control_drum", "shadow_shield", "flywheel_rotor", "launch_cradle", "tether_damper", "hyd_clamp", "piano", "wine_rack", "bar", "crusher",
 	"rf_amp", "aux_rocket", "gamma_probe", "pellet_feeder", "steam_cyl", "fog_pump", "comms_desk", "fw_appliance", "rig_welder", "e07_unit", "shunt_reg", "gas_puff", "ion_grid", "rb_clock", "daq_rail",
-	"ark_aux_pack", "battery_cart", "emerg_light", "ring_battery", "shuttle_pack", "vrla_rack", "main_battery", "drone_pack", "courier_stack", "lock_ups", "pod_ups", "race_pack", "standby_bank", "ups_unit"]
+	"ark_aux_pack", "battery_cart", "emerg_light", "ring_battery", "shuttle_pack", "vrla_rack", "main_battery", "drone_pack", "courier_stack", "lock_ups", "pod_ups", "race_pack", "standby_bank", "ups_unit",
+	"brake_ctrl", "dosing_skid", "material_rack", "food_bench", "tx_cabinet", "turbine_ctrl", "bench_drill", "tool_cart", "pack_rack", "dispatch_log", "bms_cab", "cal_bench", "survey_log", "crd_cab", "crypto_rack", "hv_switchgear", "gas_detector",
+	"herbarium", "garden_locker", "chem_store", "core_store", "drill_tools", "well_logs", "ev_calib", "dcdc", "cryo_cdb", "cryo_spares", "shot_archive", "spare_leads", "sample_cyl", "ob_cal", "plate_archive", "spare_cells", "server_spares",
+	"batch_log", "shadow_board", "cargo_log", "custody_reg", "evidence_lockers", "flow_ctrl", "mail_locker", "manifest_term", "pharmacy", "sample_trays", "seed_vault", "smelt_log", "cockpit_case", "supply_stack", "svc_bench", "dining_table", "tow_log",
+	"bl_electrolyser", "fuel_cell_pm", "stirling_gen", "turbine_genset", "drups", "co2_burner", "diesel_genset", "rtg_module", "main_alternator", "ts_power"]
 
 
 static func L(ci: CanvasItem, a: Vector2, b: Vector2, al: float = 0.5, wd: float = 1.0) -> void:
@@ -369,6 +436,67 @@ static func _draw_art(ci: CanvasItem, art: String, r: Rect2, p, font: Font) -> v
 		"race_pack": race_pack(ci, r)
 		"standby_bank": standby_bank(ci, r)
 		"ups_unit": ups_unit(ci, r)
+		"brake_ctrl": brake_ctrl(ci, r)
+		"dosing_skid": dosing_skid(ci, r)
+		"material_rack": material_rack(ci, r)
+		"food_bench": food_bench(ci, r)
+		"tx_cabinet": tx_cabinet(ci, r)
+		"turbine_ctrl": turbine_ctrl(ci, r)
+		"bench_drill": bench_drill(ci, r)
+		"tool_cart": tool_cart(ci, r)
+		"pack_rack": pack_rack(ci, r)
+		"dispatch_log": dispatch_log(ci, r)
+		"bms_cab": bms_cab(ci, r)
+		"cal_bench": cal_bench(ci, r)
+		"survey_log": survey_log(ci, r)
+		"crd_cab": crd_cab(ci, r)
+		"crypto_rack": crypto_rack(ci, r)
+		"hv_switchgear": hv_switchgear(ci, r)
+		"gas_detector": gas_detector(ci, r)
+		"herbarium": herbarium(ci, r)
+		"garden_locker": garden_locker(ci, r)
+		"chem_store": chem_store(ci, r)
+		"core_store": core_store(ci, r)
+		"drill_tools": drill_tools(ci, r)
+		"well_logs": well_logs(ci, r)
+		"ev_calib": ev_calib(ci, r)
+		"dcdc": dcdc(ci, r)
+		"cryo_cdb": cryo_cdb(ci, r)
+		"cryo_spares": cryo_spares(ci, r)
+		"shot_archive": shot_archive(ci, r)
+		"spare_leads": spare_leads(ci, r)
+		"sample_cyl": sample_cyl(ci, r)
+		"ob_cal": ob_cal(ci, r)
+		"plate_archive": plate_archive(ci, r)
+		"spare_cells": spare_cells(ci, r)
+		"server_spares": server_spares(ci, r)
+		"batch_log": batch_log(ci, r)
+		"shadow_board": shadow_board(ci, r)
+		"cargo_log": cargo_log(ci, r)
+		"custody_reg": custody_reg(ci, r)
+		"evidence_lockers": evidence_lockers(ci, r)
+		"flow_ctrl": flow_ctrl(ci, r)
+		"mail_locker": mail_locker(ci, r)
+		"manifest_term": manifest_term(ci, r)
+		"pharmacy": pharmacy(ci, r)
+		"sample_trays": sample_trays(ci, r)
+		"seed_vault": seed_vault(ci, r)
+		"smelt_log": smelt_log(ci, r)
+		"cockpit_case": cockpit_case(ci, r)
+		"supply_stack": supply_stack(ci, r)
+		"svc_bench": svc_bench(ci, r)
+		"dining_table": dining_table(ci, r)
+		"tow_log": tow_log(ci, r)
+		"bl_electrolyser": bl_electrolyser(ci, r)
+		"fuel_cell_pm": fuel_cell_pm(ci, r)
+		"stirling_gen": stirling_gen(ci, r)
+		"turbine_genset": turbine_genset(ci, r)
+		"drups": drups(ci, r)
+		"co2_burner": co2_burner(ci, r)
+		"diesel_genset": diesel_genset(ci, r)
+		"rtg_module": rtg_module(ci, r)
+		"main_alternator": main_alternator(ci, r)
+		"ts_power": ts_power(ci, r)
 
 
 # ================================================================== DR-150 Derrick
@@ -3408,7 +3536,6 @@ static func _insulator(ci: CanvasItem, base: Vector2, top: Vector2, rad: float, 
 static func rf_amp(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var cab := sub(r, 0.1, 0.05, 0.9, 0.95)
-	E.F(ci, cab, 0.035)
 	R(ci, cab, 0.62, 1.2)
 	for x in [0.04, 0.9]:
 		R(ci, sub(r, x, 0.07, x + 0.06, 0.93), 0.42)
@@ -3506,7 +3633,6 @@ static func aux_rocket(ci: CanvasItem, r: Rect2) -> void:
 static func gamma_probe(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var box := sub(r, 0.04, 0.26, 0.58, 0.95)
-	E.F(ci, box, 0.04)
 	R(ci, box, 0.62, 1.2)
 	R(ci, sub(r, 0.09, 0.34, 0.53, 0.68), 0.35)
 	var dc := _u(r, 0.31, 0.64)
@@ -3594,7 +3720,6 @@ static func pellet_feeder(ci: CanvasItem, r: Rect2) -> void:
 static func steam_cyl(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var cab := sub(r, 0.04, 0.14, 0.96, 0.92)
-	E.F(ci, cab, 0.03)
 	R(ci, cab, 0.6, 1.2)
 	L(ci, _u(r, 0.4, 0.14), _u(r, 0.4, 0.92), 0.4)
 	R(ci, sub(r, 0.08, 0.2, 0.34, 0.31), 0.45)
@@ -3776,7 +3901,6 @@ static func fw_appliance(ci: CanvasItem, r: Rect2) -> void:
 		S(ci, segs, 0.4, 1.4)
 	# appliance 1: console + mgmt ports, 2x4 data ports with link lamps, two SFP cages
 	var a1 := sub(r, 0.08, 0.08, 0.92, 0.32)
-	E.F(ci, a1, 0.04)
 	R(ci, a1, 0.6, 1.2)
 	R(ci, sub(r, 0.11, 0.13, 0.17, 0.2), 0.45)
 	R(ci, sub(r, 0.11, 0.22, 0.17, 0.28), 0.45)
@@ -3834,7 +3958,6 @@ static func fw_appliance(ci: CanvasItem, r: Rect2) -> void:
 static func rig_welder(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var cs := sub(r, 0.08, 0.14, 0.7, 0.62)
-	E.F(ci, cs, 0.035)
 	R(ci, cs, 0.62, 1.2)
 	A(ci, _u(r, 0.39, 0.14), r.size.x * 0.05, PI, TAU, 0.55, 1.3)
 	L(ci, _u(r, 0.6, 0.14), _u(r, 0.6, 0.05), 0.55, 1.6)
@@ -3934,7 +4057,6 @@ static func e07_unit(ci: CanvasItem, r: Rect2) -> void:
 static func shunt_reg(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var pl := sub(r, 0.04, 0.06, 0.96, 0.94)
-	E.F(ci, pl, 0.03)
 	R(ci, pl, 0.6, 1.2)
 	hatch(ci, sub(r, 0.8, 0.1, 0.94, 0.9), 2.2, false, 0.3, 24)
 	L(ci, _u(r, 0.78, 0.08), _u(r, 0.78, 0.92), 0.4)
@@ -3972,7 +4094,6 @@ static func shunt_reg(ci: CanvasItem, r: Rect2) -> void:
 static func gas_puff(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var bx := sub(r, 0.06, 0.12, 0.96, 0.94)
-	E.F(ci, bx, 0.03)
 	R(ci, bx, 0.6, 1.2)
 	E.corner_bolts(ci, bx, 2.0, 0.4)
 	# pigtail and CGA nut
@@ -4023,7 +4144,6 @@ static func gas_puff(ci: CanvasItem, r: Rect2) -> void:
 static func ion_grid(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var fr := sub(r, 0.18, 0.22, 0.96, 0.84)
-	E.F(ci, fr, 0.03)
 	R(ci, fr, 0.62, 1.3)
 	E.corner_bolts(ci, fr, 2.5, 0.45)
 	E.Rc(ci, sub(r, 0.555, 0.27, 0.605, 0.8), Pal.tint(Pal.VOLT, 0.28), 1.0)
@@ -4065,7 +4185,6 @@ static func ion_grid(ci: CanvasItem, r: Rect2) -> void:
 static func rb_clock(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var ch := sub(r, 0.04, 0.12, 0.96, 0.94)
-	E.F(ci, ch, 0.035)
 	R(ci, ch, 0.62, 1.2)
 	hatch(ci, sub(r, 0.1, 0.03, 0.9, 0.12), 2.2, true, 0.32, 30)
 	# physics package
@@ -4108,7 +4227,6 @@ static func daq_rail(ci: CanvasItem, r: Rect2) -> void:
 	for x in [0.04, 0.92]:
 		R(ci, sub(r, x, 0.5, x + 0.04, 0.61), 0.5)
 	var hd := sub(r, 0.08, 0.24, 0.28, 0.88)
-	E.F(ci, hd, 0.04)
 	R(ci, hd, 0.6, 1.2)
 	E.Rc(ci, sub(r, 0.11, 0.3, 0.25, 0.42), Pal.tint(Pal.AIR, 0.65), 1.0)
 	R(ci, sub(r, 0.11, 0.66, 0.175, 0.75), 0.5)
@@ -4157,7 +4275,6 @@ static func _hex(ci: CanvasItem, c: Vector2, rad: float, al: float = 0.5) -> voi
 static func ark_aux_pack(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var cab := sub(r, 0.04, 0.08, 0.8, 0.94)
-	E.F(ci, cab, 0.035)
 	R(ci, cab, 0.62, 1.2)
 	R(ci, sub(r, 0.08, 0.1, 0.76, 0.17), 0.45)
 	E.Rc(ci, sub(r, 0.11, 0.115, 0.3, 0.155), Pal.tint(Pal.AIR, 0.6), 1.0)
@@ -4196,7 +4313,6 @@ static func ark_aux_pack(ci: CanvasItem, r: Rect2) -> void:
 static func battery_cart(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var bx := sub(r, 0.1, 0.3, 0.8, 0.68)
-	E.F(ci, bx, 0.035)
 	R(ci, bx, 0.62, 1.2)
 	L(ci, _u(r, 0.1, 0.36), _u(r, 0.8, 0.36), 0.4)
 	for x in [0.16, 0.62]:
@@ -4228,7 +4344,6 @@ static func battery_cart(ci: CanvasItem, r: Rect2) -> void:
 static func emerg_light(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var hs := sub(r, 0.06, 0.34, 0.94, 0.9)
-	E.F(ci, hs, 0.04)
 	R(ci, hs, 0.62, 1.2)
 	for x in [0.28, 0.72]:
 		_pu(ci, r, [Vector2(x - 0.13, 0.3), Vector2(x - 0.11, 0.1), Vector2(x + 0.11, 0.06), Vector2(x + 0.13, 0.26)], 0.6, 1.0, true)
@@ -4309,7 +4424,6 @@ static func ring_battery(ci: CanvasItem, r: Rect2) -> void:
 static func shuttle_pack(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var bx := sub(r, 0.08, 0.2, 0.92, 0.86)
-	E.F(ci, bx, 0.04)
 	R(ci, bx, 0.62, 1.2)
 	var segs := PackedVector2Array()
 	for k in 6:
@@ -4399,7 +4513,6 @@ static func main_battery(ci: CanvasItem, r: Rect2) -> void:
 	R(ci, Rect2(r.position + Vector2(0, h * 0.95), Vector2(r.size.x, h * 0.05)), 0.55)
 	var cw: float = clampf(r.size.x * 0.2, 20.0, 0.9 * M)
 	var cab := Rect2(r.end.x - cw, r.position.y + h * 0.12, cw - 1.0, h * 0.83)
-	E.F(ci, cab, 0.04)
 	R(ci, cab, 0.62, 1.2)
 	E.Rc(ci, Rect2(cab.position + Vector2(cab.size.x * 0.15, cab.size.y * 0.06), Vector2(cab.size.x * 0.7, minf(cab.size.y * 0.1, 10.0))), Pal.tint(Pal.AIR, 0.6), 1.0)
 	E.breaker(ci, Rect2(cab.position + Vector2(cab.size.x * 0.2, cab.size.y * 0.24), Vector2(cab.size.x * 0.6, minf(cab.size.y * 0.2, 18.0))), true, 0.5)
@@ -4471,7 +4584,6 @@ static func main_battery(ci: CanvasItem, r: Rect2) -> void:
 static func _battery_blocks(ci: CanvasItem, r: Rect2) -> void:
 	for x in [0.04, 0.52]:
 		var b := sub(r, x, 0.3, x + 0.44, 0.92)
-		E.F(ci, b, 0.04)
 		R(ci, b, 0.6, 1.2)
 		L(ci, _u(r, x, 0.38), _u(r, x + 0.44, 0.38), 0.38)
 		for f in [0.1, 0.34]:
@@ -4500,7 +4612,6 @@ static func drone_pack(ci: CanvasItem, r: Rect2) -> void:
 	L(ci, _u(r, 0.98, 0.5), _u(r, 1.0, 0.5), 0.55, 1.5)
 	var c := 0.03
 	_pu(ci, r, [Vector2(0.08 + c, 0.26), Vector2(0.8 - c, 0.26), Vector2(0.8, 0.26 + c * 2.0), Vector2(0.8, 0.86 - c * 2.0), Vector2(0.8 - c, 0.86), Vector2(0.08 + c, 0.86), Vector2(0.08, 0.86 - c * 2.0), Vector2(0.08, 0.26 + c * 2.0)], 0.62, 1.2, true)
-	E.F(ci, sub(r, 0.08, 0.26, 0.8, 0.86), 0.035)
 	L(ci, _u(r, 0.1, 0.34), _u(r, 0.78, 0.34), 0.3)
 	hatch(ci, sub(r, 0.38, 0.4, 0.74, 0.8), 4.0, true, 0.16, 30)
 	_pu(ci, r, [Vector2(0.22, 0.26), Vector2(0.26, 0.08), Vector2(0.62, 0.08), Vector2(0.66, 0.26)], 0.5, 2.0)
@@ -4572,7 +4683,6 @@ static func courier_stack(ci: CanvasItem, r: Rect2) -> void:
 static func lock_ups(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var bx := sub(r, 0.12, 0.05, 0.88, 0.34)
-	E.F(ci, bx, 0.04)
 	R(ci, bx, 0.62, 1.2)
 	for y in [0.09, 0.3]:
 		D(ci, _u(r, 0.12, y), 1.1, 0.55)
@@ -4605,7 +4715,6 @@ static func lock_ups(ci: CanvasItem, r: Rect2) -> void:
 		L(ci, _u(r, 0.73, y), _u(r, 0.85, y), 0.45, 1.3)
 	# battery box
 	var bb := sub(r, 0.14, 0.62, 0.86, 0.96)
-	E.F(ci, bb, 0.035)
 	R(ci, bb, 0.6, 1.2)
 	E.louvres(ci, sub(r, 0.2, 0.645, 0.8, 0.69), 0.3)
 	for x in [0.2, 0.52]:
@@ -4625,7 +4734,6 @@ static func lock_ups(ci: CanvasItem, r: Rect2) -> void:
 static func pod_ups(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var cs := sub(r, 0.12, 0.08, 0.88, 0.94)
-	E.F(ci, cs, 0.04)
 	R(ci, cs, 0.62, 1.2)
 	_pu(ci, r, [Vector2(0.32, 0.08), Vector2(0.32, 0.025), Vector2(0.68, 0.025), Vector2(0.68, 0.08)], 0.55, 1.4)
 	var lcd := sub(r, 0.2, 0.13, 0.8, 0.27)
@@ -4633,7 +4741,7 @@ static func pod_ups(ci: CanvasItem, r: Rect2) -> void:
 	for k in 4:
 		var bar := sub(r, 0.26 + k * 0.08, 0.17, 0.31 + k * 0.08, 0.23)
 		if k < 3:
-			E.F(ci, bar, 0.35)
+			hatch(ci, bar, 2.0, false, 0.40, 30)
 		R(ci, bar, 0.4)
 	L(ci, _u(r, 0.6, 0.2), _u(r, 0.74, 0.2), 0.4)
 	L(ci, _u(r, 0.67, 0.165), _u(r, 0.67, 0.235), 0.4)
@@ -4661,7 +4769,6 @@ static func pod_ups(ci: CanvasItem, r: Rect2) -> void:
 static func race_pack(ci: CanvasItem, r: Rect2) -> void:
 	var ms := minf(r.size.x, r.size.y)
 	var cs := sub(r, 0.04, 0.3, 0.96, 0.86)
-	E.F(ci, cs, 0.04)
 	R(ci, cs, 0.62, 1.3)
 	var tw := PackedVector2Array()
 	var n := clampi(int(cs.size.x / 6.0), 6, 30)
@@ -4744,7 +4851,6 @@ static func ups_unit(ci: CanvasItem, r: Rect2) -> void:
 	if r.size.x < 60.0:
 		# a tower: display, mimic, fans; battery drawers below
 		var tw := sub(r, 0.1, 0.04, 0.9, 0.96)
-		E.F(ci, tw, 0.04)
 		R(ci, tw, 0.62, 1.2)
 		E.Rc(ci, sub(r, 0.2, 0.08, 0.8, 0.18), Pal.tint(Pal.AIR, 0.6), 1.0)
 		_ups_mimic(ci, sub(r, 0.2, 0.22, 0.8, 0.32))
@@ -4760,7 +4866,6 @@ static func ups_unit(ci: CanvasItem, r: Rect2) -> void:
 	R(ci, Rect2(r.position + Vector2(0, h * 0.95), Vector2(r.size.x, h * 0.05)), 0.55)
 	var pw: float = clampf(r.size.x * 0.42, 40.0, 2.4 * M)
 	var pc := Rect2(r.position + Vector2(1.0, h * 0.06), Vector2(pw - 2.0, h * 0.89))
-	E.F(ci, pc, 0.04)
 	R(ci, pc, 0.62, 1.2)
 	var mp := Rect2(pc.position + Vector2(pc.size.x * 0.08, pc.size.y * 0.04), Vector2(pc.size.x * 0.84, minf(pc.size.y * 0.16, 26.0)))
 	R(ci, mp, 0.45)
@@ -4823,3 +4928,2278 @@ static func _ups_mimic(ci: CanvasItem, m: Rect2) -> void:
 	L(ci, Vector2(m.position.x + m.size.x * 0.55 + bw, y), Vector2(m.end.x, y), 0.4)
 	L(ci, Vector2(m.position.x + m.size.x * 0.44, y), Vector2(m.position.x + m.size.x * 0.44, m.end.y), 0.4)
 	P(ci, PackedVector2Array([Vector2(m.position.x + m.size.x * 0.08, y), Vector2(m.position.x + m.size.x * 0.08, m.position.y + 1.0), Vector2(m.position.x + m.size.x * 0.88, m.position.y + 1.0), Vector2(m.position.x + m.size.x * 0.88, y)]), 0.25)
+
+
+# ================================================================== the shared "cabinet" (E036–E086)
+# 2026-11-11, third batch from the 零件图鉴: fifty-one kinds all drew as the same double-door
+# cabinet, most of them not cabinets at all. Each drawn as what it is.
+
+# a cabinet's carcass: faint fill, frame, plinth; returns the body rect
+static func _carcass(ci: CanvasItem, r: Rect2, x0: float = 0.06, y0: float = 0.04, x1: float = 0.94, y1: float = 0.95) -> Rect2:
+	var b := sub(r, x0, y0, x1, y1)
+	R(ci, b, 0.62, 1.2)
+	R(ci, sub(r, x0 - 0.02, y1, x1 + 0.02, minf(y1 + 0.04, 1.0)), 0.5)
+	return b
+
+
+# a row of n small lamps across a rect's middle; every k-th dark
+static func _lamp_row(ci: CanvasItem, r: Rect2, n: int, col: Color, dark_every: int = 0) -> void:
+	for k in n:
+		var c := Vector2(r.position.x + (k + 0.5) * r.size.x / n, r.get_center().y)
+		if dark_every > 0 and k % dark_every == dark_every - 1:
+			D(ci, c, 0.8, 0.35)
+		else:
+			_lamp(ci, c, maxf(1.4, minf(r.size.y * 0.6, 2.4)), col)
+
+
+# ---------------------------------------------------------------- ARK-01: despin brake control
+# the ring brake's control cabinet: the ring mimic with its two calipers and the speed
+# readout, torque bargraph, PLC card rack, the brake contactors, the cooling-pump starter,
+# the guarded emergency release, cable glands up top
+static func brake_ctrl(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var b := _carcass(ci, r)
+	var mp := sub(r, 0.12, 0.08, 0.88, 0.3)
+	R(ci, mp, 0.45)
+	var rc := _u(r, 0.36, 0.19)
+	var rr: float = minf(mp.size.y * 0.38, mp.size.x * 0.22)
+	O(ci, rc, rr, 0.55)
+	O(ci, rc, rr * 0.35, 0.4)
+	for a in [-0.4, PI + 0.4]:
+		var cp: Vector2 = rc + Vector2.from_angle(a) * rr
+		R(ci, Rect2(cp - Vector2(2.0, 2.5), Vector2(4.0, 5.0)), 0.6)
+	A(ci, rc, rr * 1.25, -PI * 0.8, -PI * 0.3, 0.4)
+	E.Rc(ci, sub(r, 0.6, 0.11, 0.84, 0.17), Pal.tint(Pal.AIR, 0.6), 1.0)
+	for k in 6:
+		var bar := sub(r, 0.6 + k * 0.04, 0.27 - 0.015 * (k + 1), 0.63 + k * 0.04, 0.27)
+		if k < 4:
+			hatch(ci, bar, 2.0, false, 0.45, 30)
+		R(ci, bar, 0.35)
+	var pl := sub(r, 0.12, 0.35, 0.88, 0.52)
+	R(ci, pl, 0.45)
+	var cards := PackedVector2Array()
+	for k in 8:
+		var x: float = pl.position.x + (k + 0.5) * pl.size.x / 8.0
+		cards.append(Vector2(x, pl.position.y + 2.0))
+		cards.append(Vector2(x, pl.end.y - 2.0))
+	S(ci, cards, 0.3)
+	_lamp_row(ci, Rect2(pl.position + Vector2(0, 2.0), Vector2(pl.size.x, 4.0)), 8, Pal.tint(Pal.FLUID, 0.8), 5)
+	for x in [0.14, 0.4]:
+		var ct := sub(r, x, 0.57, x + 0.2, 0.74)
+		R(ci, ct, 0.5)
+		L(ci, ct.position + Vector2(ct.size.x * 0.25, ct.size.y * 0.3), ct.position + Vector2(ct.size.x * 0.75, ct.size.y * 0.3), 0.4)
+		D(ci, ct.get_center() + Vector2(0, ct.size.y * 0.15), 1.0, 0.5)
+	E.breaker(ci, sub(r, 0.66, 0.57, 0.86, 0.68), true, 0.45)
+	var es := _u(r, 0.76, 0.84)
+	A(ci, es, maxf(3.0, ms * 0.1), PI, TAU, 0.5, 1.3)
+	_lamp(ci, es - Vector2(0, ms * 0.03), maxf(2.0, ms * 0.08), Pal.heat(0.9))
+	E.louvres(ci, sub(r, 0.14, 0.8, 0.5, 0.92), 0.28)
+	for x in [0.3, 0.5, 0.7]:
+		R(ci, Rect2(_u(r, x, 0.0) + Vector2(-1.5, b.position.y - r.position.y - 3.0), Vector2(3.0, 3.0)), 0.5)
+
+
+# ---------------------------------------------------------------- ARK-01: chemical dosing
+# the primary-water chemistry dosing cabinet: two chemical tanks (their levels) in the
+# bunded bottom, a diaphragm metering pump on each with its stroke knob, the injection lines
+# up through check valves, the controller with its readout, the hazard diamond
+static func dosing_skid(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	_pu(ci, r, [Vector2(0.1, 0.72), Vector2(0.1, 0.92), Vector2(0.9, 0.92), Vector2(0.9, 0.72)], 0.45)
+	for x in [0.14, 0.52]:
+		var t := sub(r, x, 0.62, x + 0.34, 0.9)
+		E.Rc(ci, sub(r, x + 0.01, 0.72, x + 0.33, 0.895), Pal.tint(Pal.FLUID, 0.22), 1.0)
+		R(ci, t, 0.55)
+		L(ci, _u(r, x + 0.01, 0.72), _u(r, x + 0.33, 0.72), 0.4)
+		R(ci, sub(r, x + 0.12, 0.59, x + 0.22, 0.62), 0.5)
+		# the metering pump on its bracket
+		var pc := _u(r, x + 0.17, 0.46)
+		var pr: float = minf(r.size.x * 0.09, r.size.y * 0.05)
+		O(ci, pc, pr, 0.58)
+		O(ci, pc, pr * 0.45, 0.4)
+		R(ci, Rect2(pc + Vector2(-pr * 0.6, pr), Vector2(pr * 1.2, pr * 1.4)), 0.45)
+		O(ci, pc + Vector2(0, -pr * 1.5), maxf(1.4, pr * 0.4), 0.5)
+		L(ci, _u(r, x + 0.17, 0.59), pc + Vector2(0, pr * 2.4), 0.4)
+		# injection line with its check valve
+		P(ci, PackedVector2Array([pc + Vector2(pr, 0), Vector2(_u(r, x + 0.3, 0).x, pc.y), _u(r, x + 0.3, 0.0)]), 0.5, 1.2)
+		var cv := _u(r, x + 0.3, 0.3)
+		P(ci, PackedVector2Array([cv + Vector2(-2.5, -2.5), cv + Vector2(2.5, 2.5), cv + Vector2(2.5, -2.5), cv + Vector2(-2.5, 2.5), cv + Vector2(-2.5, -2.5)]), 0.5)
+	var ct := sub(r, 0.12, 0.08, 0.5, 0.26)
+	R(ci, ct, 0.5)
+	E.Rc(ci, sub(r, 0.15, 0.11, 0.38, 0.16), Pal.tint(Pal.AIR, 0.6), 1.0)
+	_lamp_row(ci, sub(r, 0.15, 0.19, 0.45, 0.23), 3, Pal.tint(Pal.FLUID, 0.85))
+	var hd := _u(r, 0.68, 0.17)
+	var hs: float = maxf(3.0, ms * 0.08)
+	P(ci, PackedVector2Array([hd + Vector2(0, -hs), hd + Vector2(hs, 0), hd + Vector2(0, hs), hd + Vector2(-hs, 0), hd + Vector2(0, -hs)]), 0.55)
+	E.Rc(ci, Rect2(hd - Vector2(hs, hs) * 0.35, Vector2(hs, hs) * 0.7), Pal.heat(0.6), 1.0)
+
+
+# ---------------------------------------------------------------- ARK-01: material rack
+# the industrial deck's raw-stock rack: an upright with cantilever arms, round bar and
+# square tube racked on them (end on), a slot of plate sheets down the side, the offcut bin
+static func material_rack(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	L(ci, _u(r, 0.08, 0.02), _u(r, 0.08, 0.96), 0.62, 2.0)
+	L(ci, _u(r, 0.02, 0.97), _u(r, 0.98, 0.97), 0.55, 1.5)
+	for i in 4:
+		var y: float = 0.18 + i * 0.17
+		L(ci, _u(r, 0.08, y), _u(r, 0.62, y - 0.02), 0.58, 1.6)
+		L(ci, _u(r, 0.62, y - 0.02), _u(r, 0.62, y - 0.05), 0.5, 1.3)
+		var rad: float = maxf(1.6, ms * (0.035 + 0.008 * (i % 2)))
+		var n := clampi(int(r.size.x * 0.5 / (rad * 2.3)), 3, 10)
+		for k in n:
+			var c := _u(r, 0.12 + (k + 0.5) * 0.48 / n, 0.0)
+			c.y = _u(r, 0, y).y - rad - 1.0 - k * r.size.y * 0.02 / n
+			if i == 2:
+				R(ci, Rect2(c - Vector2(rad, rad), Vector2(rad, rad) * 2.0), 0.45)
+			else:
+				O(ci, c, rad, 0.45)
+		D(ci, _u(r, 0.08, y), 1.0, 0.55)
+	# plate slot
+	R(ci, sub(r, 0.7, 0.12, 0.96, 0.8), 0.5)
+	var pl := PackedVector2Array()
+	for k in 7:
+		var x: float = 0.73 + k * 0.032
+		pl.append(_u(r, x, 0.16 + (k % 3) * 0.03))
+		pl.append(_u(r, x + 0.01, 0.79))
+	S(ci, pl, 0.42)
+	# offcut bin
+	var bn := sub(r, 0.66, 0.84, 0.98, 0.96)
+	R(ci, bn, 0.55)
+	for q in [Vector2(0.72, 0.84), Vector2(0.8, 0.82), Vector2(0.9, 0.83)]:
+		L(ci, _u(r, q.x, q.y), _u(r, q.x + 0.05, q.y - 0.05), 0.45)
+
+
+# ---------------------------------------------------------------- ARK-01: food processing bench
+# a stainless prep bench in the ring's galley: backsplash with the utensil rail, the sink
+# and its swan-neck tap, the cutting board and knife, the slicer (blade, guard, carriage),
+# the undershelf of lidded containers, legs on levelling feet
+static func food_bench(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	L(ci, _u(r, 0.02, 0.46), _u(r, 0.98, 0.46), 0.62, 1.8)
+	L(ci, _u(r, 0.02, 0.46), _u(r, 0.02, 0.18), 0.5)
+	L(ci, _u(r, 0.02, 0.18), _u(r, 0.98, 0.18), 0.4)
+	L(ci, _u(r, 0.98, 0.18), _u(r, 0.98, 0.46), 0.5)
+	L(ci, _u(r, 0.06, 0.24), _u(r, 0.4, 0.24), 0.45)
+	for x in [0.1, 0.17, 0.24, 0.31]:
+		L(ci, _u(r, x, 0.24), _u(r, x, 0.34), 0.35)
+	# sink and tap
+	_pu(ci, r, [Vector2(0.05, 0.46), Vector2(0.07, 0.58), Vector2(0.24, 0.58), Vector2(0.26, 0.46)], 0.55)
+	E.Rc(ci, sub(r, 0.08, 0.5, 0.23, 0.56), Pal.tint(Pal.FLUID, 0.25), 1.0)
+	_pu(ci, r, [Vector2(0.2, 0.46), Vector2(0.2, 0.3), Vector2(0.15, 0.3), Vector2(0.15, 0.36)], 0.55, 1.3)
+	# board and knife
+	R(ci, sub(r, 0.32, 0.4, 0.52, 0.46), 0.5)
+	L(ci, _u(r, 0.36, 0.38), _u(r, 0.48, 0.36), 0.55, 1.4)
+	L(ci, _u(r, 0.48, 0.36), _u(r, 0.52, 0.355), 0.6, 2.0)
+	# slicer
+	var sc := _u(r, 0.73, 0.3)
+	var sr: float = ms * 0.14
+	O(ci, sc, sr, 0.58, 1.2)
+	A(ci, sc, sr * 1.15, PI * 0.9, PI * 1.9, 0.45)
+	D(ci, sc, 1.2, 0.6)
+	R(ci, sub(r, 0.6, 0.38, 0.92, 0.46), 0.5)
+	L(ci, _u(r, 0.86, 0.38), _u(r, 0.86, 0.26), 0.45)
+	_lamp(ci, _u(r, 0.9, 0.42), maxf(1.4, ms * 0.05), Pal.tint(Pal.FLUID, 0.8))
+	# undershelf and containers
+	L(ci, _u(r, 0.04, 0.8), _u(r, 0.96, 0.8), 0.5, 1.3)
+	for k in 5:
+		var x: float = 0.08 + k * 0.17
+		R(ci, sub(r, x, 0.63, x + 0.13, 0.8), 0.42)
+		L(ci, _u(r, x - 0.005, 0.66), _u(r, x + 0.135, 0.66), 0.4)
+	for x in [0.04, 0.96]:
+		L(ci, _u(r, x, 0.46), _u(r, x, 0.95), 0.58, 1.5)
+		L(ci, _u(r, x - 0.02, 0.97), _u(r, x + 0.02, 0.97), 0.55, 1.4)
+
+
+# ---------------------------------------------------------------- ARK-01: transmitter
+# the long-range transmitter: exciter drawer with its frequency readout, the final stage
+# behind a viewing window (the finned power tube in its cavity), forward/reflected/plate
+# meters, the HV supply (transformer, filter capacitors), the rigid coax and directional
+# coupler out of the roof, the door interlock
+static func tx_cabinet(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var b := _carcass(ci, r)
+	var ex := sub(r, 0.1, 0.07, 0.9, 0.17)
+	R(ci, ex, 0.5)
+	E.Rc(ci, sub(r, 0.14, 0.095, 0.48, 0.145), Pal.tint(Pal.AIR, 0.6), 1.0)
+	for x in [0.6, 0.7, 0.8]:
+		D(ci, _u(r, x, 0.12), 1.0, 0.55)
+	for k in 3:
+		E.gauge(ci, _u(r, 0.22 + k * 0.28, 0.23), maxf(2.5, ms * 0.08), 0.5)
+	var wn := sub(r, 0.16, 0.31, 0.84, 0.62)
+	R(ci, wn, 0.55)
+	R(ci, wn.grow(-2.0), 0.3)
+	var tc := wn.get_center()
+	var tw: float = wn.size.x * 0.22
+	var th: float = wn.size.y * 0.7
+	R(ci, Rect2(tc - Vector2(tw * 0.5, th * 0.5), Vector2(tw, th)), 0.58)
+	var fins := PackedVector2Array()
+	for k in 6:
+		var y: float = tc.y - th * 0.4 + k * th * 0.16
+		fins.append(Vector2(tc.x - tw * 0.8, y))
+		fins.append(Vector2(tc.x + tw * 0.8, y))
+	S(ci, fins, 0.35)
+	L(ci, tc + Vector2(0, -th * 0.5), Vector2(tc.x, wn.position.y + 2.0), 0.5, 1.4)
+	var ps := sub(r, 0.1, 0.67, 0.9, 0.92)
+	R(ci, ps, 0.5)
+	R(ci, sub(r, 0.14, 0.7, 0.42, 0.89), 0.45)
+	hatch(ci, sub(r, 0.2, 0.72, 0.36, 0.87), 2.2, false, 0.25, 12)
+	for x in [0.52, 0.64, 0.76]:
+		R(ci, sub(r, x, 0.72, x + 0.08, 0.88), 0.45)
+		L(ci, _u(r, x, 0.75), _u(r, x + 0.08, 0.75), 0.3)
+	L(ci, _u(r, 0.82, 0.07), _u(r, 0.82, 0.0), 0.62, 2.2)
+	R(ci, Rect2(_u(r, 0.82, 0.0) + Vector2(-2.5, 1.0), Vector2(5.0, b.position.y - r.position.y - 1.0)), 0.55)
+	R(ci, sub(r, 0.9, 0.42, 0.94, 0.5), 0.5)
+	E.Rc(ci, sub(r, 0.66, 0.45, 0.76, 0.48), Pal.heat(0.7), 1.0)
+
+
+# ---------------------------------------------------------------- ARK-01: turbine control
+# the turbine governor cabinet: the train mimic (turbine, generator, valves), the big speed
+# dial, steam valve position bargraphs, the triple-redundant controllers each with its
+# lamps, the trip and reset pushbuttons
+static func turbine_ctrl(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	var mp := sub(r, 0.12, 0.07, 0.88, 0.25)
+	R(ci, mp, 0.45)
+	_pu(ci, r, [Vector2(0.28, 0.12), Vector2(0.48, 0.1), Vector2(0.48, 0.22), Vector2(0.28, 0.2)], 0.55, 1.0, true)
+	O(ci, _u(r, 0.66, 0.16), minf(mp.size.y * 0.32, mp.size.x * 0.1), 0.55)
+	L(ci, _u(r, 0.48, 0.16), _u(r, 0.6, 0.16), 0.45, 1.3)
+	L(ci, _u(r, 0.16, 0.13), _u(r, 0.28, 0.13), 0.4)
+	var vc := _u(r, 0.22, 0.13)
+	P(ci, PackedVector2Array([vc + Vector2(-2.5, -2), vc + Vector2(2.5, 2), vc + Vector2(2.5, -2), vc + Vector2(-2.5, 2), vc + Vector2(-2.5, -2)]), 0.5)
+	E.gauge(ci, _u(r, 0.3, 0.37), maxf(3.0, ms * 0.17), 0.58)
+	for k in 4:
+		var bar := sub(r, 0.56 + k * 0.08, 0.29, 0.61 + k * 0.08, 0.45)
+		R(ci, bar, 0.4)
+		hatch(ci, Rect2(bar.position + Vector2(0, bar.size.y * (0.2 + 0.15 * k)), Vector2(bar.size.x, bar.size.y * (0.8 - 0.15 * k))), 2.0, false, 0.35, 30)
+	for k in 3:
+		var cc := sub(r, 0.12 + k * 0.26, 0.52, 0.34 + k * 0.26, 0.76)
+		R(ci, cc, 0.48)
+		hatch(ci, Rect2(cc.position + Vector2(2, cc.size.y * 0.4), cc.size * Vector2(1, 0.55) - Vector2(4, 0)), 3.0, true, 0.25, 8)
+		_lamp_row(ci, Rect2(cc.position + Vector2(2, 2), Vector2(cc.size.x - 4, cc.size.y * 0.25)), 3, Pal.tint(Pal.FLUID, 0.85))
+	for q in [[0.3, Pal.heat(0.9)], [0.5, Pal.tint(Pal.FLUID, 0.8)], [0.7, Pal.ink(0.5)]]:
+		var c := _u(r, q[0], 0.85)
+		O(ci, c, maxf(2.0, ms * 0.06), 0.5)
+		_lamp(ci, c, maxf(1.6, ms * 0.05), q[1])
+
+
+# ---------------------------------------------------------------- bench drill (ARK-01, TW-64)
+# a pillar drill: base with its T-slots, the column, the table on its collar and crank,
+# the vice, the head with the motor behind, the belt guard, the quill, chuck and bit,
+# the three-spoke feed handle, the work lamp
+static func bench_drill(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	R(ci, sub(r, 0.1, 0.92, 0.9, 0.99), 0.6, 1.2)
+	for x in [0.35, 0.65]:
+		L(ci, _u(r, x, 0.925), _u(r, x, 0.985), 0.35)
+	R(ci, sub(r, 0.62, 0.12, 0.72, 0.92), 0.58)
+	R(ci, sub(r, 0.15, 0.6, 0.68, 0.64), 0.55)
+	R(ci, sub(r, 0.6, 0.58, 0.76, 0.68), 0.5)
+	O(ci, _u(r, 0.82, 0.63), maxf(1.4, ms * 0.04), 0.5)
+	L(ci, _u(r, 0.76, 0.63), _u(r, 0.82, 0.63), 0.45)
+	R(ci, sub(r, 0.24, 0.54, 0.5, 0.6), 0.5)
+	L(ci, _u(r, 0.37, 0.54), _u(r, 0.37, 0.5), 0.4)
+	var hd := sub(r, 0.12, 0.14, 0.78, 0.34)
+	R(ci, hd, 0.6, 1.2)
+	R(ci, sub(r, 0.12, 0.04, 0.78, 0.14), 0.5)
+	L(ci, _u(r, 0.2, 0.09), _u(r, 0.7, 0.09), 0.3)
+	E.motor(ci, sub(r, 0.62, 0.17, 0.98, 0.31), false, 0.45)
+	R(ci, sub(r, 0.3, 0.34, 0.42, 0.42), 0.55)
+	_pu(ci, r, [Vector2(0.31, 0.42), Vector2(0.33, 0.46), Vector2(0.39, 0.46), Vector2(0.41, 0.42)], 0.55)
+	L(ci, _u(r, 0.36, 0.46), _u(r, 0.36, 0.53), 0.6, 1.3)
+	var hc := _u(r, 0.5, 0.3)
+	for a in [0.4, 2.5, 4.6]:
+		L(ci, hc, hc + Vector2.from_angle(a) * ms * 0.2, 0.5, 1.2)
+		D(ci, hc + Vector2.from_angle(a) * ms * 0.2, 1.4, 0.55)
+	_pu(ci, r, [Vector2(0.12, 0.2), Vector2(0.04, 0.2), Vector2(0.04, 0.36), Vector2(0.12, 0.4)], 0.45)
+	_lamp(ci, _u(r, 0.12, 0.4), maxf(1.4, ms * 0.05), Pal.heat(0.6))
+	_lamp(ci, _u(r, 0.22, 0.24), maxf(1.4, ms * 0.04), Pal.tint(Pal.FLUID, 0.8))
+
+
+# ---------------------------------------------------------------- tool cart (ARK-01, CV-138)
+# a mechanic's roll cab: the tray top with its tools (spanner, hammer, screwdriver), the
+# drawers and their pull bars (more of them the taller it is), the push handle, casters
+static func tool_cart(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var tall: bool = r.size.y > r.size.x * 0.95
+	var top: float = 0.28 if tall else 0.36
+	var bx := sub(r, 0.06, top, 0.84, 0.86)
+	R(ci, bx, 0.62, 1.2)
+	_pu(ci, r, [Vector2(0.04, top - 0.08), Vector2(0.06, top), Vector2(0.84, top), Vector2(0.86, top - 0.08)], 0.55)
+	if tall:
+		var tb := sub(r, 0.1, 0.04, 0.8, top - 0.1)
+		R(ci, tb, 0.55)
+		L(ci, tb.position + Vector2(0, tb.size.y * 0.3), Vector2(tb.end.x, tb.position.y + tb.size.y * 0.3), 0.4)
+		D(ci, tb.position + Vector2(tb.size.x * 0.5, tb.size.y * 0.3), 1.2, 0.55)
+	var ty: float = top - 0.08
+	L(ci, _u(r, 0.12, ty), _u(r, 0.32, ty - 0.02), 0.6, 1.5)
+	O(ci, _u(r, 0.1, ty + 0.005), maxf(1.4, ms * 0.04), 0.5)
+	L(ci, _u(r, 0.4, ty), _u(r, 0.58, ty), 0.55, 1.2)
+	R(ci, Rect2(_u(r, 0.56, ty) + Vector2(0, -3.0), Vector2(r.size.x * 0.07, 4.5)), 0.6)
+	L(ci, _u(r, 0.64, ty), _u(r, 0.74, ty - 0.01), 0.55, 1.6)
+	L(ci, _u(r, 0.74, ty - 0.01), _u(r, 0.8, ty - 0.012), 0.5)
+	var n := clampi(int(bx.size.y / 9.0), 3, 9)
+	for k in n:
+		var y: float = bx.position.y + k * bx.size.y / n
+		if k > 0:
+			L(ci, Vector2(bx.position.x, y), Vector2(bx.end.x, y), 0.45)
+		var hy: float = y + bx.size.y / n * 0.4
+		L(ci, Vector2(bx.position.x + bx.size.x * 0.3, hy), Vector2(bx.position.x + bx.size.x * 0.7, hy), 0.55, 1.3)
+	_pu(ci, r, [Vector2(0.84, top + 0.04), Vector2(0.96, top + 0.04), Vector2(0.96, 0.8), Vector2(0.84, 0.8)], 0.5, 1.4)
+	var wr: float = ms * 0.06
+	for x in [0.16, 0.74]:
+		var wc := Vector2(_u(r, x, 0).x, _u(r, 0, 0.86).y + wr + 1.5)
+		O(ci, wc, wr, 0.55, 1.2)
+		L(ci, wc, Vector2(wc.x, _u(r, 0, 0.86).y), 0.45)
+
+
+# ---------------------------------------------------------------- CV-138: drone battery pack rack
+# the charging rack for the drones' packs: six shelves, each with its packs (chamfered,
+# strapped, a charge lamp: charging orange, full green), the charge leads to the bus duct up
+# the side, the extinguishing nozzle line over the top, the cable tray
+static func pack_rack(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	for x in [0.04, 0.84]:
+		L(ci, _u(r, x, 0.06), _u(r, x, 0.99), 0.6, 1.6)
+	var nsh := clampi(int(r.size.y / 34.0), 3, 8)
+	var sh: float = 0.9 / nsh
+	for i in nsh:
+		var y: float = 0.08 + (i + 1) * sh
+		L(ci, _u(r, 0.03, y), _u(r, 0.85, y), 0.58, 1.4)
+		for k in 2:
+			var x0: float = 0.08 + k * 0.38
+			var c := 0.02
+			var y0: float = y - sh * 0.75
+			_pu(ci, r, [Vector2(x0 + c, y0), Vector2(x0 + 0.34 - c, y0), Vector2(x0 + 0.34, y0 + c), Vector2(x0 + 0.34, y - 0.005), Vector2(x0, y - 0.005), Vector2(x0, y0 + c)], 0.52, 1.0, true)
+			_pu(ci, r, [Vector2(x0 + 0.08, y0), Vector2(x0 + 0.1, y0 - sh * 0.15), Vector2(x0 + 0.24, y0 - sh * 0.15), Vector2(x0 + 0.26, y0)], 0.4)
+			var full: bool = (i * 2 + k) % 3 != 1
+			_lamp(ci, _u(r, x0 + 0.05, y - sh * 0.3), maxf(1.6, ms * 0.04), Pal.tint(Pal.FLUID, 0.85) if full else Pal.heat(0.85))
+			L(ci, _u(r, x0 + 0.34, y - sh * 0.35), _u(r, 0.86, y - sh * 0.35), 0.35)
+	R(ci, sub(r, 0.86, 0.06, 0.96, 0.98), 0.55)
+	L(ci, _u(r, 0.91, 0.08), _u(r, 0.91, 0.96), 0.3)
+	L(ci, _u(r, 0.04, 0.04), _u(r, 0.84, 0.04), 0.5, 1.3)
+	for x in [0.2, 0.44, 0.68]:
+		var c := _u(r, x, 0.04)
+		L(ci, c, c + Vector2(0, r.size.y * 0.02), 0.5)
+		_pu(ci, r, [Vector2(x - 0.03, 0.075), Vector2(x, 0.06), Vector2(x + 0.03, 0.075)], 0.3)
+	hatch(ci, sub(r, 0.04, 0.0, 0.96, 0.025), 4.0, true, 0.3, 40)
+
+
+# ---------------------------------------------------------------- CV-138: dispatch recorder
+# the drone dispatch recorder: the bay status board (a grid of bays, the out ones lit), the
+# ticket printer with its tear bar and a ticket hanging, the keyboard shelf, the headset on
+# its hook, the recorder drawer with its media slot
+static func dispatch_log(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r, 0.06, 0.04, 0.94, 0.95)
+	var bd := sub(r, 0.1, 0.08, 0.9, 0.42)
+	R(ci, bd, 0.55)
+	for row in 3:
+		for c in 6:
+			var cell := sub(r, 0.13 + c * 0.125, 0.11 + row * 0.1, 0.22 + c * 0.125, 0.18 + row * 0.1)
+			if (row * 6 + c) % 4 == 1:
+				E.Rc(ci, cell, Pal.tint(Pal.FLUID, 0.7), 1.0)
+			elif (row * 6 + c) % 7 == 3:
+				E.Rc(ci, cell, Pal.heat(0.7), 1.0)
+			else:
+				R(ci, cell, 0.35)
+	var pr := sub(r, 0.1, 0.47, 0.5, 0.58)
+	R(ci, pr, 0.5)
+	L(ci, _u(r, 0.13, 0.58), _u(r, 0.47, 0.58), 0.6, 1.5)
+	_pu(ci, r, [Vector2(0.18, 0.58), Vector2(0.18, 0.68), Vector2(0.38, 0.68), Vector2(0.38, 0.58)], 0.4)
+	for y in [0.62, 0.65]:
+		L(ci, _u(r, 0.21, y), _u(r, 0.34, y), 0.25)
+	R(ci, sub(r, 0.08, 0.72, 0.62, 0.78), 0.5)
+	hatch(ci, sub(r, 0.1, 0.73, 0.6, 0.77), 3.0, true, 0.25, 40)
+	R(ci, sub(r, 0.86, 0.48, 0.94, 0.52), 0.5)
+	A(ci, _u(r, 0.82, 0.6), r.size.x * 0.08, PI, TAU, 0.5, 1.4)
+	O(ci, _u(r, 0.74, 0.62), maxf(1.6, ms * 0.04), 0.5)
+	O(ci, _u(r, 0.9, 0.62), maxf(1.6, ms * 0.04), 0.5)
+	var dr := sub(r, 0.1, 0.82, 0.9, 0.92)
+	R(ci, dr, 0.5)
+	L(ci, _u(r, 0.2, 0.87), _u(r, 0.5, 0.87), 0.55, 1.5)
+	_lamp(ci, _u(r, 0.8, 0.87), maxf(1.4, ms * 0.035), Pal.tint(Pal.FLUID, 0.85))
+
+
+# ---------------------------------------------------------------- the battery management cabinet (SV-122, MF-126)
+# string monitors (per-cell voltage bars), the main contactors and the precharge resistor,
+# the current shunt on the busbar, the insulation monitor, the smoke detector; tall it
+# stacks them, wide it lays them side by side
+static func bms_cab(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var b := _carcass(ci, r)
+	var wide: bool = r.size.x > r.size.y * 1.3
+	var nmon := 3 if wide else clampi(int(b.size.y * 0.5 / 18.0), 2, 6)
+	for i in nmon:
+		var m := sub(r, 0.1 + i * 0.27, 0.1, 0.33 + i * 0.27, 0.55) if wide else sub(r, 0.1, 0.08 + i * 0.5 / nmon, 0.9, 0.08 + (i + 1) * 0.5 / nmon - 0.02)
+		R(ci, m, 0.48)
+		var nb := clampi(int(m.size.x / 4.0), 4, 16)
+		var bars := PackedVector2Array()
+		for k in nb:
+			var x: float = m.position.x + (k + 0.6) * m.size.x / (nb + 0.2)
+			bars.append(Vector2(x, m.end.y - 2.0))
+			bars.append(Vector2(x, m.end.y - 2.0 - (m.size.y - 6.0) * (0.55 + 0.35 * fposmod(k * 0.37 + i * 0.2, 1.0))))
+		S(ci, bars, 0.4, 1.4)
+		_lamp(ci, m.position + Vector2(3.0, 3.0), 1.8, Pal.tint(Pal.FLUID, 0.85))
+	var y0: float = 0.6
+	for k in 2:
+		var ct := sub(r, 0.12 + k * 0.2, y0, 0.28 + k * 0.2, y0 + 0.22)
+		R(ci, ct, 0.5)
+		L(ci, ct.position + Vector2(ct.size.x * 0.25, ct.size.y * 0.3), ct.position + Vector2(ct.size.x * 0.75, ct.size.y * 0.3), 0.4)
+	var pz := PackedVector2Array()
+	for k in 7:
+		pz.append(_u(r, 0.56 + k * 0.025, y0 + (0.04 if k % 2 == 0 else 0.1)))
+	P(ci, pz, 0.45)
+	L(ci, _u(r, 0.54, y0 + 0.16), _u(r, 0.88, y0 + 0.16), 0.6, 2.0)
+	R(ci, sub(r, 0.66, y0 + 0.13, 0.76, y0 + 0.19), 0.55)
+	E.Rc(ci, sub(r, 0.72, y0 - 0.0, 0.88, y0 + 0.07), Pal.tint(Pal.AIR, 0.6), 1.0)
+	O(ci, _u(r, 0.82, 0.88), maxf(2.0, ms * 0.05), 0.45)
+	D(ci, _u(r, 0.82, 0.88), 1.0, 0.45)
+
+
+# ---------------------------------------------------------------- SV-122: calibration bench
+# the survey instruments' calibration bench: the total station on its calibration mount
+# sighting along the collimator on its rail, the reference standards (meter, generator) on
+# the shelf above, the anti-static mat, the drawers, the bench legs
+static func cal_bench(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	L(ci, _u(r, 0.02, 0.56), _u(r, 0.98, 0.56), 0.62, 1.8)
+	R(ci, sub(r, 0.04, 0.53, 0.6, 0.56), 0.3)
+	for x in [0.04, 0.96]:
+		L(ci, _u(r, x, 0.56), _u(r, x, 0.98), 0.55, 1.5)
+	var dw := sub(r, 0.66, 0.6, 0.94, 0.94)
+	R(ci, dw, 0.5)
+	for k in 3:
+		var y: float = 0.6 + k * 0.113
+		L(ci, _u(r, 0.66, y), _u(r, 0.94, y), 0.4)
+		L(ci, _u(r, 0.76, y + 0.055), _u(r, 0.84, y + 0.055), 0.55, 1.3)
+	# shelf and standards
+	L(ci, _u(r, 0.04, 0.2), _u(r, 0.96, 0.2), 0.55, 1.4)
+	for x in [0.04, 0.96]:
+		L(ci, _u(r, x, 0.02), _u(r, x, 0.2), 0.45)
+	R(ci, sub(r, 0.08, 0.06, 0.3, 0.2), 0.5)
+	E.Rc(ci, sub(r, 0.1, 0.09, 0.22, 0.13), Pal.tint(Pal.AIR, 0.6), 1.0)
+	R(ci, sub(r, 0.34, 0.08, 0.58, 0.2), 0.5)
+	E.screen_face(ci, sub(r, 0.36, 0.1, 0.48, 0.18), 0, 0.35)
+	for x in [0.52, 0.55]:
+		D(ci, _u(r, x, 0.14), 1.0, 0.55)
+	# total station on its mount
+	var ts := _u(r, 0.18, 0.4)
+	R(ci, sub(r, 0.12, 0.47, 0.24, 0.53), 0.55)
+	L(ci, _u(r, 0.18, 0.47), _u(r, 0.18, 0.44), 0.5, 1.3)
+	R(ci, Rect2(ts - Vector2(r.size.x * 0.04, ms * 0.12), Vector2(r.size.x * 0.08, ms * 0.16)), 0.58)
+	R(ci, Rect2(ts + Vector2(r.size.x * 0.03, -ms * 0.08), Vector2(r.size.x * 0.05, ms * 0.07)), 0.55)
+	# collimator on its rail
+	L(ci, _u(r, 0.3, 0.52), _u(r, 0.9, 0.52), 0.5, 1.3)
+	R(ci, sub(r, 0.56, 0.33, 0.88, 0.43), 0.58)
+	L(ci, _u(r, 0.56, 0.38), _u(r, 0.26, 0.38), 0.25)
+	for x in [0.62, 0.82]:
+		L(ci, _u(r, x, 0.43), _u(r, x, 0.52), 0.45, 1.2)
+	O(ci, _u(r, 0.56, 0.38), maxf(1.6, ms * 0.04), 0.5)
+	_lamp(ci, _u(r, 0.86, 0.38), maxf(1.4, ms * 0.035), Pal.heat(0.75))
+
+
+# ---------------------------------------------------------------- SV-122: survey data store
+# the survey data store: the roll plotter on top with a contour map coming off it, the
+# disk shelves of hot-swap drives with their activity lamps, the tape library slot, the
+# controller with its readout
+static func survey_log(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var b := _carcass(ci, r, 0.06, 0.2, 0.94, 0.95)
+	R(ci, sub(r, 0.04, 0.12, 0.96, 0.2), 0.58)
+	O(ci, _u(r, 0.12, 0.16), maxf(1.6, ms * 0.03), 0.5)
+	O(ci, _u(r, 0.88, 0.16), maxf(1.6, ms * 0.03), 0.5)
+	var mp := sub(r, 0.14, 0.0, 0.86, 0.12)
+	R(ci, mp, 0.4)
+	var cc := mp.get_center() + Vector2(mp.size.x * 0.1, 0)
+	for k in 3:
+		_ell(ci, cc, mp.size.x * (0.12 + k * 0.09), mp.size.y * (0.2 + k * 0.12), 0.3)
+	L(ci, mp.position + Vector2(2, mp.size.y * 0.7), mp.position + Vector2(mp.size.x * 0.3, mp.size.y * 0.3), 0.35)
+	var ns := clampi(int(b.size.y * 0.55 / 14.0), 2, 6)
+	for i in ns:
+		var s := sub(r, 0.1, 0.24 + i * 0.5 / ns, 0.9, 0.24 + (i + 1) * 0.5 / ns - 0.015)
+		R(ci, s, 0.48)
+		var nd := clampi(int(s.size.x / 6.0), 4, 16)
+		var dd := PackedVector2Array()
+		for k in nd:
+			var x: float = s.position.x + (k + 0.5) * s.size.x / nd
+			dd.append(Vector2(x - s.size.x / nd * 0.35, s.position.y + 2.0))
+			dd.append(Vector2(x - s.size.x / nd * 0.35, s.end.y - 2.0))
+		S(ci, dd, 0.3)
+		_lamp_row(ci, Rect2(s.position + Vector2(0, s.size.y - 4.0), Vector2(s.size.x, 3.0)), mini(nd, 8), Pal.tint(Pal.FLUID, 0.8), 3)
+	var tl := sub(r, 0.1, 0.78, 0.6, 0.9)
+	R(ci, tl, 0.5)
+	L(ci, _u(r, 0.15, 0.84), _u(r, 0.55, 0.84), 0.55, 1.5)
+	E.Rc(ci, sub(r, 0.66, 0.79, 0.88, 0.85), Pal.tint(Pal.AIR, 0.6), 1.0)
+
+
+# ---------------------------------------------------------------- PT-34: control rod drive cabinet
+# the patrol ship reactor's rod drive cabinet: a rod position column per rod, the stepper
+# drive cards, the two scram breakers with their trip lamps, the key switch
+static func crd_cab(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r, 0.03, 0.06, 0.97, 0.93)
+	var n := clampi(int(r.size.x * 0.56 / 8.0), 6, 16)
+	for k in n:
+		var x: float = 0.06 + (k + 0.5) * 0.56 / n
+		var col := sub(r, x - 0.012, 0.12, x + 0.012, 0.62)
+		R(ci, col, 0.4)
+		var lv: float = 0.55 + 0.35 * fposmod(k * 0.43, 1.0)
+		hatch(ci, Rect2(col.position + Vector2(0, col.size.y * (1.0 - lv)), Vector2(col.size.x, col.size.y * lv)), 2.0, false, 0.40, 30)
+		_lamp(ci, _u(r, x, 0.7), 1.6, Pal.tint(Pal.FLUID, 0.8))
+	var cards := PackedVector2Array()
+	for k in n:
+		var x: float = 0.06 + (k + 0.5) * 0.56 / n
+		cards.append(_u(r, x, 0.76))
+		cards.append(_u(r, x, 0.88))
+	S(ci, cards, 0.3, 1.4)
+	for k in 2:
+		var br := sub(r, 0.66 + k * 0.14, 0.14, 0.78 + k * 0.14, 0.62)
+		R(ci, br, 0.55)
+		E.breaker(ci, Rect2(br.position + Vector2(2, br.size.y * 0.3), Vector2(br.size.x - 4, br.size.y * 0.3)), true, 0.5)
+		_lamp(ci, br.position + Vector2(br.size.x * 0.5, br.size.y * 0.15), maxf(1.8, ms * 0.06), Pal.heat(0.9))
+	var kc := _u(r, 0.8, 0.8)
+	O(ci, kc, maxf(2.0, ms * 0.07), 0.55)
+	L(ci, kc - Vector2(0, ms * 0.04), kc + Vector2(0, ms * 0.04), 0.6, 1.3)
+
+
+# ---------------------------------------------------------------- PT-34: crypto rack
+# the crypto equipment, red/black separated: the black-side units (network), a red line
+# across, the red-side units (keypad, display), the key fill port with its cap on a chain,
+# the guarded zeroize button, the shielded door mesh and tamper seals
+static func crypto_rack(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var b := _carcass(ci, r)
+	E.Rc(ci, Rect2(_u(r, 0.06, 0.47), Vector2(b.size.x, 1.2)), Pal.heat(0.6), 1.0)
+	for k in 2:
+		var u := sub(r, 0.1, 0.08 + k * 0.17, 0.9, 0.22 + k * 0.17)
+		R(ci, u, 0.48)
+		for j in 4:
+			R(ci, Rect2(u.position + Vector2(u.size.x * (0.45 + j * 0.12), u.size.y * 0.3), Vector2(u.size.x * 0.08, u.size.y * 0.4)), 0.42)
+		_lamp(ci, u.position + Vector2(u.size.x * 0.12, u.size.y * 0.5), 1.8, Pal.tint(Pal.FLUID, 0.8))
+	var ru := sub(r, 0.1, 0.52, 0.9, 0.8)
+	R(ci, ru, 0.52)
+	E.Rc(ci, sub(r, 0.14, 0.56, 0.5, 0.63), Pal.tint(Pal.AIR, 0.6), 1.0)
+	var kp := PackedVector2Array()
+	for row in 3:
+		for c in 3:
+			kp.append(_u(r, 0.18 + c * 0.1, 0.67 + row * 0.04))
+	for q in kp:
+		D(ci, q, 0.9, 0.5)
+	var fp := _u(r, 0.68, 0.62)
+	O(ci, fp, maxf(2.0, ms * 0.06), 0.58)
+	O(ci, fp, maxf(1.0, ms * 0.025), 0.45)
+	_pu(ci, r, [Vector2(0.72, 0.62), Vector2(0.8, 0.66), Vector2(0.78, 0.72)], 0.3)
+	var zb := _u(r, 0.72, 0.74)
+	A(ci, zb, maxf(2.2, ms * 0.06), PI, TAU, 0.55, 1.2)
+	_lamp(ci, zb, maxf(1.6, ms * 0.045), Pal.heat(0.9))
+	hatch(ci, sub(r, 0.12, 0.84, 0.88, 0.92), 2.4, true, 0.25, 40)
+	hatch(ci, sub(r, 0.12, 0.84, 0.88, 0.92), 2.4, false, 0.25, 10)
+	for x in [0.08, 0.92]:
+		R(ci, Rect2(_u(r, x, 0.3) - Vector2(1.5, 3.0), Vector2(3.0, 6.0)), 0.45)
+
+
+# ---------------------------------------------------------------- HV power distribution cabinet (FR-26, M-14)
+# a metal-clad switchgear panel: the relay compartment (protection relay screen, meters,
+# lamps), the breaker compartment (racking slot, ON/OFF flag, spring indicator), the cable
+# compartment window (terminations with stress cones), the single-line mimic and the earth
+# switch handle, the HV warning sign
+static func hv_switchgear(ci: CanvasItem, r: Rect2) -> void:
+	# a line-up when there is room (M-14's 1.9 m: three panels side by side, each its own
+	# meters, breaker truck and cable box, a common busbar chamber over them); one panel else
+	var n := clampi(int(r.size.x / (0.6 * M)), 1, 5) if r.size.x >= 1.7 * M else 1
+	if n == 1:
+		_hv_panel(ci, r)
+		return
+	var bb := sub(r, 0.02, 0.0, 0.98, 0.06)
+	R(ci, bb, 0.55)
+	L(ci, bb.position + Vector2(2, bb.size.y * 0.5), bb.end - Vector2(2, bb.size.y * 0.5), 0.5, 1.6)
+	var pw: float = r.size.x / n
+	for i in n:
+		_hv_panel(ci, Rect2(r.position + Vector2(i * pw, r.size.y * 0.06), Vector2(pw, r.size.y * 0.94)))
+
+
+static func _hv_panel(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	var rc := sub(r, 0.1, 0.07, 0.9, 0.3)
+	R(ci, rc, 0.5)
+	E.Rc(ci, sub(r, 0.14, 0.1, 0.46, 0.2), Pal.tint(Pal.AIR, 0.6), 1.0)
+	for k in 2:
+		E.gauge(ci, _u(r, 0.6 + k * 0.18, 0.15), maxf(2.5, ms * 0.07), 0.5)
+	_lamp_row(ci, sub(r, 0.14, 0.23, 0.6, 0.27), 4, Pal.tint(Pal.FLUID, 0.8), 4)
+	var bc := sub(r, 0.1, 0.34, 0.9, 0.62)
+	R(ci, bc, 0.55)
+	R(ci, sub(r, 0.44, 0.4, 0.56, 0.44), 0.5)
+	var fl := sub(r, 0.18, 0.48, 0.34, 0.56)
+	R(ci, fl, 0.5)
+	hatch(ci, fl.grow(-1.0), 2.0, false, 0.45, 30)
+	O(ci, _u(r, 0.72, 0.52), maxf(2.0, ms * 0.05), 0.5)
+	L(ci, _u(r, 0.72, 0.52), _u(r, 0.75, 0.49), 0.5)
+	# spring-charged flag, operation counter, the charging-handle socket, shutter seams
+	E.Rc(ci, sub(r, 0.38, 0.48, 0.48, 0.52), Pal.tint(Pal.FLUID, 0.7), 1.0)
+	var oc := sub(r, 0.52, 0.48, 0.64, 0.53)
+	R(ci, oc, 0.45)
+	hatch(ci, oc.grow(-0.8), 2.0, true, 0.3, 6)
+	O(ci, _u(r, 0.26, 0.42), maxf(1.4, ms * 0.035), 0.5)
+	for y in [0.575, 0.6]:
+		L(ci, _u(r, 0.14, y), _u(r, 0.86, y), 0.22)
+	for k in 4:
+		O(ci, _u(r, 0.66 + k * 0.06, 0.25), maxf(1.0, ms * 0.022), 0.45)
+	var cw := sub(r, 0.2, 0.68, 0.8, 0.92)
+	R(ci, cw, 0.5)
+	for k in 3:
+		var x: float = 0.3 + k * 0.2
+		L(ci, _u(r, x, 0.68), _u(r, x, 0.78), 0.55, 1.4)
+		_pu(ci, r, [Vector2(x - 0.03, 0.82), Vector2(x, 0.78), Vector2(x + 0.03, 0.82), Vector2(x - 0.03, 0.82)], 0.5)
+		L(ci, _u(r, x, 0.82), _u(r, x, 0.92), 0.5, 1.6)
+	var ml := PackedVector2Array([_u(r, 0.93, 0.08), _u(r, 0.93, 0.92)])
+	S(ci, ml, 0.3)
+	D(ci, _u(r, 0.93, 0.48), 1.2, 0.5)
+	var wt := _u(r, 0.82, 0.76)
+	var ws: float = maxf(3.0, ms * 0.07)
+	P(ci, PackedVector2Array([wt + Vector2(0, -ws), wt + Vector2(ws, ws * 0.8), wt + Vector2(-ws, ws * 0.8), wt + Vector2(0, -ws)]), 0.6)
+	E.Rc(ci, Rect2(wt - Vector2(ws * 0.25, ws * 0.1), Vector2(ws * 0.5, ws * 0.6)), Pal.heat(0.7), 1.0)
+
+
+# ---------------------------------------------------------------- gas detector (FL-116, FR-26, MY-48)
+# the detection controller where there is room (channel bargraphs, the alarm beacon and
+# horn on top, a detector head beside it on its conduit), the detector head alone when small
+# (sinter grille, the lamp ring, its junction box)
+static func gas_detector(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	if ms < 44.0:
+		_gas_head(ci, sub(r, 0.15, 0.05, 0.85, 0.95))
+		return
+	var b := _carcass(ci, r, 0.06, 0.2, 0.7, 0.95)
+	A(ci, _u(r, 0.25, 0.2), b.size.x * 0.14, PI, TAU, 0.55, 1.2)
+	E.Rc(ci, Rect2(_u(r, 0.25, 0.2) - Vector2(b.size.x * 0.06, b.size.x * 0.09), Vector2(b.size.x * 0.12, b.size.x * 0.06)), Pal.heat(0.75), 1.0)
+	_pu(ci, r, [Vector2(0.48, 0.2), Vector2(0.5, 0.1), Vector2(0.6, 0.06), Vector2(0.6, 0.2)], 0.5)
+	var n := 4
+	for k in n:
+		var ch := sub(r, 0.1 + k * 0.145, 0.26, 0.21 + k * 0.145, 0.62)
+		R(ci, ch, 0.45)
+		var lv: float = 0.2 + 0.5 * fposmod(k * 0.41, 1.0)
+		hatch(ci, Rect2(ch.position + Vector2(1.5, ch.size.y * (1.0 - lv)), Vector2(ch.size.x - 3.0, ch.size.y * lv - 1.5)), 2.0, false, 0.40, 30)
+		L(ci, ch.position + Vector2(0, ch.size.y * 0.3), Vector2(ch.end.x, ch.position.y + ch.size.y * 0.3), 0.4)
+		_lamp(ci, Vector2(ch.get_center().x, ch.end.y + 4.0), 1.8, Pal.heat(0.85) if k == 2 else Pal.tint(Pal.FLUID, 0.8))
+	E.Rc(ci, sub(r, 0.1, 0.72, 0.5, 0.8), Pal.tint(Pal.AIR, 0.6), 1.0)
+	for x in [0.56, 0.63]:
+		O(ci, _u(r, x, 0.76), maxf(1.6, ms * 0.04), 0.5)
+	_pu(ci, r, [Vector2(0.7, 0.86), Vector2(0.84, 0.86), Vector2(0.84, 0.6)], 0.45, 1.3)
+	_gas_head(ci, sub(r, 0.74, 0.22, 0.96, 0.6))
+
+
+static func _gas_head(ci: CanvasItem, r0: Rect2) -> void:
+	# kept no wider than 0.8 of its height so a wide box still gets an upright head
+	var r := r0
+	if r0.size.x > r0.size.y * 0.8:
+		r = Rect2(r0.get_center().x - r0.size.y * 0.4, r0.position.y, r0.size.y * 0.8, r0.size.y)
+	var ms := minf(r.size.x, r.size.y)
+	var jb := sub(r, 0.1, 0.05, 0.9, 0.45)
+	R(ci, jb, 0.6, 1.2)
+	E.corner_bolts(ci, jb, 2.0, 0.45)
+	_lamp(ci, jb.get_center(), maxf(1.6, ms * 0.08), Pal.tint(Pal.FLUID, 0.85))
+	R(ci, sub(r, 0.3, 0.45, 0.7, 0.55), 0.55)
+	R(ci, sub(r, 0.22, 0.55, 0.78, 0.82), 0.58)
+	hatch(ci, sub(r, 0.26, 0.6, 0.74, 0.8), 2.0, true, 0.3, 20)
+	L(ci, _u(r, 0.25, 0.86), _u(r, 0.75, 0.86), 0.45)
+	L(ci, _u(r, 0.5, 0.05), _u(r, 0.5, 0.0), 0.5, 1.4)
+
+
+# ---------------------------------------------------------------- BL-88: herbarium cabinet
+# a herbarium case: the glazed top door showing a pressed fern on its mounting sheet (label,
+# tape straps), the stack of shallow specimen drawers with their card holders, the
+# desiccant tray, the gasketed seam
+static func herbarium(ci: CanvasItem, r: Rect2) -> void:
+	_carcass(ci, r)
+	var gl := sub(r, 0.12, 0.07, 0.88, 0.45)
+	R(ci, gl, 0.55)
+	L(ci, gl.position + Vector2(3, 3), gl.position + Vector2(gl.size.x * 0.3, 3), 0.25)
+	var sh := sub(r, 0.2, 0.1, 0.8, 0.42)
+	R(ci, sh, 0.4)
+	var st := _u(r, 0.48, 0.38)
+	var tip := _u(r, 0.56, 0.14)
+	L(ci, st, tip, 0.5)
+	var leaf := PackedVector2Array()
+	for k in 7:
+		var t: float = (k + 1) / 8.0
+		var c: Vector2 = st.lerp(tip, t)
+		var ln: float = r.size.x * 0.13 * (1.0 - t * 0.7)
+		leaf.append(c)
+		leaf.append(c + Vector2(-ln, ln * 0.35))
+		leaf.append(c)
+		leaf.append(c + Vector2(ln, -ln * 0.05))
+	S(ci, leaf, 0.45)
+	R(ci, sub(r, 0.6, 0.34, 0.77, 0.4), 0.4)
+	for y in [0.22, 0.32]:
+		L(ci, _u(r, 0.42, y), _u(r, 0.54, y), 0.3, 1.5)
+	var n := 6
+	for k in n:
+		var y0: float = 0.48 + k * 0.07
+		R(ci, sub(r, 0.12, y0, 0.88, y0 + 0.06), 0.45)
+		R(ci, sub(r, 0.42, y0 + 0.015, 0.58, y0 + 0.045), 0.4)
+	E.Rc(ci, sub(r, 0.14, 0.9, 0.86, 0.93), Pal.tint(Pal.FLUID, 0.35), 1.0)
+
+
+# ---------------------------------------------------------------- BL-88: garden tool locker
+# an open garden-tool locker: pegboard back, the rake, spade, hoe and loppers on their
+# hooks, the watering can and the coiled hose on the floor shelf, the seed-tray shelf
+static func garden_locker(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var b := sub(r, 0.06, 0.04, 0.94, 0.96)
+	R(ci, b, 0.62, 1.2)
+	var pegs := PackedVector2Array()
+	for row in 8:
+		for c in 5:
+			pegs.append(_u(r, 0.16 + c * 0.17, 0.1 + row * 0.07))
+	for q in pegs:
+		D(ci, q, 0.6, 0.25)
+	L(ci, _u(r, 0.06, 0.66), _u(r, 0.94, 0.66), 0.55, 1.3)
+	# rake
+	L(ci, _u(r, 0.2, 0.1), _u(r, 0.2, 0.6), 0.55, 1.3)
+	L(ci, _u(r, 0.12, 0.6), _u(r, 0.28, 0.6), 0.55, 1.3)
+	for k in 5:
+		L(ci, _u(r, 0.13 + k * 0.035, 0.6), _u(r, 0.13 + k * 0.035, 0.64), 0.45)
+	# spade
+	L(ci, _u(r, 0.4, 0.08), _u(r, 0.4, 0.46), 0.55, 1.3)
+	_pu(ci, r, [Vector2(0.36, 0.08), Vector2(0.44, 0.08)], 0.55, 1.3)
+	_pu(ci, r, [Vector2(0.35, 0.46), Vector2(0.45, 0.46), Vector2(0.45, 0.58), Vector2(0.4, 0.63), Vector2(0.35, 0.58)], 0.55, 1.0, true)
+	# hoe
+	L(ci, _u(r, 0.6, 0.08), _u(r, 0.6, 0.6), 0.55, 1.3)
+	_pu(ci, r, [Vector2(0.6, 0.58), Vector2(0.68, 0.6), Vector2(0.68, 0.64)], 0.55, 1.3)
+	# loppers
+	L(ci, _u(r, 0.76, 0.12), _u(r, 0.84, 0.36), 0.5, 1.3)
+	L(ci, _u(r, 0.88, 0.12), _u(r, 0.8, 0.36), 0.5, 1.3)
+	D(ci, _u(r, 0.82, 0.24), 1.0, 0.55)
+	# watering can, hose reel
+	_pu(ci, r, [Vector2(0.14, 0.94), Vector2(0.14, 0.8), Vector2(0.36, 0.8), Vector2(0.36, 0.94)], 0.55)
+	A(ci, _u(r, 0.25, 0.8), r.size.x * 0.07, PI, TAU, 0.5)
+	L(ci, _u(r, 0.36, 0.84), _u(r, 0.46, 0.74), 0.5, 1.2)
+	E.Rc(ci, sub(r, 0.15, 0.86, 0.35, 0.93), Pal.tint(Pal.FLUID, 0.3), 1.0)
+	var hc := _u(r, 0.7, 0.83)
+	for k in 3:
+		O(ci, hc, ms * (0.08 + k * 0.035), 0.4)
+	D(ci, hc, 1.2, 0.55)
+
+
+# ---------------------------------------------------------------- DR-150: chemical store
+# the mud-chemical store: the vented cabinet (louvres, exhaust duct out the top), the door
+# open to show its shelves of jerrycans and acid bottles, the hazard diamonds, the spill
+# sump with its grating
+static func chem_store(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r, 0.06, 0.08, 0.94, 0.95)
+	_pu(ci, r, [Vector2(0.7, 0.08), Vector2(0.7, 0.0)], 0.5, 1.5)
+	_pu(ci, r, [Vector2(0.82, 0.08), Vector2(0.82, 0.0)], 0.5, 1.5)
+	E.louvres(ci, sub(r, 0.12, 0.11, 0.5, 0.18), 0.3)
+	L(ci, _u(r, 0.5, 0.08), _u(r, 0.5, 0.95), 0.45)
+	for y in [0.42, 0.68]:
+		L(ci, _u(r, 0.06, y), _u(r, 0.5, y), 0.5, 1.3)
+	for k in 2:
+		var x0: float = 0.1 + k * 0.19
+		_pu(ci, r, [Vector2(x0, 0.41), Vector2(x0, 0.27), Vector2(x0 + 0.04, 0.24), Vector2(x0 + 0.15, 0.24), Vector2(x0 + 0.15, 0.41)], 0.5)
+		R(ci, sub(r, x0 + 0.02, 0.21, x0 + 0.06, 0.24), 0.5)
+	for k in 3:
+		var x0: float = 0.09 + k * 0.13
+		_pu(ci, r, [Vector2(x0, 0.67), Vector2(x0, 0.56), Vector2(x0 + 0.03, 0.52), Vector2(x0 + 0.03, 0.48), Vector2(x0 + 0.07, 0.48), Vector2(x0 + 0.07, 0.52), Vector2(x0 + 0.1, 0.56), Vector2(x0 + 0.1, 0.67)], 0.48)
+	for q in [Vector2(0.72, 0.32), Vector2(0.72, 0.56)]:
+		var c := _u(r, q.x, q.y)
+		var hs: float = maxf(3.0, ms * 0.12)
+		P(ci, PackedVector2Array([c + Vector2(0, -hs), c + Vector2(hs, 0), c + Vector2(0, hs), c + Vector2(-hs, 0), c + Vector2(0, -hs)]), 0.58)
+		E.Rc(ci, Rect2(c - Vector2(hs, hs) * 0.3, Vector2(hs, hs) * 0.6), Pal.heat(0.7), 1.0)
+	L(ci, _u(r, 0.56, 0.44), _u(r, 0.56, 0.54), 0.6, 1.5)
+	var sp := sub(r, 0.08, 0.76, 0.92, 0.93)
+	R(ci, sp, 0.5)
+	hatch(ci, Rect2(sp.position + Vector2(2, 2), Vector2(sp.size.x - 4, sp.size.y * 0.4)), 3.0, true, 0.3, 40)
+	E.Rc(ci, Rect2(sp.position + Vector2(2, sp.size.y * 0.65), Vector2(sp.size.x - 4, sp.size.y * 0.3)), Pal.tint(Pal.FLUID, 0.25), 1.0)
+
+
+# ---------------------------------------------------------------- DR-150: core sample cabinet
+# the core store: slide-out racks of core boxes, each box's channels holding the core
+# lengths (the breaks between them), depth tags, one box pulled out
+static func core_store(ci: CanvasItem, r: Rect2) -> void:
+	_carcass(ci, r)
+	var n := 7
+	for k in n:
+		var y0: float = 0.07 + k * 0.124
+		var out: float = 0.06 if k == 2 else 0.0
+		var bx := sub(r, 0.1 - out, y0, 0.9 - out, y0 + 0.11)
+		R(ci, bx, 0.5)
+		var segs := PackedVector2Array()
+		for c in 2:
+			var cy: float = bx.position.y + bx.size.y * (0.32 + c * 0.38)
+			var x: float = bx.position.x + 2.0
+			var j := 0
+			while x < bx.end.x - 3.0:
+				var ln: float = minf(bx.size.x * (0.14 + 0.18 * fposmod((k * 3 + c * 5 + j) * 0.37, 1.0)), bx.end.x - 3.0 - x)
+				segs.append(Vector2(x, cy - 1.2))
+				segs.append(Vector2(x + ln, cy - 1.2))
+				segs.append(Vector2(x, cy + 1.2))
+				segs.append(Vector2(x + ln, cy + 1.2))
+				x += ln + 1.5
+				j += 1
+		S(ci, segs, 0.42)
+		R(ci, Rect2(Vector2(bx.end.x - bx.size.x * 0.14, bx.position.y - 1.0), Vector2(bx.size.x * 0.12, 3.0)), 0.5)
+	L(ci, _u(r, 0.04, 0.38), _u(r, 0.04, 0.44), 0.55, 1.4)
+
+
+# ---------------------------------------------------------------- DR-150: drill tool cabinet
+# the drill-floor tool cabinet: the pipe wrenches and chain tong on the back board, the
+# tricone bit and the thread protectors on the shelf, the tong dies in their tray, the
+# thread dope bucket with its brush
+static func drill_tools(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	for k in 3:
+		var x: float = 0.18 + k * 0.17
+		var ln: float = 0.22 + k * 0.05
+		L(ci, _u(r, x, 0.08), _u(r, x, 0.08 + ln), 0.58, 1.6)
+		_pu(ci, r, [Vector2(x - 0.04, 0.08 + ln), Vector2(x + 0.05, 0.08 + ln), Vector2(x + 0.05, 0.12 + ln), Vector2(x - 0.02, 0.12 + ln)], 0.55)
+	var cs := PackedVector2Array()
+	for k in 9:
+		cs.append(_u(r, 0.76 + (0.03 if k % 2 == 0 else -0.03), 0.08 + k * 0.04))
+	P(ci, cs, 0.45, 1.3)
+	L(ci, _u(r, 0.06, 0.48), _u(r, 0.94, 0.48), 0.55, 1.4)
+	var bc := _u(r, 0.3, 0.38)
+	var br: float = ms * 0.12
+	_pu(ci, r, [Vector2(0.24, 0.47), Vector2(0.24, 0.4), Vector2(0.36, 0.4), Vector2(0.36, 0.47)], 0.5)
+	for a in [-0.6, 0.0, 0.6]:
+		O(ci, bc + Vector2(sin(a) * br * 0.7, -br * 0.4 + absf(a) * br * 0.3), br * 0.38, 0.5)
+	for k in 2:
+		var x: float = 0.56 + k * 0.17
+		R(ci, sub(r, x, 0.36, x + 0.12, 0.48), 0.5)
+		hatch(ci, sub(r, x + 0.01, 0.37, x + 0.11, 0.47), 2.0, false, 0.3, 8)
+	L(ci, _u(r, 0.06, 0.72), _u(r, 0.94, 0.72), 0.55, 1.4)
+	var tr := sub(r, 0.12, 0.62, 0.5, 0.72)
+	R(ci, tr, 0.5)
+	for k in 5:
+		R(ci, sub(r, 0.14 + k * 0.07, 0.64, 0.19 + k * 0.07, 0.7), 0.42)
+	_pu(ci, r, [Vector2(0.6, 0.72), Vector2(0.62, 0.58), Vector2(0.84, 0.58), Vector2(0.86, 0.72)], 0.55)
+	L(ci, _u(r, 0.8, 0.58), _u(r, 0.88, 0.5), 0.5, 1.3)
+	E.louvres(ci, sub(r, 0.12, 0.78, 0.88, 0.92), 0.25)
+
+
+# ---------------------------------------------------------------- DR-150: well log archive
+# the well-history archive: pigeonholes of rolled log charts (each roll's end), a log strip
+# hanging out with its curve, the fire-safe lower half with its dial and handle
+static func well_logs(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	for row in 4:
+		for c in 4:
+			var cell := sub(r, 0.1 + c * 0.2, 0.07 + row * 0.1, 0.29 + c * 0.2, 0.16 + row * 0.1)
+			R(ci, cell, 0.35)
+			if (row * 4 + c) % 5 != 3:
+				O(ci, cell.get_center(), minf(cell.size.x, cell.size.y) * 0.32, 0.5)
+				D(ci, cell.get_center(), 0.8, 0.45)
+	var lg := sub(r, 0.52, 0.27, 0.66, 0.56)
+	R(ci, lg, 0.45)
+	var cv := PackedVector2Array()
+	for k in 12:
+		var t: float = k / 11.0
+		cv.append(Vector2(lg.position.x + lg.size.x * (0.5 + 0.35 * sin(t * 13.0 + 1.0) * (0.4 + 0.6 * fposmod(t * 3.7, 1.0))), lg.position.y + lg.size.y * t))
+	P(ci, cv, 0.45)
+	var sf := sub(r, 0.1, 0.5, 0.9, 0.92)
+	R(ci, sf, 0.6, 1.3)
+	R(ci, sf.grow(-3.0), 0.3)
+	var dc := _u(r, 0.42, 0.7)
+	O(ci, dc, ms * 0.14, 0.55)
+	O(ci, dc, ms * 0.05, 0.45)
+	var tk := PackedVector2Array()
+	for k in 12:
+		var a: float = TAU * k / 12.0
+		tk.append(dc + Vector2.from_angle(a) * ms * 0.12)
+		tk.append(dc + Vector2.from_angle(a) * ms * 0.14)
+	S(ci, tk, 0.35)
+	L(ci, _u(r, 0.7, 0.62), _u(r, 0.7, 0.78), 0.58, 2.0)
+	E.corner_bolts(ci, sf, 3.0, 0.4)
+
+
+# ---------------------------------------------------------------- EV-55: calibration light source
+# the spectrometer's calibration source: the integrating sphere (its baffle, exit port, the
+# fibre out), the halogen lamp house with its fins feeding it, the filter wheel, the
+# constant-current supply with its readout
+static func ev_calib(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	var sc := _u(r, 0.5, 0.36)
+	var sr: float = ms * 0.24
+	O(ci, sc, sr, 0.6, 1.3)
+	O(ci, sc, sr * 0.88, 0.25)
+	L(ci, sc + Vector2(-sr * 0.2, -sr * 0.5), sc + Vector2(-sr * 0.2, sr * 0.1), 0.4)
+	R(ci, Rect2(sc + Vector2(sr * 0.85, -3.0), Vector2(5.0, 6.0)), 0.55)
+	P(ci, PackedVector2Array([sc + Vector2(sr + 5.0, 0), _u(r, 0.9, 0.36), _u(r, 0.9, 0.04), _u(r, 0.96, 0.0)]), 0.5, 1.3)
+	var lh := Rect2(sc + Vector2(-sr * 2.0, -sr * 0.35), Vector2(sr * 0.8, sr * 0.7))
+	R(ci, lh, 0.55)
+	var fins := PackedVector2Array()
+	for k in 4:
+		var x: float = lh.position.x + (k + 0.5) * lh.size.x / 4.0
+		fins.append(Vector2(x, lh.position.y - 3.0))
+		fins.append(Vector2(x, lh.position.y))
+	S(ci, fins, 0.45)
+	E.Rc(ci, Rect2(lh.get_center() - Vector2(2, 2), Vector2(4, 4)), Pal.heat(0.85), 1.0)
+	var fw := sc + Vector2(-sr * 1.1, 0)
+	O(ci, fw, sr * 0.3, 0.5)
+	for k in 4:
+		D(ci, fw + Vector2.from_angle(TAU * k / 4.0 + 0.4) * sr * 0.18, 0.8, 0.45)
+	var ps := sub(r, 0.12, 0.66, 0.88, 0.9)
+	R(ci, ps, 0.5)
+	E.Rc(ci, sub(r, 0.16, 0.7, 0.5, 0.77), Pal.tint(Pal.AIR, 0.6), 1.0)
+	O(ci, _u(r, 0.66, 0.78), maxf(2.0, ms * 0.05), 0.5)
+	_lamp(ci, _u(r, 0.8, 0.73), maxf(1.4, ms * 0.04), Pal.tint(Pal.FLUID, 0.85))
+	E.louvres(ci, sub(r, 0.16, 0.8, 0.5, 0.88), 0.25)
+
+
+# ---------------------------------------------------------------- DC-DC converter (EV-55 and nine more)
+# a DC-DC converter: finned heat-sink case, the two magnetics (toroids) and the filter
+# capacitors seen through the cover cut-out, input and output terminal blocks, status lamp;
+# small ones are a sealed brick on its base plate
+static func dcdc(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var b := sub(r, 0.06, 0.12, 0.94, 0.88)
+	R(ci, b, 0.62, 1.2)
+	hatch(ci, sub(r, 0.06, 0.02, 0.94, 0.12), 2.6, true, 0.35, 30)
+	var win := sub(r, 0.14, 0.22, 0.86, 0.62)
+	R(ci, win, 0.42)
+	for x in [0.32, 0.56]:
+		var c := _u(r, x, 0.42)
+		var tr: float = minf(win.size.y * 0.36, win.size.x * 0.14)
+		O(ci, c, tr, 0.55)
+		O(ci, c, tr * 0.45, 0.4)
+	for x in [0.72, 0.8]:
+		var c2 := _u(r, x, 0.42)
+		R(ci, Rect2(c2 - Vector2(1.8, win.size.y * 0.3), Vector2(3.6, win.size.y * 0.6)), 0.45)
+	for x in [0.12, 0.88]:
+		var tb := Rect2(_u(r, x, 0.7) - Vector2(ms * 0.08, ms * 0.05), Vector2(ms * 0.16, ms * 0.1))
+		R(ci, tb, 0.55)
+		D(ci, tb.get_center() - Vector2(tb.size.x * 0.22, 0), 0.9, 0.55)
+		D(ci, tb.get_center() + Vector2(tb.size.x * 0.22, 0), 0.9, 0.55)
+	_lamp(ci, _u(r, 0.5, 0.72), maxf(1.4, ms * 0.05), Pal.tint(Pal.FLUID, 0.85))
+	R(ci, sub(r, 0.02, 0.88, 0.98, 0.96), 0.5)
+
+
+# ---------------------------------------------------------------- FX-70: liquid helium distribution box
+# the cryogenic distribution box: the vacuum-jacketed can, its three bayonet ports (from
+# the cold box, to the two coil sets), the long-stemmed cryogenic valves with handwheels on
+# top, the pressure gauges, the burst disc, the frost line
+static func cryo_cdb(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var can := sub(r, 0.12, 0.3, 0.88, 0.9)
+	R(ci, can, 0.62, 1.3)
+	R(ci, can.grow(-3.0), 0.3)
+	E.Rc(ci, can.grow(-3.0), Pal.tint(Pal.AIR, 0.22), 1.0)
+	for k in 3:
+		var x: float = 0.26 + k * 0.24
+		L(ci, _u(r, x, 0.3), _u(r, x, 0.1), 0.5, 1.2)
+		L(ci, _u(r, x, 0.1), _u(r, x, 0.06), 0.55)
+		var wc := _u(r, x, 0.06)
+		E.wheel(ci, wc, maxf(2.5, ms * 0.07), 0.55)
+		R(ci, sub(r, x - 0.04, 0.2, x + 0.04, 0.3), 0.5)
+	for k in 3:
+		var y: float = 0.45 + k * 0.15
+		var bp := _u(r, 0.88, y)
+		R(ci, Rect2(bp + Vector2(0, -3.5), Vector2(r.size.x * 0.06, 7.0)), 0.58)
+		L(ci, bp + Vector2(r.size.x * 0.06, 0), Vector2(r.end.x, bp.y), 0.55, 1.6)
+	E.gauge(ci, _u(r, 0.3, 0.5), maxf(2.5, ms * 0.08), 0.5)
+	E.gauge(ci, _u(r, 0.3, 0.68), maxf(2.5, ms * 0.08), 0.5)
+	var bd := _u(r, 0.6, 0.6)
+	O(ci, bd, maxf(2.0, ms * 0.06), 0.55)
+	L(ci, bd - Vector2(ms * 0.04, ms * 0.04), bd + Vector2(ms * 0.04, ms * 0.04), 0.45)
+	E.Rc(ci, Rect2(_u(r, 0.12, 0.84), Vector2(can.size.x, 1.0)), Pal.tint(Pal.AIR, 0.7), 1.0)
+	R(ci, sub(r, 0.08, 0.9, 0.92, 0.97), 0.5)
+
+
+# ---------------------------------------------------------------- FX-70 / HG-170: cryogenic spares
+# the cryo spares locker: a small dewar flask with its neck and cap, a spare cold head in its
+# cradle, bagged seal kits on hooks, the labelled bin shelf
+static func cryo_spares(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	L(ci, _u(r, 0.06, 0.5), _u(r, 0.94, 0.5), 0.55, 1.3)
+	_pu(ci, r, [Vector2(0.14, 0.49), Vector2(0.14, 0.22), Vector2(0.2, 0.16), Vector2(0.26, 0.16), Vector2(0.26, 0.1), Vector2(0.34, 0.1), Vector2(0.34, 0.16), Vector2(0.4, 0.16), Vector2(0.46, 0.22), Vector2(0.46, 0.49)], 0.58)
+	R(ci, sub(r, 0.25, 0.07, 0.35, 0.1), 0.55)
+	_pu(ci, r, [Vector2(0.17, 0.46), Vector2(0.17, 0.24), Vector2(0.43, 0.24), Vector2(0.43, 0.46)], 0.3)
+	E.Rc(ci, sub(r, 0.18, 0.36, 0.42, 0.45), Pal.tint(Pal.AIR, 0.3), 1.0)
+	var ch := sub(r, 0.56, 0.14, 0.84, 0.46)
+	R(ci, sub(r, 0.62, 0.14, 0.78, 0.3), 0.5)
+	R(ci, sub(r, 0.66, 0.3, 0.74, 0.44), 0.5)
+	E.flange(ci, _u(r, 0.7, 0.44), Vector2.DOWN, ch.size.x * 0.3, 0.5)
+	for k in 2:
+		var x: float = 0.18 + k * 0.3
+		_pu(ci, r, [Vector2(x, 0.54), Vector2(x - 0.07, 0.6), Vector2(x - 0.07, 0.72), Vector2(x + 0.07, 0.72), Vector2(x + 0.07, 0.6), Vector2(x, 0.54)], 0.42)
+		O(ci, _u(r, x, 0.66), maxf(1.4, ms * 0.04), 0.4)
+	for k in 3:
+		var bn := sub(r, 0.1 + k * 0.27, 0.78, 0.33 + k * 0.27, 0.92)
+		R(ci, bn, 0.5)
+		R(ci, sub(r, 0.15 + k * 0.27, 0.8, 0.27 + k * 0.27, 0.84), 0.35)
+
+
+# ---------------------------------------------------------------- FX-70: shot data archive
+# the discharge-data archive: the drive with a plasma-current trace on its screen (ramp,
+# flat-top, the disruption spike), the cartridge shelves numbered by shot, the index drawer
+static func shot_archive(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	var sc := sub(r, 0.12, 0.07, 0.88, 0.26)
+	R(ci, sc, 0.55)
+	var q := sc.grow(-2.0)
+	var tr := PackedVector2Array([Vector2(q.position.x, q.end.y), Vector2(q.position.x + q.size.x * 0.2, q.position.y + q.size.y * 0.3), Vector2(q.position.x + q.size.x * 0.62, q.position.y + q.size.y * 0.28), Vector2(q.position.x + q.size.x * 0.66, q.position.y), Vector2(q.position.x + q.size.x * 0.7, q.end.y), Vector2(q.end.x, q.end.y)])
+	E.Rc(ci, q, Pal.tint(Pal.AIR, 0.25), 1.0)
+	P(ci, tr, 0.6)
+	for row in 4:
+		var y0: float = 0.3 + row * 0.12
+		L(ci, _u(r, 0.1, y0 + 0.11), _u(r, 0.9, y0 + 0.11), 0.5, 1.2)
+		var segs := PackedVector2Array()
+		var n := clampi(int(r.size.x * 0.8 / 4.0), 6, 18)
+		for k in n:
+			var x: float = 0.11 + (k + 0.5) * 0.78 / n
+			var top: float = y0 + 0.02 + 0.015 * float(k % 3)
+			segs.append(_u(r, x, top))
+			segs.append(_u(r, x, y0 + 0.105))
+		S(ci, segs, 0.4, 1.6)
+	var dr := sub(r, 0.12, 0.8, 0.88, 0.92)
+	R(ci, dr, 0.5)
+	R(ci, sub(r, 0.42, 0.83, 0.58, 0.87), 0.45)
+	_lamp(ci, _u(r, 0.8, 0.165), maxf(1.4, ms * 0.04), Pal.tint(Pal.FLUID, 0.85))
+
+
+# ---------------------------------------------------------------- FX-70: spare current leads
+# the spare current-lead crate: the lid propped open, the two HTS current leads (copper
+# terminal, the long conductor, the cold end flange, the voltage taps) laid in their foam
+# cradles, the desiccant bag and the shock indicator
+static func spare_leads(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var bx := sub(r, 0.08, 0.2, 0.92, 0.96)
+	R(ci, bx, 0.62, 1.3)
+	_pu(ci, r, [Vector2(0.08, 0.2), Vector2(0.02, 0.02), Vector2(0.86, 0.02), Vector2(0.92, 0.2)], 0.5, 1.2)
+	L(ci, _u(r, 0.9, 0.2), _u(r, 0.86, 0.04), 0.4)
+	for k in 2:
+		var x: float = 0.32 + k * 0.36
+		var fm := sub(r, x - 0.12, 0.25, x + 0.12, 0.92)
+		R(ci, fm, 0.3)
+		R(ci, sub(r, x - 0.06, 0.27, x + 0.06, 0.36), 0.6)
+		D(ci, _u(r, x, 0.315), 1.2, 0.6)
+		R(ci, sub(r, x - 0.035, 0.36, x + 0.035, 0.82), 0.55)
+		for y in [0.48, 0.6, 0.72]:
+			D(ci, _u(r, x + 0.05, y), 0.8, 0.45)
+		E.flange(ci, _u(r, x, 0.84), Vector2.DOWN, r.size.x * 0.08, 0.55)
+		E.Rc(ci, sub(r, x - 0.02, 0.4, x + 0.02, 0.8), Pal.heat(0.35), 1.0)
+	R(ci, sub(r, 0.44, 0.5, 0.56, 0.62), 0.4)
+	_lamp(ci, _u(r, 0.5, 0.75), maxf(1.4, ms * 0.04), Pal.tint(Pal.FLUID, 0.8))
+
+
+# ---------------------------------------------------------------- HG-170: sample gas cylinder cabinet
+# the gas-sample cylinder cabinet: two sample cylinders on their straps (valve, cap), the
+# regulators and the pigtails to the manifold, the gas detector and the vent duct, the
+# window in the door
+static func sample_cyl(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	_pu(ci, r, [Vector2(0.8, 0.04), Vector2(0.8, 0.0)], 0.5, 1.5)
+	for k in 2:
+		var x: float = 0.3 + k * 0.36
+		var cy := sub(r, x - 0.12, 0.34, x + 0.12, 0.92)
+		_pu(ci, r, [Vector2(x - 0.12, 0.92), Vector2(x - 0.12, 0.4), Vector2(x - 0.06, 0.34), Vector2(x + 0.06, 0.34), Vector2(x + 0.12, 0.4), Vector2(x + 0.12, 0.92)], 0.58, 1.2)
+		R(ci, sub(r, x - 0.03, 0.28, x + 0.03, 0.34), 0.55)
+		E.wheel(ci, _u(r, x, 0.26), maxf(2.0, ms * 0.05), 0.5)
+		for y in [0.52, 0.76]:
+			L(ci, _u(r, 0.08, y), _u(r, 0.92, y), 0.4, 1.3)
+		E.Rc(ci, Rect2(cy.position + Vector2(2, cy.size.y * 0.15), Vector2(cy.size.x - 4, 1.2)), Pal.tint(Pal.AIR, 0.6), 1.0)
+		O(ci, _u(r, x, 0.17), maxf(2.0, ms * 0.05), 0.5)
+		_pu(ci, r, [Vector2(x, 0.24), Vector2(x, 0.21)], 0.45)
+		_pu(ci, r, [Vector2(x + 0.04, 0.15), Vector2(x + 0.1, 0.1), Vector2(0.5, 0.1)], 0.4)
+	L(ci, _u(r, 0.2, 0.1), _u(r, 0.8, 0.1), 0.5, 1.3)
+	var gd := sub(r, 0.42, 0.18, 0.58, 0.28)
+	R(ci, gd, 0.5)
+	_lamp(ci, gd.get_center(), maxf(1.4, ms * 0.04), Pal.tint(Pal.FLUID, 0.85))
+
+
+# ---------------------------------------------------------------- OB-90: telescope calibration source
+# the telescope's arc-lamp unit: a turret of four hollow-cathode lamps (thorium-argon, their
+# glass envelopes and electrodes), the shutter in front, the fibre bundle to the telescope,
+# the flat-field lamp and the lamp controller with its selector
+static func ob_cal(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	var tc := _u(r, 0.42, 0.3)
+	var tr: float = ms * 0.3
+	O(ci, tc, tr, 0.5)
+	for k in 4:
+		var c: Vector2 = tc + Vector2.from_angle(TAU * k / 4.0 + PI * 0.25) * tr * 0.6
+		O(ci, c, tr * 0.28, 0.55)
+		L(ci, c + Vector2(-tr * 0.1, 0), c + Vector2(tr * 0.1, 0), 0.4)
+		if k == 0:
+			E.Rc(ci, Rect2(c - Vector2(2, 2), Vector2(4, 4)), Pal.tint(Pal.VOLT, 0.85), 1.0)
+	D(ci, tc, 1.2, 0.55)
+	R(ci, sub(r, 0.74, 0.18, 0.8, 0.42), 0.55)
+	P(ci, PackedVector2Array([_u(r, 0.8, 0.3), _u(r, 0.9, 0.3), _u(r, 0.9, 0.0)]), 0.55, 1.6)
+	var ff := sub(r, 0.14, 0.58, 0.5, 0.7)
+	R(ci, ff, 0.5)
+	E.Rc(ci, ff.grow(-2.0), Pal.heat(0.45), 1.0)
+	var ct := sub(r, 0.14, 0.76, 0.86, 0.92)
+	R(ci, ct, 0.5)
+	var sl := _u(r, 0.3, 0.84)
+	O(ci, sl, maxf(2.0, ms * 0.06), 0.55)
+	L(ci, sl, sl + Vector2.from_angle(-0.8) * maxf(2.0, ms * 0.06), 0.55)
+	_lamp_row(ci, sub(r, 0.44, 0.82, 0.82, 0.86), 4, Pal.tint(Pal.VOLT, 0.8), 0)
+
+
+# ---------------------------------------------------------------- OB-90: star plate archive
+# the photographic plate archive: the light box on top with a glass plate on it (its star
+# images, the reference marks), the shallow flat drawers below with their label frames, one
+# drawer open showing the plates standing in their sleeves
+static func plate_archive(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r, 0.06, 0.2, 0.94, 0.95)
+	var lb := sub(r, 0.04, 0.12, 0.96, 0.2)
+	R(ci, lb, 0.55)
+	E.Rc(ci, lb.grow(-1.5), Pal.ink(0.25), 1.0)
+	var pl := sub(r, 0.2, 0.0, 0.8, 0.12)
+	R(ci, pl, 0.5)
+	for i in 14:
+		var u: float = fposmod(i * 0.618, 1.0)
+		var v: float = fposmod(i * 0.414 + 0.2, 1.0)
+		var c := pl.position + Vector2(pl.size.x * (0.06 + u * 0.88), pl.size.y * (0.15 + v * 0.7))
+		D(ci, c, 0.6 + 0.6 * float(i % 3 == 0), 0.6)
+	for k in 6:
+		var y0: float = 0.24 + k * 0.1
+		R(ci, sub(r, 0.1, y0, 0.9, y0 + 0.08), 0.45)
+		R(ci, sub(r, 0.42, y0 + 0.02, 0.58, y0 + 0.05), 0.4)
+		L(ci, _u(r, 0.46, y0 + 0.065), _u(r, 0.54, y0 + 0.065), 0.5, 1.3)
+	var od := sub(r, 0.02, 0.85, 0.82, 0.93)
+	R(ci, od, 0.5)
+	var segs := PackedVector2Array()
+	for k in 10:
+		var x: float = od.position.x + 4.0 + k * (od.size.x - 8.0) / 10.0
+		segs.append(Vector2(x, od.position.y - 3.0))
+		segs.append(Vector2(x + 1.0, od.end.y - 1.0))
+	S(ci, segs, 0.35)
+
+
+# ---------------------------------------------------------------- OB-90: spare cell cabinet
+# the fireproof spare-cell cabinet: trays of cylindrical cells standing in rows, the trickle
+# charger shelf with its lamps, the thermometer strip, the vent and the fire blanket pouch
+static func spare_cells(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var b := _carcass(ci, r)
+	R(ci, b.grow(-2.5), 0.3)
+	for t in 3:
+		var y0: float = 0.1 + t * 0.2
+		L(ci, _u(r, 0.1, y0 + 0.17), _u(r, 0.9, y0 + 0.17), 0.55, 1.3)
+		var n := clampi(int(r.size.x * 0.76 / 5.0), 5, 14)
+		var segs := PackedVector2Array()
+		for k in n:
+			var x: float = 0.12 + (k + 0.5) * 0.76 / n
+			var cw: float = 0.76 / n * 0.35
+			segs.append(_u(r, x - cw, y0 + 0.17))
+			segs.append(_u(r, x - cw, y0 + 0.06))
+			segs.append(_u(r, x + cw, y0 + 0.17))
+			segs.append(_u(r, x + cw, y0 + 0.06))
+			segs.append(_u(r, x - cw, y0 + 0.06))
+			segs.append(_u(r, x + cw, y0 + 0.06))
+		S(ci, segs, 0.42)
+	var chg := sub(r, 0.12, 0.72, 0.88, 0.8)
+	R(ci, chg, 0.5)
+	_lamp_row(ci, chg, 5, Pal.tint(Pal.FLUID, 0.85), 4)
+	E.Rc(ci, sub(r, 0.86, 0.12, 0.89, 0.6), Pal.tint(Pal.AIR, 0.4), 1.0)
+	R(ci, sub(r, 0.12, 0.84, 0.42, 0.93), 0.45)
+	E.louvres(ci, sub(r, 0.5, 0.84, 0.88, 0.93), 0.28)
+
+
+# ---------------------------------------------------------------- DC-84: server spares
+# the data centre's spares cabinet: blade servers stacked in their sleeves, a grid of drive
+# caddies, memory sticks in their trays, a spare power supply, the ESD wrist-strap jack
+static func server_spares(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	for k in 4:
+		var bl := sub(r, 0.1, 0.07 + k * 0.065, 0.9, 0.125 + k * 0.065)
+		R(ci, bl, 0.48)
+		L(ci, bl.position + Vector2(bl.size.x * 0.75, 1.5), Vector2(bl.position.x + bl.size.x * 0.75, bl.end.y - 1.5), 0.35)
+		D(ci, bl.position + Vector2(bl.size.x * 0.85, bl.size.y * 0.5), 0.8, 0.55)
+	L(ci, _u(r, 0.06, 0.36), _u(r, 0.94, 0.36), 0.55, 1.3)
+	for row in 2:
+		for c in 5:
+			var dc := sub(r, 0.1 + c * 0.16, 0.39 + row * 0.11, 0.24 + c * 0.16, 0.48 + row * 0.11)
+			R(ci, dc, 0.45)
+			L(ci, dc.position + Vector2(2, dc.size.y * 0.75), Vector2(dc.end.x - 2, dc.position.y + dc.size.y * 0.75), 0.35)
+	L(ci, _u(r, 0.06, 0.62), _u(r, 0.94, 0.62), 0.55, 1.3)
+	for k in 2:
+		var tr := sub(r, 0.1 + k * 0.4, 0.65, 0.46 + k * 0.4, 0.73)
+		R(ci, tr, 0.42)
+		var segs := PackedVector2Array()
+		for j in 6:
+			var x: float = tr.position.x + (j + 0.5) * tr.size.x / 6.0
+			segs.append(Vector2(x, tr.position.y + 1.5))
+			segs.append(Vector2(x, tr.end.y - 1.5))
+		S(ci, segs, 0.4)
+	var psu := sub(r, 0.1, 0.78, 0.6, 0.92)
+	R(ci, psu, 0.5)
+	E.fan(ci, psu.position + Vector2(psu.size.y * 0.5 + 2, psu.size.y * 0.5), psu.size.y * 0.38, 5, 0.4)
+	L(ci, psu.position + Vector2(psu.size.x * 0.7, psu.size.y * 0.5), Vector2(psu.end.x - 3, psu.get_center().y), 0.5, 1.3)
+	var j2 := _u(r, 0.8, 0.85)
+	O(ci, j2, maxf(1.6, ms * 0.04), 0.55)
+	_pu(ci, r, [Vector2(0.8, 0.88), Vector2(0.78, 0.94), Vector2(0.84, 0.94)], 0.35)
+
+
+# ---------------------------------------------------------------- FL-116: batch record terminal
+# the process ship's batch recorder: the multi-pen chart recorder (paper, three traces), the
+# operator screen with the batch table, the label printer with a label curling out, the
+# batch-ticket rack, the barcode scanner in its holster
+static func batch_log(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	var cr := sub(r, 0.1, 0.08, 0.52, 0.5)
+	R(ci, cr, 0.55)
+	var pp := cr.grow(-3.0)
+	for k in 3:
+		var tr := PackedVector2Array()
+		for j in 10:
+			var t: float = j / 9.0
+			tr.append(Vector2(pp.position.x + pp.size.x * (0.25 + 0.22 * k + 0.08 * sin(t * 9.0 + k * 2.0)), pp.position.y + pp.size.y * t))
+		P(ci, tr, 0.4 + 0.1 * k)
+	var hs := PackedVector2Array()
+	for j in 5:
+		var y: float = pp.position.y + (j + 0.5) * pp.size.y / 5.0
+		hs.append(Vector2(pp.position.x, y))
+		hs.append(Vector2(pp.end.x, y))
+	S(ci, hs, 0.15)
+	var sc := sub(r, 0.58, 0.08, 0.9, 0.32)
+	R(ci, sc, 0.55)
+	E.screen_face(ci, sc.grow(-1.5), 3, 0.35)
+	var lp := sub(r, 0.58, 0.38, 0.9, 0.5)
+	R(ci, lp, 0.5)
+	_pu(ci, r, [Vector2(0.66, 0.5), Vector2(0.66, 0.58), Vector2(0.78, 0.6), Vector2(0.8, 0.5)], 0.4)
+	_lamp(ci, _u(r, 0.86, 0.44), maxf(1.4, ms * 0.03), Pal.tint(Pal.FLUID, 0.85))
+	for k in 5:
+		var x: float = 0.12 + k * 0.08
+		R(ci, sub(r, x, 0.58, x + 0.06, 0.74), 0.4)
+		L(ci, _u(r, x + 0.01, 0.62), _u(r, x + 0.05, 0.62), 0.3)
+	L(ci, _u(r, 0.1, 0.75), _u(r, 0.52, 0.75), 0.55, 1.3)
+	R(ci, sub(r, 0.82, 0.62, 0.88, 0.78), 0.5)
+	_pu(ci, r, [Vector2(0.8, 0.6), Vector2(0.86, 0.58), Vector2(0.9, 0.62)], 0.5, 1.3)
+	E.louvres(ci, sub(r, 0.12, 0.8, 0.88, 0.92), 0.25)
+
+
+# ---------------------------------------------------------------- GR-7: tool cabinet
+# a small wall tool cabinet, both doors open: the shadow board inside (each tool on its
+# painted outline: spanners, pliers, screwdrivers, hammer, one outline empty), the door
+# racks of bits, the latch and hinges
+static func shadow_board(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var bd := sub(r, 0.2, 0.06, 0.8, 0.92)
+	R(ci, bd, 0.62, 1.2)
+	for s in [0, 1]:
+		var dx: float = 0.04 if s == 0 else 0.8
+		_pu(ci, r, [Vector2(0.2 if s == 0 else 0.8, 0.06), Vector2(dx, 0.1), Vector2(dx, 0.88), Vector2(0.2 if s == 0 else 0.8, 0.92)], 0.55, 1.1)
+		for k in 6:
+			D(ci, _u(r, dx + (0.08 if s == 0 else 0.08), 0.18 + k * 0.11), 1.0, 0.45)
+		D(ci, _u(r, 0.2 if s == 0 else 0.8, 0.2), 1.1, 0.55)
+		D(ci, _u(r, 0.2 if s == 0 else 0.8, 0.78), 1.1, 0.55)
+	# shadow outlines (faint) with the tools in them
+	for k in 3:
+		var x: float = 0.3 + k * 0.08
+		E.Rc(ci, sub(r, x - 0.015, 0.12, x + 0.015, 0.4 + k * 0.04), Pal.ink(0.18), 1.0)
+		L(ci, _u(r, x, 0.14), _u(r, x, 0.38 + k * 0.04), 0.55, 1.4)
+		O(ci, _u(r, x, 0.13), maxf(1.4, ms * 0.03), 0.5)
+	_pu(ci, r, [Vector2(0.6, 0.12), Vector2(0.62, 0.3), Vector2(0.66, 0.3), Vector2(0.7, 0.12)], 0.5)
+	for k in 4:
+		var x: float = 0.3 + k * 0.07
+		L(ci, _u(r, x, 0.5), _u(r, x, 0.6), 0.6, 2.0)
+		L(ci, _u(r, x, 0.6), _u(r, x, 0.72), 0.45)
+	E.Rc(ci, sub(r, 0.6, 0.48, 0.74, 0.54), Pal.ink(0.2), 1.0)
+	R(ci, sub(r, 0.6, 0.48, 0.74, 0.54), 0.5)
+	L(ci, _u(r, 0.67, 0.54), _u(r, 0.67, 0.74), 0.55, 1.4)
+	E.Rc(ci, sub(r, 0.3, 0.78, 0.7, 0.84), Pal.heat(0.35), 1.0)
+	L(ci, _u(r, 0.2, 0.92), _u(r, 0.8, 0.92), 0.55, 1.4)
+
+
+# ---------------------------------------------------------------- RO-128: load log terminal
+# the ro-ro's load recorder: the deck-plan screen (lanes, the parked vehicles, one lit as
+# just loaded), the axle-weight readout, the RFID reader paddle on its coiled lead, the
+# ticket printer
+static func cargo_log(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	var sc := sub(r, 0.1, 0.07, 0.9, 0.48)
+	R(ci, sc, 0.55)
+	for ln in 3:
+		var y0: float = 0.11 + ln * 0.12
+		L(ci, _u(r, 0.13, y0 + 0.11), _u(r, 0.87, y0 + 0.11), 0.25)
+		for k in 5:
+			var x0: float = 0.14 + k * 0.145 + (0.03 if ln == 1 else 0.0)
+			if x0 + 0.11 > 0.87:
+				continue
+			var car := sub(r, x0, y0 + 0.02, x0 + 0.11, y0 + 0.09)
+			if ln == 2 and k == 3:
+				E.Rc(ci, car, Pal.tint(Pal.FLUID, 0.75), 1.0)
+			else:
+				R(ci, car, 0.4)
+	E.Rc(ci, sub(r, 0.1, 0.53, 0.5, 0.62), Pal.tint(Pal.AIR, 0.6), 1.0)
+	for k in 4:
+		var bar := sub(r, 0.12 + k * 0.09, 0.66, 0.18 + k * 0.09, 0.74)
+		hatch(ci, Rect2(bar.position + Vector2(0, bar.size.y * (0.6 - 0.12 * k)), Vector2(bar.size.x, bar.size.y * (0.4 + 0.12 * k))), 2.0, false, 0.40, 30)
+		R(ci, bar, 0.35)
+	R(ci, sub(r, 0.66, 0.55, 0.78, 0.72), 0.55)
+	O(ci, _u(r, 0.72, 0.6), maxf(1.6, ms * 0.04), 0.45)
+	var cord := PackedVector2Array()
+	for k in 7:
+		cord.append(_u(r, 0.72 + (0.025 if k % 2 == 0 else -0.025), 0.72 + k * 0.025))
+	P(ci, cord, 0.35)
+	var pr := sub(r, 0.1, 0.8, 0.9, 0.92)
+	R(ci, pr, 0.5)
+	L(ci, _u(r, 0.3, 0.8), _u(r, 0.7, 0.8), 0.6, 1.5)
+	_pu(ci, r, [Vector2(0.4, 0.8), Vector2(0.4, 0.76), Vector2(0.58, 0.76), Vector2(0.58, 0.8)], 0.35)
+
+
+# ---------------------------------------------------------------- ES-112: custody registration
+# the custody desk unit: the camera on its gooseneck, the screen with the ID card being
+# registered (photo box, lines), the fingerprint pad, the wristband printer with a band
+# hanging out, the tamper-seal tag dispenser
+static func custody_reg(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r, 0.06, 0.22, 0.94, 0.95)
+	_pu(ci, r, [Vector2(0.8, 0.22), Vector2(0.8, 0.12), Vector2(0.72, 0.06)], 0.5, 1.4)
+	R(ci, sub(r, 0.62, 0.02, 0.74, 0.1), 0.58)
+	O(ci, _u(r, 0.66, 0.06), maxf(1.4, ms * 0.03), 0.55)
+	var sc := sub(r, 0.1, 0.26, 0.62, 0.56)
+	R(ci, sc, 0.55)
+	var cd := sub(r, 0.16, 0.31, 0.56, 0.51)
+	E.Rc(ci, cd, Pal.tint(Pal.AIR, 0.55), 1.0)
+	R(ci, sub(r, 0.19, 0.34, 0.29, 0.48), 0.45)
+	for y in [0.36, 0.41, 0.46]:
+		L(ci, _u(r, 0.32, y), _u(r, 0.52, y), 0.35)
+	var fp := sub(r, 0.68, 0.3, 0.88, 0.46)
+	R(ci, fp, 0.55)
+	var fc := fp.get_center()
+	for k in 3:
+		A(ci, fc + Vector2(0, fp.size.y * 0.15), fp.size.y * (0.12 + k * 0.1), PI * 1.1, PI * 1.9, 0.4)
+	_lamp(ci, fp.position + Vector2(fp.size.x * 0.85, 3.0), 1.8, Pal.tint(Pal.FLUID, 0.85))
+	var wp := sub(r, 0.1, 0.62, 0.5, 0.74)
+	R(ci, wp, 0.5)
+	_pu(ci, r, [Vector2(0.2, 0.74), Vector2(0.2, 0.86), Vector2(0.3, 0.88), Vector2(0.32, 0.8)], 0.45, 1.3)
+	var sd := sub(r, 0.6, 0.62, 0.88, 0.86)
+	R(ci, sd, 0.5)
+	for k in 3:
+		var t := sub(r, 0.63 + k * 0.08, 0.66, 0.69 + k * 0.08, 0.76)
+		R(ci, t, 0.42)
+		O(ci, t.position + Vector2(t.size.x * 0.5, 2.5), 1.0, 0.45)
+	E.Rc(ci, sub(r, 0.63, 0.78, 0.85, 0.8), Pal.heat(0.6), 1.0)
+
+
+# ---------------------------------------------------------------- ES-112: evidence lockers
+# the evidence store, floor to ceiling: a grid of small numbered lockers each with its
+# keypad lock and seal tag (the sealed ones marked), a couple of tall ones for long items,
+# the CCTV dome on top, the drop-box slot
+static func evidence_lockers(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var b := _carcass(ci, r, 0.04, 0.06, 0.96, 0.96)
+	var dc := _u(r, 0.5, 0.06)
+	A(ci, dc, ms * 0.08, 0.0, PI, 0.55, 1.2)
+	D(ci, dc + Vector2(0, ms * 0.03), 1.2, 0.55)
+	var cols := clampi(int(r.size.x / 30.0), 2, 5)
+	var rows := clampi(int(r.size.y * 0.7 / 26.0), 4, 12)
+	var cw: float = 0.84 / cols
+	var rh: float = 0.68 / rows
+	for row in rows:
+		for c in cols:
+			var cell := sub(r, 0.08 + c * cw, 0.1 + row * rh, 0.08 + (c + 1) * cw - 0.012, 0.1 + (row + 1) * rh - 0.008)
+			R(ci, cell, 0.45)
+			var kp := Rect2(cell.position + Vector2(cell.size.x * 0.68, cell.size.y * 0.25), Vector2(cell.size.x * 0.2, cell.size.y * 0.45))
+			R(ci, kp, 0.4)
+			L(ci, cell.position + Vector2(3.0, 3.5), cell.position + Vector2(cell.size.x * 0.35, 3.5), 0.35)
+			if (row * cols + c) % 3 == 1:
+				E.Rc(ci, Rect2(Vector2(cell.position.x + cell.size.x * 0.6, cell.position.y + 1.0), Vector2(1.2, cell.size.y - 2.0)), Pal.heat(0.6), 1.0)
+	for c in 2:
+		var tl := sub(r, 0.08 + c * 0.43, 0.8, 0.49 + c * 0.43, 0.94)
+		R(ci, tl, 0.5)
+		L(ci, Vector2(tl.end.x - 4.0, tl.position.y + 3.0), Vector2(tl.end.x - 4.0, tl.end.y - 3.0), 0.55, 1.3)
+	R(ci, sub(r, 0.36, 0.785, 0.64, 0.795), 0.4)
+
+
+# ---------------------------------------------------------------- flow controller (VT-80, MF-126)
+# a flow control station: the pipe spool along the bottom with its flowmeter (the body and
+# transmitter head) and the control valve (body, diaphragm actuator, positioner), block
+# valves either side, the controller above with its setpoint/flow bars
+static func flow_ctrl(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var py: float = 0.78
+	L(ci, _u(r, 0.0, py - 0.04), _u(r, 1.0, py - 0.04), 0.55, 1.3)
+	L(ci, _u(r, 0.0, py + 0.04), _u(r, 1.0, py + 0.04), 0.55, 1.3)
+	for x in [0.08, 0.92]:
+		var c := _u(r, x, py)
+		var vs: float = maxf(2.5, ms * 0.05)
+		P(ci, PackedVector2Array([c + Vector2(-vs, -vs), c + Vector2(vs, vs), c + Vector2(vs, -vs), c + Vector2(-vs, vs), c + Vector2(-vs, -vs)]), 0.55)
+		L(ci, c, c - Vector2(0, vs * 2.2), 0.45)
+		L(ci, c - Vector2(vs, vs * 2.2), c + Vector2(vs, -vs * 2.2), 0.5, 1.3)
+	var fm := sub(r, 0.2, py - 0.08, 0.38, py + 0.08)
+	R(ci, fm, 0.58)
+	E.flange(ci, Vector2(fm.position.x, _u(r, 0, py).y), Vector2.LEFT, fm.size.y * 0.6, 0.5)
+	E.flange(ci, Vector2(fm.end.x, _u(r, 0, py).y), Vector2.RIGHT, fm.size.y * 0.6, 0.5)
+	L(ci, _u(r, 0.29, py - 0.08), _u(r, 0.29, py - 0.16), 0.5)
+	var th := _u(r, 0.29, py - 0.2)
+	O(ci, th, maxf(2.5, ms * 0.06), 0.55)
+	E.Rc(ci, Rect2(th - Vector2(2, 1), Vector2(4, 2)), Pal.tint(Pal.AIR, 0.7), 1.0)
+	var vc := _u(r, 0.62, py)
+	var vs2: float = maxf(3.0, ms * 0.07)
+	P(ci, PackedVector2Array([vc + Vector2(-vs2, -vs2), vc + Vector2(vs2, vs2), vc + Vector2(vs2, -vs2), vc + Vector2(-vs2, vs2), vc + Vector2(-vs2, -vs2)]), 0.6, 1.2)
+	L(ci, vc, vc - Vector2(0, vs2 * 2.2), 0.5, 1.3)
+	A(ci, vc - Vector2(0, vs2 * 2.2), vs2 * 1.6, PI, TAU, 0.58, 1.2)
+	L(ci, vc - Vector2(vs2 * 1.6, vs2 * 2.2), vc + Vector2(vs2 * 1.6, -vs2 * 2.2), 0.58, 1.2)
+	R(ci, Rect2(vc + Vector2(vs2 * 0.8, -vs2 * 2.0), Vector2(vs2 * 1.2, vs2 * 1.0)), 0.5)
+	var ct := sub(r, 0.1, 0.06, 0.9, 0.42)
+	R(ci, ct, 0.6, 1.2)
+	E.Rc(ci, sub(r, 0.15, 0.1, 0.5, 0.2), Pal.tint(Pal.AIR, 0.6), 1.0)
+	for k in 2:
+		var bar := sub(r, 0.58 + k * 0.12, 0.1, 0.66 + k * 0.12, 0.36)
+		R(ci, bar, 0.42)
+		hatch(ci, Rect2(bar.position + Vector2(1, bar.size.y * (0.35 + 0.15 * k)), Vector2(bar.size.x - 2, bar.size.y * (0.65 - 0.15 * k) - 1)), 2.0, false, 0.40, 30)
+	for k in 4:
+		D(ci, _u(r, 0.18 + k * 0.08, 0.3), 1.1, 0.5)
+	_lamp(ci, _u(r, 0.84, 0.13), maxf(1.4, ms * 0.035), Pal.tint(Pal.FLUID, 0.85))
+	_pu(ci, r, [Vector2(0.62, 0.42), Vector2(0.62, 0.5)], 0.35)
+	_pu(ci, r, [Vector2(0.29, 0.42), Vector2(0.29, 0.52)], 0.35)
+
+
+# ---------------------------------------------------------------- LC-140: mail locker
+# the courier ship's mail locker: pigeonholes with letters and small parcels, the locked
+# drop slot, a mail sack on its hook, the parcel scale on the shelf
+static func mail_locker(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	R(ci, sub(r, 0.3, 0.07, 0.7, 0.11), 0.5)
+	O(ci, _u(r, 0.76, 0.09), maxf(1.4, ms * 0.03), 0.5)
+	for row in 4:
+		for c in 3:
+			var cell := sub(r, 0.1 + c * 0.27, 0.15 + row * 0.1, 0.35 + c * 0.27, 0.24 + row * 0.1)
+			R(ci, cell, 0.38)
+			var k: int = (row * 3 + c) % 4
+			if k == 0 or k == 2:
+				for j in 2 + (k / 2):
+					L(ci, cell.position + Vector2(2.0 + j * 2.0, cell.size.y - 1.5), cell.position + Vector2(3.5 + j * 2.0, 2.0), 0.45)
+			elif k == 1:
+				var pk := Rect2(cell.position + Vector2(cell.size.x * 0.25, cell.size.y * 0.3), cell.size * Vector2(0.5, 0.7) - Vector2(0, 1))
+				R(ci, pk, 0.45)
+				L(ci, pk.position + Vector2(pk.size.x * 0.5, 0), pk.position + Vector2(pk.size.x * 0.5, pk.size.y), 0.3)
+	L(ci, _u(r, 0.06, 0.58), _u(r, 0.94, 0.58), 0.55, 1.3)
+	var sc := sub(r, 0.58, 0.5, 0.88, 0.58)
+	R(ci, sc, 0.5)
+	E.Rc(ci, sub(r, 0.62, 0.52, 0.76, 0.56), Pal.tint(Pal.AIR, 0.6), 1.0)
+	R(ci, sub(r, 0.62, 0.46, 0.84, 0.5), 0.45)
+	D(ci, _u(r, 0.2, 0.62), 1.2, 0.55)
+	_pu(ci, r, [Vector2(0.2, 0.62), Vector2(0.14, 0.7), Vector2(0.12, 0.88), Vector2(0.18, 0.92), Vector2(0.36, 0.92), Vector2(0.42, 0.86), Vector2(0.38, 0.7), Vector2(0.2, 0.62)], 0.5)
+	L(ci, _u(r, 0.16, 0.72), _u(r, 0.38, 0.72), 0.35)
+	E.Rc(ci, sub(r, 0.5, 0.66, 0.88, 0.92), Pal.ink(0.12), 1.0)
+	for y in [0.72, 0.8, 0.88]:
+		L(ci, _u(r, 0.54, y), _u(r, 0.84, y), 0.3)
+
+
+# ---------------------------------------------------------------- manifest terminal (CL-104, LC-140)
+# the manifest printer: the screen with the manifest table and the cold-chain temperature
+# log beside it, the document printer with its paper stack, the rack of sealed manifest
+# pouches; small, it is the printer and the pouch rack alone
+static func manifest_term(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var big: bool = r.size.x > r.size.y * 0.9
+	_carcass(ci, r)
+	if big:
+		var sc := sub(r, 0.1, 0.08, 0.6, 0.42)
+		R(ci, sc, 0.55)
+		var q := sc.grow(-3.0)
+		var segs := PackedVector2Array()
+		for k in 6:
+			var y: float = q.position.y + (k + 0.5) * q.size.y / 6.0
+			segs.append(Vector2(q.position.x, y))
+			segs.append(Vector2(q.end.x, y))
+		for f in [0.35, 0.65]:
+			segs.append(Vector2(q.position.x + q.size.x * f, q.position.y))
+			segs.append(Vector2(q.position.x + q.size.x * f, q.end.y))
+		S(ci, segs, 0.25)
+		var tl := sub(r, 0.66, 0.08, 0.9, 0.42)
+		R(ci, tl, 0.5)
+		var tc := PackedVector2Array()
+		for j in 8:
+			tc.append(Vector2(tl.position.x + 3.0 + j * (tl.size.x - 6.0) / 7.0, tl.position.y + tl.size.y * (0.6 + 0.08 * sin(j * 1.7))))
+		P(ci, tc, 0.5)
+		E.Rc(ci, Rect2(Vector2(tl.position.x + 2.0, tl.position.y + tl.size.y * 0.35), Vector2(tl.size.x - 4.0, 1.0)), Pal.tint(Pal.AIR, 0.75), 1.0)
+	var y0: float = 0.5 if big else 0.08
+	var pr := sub(r, 0.1, y0, 0.9 if not big else 0.6, y0 + 0.14)
+	R(ci, pr, 0.55)
+	L(ci, Vector2(pr.position.x + pr.size.x * 0.15, pr.position.y + pr.size.y * 0.5), Vector2(pr.end.x - pr.size.x * 0.15, pr.position.y + pr.size.y * 0.5), 0.55, 1.4)
+	for k in 3:
+		L(ci, Vector2(pr.position.x + pr.size.x * 0.2, pr.end.y + 2.0 + k * 1.6), Vector2(pr.end.x - pr.size.x * 0.2, pr.end.y + 2.0 + k * 1.6), 0.4)
+	_lamp(ci, pr.position + Vector2(pr.size.x * 0.9, pr.size.y * 0.3), 1.8, Pal.tint(Pal.FLUID, 0.85))
+	var y1: float = 0.72 if big else 0.34
+	var n := clampi(int(r.size.x * 0.8 / 9.0), 3, 10)
+	for k in n:
+		var x0: float = 0.1 + k * 0.8 / n
+		var pc := sub(r, x0 + 0.01, y1, x0 + 0.8 / n - 0.01, 0.92)
+		R(ci, pc, 0.45)
+		_pu(ci, r, [Vector2(x0 + 0.01, y1 + 0.04), Vector2(x0 + 0.4 / n, y1 + 0.08), Vector2(x0 + 0.8 / n - 0.01, y1 + 0.04)], 0.4)
+		E.Rc(ci, Rect2(_u(r, x0 + 0.4 / n, y1 + 0.1) - Vector2(1.0, 1.0), Vector2(2.0, 2.0)), Pal.heat(0.7), 1.0)
+
+
+# ---------------------------------------------------------------- pharmacy store (CH-110, MT-140, MED-47, PT-34)
+# a pharmacy cabinet: glazed shelves of bottles and blister boxes, the locked controlled-drug
+# safe with its key, the drug fridge with its temperature readout, the cross on the door;
+# wider ones get more shelf columns
+static func pharmacy(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	var cols := clampi(int(r.size.x / 40.0), 1, 4)
+	var cw: float = 0.84 / (cols + 1)
+	for c in cols:
+		var x0: float = 0.08 + c * cw
+		var gl := sub(r, x0, 0.07, x0 + cw - 0.01, 0.6)
+		R(ci, gl, 0.5)
+		L(ci, gl.position + Vector2(2, 2), gl.position + Vector2(gl.size.x * 0.4, 2), 0.25)
+		for s in 3:
+			var sy: float = 0.07 + (s + 1) * 0.53 / 3.0
+			L(ci, _u(r, x0, sy), _u(r, x0 + cw - 0.01, sy), 0.45)
+			var nb := clampi(int(gl.size.x / 7.0), 2, 8)
+			for k in nb:
+				var bx: float = x0 + (k + 0.5) * (cw - 0.01) / nb
+				if (k + s + c) % 3 == 0:
+					R(ci, sub(r, bx - 0.25 * cw / nb, sy - 0.1, bx + 0.25 * cw / nb, sy), 0.42)
+				else:
+					_pu(ci, r, [Vector2(bx - 0.2 * cw / nb, sy), Vector2(bx - 0.2 * cw / nb, sy - 0.08), Vector2(bx - 0.08 * cw / nb, sy - 0.11), Vector2(bx + 0.08 * cw / nb, sy - 0.11), Vector2(bx + 0.2 * cw / nb, sy - 0.08), Vector2(bx + 0.2 * cw / nb, sy)], 0.42)
+	var xf: float = 0.08 + cols * cw
+	var sf := sub(r, xf, 0.07, 0.92, 0.36)
+	R(ci, sf, 0.6, 1.2)
+	R(ci, sf.grow(-2.5), 0.3)
+	var kc := sf.get_center()
+	O(ci, kc, maxf(2.0, ms * 0.05), 0.55)
+	L(ci, kc, kc + Vector2(0, maxf(2.0, ms * 0.05) * 1.6), 0.55, 1.3)
+	var fr := sub(r, xf, 0.4, 0.92, 0.9)
+	R(ci, fr, 0.58)
+	E.Rc(ci, Rect2(fr.position + Vector2(fr.size.x * 0.15, 3.0), Vector2(fr.size.x * 0.7, minf(fr.size.y * 0.12, 7.0))), Pal.tint(Pal.AIR, 0.65), 1.0)
+	L(ci, Vector2(fr.end.x - 3.0, fr.position.y + fr.size.y * 0.3), Vector2(fr.end.x - 3.0, fr.position.y + fr.size.y * 0.6), 0.55, 1.5)
+	var cc := _u(r, 0.08 + cols * cw * 0.5, 0.76)
+	var cs: float = maxf(3.0, ms * 0.08)
+	E.Rc(ci, Rect2(cc - Vector2(cs * 0.3, cs), Vector2(cs * 0.6, cs * 2.0)), Pal.tint(Pal.FLUID, 0.75), 1.0)
+	E.Rc(ci, Rect2(cc - Vector2(cs, cs * 0.3), Vector2(cs * 2.0, cs * 0.6)), Pal.tint(Pal.FLUID, 0.75), 1.0)
+	for c in cols:
+		L(ci, _u(r, 0.08 + c * cw + cw * 0.5 - 0.03, 0.66), _u(r, 0.08 + c * cw + cw * 0.5 + 0.03, 0.66), 0.5, 1.3)
+
+
+# ---------------------------------------------------------------- sample cabinet (FL-116, M-14, MF-126)
+# the sample cabinet: tray rows of capped sample jars with their label bands, a row of
+# bagged samples with their tags, the bin drawers below with label holders
+static func sample_trays(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r, 0.04, 0.05, 0.96, 0.94)
+	var rows := clampi(int(r.size.y * 0.55 / 18.0), 1, 4)
+	var rh: float = 0.55 / rows
+	for row in rows:
+		var y1: float = 0.08 + (row + 1) * rh
+		L(ci, _u(r, 0.06, y1), _u(r, 0.94, y1), 0.5, 1.3)
+		var n := clampi(int(r.size.x * 0.86 / 8.0), 3, 30)
+		for k in n:
+			var x: float = 0.08 + (k + 0.5) * 0.84 / n
+			var hw: float = 0.84 / n * 0.32
+			if row % 2 == 1 and k % 2 == 1:
+				_pu(ci, r, [Vector2(x - hw, y1), Vector2(x - hw * 1.1, y1 - rh * 0.5), Vector2(x, y1 - rh * 0.72), Vector2(x + hw * 1.1, y1 - rh * 0.5), Vector2(x + hw, y1)], 0.4)
+				D(ci, _u(r, x, y1 - rh * 0.72), 0.8, 0.5)
+				continue
+			R(ci, sub(r, x - hw, y1 - rh * 0.62, x + hw, y1), 0.45)
+			R(ci, sub(r, x - hw * 1.15, y1 - rh * 0.72, x + hw * 1.15, y1 - rh * 0.62), 0.5)
+			L(ci, _u(r, x - hw, y1 - rh * 0.3), _u(r, x + hw, y1 - rh * 0.3), 0.3)
+	var nd := clampi(int(r.size.x / 30.0), 2, 6)
+	for k in nd:
+		var dr := sub(r, 0.06 + k * 0.88 / nd, 0.68, 0.06 + (k + 1) * 0.88 / nd - 0.01, 0.92)
+		R(ci, dr, 0.48)
+		R(ci, Rect2(dr.position + Vector2(dr.size.x * 0.3, dr.size.y * 0.2), Vector2(dr.size.x * 0.4, dr.size.y * 0.2)), 0.4)
+		L(ci, dr.position + Vector2(dr.size.x * 0.4, dr.size.y * 0.6), dr.position + Vector2(dr.size.x * 0.6, dr.size.y * 0.6), 0.55, 1.3)
+
+
+# ---------------------------------------------------------------- HB-86: seed vault
+# the seed bank freezer: the thick insulated door ajar on its heavy hinges (gasket, the
+# lever latch), inside the drawers of foil seed packets, the frost, the -18 readout, the
+# condensing unit below with its fan grille
+static func seed_vault(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var b := _carcass(ci, r, 0.06, 0.04, 0.94, 0.78)
+	R(ci, b.grow(-4.0), 0.35)
+	E.Rc(ci, b.grow(-4.0), Pal.tint(Pal.AIR, 0.2), 1.0)
+	for k in 6:
+		var dr := sub(r, 0.14, 0.08 + k * 0.105, 0.72, 0.17 + k * 0.105)
+		R(ci, dr, 0.45)
+		var n := clampi(int(dr.size.x / 6.0), 4, 14)
+		var segs := PackedVector2Array()
+		for j in n:
+			var x: float = dr.position.x + (j + 0.5) * dr.size.x / n
+			segs.append(Vector2(x, dr.position.y + 2.0))
+			segs.append(Vector2(x, dr.end.y - 1.5))
+		S(ci, segs, 0.3)
+		L(ci, dr.position + Vector2(dr.size.x * 0.4, dr.size.y * 0.5), dr.position + Vector2(dr.size.x * 0.6, dr.size.y * 0.5), 0.55, 1.2)
+	_pu(ci, r, [Vector2(0.94, 0.06), Vector2(0.99, 0.1), Vector2(0.99, 0.72), Vector2(0.94, 0.76)], 0.58, 1.3)
+	for y in [0.16, 0.66]:
+		R(ci, sub(r, 0.92, y, 0.97, y + 0.05), 0.55)
+	L(ci, _u(r, 0.98, 0.38), _u(r, 0.98, 0.46), 0.6, 2.0)
+	var fr := PackedVector2Array()
+	for k in 9:
+		fr.append(_u(r, 0.12 + k * 0.08, 0.075 + (0.012 if k % 2 == 0 else 0.0)))
+	P(ci, fr, 0.35)
+	E.Rc(ci, sub(r, 0.76, 0.1, 0.88, 0.16), Pal.tint(Pal.AIR, 0.75), 1.0)
+	var cu := sub(r, 0.06, 0.8, 0.94, 0.96)
+	R(ci, cu, 0.55)
+	var fc := Vector2(cu.position.x + cu.size.y * 0.5 + 3.0, cu.get_center().y)
+	E.fan(ci, fc, cu.size.y * 0.38, 5, 0.42)
+	E.louvres(ci, Rect2(cu.position + Vector2(cu.size.x * 0.35, 2.0), Vector2(cu.size.x * 0.6, cu.size.y - 4.0)), 0.25)
+
+
+# ---------------------------------------------------------------- MF-126: heat log recorder
+# the smelter's heat recorder: the strip chart with the furnace temperature curve (charge,
+# melt, tap), the thermocouple jacks below, the heat-number punch with its tags hanging
+static func smelt_log(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	var ch := sub(r, 0.12, 0.07, 0.88, 0.46)
+	R(ci, ch, 0.55)
+	var q := ch.grow(-3.0)
+	var gs := PackedVector2Array()
+	for j in 4:
+		var y: float = q.position.y + (j + 0.5) * q.size.y / 4.0
+		gs.append(Vector2(q.position.x, y))
+		gs.append(Vector2(q.end.x, y))
+	S(ci, gs, 0.15)
+	var tr := PackedVector2Array([Vector2(q.position.x, q.end.y - 2.0), Vector2(q.position.x + q.size.x * 0.3, q.position.y + q.size.y * 0.45), Vector2(q.position.x + q.size.x * 0.45, q.position.y + q.size.y * 0.2), Vector2(q.position.x + q.size.x * 0.75, q.position.y + q.size.y * 0.15), Vector2(q.position.x + q.size.x * 0.8, q.position.y + q.size.y * 0.7), Vector2(q.end.x, q.position.y + q.size.y * 0.8)])
+	for i in tr.size() - 1:
+		E.Rc(ci, Rect2(tr[i], Vector2(0.8, 0.8)), Pal.heat(0.8), 1.0)
+	P(ci, tr, 0.45, 1.2)
+	for k in 4:
+		var jc := _u(r, 0.2 + k * 0.12, 0.54)
+		R(ci, Rect2(jc - Vector2(2.5, 2.0), Vector2(5.0, 4.0)), 0.5)
+		D(ci, jc, 0.7, 0.55)
+	var pn := sub(r, 0.12, 0.62, 0.5, 0.78)
+	R(ci, pn, 0.55)
+	L(ci, _u(r, 0.31, 0.62), _u(r, 0.31, 0.56), 0.55, 1.5)
+	L(ci, _u(r, 0.24, 0.56), _u(r, 0.4, 0.56), 0.55, 1.5)
+	L(ci, _u(r, 0.6, 0.62), _u(r, 0.88, 0.62), 0.5, 1.2)
+	for k in 4:
+		var x: float = 0.63 + k * 0.065
+		L(ci, _u(r, x, 0.62), _u(r, x, 0.66), 0.4)
+		R(ci, sub(r, x - 0.022, 0.66, x + 0.022, 0.76), 0.45)
+		D(ci, _u(r, x, 0.685), 0.7, 0.45)
+	E.louvres(ci, sub(r, 0.12, 0.82, 0.88, 0.92), 0.25)
+
+
+# ---------------------------------------------------------------- ST-40: cockpit spares case
+# the racer's spares: a hard case with its two latches and handle, the lid up showing the
+# foam cut-outs (a spare visor, gloves, fuses, a small tool roll)
+static func cockpit_case(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var bx := sub(r, 0.04, 0.42, 0.96, 0.96)
+	R(ci, bx, 0.62, 1.3)
+	_pu(ci, r, [Vector2(0.04, 0.42), Vector2(0.08, 0.04), Vector2(0.92, 0.04), Vector2(0.96, 0.42)], 0.5, 1.2)
+	E.Rc(ci, sub(r, 0.1, 0.1, 0.9, 0.38), Pal.ink(0.12), 1.0)
+	A(ci, _u(r, 0.32, 0.38), ms * 0.4, PI * 1.1, PI * 1.9, 0.5, 1.2)
+	E.Rc(ci, sub(r, 0.2, 0.2, 0.44, 0.3), Pal.tint(Pal.AIR, 0.4), 1.0)
+	for k in 2:
+		var x: float = 0.56 + k * 0.16
+		_pu(ci, r, [Vector2(x, 0.34), Vector2(x, 0.16), Vector2(x + 0.04, 0.12), Vector2(x + 0.08, 0.16), Vector2(x + 0.1, 0.34)], 0.45)
+	var fz := PackedVector2Array()
+	for k in 5:
+		fz.append(_u(r, 0.14 + k * 0.08, 0.58))
+		fz.append(_u(r, 0.14 + k * 0.08, 0.7))
+	S(ci, fz, 0.5, 1.6)
+	R(ci, sub(r, 0.58, 0.54, 0.88, 0.76), 0.42)
+	for x in [0.25, 0.75]:
+		R(ci, sub(r, x - 0.05, 0.38, x + 0.05, 0.48), 0.6)
+	L(ci, _u(r, 0.4, 0.96), _u(r, 0.6, 0.96), 0.55, 1.6)
+
+
+# ---------------------------------------------------------------- supply crates (JD-38, TW-64, CH-110, PT-34)
+# a stack of supply crates (ribbed lids, stencil bands, their handles), a pair of water
+# jerrycans, all under the cargo net and its ratchet strap; the stack grows with the space
+static func supply_stack(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var cols := clampi(int(r.size.x / 34.0), 1, 5)
+	var rows := clampi(int(r.size.y / 30.0), 1, 4)
+	var cw: float = 0.78 / cols
+	var rh: float = 0.9 / rows
+	for row in rows:
+		for c in cols:
+			var cr := sub(r, 0.02 + c * cw, 0.08 + row * rh, 0.02 + (c + 1) * cw - 0.01, 0.08 + (row + 1) * rh - 0.01)
+			R(ci, cr, 0.58, 1.1)
+			L(ci, cr.position + Vector2(2.0, 3.0), Vector2(cr.end.x - 2.0, cr.position.y + 3.0), 0.35)
+			E.Rc(ci, Rect2(cr.position + Vector2(3.0, cr.size.y * 0.45), Vector2(cr.size.x - 6.0, 1.5)), Pal.heat(0.45) if (row + c) % 2 == 0 else Pal.tint(Pal.FLUID, 0.5), 1.0)
+			R(ci, Rect2(cr.position + Vector2(cr.size.x * 0.35, cr.size.y * 0.62), Vector2(cr.size.x * 0.3, cr.size.y * 0.1)), 0.42)
+	for k in 2:
+		var x0: float = 0.82 + k * 0.08
+		_pu(ci, r, [Vector2(x0, 0.98), Vector2(x0, 0.62), Vector2(x0 + 0.02, 0.58), Vector2(x0 + 0.07, 0.58), Vector2(x0 + 0.07, 0.98)], 0.5)
+		E.Rc(ci, sub(r, x0 + 0.005, 0.75, x0 + 0.065, 0.97), Pal.tint(Pal.FLUID, 0.25), 1.0)
+		R(ci, sub(r, x0 + 0.01, 0.55, x0 + 0.03, 0.58), 0.5)
+	var net := PackedVector2Array()
+	var n := clampi(int(r.size.x * 0.8 / 10.0), 3, 20)
+	for k in n + 1:
+		var x: float = 0.02 + k * 0.78 / n
+		net.append(_u(r, x, 0.06))
+		net.append(_u(r, x + 0.78 / n * 0.5, 0.98))
+		net.append(_u(r, x + 0.78 / n * 0.5, 0.06))
+		net.append(_u(r, x, 0.98))
+	S(ci, net, 0.15)
+	L(ci, _u(r, 0.0, 0.5), _u(r, 0.82, 0.5), 0.55, 1.5)
+	R(ci, sub(r, 0.36, 0.47, 0.44, 0.53), 0.6)
+
+
+# ---------------------------------------------------------------- the maintenance cabinet (17 on 11 ships)
+# a bench-height maintenance cabinet: on top the cordless drill on its charger, the
+# multimeter with its leads, a tape roll; below the drawers and the consumables door; the
+# big ones add the wall shelves of boxed spares above
+static func svc_bench(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var tall: bool = r.size.y > r.size.x * 0.6
+	var top: float = 0.55 if tall else 0.3
+	if tall:
+		for s in 2:
+			var sy: float = 0.18 + s * 0.17
+			L(ci, _u(r, 0.04, sy), _u(r, 0.96, sy), 0.5, 1.3)
+			var n := clampi(int(r.size.x / 22.0), 3, 10)
+			for k in n:
+				var x0: float = 0.06 + k * 0.88 / n
+				R(ci, sub(r, x0, sy - 0.12, x0 + 0.88 / n * 0.8, sy), 0.42)
+				L(ci, _u(r, x0 + 0.02, sy - 0.08), _u(r, x0 + 0.88 / n * 0.6, sy - 0.08), 0.3)
+	var bd := sub(r, 0.04, top, 0.96, 0.96)
+	R(ci, bd, 0.62, 1.2)
+	L(ci, _u(r, 0.02, top), _u(r, 0.98, top), 0.6, 1.6)
+	var nd := 2 if not tall else 3
+	for k in nd:
+		var dr := sub(r, 0.08, top + 0.06 + k * (0.86 - top) / (nd + 0.5), 0.5, top + 0.06 + (k + 1) * (0.86 - top) / (nd + 0.5) - 0.02)
+		R(ci, dr, 0.45)
+		L(ci, dr.position + Vector2(dr.size.x * 0.35, dr.size.y * 0.5), dr.position + Vector2(dr.size.x * 0.65, dr.size.y * 0.5), 0.55, 1.3)
+	var dd := sub(r, 0.54, top + 0.06, 0.92, 0.92)
+	R(ci, dd, 0.45)
+	L(ci, Vector2(dd.position.x + 3.0, dd.get_center().y - 2.0), Vector2(dd.position.x + 3.0, dd.get_center().y + 2.0), 0.6, 1.4)
+	E.louvres(ci, Rect2(dd.position + Vector2(dd.size.x * 0.3, dd.size.y * 0.6), Vector2(dd.size.x * 0.6, dd.size.y * 0.3)), 0.25)
+	var ty: float = _u(r, 0, top).y
+	var h0: float = minf(r.size.y * (top - 0.04), 22.0)
+	R(ci, Rect2(_u(r, 0.08, 0) + Vector2(0, ty - r.position.y - h0 * 0.25), Vector2(r.size.x * 0.16, h0 * 0.25)), 0.5)
+	var dg := Vector2(_u(r, 0.14, 0).x, ty - h0 * 0.25)
+	P(ci, PackedVector2Array([dg, dg - Vector2(0, h0 * 0.45), dg + Vector2(r.size.x * 0.08, -h0 * 0.6), dg + Vector2(r.size.x * 0.1, -h0 * 0.45), dg + Vector2(r.size.x * 0.04, -h0 * 0.4)]), 0.55)
+	_lamp(ci, _u(r, 0.21, 0) + Vector2(0, ty - r.position.y - h0 * 0.12), 1.6, Pal.tint(Pal.FLUID, 0.85))
+	var mm := Rect2(_u(r, 0.36, 0) + Vector2(0, ty - r.position.y - h0 * 0.7), Vector2(r.size.x * 0.12, h0 * 0.7))
+	R(ci, mm, 0.55)
+	E.Rc(ci, Rect2(mm.position + Vector2(2, 2), Vector2(mm.size.x - 4, mm.size.y * 0.3)), Pal.tint(Pal.AIR, 0.6), 1.0)
+	O(ci, mm.position + Vector2(mm.size.x * 0.5, mm.size.y * 0.68), minf(mm.size.x * 0.25, 3.0), 0.5)
+	_pu(ci, r, [Vector2(0.48, top - 0.02), Vector2(0.58, top - 0.01), Vector2(0.62, top - 0.04)], 0.45)
+	_pu(ci, r, [Vector2(0.48, top - 0.03), Vector2(0.55, top - 0.005), Vector2(0.68, top - 0.02)], 0.35)
+	O(ci, Vector2(_u(r, 0.82, 0).x, ty - h0 * 0.25), h0 * 0.25, 0.5)
+	O(ci, Vector2(_u(r, 0.82, 0).x, ty - h0 * 0.25), h0 * 0.1, 0.4)
+
+
+# ---------------------------------------------------------------- dining table (MY-48, FR-26)
+# a dining table: the top with its edge, the pedestal (or legs), the place settings (plates,
+# glasses, cutlery), a small vase in the middle
+static func dining_table(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var ty: float = 0.42
+	R(ci, sub(r, 0.02, ty, 0.98, ty + 0.08), 0.62, 1.3)
+	L(ci, _u(r, 0.5, ty + 0.08), _u(r, 0.5, 0.9), 0.6, 2.2)
+	_pu(ci, r, [Vector2(0.3, 0.98), Vector2(0.36, 0.9), Vector2(0.64, 0.9), Vector2(0.7, 0.98)], 0.55, 1.3)
+	L(ci, _u(r, 0.28, 0.98), _u(r, 0.72, 0.98), 0.5, 1.3)
+	for x in [0.18, 0.82]:
+		_ell(ci, _u(r, x, ty - 0.02), r.size.x * 0.1, r.size.y * 0.025, 0.5)
+		_ell(ci, _u(r, x, ty - 0.03), r.size.x * 0.06, r.size.y * 0.015, 0.35)
+		var gx: float = x + (0.12 if x < 0.5 else -0.12)
+		_pu(ci, r, [Vector2(gx - 0.02, ty - 0.2), Vector2(gx - 0.015, ty - 0.12), Vector2(gx + 0.015, ty - 0.12), Vector2(gx + 0.02, ty - 0.2)], 0.45)
+		L(ci, _u(r, gx, ty - 0.12), _u(r, gx, ty - 0.01), 0.4)
+		L(ci, _u(r, gx - 0.02, ty - 0.005), _u(r, gx + 0.02, ty - 0.005), 0.4)
+		L(ci, _u(r, x - 0.13, ty - 0.01), _u(r, x - 0.13, ty - 0.08), 0.4)
+	_pu(ci, r, [Vector2(0.47, ty), Vector2(0.46, ty - 0.12), Vector2(0.48, ty - 0.18), Vector2(0.52, ty - 0.18), Vector2(0.54, ty - 0.12), Vector2(0.53, ty)], 0.5)
+	L(ci, _u(r, 0.5, ty - 0.18), _u(r, 0.48, ty - 0.32), 0.4)
+	L(ci, _u(r, 0.5, ty - 0.18), _u(r, 0.54, ty - 0.3), 0.4)
+	E.Rc(ci, Rect2(_u(r, 0.48, ty - 0.33) - Vector2(1.5, 1.5), Vector2(3, 3)), Pal.heat(0.6), 1.0)
+	E.Rc(ci, Rect2(_u(r, 0.54, ty - 0.31) - Vector2(1.5, 1.5), Vector2(3, 3)), Pal.tint(Pal.FLUID, 0.6), 1.0)
+
+
+# ---------------------------------------------------------------- TW-64: tow log recorder
+# the tug's tow recorder: the tension drum chart (its trace and the peak), the tow-line
+# payout counter, the log book open on its lectern, the printer, the alarm lamp
+static func tow_log(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	_carcass(ci, r)
+	var dm := sub(r, 0.12, 0.08, 0.6, 0.42)
+	R(ci, dm, 0.55)
+	O(ci, dm.get_center(), minf(dm.size.x, dm.size.y) * 0.45, 0.45)
+	var tr := PackedVector2Array()
+	var cc := dm.get_center()
+	var rr: float = minf(dm.size.x, dm.size.y) * 0.4
+	for k in 17:
+		var a: float = -PI * 0.9 + k * PI * 1.8 / 16.0
+		var rv: float = rr * (0.45 + 0.35 * fposmod(k * 0.37, 1.0) + (0.2 if k == 11 else 0.0))
+		tr.append(cc + Vector2.from_angle(a) * rv)
+	P(ci, tr, 0.5)
+	D(ci, cc, 1.2, 0.55)
+	var ct := sub(r, 0.66, 0.1, 0.9, 0.2)
+	E.Rc(ci, ct, Pal.tint(Pal.AIR, 0.6), 1.0)
+	for k in 4:
+		L(ci, ct.position + Vector2(ct.size.x * (0.15 + k * 0.22), 2.0), ct.position + Vector2(ct.size.x * (0.15 + k * 0.22), ct.size.y - 2.0), 0.5)
+	_lamp(ci, _u(r, 0.78, 0.3), maxf(1.6, ms * 0.05), Pal.heat(0.9))
+	_pu(ci, r, [Vector2(0.12, 0.62), Vector2(0.3, 0.52), Vector2(0.48, 0.62), Vector2(0.66, 0.52), Vector2(0.84, 0.62)], 0.55, 1.2)
+	L(ci, _u(r, 0.48, 0.62), _u(r, 0.48, 0.66), 0.5)
+	for k in 3:
+		L(ci, _u(r, 0.18, 0.6 - k * 0.025), _u(r, 0.42, 0.55 - k * 0.025), 0.3)
+		L(ci, _u(r, 0.54, 0.55 - k * 0.025), _u(r, 0.78, 0.6 - k * 0.025), 0.3)
+	var pr := sub(r, 0.12, 0.72, 0.88, 0.86)
+	R(ci, pr, 0.5)
+	L(ci, _u(r, 0.25, 0.79), _u(r, 0.75, 0.79), 0.55, 1.4)
+	_pu(ci, r, [Vector2(0.35, 0.72), Vector2(0.35, 0.68), Vector2(0.65, 0.68), Vector2(0.65, 0.72)], 0.35)
+
+
+# ================================================================== power and generation (fourth batch)
+# 2026-11-11: the generators all drew as the same stator wheel; each now its own machine.
+
+# an inline engine seen from the side: block, rocker covers, sump, the exhaust manifold
+static func _engine_side(ci: CanvasItem, r: Rect2, cyl: int, al: float = 0.55) -> void:
+	R(ci, Rect2(r.position + Vector2(0, r.size.y * 0.3), Vector2(r.size.x, r.size.y * 0.5)), al, 1.2)
+	_pu(ci, r, [Vector2(0.06, 0.8), Vector2(0.12, 0.98), Vector2(0.88, 0.98), Vector2(0.94, 0.8)], al * 0.9)
+	var cw: float = 1.0 / cyl
+	for k in cyl:
+		var c := sub(r, k * cw + 0.02, 0.06, (k + 1) * cw - 0.02, 0.3)
+		R(ci, c, al * 0.9)
+		D(ci, c.get_center(), 1.0, al)
+	var ex := PackedVector2Array()
+	for k in cyl:
+		ex.append(_u(r, (k + 0.5) * cw, 0.42))
+		ex.append(_u(r, (k + 0.5) * cw, 0.5))
+	S(ci, ex, al * 0.7, 1.4)
+	L(ci, _u(r, 0.04, 0.5), _u(r, 0.96, 0.5), al * 0.8, 1.6)
+
+
+# a large alternator lying along x in r: ribbed frame, end shields, the shaft out of the
+# drive end (left), the exciter (right), the terminal box on top
+static func _alternator(ci: CanvasItem, r: Rect2, al: float = 0.58) -> void:
+	var fr := sub(r, 0.08, 0.12, 0.8, 0.92)
+	R(ci, fr, al, 1.3)
+	var rib := PackedVector2Array()
+	var n := clampi(int(fr.size.x / 5.0), 4, 40)
+	for k in n:
+		var x: float = fr.position.x + (k + 0.5) * fr.size.x / n
+		rib.append(Vector2(x, fr.position.y + 2.0))
+		rib.append(Vector2(x, fr.end.y - 2.0))
+	S(ci, rib, 0.22)
+	for x in [0.02, 0.8]:
+		_pu(ci, r, [Vector2(x + 0.06 if x < 0.5 else x, 0.2), Vector2(x if x < 0.5 else x + 0.06, 0.3), Vector2(x if x < 0.5 else x + 0.06, 0.74), Vector2(x + 0.06 if x < 0.5 else x, 0.84)], al)
+	L(ci, _u(r, 0.0, 0.52), _u(r, 0.02, 0.52), al, 2.0)
+	R(ci, sub(r, 0.86, 0.32, 1.0, 0.72), al * 0.9)
+	hatch(ci, sub(r, 0.87, 0.34, 0.99, 0.7), 2.2, true, 0.25, 12)
+	R(ci, sub(r, 0.36, 0.0, 0.56, 0.12), al)
+	for k in 3:
+		D(ci, _u(r, 0.4 + k * 0.06, 0.06), 1.0, al)
+
+
+# ---------------------------------------------------------------- BL-88: oxygen electrolyser
+# the dome's PEM electrolyser: the cell stack between its end plates and tie rods, the
+# deionised-water tank (its level) and the polishing cartridge, the O2 and H2 gas/water
+# separators with their level glasses, the O2 line up to the dome, the H2 vent, the DC
+# rectifier with its current meter
+static func bl_electrolyser(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	R(ci, sub(r, 0.02, 0.95, 0.98, 1.0), 0.55)
+	var st := sub(r, 0.08, 0.56, 0.58, 0.94)
+	for x in [0.08, 0.53]:
+		R(ci, sub(r, x, 0.56, x + 0.05, 0.94), 0.6, 1.2)
+	hatch(ci, sub(r, 0.13, 0.58, 0.53, 0.92), 2.2, true, 0.32, 60)
+	for y in [0.6, 0.9]:
+		L(ci, _u(r, 0.06, y), _u(r, 0.6, y), 0.5)
+		D(ci, _u(r, 0.06, y), 1.0, 0.55)
+		D(ci, _u(r, 0.6, y), 1.0, 0.55)
+	# separators
+	for k in 2:
+		var x: float = 0.14 + k * 0.24
+		E.vessel_v(ci, sub(r, x, 0.14, x + 0.14, 0.48), 0.55)
+		E.Rc(ci, sub(r, x + 0.02, 0.3, x + 0.12, 0.44), Pal.tint(Pal.AIR if k == 0 else Pal.FLUID, 0.3), 1.0)
+		L(ci, _u(r, x + 0.155, 0.2), _u(r, x + 0.155, 0.42), 0.45, 1.3)
+		_pu(ci, r, [Vector2(x + 0.07, 0.56), Vector2(x + 0.07, 0.48)], 0.45)
+	_pu(ci, r, [Vector2(0.21, 0.14), Vector2(0.21, 0.04), Vector2(0.21, 0.0)], 0.55, 1.4)
+	E.Rc(ci, sub(r, 0.205, 0.0, 0.215, 0.12), Pal.tint(Pal.AIR, 0.6), 1.0)
+	_pu(ci, r, [Vector2(0.45, 0.14), Vector2(0.45, 0.08), Vector2(0.52, 0.04)], 0.4)
+	# water tank and polisher
+	var wt := sub(r, 0.66, 0.5, 0.94, 0.94)
+	R(ci, wt, 0.55)
+	E.Rc(ci, sub(r, 0.67, 0.64, 0.93, 0.93), Pal.tint(Pal.FLUID, 0.25), 1.0)
+	L(ci, _u(r, 0.67, 0.64), _u(r, 0.93, 0.64), 0.4)
+	R(ci, sub(r, 0.62, 0.62, 0.65, 0.88), 0.45)
+	_pu(ci, r, [Vector2(0.66, 0.9), Vector2(0.6, 0.9)], 0.45)
+	# rectifier
+	var rc := sub(r, 0.66, 0.06, 0.94, 0.42)
+	R(ci, rc, 0.58)
+	E.gauge(ci, _u(r, 0.8, 0.18), maxf(2.5, ms * 0.07), 0.55)
+	E.louvres(ci, sub(r, 0.7, 0.28, 0.9, 0.38), 0.28)
+	_pu(ci, r, [Vector2(0.66, 0.38), Vector2(0.58, 0.38), Vector2(0.58, 0.56)], 0.5, 1.6)
+
+
+# ---------------------------------------------------------------- fuel cell power module (p_fuel_cell, p_fuelcell)
+# a PEM fuel-cell module: one to three stacks (end plates, the cells, tie rods), the air
+# blower and the membrane humidifier, the hydrogen train (regulator, purge valve), the
+# coolant pump and its stubs, the DC/DC output box, the product-water drain
+static func fuel_cell_pm(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var b := sub(r, 0.02, 0.06, 0.98, 0.94)
+	R(ci, b, 0.45)
+	R(ci, sub(r, 0.0, 0.94, 1.0, 1.0), 0.55)
+	var ns := clampi(int(r.size.x / (1.1 * M)), 1, 3)
+	var sw: float = 0.56 / ns
+	for i in ns:
+		var x0: float = 0.06 + i * sw
+		R(ci, sub(r, x0, 0.36, x0 + 0.03, 0.9), 0.6, 1.2)
+		R(ci, sub(r, x0 + sw - 0.05, 0.36, x0 + sw - 0.02, 0.9), 0.6, 1.2)
+		hatch(ci, sub(r, x0 + 0.03, 0.38, x0 + sw - 0.05, 0.88), 2.0, true, 0.32, 60)
+		for y in [0.4, 0.86]:
+			L(ci, _u(r, x0 - 0.01, y), _u(r, x0 + sw - 0.01, y), 0.45)
+	# air blower and humidifier
+	var bc := _u(r, 0.16, 0.2)
+	var br: float = minf(r.size.x * 0.1, r.size.y * 0.12)
+	E.fan(ci, bc, br, 6, 0.48)
+	var hu := sub(r, 0.3, 0.1, 0.6, 0.3)
+	R(ci, hu, 0.5)
+	E.pleats(ci, hu.grow(-2.0), 2.4, true, 0.3)
+	L(ci, bc + Vector2(br, 0), Vector2(hu.position.x, bc.y), 0.45, 1.3)
+	_pu(ci, r, [Vector2(0.45, 0.3), Vector2(0.45, 0.36)], 0.45, 1.3)
+	# hydrogen train
+	var hy: float = 0.18
+	L(ci, _u(r, 0.66, hy), _u(r, 1.0, hy), 0.55, 1.3)
+	O(ci, _u(r, 0.76, hy), maxf(2.0, ms * 0.05), 0.55)
+	A(ci, _u(r, 0.76, hy - 0.05), maxf(2.0, ms * 0.05), PI, TAU, 0.5)
+	var pv := _u(r, 0.88, hy)
+	var vs: float = maxf(2.0, ms * 0.035)
+	P(ci, PackedVector2Array([pv + Vector2(-vs, -vs), pv + Vector2(vs, vs), pv + Vector2(vs, -vs), pv + Vector2(-vs, vs), pv + Vector2(-vs, -vs)]), 0.55)
+	E.Rc(ci, Rect2(_u(r, 0.66, hy) - Vector2(0, 0.6), Vector2(r.size.x * 0.34, 1.2)), Pal.tint(Pal.AIR, 0.5), 1.0)
+	_pu(ci, r, [Vector2(0.66, hy), Vector2(0.62, hy), Vector2(0.62, 0.36)], 0.45)
+	# coolant pump and stubs
+	var cp := _u(r, 0.76, 0.5)
+	O(ci, cp, maxf(2.5, ms * 0.07), 0.55)
+	E.impeller(ci, cp, maxf(2.0, ms * 0.05), 0.4)
+	for y in [0.44, 0.56]:
+		L(ci, _u(r, 0.86, y), _u(r, 1.0, y), 0.5, 1.4)
+	_pu(ci, r, [Vector2(0.62, 0.5), Vector2(0.72, 0.5)], 0.45, 1.3)
+	# DC/DC and drain
+	var dc := sub(r, 0.66, 0.66, 0.94, 0.9)
+	R(ci, dc, 0.58)
+	hatch(ci, Rect2(dc.position + Vector2(2, 2), Vector2(dc.size.x * 0.4, dc.size.y - 4)), 2.2, true, 0.3, 10)
+	_lamp(ci, dc.position + Vector2(dc.size.x * 0.75, dc.size.y * 0.3), maxf(1.4, ms * 0.04), Pal.tint(Pal.FLUID, 0.85))
+	L(ci, Vector2(dc.end.x, dc.position.y + dc.size.y * 0.6), Vector2(r.end.x, dc.position.y + dc.size.y * 0.6), 0.55, 1.6)
+	_pu(ci, r, [Vector2(0.3, 0.9), Vector2(0.3, 0.98)], 0.4)
+	E.Rc(ci, sub(r, 0.29, 0.92, 0.31, 0.94), Pal.tint(Pal.FLUID, 0.7), 1.0)
+
+
+# ---------------------------------------------------------------- ARK-01: backup generator (free-piston Stirling)
+# the ring's backup: two opposed free-piston Stirling engines on a common heat source (the
+# heater heads, regenerators, the linear alternators at the outer ends), the balancer, the
+# cold-side coolant jacket and lines, the controller, the skid
+static func stirling_gen(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	R(ci, sub(r, 0.02, 0.9, 0.98, 0.97), 0.58, 1.2)
+	for x in [0.12, 0.88]:
+		R(ci, sub(r, x - 0.04, 0.84, x + 0.04, 0.9), 0.5)
+	var cy: float = 0.58
+	var hs := sub(r, 0.42, cy - 0.16, 0.58, cy + 0.16)
+	R(ci, hs, 0.62, 1.3)
+	E.Rc(ci, hs.grow(-3.0), Pal.heat(0.4), 1.0)
+	for s in [-1.0, 1.0]:
+		var hx: float = 0.5 + s * 0.08
+		var x1: float = 0.5 + s * 0.16
+		var fins := PackedVector2Array()
+		for k in 4:
+			var x: float = hx + s * (k + 0.5) * 0.02
+			fins.append(_u(r, x, cy - 0.13))
+			fins.append(_u(r, x, cy + 0.13))
+		S(ci, fins, 0.45)
+		var rg := sub(r, minf(x1, x1 + s * 0.06), cy - 0.1, maxf(x1, x1 + s * 0.06), cy + 0.1)
+		R(ci, rg, 0.5)
+		hatch(ci, rg.grow(-1.0), 1.6, false, 0.3, 12)
+		var cj := sub(r, minf(x1 + s * 0.06, x1 + s * 0.12), cy - 0.12, maxf(x1 + s * 0.06, x1 + s * 0.12), cy + 0.12)
+		R(ci, cj, 0.55)
+		var la := sub(r, minf(x1 + s * 0.12, x1 + s * 0.3), cy - 0.15, maxf(x1 + s * 0.12, x1 + s * 0.3), cy + 0.15)
+		R(ci, la, 0.6, 1.2)
+		var coil := PackedVector2Array()
+		for k in 6:
+			var x: float = la.position.x + (k + 0.5) * la.size.x / 6.0
+			coil.append(Vector2(x, la.position.y + 2.0))
+			coil.append(Vector2(x, la.end.y - 2.0))
+		S(ci, coil, 0.3)
+		L(ci, Vector2(la.get_center().x, la.position.y), Vector2(la.get_center().x, _u(r, 0, 0.34).y), 0.45)
+		_pu(ci, r, [Vector2(x1 + s * 0.09, cy - 0.12), Vector2(x1 + s * 0.09, 0.3), Vector2(0.5, 0.3)], 0.4, 1.3)
+	E.Rc(ci, sub(r, 0.3, 0.295, 0.7, 0.305), Pal.tint(Pal.FLUID, 0.5), 1.0)
+	var ct := sub(r, 0.06, 0.04, 0.38, 0.26)
+	R(ci, ct, 0.58)
+	E.Rc(ci, sub(r, 0.09, 0.07, 0.27, 0.13), Pal.tint(Pal.AIR, 0.6), 1.0)
+	_lamp_row(ci, sub(r, 0.09, 0.17, 0.35, 0.22), 4, Pal.tint(Pal.FLUID, 0.85), 4)
+	E.louvres(ci, sub(r, 0.62, 0.06, 0.94, 0.24), 0.28)
+	R(ci, sub(r, 0.62, 0.04, 0.94, 0.26), 0.5)
+
+
+# ---------------------------------------------------------------- MED-47 / PT-34: backup generator (gas turbine set)
+# a gas-turbine generator in its acoustic enclosure (cut away): the intake filter louvres and
+# splitter silencer, the turbine (compressor, combustor, power turbine), the reduction
+# gearbox, the alternator, the exhaust silencer and stack up through the roof
+static func turbine_genset(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var en := sub(r, 0.02, 0.16, 0.98, 0.94)
+	R(ci, en, 0.6, 1.3)
+	R(ci, en.grow(-3.0), 0.25)
+	R(ci, sub(r, 0.0, 0.94, 1.0, 1.0), 0.55)
+	var il := sub(r, 0.05, 0.22, 0.17, 0.86)
+	R(ci, il, 0.5)
+	E.louvres(ci, il.grow(-2.0), 0.3)
+	var sp := PackedVector2Array()
+	for k in 3:
+		var y: float = 0.32 + k * 0.18
+		sp.append(_u(r, 0.19, y))
+		sp.append(_u(r, 0.26, y))
+	S(ci, sp, 0.4, 2.0)
+	var cy: float = 0.6
+	_pu(ci, r, [Vector2(0.28, cy - 0.06), Vector2(0.4, cy - 0.12), Vector2(0.5, cy - 0.12), Vector2(0.56, cy - 0.08), Vector2(0.56, cy + 0.08), Vector2(0.5, cy + 0.12), Vector2(0.4, cy + 0.12), Vector2(0.28, cy + 0.06)], 0.6, 1.2, true)
+	var bl := PackedVector2Array()
+	for k in 4:
+		var x: float = 0.31 + k * 0.025
+		var hh: float = 0.07 + k * 0.012
+		bl.append(_u(r, x, cy - hh))
+		bl.append(_u(r, x, cy + hh))
+	S(ci, bl, 0.35)
+	O(ci, _u(r, 0.45, cy - 0.12), maxf(1.6, ms * 0.035), 0.5)
+	_lamp(ci, _u(r, 0.45, cy), maxf(1.6, ms * 0.05), Pal.heat(0.75))
+	R(ci, sub(r, 0.57, cy - 0.1, 0.66, cy + 0.12), 0.55)
+	O(ci, _u(r, 0.615, cy - 0.03), maxf(1.6, ms * 0.04), 0.4)
+	O(ci, _u(r, 0.615, cy + 0.06), maxf(1.0, ms * 0.025), 0.4)
+	_alternator(ci, sub(r, 0.66, cy - 0.17, 0.95, cy + 0.17), 0.55)
+	_pu(ci, r, [Vector2(0.5, cy - 0.12), Vector2(0.5, 0.26)], 0.5, 1.4)
+	var es := sub(r, 0.42, 0.04, 0.58, 0.26)
+	R(ci, es, 0.58)
+	hatch(ci, es.grow(-2.0), 2.4, false, 0.3, 10)
+	R(ci, sub(r, 0.46, 0.0, 0.54, 0.04), 0.55)
+	R(ci, sub(r, 0.72, 0.22, 0.94, 0.36), 0.5)
+	E.Rc(ci, sub(r, 0.74, 0.25, 0.84, 0.3), Pal.tint(Pal.AIR, 0.6), 1.0)
+	_lamp(ci, _u(r, 0.9, 0.29), maxf(1.4, ms * 0.035), Pal.tint(Pal.FLUID, 0.85))
+
+
+# ---------------------------------------------------------------- ES-112 / PS-12: standby set (diesel rotary UPS)
+# a diesel rotary UPS: the diesel (rocker covers, turbo), the clutch, the heavy flywheel that
+# rides through the gap, the motor-generator, the choke on the input, the control cabinet;
+# the engine train along the bottom, the choke and controls above it
+static func drups(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	R(ci, sub(r, 0.02, 0.94, 0.98, 1.0), 0.58, 1.2)
+	var ly: float = 0.5
+	_engine_side(ci, sub(r, 0.04, ly, 0.36, 0.92), 4, 0.55)
+	var tc := _u(r, 0.38, ly + 0.08)
+	A(ci, tc, ms * 0.06, PI * 0.5, PI * 2.0, 0.5)
+	R(ci, sub(r, 0.36, ly + 0.2, 0.42, ly + 0.36), 0.55)
+	hatch(ci, sub(r, 0.365, ly + 0.21, 0.415, ly + 0.35), 1.8, true, 0.35, 6)
+	var fc := _u(r, 0.52, ly + 0.27)
+	var fr: float = minf(r.size.y * 0.2, r.size.x * 0.1)
+	O(ci, fc, fr, 0.62, 1.4)
+	O(ci, fc, fr * 0.8, 0.35)
+	O(ci, fc, fr * 0.25, 0.45)
+	for k in 6:
+		var a: float = TAU * k / 6.0
+		D(ci, fc + Vector2.from_angle(a) * fr * 0.55, 0.9, 0.45)
+	L(ci, _u(r, 0.42, ly + 0.28), fc - Vector2(fr, 0), 0.55, 2.0)
+	_alternator(ci, sub(r, 0.62, ly + 0.08, 0.98, ly + 0.44), 0.55)
+	var ch := sub(r, 0.06, 0.08, 0.36, 0.42)
+	R(ci, ch, 0.55)
+	for k in 3:
+		var cc := Vector2(ch.position.x + (k + 0.5) * ch.size.x / 3.0, ch.get_center().y)
+		R(ci, Rect2(cc - Vector2(ch.size.x * 0.12, ch.size.y * 0.32), Vector2(ch.size.x * 0.24, ch.size.y * 0.64)), 0.5)
+		hatch(ci, Rect2(cc - Vector2(ch.size.x * 0.1, ch.size.y * 0.28), Vector2(ch.size.x * 0.2, ch.size.y * 0.56)), 2.0, false, 0.3, 20)
+	var cb := sub(r, 0.44, 0.06, 0.96, 0.42)
+	R(ci, cb, 0.6, 1.2)
+	E.Rc(ci, sub(r, 0.48, 0.1, 0.7, 0.18), Pal.tint(Pal.AIR, 0.6), 1.0)
+	_ups_mimic(ci, sub(r, 0.48, 0.22, 0.92, 0.32))
+	_lamp_row(ci, sub(r, 0.74, 0.12, 0.92, 0.16), 3, Pal.tint(Pal.FLUID, 0.85), 3)
+	E.breaker(ci, sub(r, 0.5, 0.34, 0.66, 0.4), true, 0.45)
+	E.breaker(ci, sub(r, 0.72, 0.34, 0.88, 0.4), true, 0.45)
+	_pu(ci, r, [Vector2(0.21, 0.42), Vector2(0.21, 0.5)], 0.5, 1.6)
+
+
+# ---------------------------------------------------------------- HB-86: CO2 enrichment burner
+# the greenhouse CO2 generator: the gas train (regulator, double solenoid valves), the
+# burner box with its flame window, the combustion blower, the heat exchanger, the
+# perforated distribution tube along the top, the CO2 sensor head
+static func co2_burner(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	R(ci, sub(r, 0.02, 0.92, 0.98, 0.99), 0.55)
+	var dt := sub(r, 0.04, 0.04, 0.96, 0.14)
+	R(ci, dt, 0.55)
+	for k in 14:
+		D(ci, Vector2(dt.position.x + (k + 0.5) * dt.size.x / 14.0, dt.end.y + 1.5), 0.7, 0.4)
+	_pu(ci, r, [Vector2(0.42, 0.14), Vector2(0.42, 0.3)], 0.5, 1.6)
+	var bx := sub(r, 0.3, 0.3, 0.58, 0.9)
+	R(ci, bx, 0.62, 1.2)
+	var fw := sub(r, 0.36, 0.5, 0.52, 0.7)
+	R(ci, fw, 0.55)
+	E.Rc(ci, fw.grow(-2.0), Pal.heat(0.65), 1.0)
+	_pu(ci, r, [Vector2(0.38, 0.68), Vector2(0.41, 0.58), Vector2(0.44, 0.66), Vector2(0.47, 0.56), Vector2(0.5, 0.68)], 0.55)
+	var hx := sub(r, 0.6, 0.34, 0.8, 0.86)
+	R(ci, hx, 0.55)
+	var tb := PackedVector2Array()
+	for k in 5:
+		var x: float = hx.position.x + (k + 0.5) * hx.size.x / 5.0
+		tb.append(Vector2(x, hx.position.y + 3.0))
+		tb.append(Vector2(x, hx.end.y - 3.0))
+	S(ci, tb, 0.35)
+	var fc := _u(r, 0.89, 0.6)
+	var fr: float = minf(r.size.x * 0.08, r.size.y * 0.2)
+	E.fan(ci, fc, fr, 6, 0.5)
+	L(ci, _u(r, 0.0, 0.66), _u(r, 0.06, 0.66), 0.55, 1.4)
+	O(ci, _u(r, 0.1, 0.66), maxf(2.0, ms * 0.07), 0.55)
+	A(ci, _u(r, 0.1, 0.56), maxf(2.0, ms * 0.07), PI, TAU, 0.5)
+	for x in [0.17, 0.23]:
+		R(ci, sub(r, x - 0.025, 0.56, x + 0.025, 0.66), 0.55)
+		hatch(ci, sub(r, x - 0.02, 0.57, x + 0.02, 0.65), 1.8, false, 0.35, 6)
+	L(ci, _u(r, 0.14, 0.7), _u(r, 0.3, 0.7), 0.5, 1.3)
+	E.Rc(ci, Rect2(_u(r, 0.04, 0.7) - Vector2(0, 0.6), Vector2(r.size.x * 0.26, 1.2)), Pal.heat(0.4), 1.0)
+	var sn := sub(r, 0.08, 0.22, 0.2, 0.4)
+	R(ci, sn, 0.55)
+	hatch(ci, sub(r, 0.1, 0.32, 0.18, 0.38), 1.8, true, 0.3, 8)
+	_lamp(ci, sn.position + Vector2(sn.size.x * 0.5, sn.size.y * 0.25), maxf(1.4, ms * 0.04), Pal.tint(Pal.FLUID, 0.85))
+
+
+# ---------------------------------------------------------------- DR-150 / HG-170: diesel generator set
+# a diesel genset on its base tank: the radiator and fan at the free end, the engine (rocker
+# covers, turbo, the exhaust riser to the muffler on top), the alternator and its terminal
+# box, the AVR / control panel, the fuel day tank in the base frame
+static func diesel_genset(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var bt := sub(r, 0.02, 0.84, 0.98, 0.98)
+	R(ci, bt, 0.6, 1.2)
+	E.Rc(ci, sub(r, 0.04, 0.91, 0.6, 0.965), Pal.heat(0.3), 1.0)
+	O(ci, _u(r, 0.8, 0.91), maxf(1.6, ms * 0.03), 0.5)
+	var rd := sub(r, 0.02, 0.34, 0.12, 0.84)
+	R(ci, rd, 0.58)
+	hatch(ci, rd.grow(-1.5), 2.0, false, 0.32, 40)
+	E.fan(ci, _u(r, 0.15, 0.58), minf(r.size.x * 0.03, r.size.y * 0.2), 5, 0.4)
+	_engine_side(ci, sub(r, 0.18, 0.36, 0.56, 0.84), 4, 0.58)
+	var tc := _u(r, 0.6, 0.42)
+	O(ci, tc, ms * 0.06, 0.55)
+	A(ci, tc, ms * 0.09, -PI * 0.5, PI * 0.6, 0.45)
+	_pu(ci, r, [Vector2(0.56, 0.42), Vector2(0.6, 0.36), Vector2(0.6, 0.22)], 0.5, 1.4)
+	var mf := sub(r, 0.22, 0.12, 0.66, 0.22)
+	R(ci, mf, 0.58)
+	for x in [0.3, 0.44, 0.58]:
+		L(ci, _u(r, x, 0.12), _u(r, x, 0.22), 0.3)
+	L(ci, _u(r, 0.24, 0.12), _u(r, 0.24, 0.02), 0.55, 1.6)
+	_alternator(ci, sub(r, 0.62, 0.44, 0.98, 0.84), 0.55)
+	var cp := sub(r, 0.72, 0.06, 0.96, 0.36)
+	R(ci, cp, 0.55)
+	E.gauge(ci, _u(r, 0.8, 0.15), maxf(2.5, ms * 0.06), 0.5)
+	E.gauge(ci, _u(r, 0.9, 0.15), maxf(2.5, ms * 0.06), 0.5)
+	_lamp_row(ci, sub(r, 0.75, 0.25, 0.93, 0.29), 3, Pal.tint(Pal.FLUID, 0.85), 0)
+	L(ci, _u(r, 0.84, 0.36), _u(r, 0.84, 0.44), 0.45, 1.3)
+
+
+# ---------------------------------------------------------------- GR-7: main power module (radioisotope)
+# the small ship's radioisotope power module: the finned converter shell, the heat-source
+# modules stacked inside (cut away), the thermocouple rows, the coolant jacket and its two
+# lines, the trefoil, the output cable, its mounting saddles
+static func rtg_module(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var sh := sub(r, 0.2, 0.14, 0.8, 0.86)
+	R(ci, sh, 0.62, 1.3)
+	var fins := PackedVector2Array()
+	for k in 7:
+		var y: float = 0.2 + k * 0.1
+		fins.append(_u(r, 0.06, y))
+		fins.append(_u(r, 0.2, y))
+		fins.append(_u(r, 0.8, y))
+		fins.append(_u(r, 0.94, y))
+	S(ci, fins, 0.5, 1.4)
+	var core := sub(r, 0.36, 0.22, 0.64, 0.78)
+	R(ci, core, 0.5)
+	for k in 3:
+		var hs := sub(r, 0.39, 0.25 + k * 0.175, 0.61, 0.4 + k * 0.175)
+		R(ci, hs, 0.5)
+		E.Rc(ci, hs.grow(-2.0), Pal.heat(0.45), 1.0)
+	var tcs := PackedVector2Array()
+	for k in 10:
+		var y: float = 0.24 + k * 0.055
+		tcs.append(_u(r, 0.25, y))
+		tcs.append(_u(r, 0.33, y))
+		tcs.append(_u(r, 0.67, y))
+		tcs.append(_u(r, 0.75, y))
+	S(ci, tcs, 0.28)
+	for y in [0.3, 0.7]:
+		L(ci, _u(r, 0.8, y), _u(r, 1.0, y), 0.55, 1.5)
+		E.flange(ci, _u(r, 0.94, y), Vector2.RIGHT, maxf(2.0, ms * 0.04), 0.5)
+	var tf := _u(r, 0.5, 0.06)
+	var tr: float = maxf(3.0, ms * 0.06)
+	D(ci, tf, tr * 0.25, 0.6)
+	for k in 3:
+		A(ci, tf, tr, -PI * 0.5 + k * TAU / 3.0 - 0.5, -PI * 0.5 + k * TAU / 3.0 + 0.5, 0.6, 1.5)
+	L(ci, _u(r, 0.5, 0.86), _u(r, 0.5, 0.98), 0.55, 1.6)
+	for x in [0.28, 0.72]:
+		_pu(ci, r, [Vector2(x - 0.08, 0.98), Vector2(x - 0.05, 0.86), Vector2(x + 0.05, 0.86), Vector2(x + 0.08, 0.98)], 0.5)
+
+
+# ---------------------------------------------------------------- the main generator (ARK-01, CH-110, IC-120, MD-160, MT-140, TB-180)
+# a large alternator on its bed: the ribbed stator frame, the bearing pedestals and the shaft
+# from the prime mover with its coupling guard, the exciter, the air-to-water cooler on top
+# (tubes, water in and out), the line terminal box with its three cables, anchor bolts
+static func main_alternator(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	R(ci, sub(r, 0.02, 0.9, 0.98, 0.97), 0.6, 1.3)
+	for x in [0.06, 0.34, 0.66, 0.94]:
+		D(ci, _u(r, x, 0.935), 1.2, 0.6)
+	var cy: float = 0.62
+	var fr := sub(r, 0.18, 0.36, 0.78, 0.88)
+	R(ci, fr, 0.62, 1.4)
+	var rib := PackedVector2Array()
+	var n := clampi(int(fr.size.x / 6.0), 6, 40)
+	for k in n:
+		var x: float = fr.position.x + (k + 0.5) * fr.size.x / n
+		rib.append(Vector2(x, fr.position.y + 3.0))
+		rib.append(Vector2(x, fr.end.y - 3.0))
+	S(ci, rib, 0.22)
+	for x in [0.12, 0.84]:
+		R(ci, sub(r, x - 0.035, cy - 0.1, x + 0.035, 0.9), 0.55)
+		O(ci, _u(r, x, cy), maxf(2.0, ms * 0.04), 0.5)
+	L(ci, _u(r, 0.0, cy), _u(r, 0.18, cy), 0.6, 2.4)
+	R(ci, sub(r, 0.0, cy - 0.07, 0.08, cy + 0.07), 0.45)
+	R(ci, sub(r, 0.88, cy - 0.14, 0.98, cy + 0.14), 0.55)
+	hatch(ci, sub(r, 0.89, cy - 0.12, 0.97, cy + 0.12), 2.2, true, 0.3, 10)
+	var cl := sub(r, 0.24, 0.12, 0.72, 0.36)
+	R(ci, cl, 0.58)
+	var tubes := PackedVector2Array()
+	for k in 5:
+		var y: float = cl.position.y + (k + 0.5) * cl.size.y / 5.0
+		tubes.append(Vector2(cl.position.x + 3.0, y))
+		tubes.append(Vector2(cl.end.x - 3.0, y))
+	S(ci, tubes, 0.3)
+	E.Rc(ci, Rect2(cl.position + Vector2(3.0, cl.size.y * 0.45), Vector2(cl.size.x - 6.0, 1.0)), Pal.tint(Pal.FLUID, 0.5), 1.0)
+	for x in [0.32, 0.64]:
+		L(ci, _u(r, x, 0.12), _u(r, x, 0.02), 0.55, 1.5)
+		E.flange(ci, _u(r, x, 0.06), Vector2.UP, maxf(2.0, ms * 0.03), 0.5)
+	var tb := sub(r, 0.76, 0.2, 0.92, 0.36)
+	R(ci, tb, 0.58)
+	for k in 3:
+		var x: float = 0.79 + k * 0.05
+		D(ci, _u(r, x, 0.3), 1.2, 0.6)
+		L(ci, _u(r, x, 0.2), _u(r, x, 0.02), 0.55, 1.8)
+	R(ci, sub(r, 0.4, 0.74, 0.56, 0.82), 0.4)
+
+
+# ---------------------------------------------------------------- TS-1: main power module
+# the training ship's compact power module: two converter bricks on their heat sink, the
+# capacitor bank, the bus terminals and the main breaker, the status lamps
+static func ts_power(ci: CanvasItem, r: Rect2) -> void:
+	var ms := minf(r.size.x, r.size.y)
+	var bx := sub(r, 0.04, 0.08, 0.96, 0.92)
+	R(ci, bx, 0.62, 1.2)
+	hatch(ci, sub(r, 0.08, 0.12, 0.92, 0.22), 2.2, true, 0.32, 30)
+	for k in 2:
+		var bk := sub(r, 0.08 + k * 0.22, 0.26, 0.28 + k * 0.22, 0.56)
+		R(ci, bk, 0.55)
+		L(ci, bk.position + Vector2(2, bk.size.y * 0.3), Vector2(bk.end.x - 2, bk.position.y + bk.size.y * 0.3), 0.35)
+		_lamp(ci, bk.position + Vector2(bk.size.x * 0.5, bk.size.y * 0.7), maxf(1.2, ms * 0.04), Pal.tint(Pal.FLUID, 0.85))
+	for k in 3:
+		O(ci, _u(r, 0.62 + k * 0.1, 0.36), maxf(1.6, ms * 0.04), 0.5)
+		O(ci, _u(r, 0.62 + k * 0.1, 0.48), maxf(1.6, ms * 0.04), 0.5)
+	E.breaker(ci, sub(r, 0.1, 0.62, 0.46, 0.86), true, 0.5)
+	for k in 2:
+		var tp := _u(r, 0.62 + k * 0.18, 0.74)
+		R(ci, Rect2(tp - Vector2(3.0, 3.0), Vector2(6.0, 6.0)), 0.55)
+		D(ci, tp, 1.0, 0.6)
+	L(ci, _u(r, 0.71, 0.74), _u(r, 0.71, 0.92), 0.5, 1.6)

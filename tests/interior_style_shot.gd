@@ -94,7 +94,7 @@ func _run() -> void:
 				g.drone.linear_velocity = Vector2.ZERO
 				await _frames(1)
 			Cap.save(root, "res://tests/out/interior_%s_%s%s.png" % [zone, s, ("_" + tag) if tag != "" else ""])
-	DistrictStyle.style = 3
+	DistrictStyle.style = 9
 	g.queue_free()
 	await _frames(4)
 	quit(0)

@@ -49,6 +49,13 @@ var package_mode := false
 var package_worker := false
 var _cutter_service = null
 var cut_motion: Dictionary = {}
+# 切割宝典 (2026-11-11, 评审选②): a marked line the cutter cannot see yet: the hull piece over it, for the
+# "下一步" mark (scripts/next_step.gd); the machine cuts on its own the moment the player has it off
+var expose_at := Vector2.INF
+var expose_tag := ""
+var expose_t := 0.0
+var expose_piece = null
+var seg_done := 0              # marked lines the machine cut whole this job
 # 2026-11-11 切割宝典: where the steps came from — "own" (this career's recording), "codex" (the
 # shipwrights' plan, scripts/plan_codex.gd) or "" (none / the grey heron preset)
 var source := ""
@@ -74,7 +81,7 @@ func setup(g) -> void:
 	if g.career() and Career.usable():
 		Career.load_or_new()
 		var picked: Array = Codex.pick(g.ship_id) if not g.manual_only() else [[], ""]
-		steps = picked[0]
+		steps = picked[0].duplicate(true)
 		source = str(picked[1])
 		if steps.is_empty() and g.ship_id == "gr7":
 			preset = true
@@ -451,7 +458,7 @@ func switch_source() -> String:
 	var to := "own" if source == "codex" else "codex"
 	Codex.set_pick(game.ship_id, to)
 	var picked: Array = Codex.pick(game.ship_id)
-	steps = picked[0]
+	steps = picked[0].duplicate(true)
 	source = str(picked[1])
 	i = 0
 	wait = ""
@@ -577,8 +584,12 @@ func _physics_process(dt: float) -> void:
 		game.say("plan_changed", game.drone.global_position + Vector2(0, -44), st.ctrl)
 		return
 	if game.world.room_hidden(c.hidden_room):
-		_pause("plan_hidden", st.ctrl)
-		return
+		# 切割宝典: the shipwrights' drawings show the room; the machine opens it
+		if source == "codex":
+			game.world.reveal(c.hidden_room, game.world.ctrl_world(c))
+		else:
+			_pause("plan_hidden", st.ctrl)
+			return
 	for pr in st.pre:
 		var reading_site = game.world.ctrls.get(pr.key)
 		if reading_site == null or not game.world.ctrl_alive(reading_site):
@@ -650,8 +661,11 @@ func _step_cut(st: Dictionary, dt: float) -> void:
 			_pause("plan_cut_structure", str(st.key))
 			return
 	if game.world.room_hidden(p.room):
-		_pause("plan_hidden", str(st.key))
-		return
+		if source == "codex":
+			game.world.reveal(p.room, game.world.frame(p).origin)
+		else:
+			_pause("plan_hidden", str(st.key))
+			return
 	for room in st.get("rooms", []):
 		if game.sys.P(str(room)) > SAFE_KPA:
 			_pause("plan_cut_pressure", str(room))
@@ -729,6 +743,8 @@ func _step_cut(st: Dictionary, dt: float) -> void:
 	while segment < pl.size() and front.distance_to(pl[segment]) < 0.001:
 		segment += 1
 	var at: Vector2 = game.world.frame(p)*front
+	# a marked line is cut whole at its end (_seg_motion): until then the beam works from where it went in
+	if bool(st.get("seg", false)): at = game.world.frame(p)*pl[0]
 	# 104 号: the cutter working your plan is a dismantling method; before it is learned the
 	# plan still works the controls and hoses, and holds at each cut for you to make by hand
 	if game.career() and not game.dev_job() and not game.has_upgrade("cutter") and source != "codex":
@@ -739,7 +755,10 @@ func _step_cut(st: Dictionary, dt: float) -> void:
 	if not service.prepare(self,p,at,float(st.get("kerf",World.KERF)),dt):
 		wait = "plan_cutter_wait"
 		wait_arg = str(st.key)
+		if bool(st.get("seg", false)) and step_t <= 0.0 and service.reason in ["tool_blocked", "route_blocked"]:
+			_expose_wait(p, at, dt)
 		return
+	expose_at = Vector2.INF
 	# Same actual material speed budget as a held beam, capped by the berth
 	# machine's rated feed. Never apply an arbitrarily large dt as an instant cut.
 	# 87-1: the machine's feed through this part's material (armour 3-5x slower than plate)
@@ -751,6 +770,9 @@ func _step_cut(st: Dictionary, dt: float) -> void:
 	# moving stroke; otherwise a rounded *disk* is substituted at every seam.
 	if segment < pl.size() and amount < minf(0.5,front.distance_to(pl[segment])): return
 	cut_motion.feed = 0.0
+	if bool(st.get("seg", false)):
+		_seg_motion(st, p, pl, front, segment, amount, dt)
+		return
 	var end := front
 	if segment < pl.size(): end = front.move_toward(pl[segment],amount)
 	var patch := PackedVector2Array([front,end])
@@ -798,6 +820,139 @@ func _step_cut(st: Dictionary, dt: float) -> void:
 	step_t = 0.0
 	_release_cutter()
 	_passed()
+
+# 切割宝典 (2026-11-11): a cut along a piece's marked line. The line only takes the piece apart
+# whole when it is cut as one kerf (World.segment_cut), so the machine runs the beam down its
+# length and commits the whole line at the end, as the player's single stroke would.
+func _seg_motion(st: Dictionary, p, pl: PackedVector2Array, front: Vector2, segment: int, amount: float, dt: float) -> void:
+	var end := front
+	if segment < pl.size(): end = front.move_toward(pl[segment], amount)
+	cut_motion.front = [end.x, end.y]
+	step_t += minf(dt, 1.0/60.0)
+	if segment < pl.size() and end.distance_to(pl[segment]) >= 0.001: return
+	if segment + 1 < pl.size():
+		cut_motion.segment = segment + 1
+		return
+	var incident_count: int = game.incidents.size()
+	var wpl: PackedVector2Array = game.world.frame(p) * pl
+	if game.world.segment_cut(p, wpl):
+		seg_done += 1
+		st["machine_cut"] = true
+	game.cut_kerf(p, wpl, float(st.get("kerf", World.KERF)), true)
+	game.log_op("plan")
+	if game.incidents.size() > incident_count:
+		cancel()
+		_pause("plan_cut_incident", str(st.key))
+		return
+	cut_motion.clear()
+	step_t = 0.0
+	_release_cutter()
+	_passed()
+
+
+# 切割宝典: the marked line waits for the hull over it to come off. Another marked line the player has
+# already opened goes first; else the hull piece to take off is marked (the outermost on the shortest way out).
+func _expose_wait(p, at: Vector2, dt: float) -> void:
+	expose_t -= dt
+	if expose_t > 0.0:
+		if expose_at.is_finite():
+			wait = "as_plan_expose"
+			wait_arg = expose_tag
+		return
+	expose_t = 0.6
+	var origin := str(p.get_meta("origin", p.tag))
+	for k in range(i + 1, steps.size()):
+		var o: Dictionary = steps[k]
+		if not bool(o.get("seg", false)):
+			continue
+		var q = game.world.key_piece(str(o.key))
+		if q == null or q.gone or q.body != null or str(q.get_meta("origin", q.tag)) == origin:
+			continue
+		var qa: Vector2 = game.world.frame(q) * Vector2(float(o.pl[0][0]), float(o.pl[0][1]))
+		if _cover(q, qa).is_empty():
+			steps.remove_at(k)
+			steps.insert(i, o)
+			cut_motion.clear()
+			_release_cutter()
+			wait = ""
+			expose_at = Vector2.INF
+			expose_t = 0.0
+			return
+	var c := _cover(p, at)
+	if c.is_empty():
+		expose_at = Vector2.INF
+		expose_piece = null
+		return
+	expose_piece = c.piece
+	expose_at = c.at
+	expose_tag = str(c.tag)
+	wait = "as_plan_expose"
+	wait_arg = expose_tag
+
+
+# the pieces still on the ship between a point and open space: {} when there is a clear way out,
+# else the outermost of the fewest in the way {at, tag}
+const CORRIDOR := 16.0           # px either side of the beam the cutter's body needs
+func _cover(p, at: Vector2) -> Dictionary:
+	var origin := str(p.get_meta("origin", p.tag))
+	var service = cutter_service()
+	# what it is mounted on is not in the way: taken off, the equipment would come loose with it
+	var mounts := {}
+	for j in game.world.joints_of(p):
+		mounts[j.b if j.a == p.id else j.a] = true
+	var best := {}
+	var best_n := 1 << 30
+	for k in 16:
+		var d := Vector2.from_angle(TAU * k / 16.0)
+		var n := 0
+		var last = null
+		var s := 6.0
+		var out := false
+		var tries := 0
+		while s < 1200.0:
+			var pt: Vector2 = at + d * s
+			var q = game.world.piece_at(pt, [], false)
+			if q != null and (mounts.has(q.id) or (q == p and s > 12.0)):
+				break
+			# the beam is thin; the cutter needs room for its body: the corridor either side counts too
+			# (past where the beam starts, s > 2 R)
+			var side = null
+			if s > 2.0 * CORRIDOR:
+				for off in [-CORRIDOR, CORRIDOR]:
+					var qs = game.world.piece_at(pt + d.orthogonal() * off, [], false)
+					if qs != null and qs != p and str(qs.get_meta("origin", qs.tag)) != origin and not mounts.has(qs.id):
+						side = qs
+						break
+			if q != null and q != p and str(q.get_meta("origin", q.tag)) != origin:
+				if q != last:
+					n += 1
+					last = q
+			elif side != null:
+				if side != last:
+					n += 1
+					last = side
+			elif q == null and service._open(pt):
+				# open space the berth's cutter can fly to (not a pocket shut inside the ship)
+				tries += 1
+				if service._reachable(pt):
+					out = true
+					break
+				if tries >= 3:
+					break
+				s += 30.0
+			s += 6.0
+		if not out:
+			continue
+		if n == 0:
+			return {}
+		if n < best_n:
+			best_n = n
+			var c := Vector2.ZERO
+			var poly: PackedVector2Array = game.world.world_poly(last)
+			for v in poly: c += v
+			best = {"piece": last, "at": c / maxf(1.0, poly.size()), "tag": last.tag if str(last.tag) != "" else str(last.key)}
+	return best
+
 
 # would cutting this much of the stroke from the step's outline leave it in more than one part
 static func _separates(basis: Array, prefix: Array, kerf: float) -> bool:

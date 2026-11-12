@@ -77,6 +77,6 @@ func _run() -> void:
 	print("GUARD %s %s %.2f t value %.0f fragile %.2f hazard '%s' → %s (%s)" % [tag, best.pieces[0].tag, best.total_mass(), best.pieces[0].value, best.pieces[0].fragile, best.pieces[0].hazard, why, g.txt(why) if why != "-" else ""])
 	Cap.save(root, "res://tests/out/multi_guard_%s.png" % tag)
 	if why != "-":
-		check(why.begins_with("as_mg_guard_") and g.txt(why).contains("（3）"), "the reason by the pointer: %s" % g.txt(why))
+		check(why.begins_with("as_mg_guard_") and g.txt(why).contains("按 X"), "the reason by the pointer: %s" % g.txt(why))
 	print("multi_guard_shot: %d checks, %d failed" % [checks, fails])
 	quit(1 if fails > 0 else 0)
