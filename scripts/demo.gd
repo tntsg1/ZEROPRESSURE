@@ -26,7 +26,7 @@ extends RefCounted
 #   Q4 A  feedback from the pause menu at any time (scripts/demo_feedback.gd)
 
 const URL := "https://playtest.stellarascensiongame.com"
-const VERSION := "0.9-公测-20261113"
+const VERSION := "0.9-公测-20261113b"
 const CODES := false                  # the 10-30 code gate; the public build registers the machine instead
 const LIMIT_S := 18000.0              # 5 hours (user 2026-11-11 "5个小时，或者是两个小时")
 const GRACE_S := 3 * 86400            # offline, a machine that checked in within this still plays
@@ -41,6 +41,14 @@ const SHIPS := ["tug", "pod", "s09", "gr7", "h22", "jd38", "qc30", "st40",
 
 static var forced := false            # tests turn it on without the export tag
 static var base_url := URL            # tests point the gate at a dead address (offline)
+# 2026-11-13: a second address for the same API, tried when the main one fails (a player's VPN/DNS/hosts
+# broke the custom domain). The worker's workers.dev address: server/playtest/wrangler.jsonc has
+# workers_dev=false, so it is empty until that is switched on and deployed (needs the owner's go-ahead).
+const FALLBACK_URL := ""
+static var fallback_url := FALLBACK_URL
+static var net_timeout := 8.0         # seconds per request
+static var net_tries := 3             # rounds (each round: main address, then the fallback)
+static var net_waits := [2.0, 4.0]    # pause before round 2 and 3 (tests shorten it)
 static var watch_in_tests := false    # tests let the end card come up
 static var gate_open := false         # the gate is up: the title answers nothing behind it
 
@@ -164,6 +172,31 @@ static func version_label() -> Label:
 
 
 # what an error from the server means, in words
+# what HTTPRequest's result code means for the player's screenshot
+static func net_kind(result: int) -> String:
+	match result:
+		HTTPRequest.RESULT_CANT_RESOLVE:
+			return w("DNS 解析失败", "DNS lookup failed")
+		HTTPRequest.RESULT_CANT_CONNECT, HTTPRequest.RESULT_CONNECTION_ERROR:
+			return w("无法建立连接", "could not connect")
+		HTTPRequest.RESULT_TIMEOUT:
+			return w("连接超时", "timed out")
+		HTTPRequest.RESULT_TLS_HANDSHAKE_ERROR:
+			return w("TLS/证书握手失败", "TLS handshake failed")
+		HTTPRequest.RESULT_NO_RESPONSE:
+			return w("服务器没有回应", "no response")
+		-1:
+			return w("返回内容不对", "bad reply")
+		-2:
+			return w("请求发不出去", "request not sent")
+	return w("网络错误", "network error")
+
+
+static func host_of(url: String) -> String:
+	var h := url.replace("https://", "").replace("http://", "")
+	return h.get_slice("/", 0)
+
+
 static func error_text(e: String) -> String:
 	match e:
 		"used":
@@ -177,7 +210,7 @@ static func error_text(e: String) -> String:
 		"invalid":
 			return w("激活码格式不对，应该是 ZP-XXXX-XXXX。", "That isn't a code: it looks like ZP-XXXX-XXXX.")
 		"offline":
-			return w("连不上服务器。公测版需要联网，请检查网络后再试。", "Can't reach the server. The public test needs the internet: check the connection and try again.")
+			return w("【占位】连不上服务器。公测版第一次启动需要联网，请按下面的步骤处理。", "[PLACEHOLDER] Can't reach the server. The public test needs the internet. Steps are below.")
 	return w("出了点问题（%s），请稍后再试。" % e, "Something went wrong (%s). Please try again." % e)
 
 

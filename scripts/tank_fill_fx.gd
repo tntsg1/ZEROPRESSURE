@@ -65,6 +65,11 @@ func _art_of(p) -> String:
 		alt = str(EQ.ext.BY_NAME[p.name_key])
 	elif EQ.BY_NAME.has(p.name_key):
 		alt = str(EQ.BY_NAME[p.name_key])
+	# 2026-11-13: the redrawn tanks (art_ships.gd) say which picture's liquid they take, and where its inside is
+	if alt != "" and EQ.ext != null and EQ.ext.has_method("liquid_art"):
+		var la: String = EQ.ext.liquid_art(alt, art)
+		if la != "":
+			return la
 	if alt != "":
 		art = alt
 	return art if ARTS.has(art) else ""
@@ -81,6 +86,11 @@ func _shapes(art: String, w: float, h: float) -> Array:
 				out.append(_capsule(Rect2(w * 0.02, h * 0.1, w * 0.96, h * 0.74), true))
 		"water":
 			out.append(_rect(Rect2(w * 0.06, h * 0.12, w * 0.84, h * 0.8), 0.06))
+		_:
+			if EQ.ext != null and EQ.ext.has_method("liquid_rect"):
+				var lr: Array = EQ.ext.liquid_rect(art, w, h)
+				if not lr.is_empty():
+					out.append(_rect(lr[0], float(lr[1])))
 		"sphere_tank":
 			var rad: float = minf(w, h) * 0.44
 			var pts := PackedVector2Array()
@@ -317,7 +327,7 @@ func _find() -> void:
 		var shapes := _shapes(art, p.art_size.x, p.art_size.y)
 		for sh in shapes:
 			_tanks.append(_tank(str(vk), p, sh, p.art_xf, look, 1.0 / shapes.size(), PackedVector2Array(), ""))
-		if art == "water":
+		if art == "water" or (EQ.ext != null and EQ.ext.has_method("liquid_rect") and not EQ.ext.liquid_rect(art, p.art_size.x, p.art_size.y).is_empty()):
 			p.set_meta("liquid_live", true)
 			world.redraw_near([p])
 

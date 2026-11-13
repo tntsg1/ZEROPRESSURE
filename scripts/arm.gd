@@ -1,6 +1,7 @@
 class_name RecoveryArm
 extends Node2D
 const Crew = preload("res://scripts/crew.gd")
+const LoadMotion = preload("res://scripts/load_motion.gd")
 # The industrial recovery arm (berth upgrade, basic grade): a trolley on the
 # boom with a claw on a cable. It only ever takes loose scrap — a drifting
 # body of metal up to 1 t with no whole equipment in it, that the grapple is
@@ -68,7 +69,7 @@ func takes(b) -> bool:
 		return false
 	var assigned: bool = b.get_meta("arm_extraction",false) and queue.has(b)
 	if b.total_mass() > float(b.get_meta("arm_rated_t",MAX_T) if assigned else MAX_T): return false
-	if game.tools.held_body == b or b.get_meta("arm", false) or Crew.owns(b):
+	if game.tools.held_body == b or b.get_meta("arm", false) or Crew.owns(b) or LoadMotion.tied_skip(b):
 		return false
 	# just let go over the mouth: give the mouth a moment
 	if t - float(b.get_meta("arm_drop", -99.0)) < 5.0:
@@ -114,7 +115,8 @@ func _physics_process(dt: float) -> void:
 			for b in queue.duplicate():
 				if not is_instance_valid(b) or b.capture != null: queue.erase(b)
 			var candidates: Array = queue.duplicate()
-			if candidates.is_empty(): candidates = game.world.bodies.duplicate()
+			# hauling set to marks only (Shift+J): no more than the marked parts (公测 bug #8)
+			if candidates.is_empty(): candidates = game.world.bodies.duplicate() if not game.haul_manual() else game.world.bodies.filter(func(x): return is_instance_valid(x) and x.get_meta("manual_mark", false))
 			for b in candidates:
 				if takes(b):
 					body = b
@@ -156,10 +158,19 @@ func _physics_process(dt: float) -> void:
 			# the last leg is over the mouth: only once nothing else is dropping there
 			if path.size() == 1 and not game.mouth_take(zone, "arm"):
 				return
-			claw = claw.move_toward(path[0], SPEED * dt)
+			var nc := claw.move_toward(path[0], SPEED * dt)
+			# a cable to the ship holds the load, and the claw with it (公测 bug #8)
+			if not LoadMotion.tie_step(body, nc + off - body.global_position):
+				if LoadMotion.tied_long(body):
+					queue.erase(body)
+					LoadMotion.give_up_tied(game, body, claw)
+					_drop_it()
+				return
+			claw = nc
 			if claw.distance_to(path[0]) < 2.0:
 				path.pop_front()
 			body.global_position = claw + off
+			game.world.tow_after(body)
 			body.linear_velocity = Vector2.ZERO
 			body.angular_velocity = 0.0
 		"release":
@@ -197,7 +208,7 @@ func next_pick():
 			for q in queue:
 				if is_instance_valid(q) and q.capture == null:
 					candidates.append(q)
-			if candidates.is_empty(): candidates = game.world.bodies
+			if candidates.is_empty(): candidates = game.world.bodies if not game.haul_manual() else game.world.bodies.filter(func(x): return is_instance_valid(x) and x.get_meta("manual_mark", false))
 			for b in candidates:
 				if takes(b):
 					_pick_id = b.get_instance_id()

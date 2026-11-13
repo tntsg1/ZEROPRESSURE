@@ -40,6 +40,8 @@ func _run() -> void:
 	var keep := FileAccess.get_file_as_bytes(cf) if FileAccess.file_exists(cf) else PackedByteArray()
 	DirAccess.remove_absolute(cf)
 	Gt.base_url = "http://127.0.0.1:9"
+	Gt.net_timeout = 1.0
+	Gt.net_waits = [0.2, 0.2]
 	var t = load("res://scenes/title.tscn").instantiate()
 	root.add_child(t)
 	current_scene = t

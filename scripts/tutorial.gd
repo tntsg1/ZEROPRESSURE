@@ -493,6 +493,34 @@ func weld_targets() -> PackedVector2Array:
 	return points
 
 
+# 公测反馈 #12 (2026-11-13, "测量完不能换工具"): the step's target out of its tool's reach — a click on it
+# is refused for range and the old reading stays, so the step seems done and stuck. Said on the card
+# instead of the next step's line: how far still to go, and Q where the step can fly itself there.
+func far_hint() -> String:
+	if done or game == null or game.drone == null or not game.drone.alive:
+		return ""
+	var st := step()
+	var tg: Dictionary = st.get("target", {})
+	if not (tg.has("ctrl") or tg.has("piece") or tg.has("line")):
+		return ""
+	var tools: Array = st.get("tools", [])
+	if tools.is_empty() or not int(tools[0]) in [1, 3, 4, 5]:
+		return ""
+	var at := target_pos()
+	if at == Vector2.INF:
+		return ""
+	var need: float = game.drone.global_position.distance_to(at) - game.tools.reach(int(tools[0])) * 0.9
+	if need <= 0.0:
+		return ""
+	var m := maxi(1, ceili(need / Geom.M))
+	var q := _tw("（按 Q 自动飞过去）", " (Q FLIES YOU THERE)") if st.has("auto") else ""
+	return _tw("【占位：太远了，先飞近 %d m 再操作%s】", "[PLACEHOLDER: TOO FAR, FLY %d m CLOSER FIRST%s]") % [m, q]
+
+
+func _tw(zh: String, en: String) -> String:
+	return zh if Txt.zh else en
+
+
 func target_pos() -> Vector2:
 	var tg: Dictionary = step().get("target", {})
 	var w = game.world

@@ -38,7 +38,7 @@ func _ready() -> void:
 	_c.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_c.mouse_filter = Control.MOUSE_FILTER_STOP
 	_c.draw.connect(_draw_scene)
-	_c.gui_input.connect(func(ev): if ev is InputEventMouseButton and ev.pressed: finish())
+	_c.gui_input.connect(func(ev): if ev is InputEventMouseButton and ev.pressed and t >= SKIP_AFTER: finish())
 	add_child(_c)
 
 
@@ -49,7 +49,13 @@ func _process(dt: float) -> void:
 		finish()
 
 
+# 公测反馈 #19 (2026-11-13): the press that hooked the cable (or a click right after) never skips the tow home
+const SKIP_AFTER := 1.5
+
+
 func _unhandled_input(ev: InputEvent) -> void:
+	if t < SKIP_AFTER:
+		return
 	if ev is InputEventKey and ev.pressed and not ev.echo and ev.physical_keycode in [KEY_ESCAPE, KEY_SPACE, KEY_ENTER]:
 		get_viewport().set_input_as_handled()
 		finish()
@@ -159,3 +165,8 @@ func _draw_scene() -> void:
 		ci.draw_string(font, Vector2(80, y), txt.substr(0, n), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Pal.ink(0.9 * a))
 		y += 34.0
 	ci.draw_string(Fonts.get_font("Regular"), Vector2(s.x - 80, s.y - 40), Ops.w("Esc 跳过", "Esc to skip"), HORIZONTAL_ALIGNMENT_RIGHT, -1, 14, Pal.ink(0.4 * a))
+	# 公测 #19: after the prologue's cable, the tow home says what just happened and what comes next
+	if Career.usable() and bool(Career.data.get("prologue_done", false)):
+		var hk := _k(0.2, 0.8) * (1.0 - _k(LENGTH - 1.5, LENGTH - 0.5))
+		var hl := Ops.w("【占位：挂缆成功，拖船把它拖回七号坞。到了就开始拆第一艘船】", "[PLACEHOLDER: CABLE ON. THE TUG TOWS IT HOME TO BERTH 07; THERE YOU STRIP YOUR FIRST SHIP]")
+		ci.draw_string(font, Vector2(0, 110), hl, HORIZONTAL_ALIGNMENT_CENTER, s.x, 26, Pal.tint(UiSkin.ACCENT, hk, 1.2))

@@ -26,6 +26,7 @@ var game
 var post: CanvasLayer
 var post_mat: ShaderMaterial
 var laser: PointLight2D
+var _laser_scale0 := 1.0
 var lamp: PointLight2D
 var furnace: PointLight2D
 var floods: Array = []
@@ -125,6 +126,7 @@ func setup(g) -> void:
 		_soft = _radial(256)
 		_cone = _cone_tex(128, 256)
 	laser = _light(Color(1.0, 0.55, 0.22), 1.9, 5.0)
+	_laser_scale0 = laser.texture_scale
 	lamp = _light(Color(0.75, 0.88, 1.0), 0.55, 4.5)
 	furnace = _light(Color(1.0, 0.45, 0.16), 1.2, 9.0)
 	for i in Dock.FLOODS.size():
@@ -271,6 +273,11 @@ func _process(dt: float) -> void:
 		laser.position = tools.front
 		laser.color = preload("res://scripts/drone_skins.gd").lheat(1.0, 1.0) if game.drone != null and game.drone.skin_id() != "arrowring" else Color(1.0, 0.55, 0.22)
 		laser.energy = 1.7 + 0.35 * sin(_t * 47.0) + 0.2 * sin(_t * 113.0)
+		# 公测反馈 #10: softer and paler, so the lit plates round the cut are not read as the guide's line
+		if preload("res://scripts/cutaway_light.gd").SOFT_ON:
+			laser.energy *= 0.5
+			laser.color = laser.color.lerp(Color(1.0, 0.97, 0.9), 0.65)
+			laser.texture_scale = _laser_scale0 * 0.6
 	# the drone's head lamp, a little ahead of it
 	var d = game.drone
 	lamp.enabled = high and d != null and d.alive and game.state == "play"

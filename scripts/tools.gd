@@ -83,14 +83,15 @@ var tunnel_fx: Node2D
 # the key strip's button; on by default once bought
 var body_tunnel: Node
 var slurp: Node2D               # tool 5's right button: the suction tube for what has leaked (slurp.gd)
-# 2026-11-11 排队拧 (Terminal.SHOP "wrench_queue"; user: "点一下之后可以马上点下一个，不用等第一个拧完"): with it
-# fitted, a fixing clicked while the wrench is busy joins a queue; the wrench takes them one after
-# another in the order clicked (the time per fixing as ever, the player need not wait on it). Only the
-# fixings clicked (the ganged head still adds only the aimed unit's own). Clicked again, or the right
-# button on it: out of the queue. Out of reach, the queue waits at that one until the drone is back;
-# another tool in hand, or the right button elsewhere, empties it.
-var wq: Array = []              # hover dicts of the fixings queued ("joint"), in the order clicked
-var wq_wait := false            # the next one is out of reach: waiting for the drone
+# 2026-11-13 同时拧 (Terminal.SHOP "wrench_queue", the id kept for old saves; user: "螺丝现在不是排队螺旋，
+# 而是我点完一个可以立即点下一个，两个可以同时螺旋，而不是排队"): with it fitted, a fixing clicked while the
+# wrench is busy starts turning at once beside the others, each with its own time, ring and finish, up to
+# PAR_MAX at a time (the one in `job` counted). Each is started by _start_job and finished by
+# game.do_wrench like any other, so every check on a fixing holds for each. Clicked again: nothing (it
+# turns already); the right button on one stops only that one; out of reach, that one stops; another
+# tool in hand, or the right button elsewhere, stops them all. Not fitted: one at a time, as ever.
+const PAR_MAX := 4
+var par: Array = []             # the wrench's jobs turning beside `job` (same shape as `job`)
 
 
 func tunnel_fitted() -> bool:
@@ -217,9 +218,9 @@ func set_tool(n: int, force: bool = false, by_key: bool = false) -> void:
 		else:
 			release_grab(false)
 	job = {}
-	if not wq.is_empty():
-		wq.clear()
-		game.say("as_wq_cleared", drone.global_position + Vector2(0, -44))
+	if not par.is_empty():
+		par.clear()
+		game.say("as_wp_cleared", drone.global_position + Vector2(0, -44))
 	tool = n
 	game.sfx.play("tool")
 
@@ -260,7 +261,7 @@ func _context() -> Array:
 func _context_step() -> void:
 	if not Txt.context or game.bot != null or tool == 2 or tool == 5 or tool == 6:
 		return
-	if cutting or not job.is_empty() or held_body != null or held_piece != null or lmb:
+	if cutting or not job.is_empty() or not par.is_empty() or held_body != null or held_piece != null or lmb:
 		return
 	var c := _context()
 	if c[1] == pin_key:
@@ -281,7 +282,7 @@ func step(dt: float) -> void:
 			_finish_cut()
 		release_grab(false)
 		job = {}
-		wq.clear()
+		par.clear()
 		hover = {}
 		queue_redraw()
 		add_node.queue_redraw()
@@ -317,7 +318,6 @@ func step(dt: float) -> void:
 			elif lmb_pressed and hover.get("ok", false) and job.is_empty():
 				_start_job()
 	_step_job(dt)
-	_wq_step()
 	queue_redraw()
 	add_node.queue_redraw()
 
@@ -574,7 +574,7 @@ func _start_job(tg: Dictionary = {}) -> void:
 				"ctrl":
 					dur = {"switch": 0.22, "remote": 0.22, "valve": 0.5, "door": 0.25, "hatch": 0.3, "jam": 0.9, "stop": 0.35, "socket": 0.45, "discharge": 0.45}.get(hv.ctrl.kind, 0.35)
 	if kind == "wrench" and hv.get("kind", "") == "joint":
-		extra = _joint_batch(hv.joint)
+		extra = _joint_batch(hv.joint).filter(func(e): return not wq_busy(e.joint))
 		if not extra.is_empty():
 			dur *= 1.0 + 0.28 * extra.size()
 	if kind == "wrench":
@@ -587,109 +587,80 @@ func _start_job(tg: Dictionary = {}) -> void:
 		game.say("wrench_multi", hv.pos, str(extra.size() + 1))
 
 
-# ---------------------------------------------------------------- 排队拧 (the wrench's queue)
+# ---------------------------------------------------------------- 同时拧 (several fixings at once)
 
 func wq_fitted() -> bool:
 	return game != null and game.has_upgrade("wrench_queue")
 
 
-func wq_index(j) -> int:
-	for i in wq.size():
-		if wq[i].joint == j:
-			return i
-	return -1
+# how many wrench jobs turn now (the one in `job` and those beside it)
+func wq_count() -> int:
+	return (0 if job.is_empty() else 1) + par.size()
 
 
-# a press with the wrench: on a queued fixing, out of the queue; on another while the wrench is busy,
-# into it. True when the press was the queue's
+func _has_joint(jb: Dictionary, j) -> bool:
+	if jb.is_empty():
+		return false
+	if jb.target.get("joint") == j:
+		return true
+	return jb.get("extra", []).any(func(e): return e.get("joint") == j)
+
+
+# a fixing some wrench job is turning now (itself, or ganged with one)
+func wq_busy(j) -> bool:
+	if _has_joint(job, j):
+		return true
+	return par.any(func(jb): return _has_joint(jb, j))
+
+
+# a press with the wrench on a fixing while it is busy: that one starts turning beside the rest.
+# True when the press was this one's
 func _wq_click() -> bool:
 	if tool != 4 or not lmb_pressed or not wq_fitted():
 		return false
 	if hover.get("kind", "") != "joint" or hover.get("joint") == null:
 		return false
 	var j = hover.joint
-	var i := wq_index(j)
-	if i >= 0:
-		wq.remove_at(i)
-		game.say("as_wq_cancel", world.joint_world(j) + Vector2(0, -30))
-		game.sfx.play("switch")
+	if wq_busy(j):
 		return true
 	if job.is_empty() or not hover.get("ok", false):
 		return false
-	# the one being turned now, or one the ganged head takes with it: already in hand
-	if job.target.get("joint") == j or job.get("extra", []).any(func(e): return e.get("joint") == j):
+	if wq_count() >= PAR_MAX:
+		game.say("as_wp_full", world.joint_world(j) + Vector2(0, -30), str(PAR_MAX))
+		game.sfx.play("deny")
 		return true
-	wq.append(hover.duplicate())
-	game.sfx.play("tool", world.joint_world(j), 0.6, 1.3)
+	# the same start as any job (its time, its ganged head), then set beside the one in hand
+	var keep := job
+	_start_job(hover)
+	par.append(job)
+	job = keep
 	return true
 
 
-# the next in the queue once the wrench is free (in reach); gone or covered ones dropped
-func _wq_step() -> void:
-	if wq.is_empty():
-		wq_wait = false
-		return
-	if tool != 4:
-		wq.clear()
-		return
-	wq = wq.filter(func(e): return e.joint.alive and not world.joint_covered(e.joint))
-	if wq.is_empty() or not job.is_empty():
-		return
-	var head: Dictionary = wq[0]
-	var p: Vector2 = world.joint_world(head.joint)
-	if not in_range(p):
-		if not wq_wait:
-			game.say("as_wq_wait", p + Vector2(0, -30))
-		wq_wait = true
-		return
-	wq_wait = false
-	wq.pop_front()
-	head.pos = p
-	_start_job(head)
-
-
-# right button on a queued fixing: out of the queue (true); elsewhere the queue goes with the job
+# the right button with the wrench: on a fixing that turns, only that one stops (true); elsewhere
+# all of them stop with the job (false: the caller clears `job`)
 func wq_rmb() -> bool:
-	if wq.is_empty():
+	if not wq_fitted():
 		return false
 	if hover.get("kind", "") == "joint" and hover.get("joint") != null:
-		var i := wq_index(hover.joint)
-		if i >= 0:
-			wq.remove_at(i)
-			game.say("as_wq_cancel", world.joint_world(hover.joint) + Vector2(0, -30))
+		var j = hover.joint
+		for jb in [job] + par:
+			if jb.is_empty() or not _has_joint(jb, j):
+				continue
+			if jb.target.get("joint") == j:
+				if jb == job:
+					job = {}
+				else:
+					par.erase(jb)
+			else:
+				jb["extra"] = jb.get("extra", []).filter(func(e): return e.get("joint") != j)
+			game.say("as_wp_cancel", world.joint_world(j) + Vector2(0, -30))
 			game.sfx.play("switch")
 			return true
-	wq.clear()
-	game.say("as_wq_cleared", drone.global_position + Vector2(0, -44))
+	if not par.is_empty():
+		par.clear()
+		game.say("as_wp_cleared", drone.global_position + Vector2(0, -44))
 	return false
-
-
-# the queue on the field: a numbered tag on each, a faint line in the order they will be taken
-func _draw_wq(z: float) -> void:
-	if wq.is_empty():
-		return
-	var font: Font = game.hud.font if game.hud != null and "font" in game.hud else ThemeDB.fallback_font
-	var prev: Vector2 = job.pos if not job.is_empty() else Vector2.INF
-	for i in wq.size():
-		var e: Dictionary = wq[i]
-		if not e.joint.alive:
-			continue
-		var p: Vector2 = world.joint_world(e.joint)
-		if prev != Vector2.INF:
-			_dashed_line(prev, p, Pal.ink(0.22), 1.0 / z)
-		prev = p
-		var wait: bool = wq_wait and i == 0
-		var col: Color = Pal.heat(0.95, 1.2) if wait else Pal.tint(Pal.AIR, 0.95, 1.2)
-		var c := p + Vector2(11.0, -11.0) / z
-		draw_set_transform(c, 0.0, Vector2(1.0 / z, 1.0 / z))
-		draw_circle(Vector2.ZERO, 8.0, Color(0.03, 0.032, 0.036, 0.9))
-		draw_arc(Vector2.ZERO, 8.0, 0.0, TAU, 20, col, 1.4, true)
-		var txt := str(i + 1)
-		var w := font.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 11).x
-		draw_string(font, Vector2(-w * 0.5, 4.0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, col)
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		# the fixing itself ringed
-		draw_arc(p, 6.0 / z, 0.0, TAU, 16, Pal.ink(0.55), 1.0 / z, true)
 
 
 func _target_pos(tg: Dictionary) -> Vector2:
@@ -705,34 +676,52 @@ func _target_pos(tg: Dictionary) -> Vector2:
 
 
 func _step_job(dt: float) -> void:
-	if job.is_empty():
+	if not job.is_empty():
+		var r := _advance(job, dt)
+		if r != 0:
+			var j := job
+			job = {}
+			if r == 2:
+				_finish_job(j)
+	if par.is_empty():
 		return
-	var tg: Dictionary = job.target
+	for jb in par.duplicate():
+		# a fixing gone meanwhile (cut free, or its piece taken): that wrench stops
+		if jb.target.get("joint") != null and not jb.target.joint.alive:
+			par.erase(jb)
+			continue
+		var r := _advance(jb, dt)
+		if r != 0:
+			par.erase(jb)
+			if r == 2:
+				_finish_job(jb)
+
+
+# one job a frame on: 0 still turning, 1 dropped (out of reach), 2 done
+func _advance(jb: Dictionary, dt: float) -> int:
+	var tg: Dictionary = jb.target
 	if tg.kind in ["piece", "batt", "lid"] and not tg.has("local"):
 		tg.local = world.frame(tg.piece).affine_inverse() * tg.pos
-	job.pos = _target_pos(tg)
-	if not in_range(job.pos):
-		game.say("out_of_range", job.pos)
-		# the queue's run: this one goes back to the head of it, and is taken again once in reach
-		if not wq.is_empty() and job.kind == "wrench" and tg.get("kind", "") == "joint" and tg.joint.alive:
-			wq.push_front(tg)
-		job = {}
-		return
-	job.t += dt
-	if job.kind == "wrench" and randf() < 0.35:
-		game.fx.sparks(job.pos, Vector2.from_angle(randf() * TAU), 1, Pal.ink(0.7, 1.3), 90.0, 0.2)
-	if job.t >= job.dur:
-		var j := job
-		job = {}
-		match j.kind:
-			"measure": game.do_measure(j.target)
-			"wrench":
-				game.do_wrench(j.target)
-				for e in j.get("extra", []):
-					if e.get("joint") != null and e.joint.alive:
-						game.do_wrench(e)
-			"hose": game.do_hose(j.target)
-			"deploy": game.gear.act(j.target)
+	jb.pos = _target_pos(tg)
+	if not in_range(jb.pos):
+		game.say("out_of_range", jb.pos)
+		return 1
+	jb.t += dt
+	if jb.kind == "wrench" and randf() < 0.35:
+		game.fx.sparks(jb.pos, Vector2.from_angle(randf() * TAU), 1, Pal.ink(0.7, 1.3), 90.0, 0.2)
+	return 2 if jb.t >= jb.dur else 0
+
+
+func _finish_job(j: Dictionary) -> void:
+	match j.kind:
+		"measure": game.do_measure(j.target)
+		"wrench":
+			game.do_wrench(j.target)
+			for e in j.get("extra", []):
+				if e.get("joint") != null and e.joint.alive:
+					game.do_wrench(e)
+		"hose": game.do_hose(j.target)
+		"deploy": game.gear.act(j.target)
 
 
 # ---------------------------------------------------------------- laser
@@ -1633,21 +1622,10 @@ func _draw() -> void:
 		var cl := poly.duplicate()
 		cl.append(poly[0])
 		FastDraw.polyline(self, cl, Pal.ink(0.75 if hover.ok else 0.3), lw * 1.6, true)
-	# job progress
-	if not job.is_empty():
-		var k: float = job.t / job.dur
-		var pp: Vector2 = job.pos
-		FastDraw.arc(self, pp, 14.0 / z, -PI / 2, -PI / 2 + TAU * k, 30, Pal.ink(0.95), 2.4 / z, true)
-		if job.kind == "wrench":
-			for i in 6:
-				var a := t * 9.0 + TAU * i / 6.0
-				draw_line(pp + Vector2.from_angle(a) * 5.0 / z, pp + Vector2.from_angle(a) * 9.0 / z, Pal.ink(0.8), 1.6 / z)
-		elif job.kind == "measure":
-			var from := drone.muzzle()
-			var tip := from.lerp(pp, Pal.ease_out(k * 1.6))
-			_dashed_line(from, tip, Pal.ink(0.7), lw)
-			FastDraw.circle(self, tip, 2.5 / z, Pal.ink(1.0))
-	_draw_wq(z)
+	# job progress (with 同时拧, each one turning has its own)
+	for jb in [job] + par:
+		if not jb.is_empty():
+			_draw_job(jb, z, lw)
 	# cursor
 	_cursor(z)
 	# 2026-11-10: a loose piece no hauling drone will take: why, by the pointer (hauler.refuse_reason)
@@ -1667,6 +1645,21 @@ func _draw() -> void:
 			cl2.append(poly2[0])
 			var pulse := 0.5 + 0.5 * sin(t * 10.0)
 			FastDraw.polyline(self, cl2, Pal.heat(0.5 + 0.4 * pulse, 1.3), lw * 2.0, true)
+
+
+func _draw_job(jb: Dictionary, z: float, lw: float) -> void:
+	var k: float = jb.t / jb.dur
+	var pp: Vector2 = jb.pos
+	FastDraw.arc(self, pp, 14.0 / z, -PI / 2, -PI / 2 + TAU * k, 30, Pal.ink(0.95), 2.4 / z, true)
+	if jb.kind == "wrench":
+		for i in 6:
+			var a := t * 9.0 + TAU * i / 6.0
+			draw_line(pp + Vector2.from_angle(a) * 5.0 / z, pp + Vector2.from_angle(a) * 9.0 / z, Pal.ink(0.8), 1.6 / z)
+	elif jb.kind == "measure":
+		var from := drone.muzzle()
+		var tip := from.lerp(pp, Pal.ease_out(k * 1.6))
+		_dashed_line(from, tip, Pal.ink(0.7), lw)
+		FastDraw.circle(self, tip, 2.5 / z, Pal.ink(1.0))
 
 
 func _cursor(z: float) -> void:

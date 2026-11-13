@@ -521,6 +521,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 	# 128 号 第 7 段: the contract card's Space / Enter are the card's (the tour ate the first press)
 	if game != null and game.contract_open:
 		return
+	# 公测反馈 #19: a press carried over from the scene before never skips the tour at once
+	if mouth_t < 1.5:
+		return
 	if (ev is InputEventKey and ev.pressed and not ev.echo) or (ev is InputEventMouseButton and ev.pressed):
 		mouth_t = MOUTH_S * MOUTHS.size()
 		get_viewport().set_input_as_handled()

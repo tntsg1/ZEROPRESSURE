@@ -34,6 +34,9 @@ static func half_extents(body) -> Vector2:
 # other carriers (the trade and furnace robots) keep their loads' collision and are still swept
 static func move(body, delta: Vector2) -> bool:
 	if delta.length_squared() < 0.00001: return true
+	# 公测 bug #8: a line to something fixed holds it (World.tie_allows)
+	if not tie_step(body, delta):
+		return false
 	var from: Transform2D = body.global_transform
 	if body.test_move(from,delta):
 		var hit := KinematicCollision2D.new()
@@ -59,7 +62,62 @@ static func move(body, delta: Vector2) -> bool:
 	body.global_position += delta
 	body.linear_velocity = Vector2.ZERO
 	body.angular_velocity = 0.0
+	if body.world != null:
+		body.world.tow_after(body)
 	return true
+
+
+# ---------------------------------------------------------------- tied loads (公测 bug #8, 2026-11-13)
+const TIED_GIVE_UP := 0.8      # s a machine pulls on a line that will not give before it sets the part down
+
+
+# may a machine move this load by delta (no line to something fixed stretched)? Keeps the time it has
+# been held back ("tied_since", physics frames) for tied_long
+static func tie_step(body, delta: Vector2) -> bool:
+	var w = body.world
+	if w != null and not w.tie_allows(body, delta):
+		if not body.has_meta("tied_since"):
+			body.set_meta("tied_since", Engine.get_physics_frames())
+		return false
+	if body.has_meta("tied_since"):
+		body.remove_meta("tied_since")
+	return true
+
+
+# held back long enough: the machine gives up on it
+static func tied_long(body) -> bool:
+	if body == null or not is_instance_valid(body) or not body.has_meta("tied_since"):
+		return false
+	return Engine.get_physics_frames() - int(body.get_meta("tied_since")) >= int(TIED_GIVE_UP * Engine.physics_ticks_per_second)
+
+
+# set down by a machine because a line held it: the machines leave it while its web is still anchored
+static func tied_skip(body) -> bool:
+	if body == null or not is_instance_valid(body) or not body.get_meta("tied_skip", false):
+		return false
+	if body.world != null and body.world.anchored(body):
+		return true
+	body.remove_meta("tied_skip")
+	return false
+
+
+# a machine lets a tied load go where it is: no damage, nothing torn; the machines skip it until it is
+# unplugged; the operator is told what holds it
+static func give_up_tied(game, body, at: Vector2) -> void:
+	var what := str(body.get_meta("tied_to", "?"))
+	let_go(body)
+	body.linear_velocity = Vector2.ZERO
+	body.angular_velocity = 0.0
+	body.set_meta("tied_skip", true)
+	body.remove_meta("tied_since")
+	body.set_meta("arm", false)
+	body.remove_meta("arm_by")
+	if game != null:
+		var last := float(body.get_meta("tied_said", -100.0))
+		var now := Time.get_ticks_msec() / 1000.0
+		if now - last > 6.0:
+			body.set_meta("tied_said", now)
+			game.say("haul_tied", at, what)
 
 # out of the hook or the claw: its collision back. Let go inside the ship it eases out of it the way
 # a piece born overlapping does (FreeBody.start_ghost); inside anything else, gently (calm).

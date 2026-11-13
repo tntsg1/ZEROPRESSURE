@@ -1009,6 +1009,106 @@ func tether_path(l) -> PackedVector2Array:
 	return out
 
 
+# ---------------------------------------------------------------- tied loads
+# 公测 bug #8 (2026-11-13, a player: "电线没拔，被搬运无人机直接拖走，电线全断损坏62%"; the user's rule):
+# a machine carrying a part that still has cables or hoses on it — if everything at their other ends
+# is loose too, the lot comes along (the lines tow it, nothing tears, nothing is docked); if the web
+# reaches anything fixed in the ship, the line comes taut and holds, and the machine sets the part
+# down and goes to other work (LoadMotion.tie_step / tied_long). The operator's grapple is unchanged.
+const TIE_SLACK := 0.15 * 48.0
+
+
+# the lines from b's pieces to anything not on b: [line, b's piece, the other piece]
+func lines_out(b) -> Array:
+	var out: Array = []
+	if b == null or not is_instance_valid(b):
+		return out
+	for p in b.pieces:
+		for l in lines_of(p):
+			var o = pieces.get(l.b if l.a == p.id else l.a)
+			if o != null and not o.gone and o.body != b:
+				out.append([l, p, o])
+	return out
+
+
+# does b's web of lines reach anything fixed: the ship itself, or a body held fast that no machine holds
+func anchored(b) -> bool:
+	var seen := {b.get_instance_id(): true}
+	var stack: Array = [b]
+	while not stack.is_empty():
+		var x = stack.pop_back()
+		for e in lines_out(x):
+			var ob = e[2].body
+			if ob == null or not is_instance_valid(ob):
+				return true
+			if ob.freeze and not ob.get_meta("arm", false):
+				return true
+			if not seen.has(ob.get_instance_id()):
+				seen[ob.get_instance_id()] = true
+				stack.append(ob)
+	return false
+
+
+# a machine moving b by delta: false when that would stretch a line of an anchored web past its length
+# (then b says what holds it: "tied_to", the part's tag)
+func tie_allows(b, delta: Vector2) -> bool:
+	var fixed := -1
+	for e in lines_out(b):
+		var l = e[0]
+		var p = e[1]
+		var end := 0 if l.a == p.id else 1
+		var mine := line_end_world(l, end)
+		var other := line_end_world(l, 1 - end)
+		var now := mine.distance_to(other)
+		var rest: float = l.get_meta("rest", now)
+		var after := (mine + delta).distance_to(other)
+		if after <= rest + TIE_SLACK or after <= now:
+			continue
+		if fixed < 0:
+			fixed = 1 if anchored(b) else 0
+		if fixed == 1:
+			b.set_meta("tied_to", str(p.tag) if str(p.tag) != "" else Txt.piece_name(p))
+			return false
+	return true
+
+
+# after a machine moved b: the loose parts on its lines come along, each pulled to its line's length
+func tow_after(b) -> void:
+	var dt := maxf(get_physics_process_delta_time(), 1.0 / 240.0)
+	var seen := {b.get_instance_id(): true}
+	var stack: Array = [b]
+	while not stack.is_empty():
+		var x = stack.pop_back()
+		for e in lines_out(x):
+			var ob = e[2].body
+			if ob == null or not is_instance_valid(ob) or seen.has(ob.get_instance_id()):
+				continue
+			seen[ob.get_instance_id()] = true
+			stack.append(ob)
+			if ob.freeze:
+				continue
+			var l = e[0]
+			var end := 0 if l.a == e[1].id else 1
+			var a := line_end_world(l, end)
+			var c := line_end_world(l, 1 - end)
+			var d := a.distance_to(c)
+			var rest: float = l.get_meta("rest", d)
+			ob.set_meta("towed_f", Engine.get_physics_frames())
+			if d > rest:
+				var n := (a - c) / d
+				ob.linear_velocity = (n * (d - rest) / dt * 0.6 + x.linear_velocity).limit_length(900.0)
+				ob.angular_velocity *= 0.9
+
+
+# a body a machine has hold of, or one it is towing: its lines don't tear (they hold or they tow)
+func _machine_web(b) -> bool:
+	if b == null or not is_instance_valid(b):
+		return false
+	if b.freeze and b.get_meta("arm", false):
+		return true
+	return int(b.get_meta("towed_f", -100)) >= Engine.get_physics_frames() - 30
+
+
 func _check_tethers() -> void:
 	if tethers.is_empty():
 		return
@@ -1032,6 +1132,9 @@ func _check_tethers() -> void:
 			# gives doesn't tear it); only a steady pull (the grapple) stretches it to the plug
 			_tether_hold(pa.body, ea, eb)
 			_tether_hold(pb.body, eb, ea)
+			continue
+		# a machine's load, or what it tows: held, never torn (bug #8)
+		if _machine_web(pa.body) or _machine_web(pb.body):
 			continue
 		tethers.erase(l)
 		# the end that tears: the device's plug if one end is intact equipment, else the end
@@ -1070,6 +1173,14 @@ func _draw_tethers() -> void:
 			continue
 		var path := tether_path(l)
 		_draw_line_path(tether_layer, l, path, 1.0)
+		# a machine pulling on a line that will not give: drawn taut and hot (bug #8)
+		var pa2 = pieces.get(l.a)
+		var pb2 = pieces.get(l.b)
+		for q2 in [pa2, pb2]:
+			if q2 != null and q2.body != null and is_instance_valid(q2.body) and q2.body.has_meta("tied_since"):
+				var pulse := 0.55 + 0.45 * sin(Time.get_ticks_msec() / 70.0)
+				tether_layer.draw_polyline(path, Pal.heat(0.9 * pulse, 1.8), 2.2, true)
+				break
 		# the plugs at its ends: what still holds it, seen
 		for q in [path[0], path[path.size() - 1]]:
 			tether_layer.draw_rect(Rect2(q - Vector2(2.4, 2.4), Vector2(4.8, 4.8)), Pal.ink(0.75))

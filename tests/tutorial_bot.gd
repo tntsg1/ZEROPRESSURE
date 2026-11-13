@@ -394,6 +394,29 @@ func _cut_welds(ta: String, tb: String) -> void:
 			_say("weld cut %d: %d welds left, drone %s line %s tool %d" % [attempt, left, game.drone.global_position / M, [ln[0] / M, ln[1] / M] if not ln.is_empty() else [], game.tools.tool])
 
 
+# 公测反馈 (2026-11-13): the course's keys pressed for real, through the viewport (a focused control may
+# take a key before the game does — that is what stuck a player at "按 Tab 打开工程图")
+func _key(code: Key) -> void:
+	var ev := InputEventKey.new()
+	ev.physical_keycode = code
+	ev.keycode = code
+	ev.pressed = true
+	root.get_viewport().push_input(ev)
+	await _frames(2)
+	var up := InputEventKey.new()
+	up.physical_keycode = code
+	up.keycode = code
+	root.get_viewport().push_input(up)
+	await _frames(2)
+
+
+# as a player who clicked "查看整套教程" first: that button holds the focus
+func _clicked_overview() -> void:
+	for n in game.get_children():
+		if n is TutorialHud and n.overview_button != null and n.overview_button.is_visible_in_tree():
+			n.overview_button.grab_focus()
+
+
 func _mark(l: int) -> void:
 	_say("lesson %d done" % l)
 
@@ -478,9 +501,11 @@ func _lesson1() -> void:
 	await _frames(40)
 	bot.hold = false
 	await _think()
-	game.drone.assist = false
+	await _key(KEY_F)
 	await _frames(60)
-	game.drone.assist = true
+	await _key(KEY_F)
+	if not game.drone.assist:
+		_say("assist: F did not reach the game")
 	await _think()
 	await _tool(1)
 	var cov = _piece("P-001")
@@ -489,9 +514,12 @@ func _lesson1() -> void:
 	if _step_is("find"):
 		_say("find: tool %d hover %s readings %s drone %s aim %s at %s vis %s allowed %s contract %s" % [game.tools.tool, game.tools.hover.get("kind", "-"), game.sys.readings.keys(), game.drone.global_position / M, game.tools.aim / M, game.world.pieces_at(game.tools.aim).map(func(q): return q.tag), game.tools._visible(game.tools.aim), game.tutorial.tool_allowed(1), game.contract_open])
 	await _think()
-	game.blueprint.toggle()
+	_clicked_overview()
+	await _key(KEY_TAB)
+	if not game.blueprint.on:
+		_say("blueprint: Tab did not reach the game (focus %s)" % str(root.get_viewport().gui_get_focus_owner()))
 	await _frames(int(3.0 * 60))
-	game.blueprint.toggle()
+	await _key(KEY_TAB)
 	await _until(func(): return tut.lesson_i >= 2, 20.0)
 	_mark(1)
 
@@ -593,9 +621,11 @@ func _lesson3() -> void:
 	await _think()
 	tut.pick("b")
 	await _think()
-	game.blueprint.toggle()
+	await _key(KEY_TAB)
+	if not game.blueprint.on:
+		_say("blueprint: Tab did not reach the game (lesson 3)")
 	await _frames(int(4.0 * 60))
-	game.blueprint.toggle()
+	await _key(KEY_TAB)
 	await _think()
 	await _tool(4)
 	if chaos:

@@ -44,6 +44,9 @@ func _ready() -> void:
 	overview_button.position = OVERVIEW_RECT.position
 	overview_button.size = OVERVIEW_RECT.size
 	overview_button.pressed.connect(open_overview)
+	# 公测反馈 (2026-11-13, "按步骤到 tab 打开工程图然后就继续不了"): once clicked, a focused button took Tab as
+	# "next control" and the game never saw it — the course's own keys are never a button's
+	overview_button.focus_mode = Control.FOCUS_NONE
 	c.add_child(overview_button)
 	fadd = Control.new()
 	fadd.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -398,7 +401,11 @@ func _task_list() -> void:
 		var cb: Dictionary = lay.cb
 		c.draw_rect(Rect2(x, ry - 24, 5, maxf(32.0, cb.h - cb.asc + 24.0)), Pal.heat(1.0, 1.0))
 		_para(font_b, tut.text(cur.text), Vector2(x + 18 + (1.0 - pop) * 10.0, ry), cb, Pal.ink(0.98 * pop + 0.02))
-		if tut.lockstep() and si + 1 < steps.size():
+		# 公测 #12: too far for the step's tool — said in the next step's place, in the accent
+		var far: String = tut.far_hint()
+		if far != "":
+			_text(clip(font, far, STEP_W - 18.0, 17), Vector2(x + 18, lay.ny + (ry - (y + dy + 140.0))), 17, Pal.heat(0.95, 1.3))
+		elif tut.lockstep() and si + 1 < steps.size():
 			var nt: String = game.txt("tut_next_prefix") + tut.text(steps[si + 1].text)
 			_text(clip(font, nt, STEP_W - 18.0, 17), Vector2(x + 18, lay.ny + (ry - (y + dy + 140.0))), 17, Pal.ink(0.45))
 	# stuck: the step's hint on the card (it used to be Liang's line on the radio, which is off now)

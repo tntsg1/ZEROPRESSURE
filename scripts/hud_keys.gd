@@ -117,8 +117,14 @@ func _fn_list() -> Array:
 		var tb: bool = g.tools.body_tunnel != null and g.tools.body_tunnel.fitted()
 		out.append({"a": "tunnel_body", "s": w("机体", "BODY"), "n": w("量子隧穿·机体（无人机穿墙）", "Quantum tunnel: the drone itself"), "grp": 0, "ok": tb, "why": w("还没装机体隧穿", "Not fitted"), "on": tb and g.tools.body_tunnel.active()})
 	out.append({"a": "zone", "s": w("禁区", "ZONE"), "n": w("划禁区", "Keep-out zone"), "grp": 0, "ok": g.has_upgrade("zones"), "why": w("还没学会划区", "Not learnt yet"), "on": false})
+	# 公测反馈 #15: every reading tag put away at once (each also has its own ×)
+	var tags: int = g.hud.tags_shown() if g.hud != null and g.hud.has_method("tags_shown") else 0
+	out.append({"a": "clear_reads", "s": Txt.t("as_rd_key"), "n": Txt.t("as_rd_key_n"), "grp": 0, "ok": tags > 0, "why": Txt.t("as_rd_key_why"), "on": false})
 	out.append({"a": "mouth", "s": w("回收口", "MOUTH"), "n": w("回收口挪到这里", "Mouth over here"), "grp": 1, "ok": true, "why": "", "on": false})
 	out.append({"a": "auto", "s": (w("机器开", "RUNNING") if run else w("机器停", "STOPPED")) if any_machine else w("机器", "MACHINES"), "n": w("船坞机器启停", "Berth machines on / off"), "grp": 1, "ok": any_machine, "why": w("船坞里还没有机器", "No machines here"), "on": run})
+	# 公测 bug #8: what the haulers take, by themselves or the marked only (Shift+J, beside J)
+	var manual: bool = g.has_method("haul_manual") and g.haul_manual()
+	out.append({"a": "haul_mode", "k": "Shift+J", "s": w("只搬标记", "MARKED") if manual else w("自动搬", "AUTO"), "n": w("搬运：自动 / 只搬标记", "Hauling: auto / marked only"), "grp": 1, "ok": any_machine, "why": w("船坞里还没有机器", "No machines here"), "on": not manual})
 	out.append({"a": "mark", "k": w("右键", "RMB"), "s": w("标记", "MARK"), "n": w("标记给搬运机", "Mark for the haulers"), "grp": 1, "ok": haul > 0, "why": w("船坞里还没有搬运机", "No haulers here"), "on": false})
 	out.append({"a": "tow", "s": w("牵引", "TOW"), "n": w("作业艇牵引", "Tow (work boat)"), "grp": 1, "ok": boat, "why": w("坐上作业艇才能牵引", "Board the work boat"), "on": false})
 	out.append({"a": "port", "s": w("全景", "PORT"), "n": w("港口全景", "Port view"), "grp": 2, "ok": port, "why": w("回到自家港口后可用", "At your own port"), "on": false})
@@ -205,6 +211,10 @@ func _input(ev: InputEvent) -> void:
 
 # a key clicked: its real shortcut, pressed and let go (what the key on the keyboard does)
 func _send(action: String) -> void:
+	if action == "haul_mode":
+		if game.has_method("toggle_haul_mode"):
+			game.toggle_haul_mode()
+		return
 	var codes: Array = Keys.codes(action)
 	if codes.is_empty() or int(codes[0]) <= 0 or action == "mark":
 		if action == "mark" and game.hud != null:

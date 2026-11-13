@@ -1178,8 +1178,8 @@ func _account(dt: float, rdt: float) -> void:
 		k = "cut"
 	elif tools.held_body != null or tools.held_piece != null:
 		k = "haul"
-	elif not tools.job.is_empty():
-		k = "measure" if tools.job.kind == "measure" else "maintain"
+	elif not tools.job.is_empty() or not tools.par.is_empty():
+		k = "measure" if tools.job.get("kind", "") == "measure" else "maintain"
 	elif drone.alive and drone.linear_velocity.length() > 20.0:
 		k = "fly"
 	time_by[k] = float(time_by.get(k, 0.0)) + sec
@@ -1208,6 +1208,10 @@ func _read_input() -> void:
 	var lmb: bool = b.get("lmb", Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT))
 	if modal_release:
 		if not lmb: modal_release = false
+		lmb = false
+	# 公测反馈 #15: a reading tag's × takes the click (and the rest of that press) from the tools
+	if lmb and not prev_lmb and hud != null and hud.tag_close_at(hud.pointer_screen()):
+		modal_release = true
 		lmb = false
 	var blocked: bool = menu_open or contract_open or paused_sim or console_ui != null or (bot == null and hud.pointer_over_ui())
 	# the press that readied the ring (on its slot) must let go before one can fire it
@@ -1361,11 +1365,17 @@ func _unhandled_input(ev: InputEvent) -> void:
 			"contract": open_contract()
 			"starmap": open_star_map("find")
 			"log": hud.show_log = not hud.show_log
+			"clear_reads": hud.clear_tags()
 			"port":
 				if career() and in_berth() and state == "play":
 					port_view = not port_view
 					sfx.play("switch")
-			"auto": toggle_auto()
+			"auto":
+				# Shift+J: auto / marks only (公测 bug #8); J alone: every machine on or off
+				if ev is InputEventKey and ev.shift_pressed:
+					toggle_haul_mode()
+				else:
+					toggle_auto()
 			"multi": tools.toggle_multi(ev is InputEventKey and ev.shift_pressed)
 			"tow":
 				if boat_tow != null and boat != null and boat.aboard:
@@ -1474,7 +1484,7 @@ func _unhandled_input(ev: InputEvent) -> void:
 			arm_ring(false)
 		elif rmb_down and rmb_moved < 10.0 and state == "play" and not menu_open and not contract_open and not (tools.slurp != null and tools.slurp.took_press()):
 			# (a press held long enough with the hose in hand was its suction tube's, not a click: slurp.gd)
-			# 排队拧: on a queued fixing it takes only that one out of the wrench's queue (tools.wq_rmb)
+			# 同时拧: on a fixing that turns it stops only that one; elsewhere all stop (tools.wq_rmb)
 			if tools.tool == 4 and tools.wq_rmb():
 				rmb_down = false
 				return
@@ -6030,6 +6040,34 @@ func drone_near(at: Vector2, r: float, going: Vector2 = Vector2.ZERO) -> bool:
 	if d.length() >= r:
 		return false
 	return going == Vector2.ZERO or d.dot(going - at) > 0.0
+
+
+# 公测 bug #8 (2026-11-13, the user's rule): the hauling machines either fetch every loose part by
+# themselves ("auto", as before, the default — the user's own wish of 2026-11-11 and Jev 0.90) or only
+# what the operator marked ("manual"). Kept in the career; outside one (training, a dev job) auto.
+func haul_manual() -> bool:
+	if not career() or not Career.usable():
+		return _haul_manual_local
+	return str(Career.data.get("haul_mode", "auto")) == "manual"
+
+
+var _haul_manual_local := false
+
+
+func toggle_haul_mode() -> void:
+	var manual := not haul_manual()
+	if career() and Career.usable():
+		Career.data.haul_mode = "manual" if manual else "auto"
+		Career.save()
+	else:
+		_haul_manual_local = manual
+	if manual:
+		# what the machines took by themselves goes back; what was marked they keep on with
+		for h in haulers():
+			if h.body != null and is_instance_valid(h.body) and not h.body.get_meta("manual_mark", false) and h.auto_pickup:
+				h.halt()
+	say("haul_mode_manual" if manual else "haul_mode_auto", drone.global_position + Vector2(0, -44))
+	sfx.play("switch")
 
 
 # the automation key: every machine of the berth stops where it is, or goes on

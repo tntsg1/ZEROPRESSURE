@@ -67,6 +67,8 @@ func _run() -> void:
 	check(await _wait_gate(g2) == "passed", "the next start checks in and goes straight in")
 	# offline: in within three days of the last check-in, out after
 	Gt.base_url = "http://127.0.0.1:9"
+	Gt.net_timeout = 1.0
+	Gt.net_waits = [0.2, 0.2]
 	var g3 := _gate()
 	check(await _wait_gate(g3) == "passed", "offline a day later: still in")
 	var cf := ConfigFile.new()

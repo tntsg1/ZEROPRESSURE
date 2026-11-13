@@ -10,6 +10,9 @@ const GuideMark = preload("res://scripts/guide_mark.gd")
 const STEPS := ["fly", "brake", "measure", "cut", "clear", "tow"]
 const EYE := Vector2(15.5, 1.3)       # m, ship-local: the tow eye on the stern frame
 const NEAR := 9.0                     # m: "at the hulk"
+# 公测反馈 #21 (2026-11-13, "抵达位置后并没有判定抵达位置"): the cable goes on within this of the tow eye —
+# the ring on screen is drawn at this very radius, the prompt shows inside it, a press outside says how far
+const TOW_R := 3.0
 var game
 var step := 0
 var done := false
@@ -136,11 +139,35 @@ func mast_clear() -> bool:
 
 # ---------------------------------------------------------------- the steps
 
+# 公测反馈 #10 (2026-11-13, a player: "切除弯曲的那跟杆子连接处并未高亮，反而任务指示的是一个空的位置……一旦使用
+# 激光进行试探就会弹出警报"): while the mast is still welded on it has no body of its own, and the cut step's mark
+# fell back to the tow eye — an empty spot. Now it stands on the welds themselves (MARK_ON false: as before)
+static var MARK_ON := true
+
+
+# where the mast is held to the hulk: its welds (joints) in the world, [] once it is free
+func welds() -> Array:
+	var m = _piece("MAST")
+	if m == null or mast_free():
+		return []
+	var out: Array = []
+	for j in game.world.joints_of(m):
+		out.append(game.world.joint_world(j))
+	return out
+
+
 func _target() -> Vector2:
 	match STEPS[step]:
 		"fly", "brake", "measure":
 			return hulk_centre()
 		"cut", "clear":
+			if MARK_ON and STEPS[step] == "cut":
+				var ws := welds()
+				if not ws.is_empty():
+					var c := Vector2.ZERO
+					for q in ws:
+						c += q
+					return c / ws.size()
 			var m = _piece("MAST")
 			return m.body.global_position if m != null and m.body != null else eye()
 	return eye()
@@ -163,7 +190,10 @@ func _passed(dt: float) -> bool:
 		"clear":
 			return mast_clear()
 		"tow":
-			var ok: bool = _use and d.global_position.distance_to(eye()) < 2.5 * Geom.M
+			var dist: float = d.global_position.distance_to(eye())
+			var ok: bool = _use and dist < TOW_R * Geom.M
+			if _use and not ok:
+				game.say_text(w("【占位：还差 %.1f m，再靠近拖缆眼】", "[PLACEHOLDER: %.1f m TO GO, CLOSER TO THE TOW EYE]") % ((dist / Geom.M) - TOW_R), d.global_position + Vector2(0, -48))
 			_use = false
 			return ok
 	return false
@@ -302,13 +332,27 @@ func _draw() -> void:
 	var k := 0.6 + 0.4 * sin(t * 5.0)
 	var big := 1.6 if step_t >= STUCK_2 else 1.0
 	GuideMark.target(self, at, z, UiSkin.ACCENT, t, "", 26.0, big)
-	if STEPS[step] == "cut":
+	if STEPS[step] == "cut" and MARK_ON:
+		# each weld lit where it is: the cut goes through these
+		for q in welds():
+			draw_circle(q, 0.3 * Geom.M, Pal.heat(k, 1.8))
+			draw_arc(q, (0.55 + 0.15 * k) * Geom.M, 0.0, TAU, 24, Pal.heat(0.6 * k, 1.4), 1.5 / z, true)
+	elif STEPS[step] == "cut":
 		var m = _piece("MAST")
 		if m != null and m.body != null:
 			var foot: Vector2 = game.world.frame(m) * (Vector2(15.05, -0.45) * Geom.M)
 			draw_circle(foot, 0.35 * Geom.M, Pal.heat(k, 1.8))
 	if STEPS[step] in ["clear", "tow"]:
-		draw_arc(eye(), 6.0 * Geom.M if STEPS[step] == "clear" else 0.8 * Geom.M, 0.0, TAU, 64, Pal.heat(0.5 * k, 1.3), 1.5 / z, true)
+		draw_arc(eye(), 6.0 * Geom.M if STEPS[step] == "clear" else TOW_R * Geom.M, 0.0, TAU, 64, Pal.heat(0.5 * k, 1.3), 1.5 / z, true)
+	# inside the tow ring: the key to press, by the drone (公测 #21)
+	if STEPS[step] == "tow" and game.drone != null and game.drone.global_position.distance_to(eye()) < TOW_R * Geom.M:
+		var tip := w("【占位：按 %s 挂缆】", "[PLACEHOLDER: PRESS %s TO HOOK ON]") % Keys.label("use")
+		var fs := int(22.0 / z)
+		var font := Fonts.get_font("Medium")
+		var tw := font.get_string_size(tip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var tp: Vector2 = game.drone.global_position + Vector2(-tw * 0.5, -46.0 / z)
+		draw_rect(Rect2(tp + Vector2(-10.0, -fs - 4.0) / Vector2(1, 1), Vector2(tw + 20.0 / z, fs + 14.0 / z)), Color(0.02, 0.024, 0.03, 0.85))
+		draw_string(font, tp, tip, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Pal.heat(1.0, 1.4))
 	# an arrow from the drone when the target is far
 	var d = game.drone
 	if d != null:

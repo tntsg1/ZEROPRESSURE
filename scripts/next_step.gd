@@ -19,8 +19,18 @@ static func w(zh: String, en: String) -> String:
 	return zh if Txt.zh else en
 
 
-static func on(_g) -> bool:
-	return Txt.hint_tier != "hardcore"
+static func on(g) -> bool:
+	return Txt.hint_tier != "hardcore" and not quiet(g)
+
+
+# 公测反馈 #19 (2026-11-13, "卡在两个教学里面到不了下一步"): while TUG-001's guide walks its own steps it is
+# the only voice — no "下一步" board line or mark beside its card; from its last step ("the rest is
+# yours") the next-step guide speaks again
+static func quiet(g) -> bool:
+	if g == null or not is_instance_valid(g) or not g.has_method("coach_on") or not g.coach_on():
+		return false
+	var co = g.coach
+	return int(co.step) < co.STEPS.find("rest")
 
 
 # 2026-11-10 推进节奏 (user: "只要有无人机拿住了，就开始下一个……放气管子插上去之后，就马上下一个……引导与
@@ -43,6 +53,8 @@ static var _memo: Dictionary = {}
 
 
 static func of(g) -> Dictionary:
+	if quiet(g):
+		return {}
 	if not PACE_ON or g == null or not on(g):
 		return _of(g)
 	var f := Engine.get_process_frames() + Engine.get_physics_frames() * 100000

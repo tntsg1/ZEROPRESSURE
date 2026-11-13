@@ -155,6 +155,8 @@ func pointer_over_ui() -> bool:
 	var m := c.get_local_mouse_position()
 	if keys_band != null and keys_band.pointer_over():
 		return true
+	if tag_x.has_area() and tag_x.has_point(m):
+		return true
 	return _toolbar_rect().has_point(m) or _item_at(m) != "" or (game.training and TutorialHud.overview_now.has_point(m)) or (game.codex_hud != null and game.codex_hud.pointer_over_card())
 
 
@@ -2092,14 +2094,87 @@ func _hint(s: Vector2) -> void:
 
 
 # readings: tags anchored on the ship
+# 公测反馈 #15 (2026-11-13, "详细信息不会消失…把螺栓、卡扣挡住"): each reading tag puts itself away
+# with the × beside it (shown under the pointer); the clear_reads key (Y) puts them all away. Put
+# away is the tag only: the reading stays (the part counts as measured), a new measure shows it again.
+var tag_x := Rect2()          # the hovered tag's ×, on screen ("" none)
+var tag_x_key := ""
+const TAG_X := 22.0
+var tag_rect_of := {}         # key -> the tag on screen, this frame (tests)
+static var tag_fix := true    # false: the old tags (no ×, no keeping off the bolts) for the pictures
+
+# the pointer on screen (the bot's aim in tests)
+func pointer_screen() -> Vector2:
+	if game != null and game.bot != null and game.bot.has("aim"):
+		return to_screen(game.bot.aim)
+	return c.get_local_mouse_position()
+
+
+func tag_close_at(p: Vector2) -> bool:
+	if tag_x_key == "" or not tag_x.has_area() or not tag_x.grow(2.0).has_point(p):
+		return false
+	var r = game.sys.readings.get(tag_x_key)
+	if r != null:
+		r.tag_off = true
+	tag_x = Rect2()
+	tag_x_key = ""
+	if game.sfx != null:
+		game.sfx.play("switch")
+	return true
+
+
+func clear_tags() -> int:
+	var n := 0
+	for k in game.sys.readings:
+		var r: Dictionary = game.sys.readings[k]
+		if not r.get("tag_off", false):
+			r.tag_off = true
+			n += 1
+	tag_x = Rect2()
+	tag_x_key = ""
+	show_hint(Txt.t("as_rd_cleared") % n if n > 0 else Txt.t("as_rd_none"))
+	return n
+
+
+func tags_shown() -> int:
+	var n := 0
+	for k in game.sys.readings:
+		if not game.sys.readings[k].get("tag_off", false):
+			n += 1
+	return n
+
+
+# the bolts, clips and latches on screen (and the connection under the pointer): tags keep off them
+func _tag_keep() -> Array:
+	var out: Array = []
+	var vr := Rect2(Vector2(-40, -40), size() + Vector2(80, 80))
+	for j in game.world.joints:
+		if j == null or not is_instance_valid(j):
+			continue
+		var sp := to_screen(game.world.joint_world(j))
+		if vr.has_point(sp):
+			out.append(Rect2(sp - Vector2(11, 11), Vector2(22, 22)))
+	var hv: Dictionary = game.tools.hover if game.tools != null else {}
+	if hv.get("kind", "") in ["joint", "connector", "lid", "batt", "ctrl"] and hv.has("pos"):
+		out.append(Rect2(to_screen(hv.pos) - Vector2(20, 20), Vector2(40, 40)))
+	return out
+
+
 func _world_tags() -> void:
 	var g = game
 	var w = g.world
-	var mouse := c.get_local_mouse_position()
+	var mouse := pointer_screen()
 	var hovered = null
 	var rects: Array = []
+	var keep: Array = []
+	var keep_done := false
+	var x_now := Rect2()
+	var x_key := ""
+	tag_rect_of = {}
 	for key in g.sys.readings:
 		var r: Dictionary = g.sys.readings[key]
+		if r.get("tag_off", false):
+			continue
 		var anchor := Vector2.INF
 		if r.has("ctrl"):
 			if not w.ctrl_alive(r.ctrl):
@@ -2140,23 +2215,39 @@ func _world_tags() -> void:
 		var off := Vector2(16, -26)
 		if key.ends_with("/T") or key.ends_with("/V"):
 			off = Vector2(16, -6)
-		var pos := sp + off
 		var tw := _tw(label, 13) + _tw(val, 15, font_b) + 30.0
-		# clear of every tag already placed: step up above whichever it hits, a few times over
-		for tries in 8:
-			var hit := false
-			for prev in rects:
-				if prev.grow(3.0).intersects(Rect2(pos - Vector2(0, 16), Vector2(tw, 22))):
-					pos.y = prev.position.y - 9.0
-					hit = true
-			if not hit:
+		if not keep_done and tag_fix:
+			keep = _tag_keep()
+			keep_done = true
+		# 公测反馈 #15: off the bolts and clips (and the connection under the pointer) — the usual
+		# place first, then below, then to the left; the first one clear of them wins
+		var pos := sp + off
+		var first_pos := Vector2.INF
+		for o in [off, Vector2(16, 34), Vector2(-16 - tw, off.y), Vector2(-16 - tw, 34), Vector2(16, off.y - 34)]:
+			var pp: Vector2 = sp + o
+			# clear of every tag already placed: step up above whichever it hits, a few times over
+			for tries in 8:
+				var hit := false
+				for prev in rects:
+					if prev.grow(3.0).intersects(Rect2(pp - Vector2(0, 16), Vector2(tw + TAG_X, 22))):
+						pp.y = prev.position.y - 9.0
+						hit = true
+				if not hit:
+					break
+			if not first_pos.is_finite():
+				first_pos = pp
+			var rr0 := Rect2(pp - Vector2(0, 16), Vector2(tw + TAG_X, 22))
+			if not keep.any(func(z): return rr0.intersects(z)):
+				pos = pp
 				break
+			pos = first_pos
 		var rect := Rect2(pos - Vector2(0, 16), Vector2(tw, 22))
 		# 117 号 (Q5 A): out of the HUD's way, the leader stretching back to the reading
 		var cl := clear_of(rect)
 		pos += cl[0]
 		rect.position += cl[0]
-		rects.append(rect)
+		rects.append(Rect2(rect.position, rect.size + Vector2(TAG_X, 0)))
+		tag_rect_of[key] = rect
 		var pop := Pal.back(clampf(age / 0.25, 0.0, 1.0), 2.0)
 		var a: float = (1.0 if not stale else 0.5) * cl[1]
 		c.draw_line(sp, pos + Vector2(0, 6), Pal.ink(0.3 * a), 1.0, true)
@@ -2174,8 +2265,21 @@ func _world_tags() -> void:
 			_text(val, Vector2(vx, pos.y + 1), 15, vcol, font_b)
 			if stale:
 				c.draw_line(Vector2(vx - 2, pos.y - 5), Vector2(vx + _tw(val, 15, font_b) + 2, pos.y - 5), Pal.ink(0.5), 1.0)
-		if rect.has_point(mouse):
+		# the × beside the tag, while the pointer is on the tag or on it
+		var xr := Rect2(Vector2(rect.end.x, rect.position.y), Vector2(TAG_X, rect.size.y))
+		if tag_fix and (rect.has_point(mouse) or xr.has_point(mouse)) and pop > 0.6:
+			x_now = xr
+			x_key = key
+			var hot := xr.has_point(mouse)
+			c.draw_style_box(UiSkin.box("tag", 0.95 if hot else 0.88), xr)
+			var cx := xr.get_center()
+			var xc := Pal.heat(1.0, 1.3) if hot else Pal.ink(0.75 * a)
+			c.draw_line(cx + Vector2(-4, -4), cx + Vector2(4, 4), xc, 1.5, true)
+			c.draw_line(cx + Vector2(4, -4), cx + Vector2(-4, 4), xc, 1.5, true)
+		if rect.has_point(mouse) or xr.has_point(mouse):
 			hovered = [r, rect, stale]
+	tag_x = x_now
+	tag_x_key = x_key
 	if hovered != null:
 		var r: Dictionary = hovered[0]
 		var rect: Rect2 = hovered[1]
@@ -2186,10 +2290,16 @@ func _world_tags() -> void:
 		]
 		if hovered[2]:
 			lines.append(game.txt("stale"))
-		var box := Rect2(rect.position + Vector2(0, 26), Vector2(260, 22 * lines.size() + 10))
+		if tag_fix:
+			lines.append(Txt.t("as_rd_close_tip") % Keys.label("clear_reads"))
+		var bw := 260.0
+		for l in lines:
+			bw = maxf(bw, _tw(l, 13) + 20.0)
+		var box := Rect2(rect.position + Vector2(0, 26), Vector2(bw, 22 * lines.size() + 10))
 		_panel(box, 0.92)
 		for i in lines.size():
-			_text(lines[i], box.position + Vector2(10, 22 + i * 22), 13, Pal.ink(0.7) if i < 3 else Pal.heat(0.9, 1.0), font)
+			var last := i == lines.size() - 1
+			_text(lines[i], box.position + Vector2(10, 22 + i * 22), 13, Pal.ink(0.55) if last else (Pal.ink(0.7) if i < 3 else Pal.heat(0.9, 1.0)), font)
 
 
 func _story_card(sp: Vector2, it: Dictionary, info: String, age: float) -> Rect2:

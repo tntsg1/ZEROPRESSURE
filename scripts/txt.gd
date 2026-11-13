@@ -19,6 +19,9 @@ static var chapter_done := false      # chapter one seen to the end
 static var dev := false               # developer mode (F12)
 static var context := true            # the tool follows what the cursor is on (not the laser)
 static var fullscreen := false
+# 公测反馈 #13: the display mode — "window", "borderless" (no frame, the screen's work area), "full"
+static var win_mode := "window"
+const WIN_MODES := ["window", "borderless", "full"]
 static var calm := false              # no screen shake, flashes or hit-stops
 static var film := true               # 91 号: film grain and the colour fringe (scripts/look.gd)
 static var slowmo_on := true          # 91 号: the slow-motion moment when a big piece comes free
@@ -191,6 +194,15 @@ const S := {
 	"as_wq_cancel": ["已从排队里取消", "TAKEN OUT OF THE QUEUE"],
 	"as_wq_cleared": ["排队已清空", "QUEUE CLEARED"],
 	"as_wq_wait": ["下一颗超出范围：飞近些继续拧", "NEXT ONE OUT OF REACH: FLY CLOSER TO GO ON"],
+	# 2026-11-13 同时拧 (tools.gd par; the upgrade id stays "wrench_queue"): the keys above told of a queue and
+	# are no longer shown (kept: the author's own words); these placeholders wait for the author's wording
+	"as_up_wrench_par": ["【占位】同时拧", "[PLACEHOLDER] Parallel wrench"],
+	"as_up_wrench_par_d": ["【占位】拧着一颗时马上能点下一颗，几颗一起拧", "[PLACEHOLDER] Click the next fixing while one turns: they turn together"],
+	"as_up_wrench_par_st": ["【占位】拧着一颗时点下一颗，它立刻也开始拧，最多 4 颗同时转，各拧各的。右键点其中一颗只停那一颗；飞出范围的那颗会停下；换工具全部停下。", "[PLACEHOLDER] Click the next while one turns: it starts at once, up to 4 turning together, each on its own. Right-click one to stop just that one; one out of reach stops; another tool stops them all."],
+	"as_up_wrench_par_have": ["【占位】已安装 · 可几颗同时拧", "[PLACEHOLDER] FITTED · SEVERAL TURN AT ONCE"],
+	"as_wp_cancel": ["【占位】这一颗停了", "[PLACEHOLDER] THIS ONE STOPPED"],
+	"as_wp_cleared": ["【占位】全部停下", "[PLACEHOLDER] ALL STOPPED"],
+	"as_wp_full": ["【占位】最多同时拧 %s 颗：等一颗拧完再点", "[PLACEHOLDER] AT MOST %s AT ONCE: WAIT FOR ONE TO FINISH"],
 	# 2026-11-11 the hose tool's right button (scripts/slurp.gd)
 	"as_slurp_keys": ["左键 抽气液 · 右键 吸漏液", "LMB PUMP · RMB SIP SPILLS"],
 	"as_slurp_hint": ["【占位】按住右键，无人机伸出吸管，把漂在空中的漏液吸回来（按液体种类计入回收）。", "[PLACEHOLDER] Hold the right button: the drone puts out a suction tube and draws in liquid adrift (booked as recovered, by kind)."],
@@ -2420,6 +2432,9 @@ const S := {
 	"hauler_unmarked": ["取消标记", "MARK REMOVED"],
 	"hauler_heavy": ["超过 1.5 t，搬运无人机搬不动", "OVER 1.5 t: TOO HEAVY FOR THE HAULER"],
 	"hauler_heavy_n": ["%s t：搬运无人机只能搬 1.5 t，需吊车或升级", "%s t: HAULERS LIFT 1.5 t · NEEDS THE CRANE OR AN UPGRADE"],
+	"haul_tied": ["【占位】%s 还连着电线，先拔掉", "[PH] %s IS STILL WIRED IN · UNPLUG IT FIRST"],
+	"haul_mode_auto": ["【占位】搬运：自动（散件自己送进回收口）", "[PH] HAULING: AUTO (LOOSE PARTS GO IN BY THEMSELVES)"],
+	"haul_mode_manual": ["【占位】搬运：只搬标记的件（右键标记）", "[PH] HAULING: MARKED PARTS ONLY (RIGHT CLICK TO MARK)"],
 	"crew_part_busy": ["【占位】施工队正在安装这件 · 装好后再动", "[PH] THE CREW IS FITTING THIS · WAIT TILL IT IS IN"],
 	"hauler_no_mouth": ["这件设备怎么转都进不了任何设备口 · 先切开再搬", "NO EQUIPMENT MOUTH TAKES THIS WHOLE · CUT IT FIRST"],
 	"no_mouth": ["进不了设备口：%s", "NO MOUTH: %s"],
@@ -2654,6 +2669,7 @@ const S := {
 	"s_window": ["显示模式", "DISPLAY"],
 	"s_win_full": ["全屏", "FULLSCREEN"],
 	"s_win_window": ["窗口", "WINDOW"],
+	"s_win_borderless": ["【占位】无边框窗口", "[PLACEHOLDER] BORDERLESS"],
 	"s_calm": ["屏幕震动 / 闪光 / 打击停顿", "SCREEN SHAKE / FLASH / HIT STOP"],
 	"s_film": ["胶片颗粒 / 色差效果", "FILM GRAIN / CHROMATIC ABERRATION"],
 	"s_slowmo": ["大型部件分离慢动作", "SLOW MOTION ON LARGE PART DETACHMENT"],
@@ -2674,10 +2690,11 @@ const S := {
 	"key_dash": ["冲刺", "DASH"], "key_brake": ["刹停", "BRAKE"], "key_hold": ["保持当前位置（按住）", "HOLD POSITION (HOLD)"],
 	"key_overview": ["缩放至全船视图（按住）", "VIEW ENTIRE SHIP (HOLD)"],
 	"key_tool1": ["测量", "MEASURE"], "key_tool2": ["激光切割", "LASER"], "key_tool3": ["磁力抓钩", "GRAPPLE"],
-	"key_tool4": ["维护工具", "WRENCH"], "key_tool5": ["气液回收", "HOSE"], "key_blueprint": ["图纸", "DRAWING"],
+	"key_tool4": ["维护工具", "WRENCH"], "key_tool5": ["气液回收", "HOSE"], "key_tool6": ["【占位】部署", "[PLACEHOLDER] DEPLOY"], "key_blueprint": ["图纸", "DRAWING"],
 	"key_contract": ["合同", "CONTRACT"], "key_repair": ["维修包", "REPAIR KIT"], "key_ring": ["使用环形爆破切割装置", "ACTIVATE EXPLOSIVE CUTTING RING"],
 	"key_multi": ["切换磁力抓钩单体 / 范围模式（Shift：防护）", "TOGGLE MAGNETIC GRAPPLE: SINGLE / AREA MODE (SHIFT: GUARD)"],
 	"key_tunnel_body": ["开关量子隧穿·机体（无人机穿墙）", "TOGGLE BODY TUNNELLING (THE DRONE PASSES THROUGH WALLS)"],
+	"key_clear_reads": ["【占位】收起全部读数标签", "[PLACEHOLDER] PUT ALL READING TAGS AWAY"],
 	"key_tunnel": ["开关量子隧穿（抓着的件穿墙）", "TOGGLE QUANTUM TUNNELLING (HELD LOADS PASS THROUGH WALLS)"],
 	"key_tow": ["作业艇连接 / 解开拖缆", "WORKBOAT: ATTACH / RELEASE TOW CABLE"],
 	"key_assist": ["飞行稳定", "FLIGHT ASSIST"], "key_hints": ["提示", "HINTS"], "key_warp": ["加速时间流逝（按住）", "FAST-FORWARD TIME (HOLD)"],
@@ -2979,6 +2996,13 @@ const S := {
 	"as_hc_stale": ["【占位】读数过期", "[PLACEHOLDER] OUT OF DATE"],
 	"as_hc_more": ["【占位】中键看详情", "[PLACEHOLDER] MIDDLE CLICK FOR DETAILS"],
 	"as_hc_close": ["【占位】中键点空白或 Esc 关闭", "[PLACEHOLDER] MIDDLE CLICK BLANK OR Esc TO CLOSE"],
+	# 公测反馈 #15 (2026-11-13): reading tags put away one by one (×) or all at once
+	"as_rd_close_tip": ["【占位】点 × 收起这条读数 · %s 收起全部", "[PLACEHOLDER] CLICK × TO PUT THIS READING AWAY · %s FOR ALL"],
+	"as_rd_cleared": ["【占位】收起了 %d 条读数，零件仍算测过，再测一次会重新显示", "[PLACEHOLDER] %d READINGS PUT AWAY. THE PARTS STAY MEASURED; MEASURE AGAIN TO SHOW ONE"],
+	"as_rd_none": ["【占位】现在没有读数标签", "[PLACEHOLDER] NO READINGS SHOWN"],
+	"as_rd_key": ["【占位】收读数", "[PH] READS"],
+	"as_rd_key_n": ["【占位】收起全部读数标签", "[PLACEHOLDER] PUT ALL READING TAGS AWAY"],
+	"as_rd_key_why": ["【占位】还没有读数", "[PLACEHOLDER] NO READINGS YET"],
 	"as_hc_k_pressure": ["【占位】压力容器", "[PLACEHOLDER] PRESSURE VESSEL"],
 	"as_hc_k_fluid": ["【占位】液体储罐", "[PLACEHOLDER] LIQUID TANK"],
 	"as_hc_k_power": ["【占位】电力设备", "[PLACEHOLDER] ELECTRICAL"],
@@ -3072,6 +3096,10 @@ static func load_settings(testing: bool) -> void:
 		dev = cf.get_value("ui", "dev", false)
 		context = cf.get_value("ui", "context", true)
 		fullscreen = cf.get_value("video", "fullscreen", false)
+		win_mode = str(cf.get_value("video", "mode", "full" if fullscreen else "window"))
+		if not win_mode in WIN_MODES:
+			win_mode = "window"
+		fullscreen = win_mode == "full"
 		calm = cf.get_value("video", "calm", false)
 		codex_cards = cf.get_value("ui", "codex_cards", true)
 		guide_cards = cf.get_value("ui", "guide_cards", true)
@@ -3105,7 +3133,8 @@ static func save_settings(testing: bool) -> void:
 	cf.set_value("career", "chapter_done", chapter_done)
 	cf.set_value("ui", "dev", dev)
 	cf.set_value("ui", "context", context)
-	cf.set_value("video", "fullscreen", fullscreen)
+	cf.set_value("video", "fullscreen", win_mode == "full")
+	cf.set_value("video", "mode", win_mode)
 	cf.set_value("video", "calm", calm)
 	cf.set_value("ui", "codex_cards", codex_cards)
 	cf.set_value("ui", "guide_cards", guide_cards)

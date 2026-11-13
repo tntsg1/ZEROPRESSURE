@@ -295,7 +295,7 @@ func _fit_all() -> void:
 	_fit("contract card", _keys(["c_title", "c_title_n", "c_log_n", "c_fee_n"]) + _prefixed("c_req"), 15, 804)
 	# Liang's radio: two lines of 700 px at most (keep a margin for wrapping)
 	# as_codex_d / as_up_wrench_queue_st are long wrapped notes (methods detail label, strategy screen), not radio lines
-	var radio: Array = _prefixed("as_", ["as_codex_d", "as_up_wrench_queue_st"]) + _prefixed("rc_") + _prefixed("ex_l") + _keys(["ex_hint_cost", "ex_free", "ex_broken", "ex_a", "ex_bc", "tier_now"])
+	var radio: Array = _prefixed("as_", ["as_codex_d", "as_up_wrench_queue_st", "as_up_wrench_par_st"]) + _prefixed("rc_") + _prefixed("ex_l") + _keys(["ex_hint_cost", "ex_free", "ex_broken", "ex_a", "ex_bc", "tier_now"])
 	var course: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://ships/ts1_course.json"))
 	for id in course.get("lines", {}):
 		var ln: Dictionary = course.lines[id]

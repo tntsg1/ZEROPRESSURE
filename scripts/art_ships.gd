@@ -6,6 +6,7 @@ extends RefCounted
 # like the shared art (art_equip.gd, whose primitives these use).
 
 const E = preload("res://scripts/art_equip.gd")
+const LC = preload("res://scripts/liquid_colors.gd")
 const M := 48.0
 
 const BY_NAME := {
@@ -1008,20 +1009,46 @@ static func _draw_art(ci: CanvasItem, art: String, r: Rect2, p, font: Font) -> v
 		"sack_pallet": sack_pallet(ci, r)
 		"rig_spares_rack": rig_spares_rack(ci, r)
 		"bin_parts_rack": bin_parts_rack(ci, r)
-		"water_dispenser": water_dispenser(ci, r)
-		"eccs_tank": eccs_tank(ci, r)
-		"sectional_tank": sectional_tank(ci, r)
-		"ballast_tank": ballast_tank(ci, r)
-		"bio_waste_tank": bio_waste_tank(ci, r)
-		"fish_tank": fish_tank(ci, r)
-		"nutrient_mixer_tank": nutrient_mixer_tank(ci, r)
-		"wetland_pond": wetland_pond(ci, r)
-		"water_recovery": water_recovery(ci, r)
-		"mud_agitator_tank": mud_agitator_tank(ci, r)
-		"hyd_reservoir": hyd_reservoir(ci, r)
+		"water_dispenser":
+			_liquid(ci, p, "water_dispenser", r)
+			water_dispenser(ci, r)
+		"eccs_tank":
+			_liquid(ci, p, "eccs_tank", r)
+			eccs_tank(ci, r)
+		"sectional_tank":
+			_liquid(ci, p, "sectional_tank", r)
+			sectional_tank(ci, r)
+		"ballast_tank":
+			_liquid(ci, p, "ballast_tank", r)
+			ballast_tank(ci, r)
+		"bio_waste_tank":
+			_liquid(ci, p, "bio_waste_tank", r)
+			bio_waste_tank(ci, r)
+		"fish_tank":
+			_liquid(ci, p, "fish_tank", r)
+			fish_tank(ci, r)
+		"nutrient_mixer_tank":
+			_liquid(ci, p, "nutrient_mixer_tank", r)
+			nutrient_mixer_tank(ci, r)
+		"wetland_pond":
+			_liquid(ci, p, "wetland_pond", r)
+			wetland_pond(ci, r)
+		"water_recovery":
+			_liquid(ci, p, "water_recovery", r)
+			water_recovery(ci, r)
+		"mud_agitator_tank":
+			_liquid(ci, p, "mud_agitator_tank", r)
+			mud_agitator_tank(ci, r)
+		"hyd_reservoir":
+			_liquid(ci, p, "hyd_reservoir", r)
+			hyd_reservoir(ci, r)
 		"sanitary_module": sanitary_module(ci, r)
-		"coolant_bottle": coolant_bottle(ci, r)
-		"fresh_water_tank": fresh_water_tank(ci, r)
+		"coolant_bottle":
+			_liquid(ci, p, "coolant_bottle", r)
+			coolant_bottle(ci, r)
+		"fresh_water_tank":
+			_liquid(ci, p, "fresh_water_tank", r)
+			fresh_water_tank(ci, r)
 		"ahu_sections": ahu_sections(ci, r)
 		"o2_generator_plant": o2_generator_plant(ci, r)
 		"twin_bed_regen": twin_bed_regen(ci, r)
@@ -1165,7 +1192,9 @@ static func _draw_art(ci: CanvasItem, art: String, r: Rect2, p, font: Font) -> v
 		"vj_cryo_line": vj_cryo_line(ci, r)
 		"riser_pipe": riser_pipe(ci, r)
 		"rack_post": rack_post(ci, r)
-		"piston_accumulator": piston_accumulator(ci, r)
+		"piston_accumulator":
+			_liquid(ci, p, "piston_accumulator", r)
+			piston_accumulator(ci, r)
 		"argon_bundle": argon_bundle(ci, r)
 		"n2_cart": n2_cart(ci, r)
 		"n2_vessel": n2_vessel(ci, r)
@@ -1181,11 +1210,15 @@ static func _draw_art(ci: CanvasItem, art: String, r: Rect2, p, font: Font) -> v
 				E._draw_art(ci, p.art, r, p, font)
 			else:
 				air_compressor_tank(ci, r)
-		"coolant_tank": coolant_tank(ci, r)
+		"coolant_tank":
+			_liquid(ci, p, "coolant_tank", r)
+			coolant_tank(ci, r)
 		"bladder_accumulator": bladder_accumulator(ci, r)
 		"air_receiver": air_receiver(ci, r)
 		"bottle_chained": bottle_chained(ci, r)
-		"expansion_tank": expansion_tank(ci, r)
+		"expansion_tank":
+			_liquid(ci, p, "expansion_tank", r)
+			expansion_tank(ci, r)
 		"he_buffer_skirt": he_buffer_skirt(ci, r)
 		"slim_bottle": slim_bottle(ci, r)
 		"h2_type4":
@@ -1199,6 +1232,7 @@ static func _draw_art(ci: CanvasItem, art: String, r: Rect2, p, font: Font) -> v
 			if p != null and p.art != "gastank":
 				E._draw_art(ci, p.art, r, p, font)
 			else:
+				_liquid(ci, p, "lube_box_tank", r)
 				lube_box_tank(ci, r)
 		"medgas_bank": medgas_bank(ci, r)
 		"n2_purge_tube": n2_purge_tube(ci, r)
@@ -1220,8 +1254,12 @@ static func _draw_art(ci: CanvasItem, art: String, r: Rect2, p, font: Font) -> v
 		"pressurant_pair": pressurant_pair(ci, r)
 		"qc_he_buffer": qc_he_buffer(ci, r)
 		"mix_tank_cage": mix_tank_cage(ci, r)
-		"ref_receiver": ref_receiver(ci, r)
-		"n2o_tank": n2o_tank(ci, r)
+		"ref_receiver":
+			_liquid(ci, p, "ref_receiver", r)
+			ref_receiver(ci, r)
+		"n2o_tank":
+			_liquid(ci, p, "n2o_tank", r)
+			n2o_tank(ci, r)
 		"reagent_bottle": reagent_bottle(ci, r)
 		"weld_bottle": weld_bottle(ci, r)
 		"heat_pump_set": heat_pump_set(ci, r)
@@ -7967,8 +8005,8 @@ static func ts_power(ci: CanvasItem, r: Rect2) -> void:
 		L(ci, bk.position + Vector2(2, bk.size.y * 0.3), Vector2(bk.end.x - 2, bk.position.y + bk.size.y * 0.3), 0.35)
 		_lamp(ci, bk.position + Vector2(bk.size.x * 0.5, bk.size.y * 0.7), maxf(1.2, ms * 0.04), Pal.tint(Pal.FLUID, 0.85))
 	for k in 3:
-		O(ci, _u(r, 0.62 + k * 0.1, 0.36), maxf(1.6, ms * 0.04), 0.5)
-		O(ci, _u(r, 0.62 + k * 0.1, 0.48), maxf(1.6, ms * 0.04), 0.5)
+		D(ci, _u(r, 0.62 + k * 0.1, 0.36), maxf(1.6, ms * 0.04), 0.5)
+		D(ci, _u(r, 0.62 + k * 0.1, 0.48), maxf(1.6, ms * 0.04), 0.5)
 	E.breaker(ci, sub(r, 0.1, 0.62, 0.46, 0.86), true, 0.5)
 	for k in 2:
 		var tp := _u(r, 0.62 + k * 0.18, 0.74)
@@ -12342,9 +12380,10 @@ static func piston_accumulator(ci: CanvasItem, r: Rect2) -> void:
 	for y in [0.26, 0.7]:
 		_rs(sg, sub(r, 0.18, y, 0.82, y + 0.03))
 		sg.append_array(PackedVector2Array([_u(r, 0.06, y + 0.015), _u(r, 0.18, y + 0.015), _u(r, 0.06, y - 0.02), _u(r, 0.06, y + 0.05)]))
+	_fillc(ci, PackedVector2Array([_u(r, 0.22, 0.42), _u(r, 0.78, 0.42), _u(r, 0.78, 0.47), _u(r, 0.22, 0.47)]), Pal.ink(0.32))
+	_fillc(ci, PackedVector2Array([_u(r, 0.23, 0.11), _u(r, 0.77, 0.11), _u(r, 0.77, 0.415), _u(r, 0.23, 0.415)]), Color(Pal.VOLT.r, Pal.VOLT.g, Pal.VOLT.b, 0.1))
 	S(ci, sg, 0.56, 1.2)
 	L(ci, _u(r, 0.6, 0.97), _u(r, 0.98, 0.97), 0.5, 1.6)
-	_gband(ci, r, 0.25, 0.75, 0.8, Pal.tint(Pal.FLUID, 0.7))
 
 
 # ---------------------------------------------------------------- DR-150: BOP bladder accumulator
@@ -12636,7 +12675,6 @@ static func coolant_tank(ci: CanvasItem, r: Rect2) -> void:
 			_u(r, 0.82, 0.3), _u(r, 0.9, 0.3), _u(r, 0.82, 0.66), _u(r, 0.9, 0.66), _u(r, 0.88, 0.24), _u(r, 0.88, 0.72), _u(r, 0.92, 0.24), _u(r, 0.92, 0.72),
 			_u(r, 0.48, 0.78), _u(r, 0.48, 0.9), _u(r, 0.48, 0.9), _u(r, 0.98, 0.9), _u(r, 0.72, 0.86), _u(r, 0.72, 0.94)]))
 		S(ci, sg, 0.56, 1.3)
-		_gband(ci, r, 0.06, 0.82, 0.4, Pal.tint(Pal.FLUID, 0.7))
 		_gband(ci, r, 0.88, 0.92, 0.4, Pal.tint(Pal.FLUID, 0.9))
 	else:
 		var q := sub(r, 0.1, 0.06, 0.72, 0.86)
@@ -12647,7 +12685,6 @@ static func coolant_tank(ci: CanvasItem, r: Rect2) -> void:
 			_u(r, 0.4, 0.86), _u(r, 0.4, 0.92), _u(r, 0.4, 0.92), _u(r, 0.98, 0.92), _u(r, 0.88, 0.88), _u(r, 0.88, 0.96)]))
 		_rs(sg, sub(r, 0.04, 0.36, 0.1, 0.52))
 		S(ci, sg, 0.56, 1.3)
-		_gband(ci, r, 0.11, 0.71, 0.42, Pal.tint(Pal.FLUID, 0.7))
 		_gband(ci, r, 0.78, 0.82, 0.42, Pal.tint(Pal.FLUID, 0.9))
 
 
@@ -12704,12 +12741,11 @@ static func expansion_tank(ci: CanvasItem, r: Rect2) -> void:
 	var w := q.size.x
 	var sg := PackedVector2Array()
 	_vves(sg, sub(q, 0.12, 0.06, 0.88, 0.8), w * 0.3)
-	_arcs(sg, _u(q, 0.5, 0.42), w * 0.38, w * 0.1, 0.0, PI, 6)
+	_arcs(sg, _u(q, 0.5, 0.3), w * 0.38, w * 0.08, 0.0, PI, 6)
 	sg.append_array(PackedVector2Array([_u(q, 0.5, 0.06), _u(q, 0.5, 0.015), _u(q, 0.42, 0.015), _u(q, 0.58, 0.015),
 		_u(q, 0.5, 0.8), _u(q, 0.5, 0.95), _u(q, 0.5, 0.95), Vector2(r.end.x, q.position.y + q.size.y * 0.95), _u(q, 0.42, 0.88), _u(q, 0.58, 0.88),
 		_u(q, 0.12, 0.28), Vector2(r.position.x, q.position.y + q.size.y * 0.28), _u(q, 0.12, 0.32), Vector2(r.position.x, q.position.y + q.size.y * 0.32)]))
 	S(ci, sg, 0.56, 1.2)
-	_gband(ci, q, 0.14, 0.86, 0.62, Pal.tint(Pal.FLUID, 0.75))
 
 
 # ---------------------------------------------------------------- FX-70 / HG-170: helium buffer on its skirt
@@ -12831,7 +12867,6 @@ static func lube_box_tank(ci: CanvasItem, r: Rect2) -> void:
 	S(ci, sg, 0.55, 1.2)
 	A(ci, _u(r, 0.26, 0.05), ms * 0.12, PI, TAU, 0.55, 1.2)
 	_gband(ci, r, 0.865, 0.915, 0.5, Pal.tint(Pal.FLUID, 0.9))
-	_gband(ci, r, 0.09, 0.77, 0.5, Pal.tint(Pal.FLUID, 0.5))
 
 
 # ---------------------------------------------------------------- MED-47: medical gas bottles
@@ -13085,10 +13120,10 @@ static func ref_receiver(ci: CanvasItem, r: Rect2) -> void:
 		_u(r, 1.0, 0.04), _u(r, 0.6, 0.04), _u(r, 0.6, 0.04), _u(r, 0.6, 0.08),
 		_u(r, 0.45, 0.9), _u(r, 0.45, 0.96), _u(r, 0.36, 0.96), _u(r, 0.54, 0.96), _u(r, 0.45, 0.96), _u(r, 0.45, 0.99), _u(r, 0.45, 0.99), _u(r, 1.0, 0.99),
 		_u(r, 0.32, 0.07), _u(r, 0.32, 0.03), _u(r, 0.22, 0.03), _u(r, 0.42, 0.03), _u(r, 0.22, 0.03), _u(r, 0.22, 0.0), _u(r, 0.42, 0.03), _u(r, 0.42, 0.0)]))
+	_rs(sg, sub(r, 0.66, 0.965, 0.82, 1.0))
 	S(ci, sg, 0.55, 1.2)
 	for y in [0.52, 0.72]:
 		O(ci, _u(r, 0.45, y), ms * 0.09, 0.6, 1.2)
-	_gband(ci, r, 0.17, 0.73, 0.62, Pal.tint(Pal.FLUID, 0.8))
 	D(ci, _u(r, 0.62, 0.86), 1.4, 0.6)
 
 
@@ -13109,7 +13144,6 @@ static func n2o_tank(ci: CanvasItem, r: Rect2) -> void:
 	_rs(sg, sub(r, 0.6, 0.85, 0.86, 0.95))
 	S(ci, sg, 0.55, 1.2)
 	S(ci, PackedVector2Array([_u(r, 0.46, 0.08), _u(r, 0.46, 0.34), _u(r, 0.5, 0.08), _u(r, 0.5, 0.34)]), 0.3, 1.0)
-	_gband(ci, r, 0.17, 0.79, 0.38, Pal.tint(Pal.FLUID, 0.75))
 	_gband(ci, r, 0.17, 0.79, 0.16, Pal.tint(Pal.AIR, 0.75))
 
 
@@ -14633,7 +14667,6 @@ static func mini_mag_pump(ci: CanvasItem, r: Rect2) -> void:
 	S(ci, sg, 0.55, 1.0)
 	O(ci, _u(r, 0.3, 0.6), ms * 0.22, 0.55)
 	D(ci, _u(r, 0.3, 0.6), maxf(1.0, ms * 0.06), 0.6)
-	_gband(ci, r, 0.01, 0.13, 0.56, Pal.tint(Pal.FLUID, 0.8))
 
 
 # ---------------------------------------------------------------- NR-95: actuated vent valve (pump art)
@@ -14970,37 +15003,43 @@ static func _pleat(sg: PackedVector2Array, q: Rect2, n: int, vert: bool = true) 
 static func water_dispenser(ci: CanvasItem, r: Rect2) -> void:
 	var sg := PackedVector2Array()
 	_rs(sg, sub(r, 0.12, 0.34, 0.88, 0.98))
-	sg.append_array(PackedVector2Array([_u(r, 0.2, 0.04), _u(r, 0.8, 0.04), _u(r, 0.2, 0.04), _u(r, 0.2, 0.22), _u(r, 0.8, 0.04), _u(r, 0.8, 0.22),
-		_u(r, 0.2, 0.22), _u(r, 0.4, 0.28), _u(r, 0.8, 0.22), _u(r, 0.6, 0.28), _u(r, 0.4, 0.28), _u(r, 0.4, 0.34), _u(r, 0.6, 0.28), _u(r, 0.6, 0.34),
+	sg.append_array(PackedVector2Array([_u(r, 0.14, 0.02), _u(r, 0.86, 0.02), _u(r, 0.14, 0.02), _u(r, 0.14, 0.24), _u(r, 0.86, 0.02), _u(r, 0.86, 0.24),
+		_u(r, 0.14, 0.24), _u(r, 0.4, 0.3), _u(r, 0.86, 0.24), _u(r, 0.6, 0.3), _u(r, 0.4, 0.3), _u(r, 0.4, 0.34), _u(r, 0.6, 0.3), _u(r, 0.6, 0.34),
 		_u(r, 0.3, 0.44), _u(r, 0.3, 0.5), _u(r, 0.7, 0.44), _u(r, 0.7, 0.5), _u(r, 0.18, 0.62), _u(r, 0.82, 0.62),
 		_u(r, 0.26, 0.6), _u(r, 0.26, 0.62), _u(r, 0.42, 0.6), _u(r, 0.42, 0.62), _u(r, 0.58, 0.6), _u(r, 0.58, 0.62), _u(r, 0.74, 0.6), _u(r, 0.74, 0.62),
 		_u(r, 0.88, 0.4), _u(r, 0.98, 0.4), _u(r, 0.98, 0.4), _u(r, 0.98, 0.56)]))
 	S(ci, sg, 0.55, 1.1)
-	_gband(ci, r, 0.21, 0.79, 0.12, Pal.tint(Pal.FLUID, 0.7))
+	S(ci, PackedVector2Array([_u(r, 0.76, 0.07), _u(r, 0.86, 0.07), _u(r, 0.79, 0.13), _u(r, 0.86, 0.13), _u(r, 0.76, 0.19), _u(r, 0.86, 0.19)]), 0.5, 1.0)
 	_lamp(ci, _u(r, 0.3, 0.42), maxf(1.4, r.size.x * 0.08), Pal.heat(0.85))
 	_lamp(ci, _u(r, 0.7, 0.42), maxf(1.4, r.size.x * 0.08), Pal.tint(Pal.AIR, 0.85))
 
 
 # ---------------------------------------------------------------- ARK-01: emergency core cooling water tank
-# the reactor's emergency core cooling tank: the heavy tank and its stiffener ribs, the nitrogen
-# blanket's valve on the roof, the relief valve, the level transmitter's tube down its side, the big
-# outlet at the foot through its motorised valve (the actuator), the water's level
+# the reactor's emergency core cooling water: a pair of upright cylinders side by side (each with its
+# two stiffening rings and its legs), the crossover over their tops with the nitrogen blanket's valve,
+# the header joining their feet down to the check valve and the motorised valve (its actuator), the
+# level transmitter's tube, the borated water in both
 static func eccs_tank(ci: CanvasItem, r: Rect2) -> void:
+	var w := r.size.x
 	var sg := PackedVector2Array()
-	_rs(sg, sub(r, 0.06, 0.08, 0.84, 0.86))
-	for x in [0.26, 0.45, 0.64]:
-		sg.append(_u(r, x, 0.08))
-		sg.append(_u(r, x, 0.86))
-	sg.append_array(PackedVector2Array([_u(r, 0.06, 0.47), _u(r, 0.84, 0.47),
-		_u(r, 0.2, 0.08), _u(r, 0.2, 0.02), _u(r, 0.14, 0.02), _u(r, 0.26, 0.02), _u(r, 0.7, 0.08), _u(r, 0.7, 0.0), _u(r, 0.7, 0.0), _u(r, 0.8, 0.0),
-		_u(r, 0.84, 0.14), _u(r, 0.92, 0.14), _u(r, 0.84, 0.8), _u(r, 0.92, 0.8), _u(r, 0.9, 0.12), _u(r, 0.9, 0.82), _u(r, 0.94, 0.12), _u(r, 0.94, 0.82),
-		_u(r, 0.45, 0.86), _u(r, 0.45, 0.92), _u(r, 0.53, 0.94), _u(r, 1.0, 0.94), _u(r, 0.02, 0.98), _u(r, 0.88, 0.98)]))
-	_rs(sg, sub(r, 0.37, 0.9, 0.53, 0.98))
-	_rs(sg, sub(r, 0.4, 0.82, 0.5, 0.88))
+	for x0 in [0.06, 0.46]:
+		_vves(sg, sub(r, x0, 0.14, x0 + 0.34, 0.84), w * 0.08, 4)
+		for y in [0.4, 0.62]:
+			_rs(sg, sub(r, x0 - 0.01, y - 0.01, x0 + 0.35, y + 0.01))
+		sg.append_array(PackedVector2Array([_u(r, x0 + 0.05, 0.82), _u(r, x0 + 0.03, 0.98), _u(r, x0 + 0.29, 0.82), _u(r, x0 + 0.31, 0.98)]))
+	sg.append_array(PackedVector2Array([_u(r, 0.23, 0.14), _u(r, 0.23, 0.06), _u(r, 0.23, 0.06), _u(r, 0.63, 0.06), _u(r, 0.63, 0.06), _u(r, 0.63, 0.14),
+		_u(r, 0.43, 0.06), _u(r, 0.43, 0.0), _u(r, 0.39, 0.0), _u(r, 0.47, 0.0),
+		_u(r, 0.23, 0.84), _u(r, 0.23, 0.9), _u(r, 0.23, 0.9), _u(r, 0.63, 0.9), _u(r, 0.63, 0.9), _u(r, 0.63, 0.84),
+		_u(r, 0.43, 0.9), _u(r, 0.43, 0.94), _u(r, 0.43, 0.94), _u(r, 0.47, 0.94), _u(r, 0.55, 0.94), _u(r, 0.62, 0.94), _u(r, 0.7, 0.94), _u(r, 1.0, 0.94),
+		_u(r, 0.47, 0.91), _u(r, 0.55, 0.97), _u(r, 0.02, 0.98), _u(r, 0.84, 0.98),
+		_u(r, 0.8, 0.22), _u(r, 0.9, 0.22), _u(r, 0.8, 0.76), _u(r, 0.9, 0.76), _u(r, 0.88, 0.2), _u(r, 0.88, 0.78), _u(r, 0.92, 0.2), _u(r, 0.92, 0.78)]))
+	_rs(sg, sub(r, 0.47, 0.91, 0.55, 0.97))
+	_rs(sg, sub(r, 0.62, 0.91, 0.7, 0.97))
+	_rs(sg, sub(r, 0.63, 0.85, 0.69, 0.91))
+	_liquid_body(ci, sub(r, 0.47, 0.2, 0.79, 0.78), 0.82, Pal.VOLT.lerp(Pal.AIR, 0.45))
 	S(ci, sg, 0.55, 1.3)
-	_gband(ci, r, 0.07, 0.83, 0.24, Pal.tint(Pal.FLUID, 0.75))
-	_gband(ci, r, 0.905, 0.935, 0.24, Pal.tint(Pal.FLUID, 0.9))
-	_lamp(ci, _u(r, 0.2, 0.02), maxf(1.4, r.size.x * 0.03), Pal.tint(Pal.VOLT, 0.85))
+	_gband(ci, r, 0.885, 0.915, 0.32, Pal.tint(Pal.AIR, 0.9))
+	_lamp(ci, _u(r, 0.43, 0.0), maxf(1.4, w * 0.03), Pal.tint(Pal.VOLT, 0.85))
 
 
 # ---------------------------------------------------------------- ARK-01 / EV-55: sectional potable water tank
@@ -15027,28 +15066,33 @@ static func sectional_tank(ci: CanvasItem, r: Rect2) -> void:
 		sg.append(_u(r, 0.88, y))
 		sg.append(_u(r, 0.96, y))
 	S(ci, sg, 0.55, 1.2)
-	_gband(ci, r, 0.07, 0.85, 0.3, Pal.tint(Pal.FLUID, 0.75))
 
 
 # ---------------------------------------------------------------- RO-128: ballast tank
-# a ballast tank seen in section: the tank between the hull plates, its web frames (each with its
-# lightening hole), the sounding pipe down to the striker plate, the air vent up to its gooseneck, the
-# suction bellmouth at the bottom, the water in it
+# the ballast tanks seen in section: the run between the hull plates split into compartments by double
+# bulkheads (each with its manhole), the frames between them, each compartment's air vent up to its
+# gooseneck and its sounding pipe, and the sea water standing at a different level in each
 static func ballast_tank(ci: CanvasItem, r: Rect2) -> void:
 	var sg := PackedVector2Array()
 	_rs(sg, sub(r, 0.01, 0.06, 0.99, 0.94))
 	var n := clampi(int(r.size.x / (r.size.y * 0.9)), 2, 8)
-	for k in range(1, n):
-		var x: float = 0.01 + k * 0.98 / n
-		sg.append(_u(r, x, 0.06))
-		sg.append(_u(r, x, 0.94))
-	sg.append_array(PackedVector2Array([_u(r, 0.06, 0.0), _u(r, 0.06, 0.88), _u(r, 0.04, 0.9), _u(r, 0.1, 0.9),
-		_u(r, 0.94, 0.06), _u(r, 0.94, 0.0), _u(r, 0.94, 0.0), _u(r, 0.98, 0.02),
-		_u(r, 0.5, 0.06), _u(r, 0.5, 0.82), _u(r, 0.47, 0.88), _u(r, 0.53, 0.88), _u(r, 0.47, 0.88), _u(r, 0.49, 0.82), _u(r, 0.53, 0.88), _u(r, 0.51, 0.82)]))
-	S(ci, sg, 0.55, 1.2)
-	for k in range(1, n):
-		O(ci, _u(r, 0.01 + k * 0.98 / n, 0.5), r.size.y * 0.12, 0.4)
-	_gband(ci, r, 0.02, 0.98, 0.42, Pal.tint(Pal.FLUID, 0.65))
+	var fr := PackedVector2Array()
+	var hl := PackedVector2Array()
+	var cw: float = 0.98 / n
+	for k in n:
+		var x0: float = 0.01 + k * cw
+		if k > 0:
+			sg.append_array(PackedVector2Array([_u(r, x0 - 0.004, 0.06), _u(r, x0 - 0.004, 0.94), _u(r, x0 + 0.004, 0.06), _u(r, x0 + 0.004, 0.94)]))
+			_arcs(hl, _u(r, x0, 0.62), cw * r.size.x * 0.06, r.size.y * 0.1, 0.0, TAU, 6)
+		for j in [0.33, 0.66]:
+			fr.append(_u(r, x0 + cw * j, 0.08))
+			fr.append(_u(r, x0 + cw * j, 0.92))
+		var vx: float = x0 + cw * 0.82
+		sg.append_array(PackedVector2Array([_u(r, vx, 0.06), _u(r, vx, -0.04), _u(r, vx, -0.04), _u(r, vx + cw * 0.08, -0.04), _u(r, vx + cw * 0.08, -0.04), _u(r, vx + cw * 0.08, 0.0),
+			_u(r, x0 + cw * 0.12, 0.0), _u(r, x0 + cw * 0.12, 0.9)]))
+	S(ci, sg, 0.6, 1.3)
+	S(ci, fr, 0.3, 1.0)
+	S(ci, hl, 0.5, 1.1)
 
 
 # ---------------------------------------------------------------- MED-47: biological waste tank
@@ -15066,7 +15110,7 @@ static func bio_waste_tank(ci: CanvasItem, r: Rect2) -> void:
 		_u(r, 0.2, 0.86), _u(r, 0.16, 1.0), _u(r, 0.72, 0.86), _u(r, 0.76, 1.0)]))
 	S(ci, sg, 0.55, 1.2)
 	for y in [0.36, 0.5, 0.64]:
-		_gband(ci, r, 0.15, 0.77, y, Pal.heat(0.6))
+		_gband(ci, r, 0.15, 0.77, y, Pal.heat(0.32))
 	_lamp(ci, _u(r, 0.88, 0.08), maxf(1.4, w * 0.04), Pal.tint(Pal.VOLT, 0.85))
 
 
@@ -15086,7 +15130,6 @@ static func fish_tank(ci: CanvasItem, r: Rect2) -> void:
 	S(ci, sg, 0.55, 1.1)
 	for y in [0.4, 0.56, 0.72]:
 		_lamp(ci, _u(r, 0.6 + (y - 0.56) * 0.1, y), maxf(1.2, r.size.x * 0.025), Pal.tint(Pal.AIR, 0.8))
-	_gband(ci, r, 0.07, 0.79, 0.26, Pal.tint(Pal.FLUID, 0.75))
 
 
 # ---------------------------------------------------------------- BL-88: nutrient solution tank
@@ -15100,7 +15143,6 @@ static func nutrient_mixer_tank(ci: CanvasItem, r: Rect2) -> void:
 	sg.append_array(PackedVector2Array([_u(r, 0.38, 0.06), _u(r, 0.62, 0.06)]))
 	S(ci, sg, 0.55, 1.2)
 	S(ci, PackedVector2Array([_u(r, 0.5, 0.2), _u(r, 0.5, 0.6), _u(r, 0.36, 0.56), _u(r, 0.64, 0.64), _u(r, 0.36, 0.64), _u(r, 0.64, 0.56)]), 0.38, 1.0)
-	_gband(ci, r, 0.13, 0.87, 0.34, Pal.tint(Pal.FLUID, 0.75))
 
 
 # ---------------------------------------------------------------- BL-88: constructed wetland pond
@@ -15120,7 +15162,6 @@ static func wetland_pond(ci: CanvasItem, r: Rect2) -> void:
 			rd.append(_u(r, x + 0.05, 0.3))
 	S(ci, sg, 0.55, 1.1)
 	S(ci, rd, 0.45, 1.0)
-	_gband(ci, r, 0.04, 0.96, 0.42, Pal.tint(Pal.FLUID, 0.7))
 
 
 # ---------------------------------------------------------------- BL-88 / DR-150: water recovery unit
@@ -15139,6 +15180,8 @@ static func water_recovery(ci: CanvasItem, r: Rect2) -> void:
 	_rs(sg, sub(r, 0.3, 0.8, 0.5, 0.9))
 	sg.append_array(PackedVector2Array([_u(r, 0.22, 0.66), _u(r, 0.22, 0.76), _u(r, 0.5, 0.85), _u(r, 0.66, 0.85), _u(r, 0.66, 0.85), _u(r, 0.66, 0.58),
 		_u(r, 0.92, 0.16), _u(r, 0.94, 0.16), _u(r, 0.94, 0.16), _u(r, 0.94, 0.36), _u(r, 0.92, 0.36), _u(r, 0.94, 0.36), _u(r, 0.34, 0.16), _u(r, 0.42, 0.16)]))
+	for y0 in [0.1, 0.3]:
+		_liquid_body(ci, sub(r, 0.44, y0 + 0.01, 0.9, y0 + 0.11), 0.75 if y0 < 0.2 else 0.5, Pal.FLUID if y0 < 0.2 else Pal.AIR)
 	S(ci, sg, 0.55, 1.1)
 	_gband(ci, r, 0.45, 0.89, 0.55, Pal.tint(Pal.VOLT, 0.8))
 	_gband(ci, r, 0.43, 0.91, 0.36, Pal.tint(Pal.FLUID, 0.7))
@@ -15156,7 +15199,8 @@ static func mud_agitator_tank(ci: CanvasItem, r: Rect2) -> void:
 	_rs(sg, sub(r, 0.3, 0.02, 0.42, 0.1))
 	S(ci, sg, 0.55, 1.2)
 	S(ci, PackedVector2Array([_u(r, 0.36, 0.24), _u(r, 0.36, 0.84), _u(r, 0.24, 0.8), _u(r, 0.48, 0.88), _u(r, 0.24, 0.88), _u(r, 0.48, 0.8)]), 0.4, 1.2)
-	_gband(ci, r, 0.05, 0.95, 0.4, Pal.heat(0.55))
+	for x in [0.18, 0.46, 0.74]:
+		D(ci, _u(r, x, 0.42), maxf(1.2, r.size.y * 0.012), 0.5)
 
 
 # ---------------------------------------------------------------- CH-110 / TW-64: hydraulic oil reservoir
@@ -15166,18 +15210,17 @@ static func mud_agitator_tank(ci: CanvasItem, r: Rect2) -> void:
 static func hyd_reservoir(ci: CanvasItem, r: Rect2) -> void:
 	var sg := PackedVector2Array()
 	_rs(sg, sub(r, 0.04, 0.24, 0.96, 0.9))
-	_rs(sg, sub(r, 0.12, 0.36, 0.38, 0.78))
 	_rs(sg, sub(r, 0.56, 0.08, 0.68, 0.24))
 	_rs(sg, sub(r, 0.76, 0.16, 0.84, 0.24))
 	_rs(sg, sub(r, 0.86, 0.36, 0.92, 0.8))
-	sg.append_array(PackedVector2Array([_u(r, 0.5, 0.3), _u(r, 0.5, 0.9), _u(r, 0.62, 0.08), _u(r, 0.62, 0.0), _u(r, 0.6, 0.62), _u(r, 0.76, 0.62),
-		_u(r, 0.6, 0.62), _u(r, 0.6, 0.86), _u(r, 0.6, 0.86), _u(r, 0.76, 0.86), _u(r, 0.76, 0.86), _u(r, 0.76, 0.62), _u(r, 0.68, 0.62), _u(r, 0.68, 0.24),
+	sg.append_array(PackedVector2Array([_u(r, 0.62, 0.08), _u(r, 0.62, 0.0), _u(r, 0.04, 0.27), _u(r, 0.96, 0.27),
 		_u(r, 0.1, 0.9), _u(r, 0.1, 0.98), _u(r, 0.9, 0.9), _u(r, 0.9, 0.98), _u(r, 0.3, 0.9), _u(r, 0.3, 0.96)]))
-	S(ci, sg, 0.55, 1.2)
+	S(ci, sg, 0.6, 1.4)
+	var ins := PackedVector2Array([_u(r, 0.5, 0.3), _u(r, 0.5, 0.9), _u(r, 0.68, 0.24), _u(r, 0.68, 0.62)])
+	_rs(ins, sub(r, 0.6, 0.62, 0.76, 0.86))
+	_rs(ins, sub(r, 0.12, 0.36, 0.38, 0.78))
+	S(ci, ins, 0.26, 1.0)
 	A(ci, _u(r, 0.8, 0.16), r.size.y * 0.06, PI, TAU, 0.55, 1.1)
-	for x in [0.16, 0.34]:
-		D(ci, _u(r, x, 0.4), maxf(1.2, r.size.y * 0.02), 0.6)
-		D(ci, _u(r, x, 0.74), maxf(1.2, r.size.y * 0.02), 0.6)
 	_gband(ci, r, 0.865, 0.915, 0.56, Pal.tint(Pal.FLUID, 0.9))
 
 
@@ -15201,15 +15244,25 @@ static func sanitary_module(ci: CanvasItem, r: Rect2) -> void:
 
 
 # ---------------------------------------------------------------- TS-1: small coolant reservoir
-# the trainer's little coolant reservoir: the translucent bottle, its min and max marks, the cap, the
-# two hose stubs and the strap round it
+# the trainer's little coolant reservoir, drawn plain to read at its size: the bottle and its wall's
+# thickness, the filler cap on its flange, the glass sight tube outside the wall on its two connections
+# (the coolant standing in it, its two marks), the hose in on its flange, the drain valve at the foot,
+# the light catching the coolant along the wall
 static func coolant_bottle(ci: CanvasItem, r: Rect2) -> void:
-	var sg := PackedVector2Array([_u(r, 0.0, 0.7), _u(r, 0.2, 0.7), _u(r, 0.8, 0.86), _u(r, 1.0, 0.86), _u(r, 0.24, 0.42), _u(r, 0.34, 0.42), _u(r, 0.24, 0.74), _u(r, 0.34, 0.74),
-		_u(r, 0.14, 0.56), _u(r, 0.86, 0.56)])
-	_rs(sg, sub(r, 0.2, 0.2, 0.8, 0.96))
-	_rs(sg, sub(r, 0.36, 0.06, 0.56, 0.2))
-	S(ci, sg, 0.55, 1.0)
-	_gband(ci, r, 0.21, 0.79, 0.6, Pal.tint(Pal.FLUID, 0.85))
+	var col := Pal.FLUID.lerp(Pal.AIR, 0.5)
+	_fillc(ci, PackedVector2Array([_u(r, 0.135, 0.48), _u(r, 0.17, 0.48), _u(r, 0.17, 0.9), _u(r, 0.135, 0.9)]), Color(col.r, col.g, col.b, 0.55))
+	var sg := PackedVector2Array([_u(r, 0.0, 0.46), _u(r, 0.1, 0.46), _u(r, 0.03, 0.4), _u(r, 0.03, 0.52), _u(r, 0.3, 0.94), _u(r, 0.3, 0.97),
+		_u(r, 0.78, 0.36), _u(r, 0.84, 0.36), _u(r, 0.78, 0.86), _u(r, 0.84, 0.86), _u(r, 0.26, 0.22), _u(r, 0.62, 0.22),
+		_u(r, 0.94, 0.5), _u(r, 0.98, 0.5), _u(r, 0.94, 0.7), _u(r, 0.98, 0.7)])
+	_rs(sg, sub(r, 0.1, 0.22, 0.78, 0.94))
+	_rs(sg, sub(r, 0.32, 0.06, 0.56, 0.2))
+	_rs(sg, sub(r, 0.84, 0.3, 0.96, 0.92))
+	_rs(sg, sub(r, 0.24, 0.97, 0.36, 1.0))
+	_fillc(ci, PackedVector2Array([_u(r, 0.86, 0.5), _u(r, 0.94, 0.5), _u(r, 0.94, 0.9), _u(r, 0.86, 0.9)]), Color(col.r * 0.6, col.g * 0.6, col.b * 0.6, 0.9))
+	S(ci, sg, 0.6, 1.3)
+	var iw := PackedVector2Array()
+	_rs(iw, sub(r, 0.13, 0.25, 0.75, 0.91))
+	S(ci, iw, 0.32, 1.0)
 
 
 # ---------------------------------------------------------------- 11 ships: fresh water tank
@@ -15227,7 +15280,6 @@ static func fresh_water_tank(ci: CanvasItem, r: Rect2) -> void:
 			_u(r, 0.82, 0.3), _u(r, 0.9, 0.3), _u(r, 0.82, 0.66), _u(r, 0.9, 0.66), _u(r, 0.88, 0.24), _u(r, 0.88, 0.72), _u(r, 0.92, 0.24), _u(r, 0.92, 0.72),
 			_u(r, 0.44, 0.8), _u(r, 0.44, 0.92), _u(r, 0.44, 0.92), _u(r, 1.0, 0.92)]))
 		S(ci, sg, 0.55, 1.2)
-		_gband(ci, r, 0.06, 0.82, 0.36, Pal.tint(Pal.FLUID, 0.75))
 		_gband(ci, r, 0.88, 0.92, 0.36, Pal.tint(Pal.FLUID, 0.9))
 	else:
 		var q := sub(r, 0.12, 0.08, 0.74, 0.84)
@@ -15238,7 +15290,6 @@ static func fresh_water_tank(ci: CanvasItem, r: Rect2) -> void:
 			_u(r, 0.43, 0.84), _u(r, 0.43, 0.92), _u(r, 0.43, 0.92), _u(r, 1.0, 0.92)]))
 		_rs(sg, sub(r, 0.02, 0.36, 0.12, 0.52))
 		S(ci, sg, 0.55, 1.2)
-		_gband(ci, r, 0.13, 0.73, 0.32, Pal.tint(Pal.FLUID, 0.75))
 		_gband(ci, r, 0.82, 0.86, 0.32, Pal.tint(Pal.FLUID, 0.9))
 
 
@@ -17045,7 +17096,7 @@ static func passenger_seat(ci: CanvasItem, r: Rect2) -> void:
 
 # ---------------------------------------------------------------- ARK-01 (x116): wall shelf
 # a wall shelf (or a short shelving unit where tall): the shelf boards and their front lips on their
-# brackets, and on each a lidded box (its label), a storage tub with its lid, a row of three bottles
+# brackets, and on each a lidded box (its label), a storage tub with its lid, two bottles
 static func wall_shelf(ci: CanvasItem, r: Rect2) -> void:
 	var n := clampi(int(r.size.y / 28.0), 1, 4)
 	var sg := PackedVector2Array([_u(r, 0.02, 0.0), _u(r, 0.98, 0.0)])
@@ -17058,8 +17109,8 @@ static func wall_shelf(ci: CanvasItem, r: Rect2) -> void:
 		sg.append_array(PackedVector2Array([_u(r, 0.06, y - h * 0.48), _u(r, 0.32, y - h * 0.48), _u(r, 0.15, y - h * 0.3), _u(r, 0.23, y - h * 0.3)]))
 		_rs(sg, sub(r, 0.36, y - h * 0.4, 0.6, y))
 		sg.append_array(PackedVector2Array([_u(r, 0.34, y - h * 0.4), _u(r, 0.62, y - h * 0.4)]))
-		for j in 3:
-			var x: float = 0.66 + j * 0.1
+		for j in 2:
+			var x: float = 0.68 + j * 0.14
 			_rs(sg, sub(r, x, y - h * 0.5, x + 0.06, y))
 			sg.append(_u(r, x + 0.02, y - h * 0.5))
 			sg.append(_u(r, x + 0.02, y - h * 0.58))
@@ -17206,3 +17257,122 @@ static func uv_chamber(ci: CanvasItem, r: Rect2) -> void:
 		E.Rc(ci, sub(r, 0.16, 0.31 + k * 0.12, 0.66, 0.33 + k * 0.12), Pal.tint(Pal.VOLT, 0.85), 1.0)
 	_lamp(ci, _u(r, 0.89, 0.2), maxf(1.6, ms * 0.04), Pal.tint(Pal.FLUID, 0.85))
 	D(ci, _u(r, 0.4, 0.08), maxf(1.4, ms * 0.03), 0.6)
+
+
+# ================================================================ 2026-11-13: the liquid tanks' liquid
+# (user: "我总感觉现在水箱还没以前好看呢" - the redrawn tanks had become empty frames: their art names no
+# longer matched tank_fill_fx.gd's, so the live liquid had stopped, and they painted none of their own)
+# Each liquid tank's inside as [rect in the art's pixels, corner round, liquid key or colour, painted
+# level]: tank_fill_fx.gd fills it live where the ship's fluid system holds a volume for the piece;
+# elsewhere (the catalog, pieces with no volume) the drawing paints its still liquid there itself.
+const LIQ_KEYS := ["water_dispenser", "eccs_tank", "sectional_tank", "ballast_tank", "bio_waste_tank", "fish_tank",
+	"nutrient_mixer_tank", "wetland_pond", "water_recovery", "mud_agitator_tank", "hyd_reservoir", "coolant_bottle",
+	"fresh_water_tank", "coolant_tank", "expansion_tank", "lube_box_tank", "ref_receiver", "n2o_tank", "piston_accumulator"]
+
+
+static func liquid_rect(art: String, w: float, h: float) -> Array:
+	var r := Rect2(0, 0, w, h)
+	match art:
+		"water_dispenser": return [sub(r, 0.14, 0.02, 0.86, 0.24), 0.1, Pal.AIR.lerp(Color.WHITE, 0.35), 0.88]
+		"eccs_tank": return [sub(r, 0.07, 0.2, 0.39, 0.78), 0.2, Pal.VOLT.lerp(Pal.AIR, 0.45), 0.82]
+		"sectional_tank": return [sub(r, 0.06, 0.1, 0.86, 0.94), 0.02, Pal.AIR, 0.72]
+		"ballast_tank": return [sub(r, 0.01, 0.06, 0.99, 0.94), 0.0, Pal.AIR.lerp(Pal.FLUID, 0.55), 0.62]
+		"bio_waste_tank": return [sub(r, 0.14, 0.2, 0.78, 0.88), 0.12, Pal.tint(Pal.FLUID, 1.0), 0.5]
+		"fish_tank": return [sub(r, 0.06, 0.16, 0.8, 0.94), 0.0, Pal.FLUID.lerp(Pal.AIR, 0.35), 0.86]
+		"nutrient_mixer_tank": return [sub(r, 0.12, 0.2, 0.88, 0.66), 0.0, "nutrient", 0.86]
+		"wetland_pond": return [sub(r, 0.08, 0.3, 0.92, 0.74), 0.0, Pal.FLUID, 0.7]
+		"water_recovery": return [sub(r, 0.1, 0.1, 0.34, 0.62), 0.2, Pal.FLUID.lerp(Pal.AIR, 0.6), 0.55]
+		"mud_agitator_tank": return [sub(r, 0.04, 0.24, 0.96, 0.96), 0.0, Color(0.86, 0.68, 0.5), 0.74]
+		"hyd_reservoir": return [sub(r, 0.04, 0.24, 0.96, 0.9), 0.02, Color(0.72, 0.3, 0.22), 0.6]
+		"coolant_bottle": return [sub(r, 0.1, 0.22, 0.78, 0.94), 0.06, Pal.FLUID.lerp(Pal.AIR, 0.5), 0.6]
+		"fresh_water_tank":
+			if w > h * 1.3:
+				return [sub(r, 0.1, 0.13, 0.78, 0.79), 0.3, "water", 0.62]
+			return [sub(r, 0.13, 0.12, 0.73, 0.8), 0.15, "water", 0.66]
+		"coolant_tank":
+			if w > h * 1.3:
+				return [sub(r, 0.1, 0.13, 0.78, 0.77), 0.3, "glycol", 0.56]
+			return [sub(r, 0.11, 0.1, 0.71, 0.82), 0.15, "glycol", 0.52]
+		"expansion_tank":
+			var q := _fitr(r, 0.56)
+			return [sub(q, 0.13, 0.32, 0.87, 0.78), 0.25, "glycol", 1.0]
+		"lube_box_tank": return [sub(r, 0.08, 0.1, 0.78, 0.9), 0.0, Color(0.8, 0.6, 0.32), 0.48]
+		"ref_receiver": return [sub(r, 0.16, 0.1, 0.74, 0.86), 0.25, Pal.AIR.lerp(Pal.VOLT, 0.5), 0.62]
+		"n2o_tank": return [sub(r, 0.16, 0.1, 0.8, 0.78), 0.25, "solvent", 0.6]
+		"piston_accumulator": return [sub(r, 0.22, 0.47, 0.78, 0.9), 0.0, Color(0.72, 0.3, 0.22), 1.0]
+	return []
+
+
+# which picture tank_fill_fx.gd should treat a piece as (alt: its art here, raw: its own art): a split arm
+# that hands the piece back to its old picture keeps that picture's liquid; a liquid tank here keeps its own
+static func liquid_art(alt: String, raw: String) -> String:
+	if alt == "lube_box_tank" and raw != "gastank":
+		return raw
+	if alt == "water_treat_skid" or alt == "ro_rack":
+		return ""
+	return alt if LIQ_KEYS.has(alt) else ""
+
+
+# a coloured fill (through the batch while recording, straight to the canvas otherwise)
+static func _fillc(ci: CanvasItem, q: PackedVector2Array, col: Color) -> void:
+	if E._rec:
+		E._tri_fan(q, col)
+	else:
+		ci.draw_colored_polygon(q, col)
+
+
+# a liquid tank's shell thickness (its inner wall line) and, unless the live liquid is drawing it, its
+# still liquid: the dark body in the liquid's own colour under its rippled, lit surface
+static func _liquid(ci: CanvasItem, p, art: String, r: Rect2) -> void:
+	var lr := liquid_rect(art, r.size.x, r.size.y)
+	if lr.is_empty():
+		return
+	var q: Rect2 = lr[0]
+	q.position += r.position
+	if q.size.x * q.size.y > 1200.0:
+		R(ci, q.grow(-1.5), 0.3)
+	if p != null and p.has_meta("liquid_live"):
+		return
+	if art == "ballast_tank":
+		var n := clampi(int(r.size.x / (r.size.y * 0.9)), 2, 8)
+		var cw: float = q.size.x / n
+		for k in n:
+			_liquid_body(ci, Rect2(q.position + Vector2(k * cw + 2.0, 0.0), Vector2(cw - 4.0, q.size.y)), [0.72, 0.38, 0.86, 0.55, 0.3, 0.64, 0.8, 0.45][k], _liq_col(lr[2]), 5)
+		return
+	_liquid_body(ci, q, float(lr[3]), _liq_col(lr[2]))
+
+
+# the hue a still liquid is painted in: the liquid's own colour where it has one, the theme's where it is
+# clear (water and refrigerant lean cyan, nitrous violet, nutrient green)
+static func _liq_col(k) -> Color:
+	if k is Color:
+		return k
+	match str(k):
+		"water": return Pal.AIR
+		"refrigerant": return Pal.AIR.lerp(Color.WHITE, 0.3)
+		"solvent": return Pal.VOLT
+		"nutrient": return Pal.FLUID
+	return LC.of(str(k))
+
+
+# a still liquid in a rect: the dark body in its hue, the lit band just under the surface, the ripple
+static func _liquid_body(ci: CanvasItem, q: Rect2, lv: float, col: Color, max_n: int = 10) -> void:
+	var x0: float = q.position.x + 1.5
+	var x1: float = q.end.x - 1.5
+	var yb: float = q.end.y - 1.5
+	var y: float = lerpf(yb, q.position.y + 1.5, lv)
+	if yb - y < 1.0:
+		return
+	var n := clampi(int((x1 - x0) / 14.0), 3, max_n)
+	var amp: float = minf(1.4, (yb - y) * 0.1)
+	var top := PackedVector2Array()
+	for k in n + 1:
+		top.append(Vector2(lerpf(x0, x1, float(k) / n), y + (amp if k % 2 == 0 else -amp)))
+	var bd := PackedVector2Array([Vector2((x0 + x1) * 0.5, (y + yb) * 0.5)])
+	bd.append_array(top)
+	bd.append_array(PackedVector2Array([Vector2(x1, yb), Vector2(x0, yb), top[0]]))
+	_fillc(ci, bd, Color(col.r * 0.42, col.g * 0.42, col.b * 0.42, 0.92))
+	var hb: float = minf(4.0, (yb - y) * 0.18)
+	if hb > 1.0 and x1 - x0 > 40.0:
+		_fillc(ci, PackedVector2Array([Vector2(x0, y + amp), Vector2(x1, y + amp), Vector2(x1, y + amp + hb), Vector2(x0, y + amp + hb)]), Color(col.r * 0.7, col.g * 0.7, col.b * 0.7, 0.5))
+	P(ci, top, 0.66, 1.2)

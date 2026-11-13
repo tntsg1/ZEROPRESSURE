@@ -50,7 +50,7 @@ func home() -> Vector2:
 
 
 func can_take(b) -> bool:
-	return is_instance_valid(b) and b.capture == null and not b.pieces.is_empty() and b.total_mass() <= Methods.crane_t() and game.tools.held_body != b and not b.get_meta("arm", false) and not Crew.owns(b)
+	return is_instance_valid(b) and b.capture == null and not b.pieces.is_empty() and b.total_mass() <= Methods.crane_t() and game.tools.held_body != b and not b.get_meta("arm", false) and not Crew.owns(b) and not LoadMotion.tied_skip(b)
 
 
 # the mark key on a load too heavy for the haulers
@@ -202,8 +202,14 @@ func _physics_process(dt: float) -> void:
 			if path.size() == 1 and not game.mouth_take(zone, "crane"):
 				return
 			var next: Vector2 = pos.move_toward(path[0], SPEED * dt)
-			LoadMotion.move(body, next-pos)
-			pos = next
+			# the hook goes only where the load goes (a cable to the ship holds both: 公测 bug #8)
+			if LoadMotion.move(body, next-pos):
+				pos = next
+			elif LoadMotion.tied_long(body):
+				queue.erase(body)
+				LoadMotion.give_up_tied(game, body, pos)
+				_done()
+				return
 		"release":
 			hold_t += dt
 			if not is_instance_valid(body) or body.capture != null:
@@ -229,6 +235,9 @@ const AUTO_V := 0.6              # m/s: and no faster than this
 
 # the loose piece the crane takes unasked, nearest first; null for none
 func auto_pick():
+	# hauling set to marks only (Shift+J, 公测 bug #8): the crane takes only what is marked
+	if game.haul_manual():
+		return null
 	if game.manual_only() or game.training or game.exam != null:
 		return null
 	# 2026-11-11 (user: every loose body to its mouth with the machines on): with hauling drones in the
@@ -245,7 +254,7 @@ func auto_pick():
 	for b in game.world.bodies:
 		if not is_instance_valid(b) or b.capture != null or b.pieces.is_empty() or taken.has(b) or game.tools.held_body == b:
 			continue
-		if b.get_meta("arm", false) or b.get_meta("arm_extraction", false) or b.get_meta("manual_mark", false) or b.get_meta("crane_skip", false) or Crew.owns(b):
+		if b.get_meta("arm", false) or b.get_meta("arm_extraction", false) or b.get_meta("manual_mark", false) or b.get_meta("crane_skip", false) or Crew.owns(b) or LoadMotion.tied_skip(b):
 			continue
 		var m: float = b.total_mass()
 		if m <= lim + 0.001 or m > Methods.crane_t() or b.age < AUTO_AGE or b.linear_velocity.length() > AUTO_V * Geom.M:

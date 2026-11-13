@@ -21,9 +21,9 @@ const SHOP := [
 	["tunnel", "upgrade", 480000.0, "up_tunnel", "up_tunnel_d"],
 	# 2026-11-11 量子隧穿·机体: the same stage, dearer, after the grapple's tunnelling (Jev: 120 万)
 	["tunnel_body", "upgrade", 1200000.0, "up_tunnel_body", "up_tunnel_body_d"],
-	# 2026-11-11 排队拧 (user: "在前期可以解锁，拧螺丝不必一个一个拧"): early and cheap (Jev 1.2 万; one job done),
+	# 2026-11-11 排队拧, 2026-11-13 同时拧 (user: "在前期可以解锁，拧螺丝不必一个一个拧"): early and cheap (Jev 1.2 万; one job done),
 	# its card under the tunnels' on the drone page (tools.gd: wq)
-	["wrench_queue", "upgrade", 12000.0, "as_up_wrench_queue", "as_up_wrench_queue_d"],
+	["wrench_queue", "upgrade", 12000.0, "as_up_wrench_par", "as_up_wrench_par_d"],
 	["arm", "facility", 65000.0, "fa_arm", "fa_arm_d"],
 	["repair", "item", 3000.0, "it_repair", "it_repair_d"],
 	["ring", "item", 9000.0, "it_ring", "it_ring_d"],
@@ -3225,7 +3225,7 @@ func _tunnel_box(i: int, a: float, id: String = "tunnel") -> void:
 	var early: bool = id == "wrench_queue"
 	_text(Ops.w("前期升级", "EARLY") if early else Ops.w("后期升级", "LATE"), Vector2(r.end.x - 10, r.position.y + 13), 10, Pal.tint(Pal.FLUID, 0.85 * k, 1.1) if early else Pal.heat(0.85 * k, 1.1), font_b, 1)
 	if have and early:
-		_text(Txt.t("as_up_wrench_queue_have"), r.position + Vector2(42, 54), 15, Pal.tint(Pal.FLUID, 0.95 * k, 1.1), font_s)
+		_text(Txt.t("as_up_wrench_par_have"), r.position + Vector2(42, 54), 15, Pal.tint(Pal.FLUID, 0.95 * k, 1.1), font_s)
 	elif have:
 		_text(Ops.w("已安装 · 按 %s 开关", "FITTED · %s ON/OFF") % _tunnel_key(id), r.position + Vector2(42, 54), 15, Pal.tint(Pal.FLUID, 0.95 * k, 1.1), font_s)
 	elif why != "":
@@ -3438,7 +3438,7 @@ func _detail(a: float) -> void:
 			_wrap(Ops.w("先装量子隧穿，再装这个。装上后默认开启，按 %s 或右上角「机体」按钮开关。开着时，无人机自己能穿过墙壁、船体、设施和散件；还没泄压的舱室和港区边界仍然挡得住。", "Fit quantum tunnelling first. On once fitted; %s or the BODY button top right switches it. While on, the drone itself passes walls, hulls, facilities and loose pieces; rooms still under pressure and the berth's edge still stop it.") % _tunnel_key(id), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2))
 		if tab == DRONE_PAGE and id == "wrench_queue":
 			_text(Txt.t("tm_strategy"), sc.position + Vector2(14, 26), 14, Pal.ink(0.6 * ka), font)
-			_wrap(Txt.t("as_up_wrench_queue_st"), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2), 4)
+			_wrap(Txt.t("as_up_wrench_par_st"), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2), 4)
 		if tab == DRONE_PAGE and id == "tunnel" and not Txt.has("st_" + id):
 			_text(Txt.t("tm_strategy"), sc.position + Vector2(14, 26), 14, Pal.ink(0.6 * ka), font)
 			_wrap(Ops.w("装上后默认开启，按 %s 开关。开着时，抓钩抓着的件能直接穿过墙壁和船体拖出来，不用先开路。", "On once fitted; %s switches it. While on, a held piece is dragged straight through walls and hulls: no path to cut first.") % Keys.label("tunnel"), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2))
@@ -3658,7 +3658,7 @@ func _bottom(s: Vector2, a: float) -> void:
 				if tab == DRONE_PAGE and str(it[0]) in ["tunnel", "tunnel_body"]:
 					label = "✓ " + Ops.w("已安装 · 按 %s 开关", "FITTED · %s ON/OFF") % _tunnel_key(str(it[0]))
 				elif tab == DRONE_PAGE and str(it[0]) == "wrench_queue":
-					label = "✓ " + Txt.t("as_up_wrench_queue_have")
+					label = "✓ " + Txt.t("as_up_wrench_par_have")
 				ok = false
 			elif tab == DRONE_PAGE and LATE.has(it[0]) and _late_why(str(it[0])) != "":
 				label = Pal.money(price)

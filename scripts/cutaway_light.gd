@@ -9,6 +9,20 @@ extends Node2D
 #    changes (a child node), so standing still costs nothing.
 
 const R := 4.5 * 48.0       # px: how far the laser's light reaches
+# 公测反馈 #10 (2026-11-13, a player: "切割激光发射时会光源会把周围照亮，在新手眼里会误认为那是任务指引的沿线切割"): the
+# lit edges round the cut read as the guide's cut line — softer now, shorter, and a pale hot white, not the
+# guide's orange (SOFT_ON false: as before)
+static var SOFT_ON := true
+const SOFT_R := 2.8 * 48.0
+
+
+# the laser's light: the beam colour washed towards white (the guide's marks keep the orange)
+static func _lit(a: float, k: float) -> Color:
+	var c: Color = LaserSkin.lheat(a, k)
+	if not SOFT_ON:
+		return c
+	var w := Color(1.0, 0.97, 0.9, c.a)
+	return Color(lerpf(c.r, w.r, 0.65), lerpf(c.g, w.g, 0.65), lerpf(c.b, w.b, 0.65), c.a)
 const LAMP_R := 3.4 * 48.0  # px: a work lamp's reach on the structure
 const ENGINE_R := 2.2 * 48.0
 const LAMP_C := Color(1.0, 0.93, 0.82)
@@ -176,14 +190,15 @@ func _draw() -> void:
 		return
 	var f: Vector2 = world.game.tools.front
 	var flick := 0.86 + 0.1 * sin(_t * 47.0) + 0.06 * sin(_t * 113.0)
+	var rr: float = SOFT_R if SOFT_ON else R
 	var fp := PackedVector2Array()
 	var fc := PackedColorArray()
 	var fi := PackedInt32Array()
 	var segs := PackedVector2Array()
 	var sc := PackedColorArray()
-	var reach := Rect2(f - Vector2(R, R), Vector2(R, R) * 2.0)
+	var reach := Rect2(f - Vector2(rr, rr), Vector2(rr, rr) * 2.0)
 	# 60 FPS: only the strips the light reaches (ARK-01 has thousands of pieces)
-	for p in _near(f, R):
+	for p in _near(f, rr):
 		if not _visible(p):
 			continue
 		var poly: PackedVector2Array = p.poly
@@ -194,15 +209,15 @@ func _draw() -> void:
 			var base := fp.size()
 			fp.append_array(poly)
 			for v in poly:
-				var k := clampf(1.0 - v.distance_to(f) / R, 0.0, 1.0)
-				fc.append(LaserSkin.lheat(0.16 * k * k * flick, 1.0))
+				var k := clampf(1.0 - v.distance_to(f) / rr, 0.0, 1.0)
+				fc.append(_lit((0.07 if SOFT_ON else 0.16) * k * k * flick, 1.0))
 			for i in tri:
 				fi.append(base + i)
-	_edges(segs, sc, f, R, LaserSkin.lheat(1.0, 1.6), 0.75 * flick)
+	_edges(segs, sc, f, rr, _lit(1.0, 1.6 if not SOFT_ON else 1.2), (0.22 if SOFT_ON else 0.75) * flick)
 	if not fi.is_empty():
 		RenderingServer.canvas_item_add_triangle_array(get_canvas_item(), fi, fp, fc)
 	if not segs.is_empty():
-		draw_multiline_colors(segs, sc, 2.0)
+		draw_multiline_colors(segs, sc, 1.2 if SOFT_ON else 2.0)
 	var tex: Texture2D = world.game.fx.glow_tex
-	draw_texture_rect(tex, Rect2(f - Vector2(R, R) * 0.7, Vector2(R, R) * 1.4), false, LaserSkin.lheat(0.12 * flick, 1.0))
+	draw_texture_rect(tex, Rect2(f - Vector2(rr, rr) * 0.7, Vector2(rr, rr) * 1.4), false, _lit((0.06 if SOFT_ON else 0.12) * flick, 1.0))
 	draw_texture_rect(tex, Rect2(f - Vector2(30, 30), Vector2(60, 60)), false, LaserSkin.lheat(0.5 * flick, 1.6))

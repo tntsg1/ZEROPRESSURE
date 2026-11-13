@@ -1072,6 +1072,41 @@
 中：下一个螺栓超出了工具的操作范围。请靠近目标，继续拆卸。
 英：NEXT BOLT IS OUT OF REACH. MOVE CLOSER TO CONTINUE.
 
+[txt.as_up_wrench_par]
+# 提示文字
+中：【占位】同时拧
+英：[PLACEHOLDER] Parallel wrench
+
+[txt.as_up_wrench_par_d]
+# 提示文字
+中：【占位】拧着一颗时马上能点下一颗，几颗一起拧
+英：[PLACEHOLDER] Click the next fixing while one turns: they turn together
+
+[txt.as_up_wrench_par_st]
+# 提示文字
+中：【占位】拧着一颗时点下一颗，它立刻也开始拧，最多 4 颗同时转，各拧各的。右键点其中一颗只停那一颗；飞出范围的那颗会停下；换工具全部停下。
+英：[PLACEHOLDER] Click the next while one turns: it starts at once, up to 4 turning together, each on its own. Right-click one to stop just that one; one out of reach stops; another tool stops them all.
+
+[txt.as_up_wrench_par_have]
+# 提示文字
+中：【占位】已安装 · 可几颗同时拧
+英：[PLACEHOLDER] FITTED · SEVERAL TURN AT ONCE
+
+[txt.as_wp_cancel]
+# 提示文字
+中：【占位】这一颗停了
+英：[PLACEHOLDER] THIS ONE STOPPED
+
+[txt.as_wp_cleared]
+# 提示文字
+中：【占位】全部停下
+英：[PLACEHOLDER] ALL STOPPED
+
+[txt.as_wp_full]
+# 提示文字
+中：【占位】最多同时拧 %s 颗：等一颗拧完再点
+英：[PLACEHOLDER] AT MOST %s AT ONCE: WAIT FOR ONE TO FINISH
+
 [txt.as_slurp_keys]
 # 提示文字
 中：按住左键抽取气体和液体，按住右键回收泄漏液体。
@@ -1321,6 +1356,36 @@
 # 提示文字
 中：【占位】中键点空白或 Esc 关闭
 英：[PLACEHOLDER] MIDDLE CLICK BLANK OR Esc TO CLOSE
+
+[txt.as_rd_close_tip]
+# 提示文字
+中：【占位】点 × 收起这条读数 · %s 收起全部
+英：[PLACEHOLDER] CLICK × TO PUT THIS READING AWAY · %s FOR ALL
+
+[txt.as_rd_cleared]
+# 提示文字
+中：【占位】收起了 %d 条读数，零件仍算测过，再测一次会重新显示
+英：[PLACEHOLDER] %d READINGS PUT AWAY. THE PARTS STAY MEASURED; MEASURE AGAIN TO SHOW ONE
+
+[txt.as_rd_none]
+# 提示文字
+中：【占位】现在没有读数标签
+英：[PLACEHOLDER] NO READINGS SHOWN
+
+[txt.as_rd_key]
+# 提示文字
+中：【占位】收读数
+英：[PH] READS
+
+[txt.as_rd_key_n]
+# 提示文字
+中：【占位】收起全部读数标签
+英：[PLACEHOLDER] PUT ALL READING TAGS AWAY
+
+[txt.as_rd_key_why]
+# 提示文字
+中：【占位】还没有读数
+英：[PLACEHOLDER] NO READINGS YET
 
 [txt.as_hc_k_pressure]
 # 提示文字

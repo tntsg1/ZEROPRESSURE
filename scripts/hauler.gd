@@ -113,6 +113,9 @@ func can_take(b) -> bool:
 	# the works crew's parts and wreck: theirs (2026-11-12, scripts/crew.gd owns)
 	if Crew.owns(b):
 		return false
+	# set down because a line to the ship held it (公测 bug #8): not until it is unplugged
+	if LoadMotion.tied_skip(b):
+		return false
 	# another machine (the other hauler, the arm, the crane) is already after it
 	return not b.get_meta("arm", false) or b.get_meta("arm_by", "") == who
 
@@ -133,7 +136,7 @@ func _unclaim(b) -> void:
 # hazard) that nobody holds and no other machine is after. Anything of value,
 # or anything it cannot be sure of, waits for the operator (or a mark).
 func auto_takes(b) -> bool:
-	if game.manual_only():
+	if game.manual_only() or game.haul_manual():
 		return false
 	if is_instance_valid(b) and b.get_meta("arm_parked",false): return false
 	if game.plan != null and game.plan.reserves_body(b): return false
@@ -326,6 +329,12 @@ func _step(dt: float) -> void:
 		# The gripper follows that real pose; its virtual position must never run
 		# ahead and announce arrival while the cargo remains inside the ship.
 		pos = body.global_position-off
+		# 公测 bug #8: a cable to the ship held it taut a moment: set it down, go to other work
+		if LoadMotion.tied_long(body):
+			queue.erase(body)
+			LoadMotion.give_up_tied(game, body, pos)
+			_done()
+			return
 	var hold := false
 	if state in ["reach", "carry"] and game.keepout_blocks(pos, _heading()):
 		hold = true
