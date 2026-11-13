@@ -47,7 +47,7 @@ func _spots() -> Array:
 	var gp := float(HW.spokes().get("power", -PI * 0.5))
 	out.append(["hub_cabinet", PS.centre() - Vector2.from_angle(gp) * 5.75 * M, Vector2(1.6, 2.8), PS.console_spot("ring"), PS.centre() + Vector2(0.0, 40.0) * M])
 	out.append(["trade_board", PS.box("trade").position + TA.BOARD.get_center() * M, TA.BOARD.size, PS.console_spot("trade"), PS.box("trade").position + Vector2(30.0, 20.0) * M])
-	out.append(["bale_probe", PS.box("process").position + (BP.PROBE + Vector2(0.55, -1.575)) * M, Vector2(2.2, 1.35), preload("res://scripts/process_gallery.gd").term("business"), PS.box("process").position + Vector2(8.0, 3.2) * M])
+	out.append(["bale_probe", PS.box("process").position + BP.PROBE_WIN.get_center() * M, BP.PROBE_WIN.size, preload("res://scripts/process_gallery.gd").term("business"), PS.box("process").position + Vector2(8.0, 3.2) * M])
 	var ln = g.consoles.line
 	var raw: Array = ln._raw
 	var bxs: Array = ln._boxes

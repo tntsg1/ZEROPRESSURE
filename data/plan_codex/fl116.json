@@ -1,0 +1,308 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "fl116",
+	"steps": [
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"gap": 0.2,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-L",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-P",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-B",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-A",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-T1",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-T2",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-T3",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-M",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PBA",
+			"do": "h",
+			"gap": 26.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PS-1",
+			"do": "h",
+			"gap": 4.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PS-2",
+			"do": "h",
+			"gap": 1.3,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PS-3",
+			"do": "h",
+			"gap": 1.3,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "WASTE-T-D",
+			"do": "h",
+			"gap": 5.3,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "V-2",
+			"do": "w",
+			"gap": 3.3,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "V-3",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "MP-2",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "MP-2",
+			"do": "h",
+			"gap": 20.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "V-1",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "V-2",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "MP-3",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PN2",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "FOAM-D",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "MP-3",
+			"do": "h",
+			"gap": 19.3,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "V-2",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "V-3",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "MP-1",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"gap": 20.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-L",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-P",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-B",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-A",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-T1",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-T2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-T3",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PBA",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PS-1",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PS-2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PS-3",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "WASTE-T-D",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PN2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "FOAM-D",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "MP-1",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		}
+	]
+}

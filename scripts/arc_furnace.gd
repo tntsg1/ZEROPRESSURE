@@ -23,8 +23,10 @@ static var _built := {}
 
 
 static func _mesh(key: String, build: Callable) -> ArrayMesh:
+	if DistrictStyle.solid():
+		key = "solid/" + key
 	if not _built.has(key):
-		var pen := MeshPen.new()
+		var pen = preload("res://scripts/solid_pen.gd").new() if DistrictStyle.solid() else MeshPen.new()
 		build.call(pen)
 		_built[key] = pen.mesh()
 	return _built[key]
@@ -32,10 +34,38 @@ static func _mesh(key: String, build: Callable) -> ArrayMesh:
 
 func _poly(ci, pts: Array, fill_c: Color, edge: Color = Color(0, 0, 0, 0), w: float = 1.0) -> void:
 	var p := PackedVector2Array(pts)
-	ci.draw_colored_polygon(p, fill_c)
+	# 2026-11-12 (user: "纯2D、纯扁平"): the casings as lit steel in the districts' solid look
+	if not DistrictStyle.solid_poly(ci, p, fill_c, M):
+		ci.draw_colored_polygon(p, fill_c)
 	if edge.a > 0.0:
 		p.append(p[0])
-		ci.draw_polyline(p, edge, w)
+		ci.draw_polyline(p, _solid_edge(edge), w)
+
+
+# the edge colour in the solid look: Pal.ink's white-in-alpha as the opaque grey of DistrictStyle.ink
+static func _solid_edge(edge: Color) -> Color:
+	if not DistrictStyle.solid() or edge.r < 0.9 or edge.g < 0.9:
+		return edge
+	return DistrictStyle.ink(edge.a)
+
+
+# (the processing district's furnace only: the berth's smelter draws as it did)
+func _rect(ci, x0: float, y0: float, x1: float, y1: float, F: float, fill_c: Color, edge: Color = Color(0, 0, 0, 0), w: float = 1.0) -> void:
+	var p := PackedVector2Array([Vector2(X + x0, F + y0) * M, Vector2(X + x1, F + y0) * M, Vector2(X + x1, F + y1) * M, Vector2(X + x0, F + y1) * M])
+	if not DistrictStyle.solid_rect(ci, Rect2(p[0], p[2] - p[0]), fill_c, M):
+		ci.draw_colored_polygon(p, fill_c)
+	if edge.a > 0.0:
+		p.append(p[0])
+		ci.draw_polyline(p, _solid_edge(edge), w)
+
+
+func _brect(ci, x0: float, y0: float, x1: float, y1: float, F: float, fill_c: Color, edge: Color = Color(0, 0, 0, 0), w: float = 1.0) -> void:
+	var p := PackedVector2Array([body_pt(x0, y0, F), body_pt(x1, y0, F), body_pt(x1, y1, F), body_pt(x0, y1, F)])
+	if not DistrictStyle.solid_poly(ci, p, fill_c, M):
+		ci.draw_colored_polygon(p, fill_c)
+	if edge.a > 0.0:
+		p.append(p[0])
+		ci.draw_polyline(p, _solid_edge(edge), w)
 
 
 # the electrodes' tips: up out of the roof when idle, down on the scrap while melting, riding the bath

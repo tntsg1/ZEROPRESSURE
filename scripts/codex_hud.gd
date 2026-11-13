@@ -159,7 +159,7 @@ const EDGE := 22.0
 func _anchor() -> Vector2:
 	# 128 号 第 7 段 (user 2026-11-09): a guide card up on the right (the first ship's coach,
 	# the warehouse guide) keeps its place; the first-meeting card waits below it
-	var top := TOP
+	var top: float = preload("res://scripts/hud_keys.gd").below(game, TOP)
 	var x := c.size.x - EDGE - W
 	if game != null:
 		for o in [game.coach, game.store_guide]:

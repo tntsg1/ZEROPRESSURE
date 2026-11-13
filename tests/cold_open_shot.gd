@@ -13,6 +13,7 @@ var by_shot := {}
 func _initialize() -> void:
 	Career.path = "user://zp_test_coldopen_career.json"
 	SaveGame.path = "user://zp_test_coldopen_save.json"
+	SaveGame.train_path = "user://zp_test_coldopen_training.json"   # never the player's training file
 	SaveGame.allow_test = true
 	if DisplayServer.get_name() != "headless":
 		root.add_child(preload("res://tests/test_window.gd").new())

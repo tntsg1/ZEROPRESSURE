@@ -1,0 +1,237 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "lc140",
+	"steps": [
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"gap": 0.2,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-E",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-B",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2CA-6-V",
+			"do": "h",
+			"gap": 16.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PL",
+			"do": "h",
+			"gap": 26.0,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PF",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "FUEL-2-D",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-89-V",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2CA-91-V",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-S",
+			"do": "h",
+			"gap": 16.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PSF",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2CA-16-V",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAST-35-V",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "SK",
+			"do": "w",
+			"gap": 34.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "CL-1",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "CL-2",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "CL-3",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "CL-4",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "BOW",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [
+				{
+					"key": "G-H",
+					"kind": "pressure",
+					"val": 0.7
+				}
+			],
+			"value": true
+		},
+		{
+			"ctrl": "WINCH",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-M1",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "K-M2",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-E",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-B",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2CA-6-V",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PL",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PF",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "FUEL-2-D",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-89-V",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2CA-91-V",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAST-35-V",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		}
+	]
+}

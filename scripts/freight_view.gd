@@ -289,6 +289,9 @@ func _draw() -> void:
 				var e := 1.0
 				if not an.is_empty():
 					e = float(an.t) if str(an.dir) == "up" else 1.0 - float(an.t)
+					# a press crate stays whole until the baler's gripper has it (scripts/bale_press.gd HAND_GRIP)
+					if str(an.dir) == "press":
+						e = 1.0 - clampf((float(an.t) - 0.5) / 0.14, 0.0, 1.0)
 					e = e * e * (3.0 - 2.0 * e)
 				var sh := lerpf(0.35, 1.0, e)
 				art.goods_at(self, cg, at / M, ps[k][1], Color(sh, sh, sh), lerpf(0.72, 0.98, e))

@@ -73,6 +73,18 @@ func band_rect() -> Rect2:
 	return _plate if shown() else Rect2()
 
 
+# 2026-11-12 公测反馈 ("右上角的当前提示会和快捷键展示重叠，看不全"): the keys head the right column;
+# every card on the right (the coach's and the warehouse guide's step card, the first-meeting card,
+# the first-use key card, the radio log) starts below them — one rule, the same everywhere
+const GAP_BELOW := 12.0
+static var stack := true       # false: the old places (for the before/after pictures)
+static func below(game, y: float) -> float:
+	if not stack or game == null or not is_instance_valid(game) or game.get("hud") == null or game.hud.get("keys_band") == null:
+		return y
+	var b: Rect2 = game.hud.keys_band.band_rect()
+	return maxf(y, b.end.y + GAP_BELOW) if b.has_area() else y
+
+
 # ---------------------------------------------------------------- state
 
 func _const(name: String, dflt):

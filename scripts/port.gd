@@ -39,7 +39,7 @@ const DEPS := {"ring": [["power", 1], ["tug", 1]]}
 const TOW_FEE := 1500.0           # per contract while the tug station is down
 const PARTS_SHARE := 0.25          # 74 号: with the materials brought, the crew's wages only
 # the berth repairs that draw on the port's grid: they wait for the power district's stage 1
-const POWER_ITEMS := ["crane", "port2", "arm", "hauler2"]
+const POWER_ITEMS := ["crane", "port2", "arm", "hauler2", "hauler3", "hauler4", "hauler5", "hauler6", "hauler7"]
 
 
 static func stage(zone: String) -> int:

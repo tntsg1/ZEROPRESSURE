@@ -468,6 +468,8 @@ func switch_source() -> String:
 
 func _passed() -> void:
 	machine_steps += 1
+	expose_tried.clear()
+	since_t = 0.0
 	if editing() and i < steps.size():
 		rec.append(steps[i].duplicate(true))
 		if str(steps[i].get("do", "")) == "cut":
@@ -548,6 +550,9 @@ func _physics_process(dt: float) -> void:
 	if package_mode and packages != null:
 		packages.tick(dt)
 		return
+	_worse_t = _worse_t + dt if wait == "as_plan_worse" else 0.0
+	if game != null and is_instance_valid(_cutter_service):
+		_codex_drone()
 	if running and game != null and game.state == "play" and not game.paused_sim and not game.auto_paused:
 		watch_t += dt
 		if watch_t > 0.5:
@@ -568,6 +573,7 @@ func _physics_process(dt: float) -> void:
 		_preset_driver.tick(self,dt)
 		return
 	var st: Dictionary = steps[i]
+	since_t += dt
 	# the cuts and hauls the plan learned (G4)
 	if st.get("do", "") == "cut":
 		_step_cut(st, dt)
@@ -588,7 +594,7 @@ func _physics_process(dt: float) -> void:
 		if source == "codex":
 			game.world.reveal(c.hidden_room, game.world.ctrl_world(c))
 		else:
-			_pause("plan_hidden", st.ctrl)
+			_pause("as_plan_sealed" if _drone_run() else "plan_hidden", st.ctrl)
 			return
 	for pr in st.pre:
 		var reading_site = game.world.ctrls.get(pr.key)
@@ -596,20 +602,35 @@ func _physics_process(dt: float) -> void:
 			_pause("plan_changed", pr.key)
 			running = false
 			return
-		var r = game.sys.readings.get(pr.key)
-		if r == null or game.sys.stale(r):
-			_pause("plan_measure", pr.key)
-			return
-		if not no_worse(pr.kind, float(r.val), float(pr.val)):
-			_pause("plan_differs", pr.key)
+		if not _read(pr, reading_site, dt):
 			return
 	wait = ""
+	# 切割宝典: a hose comes off only once what it drains is empty (the bot that wrote the plan
+	# took them all off at the end, when the ship was safe); up to DRAIN_MAX, then the cuts' own
+	# pressure rule still holds them
+	if source == "codex" and st.do == "h" and st.has("value") and not bool(st.value) and game.sys.hoses.has(c.id) and not _drained(c):
+		drain_t += dt
+		if drain_t < DRAIN_MAX:
+			wait = "as_plan_drain"
+			wait_arg = c.id
+			return
+	drain_t = 0.0
+	# 切割宝典: the manual keeps the pace it was written at: a step comes no sooner after the one
+	# before than it did when the plan was made (a tank drawn down before its ullage vents...)
+	if source == "codex" and since_t < float(st.get("gap", 0.0)) and not _pump_dry(c) and (game.codex_rules == null or game.codex_rules.dry_running().is_empty()):
+		return
 	if st.has("value"):
 		var actual: bool = game.sys.hoses.has(c.id) if st.do == "h" else c.state
 		if actual == bool(st.value):
 			_passed()
 			step_t = 0.0
 			return
+	# 宝典无人机: the codex drone flies to the switch or the port and works it there
+	if _drone_run() and not _codex_at(game.world.ctrl_world(c)):
+		wait = "as_plan_fly"
+		wait_arg = c.id
+		step_t = 0.0
+		return
 	step_t += dt
 	if step_t < STEP_TIME:
 		return
@@ -627,6 +648,142 @@ func _physics_process(dt: float) -> void:
 
 # the machine cuts a recorded kerf: the same piece, still on the ship and uncut, the
 # rooms beside it empty, nothing live or charged through it, the readings as they were
+var drain_t := 0.0
+var stuck_t := 0.0                # s the cutter has found no spot to fire from (no hull over it either)
+const STUCK_S := 20.0
+var expose_tried := {}             # marked lines tried and blocked since the last step passed
+var since_t := 0.0               # s since the plan's last step passed
+var read_t := 0.0                # s before a codex run reads a gauge again
+const DRAIN_MAX := 240.0         # s a codex hose may wait for its room or vessel to drain
+
+
+# what a port drains is empty: the salvage bot's own rule for wanting a hose there (tests/salvage_bot.gd)
+func _drained(c) -> bool:
+	var s = game.sys
+	if c.medium == "gas":
+		return s.P(c.target) <= (1.0 if game.world.rooms.has(c.target) or s.vessel_cfg.get(c.target, {}).has("dead_leg") else 40.0)
+	if c.medium == "volt":
+		return true
+	if _pump_dry(c):
+		return true
+	var vk: String = s.fluid_at_port(c.id)
+	return vk == "" or s.fluid(vk) <= 0.015
+# 2026-11-12 (评审定): the plan's safety steps — switches, hoses, the gauges they need — are done by the
+# one visible drone on every plan run, the player's own as well as the codex's; only where the steps
+# come from differs (not the grey heron's preset, not a package's worker)
+func _drone_run() -> bool:
+	return not preset and not package_worker and not package_mode
+
+# 2026-11-12 (用户: "至少得提示大一点吧"): the run waits on the player, not on its own machines: what to do and
+# where ({} while the drone or the cutter is just busy). scripts/plan_alert.gd puts it up top-centre,
+# next_step.gd makes it the 下一步 mark
+const PLAYER_WAITS := ["as_plan_expose", "as_plan_cut_by_hand", "as_plan_sealed", "as_plan_probe", "plan_measure", "plan_differs", "plan_hidden",
+	"plan_cut_pressure", "plan_cut_live", "plan_cut_vessel", "plan_cut_pipe", "plan_cut_structure", "plan_cut_preserved",
+	"plan_cut_result", "plan_cut_incident", "plan_needs_method", "plan_preset_blocked", "plan_changed"]
+const WORSE_ALERT_S := 8.0       # a gauge reading worse that long: the player is asked to see to it
+var _worse_t := 0.0
+func player_alert() -> Dictionary:
+	if not running or wait == "" or game == null or game.world == null:
+		return {}
+	if not (wait in PLAYER_WAITS or (wait == "as_plan_worse" and _worse_t >= WORSE_ALERT_S)):
+		return {}
+	var line: String = Txt.t(wait) % wait_arg if Txt.t(wait).contains("%") else Txt.t(wait)
+	var at := Vector2.INF
+	if wait == "as_plan_expose":
+		line = Txt.t("as_plan_expose") % expose_tag
+		at = expose_at
+	elif game.world.ctrls.has(wait_arg):
+		at = game.world.ctrl_world(game.world.ctrls[wait_arg])
+	elif game.world.rooms.has(wait_arg):
+		at = Geom.centroid(game.world.rooms[wait_arg].poly)
+	elif game.world.lines.has(wait_arg):
+		var path: PackedVector2Array = game.world.line_path_world(game.world.lines[wait_arg])
+		if not path.is_empty(): at = path[path.size() / 2]
+	if not at.is_finite() and i < steps.size():
+		var st: Dictionary = steps[i]
+		var q = game.world.key_piece(str(st.get("key", ""))) if st.has("key") else null
+		if q != null and not q.gone:
+			at = game.world.frame(q) * Geom.centroid(q.poly)
+		elif game.world.ctrls.has(str(st.get("ctrl", ""))):
+			at = game.world.ctrl_world(game.world.ctrls[str(st.ctrl)])
+	return {"line": line, "at": at, "key": wait}
+
+# a reading a step needs: there, fresh and no worse than when the plan was made. On a drone run the
+# drone flies to the gauge and measures it itself (again every 2 s while it reads worse) and the plan
+# goes on by itself; it stops for the player only where the player has to do something
+func _read(pr: Dictionary, site, dt: float) -> bool:
+	var r = game.sys.readings.get(pr.key)
+	if r != null and not game.sys.stale(r) and no_worse(pr.kind, float(r.val), float(pr.val)):
+		return true
+	if not _drone_run():
+		_pause("plan_measure" if r == null or game.sys.stale(r) else "plan_differs", pr.key)
+		return false
+	if game.world.room_hidden(site.hidden_room):
+		if source == "codex":
+			game.world.reveal(site.hidden_room, game.world.ctrl_world(site))
+		else:
+			_pause("as_plan_sealed", pr.key)
+			return false
+	if not _codex_at(game.world.ctrl_world(site)):
+		wait = "as_plan_fly"
+		wait_arg = pr.key
+		step_t = 0.0
+		return false
+	read_t -= dt
+	if read_t <= 0.0:
+		read_t = 2.0
+		if not Consum.ready(game, "probe"):
+			_pause("as_plan_probe", pr.key)
+			return false
+		game.do_measure({"kind": "ctrl", "ctrl": site, "pos": game.world.ctrl_world(site)})
+		r = game.sys.readings.get(pr.key)
+		if r != null and not game.sys.stale(r) and no_worse(pr.kind, float(r.val), float(pr.val)):
+			return true
+	wait = "as_plan_worse" if r != null and not game.sys.stale(r) else "as_plan_reading"
+	wait_arg = pr.key
+	step_t = 0.0
+	return false
+
+# the drone (2026-11-12): on a plan run the berth's cutter is the codex drone, phasing through walls
+# (cutter_drone.gd set_phasing); otherwise the plain machine (back to solid once it is clear of the ship)
+func _codex_drone() -> void:
+	if package_worker:
+		return
+	var sv = cutter_service()
+	if sv == null or sv.robot == null:
+		return
+	var want: bool = running and _drone_run()
+	# the run over: home to the berth, still phasing until it is clear of the ship
+	if not want and sv.robot.phasing and sv.executor == null:
+		sv.robot.move_to(sv.berth)
+	sv.robot.set_phasing(want)
+
+# the codex drone at a control: flown there (straight, through walls) and steady beside it
+const CODEX_STANDOFF := 24.0
+func _codex_at(at: Vector2) -> bool:
+	var sv = cutter_service()
+	if sv.executor != null and sv.executor != self and is_instance_valid(sv.executor) and sv.executor.running:
+		return false
+	var r = sv.robot
+	if not r.phasing:
+		return false
+	var spot := at + Vector2(0.0, -CODEX_STANDOFF)
+	r.move_to(spot)
+	if r.global_position.distance_to(spot) > 6.0 or r.linear_velocity.length() > 30.0:
+		return false
+	r.heading = (at - r.global_position).angle()
+	r.work_at = at
+	r.work_t = 0.25
+	return true
+
+# a pump drawing through this hose is running dry: the hose comes off now (codex_rules.gd DRY_S)
+func _pump_dry(c) -> bool:
+	if c == null or game.codex_rules == null:
+		return false
+	var dr: Array = game.codex_rules.dry_running()
+	return not dr.is_empty() and str(dr[1]) == str(c.id)
+
+
 func _step_cut(st: Dictionary, dt: float) -> void:
 	if game.plan != null and game.plan.packages != null and not game.plan.packages.cut_conflicts(st).is_empty():
 		_pause("plan_cut_preserved", str(st.key))
@@ -664,7 +821,7 @@ func _step_cut(st: Dictionary, dt: float) -> void:
 		if source == "codex":
 			game.world.reveal(p.room, game.world.frame(p).origin)
 		else:
-			_pause("plan_hidden", str(st.key))
+			_pause("as_plan_sealed" if _drone_run() else "plan_hidden", str(st.key))
 			return
 	for room in st.get("rooms", []):
 		if game.sys.P(str(room)) > SAFE_KPA:
@@ -683,12 +840,7 @@ func _step_cut(st: Dictionary, dt: float) -> void:
 			_pause("plan_changed", pr.key)
 			running = false
 			return
-		var r = game.sys.readings.get(pr.key)
-		if r == null or game.sys.stale(r):
-			_pause("plan_measure", pr.key)
-			return
-		if not no_worse(pr.kind, float(r.val), float(pr.val)):
-			_pause("plan_differs", pr.key)
+		if not _read(pr, reading_site, dt):
 			return
 	wait = ""
 	var pl := PackedVector2Array()
@@ -757,7 +909,17 @@ func _step_cut(st: Dictionary, dt: float) -> void:
 		wait_arg = str(st.key)
 		if bool(st.get("seg", false)) and step_t <= 0.0 and service.reason in ["tool_blocked", "route_blocked"]:
 			_expose_wait(p, at, dt)
+		# 2026-11-12: no spot to fire from and no hull of the player's to take off: after a while the
+		# cut is the player's (made by hand, the step sees it and goes on), said up top (plan_alert.gd)
+		if wait == "plan_cutter_wait" and service.reason in ["tool_blocked", "route_blocked"] and _drone_run():
+			stuck_t += dt
+			if stuck_t >= STUCK_S:
+				wait = "as_plan_cut_by_hand"
+				wait_arg = p.tag if p.tag != "" else str(st.key)
+		else:
+			stuck_t = 0.0
 		return
+	stuck_t = 0.0
 	expose_at = Vector2.INF
 	# Same actual material speed budget as a held beam, capped by the berth
 	# machine's rated feed. Never apply an arbitrarily large dt as an instant cut.
@@ -861,12 +1023,15 @@ func _expose_wait(p, at: Vector2, dt: float) -> void:
 		return
 	expose_t = 0.6
 	var origin := str(p.get_meta("origin", p.tag))
+	# this line's cutter could not get at it: it is not put first again until a line is cut
+	# (two blocked lines each with nothing over them were swapped every frame, the cutter never settling)
+	expose_tried[str(steps[i].get("key", ""))] = true
 	for k in range(i + 1, steps.size()):
 		var o: Dictionary = steps[k]
 		if not bool(o.get("seg", false)):
 			continue
 		var q = game.world.key_piece(str(o.key))
-		if q == null or q.gone or q.body != null or str(q.get_meta("origin", q.tag)) == origin:
+		if q == null or q.gone or q.body != null or str(q.get_meta("origin", q.tag)) == origin or expose_tried.has(str(o.key)):
 			continue
 		var qa: Vector2 = game.world.frame(q) * Vector2(float(o.pl[0][0]), float(o.pl[0][1]))
 		if _cover(q, qa).is_empty():

@@ -19,10 +19,8 @@ extends Node
 #   A pretension rod cut or freed with its turnbuckle still tight whips loose,
 #   into what it hits, and knocks the containers in its bays.
 # Saved: which sides kinked, which rods snapped.
-#   97 号 (user 2026-10-28): a temporary prop (scripts/gear.gd) under a bay carries that bay and
-#   every bay outboard of it: they bend no more and weigh nothing on the bays inboard, which can
-#   then be emptied first. Each prop carries the containers between it and the next prop out;
-#   past its rating it bows and then buckles, and the wall takes the load back.
+#   (97 号's temporary props under a bay were removed 2026-11-12, user "从来没有用到过": the wall comes down
+#   from the ends inwards.)
 #   87-2: the wall really bends. Each bay outboard of the support turns about its inboard post by
 #   an angle that follows its bending (elastic: back when the load comes off), the bays beyond
 #   carried round with it, so the free end droops visibly as a column is emptied in the wrong
@@ -219,39 +217,6 @@ func bay_of(p) -> int:
 	return -1
 
 
-# the bays with a prop under them
-func _propped() -> Array:
-	var out: Array = []
-	if game != null and game.gear != null:
-		for u in game.gear.props():
-			out.append(int(u.bay))
-	return out
-
-
-# the containers' weight a prop carries (t): its bay and those out to the next prop
-func prop_load(bay: int) -> float:
-	var sup := int(cfg.get("support", 0))
-	var nb: int = cfg.bays.size()
-	var pr := _propped()
-	var bays: Array = []
-	if bay < sup:
-		var i := bay
-		while i >= 0 and (i == bay or not pr.has(i)):
-			bays.append(i)
-			i -= 1
-	else:
-		var j := bay
-		while j < nb and (j == bay or not pr.has(j)):
-			bays.append(j)
-			j += 1
-	var m := 0.0
-	for b in bays:
-		for t in cfg.bays[b]:
-			if _on(str(t)):
-				m += float(world.tag(str(t)).mass)
-	return m
-
-
 func fill(b: int) -> int:
 	var n := 0
 	for t in cfg.bays[b]:
@@ -267,26 +232,11 @@ func bend(b: int) -> float:
 		return 0.0
 	var m := 0.0
 	var nb: int = cfg.bays.size()
-	# 97 号: a prop at this bay or outboard of it holds it straight; one further out takes
-	# everything beyond it off this bay
-	var pr := _propped()
 	if b < sup:
-		var lo := 0
-		for p in pr:
-			if p < sup and p >= b:
-				return 0.0
-			if p < b:
-				lo = maxi(lo, p + 1)
-		for i in range(lo, b):
+		for i in range(0, b):
 			m += fill(i) * float(b - i)
 	else:
-		var hi := nb
-		for p in pr:
-			if p > sup and p <= b:
-				return 0.0
-			if p > b:
-				hi = mini(hi, p)
-		for i in range(b + 1, hi):
+		for i in range(b + 1, nb):
 			m += fill(i) * float(i - b)
 	var k: float = 1.0 + float(cfg.get("stiff", 0.75)) * fill(b)
 	return m / k / float(cfg.get("limit", 6.0))
@@ -342,18 +292,6 @@ func _physics_process(dt: float) -> void:
 	_t = 0.0
 	if bars != null:
 		bars.queue_redraw()
-	# 97 号: each prop's load; past its rating it bows, then buckles
-	if game.gear != null:
-		for u in game.gear.props():
-			u.load = prop_load(int(u.bay))
-			if u.load > Methods.prop_t():
-				if float(u.over) <= 0.0:
-					game.say("prop_over", game.gear.unit_pos(u) + Vector2(0, -40), "%.0f" % u.load)
-				u.over = float(u.over) + 0.2
-				if u.over >= Methods.prop_give():
-					game.gear.buckle(u)
-			else:
-				u.over = maxf(0.0, float(u.over) - 0.2)
 	var sup := int(cfg.get("support", 0))
 	for b in cfg.bays.size():
 		var side := "fwd" if b < sup else "aft"
@@ -361,9 +299,6 @@ func _physics_process(dt: float) -> void:
 			continue
 		if bend(b) > 1.0:
 			_kink(b, side)
-	# 104 号: the whole wall emptied and nothing bent teaches propping
-	if kinked.is_empty() and game.gear != null and range(cfg.bays.size()).all(func(i): return fill(i) == 0):
-		game.gear._feat("propped", 0.0)
 
 
 func _kink(b: int, side: String) -> void:
@@ -452,14 +387,13 @@ func _rod(p) -> void:
 
 
 # 97 号: a bar over each bay, as long as its bending (the tick at the limit), its number and
-# reading beside it; a propped bay says so, a kinked one says so; a fixed size on the screen
+# reading beside it; a kinked one says so; a fixed size on the screen
 func _draw_bars() -> void:
 	_build()
 	var z: float = maxf(game.cam_zoom(), 0.05)
 	var k := 1.0 / z
 	var font: Font = game.hud.font if game.hud != null else ThemeDB.fallback_font
 	var sup := int(cfg.get("support", 0))
-	var pr := _propped()
 	var flash := fmod(Time.get_ticks_msec() / 1000.0, 0.6) < 0.35
 	for b in _members:
 		var tc = world.tag("TC-%d" % (b + 1))
@@ -489,8 +423,6 @@ func _draw_bars() -> void:
 			txt = "%d · %s" % [b + 1, "船坞夹持" if Txt.zh else "HELD"]
 		elif bent:
 			txt = "%d · %s" % [b + 1, "已折弯" if Txt.zh else "KINKED"]
-		elif pr.has(b):
-			txt = "%d · %s" % [b + 1, "撑杆" if Txt.zh else "PROPPED"]
 		else:
 			txt = "%d · %d%%" % [b + 1, int(round(v * 100.0))]
 		bars.draw_set_transform(Vector2(x0, mid.y - 0.25 * Geom.M), 0.0, Vector2(k, k))

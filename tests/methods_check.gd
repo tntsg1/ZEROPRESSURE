@@ -88,11 +88,17 @@ func _run() -> void:
 	Methods.buy("crane")
 	check(Methods.crane_t() == 16.0, "crane tier II: 16 t")
 
-	# ---- props and the winch
-	check(Methods.prop_t() == 60.0 and Methods.prop_give() == 1.5, "no prop method: the lent props are 60 t, 1.5 s")
-	Methods.learn("prop", true)
-	Methods.buy("prop")
-	check(Methods.prop_t() == 90.0 and Methods.prop_give() == 3.0, "props tier II: 90 t, 3 s")
+	# ---- the props method is gone (2026-11-12): eight methods; an old career's prop entries dropped on loading
+	check(Methods.ORDER.size() == 8 and not Methods.ORDER.has("prop") and Methods.OPEN_AT.size() == Methods.ORDER.size(), "eight methods, the props one gone, each with its opening")
+	check(not Methods.learn("prop", true) and Methods.level("prop") == 0 and Methods.name_of("prop") == "prop", "learning the removed method does nothing")
+	var old_m: Dictionary = Career.data.get("methods", {}).duplicate()
+	Career.data.methods["prop"] = 2
+	Career.data["borrows"] = {"prop": 1, "pump": 1}
+	Career.data["gear"] = {"prop": 2, "anchor": 1}
+	Career.data["feats"] = {"propped": {"ship": "cf90"}, "watch": {"ship": "fr26"}}
+	Methods.drop_removed()
+	check(not Career.data.methods.has("prop") and Career.data.borrows == {"pump": 1} and Career.data.gear == {"anchor": 1} and Career.data.feats.keys() == ["watch"], "an old save's props dropped, the rest kept")
+	check(Career.data.methods.size() == old_m.size(), "the methods it had are all still there")
 	Methods.buy("section")
 	check(Methods.winch_k() == 1.5, "sections tier II: winch 1.5×")
 

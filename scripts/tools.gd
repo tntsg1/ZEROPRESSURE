@@ -1,5 +1,6 @@
 class_name Tools
 extends Node2D
+const Crew = preload("res://scripts/crew.gd")
 const FastDraw = preload("res://scripts/fast_draw.gd")
 # The five tools of R-02. Every tool works at the cursor, within 4 m of the
 # drone, on what can actually be seen (never inside a room nobody has opened).
@@ -403,6 +404,10 @@ func _find_hover() -> Dictionary:
 		if b != "":
 			h.ok = false
 			h.reason = b
+	elif h.has("piece") and tool == 3 and h.piece.body != null and Crew.owns(h.piece.body, true):
+		# the crew's new part, on its way to its seat or being bolted down (2026-11-12)
+		h.ok = false
+		h.reason = "crew_part_busy"
 	elif h.has("piece") and h.piece.hidden_by >= 0:
 		var cov = world.pieces.get(h.piece.hidden_by)
 		if cov != null and not cov.gone and cov.body == null:

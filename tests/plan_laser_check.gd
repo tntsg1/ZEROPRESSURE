@@ -159,7 +159,8 @@ func _run() -> void:
 		st1.pre = [{"key":port,"kind":"pressure","val":0.0}]
 		g.sys.readings.erase(port)
 		g.plan._step_cut(st1,100.0)
-		check(g.plan.wait == "plan_measure" and g.plan._shape(target) == shape_before,"missing fresh evidence pauses even after the volume becomes safe")
+		# 2026-11-12: on a plan run the drone goes to read it (as_plan_fly / as_plan_reading); nothing is cut meanwhile
+		check(g.plan.wait in ["plan_measure", "as_plan_fly", "as_plan_reading"] and g.plan._shape(target) == shape_before,"missing fresh evidence pauses even after the volume becomes safe")
 	g.plan.cancel()
 	var cut_seq: int = g.world.key_piece("G4-PLATE").cut_seq
 	SaveGame.allow_test = true

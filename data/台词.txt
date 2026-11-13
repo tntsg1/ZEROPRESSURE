@@ -75,6 +75,21 @@
 中：一、本证授予持证企业在核准范围内开展船舶拆解、物资回收、设备维修及相关经营活动的权利。未经批准，不得占用或使用其他封闭作业区。\n二、持证企业可自主承接回收合同、采购设备、雇用人员，并依法处置和销售取得的回收物资。经营产生的收益、成本及债务由持证企业自行承担。\n三、场地按现状交付。现有设施的损坏及缺失情况以随附清单为准。港务局不承担既有设备的修复费用，后续维修、升级及日常维护由持证企业自行安排。\n四、持证企业须对作业安全、危险物处置及港区设施运行负责。未经检测确认的设备不得投入正式作业，涉及高风险船舶及特殊物资的回收活动须符合相应安全要求。\n五、其他停用区域可在满足设施修复、安全验收及经营许可要求后，逐步申请恢复使用。持证企业须遵守港务局的相关管理规定，严重违规者可被暂停或撤销使用权。
 英：1. This permit grants the holder the right to conduct shipbreaking, material recovery, equipment repairs, and related commercial operations within the approved area. Occupation or use of other closed work zones requires separate authorization.\n2. The permit holder may independently accept salvage contracts, purchase equipment, hire personnel, and legally process or sell recovered materials. All operating revenue, expenses, and liabilities remain the responsibility of the permit holder.\n3. The premises are transferred in their existing condition. Known damage and missing equipment are documented in the attached inventory. The Port Authority is not responsible for restoring existing facilities. All subsequent repairs, upgrades, and maintenance shall be arranged by the permit holder.\n4. The permit holder is responsible for workplace safety, hazardous material handling, and the safe operation of port facilities. Equipment that has not passed inspection must not be placed into active service. High-risk vessels and special materials must be handled in accordance with applicable safety requirements.\n5. Additional inactive zones may be reopened progressively, subject to facility restoration, safety inspections, and operating authorization. The permit holder must comply with Port Authority regulations. Serious violations may result in suspension or revocation of operating rights.
 
+[L_ts1_bridge_1]
+# 衔接卡 · 衔接卡第 1 句：为什么还要练（TUG-001 是条老实的死船，后面的船不会这么老实） · 一句
+中：
+英：
+
+[L_ts1_bridge_2]
+# 衔接卡 · 衔接卡第 2 句：接下来练什么、练完去哪（练完回船坞接活） · 一句
+中：
+英：
+
+[L_ts1_bridge_t]
+# 衔接卡 · 拆完第一艘船 TUG-001 后、进入进阶训练（5 节课）前弹出的衔接卡的标题 · 一个短句
+中：
+英：
+
 [T_contract_signed]
 # 终端 · 合同签下 · 一句
 中：合同已签署，相关作业信息已录入系统。
@@ -947,6 +962,41 @@
 中：这本拆船手册由造船厂编写，收录了大部分船型的拆解方案。除了远航者和 AX-40，其他船型都不需要先手动拆解一遍。按 P 就能按照手册中的方案自动完成断电、泄压等安全处置；你拆开挡住的船壳后，切割机会接着完成主要的切割工作。船上的零件仍然需要自己拆卸。
 英：The shipwrights' own breaking manual, with plans for most ship types. Every type except the Voyager and the AX-40 needs no hand-stripping first. Press P to run the manual's safe-down steps (power off, pressure out); once you open the blocking hull plates, the cutter carries on with the main cuts. Parts are still yours to take off.
 
+[txt.as_plan_fly]
+# 提示文字
+中：【占位】宝典无人机飞往 %s
+英：[PLACEHOLDER] The codex drone is on its way to %s
+
+[txt.as_plan_reading]
+# 提示文字
+中：【占位】无人机正在测 %s
+英：[PLACEHOLDER] The drone is measuring %s
+
+[txt.as_plan_worse]
+# 提示文字
+中：【占位】%s 读数比方案录的差：无人机每 2 秒重测，合格就自动继续；一直不降就先处理这里（泄压、断电或排空）
+英：[PLACEHOLDER] %s reads worse than in the plan: the drone measures it again every 2 s and goes on once it is good; if it stays, deal with it first (vent, power down or drain)
+
+[txt.as_plan_sealed]
+# 提示文字
+中：【占位】暂停：%s 在封闭舱里，先打开这个舱（切开舱壁或开门），方案会自动继续
+英：[PLACEHOLDER] PAUSED: %s is in a sealed room: open it (cut the wall or open the door) and the plan goes on
+
+[txt.as_plan_probe]
+# 提示文字
+中：【占位】暂停：测量仪测不了 %s（探头用完了），补上后方案自动继续
+英：[PLACEHOLDER] PAUSED: the meter cannot measure %s (out of probe tips): restock and the plan goes on
+
+[txt.as_plan_cut_by_hand]
+# 提示文字
+中：【占位】无人机够不着 %s（找不到能停下开火的位置）：请你手动切这一刀，方案会自动接着走
+英：[PLACEHOLDER] The drone cannot get at %s (no spot to fire from): make this cut by hand and the plan goes on
+
+[txt.as_plan_drain]
+# 提示文字
+中：【占位】等 %s 放空，再收软管
+英：[PLACEHOLDER] Waiting for %s to drain before the hose comes off
+
 [txt.as_plan_expose]
 # 提示文字
 中：【占位】等待露出：拆开 %s，切割机就接着切
@@ -1231,6 +1281,161 @@
 # 提示文字
 中：这东西太重了，超过了设备的承载上限。先想办法拆成几块，再分别回收。
 英：This thing's too heavy for the equipment to handle. Just like that beam in training, break it into smaller sections and recover them separately.
+
+[txt.as_hc_fixed]
+# 提示文字
+中：【占位】固定 · %d 处连接
+英：[PLACEHOLDER] FIXED · %d FIXINGS
+
+[txt.as_hc_unfixed]
+# 提示文字
+中：【占位】没有连接
+英：[PLACEHOLDER] NOT FIXED
+
+[txt.as_hc_free]
+# 提示文字
+中：【占位】已脱离船体
+英：[PLACEHOLDER] FREE OF THE HULL
+
+[txt.as_hc_heavy]
+# 提示文字
+中：【占位】超重 %.1f t · 抓不动
+英：[PLACEHOLDER] TOO HEAVY %.1f t
+
+[txt.as_hc_unmeasured]
+# 提示文字
+中：【占位】未测 · 按 1 测量
+英：[PLACEHOLDER] NOT READ · MEASURE WITH 1
+
+[txt.as_hc_stale]
+# 提示文字
+中：【占位】读数过期
+英：[PLACEHOLDER] OUT OF DATE
+
+[txt.as_hc_more]
+# 提示文字
+中：【占位】中键看详情
+英：[PLACEHOLDER] MIDDLE CLICK FOR DETAILS
+
+[txt.as_hc_close]
+# 提示文字
+中：【占位】中键点空白或 Esc 关闭
+英：[PLACEHOLDER] MIDDLE CLICK BLANK OR Esc TO CLOSE
+
+[txt.as_hc_k_pressure]
+# 提示文字
+中：【占位】压力容器
+英：[PLACEHOLDER] PRESSURE VESSEL
+
+[txt.as_hc_k_fluid]
+# 提示文字
+中：【占位】液体储罐
+英：[PLACEHOLDER] LIQUID TANK
+
+[txt.as_hc_k_power]
+# 提示文字
+中：【占位】电力设备
+英：[PLACEHOLDER] ELECTRICAL
+
+[txt.as_hc_k_heat]
+# 提示文字
+中：【占位】高温
+英：[PLACEHOLDER] HOT
+
+[txt.as_hc_k_rad]
+# 提示文字
+中：【占位】辐射源
+英：[PLACEHOLDER] RADIATION
+
+[txt.as_hc_k_anti]
+# 提示文字
+中：【占位】反物质
+英：[PLACEHOLDER] ANTIMATTER
+
+[txt.as_hc_k_explosive]
+# 提示文字
+中：【占位】爆炸物
+英：[PLACEHOLDER] EXPLOSIVE
+
+[txt.as_hc_k_bio]
+# 提示文字
+中：【占位】生物污染
+英：[PLACEHOLDER] BIOHAZARD
+
+[txt.as_hc_k_chem]
+# 提示文字
+中：【占位】化学品
+英：[PLACEHOLDER] CHEMICAL
+
+[txt.as_hc_r_pressure]
+# 提示文字
+中：【占位】压力
+英：[PLACEHOLDER] PRESSURE
+
+[txt.as_hc_r_volts]
+# 提示文字
+中：【占位】电压
+英：[PLACEHOLDER] VOLTAGE
+
+[txt.as_hc_r_temp]
+# 提示文字
+中：【占位】温度
+英：[PLACEHOLDER] TEMPERATURE
+
+[txt.as_hc_r_fluid]
+# 提示文字
+中：【占位】液位
+英：[PLACEHOLDER] LEVEL
+
+[txt.as_hc_r_dose]
+# 提示文字
+中：【占位】剂量率
+英：[PLACEHOLDER] DOSE RATE
+
+[txt.as_hc_r_anti]
+# 提示文字
+中：【占位】约束
+英：[PLACEHOLDER] CONFINEMENT
+
+[txt.as_hc_r_sample]
+# 提示文字
+中：【占位】成分
+英：[PLACEHOLDER] CONTENTS
+
+[txt.as_hc_r_read]
+# 提示文字
+中：【占位】读数
+英：[PLACEHOLDER] READING
+
+[txt.as_hc_r_links]
+# 提示文字
+中：【占位】连接
+英：[PLACEHOLDER] FIXINGS
+
+[txt.as_hc_r_lines]
+# 提示文字
+中：【占位】线缆/管路
+英：[PLACEHOLDER] CABLES / PIPES
+
+[txt.as_hc_r_mass]
+# 提示文字
+中：【占位】质量
+英：[PLACEHOLDER] MASS
+
+[txt.as_hc_lines_v]
+# 提示文字
+中：【占位】线缆 %d · 管路 %d
+英：[PLACEHOLDER] %d CABLES · %d PIPES
+
+[txt.as_hc_none]
+# 提示文字
+中：【占位】无
+英：[PLACEHOLDER] NONE
+
+[txt.as_hc_anti_warn]
+# 提示文字
+中：【占位】断电即湮灭
+英：[PLACEHOLDER] LOSE POWER, IT ANNIHILATES
 
 ============================================================
 # 六、情境讲解卡：第一次遇到某件事时暂停弹出的卡（标题 + 最多 3 行；{n} {who} {client} {m} 由游戏填）

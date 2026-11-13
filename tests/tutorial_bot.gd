@@ -26,6 +26,7 @@ var lines_log: Array = []
 var recover: Array = []      # [lesson, mistake, seconds]
 var no_warp := false
 var shots := false
+var adv := false             # 双重教程: the career's course after TUG-001 — from TUT_03, the bridging card first
 var shot_done := {}
 
 
@@ -37,6 +38,9 @@ func _initialize() -> void:
 	shots = a.has("shots")
 	if a.has("fast"):
 		think = 0.3
+	if a.has("adv"):
+		adv = true
+		Game.course_start = Game.TS1_ADV_FROM
 	# a first-timer: slower to decide, and sits out the pumping in real time
 	if a.has("newcomer"):
 		think = 3.0
@@ -399,6 +403,26 @@ func _mark(l: int) -> void:
 func _run() -> void:
 	await _frames(10)
 	var tut = game.tutorial
+	if adv:
+		# the bridging card: read, then any key
+		await _frames(60)
+		for n in game.get_children():
+			if n.get_script() != null and str(n.get_script().resource_path).ends_with("ts1_bridge.gd"):
+				_say("bridge card up: %s" % str(n.lessons_left()))
+				await _frames(int(4.0 * 60))
+				n._close()
+		await _frames(10)
+		_say("adv course starts at lesson %d (%s)" % [tut.lesson_i, str(tut.lesson().get("id", ""))])
+		_mark(3)
+		await _lesson3()
+		await _lesson4()
+		await _lesson_liquids()
+		await _lesson5()
+		await _lesson6()
+		await _frames(240)
+		_report()
+		finished = true
+		return
 	# TUT_00: listen
 	await _until(func(): return tut.lesson_i >= 1, 90.0)
 	_mark(0)

@@ -36,7 +36,7 @@ static func spot(id: String) -> Vector2:
 		"lights": return Vector2(Dock.FLOODS[1], Dock.RAIL_Y + 0.4) * M
 		"net_fix", "net05": return Dock.NET * M
 		"furnace_main", "mouth_rail": return Dock.zpos("metal")
-		"hauler", "hauler2": return (Dock.BAY + Vector2(2.0, -2.0)) * M
+		"hauler", "hauler2", "hauler3", "hauler4", "hauler5", "hauler6", "hauler7": return (Dock.BAY + Vector2(2.0, -2.0)) * M
 		"port2": return Vector2(Dock.FLOOR_X1 - 10.0, -8.4 - Dock.LIFT) * M
 		"buffer": return Dock.BUFFER.get_center() * M
 		"zones": return Dock.centre() * M

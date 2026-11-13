@@ -1,101 +1,117 @@
 {
 	"by": "tools/gen_plan_codex.sh",
-	"made": "2026-11-11",
+	"made": "2026-11-12",
 	"ship": "h22",
 	"steps": [
 		{
 			"ctrl": "GAS-C",
 			"do": "h",
+			"gap": 0.6,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "GAS-Y",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "GAS-P",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PROP-1P",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PROP-2P",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "K-H",
 			"do": "w",
+			"gap": 0.1,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "E-CAP",
 			"do": "w",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "ACC-P",
 			"do": "h",
+			"gap": 8.8,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "HYD-P",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "GAS-C",
 			"do": "h",
+			"gap": 8.7,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "GAS-Y",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "GAS-P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PROP-1P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PROP-2P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "ACC-P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "HYD-P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		}

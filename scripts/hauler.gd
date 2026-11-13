@@ -15,6 +15,15 @@ extends Node2D
 # goes into a keep-out zone the operator has set (game.keepout).
 
 const MAX_T := 1.5
+# 2026-11-12 (user: "增加到最多 5 个无人机" — then "干脆把最高的能够加的无人机数量变成7"): up to seven;
+# (first ask: "增加到最多 5 个无人机，每个无人机都长得完全不一样。都可以做成升级"): up to five,
+# each its own upgrade (each needs the one before) and its own airframe (scripts/hauler_art.gd)
+const IDS := ["hauler", "hauler2", "hauler3", "hauler4", "hauler5", "hauler6", "hauler7"]
+# where each waits by the boom (m, from Dock.BAY): two rows over the berth
+const HOMES := [Vector2(0.6, -1.6), Vector2(2.2, -1.6), Vector2(3.8, -1.6), Vector2(1.4, -3.0), Vector2(3.0, -3.0), Vector2(5.4, -1.6), Vector2(4.6, -3.0)]
+const HArt = preload("res://scripts/hauler_art.gd")
+# airframes: the first two as they were (drone_art.gd), the third to the seventh hauler_art.gd's five
+const OLD_ART := ["coreclaw", "tripod"]
 # It flies like the operator's drone (player 2026-10-18: "the same rhythm,
 # the same inertia"): its top speed and acceleration, slowing for what it
 # carries, braking into where it is going; it keeps off the ship's walls on the
@@ -34,7 +43,8 @@ const PUSH_ACCEL := 150.0        # px/s², capped thruster force for heavy obstr
 const PUSH_MASS := 1.5           # t: the force budget stops scaling above this mass
 
 var game: Game
-var who := "hauler"              # its name over a mouth ("hauler", "hauler2")
+var who := "hauler"              # its name over a mouth and on a claim (IDS)
+var idx := 0                     # which of the seven (its airframe: OLD_ART, then hauler_art.gd)
 var home_off := Vector2(0.6, -1.6)
 var queue: Array = []            # marked bodies, in order (shared by both haulers)
 var body = null
@@ -52,6 +62,7 @@ var wait_t := 0.0               # s spent holding back for the drone
 # smaller and in air-blue, turned the way it travels
 const Art = preload("res://scripts/drone_art.gd")
 const LoadMotion = preload("res://scripts/load_motion.gd")
+const Crew = preload("res://scripts/crew.gd")
 var wait_reason := ""
 var heading := -PI / 2.0
 var vel := Vector2.ZERO
@@ -70,11 +81,26 @@ var _rescue_t := 0.0
 # up blows backwards, slowing down is a reverse burn — strictly)
 var _acc := Vector2.ZERO
 var _vel0 := Vector2.ZERO
+var _grip := 0.0                 # the grip drawn shutting / opening (0..1)
+var _reach := 0.0                # and reaching out
+var _scan_t := 0.0               # s to the next look round the berth for unasked scrap (idle)
+var _seen_n := -1                # bodies in the berth at the last look
+const SCAN := 0.3                # s between those looks (2026-11-12: five of them, every frame, was waste)
 
 
 func _init() -> void:
 	z_index = 6
 	z_as_relative = false
+
+
+# the idx-th hauler of the berth, working the shared list of marks
+func setup(i: int, shared_queue: Array) -> void:
+	idx = i
+	who = IDS[i]
+	home_off = HOMES[i]
+	queue = shared_queue
+	# the idle look-round for unasked scrap is spread over the frames, one hauler at a time
+	_scan_t = 0.06 * i
 
 
 func home() -> Vector2:
@@ -83,6 +109,9 @@ func home() -> Vector2:
 
 func can_take(b) -> bool:
 	if not is_instance_valid(b) or b.capture != null or b.pieces.is_empty() or b.total_mass() > MAX_T or game.tools.held_body == b:
+		return false
+	# the works crew's parts and wreck: theirs (2026-11-12, scripts/crew.gd owns)
+	if Crew.owns(b):
 		return false
 	# another machine (the other hauler, the arm, the crane) is already after it
 	return not b.get_meta("arm", false) or b.get_meta("arm_by", "") == who
@@ -231,7 +260,17 @@ func _drop_point(z: String) -> Vector2:
 	return Dock.zpos(z) + Dock.ZONES[z].face * 0.4 * Geom.M
 
 
+# what the haulers cost a frame, all of them together (µs, read by tests/haulers5_perf.gd)
+static var prof_us := 0
+
+
 func _physics_process(dt: float) -> void:
+	var t0 := Time.get_ticks_usec()
+	_step(dt)
+	prof_us += Time.get_ticks_usec() - t0
+
+
+func _step(dt: float) -> void:
 	if game == null or game.paused_sim or game.state != "play":
 		return
 	t += dt
@@ -312,7 +351,14 @@ func _physics_process(dt: float) -> void:
 			# nothing marked it can take now: loose scrap that is plainly scrap, the arm's or not
 			# (2026-11-11: a marked piece it cannot take yet — the other hauler's, put off — no longer
 			# keeps both haulers off every other piece in the berth)
-			if state == "idle":
+			_scan_t -= dt
+			# a fresh piece in the berth (a cut, a drop) is looked at at once — one hauler a frame or
+			# three apart, so five never all scan and plan their ways in the same frame
+			if game.world.bodies.size() != _seen_n:
+				_seen_n = game.world.bodies.size()
+				_scan_t = minf(_scan_t, 0.05 * idx)
+			if state == "idle" and _scan_t <= 0.0:
+				_scan_t = SCAN
 				for b in game.world.bodies:
 					if auto_takes(b) and _reachable(b) and _delivery_reachable(b):
 						_set_off(b,true)
@@ -548,7 +594,7 @@ func _obstacle_point(b, radius: float = AVOID_R) -> Vector2:
 
 
 func _can_clear(b, center: Vector2) -> bool:
-	if b.freeze or b.tethered or b.get_meta("arm", false) or b == game.tools.held_body:
+	if b.freeze or b.tethered or b.get_meta("arm", false) or b == game.tools.held_body or Crew.owns(b):
 		return false
 	for area in game.keepout:
 		if area.has_point(center): return false
@@ -605,6 +651,7 @@ func halt() -> void:
 
 func _done() -> void:
 	wait_reason = ""
+	_scan_t = 0.0
 	auto_pickup = false
 	game.mouth_release(zone, who)
 	_unclaim(body)
@@ -627,10 +674,16 @@ func _process(dt: float) -> void:
 
 
 func _draw() -> void:
-	if who == "hauler":
+	var t0 := Time.get_ticks_usec()
+	_paint()
+	prof_us += Time.get_ticks_usec() - t0
+
+
+func _paint() -> void:
+	if idx == 0:
 		_draw_refused()
-	# marks on the queued pieces
-	for i in queue.size():
+	# marks on the queued pieces (the list is shared: the first hauler draws them)
+	for i in (queue.size() if idx == 0 else 0):
 		var b = queue[i]
 		if not is_instance_valid(b):
 			continue
@@ -653,11 +706,18 @@ func _draw() -> void:
 		Art.set_scale(sc * z)
 	var xf := Transform2D(0.0, Vector2(sc, sc), 0.0, pos)
 	draw_set_transform_matrix(xf)
-	var busy := state != "idle"
 	var push := (_acc / ACCEL).limit_length(1.0) if Txt.anim_level() > 0 else Vector2.ZERO
 	Art.tint = Color(Pal.AIR.r * 1.05, Pal.AIR.g * 1.05, Pal.AIR.b * 1.05)
-	Art.draw(self, "tripod" if who == "hauler2" else "coreclaw", {"heading": heading, "tool": 3 if busy else 0, "open": 1.0 if state in ["carry", "release"] else (0.4 if busy else 0.0),
-		"t": t, "thrust": push, "dash": false, "design": "", "base_xf": xf})
+	if idx < OLD_ART.size():
+		# the first two keep their airframes (user 2026-11-12)
+		var busy := state != "idle"
+		Art.draw(self, OLD_ART[idx], {"heading": heading, "tool": 3 if busy else 0, "open": 1.0 if state in ["carry", "release"] else (0.4 if busy else 0.0),
+			"t": t, "thrust": push, "dash": false, "design": "", "base_xf": xf})
+	else:
+		var dt := get_process_delta_time()
+		_grip = move_toward(_grip, 1.0 if state in ["carry", "release"] else 0.0, dt * 4.0)
+		_reach = move_toward(_reach, 1.0 if state == "reach" else (0.6 if _grip > 0.5 else 0.0), dt * 2.5)
+		HArt.draw(self, idx - OLD_ART.size(), {"heading": heading, "t": t, "thrust": push, "reach": _reach, "grip": _grip, "base_xf": xf})
 	Art.tint = Color(1, 1, 1)
 	Art.lite = false
 	draw_set_transform_matrix(Transform2D.IDENTITY)

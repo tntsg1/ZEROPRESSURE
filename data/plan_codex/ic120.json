@@ -1,0 +1,189 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "ic120",
+	"steps": [
+		{
+			"ctrl": "HT-1",
+			"do": "w",
+			"gap": 0.2,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "HT-2",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "HT-3",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "HT-4",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "HT-5",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "HT-6",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "HT-7",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "HT-8",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "HT-9",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-E",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PW",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-H",
+			"do": "w",
+			"gap": 22.1,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PT-1",
+			"do": "h",
+			"gap": 21.3,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PT-2",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PH-1",
+			"do": "w",
+			"gap": 52.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PH-2",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PH-3",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PH-4",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "K-M",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "K-G",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-E",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PW",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PT-1",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PT-2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		}
+	]
+}

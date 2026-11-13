@@ -6,96 +6,112 @@
 		{
 			"ctrl": "G-S",
 			"do": "h",
+			"gap": 0.2,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-P",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-B",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-M",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "K-M",
 			"do": "w",
+			"gap": 0.1,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PCO",
 			"do": "h",
+			"gap": 38.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-V2",
 			"do": "h",
+			"gap": 22.0,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "K-LB",
 			"do": "w",
+			"gap": 0.7,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-V1",
 			"do": "h",
+			"gap": 5.3,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-S",
 			"do": "h",
+			"gap": 59.3,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-B",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-M",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PCO",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-V2",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-V1",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		}

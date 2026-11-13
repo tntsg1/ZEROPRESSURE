@@ -73,7 +73,10 @@ func _run_plan(g, max_frames: int) -> Dictionary:
 		if g.plan.wait == "plan_measure":
 			asked[g.plan.wait_arg] = true
 			_measure(g, g.plan.wait_arg)
-		elif g.plan.wait == "plan_hidden":
+		elif g.plan.wait == "as_plan_reading":
+			# 2026-11-12: the plan's drone reads the gauge itself
+			asked[g.plan.wait_arg] = true
+		elif g.plan.wait in ["plan_hidden", "as_plan_sealed"]:
 			# the operator opens the room the plan cannot reach
 			var c = g.world.ctrls.get(g.plan.wait_arg)
 			g.world.reveal(c.hidden_room, g.world.ctrl_world(c))
@@ -159,7 +162,11 @@ func _run() -> void:
 		g.plan.i = k
 		g.plan.toggle()
 		await _frames(30)
-		check(g.plan.running and g.plan.wait == "plan_differs" and g.plan.i == k, "it holds on step %d: %s" % [k + 1, g.plan.wait])
+		# (2026-11-12: the drone flies to the gauge and reads it again, holding while it reads worse)
+		for n in 900:
+			if g.plan.wait in ["plan_differs", "as_plan_worse"]: break
+			await process_frame
+		check(g.plan.running and g.plan.wait in ["plan_differs", "as_plan_worse"] and g.plan.i == k, "it holds on step %d: %s" % [k + 1, g.plan.wait])
 		g.toggle_auto()
 		check(not g.plan.running and g.auto_paused, "the automation key stops it")
 	else:

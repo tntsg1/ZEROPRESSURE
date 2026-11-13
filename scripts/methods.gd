@@ -7,14 +7,15 @@ class_name Methods
 # volumes' numbers live on as those tiers (the rest are gone: the drone's base is fixed).
 # Career.data.methods: id -> tier bought (1..3). A career from before keeps what it owns.
 
-const ORDER := ["section", "pump", "field", "auto", "probe", "crane", "prop", "cutter", "precise"]
+# 2026-11-12 (user: "这个删了，从来没有用到过"): the seventh method, PROP IT, EMPTY THE INSIDE (CF-90's props), is gone;
+# an old career's entries for it (methods, borrows, showcases, the props on its shelf) are dropped on loading (drop_removed)
+const ORDER := ["section", "pump", "field", "auto", "probe", "crane", "cutter", "precise"]
 # settled contracts before each one's borrow job opens: the opening three, then every 2–3
-const OPEN_AT := [3, 5, 8, 10, 13, 15, 18, 20, 23]
+const OPEN_AT := [3, 5, 8, 10, 13, 15, 20, 23]
 const FIELD_N := 100              # scrap pieces into the furnace on one job: the field grapple's achievement
 const FIELD_MIN_T := 0.5          # t: lighter than this the debris net takes it by itself; not counted
 const PRECISE_V := 500000.0       # equipment delivered whole, all jobs together: precision inspection's
 const WINCH_K := [1.0, 1.0, 1.5, 2.0]
-const PROP_T := [60.0, 60.0, 90.0, 120.0]
 const CRANE_T := [12.0, 12.0, 16.0]
 
 # name, what it lets you do (one line), how it is learned, the tool it lends or the facility,
@@ -57,12 +58,6 @@ const SPEC := {
 		"learn": "build", "builds": ["crane"],
 		"tiers": [[0.0, [["12 t 以内整件吊走", "Whole pieces up to 12 t"]]],
 			[120000.0, [["吊重 16 t", "Lifts 16 t"]]]]},
-	"prop": {"name": ["撑住先抢里侧", "PROP IT, EMPTY THE INSIDE"],
-		"does": ["撑杆立在船坞地面顶住结构，先卸里面值钱的", "A prop stood on the berth floor holds the structure while the inside is emptied first"],
-		"learn": "borrow", "ships": ["cf90"], "seed": 960001, "lend": {"prop": 2}, "gear": "prop", "feat": "propped",
-		"tiers": [[0.0, [["撑杆额定 60 t", "Props rated 60 t"]]],
-			[30000.0, [["额定 90 t", "Rated 90 t"], ["超载 3 秒才折", "3 s overloaded before it buckles"]]],
-			[90000.0, [["额定 120 t", "Rated 120 t"]]]]},
 	"cutter": {"name": ["按方案自动切", "THE CUTTER FOLLOWS YOUR PLAN"],
 		"does": ["同型号的船，切割机照你上次的切法自动切", "On a ship of a type you have stripped, the cutter works your last plan"],
 		"learn": "borrow", "ships": [], "seed": 970001, "kit": {"cutter": 1}, "feat": "replay",
@@ -81,7 +76,7 @@ const SPEC := {
 # suitable hulls that fit the berth and can be towed. The cutter needs a matching saved plan.
 const SHOWCASE := {"section": ["gr7", "jd38"], "pump": ["gr7", "h22", "fr26"], "field": ["m14", "tw64", "gr7"],
 	"auto": ["tw64", "gr7", "m14"], "probe": ["fr26", "cl104", "ic120"], "crane": ["m14", "tw64", "hb86"],
-	"prop": ["cf90", "cl104", "pt34"], "precise": ["ob90", "dc84", "ev55", "qc30"]}
+	"precise": ["ob90", "dc84", "ev55", "qc30"]}
 
 
 static func showcase_ship(id: String) -> String:
@@ -128,7 +123,6 @@ static func use_text(id: String, u: Dictionary) -> String:
 		"auto": return _t(["机器送口 %d 趟", "%d loads by machine"]) % int(u.get("arm", 0))
 		"probe": return _t(["留了 %d 根探针", "%d probes left on"]) % int(u.get("probe", 0))
 		"crane": return _t(["吊车整件吊走 %d 件", "%d pieces lifted whole"]) % int(u.get("crane", 0))
-		"prop": return _t(["立了 %d 根撑杆", "%d props set"]) % int(u.get("prop", 0))
 		"cutter": return _t(["切割机照方案做了 %d 步", "%d plan steps by machine"]) % int(u.get("plan", 0))
 		"precise": return _t(["整件交付设备 %s", "%s of machines delivered whole"]) % Pal.money(float(u.get("equip_v", 0.0)))
 	return ""
@@ -431,8 +425,6 @@ static func migrate() -> void:
 		m.pump = maxi(2 if ups.has("pump2") else 1, int(m.get("pump", 0)))
 	if int(gear.get("probe", 0)) > 0:
 		m.probe = maxi(1, int(m.get("probe", 0)))
-	if int(gear.get("prop", 0)) > 0:
-		m.prop = maxi(1, int(m.get("prop", 0)))
 	if ups.has("scan_kit"):
 		m.precise = maxi(1, int(m.get("precise", 0)))
 	if not d.get("plans", {}).is_empty():
@@ -458,12 +450,20 @@ static func winch_k() -> float:
 	return WINCH_K[clampi(level("section"), 0, 3)]
 
 
-static func prop_t() -> float:
-	return PROP_T[clampi(level("prop"), 0, 3)]
-
-
-static func prop_give() -> float:
-	return 3.0 if level("prop") >= 2 else Gear.PROP_GIVE
+# 2026-11-12: what an old career still holds of a removed method is dropped, without a word (every load)
+const REMOVED := ["prop"]
+static func drop_removed() -> void:
+	var d := Career.data
+	if d.is_empty():
+		return
+	for key in ["methods", "borrows", "showcases", "gear"]:
+		var m = d.get(key)
+		if m is Dictionary:
+			for id in REMOVED:
+				m.erase(id)
+	var feats = d.get("feats")
+	if feats is Dictionary:
+		feats.erase("propped")
 
 
 static func crane_t() -> float:
@@ -505,8 +505,6 @@ static func useful(g) -> Array:
 		out.append("probe")
 	if lift:
 		out.append("crane")
-	if g.boxbeam != null and g.boxbeam.active():
-		out.append("prop")
 	if not Career.data.is_empty() and Career.data.get("plans", {}).has(g.ship_id):
 		out.append("cutter")
 	if float(g.ship.get("value", {}).get("total", 0.0)) >= PRECISE_V:

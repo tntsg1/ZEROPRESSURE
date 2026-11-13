@@ -29,6 +29,7 @@ var t := 0.0
 var carried := 0
 var wait_t := 0.0
 const LoadMotion = preload("res://scripts/load_motion.gd")
+const Crew = preload("res://scripts/crew.gd")
 var wait_reason := ""
 var route_t := 0.0
 var _rail_node: Node2D = null   # 工业剖面: the rail, drawn once
@@ -49,7 +50,7 @@ func home() -> Vector2:
 
 
 func can_take(b) -> bool:
-	return is_instance_valid(b) and b.capture == null and not b.pieces.is_empty() and b.total_mass() <= Methods.crane_t() and game.tools.held_body != b and not b.get_meta("arm", false)
+	return is_instance_valid(b) and b.capture == null and not b.pieces.is_empty() and b.total_mass() <= Methods.crane_t() and game.tools.held_body != b and not b.get_meta("arm", false) and not Crew.owns(b)
 
 
 # the mark key on a load too heavy for the haulers
@@ -244,7 +245,7 @@ func auto_pick():
 	for b in game.world.bodies:
 		if not is_instance_valid(b) or b.capture != null or b.pieces.is_empty() or taken.has(b) or game.tools.held_body == b:
 			continue
-		if b.get_meta("arm", false) or b.get_meta("arm_extraction", false) or b.get_meta("manual_mark", false) or b.get_meta("crane_skip", false):
+		if b.get_meta("arm", false) or b.get_meta("arm_extraction", false) or b.get_meta("manual_mark", false) or b.get_meta("crane_skip", false) or Crew.owns(b):
 			continue
 		var m: float = b.total_mass()
 		if m <= lim + 0.001 or m > Methods.crane_t() or b.age < AUTO_AGE or b.linear_velocity.length() > AUTO_V * Geom.M:

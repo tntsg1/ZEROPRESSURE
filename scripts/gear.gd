@@ -13,23 +13,22 @@ extends Node2D
 #           goes down the mouth with its piece if it is left on it.
 #   probe   a monitoring probe left on a test point, a port or a piece: the
 #           reading stays live, and a real change is called out on the radio.
-#   prop    97 号 (user 2026-10-28, CF-90): a temporary prop stood on the berth floor under a
-#           container wall's bay. It takes that bay and every bay outboard of it off the bays
-#           inboard (scripts/boxbeam.gd), so those can be emptied first. It is rated PROP_T: past
-#           that it bows, and after PROP_GIVE it buckles and is gone, the load back on the wall.
+#   (prop    97 号, CF-90's temporary props under a container wall: removed 2026-11-12, user "从来没有用到过";
+#           an old save's props are dropped on loading, REMOVED)
 # The catalogue, prices and what unlocks them live here too (static), as does
 # what a contract's engineering achievements open (Career.feats).
 # State that survives a save: what is carried, what is deployed where, what
 # lies dropped, what was lost.
 
-const DEPLOY := ["anchor", "pump", "probe", "prop"]
+const DEPLOY := ["anchor", "pump", "probe"]
+const REMOVED := ["prop"]        # 2026-11-12: gear types that no longer exist; an old save or job's are skipped
 # AX-40 逆火: the portable confinement supply — only ever lent with the ship, never sold. Put on the
 # antimatter trap it takes up the coils' load (scripts/antimatter.gd CONNECT_T); then the trap reads
 # "dual supply" and the main bus may go. Taken back with the bus dead, the trap annihilates.
 const LEND_ONLY := ["confine"]
 const MODS := []                  # the drone modules were dropped in G2 (player: no use); PRICE keeps theirs for the refund
 const OLD_MODS := ["mod_bumper", "mod_hover", "mod_rack"]
-const PRICE := {"anchor": 18000.0, "pump": 14000.0, "probe": 6000.0, "prop": 12000.0, "mod_bumper": 16000.0, "mod_hover": 12000.0, "mod_rack": 20000.0}
+const PRICE := {"anchor": 18000.0, "pump": 14000.0, "probe": 6000.0, "mod_bumper": 16000.0, "mod_hover": 12000.0, "mod_rack": 20000.0}
 # 128 号 第 7 段 (user 2026-11-09 "连范围抓钩一起删"): the achievements Section Separated, Pressure
 # Equipment Recovered and the field grapple's are gone. The tools come with learning their method
 # (the rigging order, the GR-7 borrow job, the field grapple's borrow job); an old save's entries for
@@ -50,8 +49,6 @@ const PROBE_TICK := 0.5           # s between the probe's readings
 const DEPLOY_T := 0.7             # s to put a tool on
 const PICK_R := 1.1 * 48.0        # px: a dropped thing or a unit this close to the pointer is the target
 const DROP_DRIFT := 18.0          # px/s a dropped module drifts off at
-const PROP_T := 60.0              # t a prop is rated for (about two full bays of containers)
-const PROP_GIVE := 1.5            # s over its rating before it buckles
 # how much a probe's reading has to move before it is called out, by reading kind
 const PROBE_STEP := {"pressure": 10.0, "volts": 1.0, "fluid": 0.05, "temp": 8.0, "field": 2.0, "bio": 0.05, "o2": 0.03, "sample": 0.03}
 
@@ -156,13 +153,17 @@ func setup(g) -> void:
 		mods.append({"type": str(m), "lent": false})
 	var dep: Dictionary = jg.get("deploy", {})
 	for type in dep:
+		if str(type) in REMOVED:
+			continue
 		for i in int(dep[type]):
 			carried.append({"type": str(type), "lent": false})
 	var lend: Dictionary = jg.get("lent", {}).duplicate()
-	# 97 号: a ship can come with gear lent for it (CF-90: two props)
+	# 97 号: a ship can come with gear lent for it
 	for type in g.ship.get("lend", {}):
 		lend[type] = maxi(int(lend.get(type, 0)), int(g.ship.lend[type]))
 	for type in lend:
+		if str(type) in REMOVED:
+			continue
 		for i in int(lend[type]):
 			if is_deploy(str(type)):
 				carried.append({"type": str(type), "lent": true})
@@ -260,16 +261,6 @@ func target(aim: Vector2, ctrl_h: Dictionary, piece_h: Dictionary) -> Dictionary
 				var vol := _pump_vol(p, piece_h.pos)
 				if vol != "" and not _pumped(p):
 					return {"kind": "place", "type": type, "piece": p, "pos": piece_h.pos, "d": 0.0, "label": p.tag, "vol": vol}
-		"prop":
-			# under a bay of a container wall: it stands on the floor under that bay's bottom chord
-			var bx = game.boxbeam
-			if p != null and bx != null and bx.active():
-				var bay: int = bx.bay_of(p)
-				var chord = world.tag("BC-%d" % (bay + 1)) if bay >= 0 else null
-				if bay >= 0 and bay != int(bx.cfg.get("support", 0)) and chord != null and not chord.gone and chord.body == null and _prop_at(bay).is_empty():
-					var bb := Geom.bbox(world.world_poly(chord))
-					var at := Vector2(clampf(piece_h.pos.x, bb.position.x + 1.0 * Geom.M, bb.end.x - 1.0 * Geom.M), bb.end.y)
-					return {"kind": "place", "type": type, "piece": chord, "pos": at, "d": 0.0, "label": ("第 %d 列" if Txt.zh else "BAY %d") % (bay + 1), "bay": bay}
 		"confine":
 			if p != null and game.anti != null and game.anti.is_trap(p) and _confine_on(p).is_empty():
 				return {"kind": "place", "type": type, "piece": p, "pos": piece_h.pos, "d": 0.0, "label": p.tag}
@@ -287,32 +278,6 @@ func _confine_on(p) -> Dictionary:
 		if u.type == "confine" and u.piece == p.id:
 			return u
 	return {}
-
-
-# the prop under a bay ({} when none)
-func _prop_at(bay: int) -> Dictionary:
-	for u in units:
-		if u.type == "prop" and int(u.get("bay", -1)) == bay:
-			return u
-	return {}
-
-
-func props() -> Array:
-	return units.filter(func(u): return u.type == "prop")
-
-
-# a prop past its rating too long: it buckles and is gone (the wall takes its load back)
-func buckle(u: Dictionary) -> void:
-	if not units.has(u):
-		return
-	var at := unit_pos(u)
-	units.erase(u)
-	lost.append({"type": u.type, "lent": u.lent, "why": "gear_why_buckled"})
-	game.incident("prop_buckle", "bay %d" % (int(u.bay) + 1))
-	game.say("prop_buckle", at + Vector2(0, -40), str(int(u.bay) + 1))
-	game.sfx.play("hull_break", at, 0.8, 1.05)
-	game.shake(0.45)
-	game.fx.sparks(at, Vector2.UP, 16, Pal.heat(1.0, 2.0), 260.0, 0.4, PI)
 
 
 func _anchored(p) -> bool:
@@ -435,11 +400,6 @@ func act(tg: Dictionary) -> void:
 		"confine":
 			# clamped on the trap's flank nearest the pointer, its leads onto the coils' terminals
 			u.t = 0.0
-		"prop":
-			u.bay = int(tg.bay)
-			u.post = Vector2(tg.pos.x, maxf(tg.pos.y + 0.6 * Geom.M, Dock.TROUGH_Y * Geom.M))
-			u.load = 0.0
-			u.over = 0.0
 		"probe":
 			# the first reading is the operator's own measurement: the probe keeps it live
 			var tgm := {"kind": "ctrl", "ctrl": tg.ctrl, "pos": tg.pos} if tg.has("ctrl") else {"kind": "inspect", "piece": tg.piece, "pos": tg.pos}
@@ -466,8 +426,6 @@ func act(tg: Dictionary) -> void:
 			Copy.say(game.radio, "L_gear_anchor")
 	elif tg.type == "pump":
 		_hint("gear_pump_set")
-	elif tg.type == "prop":
-		_hint("gear_prop_set")
 	elif tg.type == "confine":
 		game.say("confine_on", tg.pos)
 	else:
@@ -751,22 +709,22 @@ func save_state() -> Dictionary:
 func load_state(d: Dictionary) -> void:
 	carried = []
 	for c in d.get("carried", []):
+		if str(c.type) in REMOVED:
+			continue
 		carried.append({"type": str(c.type), "lent": bool(c.lent)})
 	mods = []
 	for m in d.get("mods", []):
 		mods.append({"type": str(m.type), "lent": bool(m.lent)})
 	units = []
 	for ud in d.get("units", []):
+		if str(ud.type) in REMOVED:
+			continue
 		var u := {"type": str(ud.type), "lent": bool(ud.lent), "uid": int(ud.uid), "piece": int(ud.piece), "ctrl": str(ud.ctrl),
 			"local": Vector2(float(ud.local[0]), float(ud.local[1])), "post": Vector2(float(ud.post[0]), float(ud.post[1])),
 			"keys": ud.get("keys", []), "last": ud.get("last", {}), "t": 0.0, "done": bool(ud.get("done", false))}
 		if ud.has("vol"):
 			u.vol = str(ud.vol)
 		if ud.has("mode"): u.mode = str(ud.mode)
-		if ud.has("bay"):
-			u.bay = int(ud.bay)
-			u.load = float(ud.get("load", 0.0))
-			u.over = float(ud.get("over", 0.0))
 		if ud.has("rest"): u.rest = float(ud.rest)
 		var p = world.pieces.get(u.piece)
 		if u.piece >= 0 and (p == null or p.gone):
@@ -781,9 +739,13 @@ func load_state(d: Dictionary) -> void:
 		units.append(u)
 	drops = []
 	for dd in d.get("drops", []):
+		if str(dd.type) in REMOVED:
+			continue
 		drops.append({"type": str(dd.type), "lent": bool(dd.lent), "pos": Vector2(float(dd.pos[0]), float(dd.pos[1])), "vel": Vector2(float(dd.vel[0]), float(dd.vel[1]))})
 	lost = []
 	for l in d.get("lost", []):
+		if str(l.type) in REMOVED:
+			continue
 		lost.append({"type": str(l.type), "lent": bool(l.lent), "why": str(l.why)})
 	sel = int(d.get("sel", 0))
 	hold_mode = bool(d.get("hold_mode",false))
@@ -828,8 +790,6 @@ func _draw() -> void:
 				if u.done:
 					draw_line(at + Vector2(-4, 0) / z, at + Vector2(-1, 3) / z, Pal.tint(Pal.FLUID, 0.95, 1.4), lw * 1.4)
 					draw_line(at + Vector2(-1, 3) / z, at + Vector2(5, -3) / z, Pal.tint(Pal.FLUID, 0.95, 1.4), lw * 1.4)
-			"prop":
-				_draw_prop(u, at, z, lw)
 			"confine":
 				_draw_confine(u, at, z, lw)
 			"probe":
@@ -884,47 +844,3 @@ func _draw_confine(u: Dictionary, at: Vector2, z: float, lw: float) -> void:
 	draw_set_transform(box_c - ax * 0.42 * M + out * 0.06 * M, 0.0, Vector2(s, s) * 0.8)
 	draw_string(font, Vector2.ZERO, "PCS", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Pal.ink(0.85))
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-
-
-# 97 号: a screw-jack prop from the floor to the chord: its base plate, the outer tube, the screw
-# and its head; it bows sideways as it goes over its rating; its load beside it, a fixed size
-func _draw_prop(u: Dictionary, top: Vector2, z: float, lw: float) -> void:
-	var base: Vector2 = u.post
-	var k := clampf(float(u.get("load", 0.0)) / Methods.prop_t(), 0.0, 2.0)
-	var bow := clampf(float(u.get("over", 0.0)) / Methods.prop_give(), 0.0, 1.0)
-	var col := Pal.heat(0.95, 1.4) if k > 1.0 else (Pal.heat(0.75, 1.1) if k > 0.85 else Pal.ink(0.9, 1.15))
-	var h := base.y - top.y
-	var w := 0.35 * Geom.M
-	# base plate and head plate
-	draw_rect(Rect2(base + Vector2(-w * 1.6, -0.12 * Geom.M), Vector2(w * 3.2, 0.12 * Geom.M)), Color(0.08, 0.085, 0.095), true)
-	draw_rect(Rect2(base + Vector2(-w * 1.6, -0.12 * Geom.M), Vector2(w * 3.2, 0.12 * Geom.M)), col, false, lw)
-	draw_rect(Rect2(top + Vector2(-w * 1.3, 0), Vector2(w * 2.6, 0.1 * Geom.M)), col, false, lw)
-	# the column: two tubes, bowed by the overload (a sine across its height)
-	var pts_l := PackedVector2Array()
-	var pts_r := PackedVector2Array()
-	for i in 9:
-		var f := i / 8.0
-		var off := sin(f * PI) * bow * 0.5 * Geom.M
-		var y := base.y - 0.12 * Geom.M - f * (h - 0.22 * Geom.M)
-		var half := w * (1.0 if f < 0.55 else 0.6)
-		pts_l.append(Vector2(base.x - half + off, y))
-		pts_r.append(Vector2(base.x + half + off, y))
-	draw_polyline(pts_l, col, lw * 1.3)
-	draw_polyline(pts_r, col, lw * 1.3)
-	# the screw's threads in the upper half, the crank pin at the collar
-	for i in 5:
-		var f2 := 0.6 + i * 0.07
-		var yy := base.y - 0.12 * Geom.M - f2 * (h - 0.22 * Geom.M)
-		var o2 := sin(f2 * PI) * bow * 0.5 * Geom.M
-		draw_line(Vector2(base.x - w * 0.6 + o2, yy), Vector2(base.x + w * 0.6 + o2, yy - 0.05 * Geom.M), Pal.ink(0.5), lw)
-	var cy := base.y - 0.12 * Geom.M - 0.55 * (h - 0.22 * Geom.M)
-	draw_line(Vector2(base.x - w * 1.8, cy), Vector2(base.x + w * 1.8, cy), col, lw * 1.2)
-	# the load, by it
-	var font: Font = game.hud.font if game.hud != null else ThemeDB.fallback_font
-	var txt := "%s %.0f / %.0f t" % ["撑杆" if Txt.zh else "PROP", float(u.get("load", 0.0)), Methods.prop_t()]
-	var sk := 1.0 / maxf(z, 0.05)
-	draw_set_transform(Vector2(base.x + w * 2.4, cy), 0.0, Vector2(sk, sk))
-	draw_string_outline(font, Vector2.ZERO, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, 4, Color(0.02, 0.022, 0.028, 0.85))
-	draw_string(font, Vector2.ZERO, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, col)
-	draw_set_transform(Vector2.ZERO)
-

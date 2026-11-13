@@ -27,6 +27,10 @@ const C3 := ["p_batch_log", "p_cabinet", "p_cargo_log", "p_custody", "p_evidence
 	"p_pharmacy", "p_samples", "p_seed_vault", "p_smelt_log", "p_st_spares", "p_stores", "p_svc_cabinet", "p_table", "p_towlog"]
 const D4 := ["p_bl_electrolyser", "p_fuel_cell", "p_fuelcell", "p_ark_backup_gen", "p_backup_gen", "p_standby_gen", "p_co2_gen",
 	"p_dr_generator", "p_gen", "p_generator", "p_ts_power"]
+# fifth batch (the online catalog, 2026-11-12)
+const E5 := ["p_apu", "p_s_bat", "p_sp_lock_backup", "p_ark_charger", "p_bay_charger", "p_brake_frame", "p_e07_socket", "p_saddle_seat", "p_tether_root", "p_tool_cart", "p_ts_bracket", "p_ts_manifold", "p_ev_dcdc", "p_ark_busbar", "p_ark_irr_ctrl", "p_ark_lift_call", "p_ark_low_dist", "p_ark_panel", "p_ark_rod_panel", "p_bl_uv", "p_dc_leak_panel", "p_dr_brake_panel", "p_dr_slips_panel", "p_esd", "p_ev_pcu", "p_ev_shield_sensor", "p_fender", "p_frost_vent", "p_frz_ctrl", "p_fx_cryo_panel", "p_hg_cryo_manifold", "p_hg_level_gauge", "p_hg_process_panel", "p_lc_cradle_panel", "p_lc_engine_panel", "p_monitor_panel", "p_ob_baffle_heater", "p_ob_pcu", "p_panel", "p_purge_panel", "p_pusher", "p_qc_fridge_ctl", "p_qc_hemt_bias", "p_rail_panel", "p_rcs_ctrl", "p_ref_valve", "p_release_panel", "p_sp_cradle_panel", "p_sp_fw_panel", "p_sp_rail_panel", "p_sp_release_panel", "p_st_ecu", "p_support", "p_tank_temp", "p_tension"]
+# sixth batch (switchboards and engines, 2026-11-12)
+const F6 := ["p_ark_switchgear", "p_armctl", "p_bearing_ctrl", "p_brake_ctrl", "p_coil_pwr", "p_dist_a", "p_dist_b", "p_dr_vfd", "p_e07_jb", "p_furnace_ctrl", "p_fx_mps", "p_fx_qps", "p_lock_solenoid", "p_lv_dist", "p_main_dist", "p_ob_mcc", "p_pdu", "p_power_board", "p_process_cabinet", "p_pump_power", "p_s_swb", "p_swb", "p_train_bus", "p_ts_bus", "p_valve_box", "p_vault_ctrl", "p_wdist", "p_ark_despin", "p_ark_shuttle_engine", "p_ark_spare_engine", "p_engc", "p_engine", "p_engine_big", "p_engine_pod", "p_engt", "p_hl_motor", "p_lc_main_engine", "p_power_tail", "p_vib_drive", "p_engf", "p_main", "p_lc_courier_engine"]
 var KEYS: Array = K1
 
 var out := "E:/godot/zeropower/proofs/零件专属画法_E002-E016"
@@ -55,6 +59,10 @@ func _initialize() -> void:
 		KEYS = C3
 	if "d4" in a:
 		KEYS = D4
+	if "e5" in a:
+		KEYS = E5
+	if "f6" in a:
+		KEYS = F6
 	perf = "perf" in a
 	root.add_child(preload("res://tests/test_window.gd").new())
 	font = Fonts.get_font("Regular")

@@ -780,7 +780,7 @@ func _draw_press(r: Rect2) -> void:
 	var cur: Dictionary = pr.get("cur", {})
 	var jobs: Array = pr.get("jobs", [])
 	var ph: Array = ProcessLine.press_phase()
-	var names := {"feed": w("输送原料", "FEEDING"), "approach": w("送往压力检测探头", "TO THE PROBE"), "probe": w("正在进行压力检测", "PROBING"), "reject": w("检测未通过，退回仓库", "REJECTED, GOING BACK"), "close": w("关闭进料门", "SHUTTING"),
+	var names := {"wait": w("〔等货运列车送到〕", "〔WAITING FOR THE FREIGHT TRAIN〕"), "land": w("〔从货运平台吊下〕", "〔LIFTED DOWN FROM THE SPUR〕"), "feed": w("输送原料", "FEEDING"), "approach": w("送往压力检测探头", "TO THE PROBE"), "probe": w("正在进行压力检测", "PROBING"), "reject": w("检测未通过，退回仓库", "REJECTED, GOING BACK"), "close": w("关闭进料门", "SHUTTING"),
 		"press": w("正在压制成块", "PRESSING"), "tie": w("正在打包", "STRAPPING"), "eject": w("送回仓库", "OUT, TO STORES")}
 	Charcoal.panel(self, r, 1.0, 0.0, Charcoal.FACE, 8)
 	var s := w("空闲", "THE BALER IS IDLE")

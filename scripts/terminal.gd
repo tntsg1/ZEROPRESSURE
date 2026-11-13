@@ -51,6 +51,11 @@ const BERTH := [
 	["berth200", "facility", 1200000.0, "fa_berth200", "fa_berth200_d", true],
 	["berth620", "facility", 4500000.0, "fa_berth620", "fa_berth620_d", true],
 	["hauler2", "facility", 60000.0, "fa_hauler2", "fa_hauler2_d", true],
+	["hauler3", "facility", 80000.0, "fa_hauler3", "fa_hauler3_d", true],
+	["hauler4", "facility", 105000.0, "fa_hauler4", "fa_hauler4_d", true],
+	["hauler5", "facility", 140000.0, "fa_hauler5", "fa_hauler5_d", true],
+	["hauler6", "facility", 186000.0, "fa_hauler6", "fa_hauler6_d", true],
+	["hauler7", "facility", 248000.0, "fa_hauler7", "fa_hauler7_d", true],
 	["crane", "facility", 150000.0, "fa_crane", "fa_crane_d", true],
 	["port2", "facility", 50000.0, "fa_port2", "fa_port2_d", true],
 	["buffer", "facility", 30000.0, "fa_buffer", "fa_buffer_d", true],
@@ -61,7 +66,18 @@ const BERTH := [
 # a facility that only makes sense with another one bought first
 # late upgrades: [completed jobs, reputation] before they can be bought
 const LATE := {"tunnel": [20, 30], "tunnel_body": [20, 30], "wrench_queue": [1, 0]}
-const REQUIRES := {"tunnel": "grapple5", "tunnel_body": "tunnel", "hauler2": "hauler", "berth120": "berth88", "berth200": "berth120", "berth620": "berth200"}
+const REQUIRES := {"tunnel": "grapple5", "tunnel_body": "tunnel", "hauler2": "hauler", "hauler3": "hauler2", "hauler4": "hauler3", "hauler5": "hauler4", "hauler6": ["hauler5", "crane"], "hauler7": ["hauler6", "berth88"], "berth120": "berth88", "berth200": "berth120", "berth620": "berth200"}
+# the first thing id needs that the berth does not have yet ("" when nothing): REQUIRES holds one
+# id or (2026-11-12, the sixth and seventh haulers) a list
+func _req_missing(id: String) -> String:
+	var ups: Dictionary = Career.data.get("upgrades", {})
+	var need = REQUIRES.get(id, [])
+	for r in (need if need is Array else [need]):
+		if not ups.has(r):
+			return str(r)
+	return ""
+
+
 # The terminal is one device (P.7 structure A, player 2026-10-18): a home screen
 # of apps; on site the same device, opened by its key or at the berth's
 # computer, with what can't be used there locked and the reason written on it.
@@ -565,8 +581,8 @@ func _wq_i() -> int:
 # why a late upgrade can't be bought yet ("" when it can): the part it needs first, then the work done
 func _late_why(id: String) -> String:
 	var d := Career.data
-	if REQUIRES.has(id) and not d.get("upgrades", {}).has(REQUIRES[id]):
-		return Ops.w("需要先装上%s", "FIT THE %s FIRST") % Txt.t(_facility_name(REQUIRES[id]))
+	if _req_missing(id) != "":
+		return Ops.w("需要先装上%s", "FIT THE %s FIRST") % Txt.t(_facility_name(_req_missing(id)))
 	if LATE.has(id) and (int(d.get("done", 0)) < int(LATE[id][0]) or int(d.get("rep", 0)) < int(LATE[id][1])):
 		return Growth.text(["需要完成 %d 单、声望 %d（现在 %d 单、声望 %d）", "Requires %d completed jobs, %d reputation (now %d, %d)"]) % [int(LATE[id][0]), int(LATE[id][1]), int(d.get("done", 0)), int(d.get("rep", 0))]
 	return ""
@@ -1732,8 +1748,8 @@ func buy(it: Array, n: int = 1) -> void:
 	if tab == DRONE_PAGE and LATE.has(id) and _late_why(id) != "":
 		_refuse(_late_why(id))
 		return
-	if REQUIRES.has(id) and not d.upgrades.has(REQUIRES[id]):
-		_refuse(Txt.t("tm_needs") % Txt.t(_facility_name(REQUIRES[id])))
+	if _req_missing(id) != "":
+		_refuse(Txt.t("tm_needs") % Txt.t(_facility_name(_req_missing(id))))
 		return
 	if LATE.has(id) and (int(d.get("done", 0)) < int(LATE[id][0]) or int(d.get("rep", 0)) < int(LATE[id][1])):
 		_refuse(Growth.text(["需要完成 %d 单、声望 %d", "Requires %d completed jobs, %d reputation"]) % [int(LATE[id][0]), int(LATE[id][1])])
@@ -3118,7 +3134,7 @@ func _fac_cell(i: int, it: Array, a: float) -> void:
 	var k := Pal.ease_out(clampf((deal_t - 0.18 - (i - FITTED) * 0.03) / 0.3, 0.0, 1.0)) * a
 	var d := Career.data
 	var have: bool = d.upgrades.has(it[0])
-	var locked: bool = not have and REQUIRES.has(it[0]) and not d.upgrades.has(REQUIRES[it[0]])
+	var locked: bool = not have and _req_missing(it[0]) != ""
 	var short: bool = not have and float(d.money) < float(it[2])
 	Hmi.raised(self, r, k, Hmi.PANEL_LO.lerp(Hmi.PANEL_HI, maxf(hk * 0.6, sk)))
 	Hmi.lamp(self, r.position + Vector2(16, 20), Hmi.ok_col() if have else (Hmi.warn_col() if locked or short else Hmi.can_col()), true, k, 5.0)
@@ -3415,8 +3431,8 @@ func _detail(a: float) -> void:
 		if Txt.has("st_" + id):
 			_text(Txt.t("tm_strategy"), sc.position + Vector2(14, 26), 14, Pal.ink(0.6 * ka), font)
 			_wrap(Txt.t("st_" + id), sc.position + Vector2(14, 56), w - 8, 19, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2))
-		elif REQUIRES.has(id) and not d.upgrades.has(REQUIRES[id]):
-			_text(Txt.t("tm_needs") % Txt.t(_facility_name(REQUIRES[id])), sc.position + Vector2(14, 56), 18, Pal.heat(0.95 * ka, 1.2), font_s)
+		elif _req_missing(id) != "":
+			_text(Txt.t("tm_needs") % Txt.t(_facility_name(_req_missing(id))), sc.position + Vector2(14, 56), 18, Pal.heat(0.95 * ka, 1.2), font_s)
 		if tab == DRONE_PAGE and id == "tunnel_body" and not Txt.has("st_" + id):
 			_text(Txt.t("tm_strategy"), sc.position + Vector2(14, 26), 14, Pal.ink(0.6 * ka), font)
 			_wrap(Ops.w("先装量子隧穿，再装这个。装上后默认开启，按 %s 或右上角「机体」按钮开关。开着时，无人机自己能穿过墙壁、船体、设施和散件；还没泄压的舱室和港区边界仍然挡得住。", "Fit quantum tunnelling first. On once fitted; %s or the BODY button top right switches it. While on, the drone itself passes walls, hulls, facilities and loose pieces; rooms still under pressure and the berth's edge still stop it.") % _tunnel_key(id), sc.position + Vector2(14, 56), w - 8, 17, Pal.tint(UiSkin.FIGURE, 0.95 * ka, 1.2))
@@ -3648,9 +3664,9 @@ func _bottom(s: Vector2, a: float) -> void:
 				label = Pal.money(price)
 				note = _late_why(str(it[0]))
 				ok = false
-			elif REQUIRES.has(it[0]) and not d.upgrades.has(REQUIRES[it[0]]):
+			elif _req_missing(it[0]) != "":
 				label = Pal.money(price)
-				note = Txt.t("tm_needs") % Txt.t(_facility_name(REQUIRES[it[0]]))
+				note = Txt.t("tm_needs") % Txt.t(_facility_name(_req_missing(it[0])))
 				ok = false
 			elif float(d.money) < price:
 				label = Txt.t("tm_buy_n") % Pal.money(price)

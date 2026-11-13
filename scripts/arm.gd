@@ -1,5 +1,6 @@
 class_name RecoveryArm
 extends Node2D
+const Crew = preload("res://scripts/crew.gd")
 # The industrial recovery arm (berth upgrade, basic grade): a trolley on the
 # boom with a claw on a cable. It only ever takes loose scrap — a drifting
 # body of metal up to 1 t with no whole equipment in it, that the grapple is
@@ -67,7 +68,7 @@ func takes(b) -> bool:
 		return false
 	var assigned: bool = b.get_meta("arm_extraction",false) and queue.has(b)
 	if b.total_mass() > float(b.get_meta("arm_rated_t",MAX_T) if assigned else MAX_T): return false
-	if game.tools.held_body == b or b.get_meta("arm", false):
+	if game.tools.held_body == b or b.get_meta("arm", false) or Crew.owns(b):
 		return false
 	# just let go over the mouth: give the mouth a moment
 	if t - float(b.get_meta("arm_drop", -99.0)) < 5.0:

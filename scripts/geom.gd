@@ -131,6 +131,15 @@ static func simplify(p: PackedVector2Array, eps: float = 0.45) -> PackedVector2A
 			i += 1
 		if not changed or out.size() < 3:
 			return cur if out.size() < 3 else out
+		# playtest 2026-11-12 (a loose hatch, notched at its hinges, collided over a third of itself):
+		# dropping a run of points one after another, each measured against a point already dropped,
+		# could shave a whole corner off a thin part. Dropping points each within eps of the outline
+		# changes the area by at most eps x half the perimeter; more than that, keep this pass's input.
+		var per := 0.0
+		for k in n:
+			per += cur[k].distance_to(cur[(k + 1) % n])
+		if absf(absf(area(out)) - absf(area(cur))) > 0.5 * eps * per + 1.0:
+			return cur
 		cur = out
 	return cur
 

@@ -1,0 +1,217 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "fr26",
+	"steps": [
+		{
+			"ctrl": "G-B",
+			"do": "h",
+			"gap": 0.2,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-F",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-Q",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-A",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "H2P",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2P",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "LP-1",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "VP-1",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "LP-2",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "VP-2",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "LP-3",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "VP-3",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-FC",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "K-BA",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "RF-2",
+			"do": "h",
+			"gap": 12.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "RF-1",
+			"do": "h",
+			"gap": 2.0,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-B",
+			"do": "h",
+			"gap": 22.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-F",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-Q",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-A",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "H2P",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2P",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "LP-1",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "VP-1",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "LP-2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "VP-2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "LP-3",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "VP-3",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "RF-2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "RF-1",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		}
+	]
+}

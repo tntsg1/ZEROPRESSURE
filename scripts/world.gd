@@ -634,8 +634,6 @@ func piece_at(wpos: Vector2, kinds: Array = [], free_ok: bool = true):
 			continue
 		if not free_ok and p.body != null:
 			continue
-		if p.door and p.door_open:
-			continue
 		if piece_contains(p, wpos):
 			return p
 	return null
@@ -645,7 +643,9 @@ func piece_at(wpos: Vector2, kinds: Array = [], free_ok: bool = true):
 func pieces_at(wpos: Vector2) -> Array:
 	var out: Array = []
 	for p in _pick_cands(wpos):
-		if p.gone or (p.door and p.door_open):
+		# playtest 2026-11-12 ("打开后的切割会有问题"): an open door is there to be cut and taken where
+		# it is drawn (piece_contains follows its slide), not passed through by the beam
+		if p.gone:
 			continue
 		if piece_contains(p, wpos):
 			out.append(p)
@@ -714,7 +714,8 @@ func fixings_behind(c) -> int:
 
 func joint_world(j) -> Vector2:
 	var p = pieces.get(j.a)
-	return frame(p) * j.pos if p != null else j.pos
+	# a fixing on a door is drawn (and taken) where the door now stands
+	return frame(p) * (j.pos + door_offset(p)) if p != null else j.pos
 
 
 func line_end_world(l, end: int) -> Vector2:
@@ -1102,6 +1103,11 @@ func _mass_of(arr: Array) -> float:
 
 
 func make_body(group: Array, from_body):
+	# playtest 2026-11-12 ("把舱门连根切下，直接没法合上了…既不能直接牵引、又不能分割成小块牵引"): a door
+	# that comes loose is an ordinary part from then on, where it stood
+	for p in group:
+		if p.door:
+			_undoor(p)
 	var m := 0.0
 	var com := Vector2.ZERO
 	for p in group:
@@ -1148,6 +1154,13 @@ func make_body(group: Array, from_body):
 		b.calm = FreeBody.CALM_T
 		if od.ship:
 			b.start_ghost(od.dir)
+		# playtest 2026-11-12: a cut through a loose door lying in its pocket in the hull freed the
+		# bulkhead under it too, the two born one inside the other; the solver threw both hundreds
+		# of metres. Born inside another loose part, it touches nothing until clear (as a load let
+		# go overlapping: FreeBody.hold_end), easing out of the ship if it sits in it
+		if _overlaps_loose(group, b):
+			b.ghost = 0.0
+			b.hold_end()
 	elif from_body == null:
 		_separation_kick(b, group, com, m)
 	bodies.append(b)
@@ -1157,6 +1170,27 @@ func make_body(group: Array, from_body):
 	redraw_near(group, true)
 	piece_freed.emit(b)
 	return b
+
+
+# Does a group of pieces overlap a part of another loose body it would collide with (by more than a sliver)?
+func _overlaps_loose(group: Array, own) -> bool:
+	for p in group:
+		var wp := world_poly(p)
+		var bb := Geom.bbox(wp)
+		for ob in bodies:
+			# (one held by a machine, or tunnelling, touches nothing anyway)
+			if ob == own or not is_instance_valid(ob) or (ob.collision_layer & FreeBody.MASK) == 0:
+				continue
+			for q in ob.pieces:
+				if q.gone:
+					continue
+				var wq := world_poly(q)
+				if not bb.intersects(Geom.bbox(wq)):
+					continue
+				for part in Geometry2D.intersect_polygons(wp, wq):
+					if absf(Geom.area(part)) > 12.0:
+						return true
+	return false
 
 
 # Does a group of pieces overlap a piece outside it (by more than a sliver)?
@@ -1219,6 +1253,19 @@ static func free_shape(c: Node) -> void:
 
 
 # Move a piece's own data into a new frame (t maps old frame -> new frame).
+# A door cut loose: its slide is baked into its outline (and its art, kerfs, fixings, controls) at
+# the place it is drawn, and it has no open/shut state of its own any more (only collided and
+# picked by its outline, like any part). "Open" stays true: it is out of the way of its doorway.
+func _undoor(p) -> void:
+	var off := door_offset(p)
+	if off != Vector2.ZERO:
+		_reframe(p, Transform2D(0.0, off))
+	p.door = false
+	p.door_open = true
+	p.open_t = 0.0
+	p.open_dir = Vector2.ZERO
+
+
 func _reframe(p, t: Transform2D) -> void:
 	p.poly = t * p.poly
 	p.art_xf = t * p.art_xf
@@ -1353,14 +1400,19 @@ func rebuild_cols(p) -> void:
 		for c in static_cols[p.id]:
 			free_shape(c)
 	static_cols.erase(p.id)
-	if p.gone or (p.door and p.open_t > 0.5):
+	if p.gone:
 		return
 	# a membrane stretched in its frame is no wall to fly into
 	if p.kind == "film":
 		return
-	var poly := Geom.simplify(p.poly, 1.4)
+	# playtest 2026-11-12 ("货舱门打开的情况下舱门没有碰撞体积"): an open door is solid where it now
+	# stands (slid fully open), not a hole in the ship
+	var src: PackedVector2Array = p.poly
+	if p.door and p.open_t > 0.5:
+		src = Transform2D(0.0, p.open_dir) * p.poly
+	var poly := Geom.simplify(src, 1.4)
 	if not Geom.valid(poly):
-		poly = p.poly
+		poly = src
 	if Geom.area(poly) < 20.0 or not Geom.valid(poly):
 		return
 	var c := CollisionPolygon2D.new()
@@ -1423,7 +1475,7 @@ func _process(dt: float) -> void:
 		_doors = order.filter(func(i): return pieces[i].door)
 	for id in _doors:
 		var p = pieces[id]
-		if p.gone:
+		if p.gone or not p.door:
 			continue
 		var tgt := 1.0 if p.door_open else 0.0
 		if not is_equal_approx(p.open_t, tgt):
@@ -1759,6 +1811,18 @@ func _commit_cut(p, pl: PackedVector2Array, r: float = KERF, source: Dictionary 
 		if c.piece == p.id:
 			var to = _part_for(all_parts, c.pos, 14.0)
 			c.piece = to.id if to != null else 0
+	# playtest 2026-11-12 ("打开后的切割会有问题"): a door cut into parts is a door no more; every
+	# part stays where it was drawn (open or shut) instead of the new ones jumping back to the shut place
+	if p.door and parts.size() > 1:
+		var was_open: bool = p.door_open
+		for q in all_parts:
+			if q != p:
+				q.door = true
+				q.open_dir = p.open_dir
+				q.open_t = p.open_t
+		for q in all_parts:
+			_undoor(q)
+			q.door_open = was_open
 	for q in all_parts:
 		dirty_cols[q.id] = true
 	if _gap_ready:
@@ -1782,7 +1846,8 @@ func _pos_in(j, p) -> Vector2:
 	var pa = pieces.get(j.a)
 	if pa == null:
 		return j.pos
-	return frame(p).affine_inverse() * (frame(pa) * j.pos)
+	# where it is drawn (a door's fixings slide with it), in p's own unslid outline frame
+	return frame(p).affine_inverse() * (frame(pa) * (j.pos + door_offset(pa))) - door_offset(p)
 
 
 func _part_for(parts: Array, pos: Vector2, tol: float = 7.0):

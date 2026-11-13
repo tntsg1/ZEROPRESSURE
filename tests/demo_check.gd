@@ -46,10 +46,13 @@ func _wait_gate(gate, secs := 20.0) -> String:
 func _run() -> void:
 	Gt.forced = true
 	# a clean start for the build's own files
-	for f in [Gt.CFG, "user://playtest_save.json", "user://playtest_career.json", "user://playtest_settings.cfg"]:
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(f))
+	# (2026-11-12: a test's own copies only — this used to delete the player's real playtest files)
+	for f in [Gt.CFG, Gt.user_file("playtest_save.json"), Gt.user_file("playtest_career.json"), Gt.user_file("playtest_settings.cfg")]:
+		if not SaveGame.player_file(f):
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(f))
 	Gt.apply()
-	check(SaveGame.path == "user://playtest_save.json" and Career.path == "user://playtest_career.json" and Txt.cfg_path == "user://playtest_settings.cfg", "its own saves and settings")
+	check(SaveGame.path == Gt.user_file("playtest_save.json") and Career.path == Gt.user_file("playtest_career.json") and Txt.cfg_path == Gt.user_file("playtest_settings.cfg"), "its own saves and settings (a test's own copies: %s)" % SaveGame.path)
+	check(not SaveGame.player_file(SaveGame.path) and not SaveGame.player_file(Gt.CFG), "  never the player's playtest files")
 	Txt.load_settings(false)
 	check(Txt.playtest, "the recorder is on by default")
 	check(not Gt.dev_allowed(), "the bench is hidden (no --dev)")

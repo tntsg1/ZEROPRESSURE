@@ -62,7 +62,11 @@ func _p(v: Vector2) -> Vector2:
 
 
 func _mesh(key: String, build: Callable) -> ArrayMesh:
+	# 2026-11-12: the ring's steel as bright as the districts' in their solid look (hub_tidy.tune)
+	if DistrictStyle.solid():
+		key = "solid/" + key
 	if not _meshes.has(key):
+		Tidy.tune()
 		var pen := MeshPen.new()
 		build.call(pen)
 		_meshes[key] = pen.mesh()

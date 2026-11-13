@@ -12,12 +12,14 @@ extends RefCounted
 # additive layer. Box-local metres (60 × 28, floor at 26.8), as scripts/tug_station_art.gd.
 
 const MeshPen = preload("res://scripts/mesh_pen.gd")
+const SolidPen = preload("res://scripts/solid_pen.gd")
 const FastDraw = preload("res://scripts/fast_draw.gd")
 const W = preload("res://scripts/process_works.gd")
 const CastArt = preload("res://scripts/cast_art.gd")
 const BalePress = preload("res://scripts/bale_press.gd")
 
 const FLOOR := 26.8
+const HALL_COLS := [0.8, 10.0, 20.0, 30.0, 40.0, 50.0, 59.2]   # the hall's columns (0.6 m), from the gallery deck down
 const DY := 2.65               # the furnace sits this far below the pre-processing line
 const DECK_Y := 18.4           # the furnace deck's top
 const MILL_DECK := 12.3        # the mill deck's top
@@ -51,7 +53,20 @@ var off := Vector2.ZERO   # 128 号 第 4 段: the part being drawn stands this 
 
 
 func _ink(a: float) -> Color:
+	# 2026-11-12: in the solid look the line art steps back behind the plates — opaque grey (with
+	# hdr_2d a faint white blends in linear light and reads far brighter than its alpha), as the tug
+	# station's (scripts/tug_station_art.gd _ink at style 9)
+	if _solid():
+		# (the faint detail lines dark, cut into the steel faces; the outlines light, round them: either
+		# way the line work stands off the faces and nothing of it is lost)
+		var g := (0.04 + a * 0.28) if a < 0.3 else (0.3 + a * 0.5)
+		return Color(g, g * 1.03, g * 1.1)
 	return Pal.ink(a)
+
+
+# 2026-11-12 (user: "纯2D、纯扁平啊，没有一点质感"): the machines drawn solid (scripts/solid_pen.gd)
+func _solid() -> bool:
+	return DistrictStyle.on() and DistrictStyle.halls
 
 
 func _p(v: Vector2) -> Vector2:
@@ -67,8 +82,10 @@ func _mill() -> void:
 
 
 func _mesh(key: String, build: Callable) -> ArrayMesh:
+	if _solid():
+		key = "solid/" + key
 	if not _meshes.has(key):
-		var pen := MeshPen.new()
+		var pen = SolidPen.new() if _solid() else MeshPen.new()
 		build.call(pen)
 		_meshes[key] = pen.mesh()
 	return _meshes[key]
@@ -97,7 +114,8 @@ func still(ci: CanvasItem, on: bool, lod: int) -> void:
 	# the layer's bounds round the hall (a draw_mesh alone is culled by its untransformed box)
 	ci.draw_rect(r, Color(0, 0, 0, 0), false, 1.0)
 	off = Vector2.ZERO
-	_put(ci, _mesh("still%d%d" % [int(on), lod], func(p): _still(p, on, lod)), Vector2.ZERO)
+	var open := DistrictStyle.on() and DistrictStyle.halls
+	_put(ci, _mesh("still%d%d%d" % [int(on), lod, int(open)], func(p): _still(p, on, lod)), Vector2.ZERO)
 	# the district's code on the arrival lane's back wall, where nothing stands in front of it
 	_text(ci, Vector2(41.6, 12.2), "PRC", 2.4, Color(_ink(0.3), 0.32))
 	if not Pal.labels:
@@ -117,11 +135,18 @@ func _still(p, on: bool, lod: int) -> void:
 	var bay := Transform2D(0.0, Vector2(0.0, W.BAY_DY))
 	# ---- the hall: the roof truss over the gallery's corridor (left clear), the columns from the walkway down
 	var c0 := Gal.DECK_B
-	for cx: float in [0.8, 10.0, 20.0, 30.0, 40.0, 50.0, 59.2]:
-		p.rect(Rect2(cx - 0.3, c0, 0.6, FLOOR - c0), Color(0.07, 0.074, 0.082))
-		p.line(Vector2(cx - 0.3, c0), Vector2(cx - 0.3, FLOOR), _ink(0.13), 0.04)
-		p.line(Vector2(cx + 0.3, c0), Vector2(cx + 0.3, FLOOR), _ink(0.13), 0.04)
-		p.line(Vector2(cx, c0), Vector2(cx, FLOOR), _ink(0.05), 0.03)
+	# 2026-11-12 (user: "我能走的地方应该没有柱子才对，是空的"): with the districts' halls on, a column
+	# is drawn only where it stands in something that really collides (DistrictStyle.column_spans)
+	var open := DistrictStyle.on() and DistrictStyle.halls
+	for cx: float in HALL_COLS:
+		var spans: Array = DistrictStyle.column_spans("process", cx, c0, FLOOR) if open else [Vector2(c0, FLOOR)]
+		for sp: Vector2 in spans:
+			p.rect(Rect2(cx - 0.3, sp.x, 0.6, sp.y - sp.x), Color(0.07, 0.074, 0.082))
+			p.line(Vector2(cx - 0.3, sp.x), Vector2(cx - 0.3, sp.y), _ink(0.13), 0.04)
+			p.line(Vector2(cx + 0.3, sp.x), Vector2(cx + 0.3, sp.y), _ink(0.13), 0.04)
+			p.line(Vector2(cx, sp.x), Vector2(cx, sp.y), _ink(0.05), 0.03)
+		if spans.is_empty() or (spans[-1] as Vector2).y < FLOOR - 0.01:
+			continue
 		p.rect(Rect2(cx - 0.6, FLOOR - 0.22, 1.2, 0.22), DARK)
 		if lod > 0:
 			for bx: float in [-0.42, 0.42]:
@@ -481,6 +506,10 @@ func _mill_still(p, on: bool, lod: int) -> void:
 		p.line(Vector2(rr.position.x, rr.position.y - 0.9), Vector2(rr.end.x, rr.position.y - 0.9), _ink(0.18), 0.05)
 	# the stand: two housings with their windows, the cap, the screw-down and its motor
 	var s := STAND
+	# 2026-11-12: in the solid look the stand's window is closed behind the rolls by its back plate (it
+	# read as a wire frame with the hall showing through)
+	if _solid():
+		p.rect(Rect2(s.position.x + 0.45, s.position.y, s.size.x - 0.9, s.size.y), Color(0.06, 0.063, 0.07))
 	for hx: float in [s.position.x, s.end.x - 0.45]:
 		p.rect(Rect2(hx, s.position.y, 0.45, s.size.y), FACE2)
 		p.rect(Rect2(hx, s.position.y, 0.45, s.size.y), _ink(0.55), false, 0.05)

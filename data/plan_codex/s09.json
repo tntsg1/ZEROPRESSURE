@@ -1,131 +1,152 @@
 {
 	"by": "tools/gen_plan_codex.sh",
-	"made": "2026-11-11",
+	"made": "2026-11-12",
 	"ship": "s09",
 	"steps": [
 		{
 			"ctrl": "GAS-A",
 			"do": "h",
+			"gap": 0.2,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "GAS-B",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "GAS-L",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "H2-P",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "O2-P",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "SPRAY-P",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "RCS-1P",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "RCS-2P",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "K-FC",
 			"do": "w",
+			"gap": 0.1,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "K-B",
 			"do": "w",
+			"gap": 0.1,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "K-BRK",
 			"do": "w",
+			"gap": 0.1,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "E-CAP",
 			"do": "w",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "FC-LOCAL",
 			"do": "w",
+			"gap": 0.1,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "GAS-A",
 			"do": "h",
+			"gap": 4.8,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "GAS-B",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "GAS-L",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "H2-P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "O2-P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "SPRAY-P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "RCS-1P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "RCS-2P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		}

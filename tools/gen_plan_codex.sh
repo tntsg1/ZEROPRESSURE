@@ -15,13 +15,21 @@ fi
 LOG=${LOG:-/g/zp_logs/plan_codex}   # outside the repo
 mkdir -p "$LOG" data/plan_codex
 start=$(date +%s)
+# the project must compile first (a half-saved script elsewhere left every run idle to its limit)
+if ! timeout 120 /e/godot/godot47/Godot_v4.7-stable_win64_console.exe --path . --resolution 1280x720 --position -2600,40 --fixed-fps 60 -s tests/codex_probe.gd -- tug 2>&1 | grep -aq "^PROBE tug"; then
+  echo "the project does not compile now; nothing generated"; exit 1
+fi
 one() {
   local s="$1" x=$((RANDOM % 400))
   timeout "$LIMIT" /e/godot/godot47/Godot_v4.7-stable_win64_console.exe --path . --resolution 1280x720 --position -2600,$((40 + x)) --fixed-fps 60 -s tests/gen_plan_codex.gd -- "$s" > "$LOG/$s.log" 2>&1
   local line
   line=$(grep -a "^CODEX $s " "$LOG/$s.log" | tail -1)
   [ -z "$line" ] && line="CODEX $s FAIL wall-clock limit ${LIMIT}s (or crashed)"
-  case "$line" in *" PASS "*) ;; *) rm -f "data/plan_codex/$s.json" ;; esac   # only a verified plan stays
+  if grep -aq "Parse Error\|Compile Error" "$LOG/$s.log"; then
+    line="CODEX $s FAIL the project did not compile (another edit in progress?); its file kept"
+  else
+    case "$line" in *" PASS "*) ;; *) rm -f "data/plan_codex/$s.json" ;; esac   # only a verified plan stays
+  fi
   echo "$line"
 }
 export -f one

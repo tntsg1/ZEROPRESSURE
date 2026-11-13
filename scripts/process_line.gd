@@ -31,7 +31,13 @@ const CHANGE_S := 9.0           # s the furnace stands for a mould change (the c
 const CHANGE_MAX := 9.5         # s: the change is done by then whatever the crane is doing (no works seen)
 const BALE_K := 1.08            # a bale fetches this much more than what went into it (draft)
 const BALE_T := 2.0             # t a 1×1 cell of bales holds
-const PRESS_S := {"feed": 2.6, "close": 0.6, "press": 2.8, "tie": 1.0, "eject": 2.0, "approach": 1.6, "probe": 1.6, "reject": 2.4}
+# 2026-11-12 (user: "压块机从火车上卸下来，然后再放到这个压块机里面，这动画做得很糟糕"): the port is weightless,
+# so nothing falls: the hoist's gripper lowers it from the freight spur's hatch onto the belt (land, its length
+# by how far the trolley runs: scripts/bale_press.gd land_s), the belt carries it under the probe and through
+# the feed gate (feed), the platen sweeps it to the floor and crushes it, the bottom doors open and the platen
+# pushes the bale down into the pit (eject); a charged one goes back up the hatch (reject)
+const PRESS_S := {"feed": 3.0, "close": 0.7, "press": 3.0, "tie": 1.2, "eject": 2.8, "approach": 2.0, "probe": 1.6, "reject": 5.8}
+static var PRESS_WAIT_MAX := 60.0  # s a job waits for its train before the press fetches it off the spur anyway
 const LOOSE := ["mixed_metal:0", "nonferrous_mix:0", "ferrous_scrap:0"]
 const GAS_MAX_KPA := 20.0       # a vessel holding more than this is not empty (vacuum outside)
 const LIQ_MAX_M3 := 0.01
@@ -401,7 +407,7 @@ static func send_to_press(id: String) -> Dictionary:
 	var src: Dictionary = u.get("good", u.get("part", {}))
 	var pr := press()
 	pr.n = int(pr.get("n", 0)) + 1
-	var job := {"id": "B%d" % int(pr.n), "pl": pl, "name": str(u.name), "mass": mass_of(u), "value": bale_value(u), "cells": int(u.get("cells", 1)),
+	var job := {"id": "B%d" % int(pr.n), "uid": id, "train": press_by_train(), "pl": pl, "name": str(u.name), "mass": mass_of(u), "value": bale_value(u), "cells": int(u.get("cells", 1)),
 		"look": {"cat": str(u.cat), "ship": str(u.get("ship", "")), "tag": str(u.get("tag", "")), "nk": str(src.get("nk", "")), "key": str(u.get("key", "")), "w": int(u.w), "h": int(u.h)},
 		"charged": charged(u), "held": charged_text(u), "ship": str(u.get("ship", ""))}
 	var jobs: Array = pr.get("jobs", [])
@@ -419,22 +425,97 @@ static func press_phase() -> Array:
 	var cur: Dictionary = pr.get("cur", {})
 	if cur.is_empty():
 		return ["idle", 0.0]
+	if not press_landed(cur):
+		return ["wait", 0.0]
 	var t := float(pr.get("t", 0.0))
-	var seq := ["approach", "probe", "reject"] if cur.get("charged", false) else ["feed", "close", "press", "tie", "eject"]
-	for ph in seq:
-		var d := float(PRESS_S[ph])
+	for ph in press_seq(cur):
+		var d := press_len(cur, ph)
 		if t < d:
 			return [ph, t / d]
 		t -= d
 	return ["done", 1.0]
 
 
+static func press_seq(cur: Dictionary) -> Array:
+	return ["land", "approach", "probe", "reject"] if cur.get("charged", false) else ["land", "feed", "close", "press", "tie", "eject"]
+
+
+static func press_len(cur: Dictionary, ph: String) -> float:
+	if ph == "land":
+		return float(load("res://scripts/bale_press.gd").land_s(float(cur.get("hx", -1.0))))
+	return float(PRESS_S[ph])
+
+
 static func press_total(cur: Dictionary) -> float:
-	var seq := ["approach", "probe", "reject"] if cur.get("charged", false) else ["feed", "close", "press", "tie", "eject"]
 	var s := 0.0
-	for ph in seq:
-		s += float(PRESS_S[ph])
+	for ph in press_seq(cur):
+		s += press_len(cur, ph)
 	return s
+
+
+# ---- the press and the freight trains (2026-11-12): a job sent while trains run waits for its crate
+# a job goes by train when the trains run between the warehouse and the processing district
+static func press_by_train() -> bool:
+	var FW = load("res://scripts/freight_works.gd")
+	return bool(FW.on) and not (FW.trains as Array).is_empty() and Port.stage("cargo") >= 1 and Port.stage("process") >= 1
+
+
+# a freight train has this job's crate aboard
+static func press_on_train(job_id: String) -> bool:
+	for tr in load("res://scripts/freight_works.gd").trains:
+		for i in 2:
+			if tr.wag[i] is Dictionary and str(tr.wag[i].get("press", "")) == job_id:
+				return true
+	return false
+
+
+# has its piece come down to the hoist (old jobs, and ones not sent by train, have)
+static func press_landed(cur: Dictionary) -> bool:
+	return not bool(cur.get("train", false)) or bool(cur.get("landed", false))
+
+
+# the job waiting for the warehouse unit uid's crate (in the queue or on the press), {} for none
+static func press_job_of(uid: String) -> Dictionary:
+	var pr := press()
+	if pr.is_empty():
+		return {}
+	var all: Array = [pr.get("cur", {})] + (pr.get("jobs", []) as Array)
+	for j in all:
+		if not (j as Dictionary).is_empty() and str(j.get("uid", "")) == uid:
+			return j
+	return {}
+
+
+static func press_job_of_id(job_id: String) -> Dictionary:
+	var pr := press()
+	if pr.is_empty():
+		return {}
+	var all: Array = [pr.get("cur", {})] + (pr.get("jobs", []) as Array)
+	for j in all:
+		if not (j as Dictionary).is_empty() and str(j.get("id", "")) == job_id and not press_landed(j):
+			return j
+	return {}
+
+
+# the job on the press now is this one and waits for its piece: the train may hand it over
+static func press_ready_for(job_id: String) -> bool:
+	var cur: Dictionary = press().get("cur", {})
+	return not cur.is_empty() and str(cur.id) == job_id and not press_landed(cur)
+
+
+# the train handed job_id's piece to the hoist through the hatch at hall x (m)
+static func press_land(job_id: String, x: float) -> void:
+	var pr := press()
+	var all: Array = [pr.get("cur", {})] + (pr.get("jobs", []) as Array)
+	for j in all:
+		if not (j as Dictionary).is_empty() and str(j.get("id", "")) == job_id:
+			if press_landed(j):
+				return
+			j.landed = true
+			j.hx = float(load("res://scripts/bale_press.gd").hatch_near(x))
+			if j == pr.get("cur", {}):
+				pr.t = 0.0
+			return
 
 
 # real time: the press works its jobs one after another, seen or not
@@ -450,6 +531,14 @@ static func tick_press(dt: float) -> void:
 		pr.cur = jobs.pop_front()
 		pr.jobs = jobs
 		pr.t = 0.0
+		return
+	if not press_landed(cur):
+		# waiting for its train; after a while (no train came: the trains were stopped, the game was left and
+		# its crate forgotten) the hoist fetches it off the spur all the same
+		cur.wait_t = float(cur.get("wait_t", 0.0)) + dt
+		# (its crate already on a train on its way: that train brings it, up to three times as long)
+		if float(cur.wait_t) > PRESS_WAIT_MAX and (float(cur.wait_t) > PRESS_WAIT_MAX * 3.0 or not press_on_train(str(cur.id))):
+			press_land(str(cur.id), float(load("res://scripts/bale_press.gd").HATCHES[0]))
 		return
 	pr.t = float(pr.get("t", 0.0)) + dt
 	if float(pr.t) >= press_total(cur):

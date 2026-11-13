@@ -27,7 +27,7 @@ const TIME_STEPS := [1.0, 2.0, 4.0, 8.0, 0.25]
 static var SHIPS := Market.POOL.map(func(entry): return entry[0])
 const KIT := [["scan_kit", "up_scan"], ["grapple5", "up_grapple"], ["pump2", "up_pump"], ["arm", "fa_arm"],
 	["mouth_rail", "fa_rail"], ["net05", "fa_net"], ["hauler", "fa_hauler"],
-	["berth88", "fa_berth"], ["hauler2", "fa_hauler2"], ["crane", "fa_crane"], ["port2", "fa_port2"], ["buffer", "fa_buffer"], ["zones", "fa_zones"]]
+	["berth88", "fa_berth"], ["hauler2", "fa_hauler2"], ["hauler3", "fa_hauler3"], ["hauler4", "fa_hauler4"], ["hauler5", "fa_hauler5"], ["hauler6", "fa_hauler6"], ["hauler7", "fa_hauler7"], ["crane", "fa_crane"], ["port2", "fa_port2"], ["buffer", "fa_buffer"], ["zones", "fa_zones"]]
 const GOALS := ["", "safe", "fast", "valuable"]
 const SCOPES := ["full", "section", "rescue"]
 
@@ -925,10 +925,8 @@ func _draw_xray() -> void:
 	var mach: Array = []
 	if g.arm != null:
 		mach.append("ARM %s" % g.arm.state)
-	if g.hauler != null:
-		mach.append("HAUL %s" % g.hauler.state)
-	if g.hauler2 != null:
-		mach.append("HAUL2 %s" % g.hauler2.state)
+	for h in g.haulers():
+		mach.append("HAUL%s %s" % ["" if h.idx == 0 else str(h.idx + 1), h.state])
 	if g.crane != null:
 		mach.append("CRANE %s" % g.crane.state)
 	for z2 in g.mouths:

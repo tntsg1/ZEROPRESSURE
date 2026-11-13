@@ -15,7 +15,7 @@ const M := 48.0
 # drawings that are furniture or plain cargo: no card
 const PLAIN := ["lamp", "cabinet", "locker", "seat", "bunk", "plants", "table", "desk", "shelf", "toolwall", "galley", "bed",
 	"ladder", "grating", "suit", "bench", "medcab", "op_table", "bar", "piano", "wine_rack", "mail_sorter", "beehive",
-	"gun_rack", "harness", "screen", "spray_bar", "food_module", "composter", "growlamp", "biobox", "ingot_rack", "beacon",
+	"gun_rack", "harness", "screen", "spray_bar", "spray_line", "food_module", "composter", "growlamp", "biobox", "ingot_rack", "beacon",
 	"barrel", "shell", "missile", "ice", "drum", "glove",
 	# E036–E086 (2026-11-11): the old double-door "cabinet" redrawn as what each is; no card of its own yet, like the cabinet (cards need the owner's text)
 	"brake_ctrl", "dosing_skid", "material_rack", "food_bench", "tx_cabinet", "turbine_ctrl", "bench_drill", "tool_cart", "pack_rack", "dispatch_log", "cal_bench", "survey_log", "crd_cab", "crypto_rack", "herbarium", "garden_locker", "chem_store", "core_store", "drill_tools", "well_logs", "ev_calib", "cryo_cdb", "cryo_spares", "shot_archive", "spare_leads", "sample_cyl", "ob_cal", "plate_archive", "spare_cells", "server_spares", "batch_log", "shadow_board", "cargo_log", "custody_reg", "evidence_lockers", "mail_locker", "manifest_term", "pharmacy", "seed_vault", "smelt_log", "cockpit_case", "svc_bench", "dining_table", "tow_log"]

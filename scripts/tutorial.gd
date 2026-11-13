@@ -46,6 +46,7 @@ var rings: Array = []         # [center px, radius px]
 var long_ring: Array = []
 var stop_box := Rect2()
 var t := 0.0
+var first := 0                # 双重教程: the lesson the course started at (the career's runs from TUT_03)
 
 
 func setup(g: Game, ship_id: String) -> void:
@@ -62,6 +63,19 @@ func setup(g: Game, ship_id: String) -> void:
 	var sb: Array = course.get("stop_box", [])
 	if not sb.is_empty():
 		stop_box = Rect2(Vector2(sb[0], sb[1]) * Geom.M, Vector2(sb[2] - sb[0], sb[3] - sb[1]) * Geom.M)
+	# 双重教程 (owner 2026-11-12, "b"): the career's course after TUG-001 starts past the lessons it
+	# already taught, with the bridging card first (a save of the course part-way puts it where it was)
+	if Game.course_start != "":
+		for i in lessons().size():
+			if str(lessons()[i].get("id", "")) == Game.course_start:
+				lesson_i = i
+				first = i
+				break
+		Game.course_start = ""
+		if first > 0:
+			var bridge = preload("res://scripts/ts1_bridge.gd").new()
+			bridge.tut = self
+			game.add_child.call_deferred(bridge)
 	_enter_step()
 
 
@@ -760,13 +774,14 @@ func _react() -> void:
 # ---------------------------------------------------------------- save
 
 func save_state() -> Dictionary:
-	return {"lesson": lesson_i, "step": step_i, "flags": flags, "guard": guard_used, "recovered": recovered, "said": game.radio.said,
+	return {"lesson": lesson_i, "first": first, "step": step_i, "flags": flags, "guard": guard_used, "recovered": recovered, "said": game.radio.said,
 		"rings": rings_done, "dash": dash_done, "assist": assist_seen_off, "done": done, "ends": step_end_time,
 		"look": [panned, overview_seen, hold_seen]}
 
 
 func load_state(d: Dictionary) -> void:
 	lesson_i = int(d.get("lesson", 0))
+	first = int(d.get("first", first))
 	step_i = int(d.get("step", 0))
 	flags = d.get("flags", {})
 	guard_used = d.get("guard", {})

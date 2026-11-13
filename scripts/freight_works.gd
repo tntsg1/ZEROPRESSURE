@@ -70,6 +70,19 @@ const BAN := 15.0 * PI / 180.0 # rad either side of the hub's passenger stop no 
 const LOCK_T := 0.3
 const LOAD_T := 0.7
 const SELL_T := 4.0           # s the recycling station's crane takes to lift a sale off and drop it in
+# 2026-11-12 (the baler): a crate for the press is handed down through the spur's hatch to the hoist's gripper
+# (scripts/bale_press.gd draws it): the hatch opens under the wagon, the gripper comes up and clamps, takes it
+const HAND_T := 2.4
+const PRESS_HOLD := 25.0      # s a train with a press crate stands at the stop while the press finishes the job before
+# 2026-11-12 (user: "压块优先"): a crate for the press is the next thing a train takes, at its next free
+# moment (a load or an unload under way is never cut short); but after PRESS_STREAK of them in a row, with
+# other freight waiting, the other freight goes first once (nothing starves)
+const PRESS_STREAK := 2
+static var press_streak := 0
+static var press_firsts := 0   # tests: the times a press crate was taken first
+static var press_yields := 0   # tests: the times it let other freight go first (the streak)
+static var PRESS_FIRST := true # tests: false runs press crates in the queue's order (the before)
+static var _yielding := false  # this pick lets other freight go first: no press crate in it
 const HOLD := 0.6              # s a reversal stands: the driver changes ends
 const WAIT_MAX := 6.0          # s a train waits for a route before trying another
 const HUB_WAIT := 25.0         # s it waits by a hatch that will not take its crate
@@ -1970,9 +1983,16 @@ static func _assign(tr: Dictionary) -> void:
 				tr.steps = [{"do": "go", "place": "h:" + z, "wagons": [_empty(tr)[0]], "say": w("去中央环取货 · %s舱口", "TO THE RING FOR A CRATE · %s") % name_of(z)},
 					{"do": "take", "z": z}]
 				return
-	# a shipment
+	# a shipment (a press crate first: 压块优先)
 	var pick := -1
+	var pp := _press_pick(func(it): var f2 := "d:" + str(it.from); return f2 == str(tr.place) or (not _free_at(f2, id) and not _targeted(f2, id)))
+	if pp >= 0:
+		pick = pp
 	for i in queue.size():
+		if pick >= 0:
+			break
+		if _yielding and str(queue[i].get("press", "")) != "":
+			continue
 		var f := "d:" + str(queue[i].from)
 		if f == str(tr.place):
 			pick = i
@@ -1986,9 +2006,14 @@ static func _assign(tr: Dictionary) -> void:
 		for o in queue.duplicate():
 			if items.size() >= 2:
 				break
+			# (a trip letting other freight through takes no second press crate along)
+			if _yielding and str(o.get("press", "")) != "":
+				continue
 			if str(o.from) == str(sh.from) and (not ring_alive() and str(o.to) == str(sh.to) or ring_alive()):
 				items.append(o)
 				queue.erase(o)
+		for o in items:
+			_press_count(o)
 		var leg := "in" if ring_alive() else "out"
 		for it in items:
 			it.leg = leg
@@ -2012,6 +2037,19 @@ static func _assign(tr: Dictionary) -> void:
 static func _assign_corridor(tr: Dictionary) -> void:
 	var z := str(tr.home)
 	var held := _cargo(tr)
+	# 压块优先: a crate for the press waiting in this district goes up first (one a trip: it gets there sooner)
+	if held.is_empty() and W.hatch_out(z) == null:
+		var pp := _press_pick(func(it): return str(it.from) == z)
+		if pp >= 0 and (W.hatch_takes(z) or not ring_alive()):
+			var it2: Dictionary = queue[pp]
+			queue.remove_at(pp)
+			_press_count(it2)
+			it2.leg = "in"
+			tr.from = z
+			tr.to = str(it2.to)
+			tr.hub = z
+			tr.steps = [{"do": "go", "place": "d:" + z, "say": w("回%s装压块件", "BACK TO %s FOR THE BALER'S PIECE") % name_of(z)}, {"do": "load", "items": [it2]}]
+			return
 	# a sale: the cargo district's train runs it out to the trade port itself, first of all
 	if z == "cargo" and held.is_empty():
 		for it in queue:
@@ -2077,12 +2115,16 @@ static func _assign_corridor(tr: Dictionary) -> void:
 	# two crates a trip when the hatch is clear; one when a crate is on its way down to it (the other
 	# wagon stays free to take that one: push one, take one)
 	var room := 1 if W.outbound(z) or W.hatch_out(z) != null else 2
+	var yielding := _press_pick(func(it): return str(it.from) == z) < 0 and _yielding
 	for it in queue.duplicate():
+		if yielding and str(it.get("press", "")) != "":
+			continue
 		if str(it.from) == z and items.size() < room:
 			items.append(it)
 			queue.erase(it)
 	if not items.is_empty():
 		for it in items:
+			_press_count(it)
 			it.leg = "in"
 		tr.from = z
 		tr.to = str(items[0].to)
@@ -2111,7 +2153,7 @@ static func _lift_unserved() -> void:
 		if W.parcels.size() >= W.MAX_PARCELS - 3:
 			break
 		queue.erase(it)
-		W.lift_in(z, {"key": str(it.key), "use": str(it.use), "from": z, "to": str(it.to), "at": "hatch", "slot": -1, "name": str(it.get("name", "")), "look": it.get("look", {}), "order": str(it.get("order", ""))})
+		W.lift_in(z, {"key": str(it.key), "use": str(it.use), "from": z, "to": str(it.to), "at": "hatch", "slot": -1, "name": str(it.get("name", "")), "look": it.get("look", {}), "order": str(it.get("order", "")), "press": str(it.get("press", ""))})
 		pushed_up += 1
 
 
@@ -2536,6 +2578,18 @@ static func _watch() -> void:
 			n += 1
 			real_runs += 1
 	for id in _seen:
+		if not cur.has(id):
+			# taken out for the press: it goes to the processing district, first in the queue
+			var pj := ProcessLine.press_job_of(str(id))
+			if not pj.is_empty() and bool(pj.get("train", false)) and not bool(pj.get("landed", false)):
+				var pit := _item_of(_seen[id], "cargo", "process")
+				pit["press"] = str(pj.id)
+				if PRESS_FIRST:
+					queue.push_front(pit)
+				else:
+					queue.append(pit)
+				real_runs += 1
+				continue
 		if not cur.has(id) and n < 3:
 			_ship(_item_of(_seen[id], "cargo", "process" if pq > _pq else "trade"))
 			n += 1
@@ -2742,7 +2796,8 @@ static func _step(tr: Dictionary, dt: float) -> void:
 	for i in 2:
 		var an: Dictionary = tr.anim[i]
 		if not an.is_empty():
-			an.t = minf(1.0, float(an.t) + dt / (SELL_T if str(an.get("dir", "")) == "sell" else LOAD_T))
+			var dir := str(an.get("dir", ""))
+			an.t = minf(1.0, float(an.t) + dt / (SELL_T if dir == "sell" else (HAND_T if dir == "press" else LOAD_T)))
 	if (tr.step as Dictionary).is_empty():
 		tr.backoff = float(tr.get("backoff", 0.0)) - dt
 		if float(tr.backoff) > 0.0:
@@ -2828,9 +2883,11 @@ static func _step(tr: Dictionary, dt: float) -> void:
 				var an: Dictionary = tr.anim[i]
 				if not an.is_empty() and float(an.t) < 1.0:
 					return
-				if not an.is_empty() and str(an.dir) in ["down", "sell"]:
+				if not an.is_empty() and str(an.dir) in ["down", "sell", "press"]:
 					if str(an.dir) == "sell":
 						sold_runs += 1
+					if str(an.dir) == "press":
+						ProcessLine.press_land(str(tr.wag[i].get("press", "")), press_x(tr, i))
 					var oid := str((tr.wag[i] as Dictionary).get("order", "")) if tr.wag[i] is Dictionary else ""
 					if oid != "" and str(tr.place) == "d:trade" and order_in.has(oid):
 						order_in[oid] = int(order_in[oid]) + 1
@@ -2843,11 +2900,73 @@ static func _step(tr: Dictionary, dt: float) -> void:
 				return
 			var sale: bool = bool(tr.wag[c[0]].get("sell", false)) and str(tr.place) == "d:trade"
 			tr.status = w("回收站吊走卖出的货", "THE RECYCLING STATION LIFTS THE SALE AWAY") if sale else tr.status
-			tr.anim[c[0]] = {"t": 0.0, "dir": "sell" if sale else "down"}
+			# a crate for the press: handed down through the hatch once the press is ready for it
+			var pid := str(tr.wag[c[0]].get("press", "")) if str(tr.place) == "d:process" else ""
+			# (a job the hoist already fetched off the spur, having waited too long: its crate goes down as any)
+			if pid != "" and ProcessLine.press_job_of_id(pid).is_empty():
+				pid = ""
+			if pid != "" and not ProcessLine.press_ready_for(pid) and float(st.t) < PRESS_HOLD:
+				tr.status = w("〔等压块机空出〕", "〔WAITING FOR THE BALER〕")
+				return
+			tr.anim[c[0]] = {"t": 0.0, "dir": "sell" if sale else ("press" if pid != "" else "down")}
 		"push":
 			_push(tr, st, dt)
 		"take":
 			_take(tr, st, dt)
+
+
+# the press crate a train should take now (its index in the queue, -1 for none): the first one ok(it) allows,
+# unless PRESS_STREAK went first in a row and other freight ok() allows is waiting (that goes once first)
+static func _press_pick(ok: Callable) -> int:
+	_yielding = false
+	if not PRESS_FIRST:
+		return -1
+	var first := -1
+	var others := false
+	for i in queue.size():
+		var it: Dictionary = queue[i]
+		if not ok.call(it):
+			continue
+		if str(it.get("press", "")) != "":
+			if first < 0:
+				first = i
+		else:
+			others = true
+	if first >= 0 and press_streak >= PRESS_STREAK and others:
+		press_yields += 1
+		_yielding = true
+		return -1
+	if first >= 0 and first > 0:
+		press_firsts += 1
+	return first
+
+
+static func _press_count(it: Dictionary) -> void:
+	if str(it.get("press", "")) != "":
+		press_streak += 1
+	else:
+		press_streak = 0
+
+
+# the hall's x (m, the processing district's box) of wagon i's middle: where its crate goes down the hatch
+static func press_x(tr: Dictionary, i: int) -> float:
+	for c in cars(tr):
+		if str(c[3]) == "wagon" and int(c[4]) == i:
+			return ((c[0] as Vector2).x - PortStructure.box("process").position.x) / PortStructure.M()
+	return -1.0
+
+
+# the train standing at the processing district's stop with a press crate on it: [train, wagon i, anim t]
+# (t -1 while it has not started handing it down), [] for none
+static func press_hand() -> Array:
+	for tr in trains:
+		if str(tr.get("place", "")) != "d:process" or tr.moving:
+			continue
+		for i in 2:
+			if tr.wag[i] is Dictionary and str(tr.wag[i].get("press", "")) != "":
+				var an: Dictionary = tr.anim[i]
+				return [tr, i, float(an.t) if str(an.get("dir", "")) == "press" else -1.0]
+	return []
 
 
 # stand by a hatch and push each crate across onto its lift, one at a time
@@ -2895,7 +3014,7 @@ static func _push(tr: Dictionary, st: Dictionary, dt: float) -> void:
 			st.wait = float(st.get("wait", 0.0)) + dt
 			if float(tr.lock) >= 1.0 and W.hatch_takes(z):
 				var p: Dictionary = tr.wag[wi]
-				var parcel := {"key": str(p.key), "use": str(p.use), "from": z, "to": str(p.to), "at": "push", "slot": -1, "name": str(p.get("name", "")), "look": p.get("look", {}), "order": str(p.get("order", ""))}
+				var parcel := {"key": str(p.key), "use": str(p.use), "from": z, "to": str(p.to), "at": "push", "slot": -1, "name": str(p.get("name", "")), "look": p.get("look", {}), "order": str(p.get("order", "")), "press": str(p.get("press", ""))}
 				tr.wag[wi] = null
 				tr.pushing = {"wi": wi, "z": z}
 				W.push_in(z, parcel)
@@ -2972,7 +3091,7 @@ static func _take(tr: Dictionary, st: Dictionary, dt: float) -> void:
 			tr.roll = float(tr.roll) + dt * 3.0
 			var p = W.handed(z)
 			if p != null:
-				tr.wag[int(tr.pushing.wi)] = {"key": str(p.key), "use": str(p.use), "from": str(p.from), "to": z, "leg": "out", "name": str(p.get("name", "")), "look": p.get("look", {}), "order": str(p.get("order", ""))}
+				tr.wag[int(tr.pushing.wi)] = {"key": str(p.key), "use": str(p.use), "from": str(p.from), "to": z, "leg": "out", "name": str(p.get("name", "")), "look": p.get("look", {}), "order": str(p.get("order", "")), "press": str(p.get("press", ""))}
 				tr.pushing = {}
 				taken += 1
 				st.ph = "align"

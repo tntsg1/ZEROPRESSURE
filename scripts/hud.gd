@@ -71,6 +71,7 @@ var cur_last := []
 var cur_out := 9.0
 var minimap: Control        # the berth map, bottom right (P.6)
 var keys_band: Control      # 2026-11-11: the function keys, top right (scripts/hud_keys.gd)
+var plan_alert: Control     # 2026-11-12: the plan's wait on the player, top-centre (scripts/plan_alert.gd)
 var stock_last := {}
 var stock_pop := 9.0
 var stock_hit := ""
@@ -106,6 +107,10 @@ func _ready() -> void:
 	keys_band = preload("res://scripts/hud_keys.gd").new()
 	keys_band.hud = self
 	add_child(keys_band)
+	# 2026-11-12: the plan run waiting on the player, top-centre (scripts/plan_alert.gd)
+	plan_alert = preload("res://scripts/plan_alert.gd").new()
+	plan_alert.hud = self
+	add_child(plan_alert)
 	# the on-site guide's two keys (27 号): end it, or take its step's action (open the exchange)
 	for i in 3:
 		var b := Button.new()
@@ -229,6 +234,8 @@ func keep_out() -> Array:
 		_ko.append(keys_band.band_rect().grow(10.0))
 	if Look.on and game.look != null:
 		_ko.append(Rect2(size().x * 0.5 - 340.0, 8.0, 680.0, 86.0))
+	if plan_alert != null and plan_alert._k > 0.0 and plan_alert.bar_rect().has_area():
+		_ko.append(plan_alert.bar_rect().grow(10.0))
 	return _ko
 
 
@@ -335,11 +342,20 @@ func _arrival_card(s: Vector2) -> void:
 	_text(line, r.position + Vector2(20, 66), 15, Color(UiSkin.ACCENT, 0.95), font)
 
 
+func op_rect(s: Vector2) -> Rect2:
+	# below the keys, and below the first-meeting card when it is up (公测反馈 2026-11-12)
+	var y := HudKeys.below(game, 262.0)
+	if game.codex_hud != null and game.codex_hud.k > 0.01 and game.codex_hud.rect.has_area():
+		y = maxf(y, game.codex_hud.rect.end.y + HudKeys.GAP_BELOW)
+	return Rect2(s.x - 22.0 - 520.0, y, 520.0, 104.0)
+
+
 func _op_card(s: Vector2) -> void:
 	if op_act == "" or op_t > OpCards.SHOW_S:
 		return
 	var a := clampf(op_t / 0.25, 0.0, 1.0) * clampf((OpCards.SHOW_S - op_t) / 0.5, 0.0, 1.0)
-	var r := Rect2(s.x - 22.0 - 520.0 + (1.0 - a) * 30.0, 262.0, 520.0, 104.0)
+	var r := op_rect(s)
+	r.position.x += (1.0 - a) * 30.0
 	UI.panel(c, r, 0.94 * a)
 	c.draw_rect(Rect2(r.position + Vector2(8, 10), Vector2(3, r.size.y - 20)), Color(UiSkin.ACCENT, a))
 	var kr := Rect2(r.position + Vector2(20, 14), Vector2(maxf(44.0, 14.0 * OpCards.key_text(op_act).length() + 16.0), 30))
@@ -2312,7 +2328,8 @@ func _cursor_label() -> void:
 		return
 	# 91 号: on site a part under the pointer is boxed and read out by the drone's OSD
 	# (scripts/look.gd _designator), so its name tag here would only repeat it
-	if UiSkin.field and not h.is_empty() and str(h.get("kind", "")) in ["piece", "inspect"] and g.tools.tool != 2:
+	# (2026-11-12 HUD 中央交互: with scripts/hud_center.gd on, its tag is the one, on site or not)
+	if (UiSkin.field or preload("res://scripts/hud_center.gd").on) and not h.is_empty() and str(h.get("kind", "")) in ["piece", "inspect"] and g.tools.tool != 2:
 		cur_key = ""
 		cur_last = []
 		return
@@ -3211,7 +3228,7 @@ func _left_markers(s: Vector2) -> void:
 func _radio_log(s: Vector2) -> void:
 	var hist: Array = game.radio.history
 	var n := mini(hist.size(), 10)
-	var r := Rect2(s.x - 40 - 560, 130, 560, 64 + n * 30)
+	var r := Rect2(s.x - 40 - 560, HudKeys.below(game, 130.0), 560, 64 + n * 30)
 	UI.panel(c, r, 1.0, 1.0, Pal.AIR)
 	_text(game.txt("radio_log"), r.position + Vector2(20, 30), 14, Pal.ink(0.6), font)
 	for i in n:

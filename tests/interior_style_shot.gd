@@ -59,6 +59,11 @@ func _run() -> void:
 		at = r.position + Vector2(float(cp[0]), float(cp[1])) * PortStructure.M()
 	var tag := _arg("tag", "")
 	var styles := _arg("styles", "0,1,2").split(",")
+	DistrictStyle.halls = _arg("halls", "1") == "1"
+	# ab=1 (with perf=1): the districts' halls off and on alternating, the style held (2026-11-12)
+	var ab := _arg("ab", "0") == "1"
+	if ab:
+		styles = PackedStringArray(["off", "on"])
 	for i in 120:
 		g.drone.linear_velocity = Vector2.ZERO
 		g.cam_override = at; g.zoom_override = zoom; g.zoom_now = zoom; g.cam_pos = at
@@ -69,8 +74,15 @@ func _run() -> void:
 			acc[s] = []
 		for cycle in 6:
 			for s in styles:
-				DistrictStyle.style = int(s)
+				if ab:
+					DistrictStyle.halls = s == "on"
+				else:
+					DistrictStyle.style = int(s)
+				var r0 := Time.get_ticks_usec()
 				_redraw_all(g)
+				await process_frame
+				if ab:
+					print("  %s halls %s: redraw frame %.2f ms (the hall itself %.0f µs)" % [zone, s, (Time.get_ticks_usec() - r0) / 1000.0, DistrictStyle.hall_us])
 				await _frames(12)
 				var last := Time.get_ticks_usec()
 				for i in 150:
@@ -95,6 +107,7 @@ func _run() -> void:
 				await _frames(1)
 			Cap.save(root, "res://tests/out/interior_%s_%s%s.png" % [zone, s, ("_" + tag) if tag != "" else ""])
 	DistrictStyle.style = 9
+	DistrictStyle.halls = true
 	g.queue_free()
 	await _frames(4)
 	quit(0)

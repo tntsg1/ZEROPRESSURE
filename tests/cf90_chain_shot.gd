@@ -1,7 +1,7 @@
 extends SceneTree
-# Stills of CF-90's readable chain (97 号): the contract card with the wall and both ways; the
-# board, the bending bars and a prop under bay 2 with bay 3 half emptied; a prop under bay 5
-# bowing over its rating; the review. Writes tests/out/cf90_chain_*.png. Own saves only.
+# Stills of CF-90's readable chain (97 号): the contract card with the wall; the board and the
+# bending bars with the end bay half emptied; the review. Writes tests/out/cf90_chain_*.png. Own saves only.
+# (2026-11-12: the props are gone; this no longer places any.)
 #   tools/run_test.sh tests/cf90_chain_shot.gd --fixed-fps 60
 
 const Cap = preload("res://tests/cap.gd")
@@ -28,16 +28,6 @@ func _free(t: String) -> void:
 	p.body.global_position += Vector2(0, -30.0) * Geom.M
 
 
-func _place(tag: String) -> void:
-	var gr = g.gear
-	gr.sel = gr.carried_types().find("prop")
-	var p = g.world.tag(tag)
-	var at: Vector2 = g.world.frame(p) * Geom.centroid(p.poly)
-	var tg: Dictionary = gr.target(at, {}, {"kind": "piece", "piece": p, "pos": at})
-	if not tg.is_empty():
-		gr.act(tg)
-
-
 func _run() -> void:
 	Txt.zh = true
 	Game.contract = {}
@@ -51,9 +41,7 @@ func _run() -> void:
 	g.state = "play"
 	g.tutorial = null
 	await _frames(40)
-	_place("C21")
-	await _frames(10)
-	for t in ["C31", "C32"]:
+	for t in ["C11", "C12"]:
 		_free(t)
 		await _frames(5)
 	g.cam_override = Vector2(36.0, 0.0) * Geom.M
@@ -61,10 +49,6 @@ func _run() -> void:
 	g.drone.global_position = Vector2(36.0, -14.0) * Geom.M
 	await _frames(120)
 	Cap.save(root, "res://tests/out/cf90_chain_2_board.png")
-	_place("C51")
-	g.cam_override = Vector2(62.0, 0.0) * Geom.M
-	await _frames(40)
-	Cap.save(root, "res://tests/out/cf90_chain_3_over.png")
 	await _frames(120)
 	g.finish_contract(true)
 	await _frames(300)

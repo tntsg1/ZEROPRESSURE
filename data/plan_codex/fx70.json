@@ -6,114 +6,133 @@
 		{
 			"ctrl": "G-C",
 			"do": "h",
+			"gap": 0.2,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-R",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-P",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "GAST-28-V",
 			"do": "h",
+			"gap": 18.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PL",
 			"do": "h",
+			"gap": 2.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PF",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "DUMP",
 			"do": "w",
+			"gap": 1.3,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "O2CA-14-V",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PHE",
 			"do": "h",
+			"gap": 104.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "K-M1",
 			"do": "w",
+			"gap": 0.7,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "K-M2",
 			"do": "w",
+			"gap": 0.7,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-C",
 			"do": "h",
+			"gap": 19.3,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-R",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "GAST-28-V",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PL",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PF",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "O2CA-14-V",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PHE",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		}

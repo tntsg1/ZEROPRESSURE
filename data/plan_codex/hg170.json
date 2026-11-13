@@ -6,210 +6,245 @@
 		{
 			"ctrl": "RVH-3",
 			"do": "w",
+			"gap": 0.2,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PT-1",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PT-2",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PT-3",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PT-4",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-B",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-C",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-P",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PL",
 			"do": "h",
+			"gap": 30.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PF",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "FUEL-2-D",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "O2CA-69-V",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "GAST-53-V",
 			"do": "h",
+			"gap": 1.3,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "GAST-54-V",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "CABI-14-V",
 			"do": "h",
+			"gap": 5.3,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "GAST-35-V",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "O2CA-41-V",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "K-M1",
 			"do": "w",
+			"gap": 48.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "K-M2",
 			"do": "w",
+			"gap": 0.7,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PT-1",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PT-2",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PT-3",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PT-4",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-B",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-C",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PL",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PF",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "FUEL-2-D",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "O2CA-69-V",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "GAST-53-V",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "GAST-54-V",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "CABI-14-V",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "GAST-35-V",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "O2CA-41-V",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		}

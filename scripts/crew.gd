@@ -23,6 +23,25 @@ const CrewDrone = preload("res://scripts/crew_drone.gd")
 static var in_tests := false     # tests that want the real crew switch it on
 const FLOOR_LAYER := 4           # Dock.bounds_body: the berth's floor, rail and tower lines
 
+
+# 2026-11-12 (公测: "施工队…往上面装设备的时候，搬运无人机跑过来直接把设备搬走了，于是我就看着施工队对着空
+# 气打螺丝"): what the crew puts in the world is the crew's. The new parts — on the boat's hook, on the
+# crew hauler's tether, seated and being bolted — no one else takes, the operator's grapple included;
+# the wreck the machines leave alone too (the crew's hauler is after it), though the operator may
+# still lend a hand with it (Q4). By the pieces' own keys, so it holds through every relink.
+static var prof_us := 0         # tests: µs the crew and its drones spent (step + draw)
+static var no_guard := false     # tests only: the old behaviour, to see the bug come back
+static func owns(b, operator := false) -> bool:
+	if no_guard or b == null or not is_instance_valid(b):
+		return false
+	for p in b.pieces:
+		var k := str(p.key)
+		if k.begins_with("crew:part"):
+			return true
+		if not operator and k.begins_with("crew:"):
+			return true
+	return false
+
 var game
 var job_id := ""
 var steps: Array = []
@@ -49,6 +68,11 @@ var swallowed := 0               # wreck the furnace took (tests: really hauled,
 var carried := 0                 # wreck carried off aboard the boat, or cleared after a long wait
 var lent := 0                    # wreck the operator took over
 var font: Font
+const AFTER := 0.9               # s the test's light fades as the facility's own takes over
+var _after_t := 0.0
+var _after_job := ""
+var _after_seat := Vector2.ZERO
+var _after_list: Array = []
 
 
 func _init() -> void:
@@ -108,7 +132,9 @@ func _seat_list() -> Array:
 	if WorksPlan.PLANS.has(job_id):
 		out.append([seat(), str(sp.part[0]), sp.part[1]])
 		if sp.has("extra"):
-			out.append([seat() + Vector2(((sp.part[1] as Vector2).x * 0.5 + (sp.extra[1] as Vector2).x * 0.5 + 0.4) * M, 0.0), str(sp.extra[0]), sp.extra[1]])
+			# beside it; the lights' battery on the left (2026-11-12: on the right it sat on the boom's trolley)
+			var side := -1.0 if job_id == "lights" else 1.0
+			out.append([seat() + Vector2(side * ((sp.part[1] as Vector2).x * 0.5 + (sp.extra[1] as Vector2).x * 0.5 + 0.4) * M, 0.0), str(sp.extra[0]), sp.extra[1]])
 		return out
 	var n := int(sp.get("units", 3))
 	for k in n:
@@ -318,7 +344,27 @@ func _start() -> void:
 
 func _deploy() -> void:
 	for r in _roles():
-		_drone(r).go(boat_hover() + Vector2(randf_range(-2.0, 2.0), randf_range(1.0, 2.0)) * Geom.M)
+		_drone(r).go(_park(r))
+
+
+# Where a crew drone waits while the others work (2026-11-12: idle ones hung on the parts and the
+# box, one over the other): a row above and to the left of the work, each trade its own place.
+const PARK_ORDER := ["bot", "cutter", "hauler", "torque", "torque2", "cable", "tester"]
+const STEP_ROLES := {"isolate": ["bot"], "remove": ["cutter", "hauler"], "bring": ["hauler"], "lift": ["hauler"],
+	"fasten": ["torque", "torque2"], "connect": ["cable"], "test": ["tester"]}
+
+
+func _park(role: String) -> Vector2:
+	var k := PARK_ORDER.find(role)
+	return seat() + Vector2(-4.6 + 1.15 * k, -3.4 - 0.5 * (k % 2)) * Geom.M
+
+
+# the trades this step does not need go to their places
+func _send_idle_home(key: String) -> void:
+	var busy: Array = STEP_ROLES.get(key, [])
+	for r in drones:
+		if not r in busy and is_instance_valid(drones[r]):
+			drones[r].go(_park(r))
 
 
 func _roles() -> Array:
@@ -329,6 +375,8 @@ func _roles() -> Array:
 		out.append("hauler")
 	if _has("fasten"):
 		out.append("torque")
+		if _seat_list().size() > 1:
+			out.append("torque2")
 	if _has("connect"):
 		out.append("cable")
 	out.append("tester")
@@ -345,7 +393,9 @@ func _keep() -> void:
 	job.left = rest
 	_left_base = rest
 	step_t = 0.0
-	Career.save()
+	# the step reached, to its journal off the main thread (2026-11-12: a whole save here was 50 ms
+	# a frame on a real career, seven times a job; Career.keep_works)
+	Career.keep_works()
 
 
 func _next() -> void:
@@ -356,6 +406,7 @@ func _next() -> void:
 		return
 	_keep()
 	game.sfx.play(str(preload("res://scripts/works_site.gd").STEP_SOUND.get(WorksPlan.machine(job_id, i), "tool")), spot(), 0.8)
+	_send_idle_home(str(steps[i][0]))
 	queue = _build(str(steps[i][0]))
 
 
@@ -367,13 +418,14 @@ func _finish() -> void:
 			p.body.freeze = false
 		w0.remove_piece(p)
 	parts.clear()
+	_after_job = job_id
+	_after_seat = seat()
+	_after_list = _seat_list()
+	_after_t = AFTER if lit > 0.5 else 0.0
 	_clear_world()
 	var id := job_id
-	if Works.finish():
-		var pend: Array = Career.data.get("repaired_pending", [])
-		pend.erase(id)
-		Career.data.repaired_pending = pend
-		Career.save()
+	# one whole save (Works.finish), not on the "repaired" list: the crew shows the completion itself
+	if Works.finish(false):
 		game.fx.flash(seat(), 220.0, 0.6, Pal.ink(0.9, 2.0))
 		game.sfx.play("ok", seat())
 		if game.dock != null and game.dock.static_node != null:
@@ -401,11 +453,14 @@ func _build(key: String) -> Array:
 	match key:
 		"isolate":
 			var m := WorksPlan.machine(job_id, i)
-			q.append({"do": "fly", "who": "bot", "to": box() + Vector2(-1.4, 0.0) * M})
+			# in reach of the door and the isolator lever (its hand on them, 2026-11-12), then of the hasp
+			q.append({"do": "fly", "who": "bot", "to": box() + Vector2(-0.95, -0.3) * M})
+			q.append({"do": "tool", "who": "bot", "at": box() + Vector2(-0.5, 0.1) * M, "s": 0.5, "fx": ""})
 			q.append({"do": "call", "f": _box_opened})
-			q.append({"do": "tool", "who": "bot", "at": box(), "s": 1.2, "fx": "purge" if m == "purge" else "switch"})
+			q.append({"do": "tool", "who": "bot", "at": box() + Vector2(-0.2, -0.3) * M, "s": 1.0, "fx": "purge" if m == "purge" else "switch"})
 			q.append({"do": "call", "f": _isolated})
-			q.append({"do": "tool", "who": "bot", "at": box() + Vector2(0, 0.5) * M, "s": 0.8, "fx": ""})
+			q.append({"do": "fly", "who": "bot", "to": box() + Vector2(-0.95, 0.45) * M})
+			q.append({"do": "tool", "who": "bot", "at": box() + Vector2(-0.2, 0.05) * M, "s": 0.8, "fx": ""})
 			q.append({"do": "call", "f": _box_closed})
 			q.append({"do": "fly", "who": "bot", "to": box() + Vector2(-2.6, -2.0) * M})
 		"remove":
@@ -423,14 +478,18 @@ func _build(key: String) -> Array:
 			if in_port():
 				q.append({"do": "boat_to", "to": boat_away(), "nowait": true})
 		"bring":
-			q.append({"do": "boat_to", "to": boat_hover()})
+			# 2026-11-12: the parts used to appear on the hook over the seat; now they are slung on
+			# out at the boat's mooring (off the screen) and come in hanging under it
+			q.append({"do": "boat_to", "to": boat_away()})
 			q.append({"do": "call", "f": _spawn_parts_on_boat})
-			q.append({"do": "wait", "s": 0.8})
+			q.append({"do": "boat_to", "to": boat_hover()})
+			q.append({"do": "wait", "s": 0.5})
 		"lift":
 			if parts.is_empty():
 				# a load in the middle of the lift: the boat is back with them
-				q.append({"do": "boat_to", "to": boat_hover()})
+				q.append({"do": "boat_to", "to": boat_away()})
 				q.append({"do": "call", "f": _spawn_parts_on_boat})
+				q.append({"do": "boat_to", "to": boat_hover()})
 			for k in _seat_list().size():
 				q.append({"do": "place", "k": k})
 			q.append({"do": "boat_to", "to": boat_away(), "nowait": true})
@@ -447,13 +506,20 @@ func _build(key: String) -> Array:
 			q.append({"do": "tool", "who": "cable", "at": _cable_end(), "s": 0.7, "fx": "plug"})
 			q.append({"do": "fly", "who": "cable", "to": _cable_end() + Vector2(1.6, -2.4) * M})
 		"test":
-			q.append({"do": "fly", "who": "tester", "to": seat() + Vector2(1.6, -1.6) * M})
-			q.append({"do": "tool", "who": "tester", "at": seat(), "s": 2.6, "fx": "test"})
+			q.append({"do": "fly", "who": "tester", "to": _probe() + Vector2(0.7, -0.5) * M})
+			q.append({"do": "tool", "who": "tester", "at": _probe(), "s": 2.6, "fx": "test"})
 			q.append({"do": "wait", "s": 0.6})
 		_:
 			q.append({"do": "wait", "s": 1.0})
 	q.append({"do": "call", "f": _next})
 	return q
+
+
+# where the tester's probe goes: the new part's top corner, on its metal
+func _probe() -> Vector2:
+	var e: Array = _seat_list()[0]
+	var h: Vector2 = (e[2] as Vector2) * Geom.M * 0.5
+	return (e[0] as Vector2) + Vector2(h.x - 4.0, -h.y + 4.0)
 
 
 func _box_opened() -> void:
@@ -504,8 +570,9 @@ func _make_bolts(done: bool) -> void:
 	for e in _seat_list():
 		var c: Vector2 = e[0]
 		var h: Vector2 = (e[2] as Vector2) * Geom.M * 0.5 * 0.8
-		for corner in [Vector2(-1, -1), Vector2(1, -1), Vector2(1, 1), Vector2(-1, 1)]:
-			bolts.append([c + h * corner, done])
+		# run home crosswise, as a fitter does (2026-11-12): top left, bottom right, top right, bottom left
+		for corner in [Vector2(-1, -1), Vector2(1, 1), Vector2(1, -1), Vector2(-1, 1)]:
+			bolts.append([c + h * corner, done, 1.0 if done else 0.0, c])
 
 
 func _welding() -> bool:
@@ -516,8 +583,17 @@ func _welding() -> bool:
 # ---------------------------------------------------------------- running them
 
 func _physics_process(dt: float) -> void:
+	var t0 := Time.get_ticks_usec()
+	_step_frame(dt)
+	prof_us += Time.get_ticks_usec() - t0
+
+
+func _step_frame(dt: float) -> void:
 	if not enabled():
 		return
+	if _after_t > 0.0:
+		_after_t = maxf(0.0, _after_t - dt)
+		queue_redraw()
 	if not Works.busy():
 		if job_id != "":
 			_finish()
@@ -637,7 +713,7 @@ func _cuts(piece0, dt: float) -> bool:
 		_busy = {}
 		return false
 	var at: Vector2 = j.pos
-	var stand := at + Vector2(-0.6, -1.3) * Geom.M
+	var stand := at + Vector2(-0.68, -0.72) * Geom.M
 	# the last weld of a piece: the hauler over it first, ready to take it the moment it gives
 	var piece = game.world.pieces.get(j.a)
 	var last: bool = piece != null and game.world.joints_of(piece).size() == 1
@@ -787,6 +863,7 @@ func _place(k: int, dt: float) -> bool:
 		0:
 			if b.freeze:
 				return true
+			d.slow = 1.0
 			var grip: Vector2 = b.global_transform * b.center_of_mass
 			d.go(grip - Vector2(0, CrewDrone.HANG))
 			if d.global_position.distance_to(grip - Vector2(0, CrewDrone.HANG)) < 12.0:
@@ -803,10 +880,13 @@ func _place(k: int, dt: float) -> bool:
 			if d.at(over, 14.0):
 				_busy.st = 2
 		2:
+			# lowered slowly the last metre and a half, onto its locating pins (2026-11-12)
+			d.slow = 0.28
 			d.go(to - Vector2(0, CrewDrone.HANG))
 			var com: Vector2 = b.global_transform * b.center_of_mass
 			var still: bool = b.linear_velocity.length() < 14.0 and absf(wrapf(b.global_rotation, -PI, PI)) < 0.06
-			if (com.distance_to(to) < 7.0 and still) or float(_busy.t) > 20.0:
+			if (com.distance_to(to) < 7.0 and still) or (float(_busy.t) > 20.0 and com.distance_to(to) < 24.0) or float(_busy.t) > 40.0:
+				d.slow = 1.0
 				d.drop()
 				_set_down(b, to)
 				game.sfx.play("clamp", to, 0.9)
@@ -815,33 +895,79 @@ func _place(k: int, dt: float) -> bool:
 	return false
 
 
+# the locating pins of seat k (world): two studs up through the part's foot
+func _pins(k: int) -> Array:
+	var e: Array = _seat_list()[k]
+	var h: Vector2 = (e[2] as Vector2) * Geom.M * 0.5
+	var c: Vector2 = e[0]
+	return [c + Vector2(-h.x * 0.55, h.y), c + Vector2(h.x * 0.55, h.y)]
+
+
 # the wrench (or the welder) at each bolt in turn
 func _bolts(dt: float) -> bool:
+	# two fitters when there are two parts or more (2026-11-12: one ran all eight bolts, 14 s): each
+	# runs home the bolts of every other part, crosswise, at the same time
+	var two := _seat_list().size() > 1
+	var left := false
+	for f in (2 if two else 1):
+		if _fit(f, 2 if two else 1, dt):
+			left = true
+	return not left
+
+
+# fitter f of n: its next bolt; true while it has bolts left
+func _fit(f: int, n_fit: int, dt: float) -> bool:
 	var n := -1
 	for k in bolts.size():
-		if not bolts[k][1]:
+		if not bolts[k][1] and (k / 4) % n_fit == f:
 			n = k
 			break
 	if n < 0:
-		return true
-	var d = _drone("torque")
+		return false
+	var role := "torque" if f == 0 else "torque2"
+	var d = _drone(role)
+	var st: Dictionary = _busy.get(role, {})
+	_busy[role] = st
 	var at: Vector2 = bolts[n][0]
-	var stand := at + Vector2(0.0, -1.0) * Geom.M
-	if not _busy.has("on"):
+	# it stands off the part's corner, outward, its arm's length from the bolt (2026-11-12: it used to
+	# hang a metre over it and reach through the part)
+	var out: Vector2 = (at - (bolts[n][3] as Vector2)).normalized() if bolts[n].size() > 3 else Vector2.UP
+	var stand := at + (out * 0.62 + Vector2(0, -0.25)) * Geom.M
+	if not st.has("on"):
 		d.go(stand)
+		d.tool_at = at
 		if not d.at(stand, 9.0):
-			return false
-		_busy.on = 0.0
+			return true
+		st.on = 0.0
 		game.sfx.play("arc" if _welding() else "wrench", at, 0.6)
-	_busy.on = float(_busy.on) + dt
+	st.on = float(st.on) + dt
 	d.tool = true
 	d.tool_at = at
-	_tool_fx("weld" if _welding() else "bolt", at, dt)
-	if float(_busy.on) < (1.1 if _welding() else 0.7):
-		return false
+	var need := 1.1 if _welding() else 0.85
+	# the socket goes on first (the arm reaching), then it turns
+	var run := clampf((float(st.on) - 0.2) / (need - 0.2), 0.0, 1.0)
+	bolts[n][2] = run
+	st.fx = float(st.get("fx", 0.0)) - dt
+	if run > 0.0 and float(st.fx) <= 0.0:
+		st.fx = 0.09
+		if _welding():
+			game.fx.sparks(at, Vector2.UP.rotated(randf_range(-1.4, 1.4)), 4, Pal.heat(1.0, 2.4), 180.0, 0.35, 2.4)
+		else:
+			game.fx.sparks(at, Vector2.UP.rotated(randf_range(-1.2, 1.2)), 2, Pal.ink(0.9, 1.8), 120.0, 0.25, 2.0)
+	if float(st.on) < need:
+		return true
 	d.tool = false
 	bolts[n][1] = true
-	_busy = {}
+	bolts[n][2] = 1.0
+	# home: the last bite, a click and a spit of sparks
+	game.fx.sparks(at, Vector2.UP.rotated(randf_range(-1.0, 1.0)), 5, Pal.heat(0.9, 2.0), 160.0, 0.25, 1.8)
+	game.sfx.play("clamp", at, 0.5)
+	_busy.erase(role)
+	# its last bolt: back to its place, out of the other's way
+	for k in bolts.size():
+		if not bolts[k][1] and (k / 4) % n_fit == f:
+			return true
+	d.go(_park(role))
 	return false
 
 
@@ -871,39 +997,150 @@ func _boat_step(dt: float) -> void:
 # ---------------------------------------------------------------- drawing
 
 func _draw() -> void:
+	var t0 := Time.get_ticks_usec()
+	_paint()
+	prof_us += Time.get_ticks_usec() - t0
+
+
+func _paint() -> void:
+	# the hand-over after the test: what the test lit fades as the facility's own drawing takes over
+	if _after_t > 0.0:
+		_draw_live(_after_job, _after_seat, [], _after_t / AFTER)
 	if job_id == "":
 		return
 	var M := Geom.M
-	# the circuit's box, its door open while the bot is at it, the tag once hung
+	# the circuit's box: breakers behind the door; the door swings open while the bot is at it
 	var bx := box()
 	var r := Rect2(bx - Vector2(0.5, 0.6) * M, Vector2(1.0, 1.2) * M)
+	draw_rect(r.grow(2.0), Color(0, 0, 0, 0.45))
 	draw_rect(r, Color(0.07, 0.075, 0.085))
-	draw_rect(r, Pal.ink(0.7), false, 1.4)
+	for row in 3:
+		var y := r.position.y + (0.22 + row * 0.26) * M
+		for c in 3:
+			var br := Rect2(Vector2(r.position.x + (0.14 + c * 0.26) * M, y), Vector2(0.16, 0.14) * M)
+			draw_rect(br, Pal.ink(0.35), false, 1.0)
+			draw_line(br.get_center() + Vector2(0, -3), br.get_center() + Vector2(0, 3), Pal.ink(0.55), 1.4)
+	draw_rect(r, Pal.ink(0.75), false, 1.4)
 	if box_open > 0.0:
-		draw_rect(Rect2(r.position - Vector2(0.9 * M, 0), Vector2(0.9 * M, r.size.y)), Pal.ink(0.5), false, 1.0)
-	draw_line(bx + Vector2(-0.2, -0.3) * M, bx + Vector2(-0.2, 0.0) * M if tagged else bx + Vector2(0.15, -0.35) * M, Pal.ink(0.9), 2.0)
+		# the door, swung out on its left hinges
+		var door := PackedVector2Array([r.position, r.position + Vector2(-0.55 * M, -0.12 * M), r.position + Vector2(-0.55 * M, r.size.y + 0.12 * M), r.position + Vector2(0, r.size.y)])
+		draw_colored_polygon(door, Color(0.09, 0.095, 0.11))
+		draw_polyline(door, Pal.ink(0.6), 1.2, true)
+	else:
+		draw_line(r.position + Vector2(0.12 * M, 0.5 * M), r.position + Vector2(0.12 * M, 0.7 * M), Pal.ink(0.7), 2.0)
+	# the isolator lever: up (on) or thrown down (off)
+	var piv := bx + Vector2(-0.2, -0.3) * M
+	draw_circle(piv, 3.0, Pal.ink(0.6))
+	draw_line(piv, piv + (Vector2(0.0, 0.32) * M if tagged else Vector2(0.3, -0.12) * M), Pal.ink(0.95), 2.4, true)
 	if tagged:
-		var tag := Rect2(bx + Vector2(-0.45, 0.65) * M, Vector2(1.5, 0.55) * M)
-		draw_rect(tag, Color(0.55, 0.12, 0.08, 0.92))
-		draw_string(font, tag.position + Vector2(5, 17), w("检修 · 勿合闸", "LOCKED OUT"), HORIZONTAL_ALIGNMENT_LEFT, tag.size.x - 6, 11, Pal.ink(0.95))
-	# the cable laid, from the box to the part
+		_draw_tag(bx + Vector2(-0.2, 0.05) * M)
+	# the locating pins of the seats, standing until a part is down on them
+	if _step_key() in ["bring", "lift"]:
+		for k2 in _seat_list().size():
+			if k2 < parts.size() and parts[k2].body != null and is_instance_valid(parts[k2].body) and parts[k2].body.freeze:
+				continue
+			for pin in _pins(k2):
+				var pv: Vector2 = pin
+				var stud := Rect2(pv + Vector2(-2.2, -0.32 * M), Vector2(4.4, 0.32 * M))
+				draw_rect(stud, Color(0.12, 0.125, 0.14))
+				draw_rect(stud, Pal.ink(0.75), false, 1.0)
+				draw_colored_polygon(PackedVector2Array([stud.position, pv + Vector2(0, -0.32 * M - 4.0), Vector2(stud.end.x, stud.position.y)]), Pal.ink(0.75))
+	# the cable laid, from the box to the part: hung in a sag, a gland at each end
 	if cable.size() >= 2:
-		draw_polyline(cable, Color(0, 0, 0, 0.5), 3.4)
-		draw_polyline(cable, Color(0.32, 0.34, 0.38), 1.8)
-	# the bolts: dark until run home, then a bright head
+		var a0: Vector2 = cable[0]
+		var a1: Vector2 = cable[cable.size() - 1]
+		var pts := PackedVector2Array()
+		var sag := minf(1.1 * M, a0.distance_to(a1) * 0.18)
+		for q in 17:
+			var f := q / 16.0
+			pts.append(a0.lerp(a1, f) + Vector2(0, sag * 4.0 * f * (1.0 - f)))
+		draw_polyline(pts, Color(0, 0, 0, 0.5), 3.6, true)
+		draw_polyline(pts, Color(0.3, 0.32, 0.36), 2.0, true)
+		draw_polyline(pts, Color(0.55, 0.58, 0.62, 0.6), 0.7, true)
+		for e: Vector2 in [a0, a1]:
+			draw_rect(Rect2(e - Vector2(3.0, 3.0), Vector2(6.0, 6.0)), Color(0.12, 0.125, 0.14))
+			draw_rect(Rect2(e - Vector2(3.0, 3.0), Vector2(6.0, 6.0)), Pal.ink(0.85), false, 1.0)
+	# the bolts: set in loose, turned home with a ring of torque, then a torque-seal stripe
 	for bt in bolts:
 		var c: Vector2 = bt[0]
+		var run: float = float(bt[2]) if bt.size() > 2 else (1.0 if bt[1] else 0.0)
 		if _welding():
-			draw_line(c - Vector2(5, 0), c + Vector2(5, 0), Pal.heat(0.6, 1.4) if bt[1] else Pal.ink(0.25), 2.0)
+			draw_line(c - Vector2(5, 0), c + Vector2(5, 0), Pal.ink(0.25), 2.0)
+			if run > 0.0:
+				draw_line(c - Vector2(5, 0), c + Vector2(-5.0 + 10.0 * run, 0), Pal.heat(0.6 + 0.4 * (1.0 - run), 1.4 + (1.0 - run)), 2.0)
+			continue
+		var hex := PackedVector2Array()
+		var a := run * PI * 1.5
+		for q in 6:
+			hex.append(c + Vector2.from_angle(a + TAU * q / 6.0) * 3.4)
+		draw_circle(c, 4.6, Color(0.05, 0.05, 0.06))
+		draw_arc(c, 4.6, 0.0, TAU, 14, Pal.ink(0.35), 0.8, true)
+		draw_colored_polygon(hex, Pal.ink(0.92) if bt[1] else Color(0.2, 0.21, 0.23))
+		if not bt[1]:
+			var ol := hex.duplicate()
+			ol.append(hex[0])
+			draw_polyline(ol, Pal.ink(0.6), 0.8, true)
+			if run > 0.0:
+				draw_arc(c, 6.2, -PI * 0.5, -PI * 0.5 + TAU * run, 18, Color(UiSkin.ACCENT, 0.9), 1.4, true)
 		else:
-			draw_circle(c, 3.2, Pal.ink(0.9) if bt[1] else Pal.ink(0.25))
+			draw_line(c + Vector2(-1.0, -4.8), c + Vector2(1.6, 4.8), Color(UiSkin.ACCENT, 0.95), 1.4)
 	# the test: the work coming alive
 	if lit > 0.0:
-		var glow: Color = Pal.heat(0.35 * lit, 1.6) if job_id == "furnace_main" else Pal.ink(0.35 * lit, 2.0)
-		draw_circle(seat(), (1.2 + 0.6 * lit) * M, Color(glow, 0.12 * lit))
+		_draw_live(job_id, seat(), _seat_list(), lit)
 	# the work boat, with its hook
 	if boat_pos != Vector2.INF and game.works_site != null:
 		_draw_boat(boat_pos)
+
+
+# the lockout tag on the hasp: a red tag and a padlock drawn, no words on the work (2026-11-12)
+func _draw_tag(at: Vector2) -> void:
+	var M := Geom.M
+	draw_arc(at + Vector2(0, -1.5), 3.4, PI, TAU, 10, Pal.ink(0.9), 1.6, true)
+	draw_rect(Rect2(at + Vector2(-4.2, -1.5), Vector2(8.4, 6.8)), Pal.ink(0.92))
+	draw_circle(at + Vector2(0, 1.4), 1.1, Color(0.05, 0.05, 0.06))
+	draw_line(at + Vector2(0, 5.3), at + Vector2(0, 0.3 * M), Pal.ink(0.6), 1.0)
+	var tg := Rect2(at + Vector2(-0.28 * M, 0.3 * M), Vector2(0.56 * M, 0.42 * M))
+	var sway := 2.0 * sin(t * 1.3)
+	var poly := PackedVector2Array([tg.position + Vector2(sway, 0), Vector2(tg.end.x + sway, tg.position.y), tg.end, Vector2(tg.position.x, tg.end.y)])
+	draw_colored_polygon(poly, Color(0.62, 0.12, 0.08, 0.95))
+	draw_circle(tg.position + Vector2(tg.size.x * 0.5 + sway, 5.0), 2.0, Color(0.05, 0.05, 0.06))
+	draw_line(tg.position + Vector2(5 + sway, tg.size.y * 0.55), tg.end - Vector2(5, tg.size.y * 0.45), Pal.ink(0.85), 1.4)
+	draw_line(tg.position + Vector2(5 + sway, tg.size.y * 0.75), tg.end - Vector2(9, tg.size.y * 0.25), Pal.ink(0.6), 1.0)
+
+
+# what the test lights, at f 0..1: the lamp's beam (it stutters, then holds), the burner's flame from a
+# blue pilot to a roar; and every part's status lamps, lit one by one
+func _draw_live(id: String, st: Vector2, list: Array, f: float) -> void:
+	var M := Geom.M
+	var steady := f >= 0.6 or fmod(t * 7.3 + sin(t * 23.0), 1.0) < f * 1.4
+	match id:
+		"lights":
+			if steady:
+				var a := 0.16 * f
+				var top := st + Vector2(0, 0.4 * M)
+				var cone := PackedVector2Array([top + Vector2(-0.45, 0) * M, top + Vector2(0.45, 0) * M, top + Vector2(2.4, 7.5) * M, top + Vector2(-2.4, 7.5) * M])
+				draw_colored_polygon(cone, Color(1.0, 0.98, 0.92, a))
+				var core := PackedVector2Array([top + Vector2(-0.3, 0) * M, top + Vector2(0.3, 0) * M, top + Vector2(1.0, 5.0) * M, top + Vector2(-1.0, 5.0) * M])
+				draw_colored_polygon(core, Color(1.0, 0.98, 0.92, a * 0.8))
+		"furnace_main":
+			var base := st + Vector2(0, -0.45 * M)
+			var h := (0.5 + 1.6 * f) * M * (0.9 + 0.1 * sin(t * 31.0))
+			var wd := (0.25 + 0.35 * f) * M
+			var hot := Pal.heat(0.75 * f, 1.4 + 1.2 * f) if f > 0.35 else Color(0.45, 0.65, 1.4, 0.8)
+			draw_colored_polygon(PackedVector2Array([base + Vector2(-wd, 0), base + Vector2(0, -h), base + Vector2(wd, 0)]), hot)
+			draw_colored_polygon(PackedVector2Array([base + Vector2(-wd * 0.4, 0), base + Vector2(0, -h * 0.55), base + Vector2(wd * 0.4, 0)]), Color(1.8, 1.5, 1.1, 0.9 * f))
+	for k in list.size():
+		var e: Array = list[k]
+		var c: Vector2 = e[0]
+		var hh: Vector2 = (e[2] as Vector2) * M * 0.5
+		for q in 4:
+			var p := c + Vector2(-hh.x + 6.0 + q * 6.0, hh.y - 5.0)
+			var on := f * 4.0 > q + 0.2 + k * 0.5
+			draw_circle(p, 1.8, Color(0.55, 1.0, 0.65, 0.95) if on else Color(0.12, 0.13, 0.14))
+
+
+func _step_key() -> String:
+	return str(steps[i][0]) if i >= 0 and i < steps.size() else ""
 
 
 func _draw_boat(p: Vector2) -> void:
@@ -916,7 +1153,19 @@ func _draw_boat(p: Vector2) -> void:
 	draw_rect(Rect2(p + Vector2(-1.9, -1.1) * M, Vector2(1.2, 0.7) * M), Pal.ink(0.7), false, 1.2)
 	draw_line(p + Vector2(-0.4, -0.4) * M, p + Vector2(0.3, -1.4) * M, Pal.ink(0.75), 2.0)
 	draw_circle(p + Vector2(1.2, -0.55) * M, 0.1 * M, Pal.heat(0.9, 1.6) if fmod(t, 0.8) < 0.3 else Pal.ink(0.25))
-	draw_string(font, p + Vector2(-1.1, 0.35) * M, "WB-2", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Pal.ink(0.6))
+	# the works livery: a chevron band along the hull, no words on the work (2026-11-12)
+	var band := Rect2(p + Vector2(-2.0, 0.08) * M, Vector2(3.4, 0.26) * M)
+	draw_rect(band, Color(1.0, 0.62, 0.22, 0.85))
+	for q in 7:
+		var x := band.position.x + q * band.size.x / 7.0
+		draw_line(Vector2(x + 2, band.end.y), Vector2(x + band.size.x / 14.0 + 2, band.position.y), Color(0.05, 0.05, 0.06), 2.0)
+	# its thrusters: a plume against the way it accelerates
+	var acc := boat_goal - p
+	if boat_vel.length() > 20.0 or acc.length() > 20.0:
+		var back := -boat_vel.normalized() if boat_vel.length() > 20.0 else -acc.normalized()
+		for s2: float in [-0.25, 0.35]:
+			var o := p + Vector2(-2.2 if back.x < 0.0 else 2.2, s2) * M
+			draw_colored_polygon(PackedVector2Array([o + back.orthogonal() * 3.0, o + back * (10.0 + 0.04 * boat_vel.length()), o - back.orthogonal() * 3.0]), Pal.heat(0.6, 1.8))
 	for q in boat_hung:
 		if q.body != null and is_instance_valid(q.body) and not q.body.freeze:
 			var com: Vector2 = q.body.global_transform * q.body.center_of_mass

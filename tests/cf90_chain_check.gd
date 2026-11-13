@@ -48,7 +48,7 @@ func _run() -> void:
 	# ---- the card
 	check(CoreAsset.has(g), "CF-90 has a core asset")
 	var ca: Dictionary = CoreAsset.card(g)
-	check(str(ca.get("name", "")) == "货柜墙" and ca.methods.size() == 2 and str(ca.methods[1].name) == "撑杆抢里侧", "the card: %s, %s" % [ca.get("name", ""), str(ca.methods.map(func(m): return m.name))])
+	check(str(ca.get("name", "")) == "货柜墙" and ca.methods.size() == 1 and str(ca.methods[0].name) == "两端往中间逐层卸", "the card: %s, %s" % [ca.get("name", ""), str(ca.methods.map(func(m): return m.name))])
 	var whole := 0.0
 	for bay in g.boxbeam.cfg.bays:
 		for t in bay:

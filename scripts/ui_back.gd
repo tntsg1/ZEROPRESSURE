@@ -82,6 +82,31 @@ static func close_text(spaced := false) -> String:
 	return w("返回%s [Esc]", "BACK TO %s  [Esc]" if spaced else "BACK TO %s [Esc]") % label()
 
 
+# 2026-11-12 HUD 中央交互: what stands open on the site itself (the device card, scripts/hud_center.gd)
+# is the first thing Esc takes back, before the menu: each registers a Callable -> bool (true: closed)
+static var site: Array = []
+
+
+static func site_add(cb: Callable) -> void:
+	if not site.has(cb):
+		site.append(cb)
+
+
+static func site_remove(cb: Callable) -> void:
+	site.erase(cb)
+
+
+static func site_back() -> bool:
+	for i in range(site.size() - 1, -1, -1):
+		var cb: Callable = site[i]
+		if not cb.is_valid():
+			site.remove_at(i)
+			continue
+		if cb.call():
+			return true
+	return false
+
+
 static func reset() -> void:
 	stack.clear()
 	_hop = -1000

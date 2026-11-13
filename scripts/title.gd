@@ -397,7 +397,14 @@ func _enter(i: int) -> void:
 	Career.use_slot(i + 1)
 	var d := Career.load_or_new()
 	leave_from = _slot_rect(i)
-	if not d.get("certified", false):
+	# 双重教程 (2026-11-12): a career left in the belt (cold open, prologue) goes back there, not into
+	# TS-1 — the course comes after TUG-001 now
+	if Game.TS1_AFTER_FIRST and not d.get("prologue_done", false) and d.get("history", []).is_empty() and d.has("term_open"):
+		Game.start_ship = "belt"
+		Game.contract = {}
+		SaveGame.load_requested = false
+		next_scene = "res://scenes/main.tscn"
+	elif not d.get("certified", false):
 		# still in training: back into the course where it was left
 		Game.start_ship = "ts1"
 		SaveGame.load_requested = SaveGame.exists(SaveGame.train_path)

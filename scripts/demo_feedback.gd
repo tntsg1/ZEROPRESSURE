@@ -119,6 +119,8 @@ static func post(host: Node, p: Dictionary) -> Dictionary:
 static func keep(p: Dictionary) -> String:
 	DirAccess.make_dir_recursive_absolute(outbox)
 	var path := outbox.path_join("fb_%d_%d.json" % [int(Time.get_unix_time_from_system()), randi() % 100000])
+	if SaveGame.forbidden(path):
+		return ""
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	if f == null:
 		return ""

@@ -7,10 +7,8 @@ const S := {
 	"gear_anchor_d": ["打在船体结构上，锚索会连接到船坞的绞盘。\n切断连接处后，绞盘会把整段结构拖进投料槽，不受重量限制。\n回收完成后，牵引锚会留在绞盘附近，记得捡回来。", "Shot onto a hull piece; its line runs to a winch on the scrap trough. Once the section is cut free the winch hauls the whole of it down into the trough, whatever it weighs. The anchor is left at the winch post afterwards: fetch it."],
 	"gear_pump": ["独立泵", "INDEPENDENT PUMP"],
 	"gear_pump_d": ["可以安装在带压舱室的壁板、储罐或储箱上，直接抽出内部物质，不需要连接现有接口。\n即使接口被阀门封死，或者找不到接口，也能正常抽取。\n回收零件前记得拆下泵，否则会跟着零件一起被回收。", "Stuck on any wall of a pressurised room, or on a tank or bottle: it draws through its own tap, no port needed, even where the port is shut off or nowhere to be found. Left on a piece that goes down a mouth, it goes with it."],
-	"gear_prop": ["临时撑杆", "TEMPORARY PROP"],
 	"gear_confine": ["便携约束电源", "PORTABLE CONFINEMENT SUPPLY"],
 	"gear_confine_d": ["【占位】接在反物质储存阱上，接管约束线圈的供电；读数变成“双路供电”后才可以断主电。只随 AX-40 借出。", "[PLACEHOLDER] Clamped on the antimatter trap, it takes over its coils' supply; once the trap reads dual supply the main bus may go. Lent with the AX-40 only."],
-	"gear_prop_d": ["安装在船坞地面，支撑货柜墙指定一列的底部横梁。\n安装后，这一列及外侧各列的重量会通过撑杆传到地面，方便你先拆除内侧的货柜。\n最大承重 60 t，约等于两列满载货柜。超载后撑杆会弯曲，受力过大时可能折断。", "Stood on the berth floor under a bay's bottom chord of a container wall: that bay and every bay outboard of it bear on it instead of the bays inboard, which can then be emptied first. Rated 60 t (about two full bays): past that it bows, then buckles."],
 	"gear_probe": ["监测探头", "MONITORING PROBE"],
 	"gear_probe_d": ["安装在测量点、接口或零件上，持续监测数据。\n读数会自动更新。出现明显变化时，会通过无线电通知你。\n回收零件前记得取下探头，否则会一起丢失。", "Left on a test point, a port or a piece: its reading stays live and never goes stale, and a real change is called out on the radio. Left on a piece that goes down a mouth, it is gone."],
 	"gear_mod_bumper": ["抗冲击缓冲架", "IMPACT BUMPERS"],
@@ -24,7 +22,6 @@ const S := {
 	# the achievements
 	# 104 号: the achievements that teach a dismantling method
 	"feat_watch": ["低温船零事故拆完", "A COLD SHIP STRIPPED WITHOUT AN INCIDENT"],
-	"feat_propped": ["卸完一整面货柜墙不折弯", "A WHOLE CONTAINER WALL EMPTIED WITHOUT A BEND"],
 	"feat_replay": ["自己接的单里同型号船拆第二次", "THE SAME TYPE STRIPPED A SECOND TIME ON YOUR OWN JOBS"],
 	"feat_precise": ["累计完整送口高价值设备 $500,000", "$500,000 OF EQUIPMENT DELIVERED WHOLE"],
 	"gear_needs_method": ["需要先学会拆法「%s」", "Learn the method first: %s"],
@@ -47,7 +44,6 @@ const S := {
 	"hint_gear_anchor_set": ["锚已打上。把这一段切离，绞盘就会把整段拉进熔炉槽——不用切碎。整段进炉后锚留在绞盘处，记得捡。", "Anchor set. Cut this section free and the winch hauls the whole of it into the scrap trough — no need to cut it up. The anchor stays at the post afterwards: fetch it."],
 	"hint_gear_anchor_not_scrap": ["传送带不收带完整设备或危险品的整段。先把设备拆下来，或把危险品排空。", "The belt won't take a section with whole equipment or a hazard on it. Take the equipment off first, or drain the hazard."],
 	"hint_gear_pump_set": ["泵在自己抽，不用守着。零件进回收口前记得把泵收回。", "The pump works by itself. Take it back before the piece goes down a mouth."],
-	"hint_gear_prop_set": ["撑杆已顶住：这一列和外侧各列的重量都压在撑杆上，里侧的列可以先卸了。旁边的读数是它扛着多少吨，过了 60 t 会弯、会断。", "Prop set: this bay and the bays outboard bear on it now, so the bays inboard can come off first. The figure by it is the tonnes it carries: past 60 t it bows, then buckles."],
 	"hint_gear_probe_set": ["探头留在这里，读数会一直更新，有变化会在无线电里报。", "The probe stays here: its reading keeps updating, and a change is called out on the radio."],
 	"hint_gear_dropped": ["掉落的装备在事故位置漂着。用抓钩或部署工具点一下捡回。", "Dropped gear is drifting at the crash site. Pick it up with the grapple or the deploy tool."],
 	# the settlement
@@ -212,7 +208,7 @@ const S := {
 	# the work plan's cuts and hauls (G4)
 	"plan_cut_pressure": ["舱室 %s 还带压，机器不切", "ROOM %s STILL HOLDS PRESSURE: NO CUT"],
 	"plan_cut_live": ["线路 %s 还带电，机器不切", "LINE %s STILL LIVE: NO CUT"],
-	"plan_cutter_wait": ["切割机器人正在接近 %s；请保持工位和射线通畅", "CUTTER APPROACHING %s: KEEP THE WORK POSITION AND BEAM PATH CLEAR"],
+	"plan_cutter_wait": ["【占位】无人机正在到位切 %s，别挡住它的位置和激光", "[PLACEHOLDER] The drone is getting into place to cut %s: keep its spot and beam clear"],
 	"plan_cut_pipe": ["切缝经过管线 %s，先隔离并排净介质", "KERF CROSSES PIPE %s: ISOLATE AND DRAIN FIRST"],
 	"plan_cut_incident": ["%s 切割发生事故，方案已停止，需检查后重新授权", "INCIDENT WHILE CUTTING %s: STOPPED; INSPECT AND REAUTHORIZE"],
 	"plan_cut_vessel": ["%s 还带压或有液体，机器不切", "%s STILL CHARGED OR WET: NO CUT"],

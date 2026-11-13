@@ -19,7 +19,10 @@ const M := 48.0
 const ENGINE_LAYERED := ["eng_core", "eng_front", "engine_s", "gen", "turbo", "turboexpander", "flywheel_rotor", "hpu", "screw_comp", "top_drive", "reactor"]
 # 2026-11-11 (零件图鉴第四批): pieces whose ship art is "gen" but that are now drawn as what they are
 # (art_ships.gd) and are not engines get no engine housing
-const NOT_ENGINE_DRAWN := ["fuel_cell_pm", "stirling_gen", "turbine_genset", "drups", "co2_burner", "diesel_genset", "rtg_module", "main_alternator", "ts_power"]
+# 2026-11-12 (第六批): the dedicated engine drawings carry their own depth, so no housing over them either
+const NOT_ENGINE_DRAWN := ["fuel_cell_pm", "stirling_gen", "turbine_genset", "drups", "co2_burner", "diesel_genset", "rtg_module", "main_alternator", "ts_power",
+	"main_engine", "big_engine", "engine_pod", "power_tail", "engine_cluster", "engine_front", "small_thruster",
+	"shuttle_engine", "spare_engine", "tug_engine", "gg_engine", "courier_engine", "hl_motor", "vib_drive", "despin_drive"]
 
 static var _EQ = null
 

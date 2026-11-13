@@ -41,7 +41,6 @@ var snapped := 0
 var rec: Array = []        # what it did to make the ship safe, in order: ["w"|"h", ctrl] / ["o", room, ctrl] / ["g", guard]
 var replay = null          # a remembered order (rec of an earlier ship) done blindly, instead of reading this ship
 var replay_wait := 0.0     # sim s it waits after the remembered order before it strips (as long as it took then)
-var props := false           # 97 号: on a container wall, two props under the outer bays and the inner bays first
 var crane_hauls := 0         # loads too heavy for the grapple that the heavy crane took whole
 var safe_at := 0.0         # sim s when it judged the ship safe
 
@@ -53,7 +52,6 @@ func _init(game, opts: Dictionary = {}) -> void:
 	g = game
 	careless = opts.get("careless", false)
 	paced = opts.get("paced", false)
-	props = opts.get("props", false)
 	replay = opts.get("replay", null)
 	replay_wait = opts.get("replay_wait", 0.0)
 
@@ -1247,29 +1245,6 @@ func _go_strip() -> void:
 	if g.boxbeam != null and g.boxbeam.active():
 		var seq: Array = []
 		var tags: Array = g.boxbeam.unload_order()
-		# 97 号: or with a prop under the second bay out each side, the bays either side of the
-		# berth's grip first, then the rest
-		if props and g.gear != null:
-			var sup := int(g.boxbeam.cfg.get("support", 0))
-			for bay in [sup - 2, sup + 2]:
-				if bay < 0 or bay >= g.boxbeam.cfg.bays.size():
-					continue
-				var c = g.world.tag(str(g.boxbeam.cfg.bays[bay][0]))
-				var ci: int = g.gear.carried.find_custom(func(x): return x.type == "prop")
-				if c == null or ci < 0:
-					continue
-				g.gear.sel = g.gear.carried_types().find("prop")
-				var at: Vector2 = g.world.frame(c) * Geom.centroid(c.poly)
-				var tg: Dictionary = g.gear.target(at, {}, {"kind": "piece", "piece": c, "pos": at})
-				if not tg.is_empty():
-					g.gear.act(tg)
-					_note("prop under bay %d" % (bay + 1))
-					_work(15.0)
-			var first: Array = []
-			for bay in [sup - 1, sup + 1]:
-				if bay >= 0 and bay < g.boxbeam.cfg.bays.size():
-					first.append_array(g.boxbeam.cfg.bays[bay])
-			tags = first + tags.filter(func(t): return not first.has(t))
 		for t in tags:
 			var p = g.world.tag(t)
 			if p != null:

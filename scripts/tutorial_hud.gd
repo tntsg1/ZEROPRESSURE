@@ -315,7 +315,9 @@ func _task_list() -> void:
 	var l: Dictionary = ls[li] if li >= 0 else {}
 	var cryo_safety: bool = Txt.zh and str(l.get("id", "")) == "SP_C1"
 	var separator := "｜" if cryo_safety else "  "
-	var head: String = game.txt("tut_lesson") % li + separator + tut.text(l.get("title", "")) if li > 0 else tut.text(l.get("title", ""))
+	# 双重教程: numbered from the lesson the course started at (the career's runs from TUT_03: 1–5)
+	var shown_n: int = li - tut.first + 1 if tut.first > 0 else li
+	var head: String = game.txt("tut_lesson") % shown_n + separator + tut.text(l.get("title", "")) if li > 0 else tut.text(l.get("title", ""))
 	var hb := block(font_b, head, STEP_W, HEAD_MAX_H, HEAD_SIZES)
 	var dy := maxf(0.0, hb.h - hb.one)             # what a wrapped lesson title pushes everything down
 	var step_id := str(tut.step().get("id", ""))
@@ -372,8 +374,9 @@ func _task_list() -> void:
 			_text(game.txt("tut_q"), q_pos, 16, Pal.ink(0.55 + 0.25 * sin(t * 3.0)))
 		return
 	# lessons as a row of marks
-	for i in range(1, ls.size()):
-		var mx := x + (i - 1) * 26.0
+	var m0: int = maxi(1, tut.first)
+	for i in range(m0, ls.size()):
+		var mx := x + (i - m0) * 26.0
 		var my := y + dy + 52.0
 		var col := Pal.ink(0.9) if i < tut.lesson_i else (Pal.heat(1.0, 1.2) if i == tut.lesson_i else Pal.ink(0.25))
 		c.draw_rect(Rect2(mx, my, 18, 4), col)
@@ -381,7 +384,7 @@ func _task_list() -> void:
 		_text(game.txt("tut_done"), Vector2(x, y + dy + 110), 22, Pal.ink(0.9))
 		return
 	var mode: String = game.txt("tut_lockstep") if tut.lockstep() else game.txt("tut_goal")
-	_text(mode, Vector2(x + (ls.size() - 1) * 26.0 + 8.0, y + dy + 58), 14, Pal.ink(0.5))
+	_text(mode, Vector2(x + (ls.size() - maxi(1, tut.first)) * 26.0 + 8.0, y + dy + 58), 14, Pal.ink(0.5))
 	var ry := y + dy + 140.0 + row_shift * 34.0
 	# the step just done, ticked and fading (one line); the current one, large and wrapped; the next one (one line)
 	if si > 0 and tut.lockstep():

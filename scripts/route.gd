@@ -28,6 +28,11 @@ const POINTS := {
 	"hauler": [["一台搬运无人机：用 %s 给漂浮零件打标记", "A hauling drone: mark floating pieces with %s"], ["它自己送到该去的回收口", "It takes them to the right mouth itself"], ["1.5 t 以内", "Up to 1.5 t"]],
 	"port2": [["船坞远端上方再开一个设备口", "A second equipment mouth over the far end"], ["长船后半截的设备不用绕远", "No long trip from a long ship's stern"]],
 	"hauler2": [["第二台搬运无人机", "A second hauling drone"], ["和第一台分着搬同一张标记清单", "Works the same marks as the first"], ["要先有初级搬运无人机", "Needs the basic hauler first"]],
+	"hauler3": [["【占位】第三台搬运无人机：桁架绞车", "[PH] A third hauling drone: a truss winch"], ["【占位】三台分着搬同一张标记清单", "[PH] Three work the same marks"], ["【占位】要先有第二台", "[PH] Needs the second first"]],
+	"hauler4": [["【占位】第四台搬运无人机：环辐磁吸", "[PH] A fourth hauling drone: a spoked ring and magnet"], ["【占位】四台分着搬同一张标记清单", "[PH] Four work the same marks"], ["【占位】要先有第三台", "[PH] Needs the third first"]],
+	"hauler5": [["【占位】第五台搬运无人机：双体叉架", "[PH] A fifth hauling drone: twin pontoons and forks"], ["【占位】五台分着搬同一张标记清单", "[PH] Five work the same marks"], ["【占位】要先有第四台", "[PH] Needs the fourth first"]],
+	"hauler6": [["【占位】第六台搬运无人机：花瓣抓斗", "[PH] A sixth hauling drone: a petal grab"], ["【占位】六台分着搬同一张标记清单", "[PH] Six work the same marks"], ["【占位】要先有第五台和吊车", "[PH] Needs the fifth and the crane first"]],
+	"hauler7": [["【占位】第七台搬运无人机：重型吸盘", "[PH] A seventh hauling drone: a heavy suction bar"], ["【占位】七台分着搬同一张标记清单", "[PH] Seven work the same marks"], ["【占位】要先有第六台，船坞扩到 88 m", "[PH] Needs the sixth and the 88 m berth first"]],
 	"arm": [["悬臂上装一只回收机械臂", "A recovery arm on the boom"], ["自动把废金属送进熔炉", "Feeds scrap to the furnace by itself"], ["初级：慢，1 t 以内", "Basic: slow, up to 1 t"]],
 	"crane": [["船坞顶上的门式吊", "An overhead gantry crane"], ["12 t 以内整件吊走", "Lifts whole pieces up to 12 t"], ["用 %s 标记超过 1.5 t 的件给它", "Mark anything over 1.5 t for it with %s"]],
 	"berth120": [["船坞延长到约 120 m", "The berth extended to about 120 m"], ["能接 83–114 m 的船", "Takes ships of 83-114 m"], ["要先扩到 88 m", "Needs the 88 m extension first"]],
@@ -146,10 +151,11 @@ static func buy_node(it: Array) -> Dictionary:
 		why = "" if owned else Repair.reason(str(it[0]), pf.ok)
 	conds.append(_cond(Txt.t("rt_money"), "%s / %s" % [Pal.money(money), Pal.money(price)], 1.0 if owned else money / price, owned or money >= price))
 	if repair.is_empty() and Terminal.REQUIRES.has(it[0]):
-		var need: String = Terminal.REQUIRES[it[0]]
-		prerequisites.append(need)
-		var has: bool = d.get("upgrades", {}).has(need)
-		conds.append(_cond(Txt.t("rt_first"), _need_name(need), 1.0 if has else 0.0, has))
+		var needs = Terminal.REQUIRES[it[0]]
+		for need in (needs if needs is Array else [needs]):
+			prerequisites.append(str(need))
+			var has: bool = d.get("upgrades", {}).has(need)
+			conds.append(_cond(Txt.t("rt_first"), _need_name(str(need)), 1.0 if has else 0.0, has))
 	if Terminal.LATE.has(it[0]):
 		var late: Array = Terminal.LATE[it[0]]
 		var jobs := int(d.get("done", 0))

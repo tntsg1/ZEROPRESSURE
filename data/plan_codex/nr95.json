@@ -1,0 +1,98 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "nr95",
+	"steps": [
+		{
+			"ctrl": "DL-1",
+			"do": "w",
+			"gap": 0.2,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "DL-2",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "DL-3",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "DL-4",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PV-H2",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PL-H2",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PRC",
+			"do": "h",
+			"gap": 79.4,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-H",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"gap": 8.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PV-H2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PL-H2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PRC",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		}
+	]
+}

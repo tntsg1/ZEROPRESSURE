@@ -28,6 +28,13 @@ const ITEMS := [
 	["zones", ["lights"], {"drive": 1}, 20000.0, "fa_zones"],
 	["net05", ["net_fix"], {"structure": 4.0}, 18000.0, "fa_net"],
 	["hauler2", ["hauler"], {"drive": 2}, 60000.0, "fa_hauler2"],
+	# 2026-11-12: up to five hauling drones, each needing the one before (x1.33 a step, as 45k → 60k)
+	["hauler3", ["hauler2"], {"drive": 2, "power": 1}, 80000.0, "fa_hauler3"],
+	["hauler4", ["hauler3"], {"drive": 3}, 105000.0, "fa_hauler4"],
+	["hauler5", ["hauler4"], {"drive": 3, "power": 1}, 140000.0, "fa_hauler5"],
+	# (2026-11-12, up to seven: the last two after the crane and the 88 m berth — the least each adds)
+	["hauler6", ["hauler5", "crane"], {"drive": 3, "power": 2}, 186000.0, "fa_hauler6"],
+	["hauler7", ["hauler6", "berth88"], {"drive": 4, "power": 2}, 248000.0, "fa_hauler7"],
 	["arm", ["lights"], {"drive": 2, "power": 1}, 65000.0, "fa_arm"],
 	["crane", ["lights", "buffer"], {"drive": 3, "structure": 10.0}, 150000.0, "fa_crane"],
 	["berth88", [], {"structure": 25.0, "section": 15.0}, 240000.0, "fa_berth"],

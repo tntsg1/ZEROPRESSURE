@@ -79,7 +79,7 @@ static func clear_slot(n: int) -> void:
 	if _test_run():
 		return
 	for f in slot_files(n):
-		for ext in ["", ".bak"]:
+		for ext in ["", ".bak", ".works"]:
 			if FileAccess.file_exists(f + ext):
 				var full := ProjectSettings.globalize_path(f + ext)
 				if FileAccess.file_exists(f + ext + ".old"):
@@ -178,6 +178,9 @@ static func exists() -> bool:
 static func load_or_new() -> Dictionary:
 	if data.is_empty():
 		var d := SaveGame.read_career(path) if usable() else {}
+		# the crew's step reached since the last whole save (the works journal)
+		if not d.is_empty():
+			merge_works_journal(d)
 		data = d if not d.is_empty() else fresh()
 		# a career from before slots: whoever had one had passed or skipped training
 		if not d.is_empty() and not d.has("certified"):
@@ -207,6 +210,8 @@ static func load_or_new() -> Dictionary:
 		_normalize()
 		if before_methods:
 			Methods.migrate()
+		# 2026-11-12: what a removed method (the props) left in the save is dropped
+		Methods.drop_removed()
 		Repair.migrate()
 		_refund_mods()
 		Consum.migrate()
@@ -347,7 +352,7 @@ static func _whole(v):
 
 # a new career: the old one is kept beside it as .old
 static func start_new() -> void:
-	if usable() and FileAccess.file_exists(path):
+	if usable() and not SaveGame.forbidden(path) and FileAccess.file_exists(path):
 		var full := ProjectSettings.globalize_path(path)
 		if FileAccess.file_exists(path + ".old"):
 			DirAccess.remove_absolute(full + ".old")
@@ -389,10 +394,139 @@ static func store_story() -> void:
 	save()
 
 
+static var save_trace := false       # tests: who saves the whole career, and how long it took
+static var save_trace_print := false
+static var save_log: Array = []      # tests: the scripts that saved the whole career while traced
 static func save() -> bool:
 	if data.is_empty() or not usable():
 		return false
+	if save_trace:
+		var t0 := Time.get_ticks_usec()
+		var ok := SaveGame.write_file(path, data)
+		var st := get_stack()
+		var src: String = str(st[1].get("source", "?")) if st.size() > 1 else "?"
+		save_log.append(src)
+		if save_trace_print:
+			print("  Career.save %.1f ms from %s" % [(Time.get_ticks_usec() - t0) / 1000.0, st[1] if st.size() > 1 else "?"])
+		return ok
 	return SaveGame.write_file(path, data)
+
+
+# ---------------------------------------------------------------- the works journal
+# 2026-11-12 (60 FPS is a release gate): the crew used to save the whole career at every step of a
+# job — on a real 1 MB career 50 ms a frame (the JSON alone 42 ms), seven times a job. Now a step
+# writes only the job's own record (under 1 KB) to its journal beside the career file, on a worker
+# thread (the file system's write and renames were 4 ms even for that). Each order carries a token
+# ("jr", Works.order_*), saved with the order; a career read back takes from the journal the step
+# reached by that same order, only ever forward. A crash mid-write leaves the last good journal (or
+# its .tmp, checked); a stale journal of another order is ignored. The career's own save and its
+# backup are untouched.
+static var _jr_mutex := Mutex.new()
+static var _jr_pending := ""
+static var _jr_file := ""
+static var _jr_running := false
+static var _jr_task := -1
+static var journal_writes := 0       # tests: journal writes done
+static var journal_off := false      # tests: the old way (a whole save at each step), to compare
+
+
+static func journal_path(career_file: String = "") -> String:
+	return (path if career_file == "" else career_file) + ".works"
+
+
+# the job's progress kept, without the whole career (scripts/crew.gd at each step)
+static func keep_works() -> void:
+	if data.is_empty() or not usable():
+		return
+	var w: Dictionary = data.get("works", {})
+	if journal_off:
+		save()
+		return
+	if w.is_empty() or not w.has("jr"):
+		# an order from before the token: one whole save, and from then on the journal
+		if not w.is_empty():
+			w.jr = Works.token()
+		save()
+		return
+	if SaveGame.forbidden(journal_path()):
+		return
+	var txt := JSON.stringify({"v": 1, "jr": str(w.jr), "works": w})
+	var body := txt.md5_text() + "\n" + txt
+	_jr_mutex.lock()
+	_jr_pending = body
+	_jr_file = journal_path()
+	var start := not _jr_running
+	if start:
+		_jr_running = true
+	_jr_mutex.unlock()
+	if start:
+		if _jr_task >= 0:
+			WorkerThreadPool.wait_for_task_completion(_jr_task)
+		_jr_task = WorkerThreadPool.add_task(_journal_write, false, "works journal")
+
+
+# on the worker: write what is pending, then whatever came in meanwhile, then stop
+static func _journal_write() -> void:
+	while true:
+		_jr_mutex.lock()
+		var body := _jr_pending
+		var file := _jr_file
+		_jr_pending = ""
+		if body == "":
+			_jr_running = false
+			_jr_mutex.unlock()
+			return
+		_jr_mutex.unlock()
+		if SaveGame.forbidden(file):
+			continue
+		var full := ProjectSettings.globalize_path(file)
+		var f := FileAccess.open(file + ".tmp", FileAccess.WRITE)
+		if f == null:
+			continue
+		f.store_string(body)
+		f.close()
+		if FileAccess.file_exists(file):
+			DirAccess.remove_absolute(full)
+		DirAccess.rename_absolute(full + ".tmp", full)
+		journal_writes += 1
+
+
+# the journal's writes done (a test, a quit)
+static func journal_flush() -> void:
+	if _jr_task >= 0:
+		WorkerThreadPool.wait_for_task_completion(_jr_task)
+		_jr_task = -1
+
+
+static func _journal_read(file: String) -> Dictionary:
+	for f in [file, file + ".tmp"]:
+		if not FileAccess.file_exists(f):
+			continue
+		var text := FileAccess.get_file_as_string(f)
+		var nl := text.find("\n")
+		if nl < 0 or text.substr(nl + 1).md5_text() != text.substr(0, nl):
+			continue
+		var d = JSON.parse_string(text.substr(nl + 1))
+		if typeof(d) == TYPE_DICTIONARY and d.get("works") is Dictionary:
+			return d
+	return {}
+
+
+# a career read back: the job's progress from its journal, when it is the same order and further on
+static func merge_works_journal(d: Dictionary, career_file: String = "") -> bool:
+	var w: Dictionary = d.get("works", {})
+	if w.is_empty() or not w.has("jr"):
+		return false
+	var jd := _journal_read(journal_path(career_file))
+	if jd.is_empty() or str(jd.get("jr", "")) != str(w.jr):
+		return false
+	var jw: Dictionary = jd.works
+	if int(jw.get("step", -1)) <= int(w.get("step", -1)):
+		return false
+	for k in ["step", "step_f", "left", "crew"]:
+		if jw.has(k):
+			w[k] = jw[k]
+	return true
 
 
 # user 2026-10-26: a guide shows once per career, and one cut short (the game quit part-way)

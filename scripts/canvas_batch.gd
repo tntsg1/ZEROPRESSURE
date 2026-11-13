@@ -230,3 +230,8 @@ func draw_texture_rect_region(tex: Texture2D, r: Rect2, src: Rect2, modulate: Co
 func draw_set_transform(pos: Vector2, rot: float = 0.0, scale: Vector2 = Vector2.ONE) -> void:
 	flush()
 	node.draw_set_transform(pos, rot, scale)
+
+
+func draw_set_transform_matrix(xf: Transform2D) -> void:
+	flush()
+	node.draw_set_transform_matrix(xf)

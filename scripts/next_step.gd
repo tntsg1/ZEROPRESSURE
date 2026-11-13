@@ -83,6 +83,11 @@ static func _of(g) -> Dictionary:
 	var pl = g.get("plan") if g != null and on(g) else null
 	if pl != null and pl.running and pl.wait == "as_plan_expose" and pl.expose_at.is_finite():
 		return _step(Txt.t("as_plan_expose") % pl.expose_tag, Txt.t("as_plan_expose_how"), pl.expose_at)
+	# 2026-11-12: any wait of the plan's on the player (plan.gd player_alert) is the step, its place marked
+	if pl != null and pl.has_method("player_alert"):
+		var al: Dictionary = pl.player_alert()
+		if not al.is_empty() and (al.at as Vector2).is_finite():
+			return _step(str(al.line), "", al.at)
 	if g == null or g.world == null or g.sys == null or not on(g) or not CoreAsset.has(g) or g.store_guide_on():
 		return {}
 	# 用户定案（IC-120 的 A 方案推广到所有船，图鉴对标第二轮）: a pump whose line the hose has

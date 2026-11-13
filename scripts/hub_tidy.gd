@@ -13,11 +13,23 @@ const W = preload("res://scripts/hub_works.gd")
 const FW = preload("res://scripts/freight_works.gd")
 const CA = preload("res://scripts/console_art.gd")
 
-const TOP := Color(0.1, 0.104, 0.116)        # a lit flat face (the districts' tidy hull's)
-const TOP2 := Color(0.165, 0.172, 0.19)      # the carousel's rim, the brightest steel down here
-const LOW := Color(0.06, 0.063, 0.071)
-const EAVE := Color(0.22, 0.227, 0.245)      # an edge facing the light
-const SIDE := Color(0.024, 0.025, 0.03)      # an edge away from it
+static var TOP := Color(0.1, 0.104, 0.116)        # a lit flat face (the districts' tidy hull's)
+static var TOP2 := Color(0.165, 0.172, 0.19)      # the carousel's rim, the brightest steel down here
+static var LOW := Color(0.06, 0.063, 0.071)
+static var EAVE := Color(0.22, 0.227, 0.245)      # an edge facing the light
+static var SIDE := Color(0.024, 0.025, 0.03)      # an edge away from it
+
+
+# 2026-11-12 (the six districts as one material: user, "纯2D、纯扁平，没有一点质感"): in the districts'
+# solid look the ring's steel at the same brightness as theirs (scripts/solid_pen.gd: faces ~0.2,
+# the lit edge ~0.42); as it was otherwise. Set before each of the ring's meshes is built
+static func tune() -> void:
+	var s := DistrictStyle.solid()
+	TOP = Color(0.17, 0.176, 0.194) if s else Color(0.1, 0.104, 0.116)
+	TOP2 = Color(0.27, 0.28, 0.305) if s else Color(0.165, 0.172, 0.19)
+	LOW = Color(0.1, 0.104, 0.116) if s else Color(0.06, 0.063, 0.071)
+	EAVE = Color(0.42, 0.436, 0.462) if s else Color(0.22, 0.227, 0.245)
+	SIDE = Color(0.035, 0.037, 0.042) if s else Color(0.024, 0.025, 0.03)
 const PIT_SHADOW := 0.55                     # m the carousel stands above the pit's floor (its shadow's offset)
 
 

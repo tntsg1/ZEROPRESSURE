@@ -32,12 +32,13 @@ func _run() -> void:
 	Career.data.tram_found = ["ring", "salvage", "trade", "process", "cargo", "tug", "power"]
 	Career.data.exchange = preload("res://scripts/industrial_exchange.gd").fresh(500000.0)
 	Career.save()
+	DistrictStyle.halls = _arg("halls", "1") == "1"
 	await _spawn()
 	await _frames(30)
 	g.freight.card.probe = Vector2(-1e7, -1e7)
-	var at := Tram.station_at("ring") + Tram.platform_side("ring") * 3.0 * Geom.M
+	var at := Tram.station_at("ring") + Tram.platform_side("ring") * 3.0 * Geom.M if _arg("hub", "0") != "1" else PortStructure.centre()
 	g.drone.global_position = at + Vector2(0.0, -6.0) * Geom.M
-	for zoom in [0.75]:
+	for zoom in [float(_arg("zoom", "0.75"))]:
 		for k in 40:
 			g.cam_override = at
 			g.zoom_override = zoom
@@ -48,6 +49,7 @@ func _run() -> void:
 		var p := "res://tests/out/hub130_ring_stop_%s.png" % _arg("tag", "after")
 		Cap.save(root, p)
 		print("  shot " + ProjectSettings.globalize_path(p))
+	DistrictStyle.halls = true
 	g.queue_free()
 	await _frames(4)
 	quit(0)

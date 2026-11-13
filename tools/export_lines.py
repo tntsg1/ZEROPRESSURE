@@ -79,6 +79,10 @@ known = {
     "L_cold_4": ("片名", "冷开场 镜头 4：片名“零压”下面的一行副标题（11.0–11.9 秒）", "一个短语"),
     "L_cold_5": ("旁白或台词", "冷开场 交出操作后、第一刀之前，飘在切割线旁（可以不写）", "半句"),
     "L_cold_6": ("旁白或台词", "冷开场 第一刀切开、舱压把板冲飞、无人机被推开的那一刻（慢动作 1.5 秒）", "一句"),
+    # 双重教程 (owner 2026-11-12, "b"): the card before the career's course after TUG-001
+    "L_ts1_bridge_t": ("衔接卡", "拆完第一艘船 TUG-001 后、进入进阶训练（5 节课）前弹出的衔接卡的标题", "一个短句"),
+    "L_ts1_bridge_1": ("衔接卡", "衔接卡第 1 句：为什么还要练（TUG-001 是条老实的死船，后面的船不会这么老实）", "一句"),
+    "L_ts1_bridge_2": ("衔接卡", "衔接卡第 2 句：接下来练什么、练完去哪（练完回船坞接活）", "一句"),
     "L_permit_terms": ("文件", "回收权使用证上的“使用条件”说明段落（编号、日期、公司名、损坏清单由游戏填）", "三到五条"),
     "L_visit_frank": ("客人（爽快）", "75 号：爽快的独立商人或个体船主开船到贸易港、递上名片时（他要买或卖什么由游戏显示）", "一句"),
     "L_visit_shrewd": ("客人（精明）", "75 号：精明的客人到港时", "一句"),
@@ -138,7 +142,7 @@ term_ids = set()
 for f in glob.glob(os.path.join(ROOT, "scripts", "*.gd")):
     term_ids |= set(re.findall(r'Copy\.say\(radio, "([A-Za-z0-9_]+)", "term"', open(f, encoding="utf-8").read()))
 # the opening's cards show their captions on screen, not on the radio
-SHOWN_L = ("L_intro_", "L_permit_terms", "L_cold_")
+SHOWN_L = ("L_intro_", "L_permit_terms", "L_cold_", "L_ts1_bridge_")
 
 act = []
 ret = []

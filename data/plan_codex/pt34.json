@@ -6,264 +6,308 @@
 		{
 			"ctrl": "G-W",
 			"do": "h",
+			"gap": 0.2,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-CIC",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-UP",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-RX",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-AUX",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-ARM",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-DCR",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-MID",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-LOW",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-BR",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "K-A",
 			"do": "w",
+			"gap": 0.1,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PP-1",
 			"do": "h",
+			"gap": 0.2,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PP-2",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "K-GB",
 			"do": "w",
+			"gap": 16.1,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "O2P-1",
 			"do": "h",
+			"gap": 3.3,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "FP-1",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "O2P-2",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "FP-2",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "WP-1",
 			"do": "h",
+			"gap": 14.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "WP-2",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "K-BB",
 			"do": "w",
+			"gap": 0.7,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "CD-1",
 			"do": "w",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "WD-1",
 			"do": "w",
+			"gap": 1.3,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "WD-2",
 			"do": "w",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-MAG",
 			"do": "h",
+			"gap": 43.3,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-W",
 			"do": "h",
+			"gap": 32.7,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-CIC",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-UP",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-RX",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-AUX",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-ARM",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-DCR",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-MID",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-LOW",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-BR",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PP-1",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PP-2",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "O2P-1",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "FP-1",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "O2P-2",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "FP-2",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "WP-1",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "WP-2",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-MAG",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},

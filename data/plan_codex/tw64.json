@@ -6,144 +6,168 @@
 		{
 			"ctrl": "G-B",
 			"do": "h",
+			"gap": 0.8,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-W",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-H",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-L",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-F",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-A",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "K-M",
 			"do": "w",
+			"gap": 0.1,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "SUP",
 			"do": "w",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PA-J",
 			"do": "h",
+			"gap": 46.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PA-A",
 			"do": "h",
+			"gap": 18.0,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PH",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PW-1",
 			"do": "h",
+			"gap": 1.3,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PW-2",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-B",
 			"do": "h",
+			"gap": 16.7,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-W",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-H",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-L",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-F",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-A",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PA-J",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PA-A",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PH",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PW-1",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PW-2",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		}

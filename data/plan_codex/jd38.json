@@ -1,0 +1,164 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "jd38",
+	"steps": [
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"gap": 0.2,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-L",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-M",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "O2P",
+			"do": "h",
+			"gap": 17.4,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "WATER-M-D",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-BAT",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PF-1",
+			"do": "h",
+			"gap": 27.3,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "AUX-P",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "DR-H",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [
+				{
+					"key": "G-L",
+					"kind": "pressure",
+					"val": 0.0
+				},
+				{
+					"key": "G-H",
+					"kind": "pressure",
+					"val": 4.3
+				}
+			],
+			"value": true
+		},
+		{
+			"ctrl": "DR-ST",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [
+				{
+					"key": "G-L",
+					"kind": "pressure",
+					"val": 3.3
+				}
+			],
+			"value": true
+		},
+		{
+			"ctrl": "LK-U",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "LK-L",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"gap": 7.3,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-H",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-L",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-M",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "O2P",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "WATER-M-D",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PF-1",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		}
+	]
+}

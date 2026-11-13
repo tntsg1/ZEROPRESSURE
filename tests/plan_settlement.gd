@@ -49,6 +49,11 @@ func _run() -> void:
 	g.plan.steps = [{"do":"w","ctrl":door.id,"pre":[]}]
 	g.plan.i = 0
 	g.plan.running = true
+	# 2026-11-12: the plan's drone works the door where it stands: put it there, as if it had flown over
+	var sv = g.plan.cutter_service()
+	sv.robot.set_phasing(true)
+	sv.robot.global_position = g.world.ctrl_world(door) + Vector2(0.0, -g.plan.CODEX_STANDOFF)
+	sv.robot.linear_velocity = Vector2.ZERO
 	g.plan._physics_process(2.0)
 	check(g.plan.i == 0 and g.plan.wait == "plan_preset_blocked","a refused real door operation does not advance the machine plan")
 	g.plan.cancel()

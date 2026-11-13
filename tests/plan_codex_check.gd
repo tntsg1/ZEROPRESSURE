@@ -106,9 +106,52 @@ func _run() -> void:
 		var lines: int = g.plan.steps.filter(func(s): return s.get("seg", false)).size()
 		var exposed := 0
 		var mark_ok := true
+		# 宝典无人机: the berth's cutter is the codex drone for the run, flies to each control, through walls
+		var flew := false
+		var solid_mid := false
+		var phased := false
+		var through_wall := false
+		var at_site := 0
+		var off_site := 0
+		var shot_wall := false
+		var shot_switch := false
+		var cap: bool = "--capture" in OS.get_cmdline_user_args()
 		for k in 80000:
 			await process_frame
 			if not g.plan.running: break
+			var sv0 = g.plan._cutter_service
+			if is_instance_valid(sv0):
+				var rb = sv0.robot
+				if rb.phasing: phased = true
+				elif phased: solid_mid = true
+				if g.plan.wait == "as_plan_fly": flew = true
+				var tw = g.tools.tunnel_fx.watch.get(rb.get_instance_id())
+				if tw != null and tw.in:
+					through_wall = true
+					if cap and not shot_wall:
+						shot_wall = true
+						g.cam_override = rb.global_position
+						g.cam_pos = rb.global_position
+						g.cam_vel = Vector2.ZERO
+						await frames(2)
+						await RenderingServer.frame_post_draw
+						Cap.save(root, "res://proofs/codex_drone_wall_%s.png" % ship)
+						g.cam_override = null
+				var cur: Dictionary = g.plan.steps[g.plan.i] if g.plan.i < n_steps else {}
+				if str(cur.get("do", "")) in ["w", "h"] and g.plan.step_t > 0.0 and g.plan.wait == "":
+					# a switch or hose being worked: the drone is beside that control
+					var site: Vector2 = g.world.ctrl_world(g.world.ctrls[str(cur.ctrl)])
+					if rb.global_position.distance_to(site) <= g.plan.CODEX_STANDOFF + 8.0: at_site += 1
+					else: off_site += 1
+					if cap and not shot_switch and g.plan.step_t > 0.8 and rb.work_t > 0.0:
+						shot_switch = true
+						g.cam_override = rb.global_position
+						g.cam_pos = rb.global_position
+						g.cam_vel = Vector2.ZERO
+						await frames(2)
+						await RenderingServer.frame_post_draw
+						Cap.save(root, "res://proofs/codex_drone_switch_%s.png" % ship)
+						g.cam_override = null
 			if g.plan.wait == "as_plan_expose" and g.plan.expose_piece != null and not g.plan.expose_piece.gone and g.plan.expose_piece.body == null:
 				# the mark is on that hull piece; then the player takes it off (not the equipment's mounts)
 				var ns: Dictionary = NextStep.of(g)
@@ -135,12 +178,18 @@ func _run() -> void:
 			if is_instance_valid(service) and service.robot.beam_on and g.plan.i < n_steps:
 				for room in g.plan.steps[g.plan.i].get("rooms", []):
 					if g.sys.P(str(room)) > g.plan.SAFE_KPA: unsafe.append(str(room))
-				if not shot and "--capture" in OS.get_cmdline_user_args():
+				if not shot and "--capture" in OS.get_cmdline_user_args() and g.plan.steps[g.plan.i].get("seg", false):
+					# the camera on the cutter at its marked line (the operator's drone stays where it is)
 					shot = true
+					g.cam_override = service.robot.global_position
+					await frames(45)
 					await RenderingServer.frame_post_draw
 					Cap.save(root, "res://proofs/plan_codex_replay_%s.png" % ship)
+					g.cam_override = null
 		print("%s REPLAY i=%d/%d wait=%s %s" % [ship, g.plan.i, n_steps, g.plan.wait, g.plan.wait_arg])
 		check(head_ok, "%s: the HUD line reads the codex plan's progress" % ship)
+		check(flew and not solid_mid and at_site > 0 and off_site == 0, "%s: the codex drone flew to every switch and hose and worked it there, phasing all the run (%d frames at a control, %d away; flew %s, solid mid-run %s)" % [ship, at_site, off_site, flew, solid_mid])
+		check(through_wall, "%s: on its way it went through a wall (the phasing look drawn)" % ship)
 		if exposed > 0:
 			check(mark_ok, "%s: while a marked line waits, the hull piece over it is the 下一步 mark (%d taken off)" % [ship, exposed])
 		check(g.plan.seg_done == lines, "%s: the cutter cut %d of %d marked lines whole, the hull taken off by hand, no second P" % [ship, g.plan.seg_done, lines])

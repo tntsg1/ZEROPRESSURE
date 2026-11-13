@@ -1,53 +1,61 @@
 {
 	"by": "tools/gen_plan_codex.sh",
-	"made": "2026-11-11",
+	"made": "2026-11-12",
 	"ship": "pod",
 	"steps": [
 		{
 			"ctrl": "GAS-F",
 			"do": "h",
+			"gap": 0.2,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "RCS-1P",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "RCS-2P",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "K-P",
 			"do": "w",
+			"gap": 0.1,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "GAS-F",
 			"do": "h",
+			"gap": 8.8,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "RCS-1P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "RCS-2P",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"do": "cut",
 			"key": "CG-3",
+			"origin": "CG-3",
 			"pl": [
 				[
 					460.800018310547,

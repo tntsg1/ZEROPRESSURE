@@ -73,7 +73,9 @@ static func w(zh: String, en: String) -> String:
 
 
 func _ink(a: float) -> Color:
-	return Pal.ink(a)
+	# 2026-11-12: the solid look's line art (DistrictStyle.ink: faint lines dark into the faces,
+	# outlines light round them; opaque, never white in alpha under hdr_2d)
+	return DistrictStyle.ink(a)
 
 
 func _p(v: Vector2) -> Vector2:
@@ -81,8 +83,14 @@ func _p(v: Vector2) -> Vector2:
 
 
 func _mesh(key: String, build: Callable) -> ArrayMesh:
+	if DistrictStyle.solid():
+		key = "solid/" + key
 	if not _meshes.has(key):
-		var pen := MeshPen.new()
+		# 2026-11-12 (user: "纯2D、纯扁平，没有一点质感"): the casings as lit steel (scripts/solid_pen.gd),
+		# the painted ones (the coolant's orange, the tanks) shaded in their own colours
+		var pen = preload("res://scripts/solid_pen.gd").new() if DistrictStyle.solid() else MeshPen.new()
+		if DistrictStyle.solid():
+			pen.tinted = true
 		build.call(pen)
 		_meshes[key] = pen.mesh()
 	return _meshes[key]

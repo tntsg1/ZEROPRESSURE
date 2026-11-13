@@ -1,4 +1,5 @@
 extends RefCounted
+const Crew = preload("res://scripts/crew.gd")
 # 87-3: the grapple's range mode. X switches the grapple between one piece (as before) and a
 # field round the pointer that takes hold of several loose pieces at once; Shift+X lifts the
 # guard that keeps it off precision equipment, hazards and the ship's core assets. It takes any
@@ -166,7 +167,7 @@ func candidates(at: Vector2) -> Array:
 		var why := ""
 		if b.capture != null:
 			why = "swallowing"
-		elif b.get_meta("arm", false) or b.has_meta("hauled_by"):
+		elif b.get_meta("arm", false) or b.has_meta("hauled_by") or Crew.owns(b, true):
 			why = "busy"
 		elif guard and guarded(b):
 			why = "guarded"
@@ -232,7 +233,7 @@ func step(dt: float, target: Vector2) -> void:
 	var keep: Array = []
 	for h in held:
 		var b = h.body
-		if not is_instance_valid(b) or b.pieces.is_empty() or b.capture != null or b.get_meta("arm", false):
+		if not is_instance_valid(b) or b.pieces.is_empty() or b.capture != null or b.get_meta("arm", false) or Crew.owns(b, true):
 			continue
 		if (b.global_transform * b.center_of_mass).distance_to(tools.drone.global_position) > reach_max:
 			b.tethered = false

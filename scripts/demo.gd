@@ -30,7 +30,9 @@ const VERSION := "0.9-公测-20261112"
 const CODES := false                  # the 10-30 code gate; the public build registers the machine instead
 const LIMIT_S := 18000.0              # 5 hours (user 2026-11-11 "5个小时，或者是两个小时")
 const GRACE_S := 3 * 86400            # offline, a machine that checked in within this still plays
-const CFG := "user://playtest_activation.cfg"
+# 2026-11-12: a test run uses its own copies of the build's files ("zp_test_" + the name), never the
+# player's (tests/demo_check.gd used to delete and rewrite the real ones)
+static var CFG := user_file("playtest_activation.cfg")
 # every ship file in the pack: what fits the 50 m berth (the 88 m chapter ends the playtest), the
 # training rigs and the berth itself. The export preset lists the same (tests/demo_pack_check.gd).
 const SHIPS := ["tug", "pod", "s09", "gr7", "h22", "jd38", "qc30", "st40",
@@ -61,13 +63,18 @@ static func w(zh: String, en: String) -> String:
 static func apply() -> void:
 	if not on():
 		return
-	if SaveGame.path != "user://playtest_save.json":
+	if SaveGame.path != user_file("playtest_save.json"):
 		print("ZERO PRESSURE public test ", VERSION)
-	SaveGame.path = "user://playtest_save.json"
-	Career.path = "user://playtest_career.json"
-	Txt.cfg_path = "user://playtest_settings.cfg"
-	Playtest.root = "user://playtest_records"
+	SaveGame.path = user_file("playtest_save.json")
+	Career.path = user_file("playtest_career.json")
+	Txt.cfg_path = user_file("playtest_settings.cfg")
+	Playtest.root = user_file("playtest_records")
 	Txt.playtest = true
+
+
+# one of the build's own files: the player's in a real run, a test's own copy in a test run
+static func user_file(name: String) -> String:
+	return ("user://zp_test_" if Career._test_run() else "user://") + name
 
 
 # no end date any more (Q3 C): the server's switch ends it
@@ -85,6 +92,12 @@ static func _cfg() -> ConfigFile:
 	return cf
 
 
+# a test never writes the player's activation (SaveGame.forbidden)
+static func _save(cf: ConfigFile) -> void:
+	if not SaveGame.forbidden(CFG):
+		cf.save(CFG)
+
+
 static func code() -> String:
 	return str(_cfg().get_value("gate", "code", ""))
 
@@ -94,20 +107,20 @@ static func remember(c: String) -> void:
 	cf.set_value("gate", "code", c)
 	cf.set_value("gate", "machine", machine())
 	cf.set_value("gate", "last_ok", int(Time.get_unix_time_from_system()))
-	cf.save(CFG)
+	_save(cf)
 
 
 static func touched() -> void:
 	var cf := _cfg()
 	cf.set_value("gate", "last_ok", int(Time.get_unix_time_from_system()))
-	cf.save(CFG)
+	_save(cf)
 
 
 static func forget() -> void:
 	var cf := _cfg()
 	if cf.has_section_key("gate", "code"):
 		cf.erase_section_key("gate", "code")
-	cf.save(CFG)
+	_save(cf)
 
 
 static func within_grace() -> bool:
@@ -122,7 +135,7 @@ static func finished() -> bool:
 static func mark_finished() -> void:
 	var cf := _cfg()
 	cf.set_value("gate", "done", true)
-	cf.save(CFG)
+	_save(cf)
 
 
 # the version (and with the old gate the code) on the window's title bar from the moment the gate lets go

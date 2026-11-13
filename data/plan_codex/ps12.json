@@ -1,0 +1,306 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "ps12",
+	"steps": [
+		{
+			"ctrl": "G-O",
+			"do": "h",
+			"gap": 0.2,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-S",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-L1",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-Q",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-U2",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-L2",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-M",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PP-1",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PP-2",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PC",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-M",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-U1",
+			"do": "h",
+			"gap": 6.8,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "ARM-1",
+			"do": "w",
+			"gap": 2.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "ARM-2",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "ARM-3",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "ARM-4",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "SAN-1-D",
+			"do": "h",
+			"gap": 2.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "SAN-2-D",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "SAN-3-D",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-O",
+			"do": "h",
+			"gap": 16.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-S",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-L1",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-C",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-Q",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-U2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-L2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-M",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PP-1",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PP-2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PC",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-U1",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "SAN-1-D",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "SAN-2-D",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "SAN-3-D",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"do": "cut",
+			"key": "RAD-T",
+			"origin": "RAD-T",
+			"pl": [
+				[
+					4008.0,
+					-393.599975585938
+				],
+				[
+					4008.0,
+					-148.799987792969
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
+		},
+		{
+			"do": "cut",
+			"key": "RAD-T",
+			"origin": "RAD-T",
+			"pl": [
+				[
+					4176.0,
+					-393.599975585938
+				],
+				[
+					4176.0,
+					-148.799987792969
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
+		},
+		{
+			"do": "cut",
+			"key": "RAD-T",
+			"origin": "RAD-T",
+			"pl": [
+				[
+					4344.0,
+					-393.599975585938
+				],
+				[
+					4344.0,
+					-148.799987792969
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
+		}
+	]
+}

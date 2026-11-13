@@ -12,6 +12,7 @@ var g: Node
 func _initialize() -> void:
 	Career.path = "user://zp_test_rec1110_cold_career.json"
 	SaveGame.path = "user://zp_test_rec1110_cold_save.json"
+	SaveGame.train_path = "user://zp_test_rec1110_cold_training.json"   # never the player's training file
 	SaveGame.allow_test = true
 	for f in [Career.path, SaveGame.path]:
 		for ext in ["", ".bak", ".tmp", ".old", ".done", ".bak.done"]:

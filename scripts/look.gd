@@ -840,6 +840,17 @@ func _designator(c: CanvasItem, cc: Vector2, fb: Font, fr: Font) -> void:
 	var wp: PackedVector2Array = game.world.world_poly(p)
 	if wp.is_empty():
 		return
+	# 2026-11-12 HUD 中央交互 (scripts/hud_center.gd): the outline and the tag name the part and its
+	# state; the drone's feed keeps its own: the line of sight, and range and weight under the tag
+	const HC = preload("res://scripts/hud_center.gd")
+	if HC.on:
+		var tr: Rect2 = HC.tag_rect
+		if not tr.has_area():
+			return
+		c.draw_line(cc, xf * Geom.centroid(wp), Color(1, 1, 1, 0.12), 1.0)
+		var rg: float = game.drone.global_position.distance_to(Geom.centroid(wp)) / Geom.M
+		_ot(c, fr, Vector2(tr.position.x + 2.0, tr.end.y + 16.0), "RNG %.1f m    MASS %.2f t" % [rg, game.world.group_mass(p)], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 1, 1, 0.7))
+		return
 	var r := Rect2(xf * wp[0], Vector2.ZERO)
 	for q in wp:
 		r = r.expand(xf * q)

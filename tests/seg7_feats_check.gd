@@ -23,7 +23,7 @@ func _process(_dt: float) -> bool:
 func _run() -> void:
 	var ships := ["gr7", "jd38"]
 	var give: Array = []
-	var want: Array = []      # want=propped: these feats must come
+	var want: Array = []      # want=a,b: these feats must come
 	var opts := {}
 	var cap := 60 * 300      # gear=pump,anchor: the bot carries these and uses them; then the feats must come
 	for a in OS.get_cmdline_user_args():
@@ -33,8 +33,6 @@ func _run() -> void:
 			give = Array(a.substr(5).split(","))
 		elif a.begins_with("want="):
 			want = Array(a.substr(5).split(","))
-		elif a == "props":
-			opts.props = true
 		elif a.begins_with("frames="):
 			cap = int(a.substr(7))
 		elif a == "paced":

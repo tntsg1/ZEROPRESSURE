@@ -53,7 +53,7 @@ const FAMILY := {
 		["remove", 2.0, "切下损坏的旧甲板并运走。", "The rusted-through deck cut out and towed off", "cutter"],
 		["bring", 2.0, "铺设新的运输支撑结构。", "The barge brings a stack of plate", "boat"],
 		["lift", 3.0, "将设备模块吊装到指定位置。", "The crawler crane sets the plates one by one", "crane"],
-		["fasten", 3.0, "完成机器人焊接作业。", "The welding robots run the seams", "welder"],
+		["fasten", 3.0, "【占位】完成自动焊接作业。", "The welding robots run the seams", "welder"],
 		["test", 1.0, "施加载荷，检查结构下挠情况。", "A test load on; the deflection read", "tester"]],
 		# user 2026-11-04: this family's own step names, and the short word the progress lines use
 		"names": {"remove": "拆除", "bring": "安装", "lift": "吊装", "fasten": "焊接"}, "short": {"test": "压载测试"}},
@@ -121,7 +121,7 @@ const FAMILY := {
 		["connect", 1.0, "接电和数据线", "Power and data run in", "cable"],
 		["test", 1.0, "整套试运行", "The whole set run through", "tester"]]},
 }
-const FAMILY_OF := {"hauler": "drones", "hauler2": "drones", "port2": "mouth", "mouth_rail": "mouth", "buffer": "structure",
+const FAMILY_OF := {"hauler": "drones", "hauler2": "drones", "hauler3": "drones", "hauler4": "drones", "hauler5": "drones", "hauler6": "drones", "hauler7": "drones", "port2": "mouth", "mouth_rail": "mouth", "buffer": "structure",
 	"zones": "structure", "net05": "structure", "arm": "arm", "crane": "crane", "berth88": "structure", "berth120": "structure",
 	"berth200": "structure", "berth620": "structure", "gas_line": "pipe", "lox_tank": "pipe"}
 const ZONE_FAMILY := {"power": "power", "salvage": "structure", "process": "pipe", "tug": "dockyard", "trade": "dockyard", "cargo": "dockyard", "ring": "rail"}

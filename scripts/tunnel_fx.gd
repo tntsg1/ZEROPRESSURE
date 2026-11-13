@@ -66,13 +66,17 @@ func _candidates() -> Array:
 				out.append(h.body)
 	for id in watch:
 		var b = watch[id].b
-		if is_instance_valid(b) and not (b is Drone) and not out.has(b) and b.clearing > 0.0:
+		if is_instance_valid(b) and not (b is Drone) and not b.is_in_group("phasing_craft") and not out.has(b) and "clearing" in b and b.clearing > 0.0:
 			out.append(b)
 	# 2026-11-11 量子隧穿·机体: the drone itself, tunnelling or easing out of a wall after
 	var bt = tools.body_tunnel
 	var d = tools.drone
 	if bt != null and bt.showing() and d != null and is_instance_valid(d) and d.alive:
 		out.append(d)
+	# the codex drone (cutter_drone.gd phasing): flies through walls on a codex run
+	for craft in get_tree().get_nodes_in_group("phasing_craft"):
+		if is_instance_valid(craft) and not out.has(craft):
+			out.append(craft)
 	# every other body that does not touch the ship now (carried, eased out, tunnelling), on screen
 	var game = _game()
 	if game != null and game.world != null and all_phasing:
@@ -166,9 +170,10 @@ func _process_inner(dt: float) -> void:
 			watch[id] = {"b": b, "out_t": float(_last_in.get(id, -9.0)), "hist": [], "ht": 0.0, "rt": 0.0, "in": false, "c": Vector2.ZERO, "st": 0.0, "e": 0.0, "parts": [], "polys": [], "cross": []}
 		var w: Dictionary = watch[id]
 		var is_drone: bool = b is Drone
+		var craft: bool = is_drone or b.is_in_group("phasing_craft")
 		var polys: Array = []
-		if is_drone:
-			polys.append(_drone_poly(b))
+		if craft:
+			polys.append(_drone_poly(b) if is_drone else b.phase_poly())
 			# the jets' echoes: where it burned, and which way (drone.thrust), a moment ago
 			if not w.has("fl"):
 				w["fl"] = []
@@ -203,7 +208,7 @@ func _process_inner(dt: float) -> void:
 		if is_drone and now_in:
 			stats.drone_in += 1
 		# the player's own (the drone, what its grapple holds) always sound; the machines' loads spaced
-		var mine: bool = is_drone or b == own or bool(b.tethered)
+		var mine: bool = is_drone or b == own or b.get("tethered") == true
 		if not mine and now_in:
 			others_in += 1
 		var loud: bool = mine or _snd_t <= 0.0
@@ -399,10 +404,10 @@ func _draw_inner() -> void:
 		var b = w.b
 		# the machines' loads (not the player's drone or what its grapple holds): the same look, lighter —
 		# one echo, half the fringes, no dots, plainer rings
-		var lite: bool = is_instance_valid(b) and not (b is Drone) and not bool(b.tethered)
+		var lite: bool = is_instance_valid(b) and not (b is Drone) and not b.is_in_group("phasing_craft") and not b.get("tethered") == true
 		# the drone: the whole time it tunnels, its hull is the two-layer wave packet, and its jets
 		# leave pixel echoes behind (only the load's parts inside a wall get the rest)
-		if is_instance_valid(b) and b is Drone:
+		if is_instance_valid(b) and (b is Drone or b.is_in_group("phasing_craft")):
 			e = maxf(e, 0.55)
 			for f in w.get("fl", []):
 				var age: float = f[2] / 0.42

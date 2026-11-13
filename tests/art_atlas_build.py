@@ -74,6 +74,10 @@ ART_CAT.update({a: '电力与配电' for a in L('hv_switchgear')})
 ART_CAT.update({a: '电力与配电' for a in L('chem_store core_store cryo_cdb cryo_spares dcdc drill_tools ev_calib garden_locker herbarium ob_cal plate_archive sample_cyl server_spares shot_archive spare_cells spare_leads well_logs')})
 ART_CAT.update({a: '电力与配电' for a in L('batch_log cargo_log cockpit_case custody_reg dining_table evidence_lockers flow_ctrl mail_locker manifest_term pharmacy sample_trays seed_vault shadow_board smelt_log supply_stack svc_bench tow_log')})
 ART_CAT.update({a: '电力与配电' for a in L('bl_electrolyser co2_burner diesel_genset drups fuel_cell_pm main_alternator rtg_module stirling_gen ts_power turbine_genset')})
+ART_CAT.update({a: '电力与配电' for a in L('apu_mono baffle_heater bay_charger brake_handle_panel busbar_box charge_post control_strip cradle_ctrl cradle_lock cryo_ctrl_panel cryo_manifold dcdc engine_panel esd_station flywheel_brake_panel freezer_ctrl fridge_ctl frost_vent hemt_bias hull_support irrigation_ctrl leak_panel level_gauge lift_call lift_saddle lock_backup_box monitor_wall process_panel purge_panel push_fender pusher_plate quiet_pcu race_ecu rail_lock_board rail_lock_square rcs_ctrl recovery_valves release_board release_cabinet rod_lock_panel room_panel s_bat shield_probe slips_panel small_manifold solar_pcu standby_dist tank_bracket tank_temp tension_link tether_brake_frame tether_root tool_cart uv_tube wall_socket')})
+ART_CAT.update({a: '电力与配电' for a in L('esd_station')})
+ART_CAT.update({a: '电力与配电' for a in L('room_panel')})
+ART_CAT.update({a: '电力与配电' for a in L('material_rack room_panel')})
 def cat_of(e):
     if e.get("cat_keep"):   # a redrawn kind stays on the page it was on (swap_cells, 2026-11-11)
         return e["cat_keep"]

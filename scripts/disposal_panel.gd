@@ -733,10 +733,6 @@ func _gear_icon(ty: String, c: Vector2, s: float, col: Color) -> void:
 			draw_line(c + Vector2(-s, s * 0.6), c + Vector2(s * 0.6, -s * 0.6), col, 1.6, true)
 			draw_circle(c + Vector2(s * 0.6, -s * 0.6), s * 0.22, col)
 			draw_arc(c + Vector2(s * 0.6, -s * 0.6), s * 0.5, 0.0, TAU, 16, col * Color(1, 1, 1, 0.5), 1.0, true)
-		"prop":
-			draw_line(c + Vector2(0, -s), c + Vector2(0, s * 0.7), col, 2.2, true)
-			draw_line(c + Vector2(-s * 0.7, s * 0.8), c + Vector2(s * 0.7, s * 0.8), col, 1.8, true)
-			draw_line(c + Vector2(-s * 0.4, -s), c + Vector2(s * 0.4, -s), col, 1.8, true)
 		_:
 			draw_rect(Rect2(c - Vector2(s, s) * 0.6, Vector2(s, s) * 1.2), col, false, 1.4)
 

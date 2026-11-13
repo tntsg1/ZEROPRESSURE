@@ -124,7 +124,7 @@ func _draw_gallery() -> void:
 	var steel := Color(0.12, 0.126, 0.138)
 	var steel2 := Color(0.155, 0.162, 0.176)
 	var dark := Color(0.05, 0.054, 0.062)
-	var edge := Pal.ink(0.62)
+	var edge := DistrictStyle.ink(0.62)
 	# ---- the slanted glass under the walkway's edge: a frame every 3 m, each pane with its glints, the sill
 	var gr := Rect2(P.call(Vector2(X0, DECK_B)), Vector2(X1 - X0, GLASS_B - DECK_B) * m)
 	pen.draw_rect(gr, Color(0.42, 0.62, 0.74, 0.07))
@@ -134,41 +134,44 @@ func _draw_gallery() -> void:
 	while fx < X1 - 0.01:
 		var nx := minf(fx + 3.0, X1)
 		pen.draw_line(P.call(Vector2(fx, DECK_B)), P.call(Vector2(fx, GLASS_B)), steel2, maxf(1.0, 0.12 * m))
-		pen.draw_line(P.call(Vector2(fx, DECK_B)), P.call(Vector2(fx, GLASS_B)), Pal.ink(0.35), lw)
+		pen.draw_line(P.call(Vector2(fx, DECK_B)), P.call(Vector2(fx, GLASS_B)), DistrictStyle.ink(0.35), lw)
 		for k in 2:
 			var gx := fx + 0.6 + k * 1.3
 			pen.draw_line(P.call(Vector2(gx, DECK_B + 0.15)), P.call(Vector2(gx + 0.45, GLASS_B - 0.15)), Color(0.8, 0.9, 1.0, 0.16), maxf(1.0, 0.05 * m))
 		fx = nx
-	pen.draw_line(P.call(Vector2(X1, DECK_B)), P.call(Vector2(X1, GLASS_B)), Pal.ink(0.5), maxf(1.0, 0.12 * m))
-	pen.draw_rect(Rect2(P.call(Vector2(X0, GLASS_B - 0.1)), Vector2(X1 - X0, 0.16) * m), steel2)
+	pen.draw_line(P.call(Vector2(X1, DECK_B)), P.call(Vector2(X1, GLASS_B)), DistrictStyle.ink(0.5), maxf(1.0, 0.12 * m))
+	if not DistrictStyle.solid_rect(pen, Rect2(P.call(Vector2(X0, GLASS_B - 0.1)), Vector2(X1 - X0, 0.16) * m), steel2, m):
+		pen.draw_rect(Rect2(P.call(Vector2(X0, GLASS_B - 0.1)), Vector2(X1 - X0, 0.16) * m), steel2)
 	pen.draw_line(P.call(Vector2(X0, GLASS_B + 0.06)), P.call(Vector2(X1, GLASS_B + 0.06)), edge, lw)
 	# ---- the walkway: a grating on its stringer, the toe board and the floor lamps
-	pen.draw_rect(Rect2(P.call(Vector2(X0, DECK)), Vector2(X1 - X0, DECK_B - DECK) * m), steel)
+	if not DistrictStyle.solid_rect(pen, Rect2(P.call(Vector2(X0, DECK)), Vector2(X1 - X0, DECK_B - DECK) * m), steel, m):
+		pen.draw_rect(Rect2(P.call(Vector2(X0, DECK)), Vector2(X1 - X0, DECK_B - DECK) * m), steel)
 	var gx2 := X0 + 0.15
 	while gx2 < X1:
-		pen.draw_line(P.call(Vector2(gx2, DECK + 0.06)), P.call(Vector2(gx2, DECK + 0.2)), Pal.ink(0.2), lw)
+		pen.draw_line(P.call(Vector2(gx2, DECK + 0.06)), P.call(Vector2(gx2, DECK + 0.2)), DistrictStyle.ink(0.2), lw)
 		gx2 += 0.25
-	pen.draw_line(P.call(Vector2(X0, DECK + 0.24)), P.call(Vector2(X1, DECK + 0.24)), Pal.ink(0.3), lw)
+	pen.draw_line(P.call(Vector2(X0, DECK + 0.24)), P.call(Vector2(X1, DECK + 0.24)), DistrictStyle.ink(0.3), lw)
 	pen.draw_line(P.call(Vector2(X0, DECK)), P.call(Vector2(X1, DECK)), edge, 1.4 * lw)
-	pen.draw_line(P.call(Vector2(X0, DECK_B)), P.call(Vector2(X1, DECK_B)), Pal.ink(0.4), lw)
+	pen.draw_line(P.call(Vector2(X0, DECK_B)), P.call(Vector2(X1, DECK_B)), DistrictStyle.ink(0.4), lw)
 	# the stringer's bolts and the hangers' plates every 3 m
 	if z * m >= 10.0:
 		var bx := X0 + 1.5
 		while bx < X1:
-			pen.draw_circle(P.call(Vector2(bx - 0.3, DECK + 0.32)), 0.04 * m, Pal.ink(0.5))
-			pen.draw_circle(P.call(Vector2(bx + 0.3, DECK + 0.32)), 0.04 * m, Pal.ink(0.5))
+			pen.draw_circle(P.call(Vector2(bx - 0.3, DECK + 0.32)), 0.04 * m, DistrictStyle.ink(0.5))
+			pen.draw_circle(P.call(Vector2(bx + 0.3, DECK + 0.32)), 0.04 * m, DistrictStyle.ink(0.5))
 			bx += 3.0
 	# ---- the railing on the walkway's front edge: top rail, knee rail, posts, toe board
 	var rail_y := DECK - 1.05
-	pen.draw_rect(Rect2(P.call(Vector2(X0, DECK - 0.14)), Vector2(X1 - X0, 0.14) * m), steel2)
-	pen.draw_line(P.call(Vector2(X0, rail_y)), P.call(Vector2(X1, rail_y)), Pal.ink(0.55), maxf(1.0, 0.07 * m))
-	pen.draw_line(P.call(Vector2(X0, DECK - 0.55)), P.call(Vector2(X1, DECK - 0.55)), Pal.ink(0.3), maxf(1.0, 0.04 * m))
+	if not DistrictStyle.solid_rect(pen, Rect2(P.call(Vector2(X0, DECK - 0.14)), Vector2(X1 - X0, 0.14) * m), steel2, m):
+		pen.draw_rect(Rect2(P.call(Vector2(X0, DECK - 0.14)), Vector2(X1 - X0, 0.14) * m), steel2)
+	pen.draw_line(P.call(Vector2(X0, rail_y)), P.call(Vector2(X1, rail_y)), DistrictStyle.ink(0.55), maxf(1.0, 0.07 * m))
+	pen.draw_line(P.call(Vector2(X0, DECK - 0.55)), P.call(Vector2(X1, DECK - 0.55)), DistrictStyle.ink(0.3), maxf(1.0, 0.04 * m))
 	var px := X0 + 0.1
 	while px < X1 + 0.01:
-		pen.draw_line(P.call(Vector2(px, rail_y)), P.call(Vector2(px, DECK - 0.14)), Pal.ink(0.42), maxf(1.0, 0.06 * m))
+		pen.draw_line(P.call(Vector2(px, rail_y)), P.call(Vector2(px, DECK - 0.14)), DistrictStyle.ink(0.42), maxf(1.0, 0.06 * m))
 		px += 1.5
 	# the walkway's right end: an end post, the rail turning down, a yellow-black edge where it stops
-	pen.draw_line(P.call(Vector2(X1, rail_y)), P.call(Vector2(X1, DECK_B)), Pal.ink(0.6), maxf(1.0, 0.08 * m))
+	pen.draw_line(P.call(Vector2(X1, rail_y)), P.call(Vector2(X1, DECK_B)), DistrictStyle.ink(0.6), maxf(1.0, 0.08 * m))
 	for k in 4:
 		var hy := DECK + 0.05 + k * 0.18
 		pen.draw_line(P.call(Vector2(X1 - 0.02, hy)), P.call(Vector2(X1 - 0.02, hy + 0.09)), Pal.heat(0.6, 0.9), maxf(1.0, 0.1 * m))
@@ -177,7 +180,7 @@ func _draw_gallery() -> void:
 	while lx > X0:
 		var on_k := clampf((lit * (X1 - X0 + 6.0) - (X1 - lx)) / 3.0, 0.0, 1.0)
 		var lamp := Rect2(P.call(Vector2(lx - 0.45, DECK - 0.1)), Vector2(0.9, 0.06) * m)
-		pen.draw_rect(lamp, Color(0.9, 0.96, 1.0, 0.95).lerp(Pal.ink(0.16), 1.0 - on_k))
+		pen.draw_rect(lamp, Color(0.9, 0.96, 1.0, 0.95).lerp(DistrictStyle.ink(0.16), 1.0 - on_k))
 		if on_k > 0.01:
 			pen.draw_polygon(PackedVector2Array([lamp.position, lamp.position + Vector2(lamp.size.x, 0.0), lamp.position + Vector2(lamp.size.x + 0.5 * m, -1.3 * m), lamp.position + Vector2(-0.5 * m, -1.3 * m)]),
 				PackedColorArray([Color(0.85, 0.92, 1.0, 0.07 * on_k), Color(0.85, 0.92, 1.0, 0.07 * on_k), Color(0.85, 0.92, 1.0, 0.0), Color(0.85, 0.92, 1.0, 0.0)]))
@@ -189,17 +192,17 @@ func _draw_gallery() -> void:
 	# ---- the arrival lane: the glass on its left, the spur's deck girder under it
 	var lane := Rect2(P.call(Vector2(LANE_X - 0.12, GLASS_B)), Vector2(0.12, LANE_FLOOR - GLASS_B) * m)
 	pen.draw_rect(lane, Color(0.42, 0.62, 0.74, 0.1))
-	pen.draw_line(P.call(Vector2(LANE_X, GLASS_B)), P.call(Vector2(LANE_X, LANE_FLOOR)), Pal.ink(0.55), maxf(1.0, 0.06 * m))
+	pen.draw_line(P.call(Vector2(LANE_X, GLASS_B)), P.call(Vector2(LANE_X, LANE_FLOOR)), DistrictStyle.ink(0.55), maxf(1.0, 0.06 * m))
 	var my := GLASS_B + 1.6
 	while my < LANE_FLOOR - 0.5:
-		pen.draw_line(P.call(Vector2(LANE_X - 0.25, my)), P.call(Vector2(LANE_X + 0.05, my)), Pal.ink(0.4), maxf(1.0, 0.05 * m))
+		pen.draw_line(P.call(Vector2(LANE_X - 0.25, my)), P.call(Vector2(LANE_X + 0.05, my)), DistrictStyle.ink(0.4), maxf(1.0, 0.05 * m))
 		my += 2.0
 	pen.draw_line(P.call(Vector2(LANE_X - 0.06, GLASS_B + 0.6)), P.call(Vector2(LANE_X - 0.06, GLASS_B + 2.2)), Color(1, 1, 1, 0.16), lw)
 	pen.draw_rect(Rect2(P.call(Vector2(LANE_X, LANE_FLOOR)), Vector2(60.0 - LANE_X, 0.45) * m), steel)
 	pen.draw_line(P.call(Vector2(LANE_X, LANE_FLOOR)), P.call(Vector2(60.0, LANE_FLOOR)), edge, 1.4 * lw)
-	pen.draw_line(P.call(Vector2(LANE_X, LANE_FLOOR + 0.45)), P.call(Vector2(60.0, LANE_FLOOR + 0.45)), Pal.ink(0.35), lw)
+	pen.draw_line(P.call(Vector2(LANE_X, LANE_FLOOR + 0.45)), P.call(Vector2(60.0, LANE_FLOOR + 0.45)), DistrictStyle.ink(0.35), lw)
 	var sx := LANE_X + 0.6
 	while sx < 59.6:
-		pen.draw_line(P.call(Vector2(sx, LANE_FLOOR + 0.05)), P.call(Vector2(sx + 0.45, LANE_FLOOR + 0.4)), Pal.ink(0.16), lw)
+		pen.draw_line(P.call(Vector2(sx, LANE_FLOOR + 0.05)), P.call(Vector2(sx + 0.45, LANE_FLOOR + 0.4)), DistrictStyle.ink(0.16), lw)
 		sx += 0.9
 	pen.flush()

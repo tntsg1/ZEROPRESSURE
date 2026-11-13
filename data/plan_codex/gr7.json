@@ -1,0 +1,181 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "gr7",
+	"steps": [
+		{
+			"ctrl": "V-C01",
+			"do": "w",
+			"gap": 0.3,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAS-AB",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "P-C01",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAS-D",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "COOL-E",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "FUEL-F",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-G",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-STOP",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-B",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "E-D02",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PWR-EXT",
+			"do": "w",
+			"gap": 8.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "DR-CD",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [
+				{
+					"key": "GAS-D",
+					"kind": "pressure",
+					"val": 4.8
+				}
+			],
+			"value": true
+		},
+		{
+			"ctrl": "G-LOCAL",
+			"do": "w",
+			"gap": 0.2,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "TK-B1",
+			"do": "h",
+			"gap": 9.4,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "TK-B2",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "EM-A",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "GAS-AB",
+			"do": "h",
+			"gap": 10.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "P-C01",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "GAS-D",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "COOL-E",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "FUEL-F",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "TK-B1",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "TK-B2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "EM-A",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		}
+	]
+}

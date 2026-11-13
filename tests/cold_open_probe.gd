@@ -7,6 +7,7 @@ extends "res://tests/guide_check.gd"
 func _initialize() -> void:
 	Career.path = "user://zp_test_coldprobe_career.json"
 	SaveGame.path = "user://zp_test_coldprobe_save.json"
+	SaveGame.train_path = "user://zp_test_coldprobe_training.json"   # never the player's training file
 	SaveGame.allow_test = true
 	if DisplayServer.get_name() != "headless":
 		root.add_child(preload("res://tests/test_window.gd").new())

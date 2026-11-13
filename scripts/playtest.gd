@@ -94,7 +94,8 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var stamp := Time.get_datetime_string_from_system().replace(":", "-").replace("T", "_")
 	dir = "%s/%s" % [root, stamp]
-	DirAccess.make_dir_recursive_absolute(dir)
+	if not SaveGame.forbidden(dir):
+		DirAccess.make_dir_recursive_absolute(dir)
 	_write()
 
 
@@ -311,6 +312,8 @@ static func _save_shot(img: Image, path: String) -> void:
 	var h := int(round(float(img.get_height()) * SHOT_W / float(img.get_width())))
 	img.resize(SHOT_W, h, Image.INTERPOLATE_BILINEAR)
 	var out := _srgb8(img)
+	if SaveGame.forbidden(path):
+		return
 	out.save_jpg(path, 0.85)
 
 
@@ -510,6 +513,8 @@ static func _esc(s: String) -> String:
 
 
 func _write() -> void:
+	if SaveGame.forbidden(dir + "/entries.json"):
+		return
 	var f := FileAccess.open(dir + "/entries.json", FileAccess.WRITE)
 	if f != null:
 		f.store_string(JSON.stringify(entries, "  "))
@@ -548,6 +553,8 @@ func _write() -> void:
 			h.append("</table>")
 		h.append("</div>")
 	h.append("</body></html>")
+	if SaveGame.forbidden(dir + "/report.html"):
+		return
 	var r := FileAccess.open(dir + "/report.html", FileAccess.WRITE)
 	if r != null:
 		r.store_string("\n".join(h))

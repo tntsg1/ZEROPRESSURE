@@ -1,0 +1,326 @@
+{
+	"by": "tools/gen_plan_codex.sh",
+	"made": "2026-11-12",
+	"ship": "tb180",
+	"steps": [
+		{
+			"ctrl": "BRK-C",
+			"do": "w",
+			"gap": 0.2,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "BRK",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-AU",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-AL",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-BU",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "G-BL",
+			"do": "h",
+			"gap": 0.1,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-M",
+			"do": "w",
+			"gap": 0.1,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PRB",
+			"do": "h",
+			"gap": 16.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "K-B",
+			"do": "w",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PB-1",
+			"do": "h",
+			"gap": 1.3,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PB-2",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PHE",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "PO2",
+			"do": "h",
+			"gap": 1.3,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "WATER-A-D",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": true
+		},
+		{
+			"ctrl": "TEN",
+			"do": "w",
+			"gap": 54.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-AU",
+			"do": "h",
+			"gap": 0.7,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-AL",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-BU",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "G-BL",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PRB",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PB-1",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PB-2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PHE",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "PO2",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"ctrl": "WATER-A-D",
+			"do": "h",
+			"gap": 0.0,
+			"pre": [],
+			"value": false
+		},
+		{
+			"do": "cut",
+			"key": "TH-1",
+			"origin": "TH-1",
+			"pl": [
+				[
+					1224.0,
+					-7.19999694824219
+				],
+				[
+					1224.0,
+					7.19999694824219
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
+		},
+		{
+			"do": "cut",
+			"key": "TH-2",
+			"origin": "TH-2",
+			"pl": [
+				[
+					2100.0,
+					-7.19999694824219
+				],
+				[
+					2100.0,
+					7.19999694824219
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
+		},
+		{
+			"do": "cut",
+			"key": "TH-3",
+			"origin": "TH-3",
+			"pl": [
+				[
+					2940.0,
+					-7.19999694824219
+				],
+				[
+					2940.0,
+					7.19999694824219
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
+		},
+		{
+			"do": "cut",
+			"key": "TH-4",
+			"origin": "TH-4",
+			"pl": [
+				[
+					3744.0,
+					-7.19999694824219
+				],
+				[
+					3744.0,
+					7.19999694824219
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
+		},
+		{
+			"do": "cut",
+			"key": "TH-5",
+			"origin": "TH-5",
+			"pl": [
+				[
+					4932.0,
+					-7.19999694824219
+				],
+				[
+					4932.0,
+					7.19999694824219
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
+		},
+		{
+			"do": "cut",
+			"key": "TH-6",
+			"origin": "TH-6",
+			"pl": [
+				[
+					5772.0,
+					-7.19999694824219
+				],
+				[
+					5772.0,
+					7.19999694824219
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
+		},
+		{
+			"do": "cut",
+			"key": "TH-7",
+			"origin": "TH-7",
+			"pl": [
+				[
+					6612.0,
+					-7.19999694824219
+				],
+				[
+					6612.0,
+					7.19999694824219
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
+		},
+		{
+			"do": "cut",
+			"key": "TH-8",
+			"origin": "TH-8",
+			"pl": [
+				[
+					7452.0,
+					-7.19999694824219
+				],
+				[
+					7452.0,
+					7.19999694824219
+				]
+			],
+			"pre": [],
+			"rooms": [],
+			"seg": true
+		}
+	]
+}

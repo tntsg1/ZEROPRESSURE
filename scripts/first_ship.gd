@@ -414,6 +414,9 @@ func rest_text() -> String:
 			scrap += 1
 	lines.append(w("· 完整设备还剩 %d 件：切开固定座，整件送设备口（比口宽的送接收架）", "· %d MACHINES LEFT: CUT THEIR MOUNTS, WHOLE TO THE EQUIPMENT MOUTH (WIDER: THE RACK)") % equip)
 	lines.append(w("· 船壳和碎料还剩 %d 件：切小块送熔炉", "· %d PIECES OF HULL AND SCRAP: CUT SMALL, TO THE FURNACE") % scrap)
+	# 双重教程 (owner 2026-11-12, "b"): what the base course's first four lessons taught and the steps
+	# above did not, said here the moment it is of use (no pop-up): bolts, the hazard mouth, the view
+	lines.append_array(rest_tips())
 	var next := ""
 	if live:
 		next = w("先断电", "the power first")
@@ -427,6 +430,30 @@ func rest_text() -> String:
 	return "\n".join(lines)
 
 
+# the rest step's situational lines: a bolt still holding something, a hazard still aboard, and a while
+# into the step the view keys (the base course taught them; the career's course starts after them now)
+func rest_tips() -> Array:
+	var out: Array = []
+	var k := Keys.label
+	var bolts := false
+	for j in game.world.joints:
+		if j.alive and str(j.type) == "bolt":
+			bolts = true
+			break
+	if bolts:
+		out.append(w("· 螺栓接头：按 %s 维护工具，左键对准螺栓拧下来，零件不伤", "· BOLTED JOINTS: %s FOR THE WRENCH, CLICK A BOLT TO UNDO IT, NOTHING DAMAGED") % k.call("tool4"))
+	var hazard := false
+	for p in game.world.pieces.values():
+		if not p.gone and str(p.hazard) != "":
+			hazard = true
+			break
+	if hazard:
+		out.append(w("· 电池、化学品这类危险品送危险品口，别扔进熔炉", "· BATTERIES, CHEMICALS AND OTHER HAZARDS GO TO THE HAZARD MOUTH, NEVER THE FURNACE"))
+	if step_t > 8.0:
+		out.append(w("· 视角：按住 %s 拉远看全船，按住右键拖动看四周；按住 %s 悬停，%s 开关飞行稳定", "· VIEW: HOLD %s TO SEE THE WHOLE SHIP, HOLD RIGHT MOUSE AND DRAG TO LOOK ROUND; HOLD %s TO HOVER, %s TOGGLES FLIGHT ASSIST") % [k.call("overview"), k.call("hold"), k.call("assist")])
+	return out
+
+
 func _process(dt: float) -> void:
 	# 128 号 第 7 段 (user 2026-11-09): the job is settling — the card folds away, off the review
 	if card != null and card.visible and game != null and game.ended:
@@ -437,6 +464,8 @@ func _process(dt: float) -> void:
 	# right-aligned by its real width (the larger text widened it past the screen edge)
 	if card != null and card.visible:
 		card.position.x = get_viewport().get_visible_rect().size.x - card.size.x - 22.0
+		# below the function keys (公测反馈 2026-11-12: they sat on its text)
+		card.position.y = preload("res://scripts/hud_keys.gd").below(game, 124.0)
 	if done or game == null or game.state != "play" or get_tree().paused:
 		queue_redraw()
 		return

@@ -69,7 +69,7 @@ static func order_repair(id: String, with_parts: bool) -> String:
 	d.repaired_pending = pend
 	# 82 号: a repair with a plan takes as long as its steps add up to, not by its price
 	var t := WorksPlan.total(id) if WorksPlan.PLANS.has(id) else duration(cost)
-	d.works = {"id": id, "kind": "repair", "with_parts": with_parts, "total": t, "left": t}
+	d.works = {"id": id, "kind": "repair", "with_parts": with_parts, "total": t, "left": t, "jr": token()}
 	if not Career.save():
 		Career.data = before
 		return Txt.t("gr_save_failed")
@@ -98,7 +98,7 @@ static func order_port(zone: String, with_parts: bool) -> String:
 	pend.erase(tag)
 	d.repaired_pending = pend
 	var t := duration(cost)
-	d.works = {"id": tag, "kind": "port", "zone": zone, "stage": n, "with_parts": with_parts, "total": t, "left": t}
+	d.works = {"id": tag, "kind": "port", "zone": zone, "stage": n, "with_parts": with_parts, "total": t, "left": t, "jr": token()}
 	if not Career.save():
 		Career.data = before
 		return Txt.t("gr_save_failed")
@@ -123,7 +123,7 @@ static func _order_bill(zone: String) -> String:
 		_revive(zone, n)
 		Career.save()
 		return ""
-	d.works = {"id": tag, "kind": "port", "zone": zone, "stage": n, "bill": true, "total": secs, "left": secs}
+	d.works = {"id": tag, "kind": "port", "zone": zone, "stage": n, "bill": true, "total": secs, "left": secs, "jr": token()}
 	if not Career.save():
 		return Txt.t("gr_save_failed")
 	return ""
@@ -169,8 +169,15 @@ static func advance(dt: float, drone := Vector2.INF) -> bool:
 	return finish()
 
 
-# the job done: the facility or the stage is the berth's; the completion is shown in the berth
-static func finish() -> bool:
+# one order's own token: its works journal is read back only for it (Career.keep_works)
+static func token() -> String:
+	return "%d-%d" % [int(Time.get_unix_time_from_system()), randi() % 1000000]
+
+
+# the job done: the facility or the stage is the berth's; the completion is shown in the berth.
+# pending false: not put on the "repaired" list (the crew shows the completion itself — it used to
+# take it off again and save the whole career a second time, 2026-11-12)
+static func finish(pending: bool = true) -> bool:
 	var j := current()
 	if j.is_empty():
 		return false
@@ -184,7 +191,7 @@ static func finish() -> bool:
 		d.upgrades[str(j.id)] = 1
 	if str(j.kind) == "port" and j.get("bill", false):
 		_revive(str(j.zone), int(j.stage))
-	else:
+	elif pending:
 		var pend: Array = d.get("repaired_pending", [])
 		pend.append(str(j.id))
 		d.repaired_pending = pend

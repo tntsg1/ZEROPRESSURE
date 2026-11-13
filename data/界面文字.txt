@@ -9380,8 +9380,8 @@
 英：1–4 APPS · ARROWS CHOOSE · Enter CONFIRM · O SETTINGS · Esc HOME / BACK TO THE BERTH
 
 [txt:tm_tile_training]
-中：训练舱 TS-1 · 六课
-英：TS-1 · SIX LESSONS
+中：训练舱 TS-1 · 九课
+英：TS-1 · NINE LESSONS
 
 [txt:tm_next_first]
 中：主线合同 · 第一单
@@ -9536,8 +9536,8 @@
 英：INSTALLMENT AND INTEREST
 
 [txt:tm_training_d]
-中：回训练舱 TS-1 再上一遍六课，随时可以退出回到泊位
-英：BACK TO TS-1 FOR THE SIX LESSONS; LEAVE ANY TIME
+中：回训练舱 TS-1 再上一遍九课，随时可以退出回到泊位
+英：BACK TO TS-1 FOR THE NINE LESSONS; LEAVE ANY TIME
 
 [txt:tm_rep_next]
 中：距下一级还差 %d 点

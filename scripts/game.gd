@@ -27,6 +27,7 @@ var liner                     # a liner's escape pods and observation glass (PS-
 var boxbeam                   # a container wall that is the ship's beam (CF-90), scripts/boxbeam.gd
 var sail                      # a light sail held flat by its stays (SA-200), scripts/sail.gd
 var reactor                   # a shut-down reactor's dose field (NR-95), scripts/reactor.gd
+var hud_center                # 2026-11-12 HUD 中央交互 (scripts/hud_center.gd)
 var anti                      # AX-40's antimatter trap: no power, it annihilates (scripts/antimatter.gd)
 var softshell                 # inflatable bags on a rigid spine (IH-55), scripts/softshell.gd
 var train                     # a train of modules on couplers (MT-140), scripts/train.gd
@@ -142,8 +143,9 @@ var story: Story
 var exam: Exam
 var settings_panel: SettingsPanel
 var arm: RecoveryArm
-var hauler: Hauler
-var hauler2: Hauler             # the second hauling drone (roadmap 4.4)
+var hauler_fleet: Array = []    # the hauling drones aboard, first to fifth (Hauler.IDS)
+var hauler: Hauler              # hauler_fleet[0] (kept for the many callers that ask for "the" hauler)
+var hauler2: Hauler             # hauler_fleet[1]
 var crane: Crane                # the heavy crane (roadmap 4.4)
 var crane_wreck: CraneWreck     # 106 号: the dead one, until it is mended
 var keepout: Array = []         # Rect2 (px): keep-out zones the operator set; no machine goes in
@@ -626,6 +628,10 @@ func _ready() -> void:
 	hud = Hud.new()
 	hud.game = self
 	add_child(hud)
+	# 2026-11-12 HUD 中央交互: the hover outline and tag, the device card
+	hud_center = preload("res://scripts/hud_center.gd").new()
+	hud_center.game = self
+	add_child(hud_center)
 	Look.mark("hud")
 	codex = Codex.new()
 	codex.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -635,19 +641,19 @@ func _ready() -> void:
 	codex_hud.game = self
 	add_child(codex_hud)
 	# the industrial recovery arm on the boom, once the berth has bought it
-	if has_upgrade("hauler"):
-		hauler = Hauler.new()
-		hauler.game = self
-		hauler.process_mode = Node.PROCESS_MODE_PAUSABLE
-		add_child(hauler)
-	if hauler != null and has_upgrade("hauler2"):
-		hauler2 = Hauler.new()
-		hauler2.game = self
-		hauler2.who = "hauler2"
-		hauler2.home_off = Vector2(2.2, -1.6)
-		hauler2.queue = hauler.queue
-		hauler2.process_mode = Node.PROCESS_MODE_PAUSABLE
-		add_child(hauler2)
+	# the hauling drones (2026-11-12: up to five, each its own airframe): each one needs the one
+	# before it; they share one list of marks
+	for i in Hauler.IDS.size():
+		if not has_upgrade(Hauler.IDS[i]):
+			break
+		var h := Hauler.new()
+		h.game = self
+		h.setup(i, hauler_fleet[0].queue if i > 0 else [])
+		h.process_mode = Node.PROCESS_MODE_PAUSABLE
+		add_child(h)
+		hauler_fleet.append(h)
+	hauler = hauler_fleet[0] if hauler_fleet.size() > 0 else null
+	hauler2 = hauler_fleet[1] if hauler_fleet.size() > 1 else null
 	if career() and Career.usable():
 		consoles = Consoles.new()
 		consoles.game = self
@@ -1300,6 +1306,9 @@ func _unhandled_input(ev: InputEvent) -> void:
 		if k == KEY_ESCAPE:
 			if menu_open and hud.menu_page != "":
 				hud.menu_page = ""
+				return
+			# 2026-11-12 HUD 中央交互: an open device card goes first (scripts/ui_back.gd site_back)
+			if not menu_open and not contract_open and not ring_armed and preload("res://scripts/ui_back.gd").site_back():
 				return
 			if ring_armed:
 				arm_ring(false)
@@ -3317,7 +3326,7 @@ func settle_report() -> Dictionary:
 # 108 号: what this job did with each method (the showcase's settlement compares it)
 func method_uses() -> Dictionary:
 	var pl: Dictionary = gear.placed if gear != null else {}
-	return {"anchor": int(pl.get("anchor", 0)), "pump": int(pl.get("pump", 0)), "probe": int(pl.get("probe", 0)), "prop": int(pl.get("prop", 0)),
+	return {"anchor": int(pl.get("anchor", 0)), "pump": int(pl.get("pump", 0)), "probe": int(pl.get("probe", 0)),
 		"furnace": gear.furnace_n if gear != null else 0, "equip_v": gear.equip_v if gear != null else 0.0,
 		"arm": int(ops.get("arm_haul", 0)), "crane": int(ops.get("crane_lift", 0)), "plan": plan.machine_steps if plan != null else 0}
 
@@ -3451,6 +3460,17 @@ static func _to_ts1() -> void:
 	start_ship = "ts1"
 	contract = {}
 	SaveGame.load_requested = SaveGame.exists(SaveGame.train_path)
+	# 双重教程 (owner 2026-11-12, "b"): after TUG-001 only the lessons it did not teach, a bridging card
+	# first (scripts/ts1_bridge.gd); the full course from the menu is unchanged
+	if TS1_ADV:
+		course_start = TS1_ADV_FROM
+
+
+# 双重教程: the career's course starts at this lesson (the first four repeat the cold open, the
+# prologue and TUG-001's guide); Tutorial.setup reads course_start once and clears it
+static var TS1_ADV := true
+const TS1_ADV_FROM := "TUT_03"
+static var course_start := ""
 
 
 static func _did_first_ship() -> bool:
@@ -5661,6 +5681,12 @@ func has_upgrade(id: String) -> bool:
 	# AX-40: the ship comes with what its job cannot do without (the crane for its 9 t trap)
 	if ship.get("kit_lend", {}).has(id):
 		return true
+	# 2026-11-12 (user, CF-51: "不是有好多无人机吗？我怎么才两个，而且我升级都升了呀"): the contract's kit is
+	# what the career had when it was signed; hauling drones bought since are the berth's, and they work
+	# this hulk too — read from the career as it is now
+	if id in Hauler.IDS and career() and not dev_job() and not training and exam == null and Career.usable() \
+			and Career.data.get("upgrades", {}).has(id):
+		return true
 	return method_kit().has(id) or (bot != null and bot.get("kit", {}).has(id))
 
 
@@ -5807,7 +5833,9 @@ func _operate(c, at: Vector2) -> bool:
 				hint("no_power")
 				return false
 			var dp = world.tag(c.target)
-			if dp == null:
+			# a door cut loose or cut up (world._undoor) opens and shuts no more
+			if dp == null or not dp.door:
+				sfx.play("deny")
 				return false
 			dp.door_open = not dp.door_open
 			c.state = dp.door_open
@@ -5874,7 +5902,7 @@ func _operate(c, at: Vector2) -> bool:
 				return false
 			for t in hc.get("doors", []):
 				var hp = world.tag(t)
-				if hp != null and hp.body == null:
+				if hp != null and hp.body == null and hp.door:
 					hp.door_open = not hp.door_open
 			sfx.play("hatch")
 			shake(0.2)
@@ -5951,11 +5979,11 @@ func nav_grid():
 	return _nav
 
 
-# the hauling drones aboard (one or two)
+# the hauling drones aboard (none to five)
 func haulers() -> Array:
 	var out: Array = []
-	for h in [hauler, hauler2]:
-		if h != null:
+	for h in hauler_fleet:
+		if is_instance_valid(h):
 			out.append(h)
 	return out
 

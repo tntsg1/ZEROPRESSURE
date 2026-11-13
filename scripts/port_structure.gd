@@ -561,7 +561,7 @@ func _interior(zone: String, r: Rect2, m: float, lw: float, font: Font, z: float
 	if zone in ["process", "cargo"]:
 		return
 	# 六区内部质感: the hall is scripts/district_style.gd's, under the machines (district_interiors.gd)
-	if DistrictStyle.on() and zone == "tug":
+	if DistrictStyle.on() and (zone == "tug" or (zone in ["trade", "power"] and DistrictStyle.halls)):
 		return
 	draw_rect(r, Color(0.03, 0.034, 0.04, 0.55))
 	var gx := r.position.x

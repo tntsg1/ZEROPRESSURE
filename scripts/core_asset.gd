@@ -35,8 +35,8 @@ const SHIPS := {
 				"risks": ["不管顺序直接切：小船的设备照样能卖，但船壳一开，$900,000 的整船溢价就没了", "Cut it as it comes: its equipment still sells, but once its hull is open the $900,000 premium is gone"]},
 		],
 	},
-	# 97 号 (user 2026-10-28: all 26 containers, by bay on the board; ends inwards against props
-	# first; a bending bar over each bay)
+	# 97 号 (user 2026-10-28: all 26 containers, by bay on the board; a bending bar over each bay)
+	# (the props approach was removed 2026-11-12 with the prop method)
 	"cf90": {
 		"name": ["货柜墙", "THE CONTAINER WALL"],
 		"units": ["7 列 26 箱，含居住舱、低温箱、危险品箱", "26 CONTAINERS IN 7 BAYS, A HAB, A CRYO BOX AND A DG BOX AMONG THEM"],
@@ -44,8 +44,6 @@ const SHIPS := {
 		"methods": [
 			{"key": "careful", "name": ["两端往中间逐层卸", "ENDS INWARDS"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
 				"risks": ["先松四根拉杆的花篮螺丝；每箱 6–9 t 要吊车；从两端往中间、每列从上往下，看着每列上方的弯曲读数走：外侧还满就卸空里侧，那一列会折弯，外侧的箱全被砸坏", "Slacken the four rods' turnbuckles first; each box is 6–9 t, crane it; from the ends inwards, each bay from the top, by the bending bar over it: empty an inner bay with the outer ones full and it kinks, every box beyond it damaged"]},
-			{"key": "props", "name": ["撑杆抢里侧", "PROPS, INNER BAYS FIRST"], "minutes": [0, 0], "lo": 0.9, "hi": 1.0,
-				"risks": ["两根临时撑杆顶住外侧的列，里侧的箱就能先卸：撑杆额定 60 t（约两列满箱），撑得太靠里会超载、弯了再折；撤撑杆之前外侧要先卸掉，不然空掉的列当场折弯", "Two temporary props under the outer bays and the inner bays can come off first: a prop is rated 60 t (about two full bays), set too far in it bows and buckles; clear the outer bays before you take a prop away, or the empty bay kinks at once"]},
 		],
 	},
 	# 96 号 (user 2026-10-28: the ore and the crushing line together; the gates slowly against
@@ -686,7 +684,7 @@ const CAUSES := {
 	"lurch": [["撬起撞门", "LURCHED"], ["船头侧的锁先开了、船尾还锁着：小船撬起撞上船首门，溢价砍半、设备磕坏", "a bow-side lock let go with one aft still holding: it lurched into the bow door, half the premium gone, its fittings knocked"], ["托架锁从船尾往船首依次解：CL-1 → CL-4", "The cradle locks from the stern forward: CL-1 → CL-4"]],
 	"not_whole": [["船壳切开", "HULL CUT"], ["切到或拆下了小船的船壳，整船溢价没了", "its hull cut or taken off: no longer whole, the premium gone"], ["小船的船壳一刀都别碰：只切载舰的结构", "Never touch its hull: cut only the carrier's structure"]],
 	# CF-90's wall
-	"kink": [["箱梁折弯", "WALL KINKED"], ["外侧还满着就卸空了里侧一列，箱梁折弯，外侧的箱被砸坏", "an inner bay emptied with the bays beyond it full: the wall kinked, the boxes beyond it damaged"], ["从两端往中间卸；要先卸里侧，先用撑杆顶住外侧", "From the ends inwards; to take an inner bay first, prop the outer bays"]],
+	"kink": [["箱梁折弯", "WALL KINKED"], ["外侧还满着就卸空了里侧一列，箱梁折弯，外侧的箱被砸坏", "an inner bay emptied with the bays beyond it full: the wall kinked, the boxes beyond it damaged"], ["从两端往中间卸，每列从上往下", "From the ends inwards, each bay from the top"]],
 	"sag": [["塌箱", "STACK SAGGED"], ["从一列下面先抽了箱，上面的箱压下来受损", "a box taken from under others: the stack above sagged onto it"], ["每列从上往下卸", "Each bay from the top down"]],
 	"rod_snap": [["拉杆弹断", "ROD WHIPPED"], ["拉杆还绷着就切了，弹开砸坏了箱子", "a rod cut still tight whipped into the boxes"], ["切拉杆之前先松它的花篮螺丝", "Slacken a rod's turnbuckle before you cut it"]],
 	# M-14's hopper and line
@@ -1788,8 +1786,6 @@ const BOT_RUNS := {
 	"cf90": {
 		"careful": {"lo": 104500.0, "hi": 104500.0, "minutes": [46, 47],
 			"note": ["实测（有吊车）：整船收入 $163,355，0 事故；机器人有 5 箱飘走没送进接收口，人手可以全拿", "measured (crane): $163,355 in, no incidents; the bot let five boxes drift off, a hand gets them all"]},
-		"props": {"lo": 98000.0, "hi": 98000.0, "minutes": [47, 47],
-			"note": ["实测（有吊车，撑杆在第 2、6 列下）：整船收入 $166,852，0 事故，撑杆没超载；用时和逐层卸差不多，好处是可以先拿里侧的箱", "measured (crane, props under bays 2 and 6): $166,852 in, no incidents, no prop overloaded; about as long as ends-inwards, the gain is taking the inner bays first"]},
 	},
 	"m14": {
 		"careful": {"lo": 134169.0, "hi": 134169.0, "minutes": [23, 24],
@@ -1894,14 +1890,13 @@ static func _ore_board(g, rows: Array, warn: Array) -> float:
 
 # ---------------------------------------------------------------- 97 号: a container wall (CF-90)
 
-# a row a bay: its boxes on the wall, its bending (or its prop, or its kink), what its boxes are worth
+# a row a bay: its boxes on the wall, its bending (or its kink), what its boxes are worth
 static func _box_board(g) -> Dictionary:
 	var bx = g.boxbeam
 	var sup := int(bx.cfg.get("support", 0))
 	var rows: Array = []
 	var warn: Array = []
 	var worth := 0.0
-	var pr: Array = bx._propped()
 	for b in bx.cfg.bays.size():
 		var bay: Array = bx.cfg.bays[b]
 		var v := 0.0
@@ -1920,21 +1915,15 @@ static func _box_board(g) -> Dictionary:
 			state = w("船坞夹持", "HELD BY THE BERTH")
 		elif bent:
 			state = w("已折弯", "KINKED")
-		elif pr.has(b):
-			state = w("撑杆 %.0f t", "PROP %.0f t") % bx.prop_load(b)
 		else:
 			state = w("弯曲 %d%%", "BEND %d%%") % int(round(bd * 100.0))
 		rows.append({"name": w("第 %d 列", "BAY %d") % (b + 1), "text": w("%d/%d 箱 · %s", "%d/%d · %s") % [bx.fill(b), bay.size(), state],
 			"right": Pal.money(v), "grade": v / maxf(whole, 1.0), "alert": bent or bd > 0.85, "done": bx.fill(b) == 0,
-			"fix": "" if bent else w("先卸它外侧的箱，或在这一列下放撑杆", "clear the bays outside it first, or prop this one")})
+			"fix": "" if bent else w("先卸它外侧的箱", "clear the bays outside it first")})
 		if not bent and bd > 0.85 and b != sup:
 			warn.append(w("第 %d 列弯曲 %d%%：再卸它里侧的箱就会折", "BAY %d AT %d%%: TAKE MORE FROM INSIDE IT AND IT KINKS") % [b + 1, int(round(bd * 100.0))])
 	if not bx.unsafe().is_empty():
 		warn.append(w("拉杆还绷着：先松花篮螺丝再切", "RODS STILL TIGHT: SLACKEN THE TURNBUCKLES BEFORE YOU CUT"))
-	if g.gear != null:
-		for u in g.gear.props():
-			if float(u.get("over", 0.0)) > 0.0:
-				warn.append(w("第 %d 列下的撑杆超载 %.0f t：要折了", "THE PROP UNDER BAY %d IS AT %.0f t: IT WILL BUCKLE") % [int(u.bay) + 1, float(u.load)])
 	var tags := _units(g)
 	var recent: Array = []
 	var mine: Array = g.devalued.filter(func(d): return tags.has(str(d[1])) and EQUIP_DV.has(str(d[0])))
@@ -1979,7 +1968,7 @@ static func _box_review(g) -> Dictionary:
 		by[c].money = float(by[c].money) + float(d[2])
 		by[c].n = int(by[c].n) + 1
 	var first := w("保住的货柜值 %s（满价 %s）；已送走 %s", "The boxes kept are worth %s (whole %s); %s sent") % [Pal.money(rolled), Pal.money(f), Pal.money(got)]
-	var clean := w("一箱没坏。下次可以试试撑杆：顶住外侧，先抢里侧的箱", "Not a box damaged. Next time try the props: hold the outer bays, take the inner ones first") if got > 0.0 else w("货柜还在墙上：送进设备口才算钱", "The boxes are still on the wall: they pay only once in a mouth")
+	var clean := w("一箱没坏。", "Not a box damaged.") if got > 0.0 else w("货柜还在墙上：送进设备口才算钱", "The boxes are still on the wall: they pay only once in a mouth")
 	return _finish_review(g, f, rolled, got, units, by, first, clean, clean)
 
 

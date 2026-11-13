@@ -10,7 +10,6 @@ var job := {}
 var show_ledger := false
 var kit := {}
 var paced := false
-var props := false
 var every := 600   # every=N: a progress line every N frames
 
 
@@ -31,8 +30,6 @@ func _initialize() -> void:
 			stars = int(a.substr(6))
 		elif a == "paced":
 			paced = true
-		elif a == "props":
-			props = true
 		elif a.begins_with("grid="):
 			grid_stage = int(a.substr(5))
 		elif a.begins_with("every="):
@@ -68,7 +65,7 @@ func _initialize() -> void:
 	scene.bot = {"skip_intro": true, "skip_contract": true, "aim": Vector2.ZERO, "lmb": false, "move": Vector2.ZERO, "kit": kit}
 	root.add_child(scene)
 	game = scene
-	bot = Bot.new(game, {"careless": careless, "paced": paced, "props": props})
+	bot = Bot.new(game, {"careless": careless, "paced": paced})
 
 
 var _frame := 0

@@ -10,9 +10,13 @@ extends Node2D
 # carries does not either (FreeBody.hold_begin): the load is pulled by a spring and a damper toward
 # a point under it, so it swings, but passes through what is in its way. Driven by scripts/crew.gd.
 
-const SPEED := 240.0
+const CrewArt = preload("res://scripts/crew_art.gd")
+static var prof_us := 0         # tests: µs spent (step + draw), with Crew.prof_us
+const SPEED := 300.0
 const ACCEL := 620.0
-const R := 13.0
+const R := 16.0
+const ARM := 26.0               # px: one link of its tool arm (it works within ~45 px of where it stands)
+const APART := 40.0             # px: two crew drones keep this far apart (the one at work does not yield)
 const HANG := 30.0              # px under the drone where a load is held
 
 var game
@@ -29,7 +33,11 @@ var steady := false
 var cable: PackedVector2Array = PackedVector2Array()   # the cable laid so far (world px)
 var laying := false
 var t := 0.0
+var slow := 1.0                 # a share of its top speed (the last of a lowering, a fine approach)
+var reel := 0.0                 # the winch or reel's turn, for the drawing
+var work := 0.0                 # 0..1 how hard the tool works (eased in and out)
 var _thrust := Vector2.ZERO
+var _frame_n := 0
 
 
 func _init() -> void:
@@ -71,6 +79,12 @@ func hold_point() -> Vector2:
 
 
 func _physics_process(dt: float) -> void:
+	var t0 := Time.get_ticks_usec()
+	_step_frame(dt)
+	prof_us += Time.get_ticks_usec() - t0
+
+
+func _step_frame(dt: float) -> void:
 	if game != null and (game.paused_sim or game.state not in ["play", "build", "porttour"]):
 		return
 	t += dt
@@ -78,10 +92,27 @@ func _physics_process(dt: float) -> void:
 	if goal != Vector2.INF:
 		var off := goal - global_position
 		# braking distance: never asked to go faster than it can stop
-		var sp := minf(SPEED, minf(off.length() * 3.5, sqrt(2.0 * ACCEL * 0.8 * maxf(off.length() - 1.0, 0.0))))
+		var sp := minf(SPEED * slow, minf(off.length() * 3.5, sqrt(2.0 * ACCEL * 0.8 * maxf(off.length() - 1.0, 0.0))))
 		desired = off.normalized() * sp if off.length() > 0.5 else Vector2.ZERO
-		if off.length() > 6.0:
+		if off.length() > 6.0 and not tool:
 			heading = lerp_angle(heading, off.angle(), 1.0 - exp(-6.0 * dt))
+	# at work it faces what it works on
+	if tool:
+		heading = lerp_angle(heading, (tool_at - global_position).angle(), 1.0 - exp(-8.0 * dt))
+	work = move_toward(work, 1.0 if tool else 0.0, dt * 5.0)
+	# the others give way: a drone at its tool, or lowering a part, holds its place; the rest ease off
+	# (2026-11-12: two of them sat one on the other at the box and the part)
+	# (a drone at its goal holds its place — the cutter beside the rigger waiting over a weld — only one
+	# on its way gives way, or two at work side by side would push each other off for ever)
+	var en_route := goal != Vector2.INF and global_position.distance_to(goal) > 24.0
+	if en_route and not tool and not (load != null and steady) and get_parent() != null:
+		for o in get_parent().get_children():
+			if o == self or o.get_script() != get_script():
+				continue
+			var away: Vector2 = global_position - o.global_position
+			var dd := away.length()
+			if dd < APART:
+				desired += (away / maxf(dd, 0.5) if dd > 0.5 else Vector2.from_angle(float(get_instance_id() % 628) / 100.0)) * (APART - dd) * 6.0
 	# a heavy load makes it slow to answer
 	var heavy := 1.0
 	if load != null and is_instance_valid(load):
@@ -90,10 +121,26 @@ func _physics_process(dt: float) -> void:
 	vel += _thrust * dt
 	global_position += vel * dt
 	if laying:
+		reel += dt * vel.length() / 40.0
 		if cable.is_empty() or cable[cable.size() - 1].distance_to(global_position) > 10.0:
 			cable.append(global_position)
+	if load != null:
+		reel += dt * vel.y / 60.0
 	_carry(dt)
-	queue_redraw()
+	# redrawn every frame while it moves or works; parked, every sixth (its lamp still blinks), and
+	# not at all off the screen (2026-11-12: seven drones redrawn every frame cost 0.8 ms)
+	_frame_n += 1
+	var live := vel.length() > 3.0 or _thrust.length() > 8.0 or work > 0.0 or load != null or laying
+	if (live or _frame_n % 6 == 0) and _on_screen():
+		queue_redraw()
+
+
+func _on_screen() -> bool:
+	if game == null or game.cam == null:
+		return true
+	var z: float = maxf(0.05, game.cam_zoom())
+	var view: Vector2 = get_viewport_rect().size / z
+	return Rect2(game.cam.position - view * 0.5, view).grow(120.0).has_point(global_position)
 
 
 # the tether: a spring and a damper between the hold point and the load's grip, its angle steadied
@@ -122,64 +169,48 @@ func _carry(dt: float) -> void:
 
 
 func _draw() -> void:
-	var ink := Color(0.86, 0.9, 0.96)
-	var dark := Color(0.07, 0.075, 0.085)
+	var t0 := Time.get_ticks_usec()
+	_paint()
+	prof_us += Time.get_ticks_usec() - t0
+
+
+func _paint() -> void:
 	var lamp: Color = {"bot": Color(1.0, 0.82, 0.3), "cutter": Pal.heat(1.0, 1.6), "hauler": Color(0.55, 0.85, 1.0),
-		"torque": Color(0.95, 0.95, 1.0), "cable": Color(0.6, 1.0, 0.7), "tester": Color(0.75, 0.6, 1.0)}.get(role, ink)
-	# the cable laid so far, sagging a little between its points
+		"torque": Color(0.95, 0.95, 1.0), "torque2": Color(0.95, 0.95, 1.0), "cable": Color(0.6, 1.0, 0.7), "tester": Color(0.75, 0.6, 1.0)}.get(role, Pal.ink(1.0))
+	var trade := "torque" if role == "torque2" else role
+	# the cable laid so far, paid out of the reel's fairlead
 	if cable.size() >= 1:
 		var pts := PackedVector2Array()
 		for p in cable:
 			pts.append(to_local(p))
 		if laying:
-			pts.append(Vector2.ZERO)
+			pts.append(Vector2.from_angle(heading + PI) * R * 0.9)
 		if pts.size() >= 2:
-			draw_polyline(pts, Color(0, 0, 0, 0.5), 3.4)
-			draw_polyline(pts, Color(0.32, 0.34, 0.38), 1.8)
-	# the tether to its load
+			draw_polyline(pts, Color(0, 0, 0, 0.5), 3.6, true)
+			draw_polyline(pts, Color(0.3, 0.32, 0.36), 2.0, true)
+			draw_polyline(pts, Color(0.55, 0.58, 0.62, 0.6), 0.7, true)
+	# the tether off the winch drum to its load, and the shackle on it
 	if load != null and is_instance_valid(load):
 		var grip: Vector2 = to_local(load.global_transform * load_pt)
-		draw_line(Vector2(0, R * 0.6), grip, Color(0, 0, 0, 0.5), 2.6)
-		draw_line(Vector2(0, R * 0.6), grip, Pal.ink(0.75), 1.2)
-		draw_rect(Rect2(grip - Vector2(3, 3), Vector2(6, 6)), lamp)
-	# the tool
-	if tool:
-		var tp := to_local(tool_at)
-		var nose := Vector2.from_angle((tool_at - global_position).angle()) * (R + 2.0)
-		match role:
-			"cutter":
-				var fl := 0.7 + 0.3 * sin(t * 61.0)
-				draw_line(nose, tp, Pal.heat(0.9, 2.2), 2.4)
-				draw_line(nose, tp, Color(1.0, 0.95, 0.85, fl), 1.0)
-				draw_circle(tp, 4.0 * fl, Pal.heat(0.8 * fl, 2.4))
-			"torque":
-				draw_line(nose, tp, Pal.ink(0.8), 2.4)
-				var a := t * 14.0
-				for k in 3:
-					var dd := Vector2.from_angle(a + TAU * k / 3.0) * 5.0
-					draw_line(tp - dd, tp + dd, Pal.ink(0.9), 1.4)
-			"tester":
-				draw_line(nose, tp, Color(0.75, 0.6, 1.0, 0.9), 1.4)
-				draw_circle(tp, 2.5, Color(0.75, 0.6, 1.0))
-			_:
-				draw_line(nose, tp, Pal.ink(0.7), 1.6)
-	# the airframe: a hex hull, two pods, its trade's lamp
-	var hull := PackedVector2Array()
-	for i in 6:
-		hull.append(Vector2.from_angle(TAU * i / 6.0 + 0.52) * R)
-	draw_colored_polygon(hull, dark)
-	var ol := hull.duplicate()
-	ol.append(hull[0])
-	draw_polyline(ol, ink, 1.5)
-	var fw := Vector2.from_angle(heading)
-	var side := fw.orthogonal()
-	for s: float in [-1.0, 1.0]:
-		var pod := side * s * (R + 3.0)
-		draw_rect(Rect2(pod - Vector2(3, 4), Vector2(6, 8)), Pal.ink(0.55), false, 1.0)
-	# thrust: short plumes against the push
-	var k := _thrust.length() / ACCEL
-	if k > 0.08:
-		var back := -_thrust.normalized()
-		draw_line(back * R, back * (R + 4.0 + 10.0 * k), Color(0.55, 0.8, 1.0, 0.5 + 0.4 * k), 2.0)
-	var blink := 1.0 if fmod(t + float(get_instance_id() % 7) * 0.13, 1.2) < 0.7 else 0.35
-	draw_circle(fw * 4.0, 2.6, Color(lamp, blink))
+		draw_line(Vector2.ZERO, grip, Color(0, 0, 0, 0.5), 2.6, true)
+		draw_line(Vector2.ZERO, grip, Pal.ink(0.8), 1.1, true)
+		draw_arc(grip + Vector2(0, -2.5), 2.6, PI * 0.1, PI * 0.9 + PI, 10, Pal.ink(0.9), 1.2, true)
+		draw_rect(Rect2(grip - Vector2(3.2, 1.0), Vector2(6.4, 3.2)), lamp)
+	# the airframe
+	var sc := R / 20.0
+	var z: float = game.cam_zoom() if game != null and game.has_method("cam_zoom") else 1.0
+	CrewArt.Art.set_scale(sc * z)
+	var xf := Transform2D(0.0, Vector2(sc, sc), 0.0, Vector2.ZERO)
+	draw_set_transform_matrix(xf)
+	var push := (_thrust / ACCEL).limit_length(1.0) if Txt.anim_level() > 0 else Vector2.ZERO
+	CrewArt.draw(self, {"heading": heading, "t": t, "thrust": push, "role": trade, "busy": work, "lamp": lamp, "reel": reel,
+		"seed": float(get_instance_id() % 7) * 0.13, "base_xf": xf})
+	draw_set_transform_matrix(Transform2D.IDENTITY)
+	CrewArt.Art.lite = false
+	# the tool arm from its nose to the work, the trade's head on the work
+	if work > 0.02:
+		var sh := Vector2.from_angle(heading) * R * 0.75
+		var to := to_local(tool_at)
+		var rest := sh + Vector2.from_angle(heading) * 6.0
+		var tip := CrewArt.arm(self, sh, rest.lerp(to, work), ARM, 2.2)
+		CrewArt.head(self, trade, tip, sh, t, work, lamp)

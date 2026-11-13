@@ -19,6 +19,7 @@ const HOLD_S := 45.0            # sim s any one wait may last
 const LIMIT_RECORD := 72000     # frames
 const LIMIT_REPLAY := 108000    # frames per replay pass
 const M := 48.0
+var seg_waits := {}
 var ship := ""
 var g
 var bot
@@ -37,6 +38,8 @@ var opened := 0                 # hull pieces this script took off in verify
 var safety: Array = []          # the safety work, as recorded (the plan before the lines)
 var skip_origin := {}           # equipment whose lines are left to the player -> why
 var restarts := 0
+var stamps: Array = []          # sim time each recorded step was written down
+const GAP_MAX := 300.0
 const RESTARTS := 8
 
 func _initialize() -> void:
@@ -103,11 +106,25 @@ func _process(_dt: float) -> bool:
 	if phase == "record":
 		if frame == 10: g.tutorial = null
 		if frame < 10: return false
-		if bot.step() or frame > LIMIT_RECORD:
-			steps = g.plan.rec.duplicate(true).filter(func(s): return s.get("do", "") != "cut")
+		# the plan is the safety work: once the bot has made the ship safe and starts to strip it
+		# (salvage_bot.gd _go_strip: its hoses off; it works no control after that) the recording ends
+		var done_rec: bool = bot.step() or bot.phase == "strip" or frame > LIMIT_RECORD
+		while stamps.size() < g.plan.rec.size(): stamps.append(g.sys.time)
+		if done_rec:
+			# each step keeps the sim time the bot let pass since the one before (its waits for a
+			# tank to draw down, a room to drain): the replay keeps that pace (scripts/plan.gd "gap")
+			steps = []
+			var last := 0.0
+			for k in g.plan.rec.size():
+				var s: Dictionary = g.plan.rec[k].duplicate(true)
+				if s.get("do", "") == "cut": continue
+				var at: float = float(stamps[k]) if k < stamps.size() else last
+				s["gap"] = snappedf(clampf(at - last, 0.0, GAP_MAX), 0.1)
+				last = at
+				steps.append(s)
 			print("RECORD %s frames=%d state=%s blocked=%s steps=%d %s" % [ship, frame, g.state, g.plan.record_blocked, steps.size(), _count(steps)])
-			if g.state != "ending":
-				_out("FAIL", "the bot did not finish the ship (%s)" % ("timeout" if frame > LIMIT_RECORD else g.state))
+			if bot.phase != "strip" or int(bot.forced) > 0:
+				_out("FAIL", "the bot did not make the ship safe (%s)" % ("timeout" if frame > LIMIT_RECORD else ("gave up: %s" % str(bot._unsafe())) if int(bot.forced) > 0 else bot.phase))
 				return true
 			if g.plan.record_blocked != "":
 				_out("FAIL", "the recording stopped at an incident (%s)" % g.plan.record_blocked)
@@ -148,9 +165,29 @@ func _process(_dt: float) -> bool:
 	if not g.incidents.is_empty():
 		if phase == "verify" and p.i < p.steps.size() and p.steps[p.i].get("seg", false):
 			return _leave(str(p.steps[p.i].get("origin", "")), "incident %s" % str(g.incidents[0]))
-		return _fail("incident during the %s replay: %s" % [phase, str(g.incidents.slice(0, 3))])
+		var cur: Dictionary = p.steps[mini(p.i, p.steps.size() - 1)] if not p.steps.is_empty() else {}
+		return _fail("incident during the %s replay: %s at step %d/%d %s %s value=%s, wait=%s, hoses on %s" % [phase, str(g.incidents.slice(0, 3)), p.i, p.steps.size(), cur.get("do", ""), cur.get("ctrl", cur.get("key", "")), str(cur.get("value", "")), p.wait, str(g.sys.hoses.keys())])
 	if phase == "verify":
 		_player(p)
+		# one marked line may take its machine at most SEG_MAX s of sim (a wait that keeps
+		# changing never trips HOLD_S)
+		if p.i != step_at:
+			step_at = p.i
+			step_s = 0.0
+		step_s += 1.0 / 60.0
+		if p.i < p.steps.size() and p.steps[p.i].get("seg", false):
+			seg_waits[p.wait] = int(seg_waits.get(p.wait, 0)) + 1
+		if step_s == 1.0 / 60.0: seg_waits = {}
+		if OS.get_environment("CODEX_DEBUG") != "" and frame % 600 == 0 and p.i < p.steps.size() and p.steps[p.i].get("seg", false):
+			print("SEG WAITS ", seg_waits, " args ", p.wait_arg, " state=", g.state, " paused_sim=", g.paused_sim, " auto_paused=", g.auto_paused, " running=", p.running, " preset=", p.preset, " package_mode=", p.package_mode, " src=", p.source, " pause_why=", g.get("pause_why") if "pause_why" in g else "-", " card=", g.get("guide") != null if "guide" in g else "-")
+			var sv2 = p._cutter_service
+			var sq = g.world.key_piece(str(p.steps[p.i].get("key", "")))
+			print("SEG DBG i=%d wait=%s station=%s robot=%s beam=%s front=%s seg=%s/%d step_t=%.1f cont=%s gone=%s body=%s" % [p.i, p.wait, sv2.reason if sv2 != null else "-", sv2.robot.reason if sv2 != null else "-", str(sv2.robot.beam_on) if sv2 != null else "-", str(p.cut_motion.get("front", "")), str(p.cut_motion.get("segment", "")), p.steps[p.i].pl.size(), p.step_t, str(p.cut_motion.get("step", "")), str(sq.gone) if sq != null else "null", str(sq.body != null) if sq != null else "-"])
+		if p.running and step_s > SEG_MAX and p.i < p.steps.size() and p.steps[p.i].get("seg", false) and p.wait != "as_plan_expose":
+			var sv = p._cutter_service
+			_pass_over(p, str(p.steps[p.i].get("origin", "")), "cutter cannot finish it in %d s (%s, cutter %s)" % [int(SEG_MAX), p.wait, sv.reason if sv != null else "-"])
+			held_key = ""
+			return false
 	if p.running and p.wait != "":
 		var k := "%d %s %s" % [p.i, p.wait, p.wait_arg]
 		if held_key != k:
@@ -162,9 +199,23 @@ func _process(_dt: float) -> bool:
 			var st: Dictionary = p.steps[mini(p.i, p.steps.size() - 1)]
 			var q = g.world.key_piece(str(st.get("key", "")))
 			print("HOLD DBG reason=", sv.reason, " robot=", sv.robot.global_position, " robot_reason=", sv.robot.reason, " cover=", p._cover(q, g.world.frame(q) * Vector2(float(st.pl[0][0]), float(st.pl[0][1]))) if q != null and st.has("pl") else "-")
-		if held_t > HOLD_S and phase == "verify" and p.i < p.steps.size() and p.steps[p.i].get("seg", false):
-			return _leave(str(p.steps[p.i].get("origin", "")), "cutter cannot reach (%s)" % p.wait)
-		if held_t > HOLD_S:
+		# (a hose waiting for its room to drain is capped by the plan itself, DRAIN_MAX)
+		# a gauge still falling (plan_differs) may take a few minutes to drain
+		var hold: float = 240.0 if p.wait == "plan_differs" else HOLD_S
+		# a cutter still flying to its spot (not route_blocked) gets twice as long
+		if p.wait == "plan_cutter_wait" and p._cutter_service != null and p._cutter_service.reason == "travelling": hold = HOLD_S * 2.0
+		if p.wait == "as_plan_drain": held_t = 0.0
+		if held_t > hold and phase == "verify" and p.i < p.steps.size() and p.steps[p.i].get("seg", false):
+			# nothing was cut: that equipment's lines are passed over here, and the plan without
+			# them gets one clean verify at the end
+			# the evidence: the berth cutter's own reason (route_blocked: no open spot within its
+			# TOOL_REACH it can fly to; tool_blocked: the line's start is under material or the beam
+			# has no clear line to it) and the hull piece over it, if the plan found one
+			var sv = p._cutter_service
+			_pass_over(p, str(p.steps[p.i].get("origin", "")), "cutter cannot reach (%s, cutter %s, hull over it %s)" % [p.wait, sv.reason if sv != null else "-", p.expose_tag if p.expose_at.is_finite() else "none found"])
+			held_key = ""
+			return false
+		if held_t > hold:
 			return _fail("%s held at step %d/%d: %s %s" % [phase, p.i, p.steps.size(), p.wait, p.wait_arg])
 	else:
 		held_key = ""
@@ -174,10 +225,23 @@ func _process(_dt: float) -> bool:
 		return _fail("%s timeout at step %d/%d (%s %s)" % [phase, p.i, p.steps.size(), p.wait, p.wait_arg])
 	if p.running:
 		return false
+	if p.i < p.steps.size() and phase == "verify" and p.wait == "plan_changed" and p.steps[p.i].get("seg", false):
+		# a line put first (its hull already off) cut a part another line's key was learned on
+		return _leave(str(p.steps[p.i].get("origin", "")), "the part it is on changed: a line on it was cut in another order")
 	if p.i < p.steps.size():
 		return _fail("%s stopped at step %d/%d (%s %s)" % [phase, p.i, p.steps.size(), p.wait, p.wait_arg])
 	if phase == "trim":
 		return _lines()
+	if passed_over > 0:
+		passed_over = 0
+		restarts += 1
+		if restarts > RESTARTS:
+			return _fail("too many lines left to the player to verify")
+		steps = steps.filter(func(s): return not (s.get("seg", false) and skip_origin.has(str(s.get("origin", "")))))
+		print("PASS OVER %s: verify again with %d steps, left %s" % [ship, steps.size(), str(skip_origin)])
+		_write(steps)
+		_replay_start("verify")
+		return false
 	var lines := steps.filter(func(s): return s.get("seg", false)).size()
 	if p.seg_done != lines:
 		if not dropped_line_origin(p).is_empty():
@@ -287,19 +351,44 @@ func _lines() -> bool:
 	return false
 
 # a marked line the codex cannot make: every line of that equipment is the player's (its later
-# lines' part keys follow from the earlier cuts). The safety work and the lines again, from a fresh ship.
+# lines' part keys follow from the earlier cuts; other equipment's keys do not depend on them).
+# The plan without them, verified again from a fresh ship.
 func _leave(origin: String, why: String) -> bool:
 	restarts += 1
 	if origin == "" or skip_origin.has(origin) or restarts > RESTARTS:
 		return _fail("could not leave %s to the player (%s)" % [origin, why])
 	skip_origin[origin] = why
 	print("LEAVE %s %s: %s" % [ship, origin, why])
-	steps = safety.duplicate(true)
-	line_note = {}
+	steps = steps.filter(func(s): return not (s.get("seg", false) and skip_origin.has(str(s.get("origin", "")))))
 	opened = 0
+	passed_over = 0
 	_write(steps)
-	_replay_start("trim")
+	_replay_start("verify")
 	return false
+
+# the cutter cannot get at a line (held past HOLD_S, nothing cut): that equipment's lines are
+# passed over where they stand and the run goes on
+var passed_over := 0
+var step_at := -1
+var step_s := 0.0
+const SEG_MAX := 180.0
+func _pass_over(p, origin: String, why: String) -> void:
+	skip_origin[origin] = why
+	passed_over += 1
+	print("PASS OVER %s %s: %s" % [ship, origin, why])
+	while p.i < p.steps.size() and p.steps[p.i].get("seg", false) and str(p.steps[p.i].get("origin", "")) == origin:
+		p.i += 1
+	# and its lines further on (put out of order while a hull was off): all of that equipment's
+	# lines are the player's now (sv122: ENG met again later, "could not leave ENG")
+	for k in range(p.steps.size() - 1, p.i - 1, -1):
+		if p.steps[k].get("seg", false) and str(p.steps[k].get("origin", "")) == origin:
+			p.steps.remove_at(k)
+	p.cut_motion.clear()
+	p._release_cutter()
+	p.wait = ""
+	p.step_t = 0.0
+	p.expose_at = Vector2.INF
+	p.expose_piece = null
 
 
 func dropped_line_origin(p) -> String:

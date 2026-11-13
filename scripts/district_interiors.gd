@@ -42,6 +42,7 @@ const NAMES := {
 }
 
 var game
+var hall: Node2D              # 2026-11-12: the district's hall, under the port's drawing (_draw_hall)
 var font: Font
 var moving: Node2D
 var _key := ""                 # what the still parts were drawn for
@@ -106,6 +107,14 @@ static func solid_rects(zone: String) -> Array:
 
 func _ready() -> void:
 	z_index = 0
+	# 2026-11-12: a district's hall (scripts/district_style.gd) under everything in it — the port's own
+	# drawing is z 2 (its consoles), this node's a child of it and drawn after it; the districts' still
+	# layers are z 0 (_layer), so the hall is z 0 too, added before them
+	hall = Node2D.new()
+	hall.z_as_relative = false
+	hall.z_index = 0
+	hall.draw.connect(_draw_hall)
+	add_child(hall)
 	font = Fonts.get_font("Medium")
 	moving = Node2D.new()
 	moving.draw.connect(_draw_moving)
@@ -410,6 +419,8 @@ func _draw() -> void:
 			power_art.r = _r
 			power_art.m = _m
 			cb.flush()
+			if DistrictStyle.on() and DistrictStyle.halls:
+				hall.queue_redraw()
 			power_art.still(self, Port.stage("power"), lod())
 		"tug":
 			# 96 号: the whole station as the machines it holds (scripts/tug_station_art.gd)
@@ -420,14 +431,23 @@ func _draw() -> void:
 				DistrictStyle.back_wall(self, _r, _m, on, tug_art.FLOOR)
 			tug_art.still(self, on, lod(), Port.stage("tug"))
 		"process":
-			# 101 号: drawn by scripts/process_art.gd on its own layers
-			pass
+			# 101 号: drawn by scripts/process_art.gd on its own layers; 2026-11-12 the hall behind it
+			if DistrictStyle.on() and DistrictStyle.halls:
+				hall.queue_redraw()
 		"trade":
-			# 52 号: the hall kept clear — only a light strip along the ceiling
-			cb.draw_line(_p(Vector2(16, 0.8)), _p(Vector2(56, 0.8)), Pal.tint(Pal.AIR, 0.35 if on else 0.1, 1.1), 0.2 * _m)
+			if DistrictStyle.on() and DistrictStyle.halls:
+				# 2026-11-12: the tug station's interior carried here (scripts/district_style.gd trade_hall),
+				# on its own layer under the port's drawing (_draw_hall): drawn here, over the port, it hid
+				# the business console the port draws
+				hall.queue_redraw()
+			else:
+				# 52 号: the hall kept clear — only a light strip along the ceiling
+				cb.draw_line(_p(Vector2(16, 0.8)), _p(Vector2(56, 0.8)), Pal.tint(Pal.AIR, 0.35 if on else 0.1, 1.1), 0.2 * _m)
 		"cargo":
 			# 102 号: the hall, the racks, the floor and the machines are scripts/cargo_art.gd; here the
-			# stock on its rows (46 号, 73 号) and the parts
+			# stock on its rows (46 号, 73 号) and the parts. 2026-11-12: the hall behind it (_draw_hall)
+			if DistrictStyle.on() and DistrictStyle.halls:
+				hall.queue_redraw()
 			var stock := _stock()
 			var per_row := {}
 			for k in stock:
@@ -448,6 +468,32 @@ func _draw() -> void:
 					cb.draw_rect(Rect2(_p(Vector2(53.4 + i * 1.5, 19.6)), Vector2(1.3, 1.3) * _m), Pal.tint(Pal.AIR, 0.35, 0.9))
 				cb.draw_string(font, _p(Vector2(53, 19.2)), w("零件 %d 件", "%d PARTS") % parts, HORIZONTAL_ALIGNMENT_LEFT, -1, int(0.6 * _m), Pal.ink(0.75))
 	cb.flush()
+
+
+# 2026-11-12: the district's hall (scripts/district_style.gd), gathered into a few triangle batches
+# (hundreds of plates and lines replayed as single commands cost 0.6 ms a frame); redrawn with the still
+# parts only
+func _draw_hall() -> void:
+	var zone := _zone()
+	if zone not in ["trade", "process", "cargo", "power"] or game == null or not DistrictStyle.on() or not DistrictStyle.halls:
+		return
+	var r := PortStructure.box(zone)
+	var m := PortStructure.M()
+	var on := Port.stage(zone) >= 1
+	var h0 := Time.get_ticks_usec()
+	DistrictStyle.back_wall(hall, r, m, on, 26.8)
+	var cb = CanvasBatch.new(hall)
+	match zone:
+		"trade":
+			DistrictStyle.trade_hall(cb, r, m, on)
+		"process":
+			DistrictStyle.process_hall(cb, r, m, on)
+		"cargo":
+			DistrictStyle.cargo_hall(cb, r, m, on)
+		"power":
+			DistrictStyle.power_hall(cb, r, m, on)
+	cb.flush()
+	DistrictStyle.hall_us = float(Time.get_ticks_usec() - h0)
 
 
 # ------------------------------------------------------------------ the moving parts

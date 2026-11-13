@@ -64,6 +64,11 @@ static func _power() -> Array:
 	out.append(PS.BASE)
 	for x in PS.POSTS_X:
 		out.append(Rect2(float(x) - 0.12, PS.POST_TOP, 0.24, PS.BASE.position.y - PS.POST_TOP))
+	# 2026-11-12 (user: "我能走的地方应该没有柱子才对"): the turbine deck's four columns are drawn as the
+	# deck's supports (scripts/power_station_art.gd _turbine), so they are solid, not columns to fly through
+	var deck: Vector2 = preload("res://scripts/power_station_art.gd").DECK
+	for cx in [38.2, 42.4, 50.3, 57.4]:
+		out.append(Rect2(cx - 0.3, deck.y, 0.6, 3.9))
 	# the radiator arrays out on their booms either side (scripts/port_art.gd _power): panels and headers
 	out.append(Rect2(-36.6, 7.8, 33.0, 12.4))
 	out.append(Rect2(63.6, 7.8, 33.0, 12.4))

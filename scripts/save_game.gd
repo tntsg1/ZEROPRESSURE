@@ -18,6 +18,43 @@ static var allow_test := false
 static var recovered := false    # the last read() had to fall back to .bak
 
 
+# 2026-11-12 (user's hard rule: a test never touches the player's own saves; a -s test once deleted
+# them): whatever path a test leaves set, a run of a test script (-s / --script / tests/) never writes,
+# swaps or retires a player's file — the career, the contract, the training course, the best record,
+# the slots and the playtest slots, with their .bak / .tmp / .done / .works. Refused and said, with
+# who asked, so the test that forgot its own paths is found.
+static func forbidden(file: String) -> bool:
+	if not Career._test_run():
+		return false
+	if player_file(file):
+		var st := get_stack()
+		push_error("TEST TRIED TO TOUCH A PLAYER SAVE, refused: %s (from %s)" % [file, st[1] if st.size() > 1 else "?"])
+		return true
+	return false
+
+
+# a player's own file or folder in user:// (whoever runs): the full game's career / contract /
+# training / special course / exam / best / settings ("zeropower_*"), the slots ("zp_slot*"), and the
+# playtest build's every file and folder ("playtest*": its slots, playtest_save / _career /
+# _settings, the activation, the records) — by any part of the path, so a folder of them counts too
+static func player_file(file: String) -> bool:
+	var f := file.replace("\\", "/")
+	var rel := ""
+	if f.begins_with("user://"):
+		rel = f.substr(7)
+	else:
+		var at := f.find("app_userdata/")
+		if at < 0:
+			return false
+		rel = f.substr(at + 13)
+		var cut := rel.find("/")
+		rel = rel.substr(cut + 1) if cut >= 0 else ""
+	for part in rel.split("/", false):
+		if part.begins_with("zeropower_") or part.begins_with("zp_slot") or part.begins_with("playtest"):
+			return true
+	return false
+
+
 static func exists(file: String = "") -> bool:
 	var f := path if file == "" else file
 	return FileAccess.file_exists(f) or FileAccess.file_exists(f + ".bak")
@@ -288,6 +325,8 @@ static func snapshot(g) -> Dictionary:
 # tmp first, then swap: whatever happens mid-write, either the old save or the
 # new one is complete on disk
 static func write_file(file: String, d: Dictionary) -> bool:
+	if forbidden(file):
+		return false
 	var body := JSON.stringify(d)
 	var full := ProjectSettings.globalize_path(file)
 	var f := FileAccess.open(file + ".tmp", FileAccess.WRITE)
@@ -686,6 +725,8 @@ static func _restore_operator_hauls(g, saved) -> void:
 static func clear(file: String = "") -> void:
 	settle()
 	var f := path if file == "" else file
+	if forbidden(f):
+		return
 	for ext in ["", ".bak"]:
 		if FileAccess.file_exists(f + ext):
 			var full := ProjectSettings.globalize_path(f + ext)
@@ -707,6 +748,8 @@ static func record_best(rate: float, net: float, secs: float, grade: int) -> Dic
 	var out := {"rate": maxf(rate, b.get("rate", 0.0)), "net": maxf(net, b.get("net", -INF)), "grade": maxi(grade, int(b.get("grade", 0)))}
 	var t0: float = b.get("time", INF)
 	out["time"] = minf(secs, t0) if grade > 0 else t0
+	if forbidden(BEST):
+		return out
 	var f := FileAccess.open(BEST, FileAccess.WRITE)
 	if f != null:
 		f.store_string(JSON.stringify(out))

@@ -63,7 +63,7 @@ func _open(at: Vector2) -> bool:
 	var query := PhysicsShapeQueryParameters2D.new()
 	query.shape = robot.get_child(0).shape
 	query.transform = Transform2D(0,at)
-	query.collision_mask = robot.collision_mask
+	query.collision_mask = robot.ray_mask   # the solid machine's (the codex drone phases with 0)
 	query.exclude = [robot.get_rid()]
 	return get_world_2d().direct_space_state.intersect_shape(query,1).is_empty()
 
@@ -89,7 +89,7 @@ func _inside_exact(a: Vector2, b: Vector2) -> float:
 # one sight line toward aim: the target's surface near the kerf point, or INF
 func _sight(origin: Vector2, aim: Vector2, at: Vector2, surface_at: Vector2, kerf: float, targets: Array) -> Vector2:
 	var direction := origin.direction_to(aim)
-	var ray := PhysicsRayQueryParameters2D.create(origin+direction*(Robot.RADIUS+3.0),aim+direction*(kerf+2.0),robot.collision_mask,[robot.get_rid()])
+	var ray := PhysicsRayQueryParameters2D.create(origin+direction*(Robot.RADIUS+3.0),aim+direction*(kerf+2.0),robot.ray_mask,[robot.get_rid()])
 	ray.hit_from_inside = true
 	var hit: Dictionary = get_world_2d().direct_space_state.intersect_ray(ray)
 	if hit.is_empty():
@@ -123,10 +123,14 @@ func _fires_from(origin: Vector2, p, at: Vector2, kerf: float, targets: Array) -
 	return robot.beam_clear_from(origin,pt,targets)
 
 # can the robot fly there from where it is (the berth's payload grid, its own size)
+# (the codex drone phasing through walls may be inside one now: the question stays the solid machine's,
+# asked from the berth, so a spot shut in by hull still waits for the player to open it)
 func _reachable(point: Vector2) -> bool:
-	if robot.global_position.distance_to(point) < 6.0 or not robot.test_move(robot.global_transform, point - robot.global_position):
+	var from: Vector2 = berth if robot.phasing else robot.global_position
+	var xf := Transform2D(0.0, from)
+	if from.distance_to(point) < 6.0 or not robot.test_move_solid(xf, point - from):
 		return true
-	return game.nav_grid().payload_path(robot.global_position, point, Vector2.ONE*Robot.RADIUS, robot).size() > 0
+	return game.nav_grid().payload_path(from, point, Vector2.ONE*Robot.RADIUS, robot).size() > 0
 
 
 func _bad(candidate: Vector2) -> bool:

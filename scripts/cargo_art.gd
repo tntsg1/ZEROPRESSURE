@@ -14,6 +14,7 @@ const FastDraw = preload("res://scripts/fast_draw.gd")
 const W = preload("res://scripts/cargo_works.gd")
 
 const FLOOR := 26.8
+const HALL_COLS := [0.8, 18.6, 30.0, 39.6, 59.2]   # the hall's columns (0.6 m), from the truss down
 const BAYS := [6.0, 42.0]          # the racks' left uprights; each bank 10 m, two 5 m bays
 const BEAMS := [12.0, 15.0, 18.0, 21.0]
 const RACK_TOP := 9.0
@@ -41,7 +42,9 @@ static func w(zh: String, en: String) -> String:
 
 
 func _ink(a: float) -> Color:
-	return Pal.ink(a)
+	# 2026-11-12: the solid look's line art (DistrictStyle.ink: faint lines dark into the faces,
+	# outlines light round them; opaque, never white in alpha under hdr_2d)
+	return DistrictStyle.ink(a)
 
 
 func _p(v: Vector2) -> Vector2:
@@ -49,8 +52,13 @@ func _p(v: Vector2) -> Vector2:
 
 
 func _mesh(key: String, build: Callable) -> ArrayMesh:
+	# 2026-11-12 (user: "纯2D、纯扁平，没有一点质感"): the casings as lit steel (scripts/solid_pen.gd)
+	if DistrictStyle.solid():
+		key = "solid/" + key
 	if not _meshes.has(key):
-		var pen := MeshPen.new()
+		var pen = preload("res://scripts/solid_pen.gd").new() if DistrictStyle.solid() else MeshPen.new()
+		if DistrictStyle.solid():
+			pen.tinted = true
 		build.call(pen)
 		_meshes[key] = pen.mesh()
 	return _meshes[key]
@@ -120,7 +128,8 @@ func _goods(ci: CanvasItem, key: String, rect: Rect2, rot := 0.0) -> void:
 # ================================================================== the still parts
 func still(ci: CanvasItem, on: bool, lod: int) -> void:
 	ci.draw_rect(r, Color(0, 0, 0, 0), false, 1.0)
-	_put(ci, _mesh("still%d%d" % [int(on), lod], func(p): _still(p, on, lod)), Vector2.ZERO)
+	var open := DistrictStyle.on() and DistrictStyle.halls
+	_put(ci, _mesh("still%d%d%d" % [int(on), lod, int(open)], func(p): _still(p, on, lod)), Vector2.ZERO)
 	for b in 2:
 		for lv in 4:
 			_text(ci, Vector2(float(BAYS[b]) - 1.55, BEAMS[lv] + 0.12), Warehouse.ROWS[b * 4 + lv], 0.5, _ink(0.85))
@@ -142,11 +151,18 @@ func still(ci: CanvasItem, on: bool, lod: int) -> void:
 func _still(p, on: bool, lod: int) -> void:
 	var lit := 1.0 if on else 0.35
 	# ---- the hall
-	for cx: float in [0.8, 18.6, 30.0, 39.6, 59.2]:
-		p.rect(Rect2(cx - 0.3, 1.3, 0.6, FLOOR - 1.3), Color(0.07, 0.074, 0.082))
-		p.line(Vector2(cx - 0.3, 1.3), Vector2(cx - 0.3, FLOOR), _ink(0.12), 0.04)
-		p.line(Vector2(cx + 0.3, 1.3), Vector2(cx + 0.3, FLOOR), _ink(0.12), 0.04)
-		p.rect(Rect2(cx - 0.6, FLOOR - 0.22, 1.2, 0.22), DARK)
+	# 2026-11-12 (user: "我能走的地方应该没有柱子才对，是空的"): with the districts' halls on, a column
+	# is drawn only where it stands in something that really collides (DistrictStyle.column_spans); the
+	# two at the end walls are the shell's
+	var open := DistrictStyle.on() and DistrictStyle.halls
+	for cx: float in HALL_COLS:
+		var spans: Array = [Vector2(1.3, FLOOR)] if not open or cx < 1.0 or cx > 59.0 else DistrictStyle.column_spans("cargo", cx, 1.3, FLOOR)
+		for sp: Vector2 in spans:
+			p.rect(Rect2(cx - 0.3, sp.x, 0.6, sp.y - sp.x), Color(0.07, 0.074, 0.082))
+			p.line(Vector2(cx - 0.3, sp.x), Vector2(cx - 0.3, sp.y), _ink(0.12), 0.04)
+			p.line(Vector2(cx + 0.3, sp.x), Vector2(cx + 0.3, sp.y), _ink(0.12), 0.04)
+		if not spans.is_empty() and (spans[-1] as Vector2).y >= FLOOR - 0.01:
+			p.rect(Rect2(cx - 0.6, FLOOR - 0.22, 1.2, 0.22), DARK)
 	p.line(Vector2(0.3, 0.4), Vector2(59.7, 0.4), _ink(0.17), 0.12)
 	p.line(Vector2(0.3, 1.3), Vector2(59.7, 1.3), _ink(0.17), 0.1)
 	var tx := 0.3
@@ -183,10 +199,21 @@ func _still(p, on: bool, lod: int) -> void:
 	# ---- the racks
 	for b in 2:
 		var x0: float = BAYS[b]
+		var solid := DistrictStyle.solid()
 		for k in 3:
 			var ux := x0 + k * 5.0
 			p.rect(Rect2(ux - 0.13, RACK_TOP, 0.26, FLOOR - RACK_TOP), Color(0.26, 0.28, 0.31))
 			p.line(Vector2(ux - 0.13, RACK_TOP), Vector2(ux - 0.13, FLOOR), _ink(0.55), 0.03)
+			# 2026-11-12 (the solid look, user: "看不到任何改动"): where the rack collides, the upright a
+			# solid steel column 0.5 m wide (scripts/solid_pen.gd shades it: lit edge, dark side, shadow),
+			# its bolt holes down its face; the thin upright as before where the bank stands open
+			if solid:
+				for sp: Vector2 in DistrictStyle.column_spans("cargo", ux, RACK_TOP, FLOOR):
+					p.rect(Rect2(ux - 0.25, sp.x, 0.5, sp.y - sp.x), Color(0.1, 0.104, 0.115))
+					var hy2 := sp.x + 0.3
+					while hy2 < sp.y - 0.2:
+						p.rect(Rect2(ux - 0.05, hy2, 0.1, 0.12), Color(0.03, 0.032, 0.036))
+						hy2 += 0.4
 			p.rect(Rect2(ux - 0.3, FLOOR - 0.12, 0.6, 0.12), DARK)
 			if lod > 0:
 				var hy := RACK_TOP + 0.3
@@ -194,9 +221,22 @@ func _still(p, on: bool, lod: int) -> void:
 					p.rect(Rect2(ux - 0.04, hy, 0.08, 0.12), Color(0.12, 0.13, 0.14))
 					hy += 0.35
 		p.rect(Rect2(x0 - 0.13, RACK_TOP - 0.2, 10.26, 0.2), Color(0.26, 0.28, 0.31))
+		# (the solid look: the bank's top ring beam, within its collision 8.8 m down)
+		if DistrictStyle.solid():
+			p.rect(Rect2(x0 - 0.13, 8.8, 10.26, 0.5), Color(0.1, 0.104, 0.115))
 		for by: float in BEAMS:
 			# the beam pair's face, its mesh deck behind, the load sign
-			p.rect(Rect2(x0, by, 10.0, 0.26), BEAM_COL)
+			# (the solid look: a box beam as deep as the rack's collision there allows, up to 0.45 m —
+			# shaded in its orange by the pen — its end plates bolted to the uprights)
+			var bh := 0.26
+			if solid:
+				var sps: Array = DistrictStyle.column_spans("cargo", x0 + 5.0, by, by + 0.45)
+				if not sps.is_empty() and (sps[0] as Vector2).x <= by + 0.001:
+					bh = maxf(0.26, (sps[0] as Vector2).y - by)
+			p.rect(Rect2(x0, by, 10.0, bh), BEAM_COL)
+			if solid and bh > 0.3:
+				for ex: float in [x0 + 0.25, x0 + 9.75]:
+					p.rect(Rect2(ex - 0.12, by - 0.04, 0.24, bh + 0.08), Color(0.12, 0.125, 0.135))
 			p.line(Vector2(x0, by), Vector2(x0 + 10.0, by), Color(1.0, 0.7, 0.45, 0.9), 0.035)
 			p.rect(Rect2(x0 + 0.15, by - 0.08, 9.7, 0.08), Color(0.2, 0.21, 0.23))
 			if lod > 0:

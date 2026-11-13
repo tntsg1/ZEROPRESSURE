@@ -48,12 +48,16 @@ static func lamp_col(state: String, t: float) -> Color:
 		"work", "wait", "short": return Pal.heat(0.65 + 0.35 * absf(sin(t * 4.0)), 1.3)
 		"warn": return Color(1.0, 0.3, 0.22, 0.6 + 0.4 * absf(sin(t * 2.5)))
 		"idle": return Pal.tint(Pal.AIR, 0.8, 1.2)
-	return Pal.ink(0.25)
+	return DistrictStyle.ink(0.25)
 
 
 static func _mesh(key: String, build: Callable) -> ArrayMesh:
+	# 2026-11-12 (user: "纯2D、纯扁平，没有一点质感"): every console in the port as lit steel, the
+	# districts' solid look (scripts/solid_pen.gd; DistrictStyle.ink for its line art)
+	if DistrictStyle.solid():
+		key = "solid/" + key
 	if not _meshes.has(key):
-		var pen := MeshPen.new()
+		var pen = preload("res://scripts/solid_pen.gd").new() if DistrictStyle.solid() else MeshPen.new()
 		build.call(pen)
 		_meshes[key] = pen.mesh()
 	return _meshes[key]
@@ -77,11 +81,11 @@ const KINDS := ["console", "furnace", "sort", "assay", "wall", "rack", "store"]
 
 # the foot plate and column down to the floor (foot below the spot), the cable into the floor
 static func _stand(p, top: float, foot: float, w := 0.52) -> void:
-	var edge := Pal.ink(0.62)
+	var edge := DistrictStyle.ink(0.62)
 	p.rect(Rect2(-1.1, foot - 0.22, 2.2, 0.22), FACE2)
 	p.rect(Rect2(-1.1, foot - 0.22, 2.2, 0.22), edge, false, 0.04)
 	for bx in [-0.85, 0.85]:
-		p.bolt(Vector2(bx, foot - 0.11), 0.06, Pal.ink(0.55))
+		p.bolt(Vector2(bx, foot - 0.11), 0.06, DistrictStyle.ink(0.55))
 	if foot - 0.22 > top:
 		p.rect(Rect2(-w * 0.5, top, w, foot - 0.22 - top), FACE)
 		p.line(Vector2(-w * 0.5, top), Vector2(-w * 0.5, foot - 0.22), edge, 0.04)
@@ -93,20 +97,20 @@ static func _stand(p, top: float, foot: float, w := 0.52) -> void:
 
 # a cabinet: door seam, vents, its handle
 static func _cabinet(p, r: Rect2) -> void:
-	var edge := Pal.ink(0.62)
+	var edge := DistrictStyle.ink(0.62)
 	p.rect(r, FACE)
 	p.rect(r, edge, false, 0.05)
-	p.line(Vector2(r.get_center().x, r.position.y + 0.05), Vector2(r.get_center().x, r.end.y - 0.05), Pal.ink(0.3), 0.03)
+	p.line(Vector2(r.get_center().x, r.position.y + 0.05), Vector2(r.get_center().x, r.end.y - 0.05), DistrictStyle.ink(0.3), 0.03)
 	for k in 4:
-		p.line(Vector2(r.position.x + 0.2, r.position.y + 0.3 + k * 0.16), Vector2(r.get_center().x - 0.2, r.position.y + 0.3 + k * 0.16), Pal.ink(0.28), 0.04)
-	p.rect(Rect2(r.get_center().x + 0.15, r.position.y + 0.45, 0.08, 0.3), Pal.ink(0.55))
+		p.line(Vector2(r.position.x + 0.2, r.position.y + 0.3 + k * 0.16), Vector2(r.get_center().x - 0.2, r.position.y + 0.3 + k * 0.16), DistrictStyle.ink(0.28), 0.04)
+	p.rect(Rect2(r.get_center().x + 0.15, r.position.y + 0.45, 0.08, 0.3), DistrictStyle.ink(0.55))
 
 
 # the sloped desk between x0 and x1 (wider at the operator's edge)
 static func _desk(p, x0: float, x1: float) -> void:
 	var desk := PackedVector2Array([Vector2(x0, 0.25), Vector2(x1, 0.25), Vector2(x1 + 0.2, 0.85), Vector2(x0 - 0.2, 0.85)])
 	p.poly(desk, FACE2)
-	p.polyline(desk, Pal.ink(0.62), 0.05, true)
+	p.polyline(desk, DistrictStyle.ink(0.62), 0.05, true)
 
 
 static func _keys(p, x0: float, n: int) -> void:
@@ -114,18 +118,18 @@ static func _keys(p, x0: float, n: int) -> void:
 		for k in n:
 			var kx := x0 + k * 0.32 + row * 0.06
 			p.rect(Rect2(kx, 0.38 + row * 0.22, 0.24, 0.14), Color(0.2, 0.21, 0.225))
-			p.rect(Rect2(kx, 0.38 + row * 0.22, 0.24, 0.14), Pal.ink(0.4), false, 0.02)
+			p.rect(Rect2(kx, 0.38 + row * 0.22, 0.24, 0.14), DistrictStyle.ink(0.4), false, 0.02)
 
 
 static func _estop(p, c: Vector2) -> void:
 	p.circle(c, 0.2, Pal.heat(0.85, 1.0), 14)
 	p.circle(c, 0.12, Color(0.75, 0.16, 0.12), 12)
-	p.ring(c, 0.2, Pal.ink(0.7), 0.03, 14)
+	p.ring(c, 0.2, DistrictStyle.ink(0.7), 0.03, 14)
 
 
 # the screen's housing and hood, the neck under it
 static func _head(p, neck := true) -> void:
-	var edge := Pal.ink(0.62)
+	var edge := DistrictStyle.ink(0.62)
 	if neck:
 		p.rect(Rect2(-0.15, -0.08, 0.3, 0.35), FACE)
 	p.rect(Rect2(-1.1, -1.55, 2.2, 1.5), DARK)
@@ -134,11 +138,11 @@ static func _head(p, neck := true) -> void:
 	p.poly(PackedVector2Array([Vector2(-1.25, -1.78), Vector2(1.25, -1.78), Vector2(1.1, -1.55), Vector2(-1.1, -1.55)]), FACE2)
 	p.line(Vector2(-1.25, -1.78), Vector2(1.25, -1.78), edge, 0.05)
 	for bx in [-1.0, 1.0]:
-		p.bolt(Vector2(bx, -0.18), 0.04, Pal.ink(0.45))
+		p.bolt(Vector2(bx, -0.18), 0.04, DistrictStyle.ink(0.45))
 
 
 static func _body(p, kind: String, foot: float) -> void:
-	var edge := Pal.ink(0.62)
+	var edge := DistrictStyle.ink(0.62)
 	match kind:
 		"rail":
 			# 128 号 第 4 段: a low console clamped to a walkway's front railing — the screen on a short neck,
@@ -154,8 +158,8 @@ static func _body(p, kind: String, foot: float) -> void:
 				if cy > 0.9:
 					p.rect(Rect2(-0.32, cy - 0.07, 0.64, 0.14), FACE2)
 					p.rect(Rect2(-0.32, cy - 0.07, 0.64, 0.14), edge, false, 0.025)
-					p.bolt(Vector2(-0.22, cy), 0.03, Pal.ink(0.55))
-					p.bolt(Vector2(0.22, cy), 0.03, Pal.ink(0.55))
+					p.bolt(Vector2(-0.22, cy), 0.03, DistrictStyle.ink(0.55))
+					p.bolt(Vector2(0.22, cy), 0.03, DistrictStyle.ink(0.55))
 			p.rect(Rect2(-0.55, foot - 0.12, 1.1, 0.12), FACE2)
 			p.rect(Rect2(-0.55, foot - 0.12, 1.1, 0.12), edge, false, 0.03)
 			var cable := PackedVector2Array([Vector2(0.14, 0.95), Vector2(0.3, foot - 0.4), Vector2(0.75, foot - 0.08)])
@@ -168,9 +172,9 @@ static func _body(p, kind: String, foot: float) -> void:
 			_keys(p, -0.75, 3)
 			# start (green), the power dial, the emergency stop
 			p.circle(Vector2(-1.15, 0.55), 0.2, Pal.tint(Pal.FLUID, 0.8, 1.0), 14)
-			p.ring(Vector2(-1.15, 0.55), 0.2, Pal.ink(0.7), 0.03, 14)
+			p.ring(Vector2(-1.15, 0.55), 0.2, DistrictStyle.ink(0.7), 0.03, 14)
 			p.circle(Vector2(0.55, 0.55), 0.22, Color(0.2, 0.21, 0.225), 16)
-			p.ring(Vector2(0.55, 0.55), 0.22, Pal.ink(0.7), 0.03, 16)
+			p.ring(Vector2(0.55, 0.55), 0.22, DistrictStyle.ink(0.7), 0.03, 16)
 			p.arc(Vector2(0.55, 0.55), 0.3, PI * 0.8, PI * 2.2, Pal.heat(0.6, 1.0), 0.03, 14)
 			_estop(p, Vector2(1.3, 0.55))
 			# the heat shield towards the furnace (to the right), hatched, its viewing port
@@ -179,7 +183,7 @@ static func _body(p, kind: String, foot: float) -> void:
 			p.hatch(sh, Pal.heat(0.55, 1.0), 0.06, 0.35)
 			p.rect(sh, edge, false, 0.05)
 			p.circle(Vector2(2.11, -0.75), 0.24, Color(0.02, 0.02, 0.022), 14)
-			p.ring(Vector2(2.11, -0.75), 0.24, Pal.ink(0.75), 0.05, 14)
+			p.ring(Vector2(2.11, -0.75), 0.24, DistrictStyle.ink(0.75), 0.05, 14)
 			p.line(Vector2(1.95, 1.2), Vector2(1.3, 1.2), edge, 0.06)
 			_head(p)
 		"sort":
@@ -189,13 +193,13 @@ static func _body(p, kind: String, foot: float) -> void:
 			_keys(p, -1.05, 3)
 			# the joystick, the stop button
 			p.circle(Vector2(0.15, 0.62), 0.14, Color(0.2, 0.21, 0.225), 12)
-			p.line(Vector2(0.15, 0.62), Vector2(0.3, 0.3), Pal.ink(0.7), 0.06)
-			p.circle(Vector2(0.3, 0.3), 0.08, Pal.ink(0.8), 10)
+			p.line(Vector2(0.15, 0.62), Vector2(0.3, 0.3), DistrictStyle.ink(0.7), 0.06)
+			p.circle(Vector2(0.3, 0.3), 0.08, DistrictStyle.ink(0.8), 10)
 			_estop(p, Vector2(1.0, 0.55))
 			# the pull cord along the line, its pull handle
 			p.line(Vector2(1.45, 0.2), Vector2(4.6, 0.2), Pal.heat(0.75, 1.0), 0.05)
 			for kx in [2.4, 3.5, 4.6]:
-				p.rect(Rect2(kx - 0.05, 0.12, 0.1, 0.16), Pal.ink(0.55))
+				p.rect(Rect2(kx - 0.05, 0.12, 0.1, 0.16), DistrictStyle.ink(0.55))
 			p.line(Vector2(3.0, 0.2), Vector2(3.0, 0.75), Pal.heat(0.75, 1.0), 0.04)
 			p.rect(Rect2(2.85, 0.75, 0.3, 0.14), Pal.heat(0.9, 1.0))
 			_head(p)
@@ -209,7 +213,7 @@ static func _body(p, kind: String, foot: float) -> void:
 			for k in 3:
 				var dy := dr.position.y + (k + 0.5) * dr.size.y / 3.0
 				p.line(Vector2(dr.position.x, dr.position.y + k * dr.size.y / 3.0), Vector2(dr.end.x, dr.position.y + k * dr.size.y / 3.0), edge, 0.03)
-				p.rect(Rect2(dr.get_center().x - 0.2, dy - 0.03, 0.4, 0.06), Pal.ink(0.55))
+				p.rect(Rect2(dr.get_center().x - 0.2, dy - 0.03, 0.4, 0.06), DistrictStyle.ink(0.55))
 			for lx in [-1.85, 2.25]:
 				p.rect(Rect2(lx, 0.48, 0.12, foot - 0.48), FACE)
 			p.rect(Rect2(-2.0, foot - 0.12, 4.4, 0.12), FACE2)
@@ -232,11 +236,11 @@ static func _body(p, kind: String, foot: float) -> void:
 			p.rect(Rect2(-3.05, -0.95, 1.95, 0.2), FACE2)
 			p.rect(Rect2(-3.05, -0.95, 1.95, 0.2), edge, false, 0.035)
 			p.line(Vector2(-2.95, -0.2), Vector2(-1.15, -0.85), edge, 0.06)
-			p.line(Vector2(-2.95, -1.55), Vector2(-1.15, -1.0), Pal.ink(0.4), 0.04)
+			p.line(Vector2(-2.95, -1.55), Vector2(-1.15, -1.0), DistrictStyle.ink(0.4), 0.04)
 			p.rect(Rect2(-3.15, -1.75, 0.16, 1.75), FACE)
 			p.rect(Rect2(-3.15, -1.75, 0.16, 1.75), edge, false, 0.03)
 			for by in [-1.5, -0.3]:
-				p.bolt(Vector2(-3.07, by), 0.045, Pal.ink(0.55))
+				p.bolt(Vector2(-3.07, by), 0.045, DistrictStyle.ink(0.55))
 			# the keypad box under the screen: a row of keys, the card slot, its lamp's bezel
 			p.rect(Rect2(-1.1, -0.05, 2.2, 0.62), DARK)
 			p.rect(Rect2(-1.1, -0.05, 2.2, 0.62), edge, false, 0.05)
@@ -244,15 +248,15 @@ static func _body(p, kind: String, foot: float) -> void:
 				p.rect(Rect2(-0.95 + k * 0.28, 0.1, 0.21, 0.15), Color(0.2, 0.21, 0.225))
 				p.rect(Rect2(-0.95 + k * 0.28, 0.31, 0.21, 0.15), Color(0.2, 0.21, 0.225))
 			p.rect(Rect2(0.5, 0.12, 0.42, 0.06), Color(0.01, 0.012, 0.016))
-			p.rect(Rect2(0.5, 0.12, 0.42, 0.06), Pal.ink(0.45), false, 0.02)
-			p.ring(Vector2(0.75, 0.38), 0.11, Pal.ink(0.5), 0.025, 12)
+			p.rect(Rect2(0.5, 0.12, 0.42, 0.06), DistrictStyle.ink(0.45), false, 0.02)
+			p.ring(Vector2(0.75, 0.38), 0.11, DistrictStyle.ink(0.5), 0.025, 12)
 			# the gland on the housing's right side: a hex nut round the cable going out to the right
 			p.rect(Rect2(1.1, -1.12, 0.24, 0.36), FACE2)
 			p.rect(Rect2(1.1, -1.12, 0.24, 0.36), edge, false, 0.03)
-			p.rect(Rect2(1.34, -1.06, 0.12, 0.24), Pal.ink(0.45))
+			p.rect(Rect2(1.34, -1.06, 0.12, 0.24), DistrictStyle.ink(0.45))
 			_head(p, false)
 			# the screen's maker plate under the hood's lip
-			p.rect(Rect2(-0.3, -1.7, 0.6, 0.06), Pal.ink(0.35))
+			p.rect(Rect2(-0.3, -1.7, 0.6, 0.06), DistrictStyle.ink(0.35))
 		"rack":
 			# 107 号: a pallet rack of four shelves (sail, power, thermal, drive — top to bottom), its
 			# crates drawn on it live (scripts/consoles.gd); punched uprights, orange beams, wall brackets
@@ -388,7 +392,7 @@ static func draw(ci: CanvasItem, at: Vector2, foot: float, title: String, hint: 
 			ci.draw_rect(Rect2(sr.position + Vector2(0.1, 0.3 + k * 0.25) * m, Vector2((0.5 + 0.35 * ((k + 1) % 3)) * m, 0.1 * m)), Color(col.r, col.g, col.b, 0.5))
 	if bar >= 0.0:
 		var br := Rect2(sr.position + Vector2(0.1 * m, sr.size.y - 0.22 * m), Vector2(sr.size.x - 0.2 * m, 0.1 * m))
-		ci.draw_rect(br, Pal.ink(0.15))
+		ci.draw_rect(br, DistrictStyle.ink(0.15))
 		ci.draw_rect(Rect2(br.position, Vector2(br.size.x * clampf(bar, 0.0, 1.0), br.size.y)), Pal.heat(0.9, 1.2) if bar > 0.85 else Color(UiSkin.DATA))
 	# the furnace desk's viewing port: as bright as the furnace burns
 	if kind == "furnace":
@@ -431,14 +435,14 @@ static func _name_plate(ci: CanvasItem, anchor: Vector2, title: String, hint: St
 	FastDraw.circle(ci, pos + Vector2(12.0, 11.0), 3.5, lamp_col(lamp, t))
 	ci.draw_string(font, pos + Vector2(21.0, 16.0), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, col)
 	if hint != "":
-		ci.draw_string(font, pos + Vector2(8.0, 36.0), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Pal.ink(0.95))
+		ci.draw_string(font, pos + Vector2(8.0, 36.0), hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, DistrictStyle.ink(0.95))
 	ci.draw_set_transform_matrix(Transform2D.IDENTITY)
 
 
 # ---------------------------------------------------------------- each district's console: its figures and card
 static func summary(zone: String, game) -> Dictionary:
 	var st := Port.stage(zone) if zone != "ring" else Port.stage("power")
-	var dim := Pal.ink(0.7)
+	var dim := DistrictStyle.ink(0.7)
 	var hi := Pal.tint(Pal.AIR, 0.95, 1.2)
 	match zone:
 		"power":

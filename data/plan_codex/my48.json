@@ -6,68 +6,99 @@
 		{
 			"ctrl": "VENT-JAM",
 			"do": "w",
+			"gap": 0.2,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "G-S",
 			"do": "h",
+			"gap": 0.1,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "K-M",
 			"do": "w",
+			"gap": 0.1,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PO2",
 			"do": "h",
+			"gap": 40.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "PSPA",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "WATER-T-D",
 			"do": "h",
+			"gap": 0.7,
 			"pre": [],
 			"value": true
 		},
 		{
 			"ctrl": "K-FC",
 			"do": "w",
+			"gap": 0.7,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "G-S",
 			"do": "h",
+			"gap": 17.3,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PO2",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "PSPA",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
 		},
 		{
 			"ctrl": "WATER-T-D",
 			"do": "h",
+			"gap": 0.0,
 			"pre": [],
 			"value": false
+		},
+		{
+			"do": "cut",
+			"key": "SPA",
+			"origin": "SPA",
+			"pl": [
+				[
+					816.0,
+					-260.697601318359
+				],
+				[
+					816.0,
+					-51.3023986816406
+				]
+			],
+			"pre": [],
+			"rooms": [
+				"S"
+			],
+			"seg": true
 		}
 	]
 }

@@ -117,6 +117,9 @@ func _process(dt: float) -> void:
 		return
 	t += dt
 	step_t += dt
+	# below the function keys when they are up (公测反馈 2026-11-12)
+	if card != null:
+		card.position.y = preload("res://scripts/hud_keys.gd").below(game, 124.0)
 	var ui = game.console_ui
 	var flying: bool = step == "fly" and ui == null and game.drone != null
 	way.update(game, game.drone.global_position if flying else Vector2.INF, target() if flying else Vector2.INF, dt)

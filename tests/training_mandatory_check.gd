@@ -9,6 +9,7 @@ extends "res://tests/guide_check.gd"
 func _initialize() -> void:
 	Career.path = "user://zp_test_training_mandatory_career.json"
 	SaveGame.path = "user://zp_test_training_mandatory_save.json"
+	SaveGame.train_path = "user://zp_test_training_mandatory_training.json"   # never the player's training file
 	SaveGame.allow_test = true
 	_run.call_deferred()
 
@@ -25,10 +26,10 @@ func _run() -> void:
 	Career.data.history = [{"id": "TUG-001"}]
 	check(not Game.ts1_due(), "an older career past its first ship is not sent back to it")
 	Career.data.history = []
-	# 开局重做 (owner 2026-11-10): the prologue over, the first ship comes first; TS-1 once it is stripped
 	Game.start_ship = "berth"
 	await _spawn()
 	await _frames(10)
+	# 开局重做 (owner 2026-11-10): the prologue over, the first ship comes first; TS-1 once it is stripped
 	check(Game.TS1_AFTER_FIRST, "(the course comes after the first ship)")
 	g.finish_prologue()
 	await _frames(2)
