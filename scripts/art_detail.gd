@@ -12,11 +12,7 @@ const M := 48.0
 # name_key -> drawing (picked before the piece's own art)
 const BY_NAME := {
 	"p_suite": "suite",
-	"p_bed": "bed_d", "p_ark_bed": "bed_d", "p_ark_medbed": "bed_d",
-	"p_seat_pilot": "seat_d", "p_seat_p": "seat_d", "p_seat_c": "seat_d", "p_ark_chair": "seat_d", "p_seat_row": "seat_d",
 	"p_suit": "suit_d", "p_ark_suit": "suit_d", "p_suit_locker": "suit_d", "p_ob_cleansuit": "suit_d",
-	"p_defib": "medcart", "p_anes": "medcart", "p_vent": "medcart", "p_ark_medmon": "medcart", "p_dose_probe": "medcart",
-	"p_ark_plant_tray": "plant_tray", "p_culture_rack": "plant_tray", "p_bl_planter": "plant_tray", "p_bl_hydro_rack": "plant_tray", "p_bl_vertical_farm": "plant_tray",
 	"p_ark_maint_robot": "robot", "p_bay_drone": "robot", "p_recovery_drone": "robot", "p_spare_drone": "robot",
 	"p_deposit": "vault_d", "p_data_archive": "vault_d", "p_vault_door": "vault_d", "p_ark_rod_store": "vault_d", "p_bl_seed_vault": "vault_d",
 	"p_stairs": "stairs", "p_ladder": "stairs", "p_ark_work_stand": "stairs",

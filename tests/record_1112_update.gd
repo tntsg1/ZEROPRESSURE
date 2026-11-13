@@ -103,14 +103,22 @@ func _run() -> void:
 				kit.keep(false)
 		"plan":
 			# the codex plan on POD: the gold drone phases through the hull, works the switches and hoses
+			const Codex = preload("res://scripts/plan_codex.gd")
 			Career.data = Career.fresh()
-			Career.data.money = 0.0
+			Career.data.money = 300000.0
 			Career.data.methods = {"cutter": 3}
+			Career.data.plans = {}
 			Career.save()
+			print("CODEX buy: %s owned %s" % [Codex.buy(), str(Codex.owned())])
+			var ship := "gr7"
+			for s in ["gr7", "tug", "s09", "pod"]:
+				if Codex.has(s):
+					ship = s
+					break
 			Game.G4_OPEN = false
-			Game.contract = {"id": "UPD-PLAN", "ship": "pod", "fee": 0, "time": 3600, "kit": {}}
+			Game.contract = {"id": "UPD-PLAN", "ship": ship, "fee": 0, "time": 3600, "kit": {}}
 			Career.data.active = {}
-			await _spawn("pod")
+			await _spawn(ship)
 			g.autosave_t = -1000000.0
 			print("PLAN source %s steps %d" % [str(g.plan.source), g.plan.steps.size()])
 			g.zoom_override = 0.9
@@ -131,7 +139,7 @@ func _run() -> void:
 			await _frames(60)
 		"parts":
 			# the reworked part drawings close up, a slow drift over each
-			var looks := [["gr7", ["engine", "nozzle"]], ["gr7", ["switchboard", "panel", "cabinet"]], ["gr7", ["capacitor"]], ["gr7", ["gastank", "bottle"]]]
+			var looks := [["gr7", ["p_engn", "p_engf", "p_engc"]], ["gr7", ["p_swb"]], ["gr7", ["p_cap"]], ["gr7", ["p_gastank"]], ["gr7", ["p_gen"]]]
 			Game.contract = {}
 			await _spawn("gr7")
 			for n in g.world.rooms:
@@ -146,7 +154,7 @@ func _run() -> void:
 					if p.gone or p.body != null or used.has(p.id) or str(p.cls) != "equip":
 						continue
 					for w in lk[1]:
-						if str(p.name_key).contains(w):
+						if str(p.name_key) == w:
 							hit = p
 							break
 					if hit != null:

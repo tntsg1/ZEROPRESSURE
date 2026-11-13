@@ -13,7 +13,7 @@ extends SceneTree
 
 const M := 48.0
 # drawings that are furniture or plain cargo: no card
-const PLAIN := ["lamp", "cabinet", "locker", "seat", "bunk", "plants", "table", "desk", "shelf", "toolwall", "galley", "bed",
+const PLAIN := ["berth_pod", "operating_table", "icu_bed", "crew_berth", "double_bunk", "rest_capsules", "mess_serving_line", "ship_galley", "emergency_kit_locker", "tier_locker", "baggage_hold", "overhead_bins", "explosives_magazine", "dc_gear_locker", "hose_reel_cabinet", "weapons_locker", "lashing_store", "tool_locker", "drug_cabinet", "rotor_blade_rack", "spill_station", "grow_tray", "nft_rack", "raised_planter", "aero_tower", "culture_racks", "framed_artwork", "fruit_tree", "soil_bed", "seedling_racks", "task_chair", "copilot_seat", "pilot_bucket", "bridge_chair", "passenger_seat", "drive_shelf", "core_box_rack", "sack_pallet", "rig_spares_rack", "wall_shelf", "lamp", "cabinet", "locker", "seat", "bunk", "plants", "table", "desk", "shelf", "toolwall", "galley", "bed",
 	"ladder", "grating", "suit", "bench", "medcab", "op_table", "bar", "piano", "wine_rack", "mail_sorter", "beehive",
 	"gun_rack", "harness", "screen", "spray_bar", "spray_line", "food_module", "composter", "growlamp", "biobox", "ingot_rack", "beacon",
 	"barrel", "shell", "missile", "ice", "drum", "glove",
